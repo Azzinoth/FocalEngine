@@ -1,10 +1,11 @@
 #include "FEMaterial.h"
+using namespace FocalEngine;
 
-FocalEngine::FEMaterial::FEMaterial()
+FEMaterial::FEMaterial()
 {
 }
 
-FocalEngine::FEMaterial::~FEMaterial()
+FEMaterial::~FEMaterial()
 {
 	for (size_t i = 0; i < shaders.size(); i++)
 	{
@@ -17,7 +18,7 @@ FocalEngine::FEMaterial::~FEMaterial()
 	}
 }
 
-void FocalEngine::FEMaterial::bind()
+void FEMaterial::bind()
 {
 	if (shaders.size() > 0)
 		shaders[0]->start();
@@ -29,7 +30,7 @@ void FocalEngine::FEMaterial::bind()
 	}
 }
 
-void FocalEngine::FEMaterial::unBind()
+void FEMaterial::unBind()
 {
 	if (shaders.size() > 0)
 		shaders[0]->stop();

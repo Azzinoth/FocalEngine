@@ -24,6 +24,9 @@ namespace FocalEngine
 		void loadMatrix(GLuint& location, glm::mat4& matrix);
 
 		void loadModelViewProjection(glm::mat4& matrix);
+
+		void loadWorldMatrix(glm::mat4& matrix);
+		void loadViewMatrix(glm::mat4& matrix);
 		void loadProjectionMatrix(glm::mat4& matrix);
 
 		virtual void loadData();
@@ -34,6 +37,8 @@ namespace FocalEngine
 		std::vector<std::string> attributes;
 
 		// standard uniforms
+		GLuint locationWorldMatrix;
+		GLuint locationViewMatrix;
 		GLuint locationProjectionMatrix;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);

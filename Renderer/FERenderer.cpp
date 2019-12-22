@@ -1,34 +1,28 @@
 #include "FERenderer.h"
+using namespace FocalEngine;
 
-FocalEngine::FERenderer* Renderer = nullptr;
+FERenderer* FERenderer::_instance = nullptr;
 
-FocalEngine::FERenderer::FERenderer()
+FERenderer::FERenderer()
 {
 }
 
-glm::mat4 FocalEngine::FERenderer::getProjectionMatrix()
-{
-	#define WIN_W 1280
-	#define WIN_H 720
-
-	return glm::perspective(FOV, float(WIN_W) / float(WIN_H), NEAR_PLANE, FAR_PLANE);
-}
-
-void FocalEngine::FERenderer::addToScene(FEEntity* newEntity)
+void FERenderer::addToScene(FEEntity* newEntity)
 {
 	sceneGraph.push_back(newEntity);
 }
 
-void FocalEngine::FERenderer::render()
+void FERenderer::render(FEBasicCamera* currentCamera)
 {
 	for (size_t i = 0; i < sceneGraph.size(); i++)
 	{
-		glm::mat4 trans = glm::mat4(1.0);
-		trans = glm::translate(trans, sceneGraph[i]->position);
 		sceneGraph[i]->material->bind();
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		//sceneGraph[i]->material->shaders[0]->loadProjectionMatrix(view * trans);
-		sceneGraph[i]->material->shaders[0]->loadProjectionMatrix(getProjectionMatrix() * view * trans);
+		//glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 4.0f), currentCamera->getPosition(), glm::vec3(0.0f, 1.0f, 0.0f));
+
+		sceneGraph[i]->material->shaders[0]->loadWorldMatrix(sceneGraph[i]->worldMatrix);
+		sceneGraph[i]->material->shaders[0]->loadViewMatrix(view);
+		sceneGraph[i]->material->shaders[0]->loadProjectionMatrix(currentCamera->getProjectionMatrix());
 		sceneGraph[i]->render();
 		sceneGraph[i]->material->unBind();
 	}

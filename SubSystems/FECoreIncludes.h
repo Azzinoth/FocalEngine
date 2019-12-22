@@ -14,3 +14,9 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.inl"
+
+#define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
+
+#define SINGLETON_COPY_ASSIGN_PART(CLASS_NAME) \
+CLASS_NAME(const CLASS_NAME &);                \
+void operator= (const CLASS_NAME &);

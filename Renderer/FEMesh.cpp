@@ -1,23 +1,23 @@
 #include "FEMesh.h"
+using namespace FocalEngine;
 
-FocalEngine::FEMesh::FEMesh(GLuint vaoID, unsigned int vertexCount)
+FEMesh::FEMesh(GLuint vaoID, unsigned int vertexCount)
 {
 	this->vaoID = vaoID;
 	this->vertexCount = vertexCount;
 }
 
-FocalEngine::FEMesh::~FEMesh()
+FEMesh::~FEMesh()
 {
 	glDeleteVertexArrays(1, &vaoID);
-	//glDeleteBuffers(vbos.size(), vbos.data());
 }
 
-GLuint FocalEngine::FEMesh::getVaoID() const
+GLuint FEMesh::getVaoID() const
 {
 	return vaoID;
 }
 
-GLuint FocalEngine::FEMesh::getVertexCount() const
+GLuint FEMesh::getVertexCount() const
 {
 	return vertexCount;
 }

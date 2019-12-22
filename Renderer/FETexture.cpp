@@ -1,6 +1,7 @@
 #include "FETexture.h"
+using namespace FocalEngine;
 
-FocalEngine::FETexture::FETexture(char* fileName, std::string Name)
+FETexture::FETexture(char* fileName, std::string Name)
 {
 	textureID = png_texture_load(fileName);
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -11,27 +12,27 @@ FocalEngine::FETexture::FETexture(char* fileName, std::string Name)
 	setName(Name);
 }
 
-FocalEngine::FETexture::FETexture(std::string Name)
+FETexture::FETexture(std::string Name)
 {
 	setName(Name);
 }
 
-FocalEngine::FETexture::~FETexture()
+FETexture::~FETexture()
 {
 	glDeleteTextures(1, &textureID);
 }
 
-GLuint FocalEngine::FETexture::getTextureID()
+GLuint FETexture::getTextureID()
 {
 	return textureID;
 }
 
-std::string FocalEngine::FETexture::getName()
+std::string FETexture::getName()
 {
 	return name;
 }
 
-void FocalEngine::FETexture::setName(std::string newName)
+void FETexture::setName(std::string newName)
 {
 	name = newName;
 }
