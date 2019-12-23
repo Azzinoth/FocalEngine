@@ -17,9 +17,9 @@ FEShader::FEShader(const char* vertexText, const char* fragmentText, std::vector
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragmentShaderID);
 
-	locationWorldMatrix = getUniformLocation("WorldMatrix");
-	locationViewMatrix = getUniformLocation("ViewMatrix");
-	locationProjectionMatrix = getUniformLocation("ProjectionMatrix");
+	locationWorldMatrix = getUniformLocation("FEWorldMatrix");
+	locationViewMatrix = getUniformLocation("FEViewMatrix");
+	locationProjectionMatrix = getUniformLocation("FEProjectionMatrix");
 	//if (locationProjectionMatrix == GLint(-1))
 	//	FEError("shader didn't containe minimum needed uniforms.");
 }

@@ -4,7 +4,7 @@
 #define FERENDERER_H
 
 #include "../ResourceManager/FEResourceManager.h"
-#include "../SubSystems/FEBasicCamera.h"
+#include "../CoreExtensions/FEFreeCamera.h"
 
 namespace FocalEngine
 {

@@ -8,8 +8,8 @@ FEngine* FEngine::_instance = nullptr;
 
 FEngine::FEngine()
 {
-	currentCamera = new FEBasicCamera();
 	FEInput::getInstance().mouseButtonCallbackImpl = &FEngine::mouseButtonCallback;
+	FEInput::getInstance().mouseMoveCallbackImpl = &FEngine::mouseMoveCallback;
 	FEInput::getInstance().keyButtonCallbackImpl = &FEngine::keyButtonCallback;
 }
 
@@ -44,8 +44,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	windowH = height;
 	windowTitle = WindowTitle;
 
-	currentCamera->setAspectRatio(float(width) / float(height));
-
 	glfwInit();
 	//if (!glfwInit())
 		//return -1;
@@ -61,13 +59,13 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glewInit();
    
 	glfwSetMouseButtonCallback(window, &FEInput::mouseButtonCallback);
+	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
 
 	glClearColor(0.7f, 0.0f, 0.7f, 1.0f);
 
-	// Force subsystems start up
-	//FEResourceManager resourceManager = FEResourceManager::getInstance();
-	//FERenderer renderer = FERenderer::getInstance();
+	currentCamera = new FEFreeCamera(window);
+	currentCamera->setAspectRatio(float(width) / float(height));
 }
 
 void FEngine::setKeyCallback(void(*func)(int, int, int, int))
@@ -75,9 +73,14 @@ void FEngine::setKeyCallback(void(*func)(int, int, int, int))
 	clientKeyButtonCallbackImpl = func;
 }
 
-void FEngine::setMouseCallback(void(*func)(int, int, int))
+void FEngine::setMouseButtonCallback(void(*func)(int, int, int))
 {
 	clientMouseButtonCallbackImpl = func;
+}
+
+void FEngine::setMouseMoveCallback(void(*func)(double, double))
+{
+	clientMouseMoveCallbackImpl = func;
 }
 
 void FEngine::mouseButtonCallback(int button, int action, int mods)
@@ -85,6 +88,15 @@ void FEngine::mouseButtonCallback(int button, int action, int mods)
 	FEngine& engineObj = getInstance();
 	if (engineObj.clientMouseButtonCallbackImpl != nullptr)
 		engineObj.clientMouseButtonCallbackImpl(button, action, mods);
+}
+
+void FEngine::mouseMoveCallback(double xpos, double ypos)
+{
+	FEngine& engineObj = getInstance();
+	if (engineObj.clientMouseMoveCallbackImpl != nullptr)
+		engineObj.clientMouseMoveCallbackImpl(xpos, ypos);
+
+	engineObj.currentCamera->mouseMoveInput(xpos, ypos);
 }
 
 void FEngine::keyButtonCallback(int key, int scancode, int action, int mods)

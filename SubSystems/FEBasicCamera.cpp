@@ -69,7 +69,7 @@ void FEBasicCamera::setAspectRatio(float newAspectRatio)
 
 void FEBasicCamera::updateViewMatrix()
 {
-	viewMatrix = glm::mat4();
+	viewMatrix = glm::mat4(1.0f);
 
 	viewMatrix = glm::rotate(viewMatrix, getPitch() * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
 	viewMatrix = glm::rotate(viewMatrix, getYaw() * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
@@ -100,29 +100,4 @@ void FEBasicCamera::updateAll()
 {
 	updateViewMatrix();
 	updateProjectionMatrix();
-}
-
-void FEBasicCamera::keyboardInput(int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE)
-	{
-		position[0] -= 0.03;
-	}
-
-	if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE)
-	{
-		position[0] += 0.03;
-	}
-
-	if (key == GLFW_KEY_UP && action != GLFW_RELEASE)
-	{
-		position[1] -= 0.03;
-	}
-
-	if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE)
-	{
-		position[1] += 0.03;
-	}
-
-	updateViewMatrix();
 }

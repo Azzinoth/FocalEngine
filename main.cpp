@@ -4,13 +4,13 @@ static const char* const sTestVS = R"(
 #version 400 core
 
 in vec3 vPos;
-uniform mat4 WorldMatrix;
-uniform mat4 ViewMatrix;
-uniform mat4 ProjectionMatrix;
+uniform mat4 FEWorldMatrix;
+uniform mat4 FEViewMatrix;
+uniform mat4 FEProjectionMatrix;
 
 void main(void)
 {
-	gl_Position = ProjectionMatrix * ViewMatrix * WorldMatrix * vec4(vPos, 1.0);
+	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(vPos, 1.0);
 }
 )";
 
@@ -26,6 +26,12 @@ void main(void)
 )";
 
 void mouseButtonCallback(int button, int action, int mods)
+{
+	int y = 0;
+	y++;
+}
+
+void mouseMoveCallback(double xpos, double ypos)
 {
 	int y = 0;
 	y++;
@@ -65,7 +71,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 	engine.setKeyCallback(keyButtonCallback);
-	engine.setMouseCallback(mouseButtonCallback);
+	engine.setMouseButtonCallback(mouseButtonCallback);
+	engine.setMouseMoveCallback(mouseMoveCallback);
 
 	while (engine.isWindowOpened())
 	{

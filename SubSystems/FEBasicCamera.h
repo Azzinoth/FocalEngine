@@ -23,14 +23,15 @@ namespace FocalEngine
 		void setAspectRatio(float newAspectRatio);
 
 		glm::mat4 getViewMatrix();
-		void updateViewMatrix();
+		virtual void updateViewMatrix();
 		glm::mat4 getProjectionMatrix();
-		void updateProjectionMatrix();
+		virtual void updateProjectionMatrix();
 
-		void updateAll();
+		virtual void updateAll();
 
-		void keyboardInput(int key, int scancode, int action, int mods);
-	private:
+		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
+		virtual void mouseMoveInput(double xpos, double ypos) {};
+	protected:
 		float FOV = 70.0f;
 		float NEAR_PLANE = 0.1f;
 		float FAR_PLANE = 5000.0f;
@@ -43,5 +44,7 @@ namespace FocalEngine
 		glm::vec3 position = glm::vec3(0.0f);
 		glm::mat4 viewMatrix;
 		glm::mat4 projectionMatrix;
+
+		GLFWwindow* window;
 	};
 }

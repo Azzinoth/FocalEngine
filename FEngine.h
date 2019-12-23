@@ -27,7 +27,8 @@ namespace FocalEngine
 		void setCamera(FEBasicCamera* newCamera);
 
 		void setKeyCallback(void(*func)(int, int, int, int));
-		void setMouseCallback(void(*func)(int, int, int));
+		void setMouseButtonCallback(void(*func)(int, int, int));
+		void setMouseMoveCallback(void(*func)(double, double));
 	private:
 		static FEngine* _instance;
 
@@ -41,6 +42,9 @@ namespace FocalEngine
 		GLFWwindow* window;
 		static void mouseButtonCallback(int button, int action, int mods);
 		void(*clientMouseButtonCallbackImpl)(int, int, int) = nullptr;
+
+		static void mouseMoveCallback(double xpos, double ypos);
+		void(*clientMouseMoveCallbackImpl)(double, double) = nullptr;
 
 		static void keyButtonCallback(int key, int scancode, int action, int mods);
 		void(*clientKeyButtonCallbackImpl)(int, int, int, int) = nullptr;
