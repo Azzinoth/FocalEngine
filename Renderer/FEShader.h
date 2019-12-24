@@ -2,12 +2,18 @@
 
 #include "FETexture.h"
 
+#define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
+#define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
+#define FE_PROJECTION_MATRIX_MACRO "@ProjectionMatrix@"
+
 namespace FocalEngine
 {
+	class FERenderer;
 	class FEShader
 	{
+		friend FERenderer;
 	public:
-		FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>&& attributes);
+		FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>& attributes);
 		~FEShader();
 
 		virtual void start();
@@ -15,16 +21,16 @@ namespace FocalEngine
 
 		void bindAttribute(int& attribute, const char* variableName);
 
-		void loadFloat(GLuint& location, GLfloat& value);
-		void loadInt(GLuint& location, GLint value);
-		void loadVector(GLuint& location, glm::vec3& vector);
-		void loadVector(GLuint& location, glm::vec4& vector);
-		void loadVector(GLuint& location, glm::vec2& vector);
-		void loadBool(GLuint& location, bool& value);
-		void loadMatrix(GLuint& location, glm::mat4& matrix);
+		void loadScalar(const char* uniformName, GLfloat& value);
+		void loadScalar(const char* uniformName, GLint& value);
+		void loadVector(const char* uniformName, glm::vec3& vector);
+		void loadVector(const char* uniformName, glm::vec4& vector);
+		void loadVector(const char* uniformName, glm::vec2& vector);
+		void loadMatrix(const char* uniformName, glm::mat4& matrix);
+
+		std::string parseShaderForMacro(const char* shaderText);
 
 		void loadModelViewProjection(glm::mat4& matrix);
-
 		void loadWorldMatrix(glm::mat4& matrix);
 		void loadViewMatrix(glm::mat4& matrix);
 		void loadProjectionMatrix(glm::mat4& matrix);
@@ -37,9 +43,12 @@ namespace FocalEngine
 		std::vector<std::string> attributes;
 
 		// standard uniforms
-		GLuint locationWorldMatrix;
-		GLuint locationViewMatrix;
-		GLuint locationProjectionMatrix;
+		bool macroWorldMatrix = false;
+		GLuint locationWorldMatrix = -1;
+		bool macroViewMatrix = false;
+		GLuint locationViewMatrix = -1;
+		bool macroProjectionMatrix = false;
+		GLuint locationProjectionMatrix = -1;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
 		void cleanUp();

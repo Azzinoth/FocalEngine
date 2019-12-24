@@ -4,6 +4,7 @@
 #define FEMATERIAL_H
 
 #include "FEShader.h"
+#include "../CoreExtensions/StandardMaterial/FEStandardShader.h"
 
 #define MAX_TEXTURE_COUNT_FOR_MATERIAL = 10;
 

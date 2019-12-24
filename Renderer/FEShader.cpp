@@ -1,7 +1,7 @@
 #include "FEShader.h"
 using namespace FocalEngine;
 
-FEShader::FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>&& attributes)
+FEShader::FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>& attributes)
 {
 	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
 	fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
@@ -33,7 +33,10 @@ GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 {
 	GLuint shaderID;
 	shaderID = glCreateShader(shaderType);
-	glShaderSource(shaderID, 1, &shaderText, nullptr);
+
+	std::string tempString = parseShaderForMacro(shaderText);
+	const char *parsedShaderText = tempString.c_str();
+	glShaderSource(shaderID, 1, &parsedShaderText, nullptr);
 	glCompileShader(shaderID);
 	GLint status = 0;
 	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
@@ -85,46 +88,67 @@ void FEShader::stop()
 	glUseProgram(0);
 }
 
+std::string FEShader::parseShaderForMacro(const char* shaderText)
+{
+	std::string parsedShaderText = shaderText;
+
+	size_t index = parsedShaderText.find(FE_WORLD_MATRIX_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_WORLD_MATRIX_MACRO), "uniform mat4 FEWorldMatrix;");
+		macroWorldMatrix = true;
+	}
+
+	index = parsedShaderText.find(FE_VIEW_MATRIX_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_VIEW_MATRIX_MACRO), "uniform mat4 FEViewMatrix;");
+		macroViewMatrix = true;
+	}
+
+	index = parsedShaderText.find(FE_PROJECTION_MATRIX_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_PROJECTION_MATRIX_MACRO), "uniform mat4 FEProjectionMatrix;");
+		macroProjectionMatrix = true;
+	}
+
+	return parsedShaderText;
+}
+
 GLuint FEShader::getUniformLocation(const char* name)
 {
 	return glGetUniformLocation(programID, name);
 }
 
-void FEShader::loadFloat(GLuint& location, GLfloat& value)
+void FEShader::loadScalar(const char* uniformName, GLfloat& value)
 {
-	glUniform1f(location, value);
+	glUniform1f(getUniformLocation(uniformName), value);
 }
 
-void FEShader::loadInt(GLuint& location, GLint value)
+void FEShader::loadScalar(const char* uniformName, GLint& value)
 {
-	glUniform1i(location, value);
+	glUniform1i(getUniformLocation(uniformName), value);
 }
 
-void FEShader::loadVector(GLuint& location, glm::vec3& vector)
+void FEShader::loadVector(const char* uniformName, glm::vec3& vector)
 {
-	glUniform3f(location, vector.x, vector.y, vector.z);
+	glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z);
 }
 
-void FEShader::loadVector(GLuint& location, glm::vec4& vector)
+void FEShader::loadVector(const char* uniformName, glm::vec4& vector)
 {
-	glUniform4f(location, vector.x, vector.y, vector.z, vector.w);
+	glUniform4f(getUniformLocation(uniformName), vector.x, vector.y, vector.z, vector.w);
 }
 
-void FEShader::loadVector(GLuint& location, glm::vec2& vector)
+void FEShader::loadVector(const char* uniformName, glm::vec2& vector)
 {
-	glUniform2f(location, vector.x, vector.y);
+	glUniform2f(getUniformLocation(uniformName), vector.x, vector.y);
 }
 
-void FEShader::loadBool(GLuint& location, bool& value)
+void FEShader::loadMatrix(const char* uniformName, glm::mat4& matrix)
 {
-	GLfloat fValue = 0.0f;
-	if (value) fValue = 1.0f;
-	glUniform1f(location, fValue);
-}
-
-void FEShader::loadMatrix(GLuint& location, glm::mat4& matrix)
-{
-	glUniformMatrix4fv(location, 1, false, glm::value_ptr(matrix));
+	glUniformMatrix4fv(getUniformLocation(uniformName), 1, false, glm::value_ptr(matrix));
 }
 
 void FEShader::loadWorldMatrix(glm::mat4& matrix)
