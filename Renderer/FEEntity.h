@@ -5,6 +5,7 @@
 
 #include "FEMesh.h"
 #include "FEMaterial.h"
+#include "../CoreExtensions/StandardMaterial/FEStandardMaterial.h"
 
 namespace FocalEngine
 {
@@ -13,6 +14,7 @@ namespace FocalEngine
 		friend FERenderer;
 	public:
 		FEEntity(FEMesh* Mesh, FEMaterial* Material);
+		FEEntity(FEMesh* Mesh);
 		~FEEntity();
 
 		FEMesh* mesh = nullptr; // need some basic mesh ?

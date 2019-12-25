@@ -19,9 +19,12 @@ void main(void)
 static const char* const FEStandardFS = R"(
 #version 400 core
 
+uniform vec3 baseColor;
+uniform vec3 secondBaseColor;
+
 void main(void)
 {
-	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+	gl_FragColor = mix(vec4(baseColor, 1.0), vec4(secondBaseColor, 1.0), 0.5);
 }
 )";
 
@@ -34,6 +37,7 @@ namespace FocalEngine
 		~FEStandardShader();
 
 	private:
-
+		glm::vec3 baseColor;
+		
 	};
 }

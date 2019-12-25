@@ -1,6 +1,21 @@
 #include "FEShader.h"
 using namespace FocalEngine;
 
+FEShaderInputData::FEShaderInputData()
+{
+}
+
+FEShaderInputData::FEShaderInputData(FEShaderInputDataType Type, void* RawData, std::string& UniformName)
+{
+	type = Type;
+	rawData = RawData;
+	uniformName = UniformName;
+}
+
+FEShaderInputData::~FEShaderInputData()
+{
+}
+
 FEShader::FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>& attributes)
 {
 	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
@@ -16,12 +31,6 @@ FEShader::FEShader(const char* vertexText, const char* fragmentText, std::vector
 
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragmentShaderID);
-
-	locationWorldMatrix = getUniformLocation("FEWorldMatrix");
-	locationViewMatrix = getUniformLocation("FEViewMatrix");
-	locationProjectionMatrix = getUniformLocation("FEProjectionMatrix");
-	//if (locationProjectionMatrix == GLint(-1))
-	//	FEError("shader didn't containe minimum needed uniforms.");
 }
 
 FEShader::~FEShader()
@@ -58,6 +67,54 @@ void FEShader::bindAttribute(int& attribute, const char* variableName)
 	glBindAttribLocation(programID, attribute, variableName);
 }
 
+void FEShader::cleanConsumeData()
+{
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		switch (data[i].type)
+		{
+		case FE_INT_SCALAR_UNIFORM:
+		{
+			delete (int*)data[i].rawData;
+			break;
+		}
+
+		case FE_FLOAT_SCALAR_UNIFORM:
+		{
+			delete (float*)data[i].rawData;
+			break;
+		}
+
+		case FE_VECTOR2_UNIFORM:
+		{
+			delete (glm::vec2*)data[i].rawData;
+			break;
+		}
+
+		case FE_VECTOR3_UNIFORM:
+		{
+			delete (glm::vec3*)data[i].rawData;
+			break;
+		}
+
+		case FE_VECTOR4_UNIFORM:
+		{
+			delete (glm::vec4*)data[i].rawData;
+			break;
+		}
+
+		case FE_MAT4_UNIFORM:
+		{
+			delete (glm::mat4*)data[i].rawData;
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
+}
+
 void FEShader::cleanUp()
 {
 	stop();
@@ -66,6 +123,7 @@ void FEShader::cleanUp()
 	//GL_ERROR(glDeleteShader(vertexShaderID));
 	//GL_ERROR(glDeleteShader(fragmentShaderID));
 	glDeleteProgram(programID);
+	cleanConsumeData();
 }
 
 void FEShader::bindAttributes()
@@ -96,21 +154,21 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_WORLD_MATRIX_MACRO), "uniform mat4 FEWorldMatrix;");
-		macroWorldMatrix = true;
+		standardDataRequest.push_back(FEShaderInputData(FE_MAT4_UNIFORM, nullptr, std::string("FEWorldMatrix")));
 	}
 
 	index = parsedShaderText.find(FE_VIEW_MATRIX_MACRO);
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_VIEW_MATRIX_MACRO), "uniform mat4 FEViewMatrix;");
-		macroViewMatrix = true;
+		standardDataRequest.push_back(FEShaderInputData(FE_MAT4_UNIFORM, nullptr, std::string("FEViewMatrix")));
 	}
 
 	index = parsedShaderText.find(FE_PROJECTION_MATRIX_MACRO);
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_PROJECTION_MATRIX_MACRO), "uniform mat4 FEProjectionMatrix;");
-		macroProjectionMatrix = true;
+		standardDataRequest.push_back(FEShaderInputData(FE_MAT4_UNIFORM, nullptr, std::string("FEProjectionMatrix")));
 	}
 
 	return parsedShaderText;
@@ -131,6 +189,11 @@ void FEShader::loadScalar(const char* uniformName, GLint& value)
 	glUniform1i(getUniformLocation(uniformName), value);
 }
 
+void FEShader::loadVector(const char* uniformName, glm::vec2& vector)
+{
+	glUniform2f(getUniformLocation(uniformName), vector.x, vector.y);
+}
+
 void FEShader::loadVector(const char* uniformName, glm::vec3& vector)
 {
 	glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z);
@@ -141,37 +204,61 @@ void FEShader::loadVector(const char* uniformName, glm::vec4& vector)
 	glUniform4f(getUniformLocation(uniformName), vector.x, vector.y, vector.z, vector.w);
 }
 
-void FEShader::loadVector(const char* uniformName, glm::vec2& vector)
-{
-	glUniform2f(getUniformLocation(uniformName), vector.x, vector.y);
-}
-
 void FEShader::loadMatrix(const char* uniformName, glm::mat4& matrix)
 {
 	glUniformMatrix4fv(getUniformLocation(uniformName), 1, false, glm::value_ptr(matrix));
 }
 
-void FEShader::loadWorldMatrix(glm::mat4& matrix)
+void FEShader::loadDataToGPU()
 {
-	glUniformMatrix4fv(locationWorldMatrix, 1, false, glm::value_ptr(matrix));
+	for (size_t i = 0; i < data.size(); i++)
+	{
+		switch (data[i].type)
+		{
+		case FE_INT_SCALAR_UNIFORM:
+		{
+			loadScalar(data[i].uniformName.c_str(), *(int*)data[i].rawData);
+			break;
+		}
+
+		case FE_FLOAT_SCALAR_UNIFORM:
+		{
+			loadScalar(data[i].uniformName.c_str(), *(float*)data[i].rawData);
+			break;
+		}
+
+		case FE_VECTOR2_UNIFORM:
+		{
+			loadVector(data[i].uniformName.c_str(), *(glm::vec2*)data[i].rawData);
+			break;
+		}
+
+		case FE_VECTOR3_UNIFORM:
+		{
+			loadVector(data[i].uniformName.c_str(), *(glm::vec3*)data[i].rawData);
+			break;
+		}
+
+		case FE_VECTOR4_UNIFORM:
+		{
+			loadVector(data[i].uniformName.c_str(), *(glm::vec4*)data[i].rawData);
+			break;
+		}
+
+		case FE_MAT4_UNIFORM:
+		{
+			loadMatrix(data[i].uniformName.c_str(), *(glm::mat4*)data[i].rawData);
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
 }
 
-void FEShader::loadViewMatrix(glm::mat4& matrix)
+void FEShader::consumeData(std::vector<FEShaderInputData> Data)
 {
-	glUniformMatrix4fv(locationViewMatrix, 1, false, glm::value_ptr(matrix));
-}
-
-void FEShader::loadProjectionMatrix(glm::mat4& matrix)
-{
-	glUniformMatrix4fv(locationProjectionMatrix, 1, false, glm::value_ptr(matrix));
-}
-
-void FEShader::loadModelViewProjection(glm::mat4& matrix)
-{
-	//glUniformMatrix4fv(location, 1, false, glm::value_ptr(matrix));
-}
-
-void FEShader::loadData()
-{
-
+	cleanConsumeData();
+	data = std::move(Data);
 }

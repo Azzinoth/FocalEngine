@@ -22,8 +22,8 @@ namespace FocalEngine
 		std::vector<FEShader*> shaders;
 		std::vector<FETexture*> textures;
 
-		void bind();
-		void unBind();
+		virtual void bind();
+		virtual void unBind();
 	private:
 		glm::vec3 diffuseColor;
 	};

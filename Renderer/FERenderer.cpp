@@ -18,14 +18,19 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	{
 		sceneGraph[i]->material->bind();
 
-		if (sceneGraph[i]->material->shaders[0]->macroWorldMatrix)
-			sceneGraph[i]->material->shaders[0]->loadWorldMatrix(sceneGraph[i]->worldMatrix);
-		if (sceneGraph[i]->material->shaders[0]->macroViewMatrix)
-			sceneGraph[i]->material->shaders[0]->loadViewMatrix(currentCamera->getViewMatrix());
-		if (sceneGraph[i]->material->shaders[0]->macroProjectionMatrix)
-			sceneGraph[i]->material->shaders[0]->loadProjectionMatrix(currentCamera->getProjectionMatrix());
+		for (size_t j = 0; j < sceneGraph[i]->material->shaders[0]->standardDataRequest.size(); j++)
+		{
+			if (sceneGraph[i]->material->shaders[0]->standardDataRequest[j].uniformName == std::string("FEWorldMatrix"))
+				sceneGraph[i]->material->shaders[0]->loadMatrix("FEWorldMatrix", sceneGraph[i]->worldMatrix);
 
-		sceneGraph[i]->material->shaders[0]->loadData();
+			if (sceneGraph[i]->material->shaders[0]->standardDataRequest[j].uniformName == std::string("FEViewMatrix"))
+				sceneGraph[i]->material->shaders[0]->loadMatrix("FEViewMatrix", currentCamera->getViewMatrix());
+
+			if (sceneGraph[i]->material->shaders[0]->standardDataRequest[j].uniformName == std::string("FEProjectionMatrix"))
+				sceneGraph[i]->material->shaders[0]->loadMatrix("FEProjectionMatrix", currentCamera->getProjectionMatrix());
+		}
+
+		sceneGraph[i]->material->shaders[0]->loadDataToGPU();
 		sceneGraph[i]->render();
 
 		sceneGraph[i]->material->unBind();

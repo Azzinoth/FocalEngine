@@ -7,6 +7,12 @@ FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material)
 	material = Material;
 }
 
+FEEntity::FEEntity(FEMesh* Mesh)
+{
+	mesh = Mesh;
+	material = new FEStandardMaterial();
+}
+
 FEEntity::~FEEntity()
 {
 	delete mesh;
