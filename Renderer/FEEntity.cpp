@@ -66,15 +66,20 @@ void FEEntity::updateWorldMatrix()
 
 void FEEntity::render()
 {
-	//material->bind();
-
 	glBindVertexArray(mesh->getVaoID());
-	glEnableVertexAttribArray(0);
+	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glEnableVertexAttribArray(0);
+	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glEnableVertexAttribArray(1);
+	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) glEnableVertexAttribArray(2);
+	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glEnableVertexAttribArray(3);
+	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glEnableVertexAttribArray(4);
 
 	//glDrawElements(GL_TRIANGLES, mesh->getVertexCount(), GL_UNSIGNED_INT, 0);
 	glDrawArrays(GL_TRIANGLES, 0, mesh->getVertexCount());
 
-	glDisableVertexAttribArray(0);
+	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glDisableVertexAttribArray(0);
+	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glDisableVertexAttribArray(1);
+	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) glDisableVertexAttribArray(2);
+	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glDisableVertexAttribArray(3);
+	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glDisableVertexAttribArray(4);
 	glBindVertexArray(0);
-	//material->unBind();
 }

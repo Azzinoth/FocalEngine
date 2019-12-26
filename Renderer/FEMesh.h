@@ -4,10 +4,13 @@
 
 namespace FocalEngine
 {
+	class FEEntity;
+
 	class FEMesh
-	{
+	{	
+		friend FEEntity;
 	public:
-		FEMesh(GLuint vaoID, unsigned int vertexCount);
+		FEMesh(GLuint vaoID, unsigned int vertexCount, int vertexBuffersTypes);
 		~FEMesh();
 
 		GLuint getVaoID() const;
@@ -15,5 +18,7 @@ namespace FocalEngine
 	private:
 		GLuint vaoID = -1;
 		unsigned int vertexCount;
+
+		int vertexBuffers = 1;
 	};
 }

@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <GL/GL.h>
 #include <iostream>
+#include <unordered_map>
 
 #define GLM_FORCE_XYZW_ONLY
 
@@ -20,3 +21,5 @@
 #define SINGLETON_COPY_ASSIGN_PART(CLASS_NAME) \
 CLASS_NAME(const CLASS_NAME &);                \
 void operator= (const CLASS_NAME &);
+
+#define FE_DEBUG_ENABLED

@@ -5,14 +5,16 @@
 static const char* const FEStandardVS = R"(
 #version 400 core
 
-in vec3 vPos;
+//in vec3 vPos;
+@In_Position@
+
 @WorldMatrix@
 @ViewMatrix@
 @ProjectionMatrix@
 
 void main(void)
 {
-	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(vPos, 1.0);
+	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
 }
 )";
 

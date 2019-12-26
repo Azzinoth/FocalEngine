@@ -16,6 +16,8 @@ namespace FocalEngine
 		}
 		~FEResourceManager();
 
+		FEMesh* rawDataToMesh(std::vector<float>& positions);
+		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);
 		FEMesh* getSimpleMesh(std::string meshName);
 	private:
 		static FEResourceManager* _instance;

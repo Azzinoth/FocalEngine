@@ -24,6 +24,13 @@ namespace FocalEngine
 
 		virtual void bind();
 		virtual void unBind();
+
+		void setParam(std::string name, int newData);
+		void setParam(std::string name, float newData);
+		void setParam(std::string name, glm::vec2 newData);
+		void setParam(std::string name, glm::vec3 newData);
+		void setParam(std::string name, glm::vec4 newData);
+		void setParam(std::string name, glm::mat4 newData);
 	private:
 		glm::vec3 diffuseColor;
 	};

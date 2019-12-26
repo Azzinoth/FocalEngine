@@ -9,9 +9,6 @@ namespace FocalEngine
 	public:
 		FEStandardMaterial();
 		~FEStandardMaterial();
-
-		glm::vec3 getBaseColor();
-		void setBaseColor(glm::vec3 newColor);
 	private:
 		glm::vec3 baseColor;
 	};

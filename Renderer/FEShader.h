@@ -2,30 +2,66 @@
 
 #include "FETexture.h"
 
+#define FE_VERTEX_ATTRIBUTE_POSITION "@In_Position@"
+#define FE_VERTEX_ATTRIBUTE_COLOR "@In_Color@"
+#define FE_VERTEX_ATTRIBUTE_NORMAL "@In_Normal@"
+#define FE_VERTEX_ATTRIBUTE_TANGENT "@In_Tangent@"
+#define FE_VERTEX_ATTRIBUTE_UV "@In_UV@"
+
 #define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
 #define FE_PROJECTION_MATRIX_MACRO "@ProjectionMatrix@"
 
-enum FEShaderInputDataType
-{
-	FE_INT_SCALAR_UNIFORM = 0,
-	FE_FLOAT_SCALAR_UNIFORM = 1,
-	FE_VECTOR2_UNIFORM = 2,
-	FE_VECTOR3_UNIFORM = 3,
-	FE_VECTOR4_UNIFORM = 4,
-	FE_MAT4_UNIFORM = 5
-};
-
 namespace FocalEngine
 {
-	struct FEShaderInputData
+	enum FEShaderParamType
 	{
-		FEShaderInputData();
-		FEShaderInputData(FEShaderInputDataType Type, void* RawData, std::string& UniformName);
-		~FEShaderInputData();
-		FEShaderInputDataType type;
-		void* rawData;
-		std::string uniformName;
+		FE_INT_SCALAR_UNIFORM = 0,
+		FE_FLOAT_SCALAR_UNIFORM = 1,
+		FE_VECTOR2_UNIFORM = 2,
+		FE_VECTOR3_UNIFORM = 3,
+		FE_VECTOR4_UNIFORM = 4,
+		FE_MAT4_UNIFORM = 5
+	};
+
+	enum FEVertexAttributes
+	{
+		FE_POSITION = 1,
+		FE_COLOR = 2,
+		FE_NORMAL = 4,
+		FE_TANGENTS = 8,
+		FE_UV = 16,
+	};
+
+	struct FEShaderParam
+	{
+		FEShaderParam() {};
+		FEShaderParam(int Data, std::string Name);
+		FEShaderParam(float Data, std::string Name);
+		FEShaderParam(glm::vec2 Data, std::string Name);
+		FEShaderParam(glm::vec3 Data, std::string Name);
+		FEShaderParam(glm::vec4 Data, std::string Name);
+		FEShaderParam(glm::mat4 Data, std::string Name);
+
+		void copyCode(const FEShaderParam& copy);
+		FEShaderParam(const FEShaderParam& copy);
+		void operator=(const FEShaderParam& assign);
+
+		~FEShaderParam();
+
+		void updateData(int Data);
+		void updateData(float Data);
+		void updateData(glm::vec2 Data);
+		void updateData(glm::vec3 Data);
+		void updateData(glm::vec4 Data);
+		void updateData(glm::mat4 Data);
+
+		std::string getParamName();
+		void setParamName(std::string newName);
+
+		void* data;
+		FEShaderParamType type;
+		std::string paramName;
 	};
 
 	class FEMaterial;
@@ -36,13 +72,11 @@ namespace FocalEngine
 		friend FEMaterial;
 		friend FERenderer;
 	public:
-		FEShader(const char* vertexText, const char* fragmentText, std::vector<std::string>& attributes);
+		FEShader(const char* vertexText, const char* fragmentText);
 		~FEShader();
 
 		virtual void start();
 		virtual void stop();
-
-		void bindAttribute(int& attribute, const char* variableName);
 
 		void loadScalar(const char* uniformName, GLfloat& value);
 		void loadScalar(const char* uniformName, GLint& value);
@@ -54,19 +88,19 @@ namespace FocalEngine
 		std::string parseShaderForMacro(const char* shaderText);
 
 		virtual void loadDataToGPU();
-		virtual inline void consumeData(std::vector<FEShaderInputData> Data);
+		virtual void addParams(std::vector<FEShaderParam> Params);
+		virtual void addParams(FEShaderParam Param);
+
+		virtual FEShaderParam& getParam(std::string name);
 	private:
 		GLuint programID;
 		GLuint vertexShaderID;
 		GLuint fragmentShaderID;
-		std::vector<std::string> attributes;
+		int vertexAttributes = 0;
 
-		// standard uniforms
-		std::vector<FEShaderInputData> standardDataRequest;
-		std::vector<FEShaderInputData> data;
+		std::vector<FEShaderParam> params;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
-		void cleanConsumeData();
 		void cleanUp();
 		void bindAttributes();
 		GLuint getUniformLocation(const char* name);

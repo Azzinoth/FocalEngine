@@ -3,6 +3,49 @@ using namespace FocalEngine;
 
 FEResourceManager* FEResourceManager::_instance = nullptr;
 
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
+{
+	GLuint vaoID;
+	glGenVertexArrays(1, &vaoID);
+	glBindVertexArray(vaoID);
+
+	GLuint vboID;
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
+
+	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION);
+}
+
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals)
+{
+	GLuint vaoID;
+	glGenVertexArrays(1, &vaoID);
+	glBindVertexArray(vaoID);
+
+	GLuint vboID;
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// normals
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
+
+	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL);
+}
+
 FEResourceManager::FEResourceManager()
 {
 	float minX = -1.0f;
@@ -57,20 +100,15 @@ FEResourceManager::FEResourceManager()
 		minX, minY, minZ  // 1
 	};
 
-	GLuint vaoID;
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
+	std::vector<float> normals;
+	for (size_t i = 0; i < VERTICES.size() / 3; i++)
+	{
+		normals.push_back(0.0f);
+		normals.push_back(1.0f);
+		normals.push_back(0.0f);
+	}
 
-	GLuint vboID;
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * VERTICES.size(), VERTICES.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindVertexArray(0);
-
-	cube = new FEMesh(vaoID, VERTICES.size() / 3);
+	cube = rawDataToMesh(VERTICES, normals);
 }
 
 FEResourceManager::~FEResourceManager()

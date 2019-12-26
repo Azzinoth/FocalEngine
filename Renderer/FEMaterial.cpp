@@ -35,3 +35,33 @@ void FEMaterial::unBind()
 	if (shaders.size() > 0)
 		shaders[0]->stop();
 }
+
+void FEMaterial::setParam(std::string name, int newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
+
+void FEMaterial::setParam(std::string name, float newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
+
+void FEMaterial::setParam(std::string name, glm::vec2 newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
+
+void FEMaterial::setParam(std::string name, glm::vec3 newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
+
+void FEMaterial::setParam(std::string name, glm::vec4 newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
+
+void FEMaterial::setParam(std::string name, glm::mat4 newData)
+{
+	shaders[0]->getParam(name).updateData(newData);
+}
