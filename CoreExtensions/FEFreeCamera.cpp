@@ -13,7 +13,44 @@ FEFreeCamera::~FEFreeCamera()
 
 void FEFreeCamera::move()
 {
-	
+	glm::vec4 forward = { 0.0f, 0.0f, -speed, 0.0f };
+	glm::vec4 right = { speed, 0.0f, 0.0f, 0.0f };
+
+	right = right * viewMatrix;
+	forward = forward * viewMatrix;
+
+	glm::normalize(right);
+	glm::normalize(forward);
+
+	if (leftKeyPreesed)
+	{
+		position.x -= right.x;
+		position.y -= right.y;
+		position.z -= right.z;
+	}
+
+	if (upKeyPreesed)
+	{
+		position.x += forward.x;
+		position.y += forward.y;
+		position.z += forward.z;
+	}
+
+	if (rightKeyPreesed)
+	{
+		position.x += right.x;
+		position.y += right.y;
+		position.z += right.z;
+	}
+
+	if (downKeyPreesed)
+	{
+		position.x -= forward.x;
+		position.y -= forward.y;
+		position.z -= forward.z;
+	}
+
+	updateViewMatrix();
 }
 
 void FEFreeCamera::setCursorToCenter()
@@ -72,47 +109,39 @@ void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 
 void FEFreeCamera::keyboardInput(int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_UP && action != GLFW_RELEASE)
+	if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
 	{
-		glm::vec4 forward = { 0.0f, 0.0f, -speed, 0.0f };
-		forward = forward * viewMatrix;
-		glm::normalize(forward);
-
-		position.x += forward.x;
-		position.y += forward.y;
-		position.z += forward.z;
+		leftKeyPreesed = true;
 	}
-	if (key == GLFW_KEY_DOWN && action != GLFW_RELEASE)
+	else if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
 	{
-		glm::vec4 forward = { 0.0f, 0.0f, -speed, 0.0f };
-		forward = forward * viewMatrix;
-		glm::normalize(forward);
-
-		position.x -= forward.x;
-		position.y -= forward.y;
-		position.z -= forward.z;
+		leftKeyPreesed = false;
 	}
 
-	if (key == GLFW_KEY_LEFT && action != GLFW_RELEASE)
+	if (key == GLFW_KEY_UP && action == GLFW_PRESS)
 	{
-		glm::vec4 right = { speed, 0.0f, 0.0f, 0.0f };
-		right = right * viewMatrix;
-		glm::normalize(right);
-
-		position.x -= right.x;
-		position.y -= right.y;
-		position.z -= right.z;
+		upKeyPreesed = true;
 	}
-	if (key == GLFW_KEY_RIGHT && action != GLFW_RELEASE)
+	else if (key == GLFW_KEY_UP && action == GLFW_RELEASE)
 	{
-		glm::vec4 right = { speed, 0.0f, 0.0f, 0.0f };
-		right = right * viewMatrix;
-		glm::normalize(right);
-
-		position.x += right.x;
-		position.y += right.y;
-		position.z += right.z;
+		upKeyPreesed = false;
 	}
 
-	updateViewMatrix();
+	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+	{
+		downKeyPreesed = true;
+	}
+	else if (key == GLFW_KEY_DOWN && action == GLFW_RELEASE)
+	{
+		downKeyPreesed = false;
+	}
+
+	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+	{
+		rightKeyPreesed = true;
+	}
+	else if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
+	{
+		rightKeyPreesed = false;
+	}
 }

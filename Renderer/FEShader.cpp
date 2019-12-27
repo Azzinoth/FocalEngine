@@ -314,7 +314,7 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_UV);
 	if (index != size_t(-1))
 	{
-		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_UV), "layout (location = 4) in vec3 FETexCoord;");
+		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_UV), "layout (location = 4) in vec2 FETexCoord;");
 		vertexAttributes |= FE_UV;
 	}
 

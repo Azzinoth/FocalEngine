@@ -31,6 +31,7 @@ namespace FocalEngine
 		FE_NORMAL = 4,
 		FE_TANGENTS = 8,
 		FE_UV = 16,
+		FE_INDEX = 32,
 	};
 
 	struct FEShaderParam

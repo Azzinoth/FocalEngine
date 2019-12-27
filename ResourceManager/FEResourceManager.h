@@ -1,28 +1,23 @@
 #pragma once
 
 #include "../Renderer/FEEntity.h"
+#include "../ResourceManager/FEObjLoader.h"
 
 namespace FocalEngine
 {
 	class FEResourceManager
 	{
 	public:
-		static FEResourceManager& getInstance()
-		{
-			if (!_instance)
-				_instance = new FEResourceManager();
-
-			return *_instance;
-		}
-		~FEResourceManager();
+		SINGLETON_PUBLIC_PART(FEResourceManager)
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);
+		FEMesh* rawObjDataToMesh();
 		FEMesh* getSimpleMesh(std::string meshName);
+
+		FEMesh* loadObjMeshData(const char* fileName);
 	private:
-		static FEResourceManager* _instance;
-		FEResourceManager();
-		SINGLETON_COPY_ASSIGN_PART(FEResourceManager)
+		SINGLETON_PRIVATE_PART(FEResourceManager)
 		FEMesh* cube;
 	};
 }

@@ -100,23 +100,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	renderer.addToScene(testEntity3);
 
-	int storage = 0;
+	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
+	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"));
+	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
+	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+	newEntity->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	
-	storage |= 1; // FE_POSITION
-	storage <<= 1;
-	storage |= 1;  // FE_COLOR
-	storage <<= 1;
-	storage |= 1;  // FE_NORMAL
-	storage <<= 1;
-	storage |= 1;  // FE_TANGENTS
-
-	int test = FocalEngine::FE_POSITION | FocalEngine::FE_NORMAL;
-
-	bool ifFE_POSITION = test & FocalEngine::FE_POSITION;
-	bool ifFE_COLOR = test & FocalEngine::FE_COLOR;
-	bool ifFE_NORMAL = test & FocalEngine::FE_NORMAL;
-	bool ifFE_TANGENTS = test & FocalEngine::FE_TANGENTS;
+	renderer.addToScene(newEntity);
 
 	while (engine.isWindowOpened())
 	{

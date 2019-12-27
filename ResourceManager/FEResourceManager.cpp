@@ -46,6 +46,53 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL);
 }
 
+FEMesh* FEResourceManager::rawObjDataToMesh()
+{
+	FEObjLoader& objLoader = FEObjLoader::getInstance();
+
+	GLuint vaoID;
+	glGenVertexArrays(1, &vaoID);
+	glBindVertexArray(vaoID);
+
+	GLuint vboID;
+	// index
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * objLoader.fInd.size(), objLoader.fInd.data(), GL_STATIC_DRAW);
+
+	// verCoords
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fVerC.size(), objLoader.fVerC.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// normals
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fNorC.size(), objLoader.fNorC.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// tangents
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTanC.size(), objLoader.fTanC.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// UV
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTexC.size(), objLoader.fTexC.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
+
+	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
+}
+
 FEResourceManager::FEResourceManager()
 {
 	float minX = -1.0f;
@@ -124,4 +171,13 @@ FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 	}
 
 	return nullptr;
+}
+
+FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
+{
+	FEObjLoader& objLoader = FEObjLoader::getInstance();
+
+	objLoader.readFile(fileName);
+
+	return rawObjDataToMesh();
 }

@@ -11,20 +11,12 @@ namespace FocalEngine
 	class FERenderer
 	{
 	public:
-		static FERenderer& getInstance()
-		{
-			if (!_instance)
-				_instance = new FERenderer();
-
-			return *_instance;
-		}
+		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void addToScene(FEEntity* newEntity);
 		void render(FEBasicCamera* currentCamera);
 	private:
-		static FERenderer* _instance;
-		FERenderer();
-		SINGLETON_COPY_ASSIGN_PART(FERenderer)
+		SINGLETON_PRIVATE_PART(FERenderer)
 		std::vector<FEEntity*> sceneGraph;
 	};
 }

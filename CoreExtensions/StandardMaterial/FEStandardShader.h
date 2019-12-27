@@ -5,7 +5,6 @@
 static const char* const FEStandardVS = R"(
 #version 400 core
 
-//in vec3 vPos;
 @In_Position@
 
 @WorldMatrix@

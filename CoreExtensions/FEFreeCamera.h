@@ -12,7 +12,7 @@ namespace FocalEngine
 
 		float currentMouseXAngle = 0;
 		float currentMouseYAngle = 0;
-		float speed = 0.3f;
+		float speed = 0.01f;
 
 		void keyboardInput(int key, int scancode, int action, int mods) final;
 		void mouseMoveInput(double xpos, double ypos) final;
@@ -20,6 +20,11 @@ namespace FocalEngine
 	private:
 		int lastMouseX = 0;
 		int lastMouseY = 0;
+
+		bool leftKeyPreesed = false;
+		bool upKeyPreesed = false;
+		bool rightKeyPreesed = false;
+		bool downKeyPreesed = false;
 
 		const int correctionToSensitivity = 3;
 

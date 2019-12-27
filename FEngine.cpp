@@ -29,6 +29,9 @@ void FEngine::beginFrame()
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+	ENGINE_OBJ.currentCamera->move();
+
 	RENDERER_OBJ.render(currentCamera);
 }
 
@@ -63,6 +66,9 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
 
 	glClearColor(0.7f, 0.0f, 0.7f, 1.0f);
+
+	// turn off v-sink
+	glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window);
 	currentCamera->setAspectRatio(float(width) / float(height));

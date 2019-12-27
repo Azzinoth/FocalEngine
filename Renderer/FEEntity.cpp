@@ -73,8 +73,10 @@ void FEEntity::render()
 	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glEnableVertexAttribArray(3);
 	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glEnableVertexAttribArray(4);
 
-	//glDrawElements(GL_TRIANGLES, mesh->getVertexCount(), GL_UNSIGNED_INT, 0);
-	glDrawArrays(GL_TRIANGLES, 0, mesh->getVertexCount());
+	if ((mesh->vertexBuffers & FE_INDEX) == FE_INDEX)
+		glDrawElements(GL_TRIANGLES, mesh->getVertexCount(), GL_UNSIGNED_INT, 0);
+	if ((mesh->vertexBuffers & FE_INDEX) != FE_INDEX)
+		glDrawArrays(GL_TRIANGLES, 0, mesh->getVertexCount());
 
 	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glDisableVertexAttribArray(0);
 	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glDisableVertexAttribArray(1);

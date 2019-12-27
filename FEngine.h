@@ -8,14 +8,7 @@ namespace FocalEngine
 	class FEngine
 	{
 	public:
-		static FEngine& getInstance()
-		{
-			if (!_instance)
-				_instance = new FEngine();
-
-			return *_instance;
-		}
-		~FEngine();
+		SINGLETON_PUBLIC_PART(FEngine)
 
 		void createWindow(int width = 1280, int height = 720, std::string WindowTitle = "FEWindow");
 
@@ -30,10 +23,7 @@ namespace FocalEngine
 		void setMouseButtonCallback(void(*func)(int, int, int));
 		void setMouseMoveCallback(void(*func)(double, double));
 	private:
-		static FEngine* _instance;
-
-		FEngine();
-		SINGLETON_COPY_ASSIGN_PART(FEngine)
+		SINGLETON_PRIVATE_PART(FEngine)
 
 		int windowW;
 		int windowH;

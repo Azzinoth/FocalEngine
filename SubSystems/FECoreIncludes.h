@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <GL/GL.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <unordered_map>
 
 #define GLM_FORCE_XYZW_ONLY
@@ -18,8 +20,20 @@
 
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
 
-#define SINGLETON_COPY_ASSIGN_PART(CLASS_NAME) \
-CLASS_NAME(const CLASS_NAME &);                \
+#define SINGLETON_PUBLIC_PART(CLASS_NAME) \
+static CLASS_NAME& getInstance()          \
+{										  \
+	if (!_instance)                       \
+		_instance = new CLASS_NAME();     \
+	return *_instance;				      \
+}                                         \
+										  \
+~CLASS_NAME();
+
+#define SINGLETON_PRIVATE_PART(CLASS_NAME) \
+static CLASS_NAME* _instance;              \
+CLASS_NAME();                              \
+CLASS_NAME(const CLASS_NAME &);            \
 void operator= (const CLASS_NAME &);
 
 #define FE_DEBUG_ENABLED

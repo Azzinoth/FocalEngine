@@ -23,7 +23,14 @@ void FEInput::mouseMoveCallback(GLFWwindow* window, double xpos, double ypos)
 	getInstance().mouseMoveCallbackImpl(xpos, ypos);
 }
 
+std::vector<int> actions;
 void FEInput::keyButtonCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	actions.push_back(action);
+	if (actions.size() > 10)
+	{
+		int y = 0;
+		y++;
+	}
 	getInstance().keyButtonCallbackImpl(key, scancode, action, mods);
 }
