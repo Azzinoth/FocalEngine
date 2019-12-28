@@ -222,11 +222,73 @@ FEShader::FEShader(const char* vertexText, const char* fragmentText)
 
 	glDeleteShader(vertexShaderID);
 	glDeleteShader(fragmentShaderID);
+
+	registerUniforms();
 }
 
 FEShader::~FEShader()
 {
 	cleanUp();
+}
+
+void FEShader::registerUniforms()
+{
+	GLint count;
+	GLint size;
+	GLenum type;
+
+	const GLsizei bufSize = 24;
+	GLchar name[bufSize];
+	GLsizei length;
+
+	glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count);
+	for (size_t i = 0; i < size_t(count); i++)
+	{
+		glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+		
+		switch (type)
+		{
+			case GL_INT:
+			{
+				params.push_back(FEShaderParam(0, name));
+				break;
+			}
+
+			case GL_FLOAT:
+			{
+				params.push_back(FEShaderParam(0.0f, name));
+				break;
+			}
+
+			case GL_FLOAT_VEC2:
+			{
+				params.push_back(FEShaderParam(glm::vec2(0.0f), name));
+				break;
+			}
+
+			case GL_FLOAT_VEC3:
+			{
+				params.push_back(FEShaderParam(glm::vec3(0.0f), name));
+				break;
+			}
+
+			case GL_FLOAT_VEC4:
+			{
+				params.push_back(FEShaderParam(glm::vec4(0.0f), name));
+				break;
+			}
+
+			case GL_FLOAT_MAT4:
+			{
+				params.push_back(FEShaderParam(glm::mat4(1.0f), name));
+				break;
+			}
+
+			default:
+				break;
+		}
+		
+	}
 }
 
 GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
@@ -256,10 +318,6 @@ GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 void FEShader::cleanUp()
 {
 	stop();
-	//GL_ERROR(glDetachShader(programID, vertexShaderID));
-	//GL_ERROR(glDetachShader(programID, fragmentShaderID));
-	//GL_ERROR(glDeleteShader(vertexShaderID));
-	//GL_ERROR(glDeleteShader(fragmentShaderID));
 	glDeleteProgram(programID);
 }
 
@@ -322,21 +380,36 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_WORLD_MATRIX_MACRO), "uniform mat4 FEWorldMatrix;");
-		params.push_back(FEShaderParam(glm::mat4(1.0f), "FEWorldMatrix"));
 	}
 
 	index = parsedShaderText.find(FE_VIEW_MATRIX_MACRO);
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_VIEW_MATRIX_MACRO), "uniform mat4 FEViewMatrix;");
-		params.push_back(FEShaderParam(glm::mat4(1.0f), "FEViewMatrix"));
 	}
 
 	index = parsedShaderText.find(FE_PROJECTION_MATRIX_MACRO);
 	if (index != size_t(-1))
 	{
 		parsedShaderText.replace(index, strlen(FE_PROJECTION_MATRIX_MACRO), "uniform mat4 FEProjectionMatrix;");
-		params.push_back(FEShaderParam(glm::mat4(1.0f), "FEProjectionMatrix"));
+	}
+
+	index = parsedShaderText.find(FE_CAMERA_POSITION_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_CAMERA_POSITION_MACRO), "uniform vec3 FECameraPosition;");
+	}
+
+	index = parsedShaderText.find(FE_LIGHT_POSITION_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_LIGHT_POSITION_MACRO), "uniform vec3 FELightPosition;");
+	}
+
+	index = parsedShaderText.find(FE_LIGHT_COLOR_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_LIGHT_COLOR_MACRO), "uniform vec3 FELightColor;");
 	}
 
 	return parsedShaderText;

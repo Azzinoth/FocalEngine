@@ -7,32 +7,43 @@ FERenderer::FERenderer()
 {
 }
 
-void FERenderer::addToScene(FEEntity* newEntity)
-{
-	sceneGraph.push_back(newEntity);
-}
-
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
-	for (size_t i = 0; i < sceneGraph.size(); i++)
+	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+
+	auto it = scene.entityMap.begin();
+	while (it != scene.entityMap.end())
 	{
-		sceneGraph[i]->material->bind();
+		auto entity = it->second;
 
-		for (size_t j = 0; j < sceneGraph[i]->material->shaders[0]->params.size(); j++)
+		entity->material->bind();
+		
+		for (size_t j = 0; j < entity->material->shaders[0]->params.size(); j++)
 		{
-			if (sceneGraph[i]->material->shaders[0]->params[j].getParamName() == std::string("FEWorldMatrix"))
-				sceneGraph[i]->material->shaders[0]->params[j].updateData(sceneGraph[i]->worldMatrix);
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FEWorldMatrix"))
+				entity->material->shaders[0]->params[j].updateData(entity->worldMatrix);
 
-			if (sceneGraph[i]->material->shaders[0]->params[j].getParamName() == std::string("FEViewMatrix"))
-				sceneGraph[i]->material->shaders[0]->params[j].updateData(currentCamera->getViewMatrix());
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FEViewMatrix"))
+				entity->material->shaders[0]->params[j].updateData(currentCamera->getViewMatrix());
 
-			if (sceneGraph[i]->material->shaders[0]->params[j].getParamName() == std::string("FEProjectionMatrix"))
-				sceneGraph[i]->material->shaders[0]->params[j].updateData(currentCamera->getProjectionMatrix());
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FEProjectionMatrix"))
+				entity->material->shaders[0]->params[j].updateData(currentCamera->getProjectionMatrix());
+
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FECameraPosition"))
+				entity->material->shaders[0]->params[j].updateData(currentCamera->getPosition());
+
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FELightPosition"))
+				entity->material->shaders[0]->params[j].updateData(scene.sceneLights[0]->getPosition());
+
+			if (entity->material->shaders[0]->params[j].getParamName() == std::string("FELightColor"))
+				entity->material->shaders[0]->params[j].updateData(scene.sceneLights[0]->getColor());
 		}
 
-		sceneGraph[i]->material->shaders[0]->loadDataToGPU();
-		sceneGraph[i]->render();
+		entity->material->shaders[0]->loadDataToGPU();
+		entity->render();
 
-		sceneGraph[i]->material->unBind();
+		entity->material->unBind();
+
+		it++;
 	}
 }

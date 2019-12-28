@@ -67,7 +67,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 
 	glClearColor(0.7f, 0.0f, 0.7f, 1.0f);
 
-	// turn off v-sink
+	// turn off v-sync
 	glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window);
@@ -117,4 +117,9 @@ void FEngine::keyButtonCallback(int key, int scancode, int action, int mods)
 void FEngine::setCamera(FEBasicCamera* newCamera)
 {
 	currentCamera = newCamera;
+}
+
+FEBasicCamera* FEngine::getCamera()
+{
+	return currentCamera;
 }

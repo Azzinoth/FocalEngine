@@ -2,57 +2,6 @@
 
 FocalEngine::FEEntity* testEntity2;
 
-static const char* const StrangeMatVS = R"(
-#version 400 core
-
-@In_Position@
-@In_Normal@
-
-@WorldMatrix@
-@ViewMatrix@
-@ProjectionMatrix@
-
-out vec3 Norm;
-
-void main(void)
-{
-	Norm = FENormal;
-	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
-}
-)";
-
-static const char* const StrangeMatFS = R"(
-#version 400 core
-
-in vec3 Norm;
-
-void main(void)
-{
-	gl_FragColor = vec4(Norm, 0.0f); // 1.0f, 0.0f, 0.0f
-}
-)";
-
-class StrangeShader : public FocalEngine::FEShader
-{
-public:
-	StrangeShader() : FEShader(StrangeMatVS, StrangeMatFS) {};
-	~StrangeShader() {};
-
-private:
-
-};
-
-class StrangeMat : public FocalEngine::FEMaterial
-{
-public:
-	StrangeMat()
-	{
-		shaders.push_back(new StrangeShader());
-	};
-	~StrangeMat() {};
-private:
-};
-
 void mouseButtonCallback(int button, int action, int mods)
 {
 	//dynamic_cast<FocalEngine::FEStandardMaterial*>(testEntity2->material)->setBaseColor(glm::vec3(0.1f, 0.6f, 0.1f));
@@ -77,6 +26,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engine.createWindow();
 	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
+	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 	
 	FocalEngine::FEEntity* testEntity = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
 	testEntity->setPosition(glm::vec3(-1.5f, 0.0f, -10.0f));
@@ -85,8 +35,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	testEntity2 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
 	testEntity2->setPosition(glm::vec3(1.5f, 0.0f, 0.0f));
 
-	renderer.addToScene(testEntity);
-	renderer.addToScene(testEntity2);
+	scene.add(testEntity);
+	scene.add(testEntity2);
 
 	FocalEngine::FERenderer& renderer1 = FocalEngine::FERenderer::getInstance();
 
@@ -94,11 +44,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	engine.setMouseButtonCallback(mouseButtonCallback);
 	engine.setMouseMoveCallback(mouseMoveCallback);
 
-	FocalEngine::FEEntity* testEntity3 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"), new StrangeMat());
-	testEntity3->setPosition(glm::vec3(-1.5f, -5.0f, -10.0f));
-	testEntity3->setRotation(glm::vec3(0.0f, 0.0f, 45.0f));
+	FocalEngine::FEEntity* testEntity3 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
+	testEntity3->setPosition(glm::vec3(-1.5f, -7.0f, -10.0f));
+	testEntity3->setRotation(glm::vec3(0.0f, 45.0f, 45.0f));
 
-	renderer.addToScene(testEntity3);
+	scene.add(testEntity3);
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
 	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"));
@@ -106,7 +56,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	newEntity->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	renderer.addToScene(newEntity);
+	scene.add(newEntity);
+
+	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
+	scene.add(lightBlob);
 
 	while (engine.isWindowOpened())
 	{

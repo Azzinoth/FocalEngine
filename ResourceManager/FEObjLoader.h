@@ -37,5 +37,22 @@ namespace FocalEngine
 
 		glm::vec3 calculateTangent(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, std::vector<glm::vec2>&& textures);
 		void calculateTangents();
+
+		struct vertexThatNeedDoubling
+		{
+			vertexThatNeedDoubling(int IndexInArray, int AcctualIndex, int TexIndex, int NormIndex) : indexInArray(IndexInArray),
+				                                    acctualIndex(AcctualIndex), texIndex(TexIndex), normIndex(NormIndex), wasDone(false) {};
+
+			int indexInArray;
+			int acctualIndex;
+			int texIndex;
+			int normIndex;
+			bool wasDone;
+
+			friend bool operator==(const vertexThatNeedDoubling& lhs, const vertexThatNeedDoubling& rhs)
+			{
+				return lhs.acctualIndex == rhs.acctualIndex && lhs.indexInArray == rhs.indexInArray && lhs.texIndex == rhs.texIndex && lhs.normIndex == rhs.normIndex;
+			}
+		};
 	};
 }

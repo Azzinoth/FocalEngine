@@ -18,6 +18,7 @@ namespace FocalEngine
 		bool isWindowOpened();
 
 		void setCamera(FEBasicCamera* newCamera);
+		FEBasicCamera* getCamera();
 
 		void setKeyCallback(void(*func)(int, int, int, int));
 		void setMouseButtonCallback(void(*func)(int, int, int));

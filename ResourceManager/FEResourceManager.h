@@ -12,6 +12,7 @@ namespace FocalEngine
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);
+		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index);
 		FEMesh* rawObjDataToMesh();
 		FEMesh* getSimpleMesh(std::string meshName);
 

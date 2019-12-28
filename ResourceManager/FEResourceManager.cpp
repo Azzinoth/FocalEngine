@@ -46,6 +46,51 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL);
 }
 
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index)
+{
+	GLuint vaoID;
+	glGenVertexArrays(1, &vaoID);
+	glBindVertexArray(vaoID);
+
+	GLuint vboID;
+	// index
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * index.size(), index.data(), GL_STATIC_DRAW);
+
+	// verCoords
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// normals
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// tangents
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tangents.size(), tangents.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// UV
+	glGenBuffers(1, &vboID);
+	glBindBuffer(GL_ARRAY_BUFFER, vboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UV.size(), UV.data(), GL_STATIC_DRAW);
+	glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindVertexArray(0);
+
+	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
+}
+
 FEMesh* FEResourceManager::rawObjDataToMesh()
 {
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
@@ -95,67 +140,72 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 
 FEResourceManager::FEResourceManager()
 {
-	float minX = -1.0f;
-	float minY = -1.0f;
-	float minZ = -1.0f;
-
-	float maxX = 1.0f;
-	float maxY = 1.0f;
-	float maxZ = 1.0f;
-
-	std::vector<float> VERTICES = {
-		maxX, maxY, minZ, // 3
-		maxX, minY, minZ, // 2
-		minX, minY, minZ, // 1
-		minX, minY, minZ, // 1
-		minX, maxY, minZ, // 0
-		maxX, maxY, minZ, // 3
-
-		minX, maxY, minZ, // 0
-		minX, minY, minZ, // 1
-		minX, minY, maxZ, // 4
-		minX, minY, maxZ, // 4
-		minX, maxY, maxZ, // 5
-		minX, maxY, minZ, // 0
-
-		maxX, maxY, maxZ, // 7
-		maxX, minY, maxZ, // 6
-		maxX, minY, minZ, // 2
-		maxX, minY, minZ, // 2
-		maxX, maxY, minZ, // 3
-		maxX, maxY, maxZ, // 7
-
-		minX, maxY, maxZ, // 5
-		minX, minY, maxZ, // 4
-		maxX, maxY, maxZ, // 7
-		maxX, maxY, maxZ, // 7
-		minX, minY, maxZ, // 4
-		maxX, minY, maxZ, // 6
-
-		maxX, maxY, minZ, // 3
-		minX, maxY, minZ, // 0
-		minX, maxY, maxZ, // 5
-		minX, maxY, maxZ, // 5
-		maxX, maxY, maxZ, // 7
-		maxX, maxY, minZ, // 3
-
-		minX, minY, minZ, // 1
-		maxX, minY, minZ, // 2
-		maxX, minY, maxZ, // 6
-		maxX, minY, maxZ, // 6
-		minX, minY, maxZ, // 4
-		minX, minY, minZ  // 1
+	std::vector<int> cubeIndecies = {
+		4, 2, 0, 9, 7, 3, 6, 5,	20,	21,	15,	
+		22,	10,	12,	18,	8, 1, 19, 4, 17, 2,	
+		9, 23, 7, 6, 13, 5, 24, 16, 15, 10,	
+		14, 12, 8, 11, 1
 	};
 
-	std::vector<float> normals;
-	for (size_t i = 0; i < VERTICES.size() / 3; i++)
-	{
-		normals.push_back(0.0f);
-		normals.push_back(1.0f);
-		normals.push_back(0.0f);
-	}
+	std::vector<float> cubePositions = {
+		1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
+		-1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f,
+		1.0f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f,
+		1.0f, 1.0f, 1.0f, -1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, 1.0f, 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f
+	};
 
-	cube = rawDataToMesh(VERTICES, normals);
+	std::vector<float> cubeNormals = {
+		0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+		-1.0f, 1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, -1.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, -1.0f, 0.0f
+	};
+
+	std::vector<float> cubeTangents = {
+		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, -1.0f, 0.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		-1.0f, 0.0f, 0.0f
+	};
+
+	std::vector<float> cubeUV = {
+		0.375f, 1.0f, 0.625f, 0.25f, 0.375f, 0.75f,
+		0.375f, 0.75f, 0.625f, 1.0f, 0.375f, 0.25f,
+		0.625f, 0.5f, 0.375f, 0.5f, 0.875f, 0.5f,
+		0.625f, 0.75f, 0.375f, 0.5f, 0.875f, 0.25f,
+		0.125f, 0.25f, 0.625f, 0.25f, 0.375f, 0.25f,
+		0.375f, 0.0f, 0.625f, 0.0f, 0.625f, 0.75f,
+		0.125f, 0.5f, 0.625f, 0.5f, 0.375f, 0.5f,
+		0.625f, 0.25f, 0.375f, 0.25f, 0.625f, 0.5f,
+		0.625f, 0.25f
+	};
+
+	cube = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndecies);
 }
 
 FEResourceManager::~FEResourceManager()

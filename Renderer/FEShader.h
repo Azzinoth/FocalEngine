@@ -11,6 +11,10 @@
 #define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
 #define FE_PROJECTION_MATRIX_MACRO "@ProjectionMatrix@"
+#define FE_CAMERA_POSITION_MACRO "@CameraPosition@"
+
+#define FE_LIGHT_POSITION_MACRO "@LightPosition@"
+#define FE_LIGHT_COLOR_MACRO "@LightColor@"
 
 namespace FocalEngine
 {
@@ -87,6 +91,7 @@ namespace FocalEngine
 		void loadMatrix(const char* uniformName, glm::mat4& matrix);
 
 		std::string parseShaderForMacro(const char* shaderText);
+		void registerUniforms();
 
 		virtual void loadDataToGPU();
 		virtual void addParams(std::vector<FEShaderParam> Params);

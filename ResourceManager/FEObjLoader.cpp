@@ -165,7 +165,7 @@ void FEObjLoader::calculateTangents()
 
 void FEObjLoader::processRawData()
 {
-	std::vector<std::tuple<int, int, int, bool>> vertexThatNeedDoubling;
+	std::vector<FEObjLoader::vertexThatNeedDoubling> vertexList;
 	std::unordered_map<int, int> indexesMap;
 
 	for (size_t i = 0; i < rawIndices.size(); i += 3)
@@ -182,42 +182,37 @@ void FEObjLoader::processRawData()
 
 			bool TexD = rawIndices[i + 1] != rawIndices[j + 1];
 			bool NormD = rawIndices[i + 2] != rawIndices[j + 2];
-			if (rawIndices[i] == rawIndices[j] && TexD)
+			if (rawIndices[i] == rawIndices[j] && (TexD || NormD))
 			{
 				// we do not need to add first appearance of vertex that is we need to double
-				auto newVertexTuple = std::make_tuple(j, rawIndices[j], rawIndices[j + 1], false);
-				if (std::find(vertexThatNeedDoubling.begin(), vertexThatNeedDoubling.end(), newVertexTuple) == vertexThatNeedDoubling.end())
+				FEObjLoader::vertexThatNeedDoubling newVertex = FEObjLoader::vertexThatNeedDoubling(j, rawIndices[j], rawIndices[j + 1], rawIndices[j + 2]);
+				if (std::find(vertexList.begin(), vertexList.end(), newVertex) == vertexList.end())
 				{
-					vertexThatNeedDoubling.push_back(newVertexTuple);
+					vertexList.push_back(newVertex);
 				}
-			}
-			else if (rawIndices[i] == rawIndices[j] && NormD)
-			{
-				// to-do: check do I need to fill that. OldCode.
 			}
 
 			std::swap(i, j);
 		}
 	}
 
-	// to-do: rewrite with out std::tuple
-	for (auto& ver : vertexThatNeedDoubling)
+	for (auto& ver : vertexList)
 	{
-		if (std::get<3>(ver)) continue;
+		if (ver.wasDone) continue;
 
-		rawVertexCoordinates.push_back(rawVertexCoordinates[std::get<1>(ver) - 1]);
+		rawVertexCoordinates.push_back(rawVertexCoordinates[ver.acctualIndex - 1]);
 
 		int newVertexIndex = rawVertexCoordinates.size();
-		rawIndices[std::get<0>(ver)] = newVertexIndex;
-		std::get<3>(ver) = true;
+		rawIndices[ver.indexInArray] = newVertexIndex;
+		ver.wasDone = true;
 
-		for (auto& verNext : vertexThatNeedDoubling)
+		for (auto& verNext : vertexList)
 		{
-			if (std::get<3>(verNext)) continue;
-			if (std::get<1>(ver) == std::get<1>(verNext) && std::get<2>(ver) == std::get<2>(verNext))
+			if (verNext.wasDone) continue;
+			if (ver.indexInArray == verNext.indexInArray && (ver.texIndex == verNext.texIndex || ver.normIndex == verNext.normIndex))
 			{
-				rawIndices[std::get<0>(verNext)] = newVertexIndex;
-				std::get<3>(verNext) = true;
+				rawIndices[verNext.indexInArray] = newVertexIndex;
+				verNext.wasDone = true;
 			}
 		}
 	}
