@@ -140,7 +140,7 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 
 FEResourceManager::FEResourceManager()
 {
-	std::vector<int> cubeIndecies = {
+	std::vector<int> cubeIndices = {
 		4, 2, 0, 9, 7, 3, 6, 5,	20,	21,	15,	
 		22,	10,	12,	18,	8, 1, 19, 4, 17, 2,	
 		9, 23, 7, 6, 13, 5, 24, 16, 15, 10,	
@@ -205,7 +205,31 @@ FEResourceManager::FEResourceManager()
 		0.625f, 0.25f
 	};
 
-	cube = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndecies);
+	cube = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices);
+
+	std::vector<int> planeIndices = {
+		0, 1, 2, 3, 0, 2
+	};
+
+	std::vector<float> planePositions = {
+		-0.5f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f
+	};
+
+	std::vector<float> planeNormals = {
+		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
+
+	std::vector<float> planeTangents = { 
+		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
+		0.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f
+	};
+	
+	std::vector<float> planeUV = { 
+		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
+	};
+	
+	plane = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices);
 }
 
 FEResourceManager::~FEResourceManager()
@@ -218,6 +242,11 @@ FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 	if (meshName == std::string("cube"))
 	{
 		return cube;
+	}
+
+	if (meshName == std::string("plane"))
+	{
+		return plane;
 	}
 
 	return nullptr;

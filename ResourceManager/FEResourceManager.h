@@ -19,6 +19,7 @@ namespace FocalEngine
 		FEMesh* loadObjMeshData(const char* fileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
+		FEMesh* plane;
 		FEMesh* cube;
 	};
 }

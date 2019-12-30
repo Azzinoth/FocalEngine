@@ -58,6 +58,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	scene.add(newEntity);
 
+	FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"));
+	testEntity4->setPosition(glm::vec3(0.0f, 2.0f, 0.0f));
+	testEntity4->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
+	testEntity4->setScale(glm::vec3(2.1f, 2.1f, 2.1f));
+
+	scene.add(testEntity4);
+
 	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
 	scene.add(lightBlob);
 
