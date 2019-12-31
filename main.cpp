@@ -51,7 +51,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	scene.add(testEntity3);
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
-	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"));
+	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Albedo.png");
+	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), new FocalEngine::FEPhongMaterial(rockTexture));
 	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	newEntity->setScale(glm::vec3(0.1f, 0.1f, 0.1f));

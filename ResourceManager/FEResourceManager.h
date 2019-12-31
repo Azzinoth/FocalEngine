@@ -2,6 +2,7 @@
 
 #include "../Renderer/FEEntity.h"
 #include "../ResourceManager/FEObjLoader.h"
+#include "../ThirdParty/lodepng.h"
 
 namespace FocalEngine
 {
@@ -9,6 +10,8 @@ namespace FocalEngine
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
+
+		FETexture* createTexture(const char* file_name, std::string Name = "DefaultName"); // to-do: add flags
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);

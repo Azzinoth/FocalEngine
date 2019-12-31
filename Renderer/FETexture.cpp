@@ -1,20 +1,8 @@
 #include "FETexture.h"
 using namespace FocalEngine;
 
-FETexture::FETexture(char* fileName, std::string Name)
+FETexture::FETexture()
 {
-	textureID = png_texture_load(fileName);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // smooth textures not blocky :)
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.8f);
-
-	setName(Name);
-}
-
-FETexture::FETexture(std::string Name)
-{
-	setName(Name);
 }
 
 FETexture::~FETexture()
@@ -35,4 +23,17 @@ std::string FETexture::getName()
 void FETexture::setName(std::string newName)
 {
 	name = newName;
+}
+
+void FETexture::bind(const unsigned int textureUnit)
+{
+	defaultTextureUnit = textureUnit;
+	glActiveTexture(GL_TEXTURE0 + textureUnit);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+}
+
+void FETexture::unBind()
+{
+	if (defaultTextureUnit != -1)
+		glBindTexture(defaultTextureUnit, 0);
 }

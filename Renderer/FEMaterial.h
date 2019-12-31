@@ -4,7 +4,8 @@
 #define FEMATERIAL_H
 
 #include "FEShader.h"
-#include "../CoreExtensions/StandardMaterial/FEStandardShader.h"
+#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorShader.h"
+#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongShader.h"
 
 #define MAX_TEXTURE_COUNT_FOR_MATERIAL = 10;
 
@@ -20,8 +21,7 @@ namespace FocalEngine
 		~FEMaterial();
 
 		std::vector<FEShader*> shaders;
-		std::vector<FETexture*> textures;
-
+		
 		virtual void bind();
 		virtual void unBind();
 
@@ -31,7 +31,10 @@ namespace FocalEngine
 		void setParam(std::string name, glm::vec3 newData);
 		void setParam(std::string name, glm::vec4 newData);
 		void setParam(std::string name, glm::mat4 newData);
+
+		void addTexture(FETexture* newTexture);
 	private:
+		std::vector<FETexture*> textures;
 		glm::vec3 diffuseColor;
 	};
 }

@@ -1,31 +1,40 @@
 #pragma once
 
 #include "..\SubSystems\FECoreIncludes.h"
-#include "..\ResourceManager\PNGTextureLoader.h"
 
 namespace FocalEngine
 {
+	enum FE_TEXTURE_MAG_FILTER
+	{
+		FE_NEAREST = 0,
+		FE_LINEAR = 1,
+	};
+
+	class FEResourceManager;
+
 	class FETexture
 	{
+		friend FEResourceManager;
 	public:
-		FETexture(char* fileName, std::string Name = "DefaultName");
-		FETexture(std::string Name = "DefaultName");
+		FETexture();
 		~FETexture();
 
 		GLuint getTextureID();
 
 		std::string getName();
 		void setName(std::string newName);
+
+		virtual void bind(const unsigned int textureUnit);
+		virtual void unBind();
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";
 
-		/*float shineDamper = 1;
-		float reflectivity = 0;
+		int width = 0;
+		int height = 0;
+		GLuint defaultTextureUnit = -1;
 
-		bool hasTransparency = false;
-		bool useFakeLighting = false;
-
-		int numberOfRows = 1;*/
+		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;
+		bool mipEnabled = true;
 	};
 }

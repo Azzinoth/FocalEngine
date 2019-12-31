@@ -5,7 +5,8 @@
 
 #include "FEMesh.h"
 #include "FEMaterial.h"
-#include "../CoreExtensions/StandardMaterial/FEStandardMaterial.h"
+#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
+#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
 
 namespace FocalEngine
 {

@@ -10,7 +10,7 @@ FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material)
 FEEntity::FEEntity(FEMesh* Mesh)
 {
 	mesh = Mesh;
-	material = new FEStandardMaterial();
+	material = new FESolidColorMaterial();
 }
 
 FEEntity::~FEEntity()

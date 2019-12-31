@@ -3,6 +3,41 @@ using namespace FocalEngine;
 
 FEResourceManager* FEResourceManager::_instance = nullptr;
 
+FETexture* FEResourceManager::createTexture(const char* file_name, std::string Name)
+{
+	FETexture* newTexture = new FETexture();
+	std::vector<unsigned char> rawData;
+	unsigned uWidth, uHeight;
+	lodepng::decode(rawData, uWidth, uHeight, file_name);
+	newTexture->width = uWidth;
+	newTexture->height = uHeight;
+
+	glGenTextures(1, &newTexture->textureID);
+	glBindTexture(GL_TEXTURE_2D, newTexture->textureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+
+	if (newTexture->mipEnabled)
+	{
+		glGenerateMipmap(GL_TEXTURE_2D);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);// to-do: fix this
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f);
+	}
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	}
+	else
+	{
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	}
+
+	newTexture->setName(Name);
+
+	return newTexture;
+}
+
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 {
 	GLuint vaoID;

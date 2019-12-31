@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../Renderer/FEShader.h"
+#include "../../../Renderer/FEShader.h"
 
-static const char* const FEStandardVS = R"(
+static const char* const FESolidColorVS = R"(
 #version 400 core
 
 @In_Position@
@@ -24,7 +24,7 @@ void main(void)
 }
 )";
 
-static const char* const FEStandardFS = R"(
+static const char* const FESolidColorFS = R"(
 #version 400 core
 
 in vec3 normal;
@@ -57,11 +57,11 @@ void main(void)
 
 namespace FocalEngine 
 {
-	class FEStandardShader : public FEShader
+	class FESolidColorShader : public FEShader
 	{
 	public:
-		FEStandardShader();
-		~FEStandardShader();
+		FESolidColorShader();
+		~FESolidColorShader();
 
 	private:
 		glm::vec3 baseColor;
