@@ -66,6 +66,9 @@ void FEEntity::updateWorldMatrix()
 
 void FEEntity::render()
 {
+	if (!visible)
+		return;
+
 	glBindVertexArray(mesh->getVaoID());
 	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glEnableVertexAttribArray(0);
 	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glEnableVertexAttribArray(1);
@@ -84,4 +87,14 @@ void FEEntity::render()
 	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glDisableVertexAttribArray(3);
 	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glDisableVertexAttribArray(4);
 	glBindVertexArray(0);
+}
+
+bool FEEntity::isVisible()
+{
+	return visible;
+}
+
+void FEEntity::setVisibility(bool isVisible)
+{
+	visible = isVisible;
 }

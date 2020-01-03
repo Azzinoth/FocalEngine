@@ -17,6 +17,8 @@ namespace FocalEngine
 		friend FEResourceManager;
 	public:
 		FETexture();
+		FETexture(int Width, int Height);
+		FETexture(GLint internalFormat, GLenum format, int Width, int Height);
 		~FETexture();
 
 		GLuint getTextureID();
@@ -24,7 +26,7 @@ namespace FocalEngine
 		std::string getName();
 		void setName(std::string newName);
 
-		virtual void bind(const unsigned int textureUnit);
+		virtual void bind(const unsigned int textureUnit = 0);
 		virtual void unBind();
 	private:
 		GLuint textureID = -1;

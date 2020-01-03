@@ -10,6 +10,13 @@ namespace FocalEngine
 		FEBasicCamera();
 		~FEBasicCamera();
 
+		float getFov();
+		void setFov(float newFov);
+		float getNearPlane();
+		void setNearPlane(float newNearPlane);
+		float getFarPlane();
+		void setFarPlane(float newFarPlane);
+
 		float getYaw();
 		void setYaw(float newYaw);
 		float getPitch();
@@ -34,9 +41,9 @@ namespace FocalEngine
 		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
 		virtual void mouseMoveInput(double xpos, double ypos) {};
 	protected:
-		float FOV = 70.0f;
-		float NEAR_PLANE = 0.1f;
-		float FAR_PLANE = 5000.0f;
+		float fov = 70.0f;
+		float nearPlane = 0.1f;
+		float farPlane = 5000.0f;
 		float aspectRatio = 1.0f;
 
 		float yaw = 0.0f;

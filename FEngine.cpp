@@ -28,10 +28,11 @@ void FEngine::beginFrame()
 {
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
-
+void FEngine::render()
+{
 	ENGINE_OBJ.currentCamera->move();
-
 	RENDERER_OBJ.render(currentCamera);
 }
 
@@ -122,4 +123,22 @@ void FEngine::setCamera(FEBasicCamera* newCamera)
 FEBasicCamera* FEngine::getCamera()
 {
 	return currentCamera;
+}
+
+int FEngine::getWindowWidth()
+{
+	return windowW;
+}
+
+int FEngine::getWindowHeight()
+{
+	return windowH;
+}
+
+void FEngine::renderTo(FEFramebuffer* renderTo)
+{
+	renderTo->bind();
+	beginFrame();
+	render();
+	renderTo->unBind();
 }

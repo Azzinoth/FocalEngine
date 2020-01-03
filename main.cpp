@@ -59,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	scene.add(newEntity);
 
-	FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"));
+	FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"), new FocalEngine::FEPhongMaterial(nullptr));
 	testEntity4->setPosition(glm::vec3(0.0f, 2.0f, 0.0f));
 	testEntity4->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 	testEntity4->setScale(glm::vec3(2.1f, 2.1f, 2.1f));
@@ -69,12 +69,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
 	scene.add(lightBlob);
 
+	FocalEngine::FEFramebuffer* fb = new FocalEngine::FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT | FocalEngine::FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
+	testEntity4->material->addTexture(fb->getColorAttachment());
+
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
 
-		
+		testEntity4->setVisibility(false);
+		engine.renderTo(fb);
+		testEntity4->setVisibility(true);
 
+		engine.render();
+		
 		engine.endFrame();
 	}
 	

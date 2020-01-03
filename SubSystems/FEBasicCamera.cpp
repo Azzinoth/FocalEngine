@@ -93,11 +93,44 @@ glm::mat4 FEBasicCamera::getProjectionMatrix()
 
 void FEBasicCamera::updateProjectionMatrix()
 {
-	projectionMatrix = glm::perspective(FOV, aspectRatio, NEAR_PLANE, FAR_PLANE);
+	projectionMatrix = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
 }
 
 void FEBasicCamera::updateAll()
 {
 	updateViewMatrix();
+	updateProjectionMatrix();
+}
+
+float FEBasicCamera::getFov()
+{
+	return fov;
+}
+
+void FEBasicCamera::setFov(float newFov)
+{
+	fov = newFov;
+	updateProjectionMatrix();
+}
+
+float FEBasicCamera::getNearPlane()
+{
+	return nearPlane;
+}
+
+void FEBasicCamera::setNearPlane(float newNearPlane)
+{
+	nearPlane = newNearPlane;
+	updateProjectionMatrix();
+}
+
+float FEBasicCamera::getFarPlane()
+{
+	return farPlane;
+}
+
+void FEBasicCamera::setFarPlane(float newFarPlane)
+{
+	farPlane = newFarPlane;
 	updateProjectionMatrix();
 }

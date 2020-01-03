@@ -4,7 +4,7 @@
 #define FEENTITY_H
 
 #include "FEMesh.h"
-#include "FEMaterial.h"
+#include "FEFramebuffer.h"
 #include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
 #include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
 
@@ -30,6 +30,9 @@ namespace FocalEngine
 		void setScale(glm::vec3 newScale);
 
 		void render();
+
+		bool isVisible();
+		void setVisibility(bool isVisible);
 	private:
 		glm::vec3 position = glm::vec3();
 		glm::vec3 rotation = glm::vec3();
@@ -37,6 +40,8 @@ namespace FocalEngine
 
 		void updateWorldMatrix();
 		glm::mat4 worldMatrix;
+
+		bool visible = true;
 	};
 }
 

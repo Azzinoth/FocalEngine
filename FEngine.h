@@ -15,6 +15,8 @@ namespace FocalEngine
 		void beginFrame();
 		void endFrame();
 
+		void render();
+
 		bool isWindowOpened();
 
 		void setCamera(FEBasicCamera* newCamera);
@@ -23,6 +25,11 @@ namespace FocalEngine
 		void setKeyCallback(void(*func)(int, int, int, int));
 		void setMouseButtonCallback(void(*func)(int, int, int));
 		void setMouseMoveCallback(void(*func)(double, double));
+
+		int getWindowWidth();
+		int getWindowHeight();
+
+		void renderTo(FEFramebuffer* renderTo);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 

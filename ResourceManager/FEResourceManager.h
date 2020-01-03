@@ -11,7 +11,9 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
-		FETexture* createTexture(const char* file_name, std::string Name = "DefaultName"); // to-do: add flags
+		// to-do: add flags
+		FETexture* createTexture(const char* file_name, std::string Name = "DefaultName");
+		// to-do: put creating of framebuffers here!
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);

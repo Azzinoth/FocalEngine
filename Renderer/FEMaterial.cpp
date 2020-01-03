@@ -25,7 +25,8 @@ void FEMaterial::bind()
 
 	for (size_t i = 0; i < textures.size(); i++)
 	{
-		textures[i]->bind(i);
+		if (textures[i] != nullptr)
+			textures[i]->bind(i);
 		/*glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, textures[i]->getTextureID());*/
 	}
@@ -35,6 +36,12 @@ void FEMaterial::unBind()
 {
 	if (shaders.size() > 0)
 		shaders[0]->stop();
+
+	for (size_t i = 0; i < textures.size(); i++)
+	{
+		if (textures[i] != nullptr)
+			textures[i]->unBind();
+	}
 }
 
 void FEMaterial::setParam(std::string name, int newData)
@@ -69,5 +76,8 @@ void FEMaterial::setParam(std::string name, glm::mat4 newData)
 
 void FEMaterial::addTexture(FETexture* newTexture)
 {
+	if (!newTexture)
+		return;
+
 	textures.push_back(newTexture);
 }
