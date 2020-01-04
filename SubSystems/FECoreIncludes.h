@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FETime.h"
+
 #include "glew2/include/GL/glew.h"
 #include "glew2/include/GL/wglew.h"
 
@@ -37,3 +39,21 @@ CLASS_NAME(const CLASS_NAME &);            \
 void operator= (const CLASS_NAME &);
 
 #define FE_DEBUG_ENABLED
+
+#ifdef FE_DEBUG_ENABLED
+	#define FE_GL_ERROR(glCall)            \
+	{                                      \
+		glCall;                            \
+		GLenum error = glGetError();	   \
+		if (error != 0)                    \
+		{								   \
+			assert(0);					   \
+		}                                  \
+	}
+#else
+	#define FE_GL_ERROR(glCall)            \
+	{                                      \
+		glCall;                            \
+	}
+#endif // FE_GL_ERROR
+

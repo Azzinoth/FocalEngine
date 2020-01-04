@@ -69,24 +69,24 @@ void FEEntity::render()
 	if (!visible)
 		return;
 
-	glBindVertexArray(mesh->getVaoID());
-	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glEnableVertexAttribArray(0);
-	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glEnableVertexAttribArray(1);
-	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) glEnableVertexAttribArray(2);
-	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glEnableVertexAttribArray(3);
-	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glEnableVertexAttribArray(4);
+	FE_GL_ERROR(glBindVertexArray(mesh->getVaoID()));
+	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+	if ((mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
 
 	if ((mesh->vertexBuffers & FE_INDEX) == FE_INDEX)
-		glDrawElements(GL_TRIANGLES, mesh->getVertexCount(), GL_UNSIGNED_INT, 0);
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
 	if ((mesh->vertexBuffers & FE_INDEX) != FE_INDEX)
-		glDrawArrays(GL_TRIANGLES, 0, mesh->getVertexCount());
+		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, mesh->getVertexCount()));
 
-	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) glDisableVertexAttribArray(0);
-	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) glDisableVertexAttribArray(1);
-	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) glDisableVertexAttribArray(2);
-	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) glDisableVertexAttribArray(3);
-	if ((mesh->vertexBuffers & FE_UV) == FE_UV) glDisableVertexAttribArray(4);
-	glBindVertexArray(0);
+	if ((mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glDisableVertexAttribArray(0));
+	if ((mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glDisableVertexAttribArray(1));
+	if ((mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glDisableVertexAttribArray(2));
+	if ((mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glDisableVertexAttribArray(3));
+	if ((mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glDisableVertexAttribArray(4));
+	FE_GL_ERROR(glBindVertexArray(0));
 }
 
 bool FEEntity::isVisible()

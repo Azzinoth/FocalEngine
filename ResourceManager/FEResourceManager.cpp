@@ -12,25 +12,25 @@ FETexture* FEResourceManager::createTexture(const char* file_name, std::string N
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
 
-	glGenTextures(1, &newTexture->textureID);
-	glBindTexture(GL_TEXTURE_2D, newTexture->textureID);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
 
 	if (newTexture->mipEnabled)
 	{
-		glGenerateMipmap(GL_TEXTURE_2D);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);// to-do: fix this
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f);
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
 	if (newTexture->magFilter == FE_LINEAR)
 	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
 	else
 	{
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
 	newTexture->setName(Name);
@@ -41,17 +41,17 @@ FETexture* FEResourceManager::createTexture(const char* file_name, std::string N
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 {
 	GLuint vaoID;
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
+	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glBindVertexArray(vaoID));
 
 	GLuint vboID;
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	glBindVertexArray(0);
+	FE_GL_ERROR(glBindVertexArray(0));
 
 	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION);
 }
@@ -59,24 +59,24 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals)
 {
 	GLuint vaoID;
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
+	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glBindVertexArray(vaoID));
 
 	GLuint vboID;
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// normals
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	glBindVertexArray(0);
+	FE_GL_ERROR(glBindVertexArray(0));
 
 	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL);
 }
@@ -84,44 +84,44 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index)
 {
 	GLuint vaoID;
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
+	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glBindVertexArray(vaoID));
 
 	GLuint vboID;
 	// index
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * index.size(), index.data(), GL_STATIC_DRAW);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * index.size(), index.data(), GL_STATIC_DRAW));
 
 	// verCoords
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * positions.size(), positions.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// normals
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normals.size(), normals.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// tangents
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tangents.size(), tangents.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tangents.size(), tangents.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// UV
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UV.size(), UV.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UV.size(), UV.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	glBindVertexArray(0);
+	FE_GL_ERROR(glBindVertexArray(0));
 
 	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
 }
@@ -131,44 +131,44 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
 
 	GLuint vaoID;
-	glGenVertexArrays(1, &vaoID);
-	glBindVertexArray(vaoID);
+	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glBindVertexArray(vaoID));
 
 	GLuint vboID;
 	// index
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * objLoader.fInd.size(), objLoader.fInd.data(), GL_STATIC_DRAW);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * objLoader.fInd.size(), objLoader.fInd.data(), GL_STATIC_DRAW));
 
 	// verCoords
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fVerC.size(), objLoader.fVerC.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fVerC.size(), objLoader.fVerC.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// normals
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fNorC.size(), objLoader.fNorC.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fNorC.size(), objLoader.fNorC.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// tangents
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTanC.size(), objLoader.fTanC.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTanC.size(), objLoader.fTanC.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	// UV
-	glGenBuffers(1, &vboID);
-	glBindBuffer(GL_ARRAY_BUFFER, vboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTexC.size(), objLoader.fTexC.data(), GL_STATIC_DRAW);
-	glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * objLoader.fTexC.size(), objLoader.fTexC.data(), GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	glBindVertexArray(0);
+	FE_GL_ERROR(glBindVertexArray(0));
 
 	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
 }
@@ -247,8 +247,8 @@ FEResourceManager::FEResourceManager()
 	};
 
 	std::vector<float> planePositions = {
-		-0.5f, 0.5f, 0.0f, -0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f, 0.5f, 0.5f, 0.0f
+		-1.0f, 1.0f, 0.0f, -1.0f, -1.0f, 0.0f,
+		1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f
 	};
 
 	std::vector<float> planeNormals = {
@@ -294,4 +294,9 @@ FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
 	objLoader.readFile(fileName);
 
 	return rawObjDataToMesh();
+}
+
+FEScreenSpaceEffect* FEResourceManager::createScreenSpaceEffect(int ScreenWidth, int ScreenHeight)
+{
+	return new FEScreenSpaceEffect(getSimpleMesh("plane"), ScreenWidth, ScreenHeight);
 }

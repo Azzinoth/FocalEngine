@@ -1,5 +1,55 @@
 #include "FEngine.h"
 
+static const char* const MyVS = R"(
+#version 400 core
+
+@In_Position@
+out vec2 textureCoords;
+
+void main(void)
+{
+	gl_Position = vec4(FEPosition, 1.0);
+	textureCoords = vec2((FEPosition.x + 1.0) / 2.0, 1 - (-FEPosition.y + 1.0) / 2.0);
+}
+)";
+
+static const char* const MyFS = R"(
+#version 400 core
+
+in vec2 textureCoords;
+uniform sampler2D inputTexture;
+
+void main(void)
+{
+	gl_FragColor = texture(inputTexture, textureCoords) * 0.5f;
+}
+)";
+
+static const char* const MyVS2 = R"(
+#version 400 core
+
+@In_Position@
+out vec2 textureCoords;
+
+void main(void)
+{
+	gl_Position = vec4(FEPosition, 1.0);
+	textureCoords = vec2((FEPosition.x + 1.0) / 2.0, 1 - (-FEPosition.y + 1.0) / 2.0);
+}
+)";
+
+static const char* const MyFS2 = R"(
+#version 400 core
+
+in vec2 textureCoords;
+uniform sampler2D inputTexture;
+
+void main(void)
+{
+	gl_FragColor = texture(inputTexture, textureCoords) * vec4(2.0f, 1.0f, 1.0f, 1.0f);
+}
+)";
+
 FocalEngine::FEEntity* testEntity2;
 
 void mouseButtonCallback(int button, int action, int mods)
@@ -51,7 +101,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	scene.add(testEntity3);
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
-	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Albedo.png");
+	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_2K_Albedo.png");
 	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), new FocalEngine::FEPhongMaterial(rockTexture));
 	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -72,6 +122,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FEFramebuffer* fb = new FocalEngine::FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT | FocalEngine::FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
 	testEntity4->material->addTexture(fb->getColorAttachment());
 
+	FocalEngine::FEScreenSpaceEffect* testEffect = engine.createScreenSpaceEffect();
+	testEffect->setFinalTexture(fb->getColorAttachment());
+
+
+	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
+	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS2, MyFS2);
+
+	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(fb->getColorAttachment(), testshader));
+	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(testEffect->getFinalTexture(), testshader2));
+
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
@@ -81,8 +141,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		testEntity4->setVisibility(true);
 
 		engine.render();
-		
+
+		testEffect->render();
+
 		engine.endFrame();
+
+		// CPU and GPU Time
+		std::string cpuMS = std::to_string(engine.getCpuTime());
+		cpuMS.erase(cpuMS.begin() + 4, cpuMS.end());
+
+		std::string gpuMS = std::to_string(engine.getGpuTime());
+		gpuMS.erase(gpuMS.begin() + 4, gpuMS.end());
+
+		std::string caption = "CPU time : ";
+		caption += cpuMS;
+		caption += " ms";
+		caption += "  Frame time : ";
+		caption += gpuMS;
+		caption += " ms";
+		engine.setWindowCaption(caption.c_str());
 	}
 	
 	return 0;

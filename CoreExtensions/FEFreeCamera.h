@@ -16,7 +16,7 @@ namespace FocalEngine
 
 		void keyboardInput(int key, int scancode, int action, int mods) final;
 		void mouseMoveInput(double xpos, double ypos) final;
-		void move();
+		void move(float deltaTime = 0.0f);
 	private:
 		int lastMouseX = 0;
 		int lastMouseY = 0;

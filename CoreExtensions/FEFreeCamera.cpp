@@ -11,10 +11,10 @@ FEFreeCamera::~FEFreeCamera()
 
 }
 
-void FEFreeCamera::move()
+void FEFreeCamera::move(float deltaTime)
 {
-	glm::vec4 forward = { 0.0f, 0.0f, -speed, 0.0f };
-	glm::vec4 right = { speed, 0.0f, 0.0f, 0.0f };
+	glm::vec4 forward = { 0.0f, 0.0f, -speed * deltaTime, 0.0f };
+	glm::vec4 right = { speed * deltaTime, 0.0f, 0.0f, 0.0f };
 
 	right = right * viewMatrix;
 	forward = forward * viewMatrix;

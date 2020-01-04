@@ -12,16 +12,17 @@ namespace FocalEngine
 
 		void createWindow(int width = 1280, int height = 720, std::string WindowTitle = "FEWindow");
 
-		void beginFrame();
-		void endFrame();
+		void beginFrame(bool internalCall = false);
+		void endFrame(bool internalCall = false);
 
-		void render();
+		void render(bool internalCall = false);
 
 		bool isWindowOpened();
 
 		void setCamera(FEBasicCamera* newCamera);
 		FEBasicCamera* getCamera();
 
+		void setWindowCaption(const char* text);
 		void setKeyCallback(void(*func)(int, int, int, int));
 		void setMouseButtonCallback(void(*func)(int, int, int));
 		void setMouseMoveCallback(void(*func)(double, double));
@@ -30,12 +31,19 @@ namespace FocalEngine
 		int getWindowHeight();
 
 		void renderTo(FEFramebuffer* renderTo);
+
+		float getCpuTime();
+		float getGpuTime();
+
+		FEScreenSpaceEffect* createScreenSpaceEffect(int ScreenWidth = -1, int ScreenHeight = -1);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
 		int windowW;
 		int windowH;
 		std::string windowTitle;
+
+		float cpuTime, gpuTime;
 
 		GLFWwindow* window;
 		static void mouseButtonCallback(int button, int action, int mods);

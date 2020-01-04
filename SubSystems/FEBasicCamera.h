@@ -36,7 +36,7 @@ namespace FocalEngine
 
 		virtual void updateAll();
 
-		virtual void move() {};
+		virtual void move(float deltaTime = 0.0f) {};
 
 		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
 		virtual void mouseMoveInput(double xpos, double ypos) {};

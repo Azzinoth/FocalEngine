@@ -213,15 +213,15 @@ FEShader::FEShader(const char* vertexText, const char* fragmentText)
 	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
 	fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
 
-	programID = glCreateProgram();
-	glAttachShader(programID, vertexShaderID);
-	glAttachShader(programID, fragmentShaderID);
+	FE_GL_ERROR(programID = glCreateProgram());
+	FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
+	FE_GL_ERROR(glAttachShader(programID, fragmentShaderID));
 	bindAttributes();
-	glLinkProgram(programID);
-	glValidateProgram(programID); // too slow ?
+	FE_GL_ERROR(glLinkProgram(programID));
+	FE_GL_ERROR(glValidateProgram(programID)); // too slow ?
 
-	glDeleteShader(vertexShaderID);
-	glDeleteShader(fragmentShaderID);
+	FE_GL_ERROR(glDeleteShader(vertexShaderID));
+	FE_GL_ERROR(glDeleteShader(fragmentShaderID));
 
 	registerUniforms();
 }
@@ -241,10 +241,10 @@ void FEShader::registerUniforms()
 	GLchar name[bufSize];
 	GLsizei length;
 
-	glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count);
+	FE_GL_ERROR(glGetProgramiv(programID, GL_ACTIVE_UNIFORMS, &count));
 	for (size_t i = 0; i < size_t(count); i++)
 	{
-		glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name);
+		FE_GL_ERROR(glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name));
 		
 		switch (type)
 		{
@@ -294,21 +294,21 @@ void FEShader::registerUniforms()
 GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 {
 	GLuint shaderID;
-	shaderID = glCreateShader(shaderType);
+	FE_GL_ERROR(shaderID = glCreateShader(shaderType));
 
 	std::string tempString = parseShaderForMacro(shaderText);
 	const char *parsedShaderText = tempString.c_str();
-	glShaderSource(shaderID, 1, &parsedShaderText, nullptr);
-	glCompileShader(shaderID);
+	FE_GL_ERROR(glShaderSource(shaderID, 1, &parsedShaderText, nullptr));
+	FE_GL_ERROR(glCompileShader(shaderID));
 	GLint status = 0;
-	glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status);
+	FE_GL_ERROR(glGetShaderiv(shaderID, GL_COMPILE_STATUS, &status));
 
 	if (status == GL_FALSE) {
 		GLint logSize = 0;
-		glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logSize);
+		FE_GL_ERROR(glGetShaderiv(shaderID, GL_INFO_LOG_LENGTH, &logSize));
 		std::vector<GLchar> errorLog(logSize);
 
-		glGetShaderInfoLog(shaderID, logSize, &logSize, &errorLog[0]);
+		FE_GL_ERROR(glGetShaderInfoLog(shaderID, logSize, &logSize, &errorLog[0]));
 		assert(status);
 	}
 
@@ -318,26 +318,26 @@ GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 void FEShader::cleanUp()
 {
 	stop();
-	glDeleteProgram(programID);
+	FE_GL_ERROR(glDeleteProgram(programID));
 }
 
 void FEShader::bindAttributes()
 {
-	if ((vertexAttributes & FE_POSITION) == FE_POSITION) glBindAttribLocation(programID, 0, "FEPosition");
-	if ((vertexAttributes & FE_COLOR) == FE_COLOR) glBindAttribLocation(programID, 1, "FEColor");
-	if ((vertexAttributes & FE_NORMAL) == FE_NORMAL) glBindAttribLocation(programID, 2, "FENormal");
-	if ((vertexAttributes & FE_TANGENTS) == FE_TANGENTS) glBindAttribLocation(programID, 3, "FETangent");
-	if ((vertexAttributes & FE_UV) == FE_UV) glBindAttribLocation(programID, 4, "FETexCoord");
+	if ((vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glBindAttribLocation(programID, 0, "FEPosition"));
+	if ((vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glBindAttribLocation(programID, 1, "FEColor"));
+	if ((vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glBindAttribLocation(programID, 2, "FENormal"));
+	if ((vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glBindAttribLocation(programID, 3, "FETangent"));
+	if ((vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glBindAttribLocation(programID, 4, "FETexCoord"));
 }
 
 void FEShader::start()
 {
-	glUseProgram(programID);
+	FE_GL_ERROR(glUseProgram(programID));
 }
 
 void FEShader::stop()
 {
-	glUseProgram(0);
+	FE_GL_ERROR(glUseProgram(0));
 }
 
 std::string FEShader::parseShaderForMacro(const char* shaderText)
@@ -417,37 +417,37 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 
 GLuint FEShader::getUniformLocation(const char* name)
 {
-	return glGetUniformLocation(programID, name);
+	FE_GL_ERROR(return glGetUniformLocation(programID, name));
 }
 
 void FEShader::loadScalar(const char* uniformName, GLfloat& value)
 {
-	glUniform1f(getUniformLocation(uniformName), value);
+	FE_GL_ERROR(glUniform1f(getUniformLocation(uniformName), value));
 }
 
 void FEShader::loadScalar(const char* uniformName, GLint& value)
 {
-	glUniform1i(getUniformLocation(uniformName), value);
+	FE_GL_ERROR(glUniform1i(getUniformLocation(uniformName), value));
 }
 
 void FEShader::loadVector(const char* uniformName, glm::vec2& vector)
 {
-	glUniform2f(getUniformLocation(uniformName), vector.x, vector.y);
+	FE_GL_ERROR(glUniform2f(getUniformLocation(uniformName), vector.x, vector.y));
 }
 
 void FEShader::loadVector(const char* uniformName, glm::vec3& vector)
 {
-	glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z);
+	FE_GL_ERROR(glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z));
 }
 
 void FEShader::loadVector(const char* uniformName, glm::vec4& vector)
 {
-	glUniform4f(getUniformLocation(uniformName), vector.x, vector.y, vector.z, vector.w);
+	FE_GL_ERROR(glUniform4f(getUniformLocation(uniformName), vector.x, vector.y, vector.z, vector.w));
 }
 
 void FEShader::loadMatrix(const char* uniformName, glm::mat4& matrix)
 {
-	glUniformMatrix4fv(getUniformLocation(uniformName), 1, false, glm::value_ptr(matrix));
+	FE_GL_ERROR(glUniformMatrix4fv(getUniformLocation(uniformName), 1, false, glm::value_ptr(matrix)));
 }
 
 void FEShader::loadDataToGPU()

@@ -10,7 +10,7 @@ FEMesh::FEMesh(GLuint vaoID, unsigned int vertexCount, int vertexBuffersTypes)
 
 FEMesh::~FEMesh()
 {
-	glDeleteVertexArrays(1, &vaoID);
+	FE_GL_ERROR(glDeleteVertexArrays(1, &vaoID));
 }
 
 GLuint FEMesh::getVaoID() const

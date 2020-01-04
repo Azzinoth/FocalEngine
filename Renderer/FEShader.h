@@ -71,11 +71,13 @@ namespace FocalEngine
 
 	class FEMaterial;
 	class FERenderer;
+	class FEScreenSpaceEffect;
 
 	class FEShader
 	{
 		friend FEMaterial;
 		friend FERenderer;
+		friend FEScreenSpaceEffect;
 	public:
 		FEShader(const char* vertexText, const char* fragmentText);
 		~FEShader();
