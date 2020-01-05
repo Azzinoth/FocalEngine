@@ -16,3 +16,8 @@ void FEScene::add(FELight* newLight)
 {
 	sceneLights.push_back(newLight);
 }
+
+void FEScene::add(FEScreenSpaceEffect* newScreenSpaceEffect)
+{
+	sceneScreenSpaceEffects.push_back(newScreenSpaceEffect);
+}

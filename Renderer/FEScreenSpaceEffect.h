@@ -49,23 +49,25 @@ namespace FocalEngine
 	};
 
 	class FEResourceManager;
+	class FERenderer;
 
 	class FEScreenSpaceEffect
 	{
 		friend FEResourceManager;
+		friend FERenderer;
 	public:
 		FEScreenSpaceEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
 		~FEScreenSpaceEffect();
 
-		void render();
-		FETexture* getFinalTexture();
-		void setFinalTexture(FETexture* FinalTexture);
+		FETexture* getInTexture();
+		void setInTexture(FETexture* InTexture);
 
 		void addStage(FEScreenSpaceEffectStage* newStage);
 	private:
 		int screenWidth, screenHeight;
 		FEMesh* screenQuad;
 		FEShader* screenQuadShader;
+		FETexture* inTexture = nullptr;
 		FETexture* finalTexture = nullptr;
 
 		FEFramebuffer* intermediateFramebuffer = nullptr;

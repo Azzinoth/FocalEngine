@@ -11,14 +11,16 @@ namespace FocalEngine
 	};
 
 	class FEResourceManager;
+	class FEScreenSpaceEffect;
 
 	class FETexture
 	{
 		friend FEResourceManager;
+		friend FEScreenSpaceEffect;
 	public:
 		FETexture();
 		FETexture(int Width, int Height);
-		FETexture(GLint internalFormat, GLenum format, int Width, int Height);
+		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height);
 		~FETexture();
 
 		GLuint getTextureID();
@@ -31,9 +33,12 @@ namespace FocalEngine
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";
+		bool hdr = false;
 
 		int width = 0;
 		int height = 0;
+		GLint internalFormat;
+		GLenum format;
 		GLuint defaultTextureUnit = -1;
 
 		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;

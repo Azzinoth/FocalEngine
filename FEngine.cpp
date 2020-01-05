@@ -5,6 +5,7 @@ FEngine* FEngine::_instance = nullptr;
 #define RENDERER_OBJ FERenderer::getInstance()
 #define RESOURCE_MANAGER_OBJ FEResourceManager::getInstance()
 #define ENGINE_OBJ FEngine::getInstance()
+#define SCENE_OBJ FocalEngine::FEScene::getInstance()
 #define TIME_OBJ FocalEngine::FETime::getInstance()
 
 FEngine::FEngine()
@@ -83,6 +84,10 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 
 	FE_GL_ERROR(glEnable(GL_CULL_FACE));
 	FE_GL_ERROR(glCullFace(GL_BACK));
+
+	RENDERER_OBJ.standardFBInit(windowW, windowH);
+	SCENE_OBJ.add(new FEBlurEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH, RENDERER_OBJ.sceneToTextureFB->getColorAttachment()));
+	SCENE_OBJ.add(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH, RENDERER_OBJ.sceneToTextureFB->getColorAttachment()));
 }
 
 void FEngine::setWindowCaption(const char* text)

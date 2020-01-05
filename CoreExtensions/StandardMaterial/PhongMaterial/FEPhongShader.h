@@ -38,10 +38,11 @@ uniform sampler2D baseColorTexture;
 @LightPosition@
 @LightColor@
 @CameraPosition@
+uniform float FEGamma;
 
 void main(void)
 {
-	vec3 baseColor = texture(baseColorTexture, UV, -1.0).xyz;
+	vec3 baseColor = pow(texture(baseColorTexture, UV).rgb, vec3(FEGamma));
 	vec3 lightDirection = normalize(FELightPosition - FragPosition);
 
 	// diffuse part

@@ -34,9 +34,11 @@ uniform vec3 baseColor;
 @LightPosition@
 @LightColor@
 @CameraPosition@
+uniform float FEGamma;
 
 void main(void)
 {
+	vec3 correctedBaseColor = pow(baseColor, vec3(FEGamma));
 	vec3 lightDirection = normalize(FELightPosition - FragPosition);
 
 	// diffuse part
@@ -51,7 +53,7 @@ void main(void)
 	vec3 specular = specularStrength * specularFactor * FELightColor;
 
 	vec3 ambientColor = vec3(0.1, 0.0f, 0.6f) * 0.3f;
-	gl_FragColor = vec4(baseColor * (diffuseColor + ambientColor + specular), 1.0f);
+	gl_FragColor = vec4(correctedBaseColor * (diffuseColor + ambientColor + specular), 1.0f);
 }
 )";
 

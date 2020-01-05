@@ -21,32 +21,16 @@ uniform sampler2D inputTexture;
 
 void main(void)
 {
-	gl_FragColor = texture(inputTexture, textureCoords) * 0.5f;
-}
-)";
+	if (texture(inputTexture, textureCoords).r > 0.7 || texture(inputTexture, textureCoords).g > 2.0 || texture(inputTexture, textureCoords).b > 2.0)
+	{
+		gl_FragColor = texture(inputTexture, textureCoords);
+	}
+	else
+	{
+		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+	}
 
-static const char* const MyVS2 = R"(
-#version 400 core
-
-@In_Position@
-out vec2 textureCoords;
-
-void main(void)
-{
-	gl_Position = vec4(FEPosition, 1.0);
-	textureCoords = vec2((FEPosition.x + 1.0) / 2.0, 1 - (-FEPosition.y + 1.0) / 2.0);
-}
-)";
-
-static const char* const MyFS2 = R"(
-#version 400 core
-
-in vec2 textureCoords;
-uniform sampler2D inputTexture;
-
-void main(void)
-{
-	gl_FragColor = texture(inputTexture, textureCoords) * vec4(2.0f, 1.0f, 1.0f, 1.0f);
+	//gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 }
 )";
 
@@ -56,6 +40,9 @@ void mouseButtonCallback(int button, int action, int mods)
 {
 	//dynamic_cast<FocalEngine::FEStandardMaterial*>(testEntity2->material)->setBaseColor(glm::vec3(0.1f, 0.6f, 0.1f));
 	testEntity2->material->setParam("baseColor", glm::vec3(0.1f, 0.6f, 0.1f));
+
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	engine.getCamera()->setExposure(engine.getCamera()->getExposure() - 0.01f);
 }
 
 void mouseMoveCallback(double xpos, double ypos)
@@ -109,40 +96,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	scene.add(newEntity);
 
-	FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"), new FocalEngine::FEPhongMaterial(nullptr));
+	/*FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"), new FocalEngine::FEPhongMaterial(nullptr));
 	testEntity4->setPosition(glm::vec3(0.0f, 2.0f, 0.0f));
 	testEntity4->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
 	testEntity4->setScale(glm::vec3(2.1f, 2.1f, 2.1f));
-
-	scene.add(testEntity4);
+	scene.add(testEntity4);*/
 
 	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
+	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
 	scene.add(lightBlob);
 
-	FocalEngine::FEFramebuffer* fb = new FocalEngine::FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT | FocalEngine::FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
-	testEntity4->material->addTexture(fb->getColorAttachment());
+	// to-do: there is no ability to add light :)
+	FocalEngine::FELight* lightBlob2 = new FocalEngine::FELight();
+	lightBlob2->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+	lightBlob2->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
+	scene.add(lightBlob2);
+
+	/*FocalEngine::FEFramebuffer* fb = new FocalEngine::FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT | FocalEngine::FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
+	testEntity4->material->addTexture(fb->getColorAttachment());*/
 
 	FocalEngine::FEScreenSpaceEffect* testEffect = engine.createScreenSpaceEffect();
-	testEffect->setFinalTexture(fb->getColorAttachment());
-
+	//testEffect->setFinalTexture(fb->getColorAttachment());
 
 	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
-	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS2, MyFS2);
+	/*FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS2, MyFS2);*/
 
-	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(fb->getColorAttachment(), testshader));
-	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(testEffect->getFinalTexture(), testshader2));
+	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(nullptr, testshader));
+	/*testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(testEffect->getFinalTexture(), testshader2));*/
+	//scene.add(testEffect);
 
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
 
-		testEntity4->setVisibility(false);
-		engine.renderTo(fb);
-		testEntity4->setVisibility(true);
-
 		engine.render();
-
-		testEffect->render();
 
 		engine.endFrame();
 

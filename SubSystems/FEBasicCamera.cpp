@@ -134,3 +134,23 @@ void FEBasicCamera::setFarPlane(float newFarPlane)
 	farPlane = newFarPlane;
 	updateProjectionMatrix();
 }
+
+float FEBasicCamera::getGamma()
+{
+	return gamma;
+}
+
+void FEBasicCamera::setGamma(float newGamma)
+{
+	gamma = newGamma;
+}
+
+float FEBasicCamera::getExposure()
+{
+	return exposure;
+}
+
+void FEBasicCamera::setExposure(float newExposure)
+{
+	exposure = newExposure;
+}

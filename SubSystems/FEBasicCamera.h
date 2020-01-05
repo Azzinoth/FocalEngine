@@ -29,6 +29,11 @@ namespace FocalEngine
 		float getAspectRatio();
 		void setAspectRatio(float newAspectRatio);
 
+		float getGamma();
+		void setGamma(float newGamma);
+		float getExposure();
+		void setExposure(float newExposure);
+
 		glm::mat4 getViewMatrix();
 		virtual void updateViewMatrix();
 		glm::mat4 getProjectionMatrix();
@@ -49,6 +54,9 @@ namespace FocalEngine
 		float yaw = 0.0f;
 		float pitch = 0.0f;
 		float roll = 0.0f;
+
+		float gamma = 2.2f;
+		float exposure = 1.0f;
 
 		glm::vec3 position = glm::vec3(0.0f);
 		glm::mat4 viewMatrix;

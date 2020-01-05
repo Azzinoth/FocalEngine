@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Renderer/FEScreenSpaceEffect.h"
+#include "../CoreExtensions/ScreenspaceEffects/FEGammaAndHDRCorrection.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng.h"
 

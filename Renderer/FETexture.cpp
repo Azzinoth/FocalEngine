@@ -3,6 +3,7 @@ using namespace FocalEngine;
 
 FETexture::FETexture()
 {
+	FE_GL_ERROR(glGenTextures(1, &textureID));
 }
 
 FETexture::FETexture(int Width, int Height)
@@ -17,10 +18,12 @@ FETexture::FETexture(int Width, int Height)
 	unBind();
 }
 
-FETexture::FETexture(GLint internalFormat, GLenum format, int Width, int Height)
+FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height)
 {
 	width = Width;
 	height = Height;
+	internalFormat = InternalFormat;
+	format = Format;
 	FE_GL_ERROR(glGenTextures(1, &textureID));
 	bind(0);
 
@@ -29,6 +32,12 @@ FETexture::FETexture(GLint internalFormat, GLenum format, int Width, int Height)
 	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, NULL));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	// to-do: it is needed for screen space effects but could interfere with other purposes
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+
+	if (internalFormat == GL_RGBA16F || internalFormat == GL_RGB16F || internalFormat == GL_RGB32F || internalFormat == GL_RGBA32F)
+		hdr = true;
 }
 
 FETexture::~FETexture()

@@ -19,49 +19,15 @@ FEScreenSpaceEffect::~FEScreenSpaceEffect()
 {
 }
 
-FETexture* FEScreenSpaceEffect::getFinalTexture()
+FETexture* FEScreenSpaceEffect::getInTexture()
 {
 	return finalTexture;
 }
 
-void FEScreenSpaceEffect::setFinalTexture(FETexture* FinalTexture)
+void FEScreenSpaceEffect::setInTexture(FETexture* InTexture)
 {
-	finalTexture = FinalTexture;
-}
-
-void FEScreenSpaceEffect::render()
-{
-	if (!finalTexture)
-		return;
-
-	for (size_t i = 0; i < stages.size(); i++)
-	{
-		stages[i]->shader->start();
-		stages[i]->shader->loadDataToGPU();
-		stages[i]->inTexture->bind(0);
-
-		FE_GL_ERROR(glBindVertexArray(screenQuad->getVaoID()));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, screenQuad->getVertexCount(), GL_UNSIGNED_INT, 0));
-		FE_GL_ERROR(glDisableVertexAttribArray(0));
-		FE_GL_ERROR(glBindVertexArray(0));
-
-		stages[i]->inTexture->unBind();
-		stages[i]->shader->stop();
-	}
-
-	screenQuadShader->start();
-	screenQuadShader->loadDataToGPU();
-	finalTexture->bind(0);
-
-	FE_GL_ERROR(glBindVertexArray(screenQuad->getVaoID()));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, screenQuad->getVertexCount(), GL_UNSIGNED_INT, 0));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glBindVertexArray(0));
-
-	finalTexture->unBind();
-	screenQuadShader->stop();
+	inTexture = InTexture;
+	finalTexture = new FETexture(InTexture->internalFormat, InTexture->format, InTexture->width, InTexture->height);
 }
 
 void FEScreenSpaceEffect::addStage(FEScreenSpaceEffectStage* newStage)
