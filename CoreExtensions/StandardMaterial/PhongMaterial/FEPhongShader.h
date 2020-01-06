@@ -34,7 +34,7 @@ in vec2 UV;
 in vec3 normal;
 in vec3 FragPosition;
 
-uniform sampler2D baseColorTexture;
+@Texture@ baseColorTexture;
 @LightPosition@
 @LightColor@
 @CameraPosition@

@@ -35,7 +35,7 @@ namespace FocalEngine
 		float getCpuTime();
 		float getGpuTime();
 
-		FEScreenSpaceEffect* createScreenSpaceEffect(int ScreenWidth = -1, int ScreenHeight = -1);
+		FEPostProcess* createPostProcess(int ScreenWidth = -1, int ScreenHeight = -1);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 

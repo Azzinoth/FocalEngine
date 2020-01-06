@@ -19,7 +19,7 @@ static const char* const FEScreenQuadFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
-uniform sampler2D quadTexture;
+@Texture@ quadTexture;
 
 void main(void)
 {
@@ -29,15 +29,20 @@ void main(void)
 
 namespace FocalEngine
 {
-	struct FEScreenSpaceEffectStage
+	enum FEPostProcessSources
 	{
-		FEScreenSpaceEffectStage(FETexture* InTexture, FEShader* Shader, FETexture* OutTexture)
-			: inTexture(InTexture), shader(Shader), outTexture(OutTexture) {};
+		FEPP_PREVIOUS_STAGE_RESULT0 = 0,
+		FEPP_SCENE_HDR_COLOR = 1,
+		FEPP_SCENE_DEPTH = 2,
+	};
 
-		FEScreenSpaceEffectStage(FETexture* InTexture, FEShader* Shader)
-			: inTexture(InTexture), shader(Shader), outTexture(nullptr) {};
+	struct FEPostProcessStage
+	{
+		FEPostProcessStage(int InTextureSource, FEShader* Shader);
+		FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader);
 
-		FETexture* inTexture = nullptr;
+		std::vector<int> inTextureSource;
+		std::vector<FETexture*> inTexture;
 		FEShader* shader = nullptr;
 		FETexture* outTexture = nullptr;
 	};
@@ -51,18 +56,18 @@ namespace FocalEngine
 	class FEResourceManager;
 	class FERenderer;
 
-	class FEScreenSpaceEffect
+	class FEPostProcess
 	{
 		friend FEResourceManager;
 		friend FERenderer;
 	public:
-		FEScreenSpaceEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
-		~FEScreenSpaceEffect();
+		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		~FEPostProcess();
 
 		FETexture* getInTexture();
 		void setInTexture(FETexture* InTexture);
 
-		void addStage(FEScreenSpaceEffectStage* newStage);
+		void addStage(FEPostProcessStage* newStage);
 	private:
 		int screenWidth, screenHeight;
 		FEMesh* screenQuad;
@@ -71,6 +76,6 @@ namespace FocalEngine
 		FETexture* finalTexture = nullptr;
 
 		FEFramebuffer* intermediateFramebuffer = nullptr;
-		std::vector<FEScreenSpaceEffectStage*> stages;
+		std::vector<FEPostProcessStage*> stages;
 	};
 }

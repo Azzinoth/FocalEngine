@@ -70,5 +70,13 @@ void FETexture::bind(const unsigned int textureUnit)
 void FETexture::unBind()
 {
 	if (defaultTextureUnit != -1)
-		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D + defaultTextureUnit, 0));
+	{
+		FE_GL_ERROR(glActiveTexture(GL_TEXTURE0 + defaultTextureUnit));
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, 0));
+	}
+}
+
+FETexture* FETexture::createSameFormatTexture()
+{
+	return new FETexture(internalFormat, format, width, height);
 }

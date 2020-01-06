@@ -16,13 +16,15 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void render(FEBasicCamera* currentCamera);
+		void addPostProcess(FEPostProcess* newPostProcess);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);
 
 		void standardFBInit(int WindowWidth, int WindowHeight);
 		FEFramebuffer* sceneToTextureFB = nullptr;
-		FEFramebuffer* sceneToTextureFB_DELETE = nullptr;
+
+		std::vector<FEPostProcess*> postProcessEffects;
 	};
 }
 

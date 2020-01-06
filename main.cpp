@@ -17,20 +17,93 @@ static const char* const MyFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
-uniform sampler2D inputTexture;
+@Texture@ sceneTexture;
+@Texture@ depthTexture;
 
 void main(void)
 {
-	if (texture(inputTexture, textureCoords).r > 0.7 || texture(inputTexture, textureCoords).g > 2.0 || texture(inputTexture, textureCoords).b > 2.0)
+	float depthValue = texture(depthTexture, textureCoords).r;
+	depthValue = (1 - depthValue) * 10;
+	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
+
+	if (depthValue > 0.1)
 	{
-		gl_FragColor = texture(inputTexture, textureCoords);
+		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
+		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
+
+		vec2 blurTextureCoords[11];
+		vec2 centerTexCoords = textureCoords; // * 0.5 + 0.5
+
+		for (int i = -5; i <= 5; i++)
+		{
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * 2);
+		}
+
+		gl_FragColor = vec4(0.0);
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
 	}
 	else
 	{
-		gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+		gl_FragColor = texture(sceneTexture, textureCoords);
 	}
 
-	//gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+)";
+
+static const char* const MyFS2 = R"(
+#version 400 core
+
+in vec2 textureCoords;
+@Texture@ sceneTexture;
+@Texture@ depthTexture;
+
+void main(void)
+{
+	float depthValue = texture(depthTexture, textureCoords).r;
+	depthValue = (1 - depthValue) * 10;
+	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
+
+	if (depthValue > 0.1)
+	{
+		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
+		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
+
+		vec2 blurTextureCoords[11];
+		vec2 centerTexCoords = textureCoords; // * 0.5 + 0.5
+
+		for (int i = -5; i <= 5; i++)
+		{
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * 2, 0.0);
+		}
+
+		gl_FragColor = vec4(0.0);
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		gl_FragColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+	}
+	else
+	{
+		gl_FragColor = texture(sceneTexture, textureCoords);
+	}
+
 }
 )";
 
@@ -93,14 +166,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	newEntity->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
-
 	scene.add(newEntity);
-
-	/*FocalEngine::FEEntity* testEntity4 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("plane"), new FocalEngine::FEPhongMaterial(nullptr));
-	testEntity4->setPosition(glm::vec3(0.0f, 2.0f, 0.0f));
-	testEntity4->setRotation(glm::vec3(90.0f, 0.0f, 0.0f));
-	testEntity4->setScale(glm::vec3(2.1f, 2.1f, 2.1f));
-	scene.add(testEntity4);*/
 
 	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
 	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
@@ -112,18 +178,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	lightBlob2->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(lightBlob2);
 
-	/*FocalEngine::FEFramebuffer* fb = new FocalEngine::FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT | FocalEngine::FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
-	testEntity4->material->addTexture(fb->getColorAttachment());*/
-
-	FocalEngine::FEScreenSpaceEffect* testEffect = engine.createScreenSpaceEffect();
-	//testEffect->setFinalTexture(fb->getColorAttachment());
-
+	FocalEngine::FEPostProcess* testEffect = engine.createPostProcess();
 	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
-	/*FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS2, MyFS2);*/
-
-	testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(nullptr, testshader));
-	/*testEffect->addStage(new FocalEngine::FEScreenSpaceEffectStage(testEffect->getFinalTexture(), testshader2));*/
-	//scene.add(testEffect);
+	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS, MyFS2);
+	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
+	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
+	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
+	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
+	renderer.addPostProcess(testEffect);
 
 	while (engine.isWindowOpened())
 	{

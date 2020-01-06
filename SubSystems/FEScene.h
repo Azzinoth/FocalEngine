@@ -15,12 +15,10 @@ namespace FocalEngine
 
 		void add(FEEntity* newEntity);
 		void add(FELight* newLight);
-		void add(FEScreenSpaceEffect* newScreenSpaceEffect);
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
 		std::unordered_map<std::string, FEEntity*> entityMap;
 		std::vector<FELight*> sceneLights;
-		std::vector<FEScreenSpaceEffect*> sceneScreenSpaceEffects;
 	};
 }

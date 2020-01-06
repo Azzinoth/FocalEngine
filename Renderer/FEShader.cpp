@@ -287,8 +287,15 @@ void FEShader::registerUniforms()
 			default:
 				break;
 		}
-		
 	}
+
+	start();
+	for (size_t i = 0; i < textureUniforms.size(); i++)
+	{
+		int temp = i;
+		loadScalar(textureUniforms[i].c_str(), temp);
+	}
+	stop();
 }
 
 GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
@@ -412,6 +419,18 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		parsedShaderText.replace(index, strlen(FE_LIGHT_COLOR_MACRO), "uniform vec3 FELightColor;");
 	}
 
+	index = parsedShaderText.find(FE_TEXTURE_MACRO);
+	while (index != size_t(-1))
+	{
+		size_t semicolonPos = parsedShaderText.find(";", index);
+		std::string textureName = parsedShaderText.substr(index + strlen(FE_TEXTURE_MACRO) + 1, semicolonPos - (index + strlen(FE_TEXTURE_MACRO)) - 1);
+
+		parsedShaderText.replace(index, strlen(FE_TEXTURE_MACRO), "uniform sampler2D");
+
+		textureUniforms.push_back(textureName);
+		index = parsedShaderText.find(FE_TEXTURE_MACRO);
+	}
+	
 	return parsedShaderText;
 }
 

@@ -1,14 +1,16 @@
 #include "FEBlurEffect.h"
 using namespace FocalEngine;
 
-FEBlurEffect::FEBlurEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, FETexture* sceneTexture)
-	: FEScreenSpaceEffect(ScreenQuad, ScreenWidth, ScreenHeight)
+FEBlurEffect::FEBlurEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight)
+	: FEPostProcess(ScreenQuad, ScreenWidth, ScreenHeight)
 {
-	setInTexture(sceneTexture);
-	addStage(new FEScreenSpaceEffectStage(sceneTexture, new FEShader(FEBlurEffectVS, FEBlurEffectThresholdFS)));
-	addStage(new FEScreenSpaceEffectStage(sceneTexture, new FEShader(FEBlurEffectVS, FEBlurEffectHorizontalFS)));
-	addStage(new FEScreenSpaceEffectStage(sceneTexture, new FEShader(FEBlurEffectVS, FEBlurEffectVerticalFS)));
-	addStage(new FEScreenSpaceEffectStage(sceneTexture, new FEShader(FEBlurEffectVS, FEBlurEffectFinalFS)));
+	addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, new FEShader(FEBlurEffectVS, FEBlurEffectThresholdFS)));
+	for (size_t i = 0; i < 4; i++)
+	{
+		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBlurEffectVS, FEBlurEffectHorizontalFS)));
+		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBlurEffectVS, FEBlurEffectVerticalFS)));
+	}
+	addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, new FEShader(FEBlurEffectVS, FEBlurEffectFinalFS)));
 }
 
 FEBlurEffect::~FEBlurEffect()

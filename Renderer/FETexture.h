@@ -11,12 +11,12 @@ namespace FocalEngine
 	};
 
 	class FEResourceManager;
-	class FEScreenSpaceEffect;
+	class FEPostProcess;
 
 	class FETexture
 	{
 		friend FEResourceManager;
-		friend FEScreenSpaceEffect;
+		friend FEPostProcess;
 	public:
 		FETexture();
 		FETexture(int Width, int Height);
@@ -30,6 +30,8 @@ namespace FocalEngine
 
 		virtual void bind(const unsigned int textureUnit = 0);
 		virtual void unBind();
+
+		FETexture* createSameFormatTexture();
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";

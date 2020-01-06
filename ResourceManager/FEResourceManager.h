@@ -30,6 +30,6 @@ namespace FocalEngine
 		FEMesh* plane;
 		FEMesh* cube;
 
-		FEScreenSpaceEffect* createScreenSpaceEffect(int ScreenWidth, int ScreenHeight);
+		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight);
 	};
 }

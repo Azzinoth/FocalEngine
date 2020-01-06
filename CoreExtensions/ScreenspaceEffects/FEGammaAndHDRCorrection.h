@@ -21,7 +21,7 @@ static const char* FEGammaAndHDRFS = R"(
 in vec2 textureCoords;
 uniform float FEExposure;
 uniform float FEGamma;
-uniform sampler2D inputTexture;
+@Texture@ inputTexture;
 
 void main(void)
 {
@@ -38,10 +38,10 @@ void main(void)
 
 namespace FocalEngine
 {
-	class FEGammaAndHDRCorrection : public FEScreenSpaceEffect
+	class FEGammaAndHDRCorrection : public FEPostProcess
 	{
 	public:
-		FEGammaAndHDRCorrection(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, FETexture* sceneTexture);
+		FEGammaAndHDRCorrection(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
 		~FEGammaAndHDRCorrection();
 
 	private:

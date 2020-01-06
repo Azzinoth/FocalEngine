@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Renderer/FEScreenSpaceEffect.h"
+#include "../../Renderer/FEPostProcess.h"
 
 static const char* const FEBlurEffectVS = R"(
 #version 400 core
@@ -19,7 +19,7 @@ static const char* FEBlurEffectThresholdFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
-uniform sampler2D inputTexture;
+@Texture@ inputTexture;
 
 void main(void)
 {
@@ -40,23 +40,32 @@ static const char* FEBlurEffectHorizontalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
-uniform sampler2D inputTexture;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
-
+@Texture@ inputTexture;
+					
 void main(void)
 {
-	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0); // gets size of single texel
-    vec3 result = texture(inputTexture, textureCoords).rgb * weight[0]; // current fragment's contribution
-    
-	float kernelMult = 2.0;
-    for(int i = 1; i < 10; ++i)
-    {
-		kernelMult += 0.3;
-        result += texture(inputTexture, textureCoords + vec2(tex_offset.x * i * kernelMult, 0.0)).rgb * weight[i];
-        result += texture(inputTexture, textureCoords - vec2(tex_offset.x * i * kernelMult, 0.0)).rgb * weight[i];
-    }
+	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0);
 
-	gl_FragColor = vec4(result, 1.0);
+	vec2 blurTextureCoords[11];
+	vec2 centerTexCoords = textureCoords; // * 0.5 + 0.5
+
+	for (int i = -5; i <= 5; i++)
+	{
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * 4);
+	}
+
+	gl_FragColor = vec4(0.0);
+	gl_FragColor += texture(inputTexture, blurTextureCoords[0]) * 0.0093;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[1]) * 0.028002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[2]) * 0.065984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[3]) * 0.121703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[4]) * 0.175713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[5]) * 0.198596;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[6]) * 0.175713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[7]) * 0.121703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[8]) * 0.065984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[9]) * 0.028002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[10]) * 0.0093;
 }
 )";
 
@@ -64,34 +73,42 @@ static const char* FEBlurEffectVerticalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
-uniform sampler2D inputTexture;
-uniform float weight[5] = float[] (0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216);
+@Texture@ inputTexture;
+
 
 void main(void)
 {
-	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0); // gets size of single texel
-    vec3 result = texture(inputTexture, textureCoords).rgb * weight[0]; // current fragment's contribution
-    
-	float kernelMult = 2.0;
-    for(int i = 1; i < 10; ++i)
-    {
-		kernelMult += 0.3;
-        result += texture(inputTexture, textureCoords + vec2(0.0, tex_offset.y * i * kernelMult)).rgb * weight[i];
-        result += texture(inputTexture, textureCoords - vec2(0.0, tex_offset.y * i * kernelMult)).rgb * weight[i];
-    }
+	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0);
 
-	gl_FragColor = vec4(result, 1.0);
+	vec2 blurTextureCoords[11];
+	vec2 centerTexCoords = textureCoords;// * 0.5 + 0.5
+
+	for (int i = -5; i <= 5; i++)
+	{
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * 4, 0.0);
+	}
+
+	gl_FragColor = vec4(0.0);
+	gl_FragColor += texture(inputTexture, blurTextureCoords[0]) * 0.0093;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[1]) * 0.028002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[2]) * 0.065984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[3]) * 0.121703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[4]) * 0.175713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[5]) * 0.198596;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[6]) * 0.175713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[7]) * 0.121703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[8]) * 0.065984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[9]) * 0.028002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[10]) * 0.0093;
 }
 )";
 
 static const char* FEBlurEffectFinalFS = R"(
-#version 420 core
+#version 400 core
 
 in vec2 textureCoords;
-layout (binding = 0) uniform sampler2D inputTexture;
-layout (binding = 1) uniform sampler2D otherTexture;
-//uniform sampler2D inputTexture;
-//uniform sampler2D otherTexture;
+@Texture@ inputTexture;
+@Texture@ otherTexture;
 
 void main(void)
 {
@@ -101,10 +118,10 @@ void main(void)
 
 namespace FocalEngine
 {
-	class FEBlurEffect : public FEScreenSpaceEffect
+	class FEBlurEffect : public FEPostProcess
 	{
 	public:
-		FEBlurEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, FETexture* sceneTexture);
+		FEBlurEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
 		~FEBlurEffect();
 
 	private:

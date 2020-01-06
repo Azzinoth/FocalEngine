@@ -82,12 +82,13 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	currentCamera = new FEFreeCamera(window);
 	currentCamera->setAspectRatio(float(width) / float(height));
 
+	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
 	FE_GL_ERROR(glEnable(GL_CULL_FACE));
 	FE_GL_ERROR(glCullFace(GL_BACK));
 
 	RENDERER_OBJ.standardFBInit(windowW, windowH);
-	SCENE_OBJ.add(new FEBlurEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH, RENDERER_OBJ.sceneToTextureFB->getColorAttachment()));
-	SCENE_OBJ.add(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH, RENDERER_OBJ.sceneToTextureFB->getColorAttachment()));
+	RENDERER_OBJ.addPostProcess(new FEBlurEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
+	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
 }
 
 void FEngine::setWindowCaption(const char* text)
@@ -173,7 +174,7 @@ float FEngine::getGpuTime()
 	return gpuTime;
 }
 
-FEScreenSpaceEffect* FEngine::createScreenSpaceEffect(int ScreenWidth, int ScreenHeight)
+FEPostProcess* FEngine::createPostProcess(int ScreenWidth, int ScreenHeight)
 {
 	if (ScreenWidth < 2 || ScreenHeight < 2)
 	{
@@ -181,5 +182,5 @@ FEScreenSpaceEffect* FEngine::createScreenSpaceEffect(int ScreenWidth, int Scree
 		ScreenHeight = windowH;
 	}
 
-	return RESOURCE_MANAGER_OBJ.createScreenSpaceEffect(ScreenWidth, ScreenHeight);
+	return RESOURCE_MANAGER_OBJ.createPostProcess(ScreenWidth, ScreenHeight);
 }

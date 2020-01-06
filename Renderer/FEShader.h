@@ -16,6 +16,8 @@
 #define FE_LIGHT_POSITION_MACRO "@LightPosition@"
 #define FE_LIGHT_COLOR_MACRO "@LightColor@"
 
+#define FE_TEXTURE_MACRO "@Texture@"
+
 namespace FocalEngine
 {
 	enum FEShaderParamType
@@ -71,13 +73,13 @@ namespace FocalEngine
 
 	class FEMaterial;
 	class FERenderer;
-	class FEScreenSpaceEffect;
+	class FEPostProcess;
 
 	class FEShader
 	{
 		friend FEMaterial;
 		friend FERenderer;
-		friend FEScreenSpaceEffect;
+		friend FEPostProcess;
 	public:
 		FEShader(const char* vertexText, const char* fragmentText);
 		~FEShader();
@@ -112,5 +114,6 @@ namespace FocalEngine
 		void cleanUp();
 		void bindAttributes();
 		GLuint getUniformLocation(const char* name);
+		std::vector<std::string> textureUniforms;
 	};
 }

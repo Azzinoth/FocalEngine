@@ -296,7 +296,7 @@ FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
 	return rawObjDataToMesh();
 }
 
-FEScreenSpaceEffect* FEResourceManager::createScreenSpaceEffect(int ScreenWidth, int ScreenHeight)
+FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight)
 {
-	return new FEScreenSpaceEffect(getSimpleMesh("plane"), ScreenWidth, ScreenHeight);
+	return new FEPostProcess(getSimpleMesh("plane"), ScreenWidth, ScreenHeight);
 }
