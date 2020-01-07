@@ -2,11 +2,16 @@
 
 #include "FETime.h"
 
-#include "glew2/include/GL/glew.h"
-#include "glew2/include/GL/wglew.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#include "GL/glew.h"
+#include "GL/wglew.h"
 
 #include <GLFW/glfw3.h>
 #include <GL/GL.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>

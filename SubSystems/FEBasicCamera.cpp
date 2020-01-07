@@ -154,3 +154,13 @@ void FEBasicCamera::setExposure(float newExposure)
 {
 	exposure = newExposure;
 }
+
+bool FEBasicCamera::getIsInputActive()
+{
+	return isInputActive;
+}
+
+void FEBasicCamera::setIsInputActive(bool isActive)
+{
+	isInputActive = isActive;
+}

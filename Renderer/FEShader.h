@@ -94,9 +94,6 @@ namespace FocalEngine
 		void loadVector(const char* uniformName, glm::vec4& vector);
 		void loadMatrix(const char* uniformName, glm::mat4& matrix);
 
-		std::string parseShaderForMacro(const char* shaderText);
-		void registerUniforms();
-
 		virtual void loadDataToGPU();
 		virtual void addParams(std::vector<FEShaderParam> Params);
 		virtual void addParams(FEShaderParam Param);
@@ -115,5 +112,8 @@ namespace FocalEngine
 		void bindAttributes();
 		GLuint getUniformLocation(const char* name);
 		std::vector<std::string> textureUniforms;
+
+		std::string parseShaderForMacro(const char* shaderText);
+		void registerUniforms();
 	};
 }

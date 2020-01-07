@@ -152,3 +152,11 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ********* SCREEN SPACE EFFECTS END *********
 
 }
+
+FEPostProcess* FERenderer::getPostProcessEffect(int index)
+{
+	if (index < 0 || index >= (int)postProcessEffects.size())
+		return nullptr;
+
+	return postProcessEffects[index];
+}

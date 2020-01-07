@@ -28,10 +28,14 @@ bool FEngine::isWindowOpened()
 
 void FEngine::beginFrame(bool internalCall)
 {
-	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
+	if (!internalCall) TIME_OBJ.beginTimeStamp();
+
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	if (!internalCall) TIME_OBJ.beginTimeStamp();
+	ImGui::GetIO().DeltaTime = 1.0f / 60.0f;
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 }
 
 void FEngine::render(bool internalCall)
@@ -45,6 +49,8 @@ void FEngine::render(bool internalCall)
 void FEngine::endFrame(bool internalCall)
 {
 	if (!internalCall) TIME_OBJ.beginTimeStamp();
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
 	glfwPollEvents();
 	if (!internalCall) gpuTime = TIME_OBJ.endTimeStamp();
@@ -89,6 +95,20 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER_OBJ.standardFBInit(windowW, windowH);
 	RENDERER_OBJ.addPostProcess(new FEBlurEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
 	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); 
+	unsigned char* tex_pixels = NULL;
+	int tex_w, tex_h;
+	io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);
+
+	io.DisplaySize = ImVec2(float(windowW), float(windowH));
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init("#version 410");
 }
 
 void FEngine::setWindowCaption(const char* text)

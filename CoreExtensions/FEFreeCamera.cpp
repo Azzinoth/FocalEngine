@@ -75,6 +75,9 @@ void FEFreeCamera::setCursorToCenter()
 
 void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 {
+	if (!isInputActive)
+		return;
+
 	int mouseX = int(xpos);
 	int mouseY = int(ypos);
 
@@ -109,6 +112,9 @@ void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 
 void FEFreeCamera::keyboardInput(int key, int scancode, int action, int mods)
 {
+	if (!isInputActive)
+		return;
+
 	if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
 	{
 		leftKeyPreesed = true;

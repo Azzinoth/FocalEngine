@@ -20,12 +20,13 @@ static const char* FEBlurEffectThresholdFS = R"(
 
 in vec2 textureCoords;
 @Texture@ inputTexture;
+uniform float thresholdBrightness;
 
 void main(void)
 {
 	vec3 color = texture(inputTexture, textureCoords).rgb;
     float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-    if (brightness > 1.0)
+    if (brightness > thresholdBrightness)
 	{
 		gl_FragColor = vec4(color, 1.0);
 	}
@@ -74,7 +75,6 @@ static const char* FEBlurEffectVerticalFS = R"(
 
 in vec2 textureCoords;
 @Texture@ inputTexture;
-
 
 void main(void)
 {

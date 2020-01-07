@@ -68,6 +68,9 @@ namespace FocalEngine
 		void setInTexture(FETexture* InTexture);
 
 		void addStage(FEPostProcessStage* newStage);
+
+		// to-do: move to private !!!
+		std::vector<FEPostProcessStage*> stages;
 	private:
 		int screenWidth, screenHeight;
 		FEMesh* screenQuad;
@@ -76,6 +79,6 @@ namespace FocalEngine
 		FETexture* finalTexture = nullptr;
 
 		FEFramebuffer* intermediateFramebuffer = nullptr;
-		std::vector<FEPostProcessStage*> stages;
+		
 	};
 }

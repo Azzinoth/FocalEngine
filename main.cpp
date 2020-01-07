@@ -108,6 +108,7 @@ void main(void)
 )";
 
 FocalEngine::FEEntity* testEntity2;
+bool isCameraInputActive = true;
 
 void mouseButtonCallback(int button, int action, int mods)
 {
@@ -126,8 +127,11 @@ void mouseMoveCallback(double xpos, double ypos)
 
 void keyButtonCallback(int key, int scancode, int action, int mods)
 {
-	int y = 0;
-	y++;
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	{
+		isCameraInputActive = !isCameraInputActive;
+		FocalEngine::FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+	}
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
@@ -161,7 +165,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	scene.add(testEntity3);
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
-	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_2K_Albedo.png");
+	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Albedo.png");
 	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), new FocalEngine::FEPhongMaterial(rockTexture));
 	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -192,6 +196,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		engine.beginFrame();
 
 		engine.render();
+
+		FocalEngine::FEPostProcess* bloom = renderer.getPostProcessEffect(0);
+
+		float thresholdBrightness = *(float*)bloom->stages[0]->shader->getParam("thresholdBrightness").data;
+		ImGui::SliderFloat("thresholdBrightness", &thresholdBrightness, 0.0f, 4.0f);
+		bloom->stages[0]->shader->getParam("thresholdBrightness").updateData(thresholdBrightness);
 
 		engine.endFrame();
 

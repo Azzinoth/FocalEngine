@@ -43,9 +43,14 @@ namespace FocalEngine
 
 		virtual void move(float deltaTime = 0.0f) {};
 
+		virtual bool getIsInputActive();
+		virtual void setIsInputActive(bool isActive);
+
 		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
 		virtual void mouseMoveInput(double xpos, double ypos) {};
 	protected:
+		bool isInputActive = true;
+
 		float fov = 70.0f;
 		float nearPlane = 0.1f;
 		float farPlane = 5000.0f;
