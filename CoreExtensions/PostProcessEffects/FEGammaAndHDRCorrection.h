@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FEBlurEffect.h"
+#include "FEBloomEffect.h"
 
 static const char* const FEGammaAndHDRVS = R"(
 #version 400 core

@@ -1,6 +1,11 @@
 #include "FEShader.h"
 using namespace FocalEngine;
 
+FEShaderParam::FEShaderParam()
+{
+	data = nullptr;
+}
+
 FEShaderParam::FEShaderParam(int Data, std::string Name)
 {
 	data = new int(Data);
@@ -155,6 +160,9 @@ void FEShaderParam::operator=(const FEShaderParam& assign)
 
 FEShaderParam::~FEShaderParam()
 {
+	if (data == nullptr)
+		return;
+
 	switch (type)
 	{
 		case FE_INT_SCALAR_UNIFORM:
@@ -517,6 +525,56 @@ void FEShader::loadDataToGPU()
 			default:
 				break;
 		}
+	}
+
+	auto iterator = userParams.begin();
+	while (iterator != userParams.end())
+	{
+		if (iterator->second.data == nullptr)
+			continue;
+
+		switch (iterator->second.type)
+		{
+			case FE_INT_SCALAR_UNIFORM:
+			{
+				loadScalar(iterator->second.getParamName().c_str(), *(int*)iterator->second.data);
+				break;
+			}
+
+			case FE_FLOAT_SCALAR_UNIFORM:
+			{
+				loadScalar(iterator->second.getParamName().c_str(), *(float*)iterator->second.data);
+				break;
+			}
+
+			case FE_VECTOR2_UNIFORM:
+			{
+				loadVector(iterator->second.getParamName().c_str(), *(glm::vec2*)iterator->second.data);
+				break;
+			}
+
+			case FE_VECTOR3_UNIFORM:
+			{
+				loadVector(iterator->second.getParamName().c_str(), *(glm::vec3*)iterator->second.data);
+				break;
+			}
+
+			case FE_VECTOR4_UNIFORM:
+			{
+				loadVector(iterator->second.getParamName().c_str(), *(glm::vec4*)iterator->second.data);
+				break;
+			}
+
+			case FE_MAT4_UNIFORM:
+			{
+				loadMatrix(iterator->second.getParamName().c_str(), *(glm::mat4*)iterator->second.data);
+				break;
+			}
+
+			default:
+				break;
+		}
+		iterator++;
 	}
 }
 

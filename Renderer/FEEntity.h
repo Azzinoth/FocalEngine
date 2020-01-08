@@ -5,6 +5,7 @@
 
 #include "FEMesh.h"
 #include "FEFramebuffer.h"
+//#include "FEMaterial.h"
 #include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
 #include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
 
@@ -18,8 +19,8 @@ namespace FocalEngine
 		FEEntity(FEMesh* Mesh);
 		~FEEntity();
 
-		FEMesh* mesh = nullptr; // need some basic mesh ?
-		FEMaterial* material = nullptr; // need some basic material
+		FEMesh* mesh = nullptr;
+		FEMaterial* material = nullptr;
 
 		glm::vec3 getPosition();
 		glm::vec3 getRotation();

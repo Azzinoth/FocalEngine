@@ -300,3 +300,22 @@ FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenH
 {
 	return new FEPostProcess(getSimpleMesh("plane"), ScreenWidth, ScreenHeight);
 }
+
+FEMaterial* FEResourceManager::createMaterial(std::string Name)
+{
+	short nextID = short(materials.size());
+	if (Name.size())
+	{
+		// if there is material with that name already
+		if (materials.find(Name) != materials.end())
+			return nullptr;
+	}
+	else
+	{
+		Name = "material_" + std::to_string(nextID);
+	}
+
+	materials[Name] = new FEMaterial();
+
+	return materials[Name];
+}

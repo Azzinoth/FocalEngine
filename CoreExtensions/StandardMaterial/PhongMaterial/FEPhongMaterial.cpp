@@ -4,8 +4,7 @@ using namespace FocalEngine;
 FEPhongMaterial::FEPhongMaterial(FETexture* baseColorTexture)
 {
 	addTexture(baseColorTexture);
-	
-	shaders.push_back(new FEPhongShader());
+	shader = new FEPhongShader();
 }
 
 FEPhongMaterial::~FEPhongMaterial()

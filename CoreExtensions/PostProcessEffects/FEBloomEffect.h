@@ -2,7 +2,7 @@
 
 #include "../../Renderer/FEPostProcess.h"
 
-static const char* const FEBlurEffectVS = R"(
+static const char* const FEBloomEffectVS = R"(
 #version 400 core
 
 @In_Position@
@@ -15,7 +15,7 @@ void main(void)
 }
 )";
 
-static const char* FEBlurEffectThresholdFS = R"(
+static const char* FEBloomEffectThresholdFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -37,7 +37,7 @@ void main(void)
 }
 )";
 
-static const char* FEBlurEffectHorizontalFS = R"(
+static const char* FEBloomEffectHorizontalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -70,7 +70,7 @@ void main(void)
 }
 )";
 
-static const char* FEBlurEffectVerticalFS = R"(
+static const char* FEBloomEffectVerticalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -103,7 +103,7 @@ void main(void)
 }
 )";
 
-static const char* FEBlurEffectFinalFS = R"(
+static const char* FEBloomEffectFinalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -118,11 +118,11 @@ void main(void)
 
 namespace FocalEngine
 {
-	class FEBlurEffect : public FEPostProcess
+	class FEBloomEffect : public FEPostProcess
 	{
 	public:
-		FEBlurEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
-		~FEBlurEffect();
+		FEBloomEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		~FEBloomEffect();
 
 	private:
 

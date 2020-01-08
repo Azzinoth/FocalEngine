@@ -12,15 +12,17 @@
 namespace FocalEngine
 {
 	class FERenderer;
+	class FEResourceManager;
 
 	class FEMaterial
 	{
 		friend FERenderer;
+		friend FEResourceManager;
 	public:
 		FEMaterial();
 		~FEMaterial();
 
-		std::vector<FEShader*> shaders;
+		FEShader* shader;
 		
 		virtual void bind();
 		virtual void unBind();
@@ -33,7 +35,19 @@ namespace FocalEngine
 		void setParam(std::string name, glm::mat4 newData);
 
 		void addTexture(FETexture* newTexture);
+
+		short getID();
+
+		bool addParameter(FEShaderParam newParameter);
+		std::vector<std::string> getParameterList();
+		FEShaderParam* getParametr(std::string name);
+
+		std::string getName();
+		void setName(std::string newName);
 	private:
+		short id = -1;
+		std::string name;
+
 		std::vector<FETexture*> textures;
 		glm::vec3 diffuseColor;
 	};

@@ -19,6 +19,7 @@ static const char* const MyFS = R"(
 in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
+uniform float depthThreshold;
 
 void main(void)
 {
@@ -26,7 +27,7 @@ void main(void)
 	depthValue = (1 - depthValue) * 10;
 	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
 
-	if (depthValue > 0.1)
+	if (depthValue > depthThreshold)
 	{
 		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
 		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
@@ -66,6 +67,7 @@ static const char* const MyFS2 = R"(
 in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
+uniform float depthThreshold;
 
 void main(void)
 {
@@ -73,7 +75,7 @@ void main(void)
 	depthValue = (1 - depthValue) * 10;
 	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
 
-	if (depthValue > 0.1)
+	if (depthValue > depthThreshold)
 	{
 		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
 		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
@@ -115,8 +117,8 @@ void mouseButtonCallback(int button, int action, int mods)
 	//dynamic_cast<FocalEngine::FEStandardMaterial*>(testEntity2->material)->setBaseColor(glm::vec3(0.1f, 0.6f, 0.1f));
 	testEntity2->material->setParam("baseColor", glm::vec3(0.1f, 0.6f, 0.1f));
 
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	engine.getCamera()->setExposure(engine.getCamera()->getExposure() - 0.01f);
+	//FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	//engine.getCamera()->setExposure(engine.getCamera()->getExposure() - 0.01f);
 }
 
 void mouseMoveCallback(double xpos, double ypos)
@@ -134,29 +136,105 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 	}
 }
 
+void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
+{
+	switch (param->type)
+	{
+		case FocalEngine::FE_INT_SCALAR_UNIFORM:
+		{
+			int iData = *(int*)param->data;
+			ImGui::SliderInt(param->paramName.c_str(), &iData, 0, 10);
+			param->updateData(iData);
+			break;
+		}
+
+		case FocalEngine::FE_FLOAT_SCALAR_UNIFORM:
+		{
+			float fData = *(float*)param->data;
+			ImGui::SliderFloat(param->paramName.c_str(), &fData, 0.0f, 10.0f);
+			param->updateData(fData);
+			break;
+		}
+
+		case FocalEngine::FE_VECTOR2_UNIFORM:
+		{
+			glm::vec2 color = *(glm::vec2*)param->data;
+			ImGui::ColorEdit3(param->paramName.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FocalEngine::FE_VECTOR3_UNIFORM:
+		{
+			glm::vec3 color = *(glm::vec3*)param->data;
+			ImGui::ColorEdit3(param->paramName.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FocalEngine::FE_VECTOR4_UNIFORM:
+		{
+			glm::vec4 color = *(glm::vec4*)param->data;
+			ImGui::ColorEdit3(param->paramName.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FocalEngine::FE_MAT4_UNIFORM:
+		{
+			//loadMatrix(iterator->second.getParamName().c_str(), *(glm::mat4*)iterator->second.data);
+			break;
+		}
+
+		default:
+			break;
+	}
+}
+
+void displayMaterialPrameters(FocalEngine::FEMaterial* material)
+{
+	std::string text = "Parameters of " + material->getName() + " :";
+	if (ImGui::CollapsingHeader(text.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+		ImGui::PushID(0); // to create scopes and avoid ID conflicts within the same Window.
+		std::vector<std::string> params = material->getParameterList();
+		FocalEngine::FEShaderParam* param;
+		for (size_t i = 0; i < params.size(); i++)
+		{
+			param = material->getParametr(params[i]);
+
+			displayMaterialPrameter(param);
+		}
+		ImGui::PopID();
+	}
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
 	engine.createWindow();
+	engine.setKeyCallback(keyButtonCallback);
+	engine.setMouseButtonCallback(mouseButtonCallback);
+	engine.setMouseMoveCallback(mouseMoveCallback);
+
 	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+
+
+	FocalEngine::FESolidColorMaterial* testMat = new FocalEngine::FESolidColorMaterial();
+	testMat->setName("cubeMaterial");
 	
-	FocalEngine::FEEntity* testEntity = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
+	FocalEngine::FEEntity* testEntity = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"), testMat);
 	testEntity->setPosition(glm::vec3(-1.5f, 0.0f, -10.0f));
 	testEntity->setRotation(glm::vec3(0.0f, 0.0f, 30.0f));
 
-	testEntity2 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
+	testEntity2 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"), testMat);
 	testEntity2->setPosition(glm::vec3(1.5f, 0.0f, 0.0f));
 
 	scene.add(testEntity);
 	scene.add(testEntity2);
 
-	FocalEngine::FERenderer& renderer1 = FocalEngine::FERenderer::getInstance();
-
-	engine.setKeyCallback(keyButtonCallback);
-	engine.setMouseButtonCallback(mouseButtonCallback);
-	engine.setMouseMoveCallback(mouseMoveCallback);
+	
 
 	FocalEngine::FEEntity* testEntity3 = new FocalEngine::FEEntity(resourceManager.getSimpleMesh("cube"));
 	testEntity3->setPosition(glm::vec3(-1.5f, -7.0f, -10.0f));
@@ -166,7 +244,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
 	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Albedo.png");
-	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), new FocalEngine::FEPhongMaterial(rockTexture));
+	
+
+	FocalEngine::FEEntity* newEntity = new FocalEngine::FEEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), /*newMat*/ new FocalEngine::FEPhongMaterial(rockTexture));
+
+
+
+	
 	newEntity->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	newEntity->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	newEntity->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
@@ -191,6 +275,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
 	renderer.addPostProcess(testEffect);
 
+	FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
+	testMat->addParameter(testParam);
+
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
@@ -199,9 +286,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		FocalEngine::FEPostProcess* bloom = renderer.getPostProcessEffect(0);
 
+		float exposure = engine.getCamera()->getExposure();
+		ImGui::SliderFloat("cameraExposure", &exposure, 0.0f, 4.0f);
+		engine.getCamera()->setExposure(exposure);
+
 		float thresholdBrightness = *(float*)bloom->stages[0]->shader->getParam("thresholdBrightness").data;
 		ImGui::SliderFloat("thresholdBrightness", &thresholdBrightness, 0.0f, 4.0f);
 		bloom->stages[0]->shader->getParam("thresholdBrightness").updateData(thresholdBrightness);
+
+		float depthThreshold = *(float*)testEffect->stages[1]->shader->getParam("depthThreshold").data;
+		ImGui::SliderFloat("depthThreshold", &depthThreshold, 0.0f, 2.0f);
+		testEffect->stages[0]->shader->getParam("depthThreshold").updateData(depthThreshold);
+		testEffect->stages[1]->shader->getParam("depthThreshold").updateData(depthThreshold);
+
+		displayMaterialPrameters(testMat);
+		/*FocalEngine::FEShaderParam* param = testMat->getParametr("FESpecularStrength");
+		float specularStrength = *(float*)param->data;
+		ImGui::SliderFloat("SpecularStrength", &specularStrength, 0.0f, 4.0f);
+		param->updateData(specularStrength);
+
+		param = testMat->getParametr("baseColor");
+		glm::vec3 color = *(glm::vec3*)param->data;
+		ImGui::ColorEdit3("baseColor", &color.x);
+		param->updateData(color);*/
 
 		engine.endFrame();
 

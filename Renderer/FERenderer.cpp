@@ -70,8 +70,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		auto entity = it->second;
 
 		entity->material->bind();
-		loadStandardParams(entity->material->shaders[0], currentCamera, entity);
-		entity->material->shaders[0]->loadDataToGPU();
+		loadStandardParams(entity->material->shader, currentCamera, entity);
+		entity->material->shader->loadDataToGPU();
 		entity->render();
 		entity->material->unBind();
 

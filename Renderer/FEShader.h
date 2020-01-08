@@ -42,7 +42,7 @@ namespace FocalEngine
 
 	struct FEShaderParam
 	{
-		FEShaderParam() {};
+		FEShaderParam();
 		FEShaderParam(int Data, std::string Name);
 		FEShaderParam(float Data, std::string Name);
 		FEShaderParam(glm::vec2 Data, std::string Name);
@@ -106,6 +106,7 @@ namespace FocalEngine
 		int vertexAttributes = 0;
 
 		std::vector<FEShaderParam> params;
+		std::unordered_map<std::string, FEShaderParam> userParams;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
 		void cleanUp();

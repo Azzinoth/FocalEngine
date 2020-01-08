@@ -1,16 +1,15 @@
 #include "FEMaterial.h"
 using namespace FocalEngine;
 
-FEMaterial::FEMaterial()
+FEMaterial::FEMaterial(/*short ID, std::string Name*/)
 {
+	/*id = ID;
+	name = Name;*/
 }
 
 FEMaterial::~FEMaterial()
 {
-	for (size_t i = 0; i < shaders.size(); i++)
-	{
-		delete shaders[i];
-	}
+	delete shader;
 
 	for (size_t i = 0; i < textures.size(); i++)
 	{
@@ -20,22 +19,18 @@ FEMaterial::~FEMaterial()
 
 void FEMaterial::bind()
 {
-	if (shaders.size() > 0)
-		shaders[0]->start();
+	shader->start();
 
 	for (size_t i = 0; i < textures.size(); i++)
 	{
 		if (textures[i] != nullptr)
 			textures[i]->bind(i);
-		/*glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D, textures[i]->getTextureID());*/
 	}
 }
 
 void FEMaterial::unBind()
 {
-	if (shaders.size() > 0)
-		shaders[0]->stop();
+	shader->stop();
 
 	for (size_t i = 0; i < textures.size(); i++)
 	{
@@ -46,32 +41,32 @@ void FEMaterial::unBind()
 
 void FEMaterial::setParam(std::string name, int newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::setParam(std::string name, float newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::setParam(std::string name, glm::vec2 newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::setParam(std::string name, glm::vec3 newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::setParam(std::string name, glm::vec4 newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::setParam(std::string name, glm::mat4 newData)
 {
-	shaders[0]->getParam(name).updateData(newData);
+	shader->getParam(name).updateData(newData);
 }
 
 void FEMaterial::addTexture(FETexture* newTexture)
@@ -80,4 +75,49 @@ void FEMaterial::addTexture(FETexture* newTexture)
 		return;
 
 	textures.push_back(newTexture);
+}
+
+short FEMaterial::getID()
+{
+	return id;
+}
+
+bool FEMaterial::addParameter(FEShaderParam newParameter)
+{
+	if (shader->userParams.find(newParameter.paramName) != shader->userParams.end())
+		return false;
+
+	shader->userParams[newParameter.paramName] = newParameter;
+}
+
+std::vector<std::string> FEMaterial::getParameterList()
+{
+	std::vector<std::string> result;
+
+	auto iterator = shader->userParams.begin();
+	while (iterator != shader->userParams.end())
+	{
+		result.push_back(iterator->second.getParamName());
+		iterator++;
+	}
+
+	return result;
+}
+
+FEShaderParam* FEMaterial::getParametr(std::string name)
+{
+	if (shader->userParams.find(name) == shader->userParams.end())
+		return nullptr;
+
+	return &shader->userParams[name];
+}
+
+std::string FEMaterial::getName()
+{
+	return name;
+}
+
+void FEMaterial::setName(std::string newName)
+{
+	name = newName;
 }

@@ -3,6 +3,10 @@
 #include "Renderer\FERenderer.h"
 #include "SubSystems\FEInput.h"
 
+// CoreExtensions
+//#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
+//#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
+
 namespace FocalEngine
 {
 	class FEngine

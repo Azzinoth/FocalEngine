@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../CoreExtensions/ScreenspaceEffects/FEGammaAndHDRCorrection.h"
+#include "../CoreExtensions/PostProcessEffects/FEGammaAndHDRCorrection.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng.h"
 
@@ -25,11 +25,14 @@ namespace FocalEngine
 		FEMesh* getSimpleMesh(std::string meshName);
 
 		FEMesh* loadObjMeshData(const char* fileName);
+
+		FEMaterial* createMaterial(std::string Name = "");
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 		FEMesh* plane;
 		FEMesh* cube;
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight);
+		std::unordered_map<std::string, FEMaterial*> materials;
 	};
 }
