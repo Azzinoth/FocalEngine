@@ -1,16 +1,11 @@
 #include "FEEntity.h"
 using namespace FocalEngine;
 
-FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material)
+FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 {
 	mesh = Mesh;
 	material = Material;
-}
-
-FEEntity::FEEntity(FEMesh* Mesh)
-{
-	mesh = Mesh;
-	material = new FESolidColorMaterial();
+	name = Name;
 }
 
 FEEntity::~FEEntity()
@@ -97,4 +92,14 @@ bool FEEntity::isVisible()
 void FEEntity::setVisibility(bool isVisible)
 {
 	visible = isVisible;
+}
+
+std::string FEEntity::getName()
+{
+	return name;
+}
+
+void FEEntity::setName(std::string newName)
+{
+	name = newName;
 }

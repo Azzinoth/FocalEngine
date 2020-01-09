@@ -5,9 +5,8 @@
 
 #include "FEMesh.h"
 #include "FEFramebuffer.h"
-//#include "FEMaterial.h"
-#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
-#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
+//#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
+//#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
 
 namespace FocalEngine
 {
@@ -15,8 +14,7 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 	public:
-		FEEntity(FEMesh* Mesh, FEMaterial* Material);
-		FEEntity(FEMesh* Mesh);
+		FEEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
 		~FEEntity();
 
 		FEMesh* mesh = nullptr;
@@ -34,7 +32,12 @@ namespace FocalEngine
 
 		bool isVisible();
 		void setVisibility(bool isVisible);
+
+		std::string getName();
+		void setName(std::string newName);
 	private:
+		std::string name;
+
 		glm::vec3 position = glm::vec3();
 		glm::vec3 rotation = glm::vec3();
 		glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);

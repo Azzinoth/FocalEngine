@@ -2,10 +2,10 @@
 using namespace FocalEngine;
 
 FEBloomEffect::FEBloomEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight)
-	: FEPostProcess(ScreenQuad, ScreenWidth, ScreenHeight)
+	: FEPostProcess(ScreenQuad, ScreenWidth, ScreenHeight, "Bloom")
 {
 	addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, new FEShader(FEBloomEffectVS, FEBloomEffectThresholdFS)));
-	stages[0]->shader->getParam("thresholdBrightness").updateData(1.0f);
+	stages[0]->shader->getParameter("thresholdBrightness")->updateData(1.0f);
 
 	for (size_t i = 0; i < 4; i++)
 	{

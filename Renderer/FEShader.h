@@ -22,23 +22,27 @@ namespace FocalEngine
 {
 	enum FEShaderParamType
 	{
-		FE_INT_SCALAR_UNIFORM = 0,
+		FE_INT_SCALAR_UNIFORM   = 0,
 		FE_FLOAT_SCALAR_UNIFORM = 1,
-		FE_VECTOR2_UNIFORM = 2,
-		FE_VECTOR3_UNIFORM = 3,
-		FE_VECTOR4_UNIFORM = 4,
-		FE_MAT4_UNIFORM = 5
+		FE_VECTOR2_UNIFORM      = 2,
+		FE_VECTOR3_UNIFORM      = 3,
+		FE_VECTOR4_UNIFORM      = 4,
+		FE_MAT4_UNIFORM         = 5
 	};
 
 	enum FEVertexAttributes
 	{
-		FE_POSITION = 1,
-		FE_COLOR = 2,
-		FE_NORMAL = 4,
-		FE_TANGENTS = 8,
-		FE_UV = 16,
-		FE_INDEX = 32,
+		FE_POSITION = 1 << 0,
+		FE_COLOR    = 1 << 1,
+		FE_NORMAL   = 1 << 2,
+		FE_TANGENTS = 1 << 3,
+		FE_UV       = 1 << 4,
+		FE_INDEX    = 1 << 5,
 	};
+
+	static std::vector<std::string> FEStandardUniforms = 
+	{ "FEPosition", "FEColor", "FENormal", "FETangent", "FETexCoord", "FEWorldMatrix", "FEViewMatrix",
+	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor" };
 
 	struct FEShaderParam
 	{
@@ -63,12 +67,14 @@ namespace FocalEngine
 		void updateData(glm::vec4 Data);
 		void updateData(glm::mat4 Data);
 
-		std::string getParamName();
-		void setParamName(std::string newName);
+		std::string getName();
+		void setName(std::string newName);
 
 		void* data;
 		FEShaderParamType type;
-		std::string paramName;
+		std::string name;
+
+		bool loadedFromEngine = false;
 	};
 
 	class FEMaterial;
@@ -95,18 +101,17 @@ namespace FocalEngine
 		void loadMatrix(const char* uniformName, glm::mat4& matrix);
 
 		virtual void loadDataToGPU();
-		virtual void addParams(std::vector<FEShaderParam> Params);
-		virtual void addParams(FEShaderParam Param);
+		virtual void addParameter(FEShaderParam Parameter);
 
-		virtual FEShaderParam& getParam(std::string name);
+		std::vector<std::string> getParameterList();
+		FEShaderParam* getParameter(std::string name);
 	private:
 		GLuint programID;
 		GLuint vertexShaderID;
 		GLuint fragmentShaderID;
 		int vertexAttributes = 0;
 
-		std::vector<FEShaderParam> params;
-		std::unordered_map<std::string, FEShaderParam> userParams;
+		std::unordered_map<std::string, FEShaderParam> parameters;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
 		void cleanUp();

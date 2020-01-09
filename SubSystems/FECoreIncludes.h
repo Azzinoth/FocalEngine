@@ -62,3 +62,13 @@ void operator= (const CLASS_NAME &);
 	}
 #endif // FE_GL_ERROR
 
+#define FE_MAP_TO_STR_VECTOR(map)          \
+std::vector<std::string> result;           \
+auto iterator = map.begin();               \
+while (iterator != map.end())              \
+{                                          \
+	result.push_back(iterator->first);     \
+	iterator++;                            \
+}                                          \
+                                           \
+return result;

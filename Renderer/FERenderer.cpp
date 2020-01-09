@@ -5,6 +5,15 @@ FERenderer* FERenderer::_instance = nullptr;
 
 FERenderer::FERenderer()
 {
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+
+	FEMaterial* newMat = resourceManager.createMaterial("SolidColorMaterial");
+	newMat->shader = new FEShader(FESolidColorVS, FESolidColorFS);
+	FocalEngine::FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
+	newMat->addParameter(color);
+
+	newMat = resourceManager.createMaterial("PhongMaterial");
+	newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -16,31 +25,34 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 {
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 
-	for (size_t j = 0; j < shader->params.size(); j++)
+	auto iterator = shader->parameters.begin();
+	while (iterator != shader->parameters.end())
 	{
-		if (shader->params[j].getParamName() == std::string("FEWorldMatrix"))
-			shader->params[j].updateData(entity->worldMatrix);
+		if (iterator->first == std::string("FEWorldMatrix"))
+			iterator->second.updateData(entity->worldMatrix);
 
-		if (shader->params[j].getParamName() == std::string("FEViewMatrix"))
-			shader->params[j].updateData(currentCamera->getViewMatrix());
+		if (iterator->first == std::string("FEViewMatrix"))
+			iterator->second.updateData(currentCamera->getViewMatrix());
 
-		if (shader->params[j].getParamName() == std::string("FEProjectionMatrix"))
-			shader->params[j].updateData(currentCamera->getProjectionMatrix());
+		if (iterator->first == std::string("FEProjectionMatrix"))
+			iterator->second.updateData(currentCamera->getProjectionMatrix());
 
-		if (shader->params[j].getParamName() == std::string("FECameraPosition"))
-			shader->params[j].updateData(currentCamera->getPosition());
+		if (iterator->first == std::string("FECameraPosition"))
+			iterator->second.updateData(currentCamera->getPosition());
 
-		if (shader->params[j].getParamName() == std::string("FELightPosition"))
-			shader->params[j].updateData(scene.sceneLights[0]->getPosition());
+		if (iterator->first == std::string("FELightPosition"))
+			iterator->second.updateData(scene.sceneLights[0]->getPosition());
 
-		if (shader->params[j].getParamName() == std::string("FELightColor"))
-			shader->params[j].updateData(scene.sceneLights[0]->getColor());
+		if (iterator->first == std::string("FELightColor"))
+			iterator->second.updateData(scene.sceneLights[0]->getColor());
 
-		if (shader->params[j].getParamName() == std::string("FEGamma"))
-			shader->params[j].updateData(currentCamera->getGamma());
+		if (iterator->first == std::string("FEGamma"))
+			iterator->second.updateData(currentCamera->getGamma());
 
-		if (shader->params[j].getParamName() == std::string("FEExposure"))
-			shader->params[j].updateData(currentCamera->getExposure());
+		if (iterator->first == std::string("FEExposure"))
+			iterator->second.updateData(currentCamera->getExposure());
+
+		iterator++;
 	}
 }
 
@@ -153,10 +165,22 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 }
 
-FEPostProcess* FERenderer::getPostProcessEffect(int index)
+FEPostProcess* FERenderer::getPostProcessEffect(std::string name)
 {
-	if (index < 0 || index >= (int)postProcessEffects.size())
-		return nullptr;
+	for (size_t i = 0; i < postProcessEffects.size(); i++)
+	{
+		if (postProcessEffects[i]->getName() == name)
+			return postProcessEffects[i];
+	}
 
-	return postProcessEffects[index];
+	return nullptr;
+}
+
+std::vector<std::string> FERenderer::getPostProcessList()
+{
+	std::vector<std::string> result;
+	for (size_t i = 0; i < postProcessEffects.size(); i++)
+		result.push_back(postProcessEffects[i]->getName());
+		
+	return result;
 }

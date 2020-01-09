@@ -13,7 +13,10 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
-		void add(FEEntity* newEntity);
+		void addEntity(FEMesh* Mesh, FEMaterial* Material = nullptr, std::string Name = "");
+		FEEntity* getEntity(std::string name);
+		std::vector<std::string> getEntityList();
+
 		void add(FELight* newLight);
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)

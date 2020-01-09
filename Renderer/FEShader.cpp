@@ -10,42 +10,48 @@ FEShaderParam::FEShaderParam(int Data, std::string Name)
 {
 	data = new int(Data);
 	type = FE_INT_SCALAR_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(float Data, std::string Name)
 {
 	data = new float(Data);
 	type = FE_FLOAT_SCALAR_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
 {
 	data = new glm::vec2(Data);
 	type = FE_VECTOR2_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
 {
 	data = new glm::vec3(Data);
 	type = FE_VECTOR3_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
 {
 	data = new glm::vec4(Data);
 	type = FE_VECTOR4_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
 {
 	data = new glm::mat4(Data);
 	type = FE_MAT4_UNIFORM;
-	paramName = Name;
+	name = Name;
+	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 void FEShaderParam::updateData(int Data)
@@ -144,7 +150,8 @@ void FEShaderParam::copyCode(const FEShaderParam& copy)
 FEShaderParam::FEShaderParam(const FEShaderParam& copy)
 {
 	this->type = copy.type;
-	this->paramName = copy.paramName;
+	this->name = copy.name;
+	this->loadedFromEngine = copy.loadedFromEngine;
 
 	copyCode(copy);
 }
@@ -153,7 +160,8 @@ void FEShaderParam::operator=(const FEShaderParam& assign)
 {
 	this->~FEShaderParam();
 	this->type = assign.type;
-	this->paramName = assign.paramName;
+	this->name = assign.name;
+	this->loadedFromEngine = assign.loadedFromEngine;
 
 	copyCode(assign);
 }
@@ -206,14 +214,14 @@ FEShaderParam::~FEShaderParam()
 	}
 }
 
-std::string FEShaderParam::getParamName()
+std::string FEShaderParam::getName()
 {
-	return paramName;
+	return name;
 }
 
-void FEShaderParam::setParamName(std::string newName)
+void FEShaderParam::setName(std::string newName)
 {
-	paramName = newName;
+	name = newName;
 }
 
 FEShader::FEShader(const char* vertexText, const char* fragmentText)
@@ -258,37 +266,37 @@ void FEShader::registerUniforms()
 		{
 			case GL_INT:
 			{
-				params.push_back(FEShaderParam(0, name));
+				addParameter(FEShaderParam(0, name));
 				break;
 			}
 
 			case GL_FLOAT:
 			{
-				params.push_back(FEShaderParam(0.0f, name));
+				addParameter(FEShaderParam(0.0f, name));
 				break;
 			}
 
 			case GL_FLOAT_VEC2:
 			{
-				params.push_back(FEShaderParam(glm::vec2(0.0f), name));
+				addParameter(FEShaderParam(glm::vec2(0.0f), name));
 				break;
 			}
 
 			case GL_FLOAT_VEC3:
 			{
-				params.push_back(FEShaderParam(glm::vec3(0.0f), name));
+				addParameter(FEShaderParam(glm::vec3(0.0f), name));
 				break;
 			}
 
 			case GL_FLOAT_VEC4:
 			{
-				params.push_back(FEShaderParam(glm::vec4(0.0f), name));
+				addParameter(FEShaderParam(glm::vec4(0.0f), name));
 				break;
 			}
 
 			case GL_FLOAT_MAT4:
 			{
-				params.push_back(FEShaderParam(glm::mat4(1.0f), name));
+				addParameter(FEShaderParam(glm::mat4(1.0f), name));
 				break;
 			}
 
@@ -479,56 +487,8 @@ void FEShader::loadMatrix(const char* uniformName, glm::mat4& matrix)
 
 void FEShader::loadDataToGPU()
 {
-	for (size_t i = 0; i < params.size(); i++)
-	{
-		if (params[i].data == nullptr)
-			continue;
-
-		switch (params[i].type)
-		{
-			case FE_INT_SCALAR_UNIFORM:
-			{
-				loadScalar(params[i].getParamName().c_str(), *(int*)params[i].data);
-				break;
-			}
-
-			case FE_FLOAT_SCALAR_UNIFORM:
-			{
-				loadScalar(params[i].getParamName().c_str(), *(float*)params[i].data);
-				break;
-			}
-
-			case FE_VECTOR2_UNIFORM:
-			{
-				loadVector(params[i].getParamName().c_str(), *(glm::vec2*)params[i].data);
-				break;
-			}
-
-			case FE_VECTOR3_UNIFORM:
-			{
-				loadVector(params[i].getParamName().c_str(), *(glm::vec3*)params[i].data);
-				break;
-			}
-
-			case FE_VECTOR4_UNIFORM:
-			{
-				loadVector(params[i].getParamName().c_str(), *(glm::vec4*)params[i].data);
-				break;
-			}
-
-			case FE_MAT4_UNIFORM:
-			{
-				loadMatrix(params[i].getParamName().c_str(), *(glm::mat4*)params[i].data);
-				break;
-			}
-
-			default:
-				break;
-		}
-	}
-
-	auto iterator = userParams.begin();
-	while (iterator != userParams.end())
+	auto iterator = parameters.begin();
+	while (iterator != parameters.end())
 	{
 		if (iterator->second.data == nullptr)
 			continue;
@@ -537,37 +497,37 @@ void FEShader::loadDataToGPU()
 		{
 			case FE_INT_SCALAR_UNIFORM:
 			{
-				loadScalar(iterator->second.getParamName().c_str(), *(int*)iterator->second.data);
+				loadScalar(iterator->second.getName().c_str(), *(int*)iterator->second.data);
 				break;
 			}
 
 			case FE_FLOAT_SCALAR_UNIFORM:
 			{
-				loadScalar(iterator->second.getParamName().c_str(), *(float*)iterator->second.data);
+				loadScalar(iterator->second.getName().c_str(), *(float*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR2_UNIFORM:
 			{
-				loadVector(iterator->second.getParamName().c_str(), *(glm::vec2*)iterator->second.data);
+				loadVector(iterator->second.getName().c_str(), *(glm::vec2*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR3_UNIFORM:
 			{
-				loadVector(iterator->second.getParamName().c_str(), *(glm::vec3*)iterator->second.data);
+				loadVector(iterator->second.getName().c_str(), *(glm::vec3*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR4_UNIFORM:
 			{
-				loadVector(iterator->second.getParamName().c_str(), *(glm::vec4*)iterator->second.data);
+				loadVector(iterator->second.getName().c_str(), *(glm::vec4*)iterator->second.data);
 				break;
 			}
 
 			case FE_MAT4_UNIFORM:
 			{
-				loadMatrix(iterator->second.getParamName().c_str(), *(glm::mat4*)iterator->second.data);
+				loadMatrix(iterator->second.getName().c_str(), *(glm::mat4*)iterator->second.data);
 				break;
 			}
 
@@ -578,27 +538,20 @@ void FEShader::loadDataToGPU()
 	}
 }
 
-void FEShader::addParams(std::vector<FEShaderParam> Params)
+void FEShader::addParameter(FEShaderParam Parameter)
 {
-	for (size_t i = 0; i < Params.size(); i++)
-	{
-		params.push_back(Params[i]);
-	}
+	parameters[Parameter.getName()] = Parameter;
 }
 
-void FEShader::addParams(FEShaderParam Params)
+std::vector<std::string> FEShader::getParameterList()
 {
-	params.push_back(Params);
+	FE_MAP_TO_STR_VECTOR(parameters)
 }
 
-FEShaderParam& FEShader::getParam(std::string name)
+FEShaderParam* FEShader::getParameter(std::string name)
 {
-	for (size_t i = 0; i < params.size(); i++)
-	{
-		if (params[i].getParamName() == name)
-		{
-			return params[i];
-		}
-	}
-	//do-to: fix warning
+	if (parameters.find(name) == parameters.end())
+		return nullptr;
+
+	return &parameters[name];
 }

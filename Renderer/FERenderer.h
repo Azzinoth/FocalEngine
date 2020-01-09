@@ -18,7 +18,8 @@ namespace FocalEngine
 		void render(FEBasicCamera* currentCamera);
 		void addPostProcess(FEPostProcess* newPostProcess);
 
-		FEPostProcess* getPostProcessEffect(int index);
+		std::vector<std::string> getPostProcessList();
+		FEPostProcess* getPostProcessEffect(std::string name);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);

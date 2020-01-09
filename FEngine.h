@@ -3,10 +3,6 @@
 #include "Renderer\FERenderer.h"
 #include "SubSystems\FEInput.h"
 
-// CoreExtensions
-//#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
-//#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
-
 namespace FocalEngine
 {
 	class FEngine
@@ -39,7 +35,7 @@ namespace FocalEngine
 		float getCpuTime();
 		float getGpuTime();
 
-		FEPostProcess* createPostProcess(int ScreenWidth = -1, int ScreenHeight = -1);
+		FEPostProcess* createPostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 

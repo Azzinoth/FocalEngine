@@ -61,7 +61,7 @@ namespace FocalEngine
 		friend FEResourceManager;
 		friend FERenderer;
 	public:
-		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name);
 		~FEPostProcess();
 
 		FETexture* getInTexture();
@@ -69,9 +69,11 @@ namespace FocalEngine
 
 		void addStage(FEPostProcessStage* newStage);
 
-		// to-do: move to private !!!
-		std::vector<FEPostProcessStage*> stages;
+		std::string getName();
+		void setName(std::string newName);
 	private:
+		std::string name;
+
 		int screenWidth, screenHeight;
 		FEMesh* screenQuad;
 		FEShader* screenQuadShader;
@@ -79,6 +81,7 @@ namespace FocalEngine
 		FETexture* finalTexture = nullptr;
 
 		FEFramebuffer* intermediateFramebuffer = nullptr;
-		
+	public:
+		std::vector<FEPostProcessStage*> stages;
 	};
 }

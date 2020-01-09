@@ -99,7 +99,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); 
+	ImGuiIO& io = ImGui::GetIO();
 	unsigned char* tex_pixels = NULL;
 	int tex_w, tex_h;
 	io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);
@@ -194,7 +194,7 @@ float FEngine::getGpuTime()
 	return gpuTime;
 }
 
-FEPostProcess* FEngine::createPostProcess(int ScreenWidth, int ScreenHeight)
+FEPostProcess* FEngine::createPostProcess(std::string Name, int ScreenWidth, int ScreenHeight)
 {
 	if (ScreenWidth < 2 || ScreenHeight < 2)
 	{
@@ -202,5 +202,5 @@ FEPostProcess* FEngine::createPostProcess(int ScreenWidth, int ScreenHeight)
 		ScreenHeight = windowH;
 	}
 
-	return RESOURCE_MANAGER_OBJ.createPostProcess(ScreenWidth, ScreenHeight);
+	return RESOURCE_MANAGER_OBJ.createPostProcess(ScreenWidth, ScreenHeight, Name);
 }

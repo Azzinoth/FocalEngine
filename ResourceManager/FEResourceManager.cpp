@@ -296,14 +296,14 @@ FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
 	return rawObjDataToMesh();
 }
 
-FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight)
+FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name)
 {
-	return new FEPostProcess(getSimpleMesh("plane"), ScreenWidth, ScreenHeight);
+	return new FEPostProcess(getSimpleMesh("plane"), ScreenWidth, ScreenHeight, Name);
 }
 
 FEMaterial* FEResourceManager::createMaterial(std::string Name)
 {
-	short nextID = short(materials.size());
+	int nextID = int(materials.size());
 	if (Name.size())
 	{
 		// if there is material with that name already
@@ -315,7 +315,24 @@ FEMaterial* FEResourceManager::createMaterial(std::string Name)
 		Name = "material_" + std::to_string(nextID);
 	}
 
-	materials[Name] = new FEMaterial();
-
+	materials[Name] = new FEMaterial(nextID, Name);
 	return materials[Name];
+}
+
+FEEntity* FEResourceManager::createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
+{
+	return new FEEntity(Mesh, Material, Name);
+}
+
+std::vector<std::string> FEResourceManager::getMaterialList()
+{
+	FE_MAP_TO_STR_VECTOR(materials)
+}
+
+FEMaterial* FEResourceManager::getMaterial(std::string name)
+{
+	if (materials.find(name) == materials.end())
+		return nullptr;
+
+	return materials[name];
 }

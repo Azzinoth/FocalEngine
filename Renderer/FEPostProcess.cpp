@@ -17,8 +17,9 @@ FEScreenQuadShader::FEScreenQuadShader() : FEShader(FEScreenQuadVS, FEScreenQuad
 {
 }
 
-FEPostProcess::FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight)
+FEPostProcess::FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name)
 {
+	name = Name;
 	screenWidth = ScreenWidth;
 	screenHeight = ScreenHeight;
 	screenQuad = ScreenQuad;
@@ -46,4 +47,14 @@ void FEPostProcess::addStage(FEPostProcessStage* newStage)
 	if (!newStage->outTexture)
 		newStage->outTexture = finalTexture;
 	stages.push_back(newStage);
+}
+
+std::string FEPostProcess::getName()
+{
+	return name;
+}
+
+void FEPostProcess::setName(std::string newName)
+{
+	name = newName;
 }
