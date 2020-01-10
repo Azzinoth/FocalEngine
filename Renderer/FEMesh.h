@@ -10,13 +10,16 @@ namespace FocalEngine
 	{	
 		friend FEEntity;
 	public:
-		FEMesh(GLuint vaoID, unsigned int vertexCount, int vertexBuffersTypes);
+		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes);
 		~FEMesh();
 
 		GLuint getVaoID() const;
 		unsigned int getVertexCount() const;
+		std::string getName();
+		void setName(std::string newName);
 	private:
 		GLuint vaoID = -1;
+		std::string name;
 		unsigned int vertexCount;
 
 		int vertexBuffers = 1;

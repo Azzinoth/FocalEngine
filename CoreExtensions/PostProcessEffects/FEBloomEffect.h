@@ -42,7 +42,8 @@ static const char* FEBloomEffectHorizontalFS = R"(
 
 in vec2 textureCoords;
 @Texture@ inputTexture;
-					
+uniform float BloomSize;
+
 void main(void)
 {
 	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0);
@@ -52,7 +53,7 @@ void main(void)
 
 	for (int i = -5; i <= 5; i++)
 	{
-		blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * 4);
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * BloomSize);
 	}
 
 	gl_FragColor = vec4(0.0);
@@ -75,6 +76,7 @@ static const char* FEBloomEffectVerticalFS = R"(
 
 in vec2 textureCoords;
 @Texture@ inputTexture;
+uniform float BloomSize;
 
 void main(void)
 {
@@ -85,7 +87,7 @@ void main(void)
 
 	for (int i = -5; i <= 5; i++)
 	{
-		blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * 4, 0.0);
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * BloomSize, 0.0);
 	}
 
 	gl_FragColor = vec4(0.0);
@@ -100,6 +102,72 @@ void main(void)
 	gl_FragColor += texture(inputTexture, blurTextureCoords[8]) * 0.065984;
 	gl_FragColor += texture(inputTexture, blurTextureCoords[9]) * 0.028002;
 	gl_FragColor += texture(inputTexture, blurTextureCoords[10]) * 0.0093;
+}
+)";
+
+static const char* FEWeakBloomEffectHorizontalFS = R"(
+#version 400 core
+
+in vec2 textureCoords;
+@Texture@ inputTexture;
+					
+void main(void)
+{
+	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0);
+
+	vec2 blurTextureCoords[11];
+	vec2 centerTexCoords = textureCoords;
+
+	for (int i = -5; i <= 5; i++)
+	{
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i);
+	}
+
+	gl_FragColor = vec4(0.0);
+	gl_FragColor += texture(inputTexture, blurTextureCoords[0]) * 0.0073;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[1]) * 0.020002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[2]) * 0.055984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[3]) * 0.111703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[4]) * 0.165713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[5]) * 0.178596;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[6]) * 0.165713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[7]) * 0.111703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[8]) * 0.055984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[9]) * 0.020002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[10]) * 0.0073;
+}
+)";
+
+static const char* FEWeakBloomEffectVerticalFS = R"(
+#version 400 core
+
+in vec2 textureCoords;
+@Texture@ inputTexture;
+
+void main(void)
+{
+	vec2 tex_offset = 1.0 / textureSize(inputTexture, 0);
+
+	vec2 blurTextureCoords[11];
+	vec2 centerTexCoords = textureCoords;
+
+	for (int i = -5; i <= 5; i++)
+	{
+		blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i, 0.0);
+	}
+
+	gl_FragColor = vec4(0.0);
+	gl_FragColor += texture(inputTexture, blurTextureCoords[0]) * 0.0073;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[1]) * 0.020002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[2]) * 0.055984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[3]) * 0.111703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[4]) * 0.165713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[5]) * 0.178596;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[6]) * 0.165713;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[7]) * 0.111703;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[8]) * 0.055984;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[9]) * 0.020002;
+	gl_FragColor += texture(inputTexture, blurTextureCoords[10]) * 0.0073;
 }
 )";
 

@@ -42,7 +42,7 @@ namespace FocalEngine
 
 	static std::vector<std::string> FEStandardUniforms = 
 	{ "FEPosition", "FEColor", "FENormal", "FETangent", "FETexCoord", "FEWorldMatrix", "FEViewMatrix",
-	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor" };
+	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor", "FEGamma", "FEExposure" };
 
 	struct FEShaderParam
 	{

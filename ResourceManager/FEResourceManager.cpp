@@ -8,6 +8,10 @@ FETexture* FEResourceManager::createTexture(const char* file_name, std::string N
 	FETexture* newTexture = new FETexture();
 	std::vector<unsigned char> rawData;
 	unsigned uWidth, uHeight;
+
+	if (Name.size() == 0)
+		Name = getFileNameFromFilePath(file_name);
+
 	lodepng::decode(rawData, uWidth, uHeight, file_name);
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
@@ -241,6 +245,7 @@ FEResourceManager::FEResourceManager()
 	};
 
 	cube = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices);
+	cube->setName("cubeMesh");
 
 	std::vector<int> planeIndices = {
 		0, 1, 2, 3, 0, 2
@@ -265,6 +270,7 @@ FEResourceManager::FEResourceManager()
 	};
 	
 	plane = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices);
+	plane->setName("planeMesh");
 }
 
 FEResourceManager::~FEResourceManager()
@@ -290,10 +296,11 @@ FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
 {
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
-
 	objLoader.readFile(fileName);
+	FEMesh* newMesh = rawObjDataToMesh();
+	newMesh->setName(getFileNameFromFilePath(fileName));
 
-	return rawObjDataToMesh();
+	return newMesh;
 }
 
 FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name)
@@ -336,3 +343,15 @@ FEMaterial* FEResourceManager::getMaterial(std::string name)
 
 	return materials[name];
 }
+
+std::string FEResourceManager::getFileNameFromFilePath(std::string filePath)
+{
+	for (size_t i = filePath.size() - 1; i > 0; i--)
+	{
+		if (filePath[i] == '\\' || filePath[i] == '/')
+			return filePath.substr(i + 1, filePath.size() - 1 - i);
+	}
+
+	return std::string("");
+}
+

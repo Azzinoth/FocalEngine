@@ -81,10 +81,10 @@ void FEObjLoader::readLine(std::stringstream& lineStream)
 
 void FEObjLoader::readFile(const char* fileName)
 {
-	rawVertexCoordinates.clear();
-	rawTextureCoordinates.clear();
-	rawNormalCoordinates.clear();
-	rawIndices.clear();
+	rawVertexCoordinates.resize(0);
+	rawTextureCoordinates.resize(0);
+	rawNormalCoordinates.resize(0);
+	rawIndices.resize(0);
 
 	// to-do: error no file name
 	if (fileName == nullptr)
@@ -221,6 +221,7 @@ void FEObjLoader::processRawData()
 	fTexC.resize(rawVertexCoordinates.size() * 2);
 	fNorC.resize(rawVertexCoordinates.size() * 3);
 	fTanC.resize(rawVertexCoordinates.size() * 3);
+	fInd.resize(0);
 
 	for (size_t i = 0; i < rawIndices.size(); i += 3)
 	{

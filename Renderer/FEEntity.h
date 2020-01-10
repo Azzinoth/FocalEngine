@@ -5,8 +5,6 @@
 
 #include "FEMesh.h"
 #include "FEFramebuffer.h"
-//#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorMaterial.h"
-//#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongMaterial.h"
 
 namespace FocalEngine
 {

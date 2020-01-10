@@ -108,3 +108,40 @@ void FEMaterial::setName(std::string newName)
 {
 	name = newName;
 }
+
+std::vector<std::string> FEMaterial::getTextureList()
+{
+	std::vector<std::string> result;
+	for (size_t i = 0; i < textures.size(); i++)
+	{
+		result.push_back(textures[i]->getName());
+	}
+
+	return result;
+}
+
+FETexture* FEMaterial::getTexture(std::string name)
+{
+	for (size_t i = 0; i < textures.size(); i++)
+	{
+		if (name == textures[i]->getName())
+			return textures[i];
+	}
+
+	return nullptr;
+}
+
+void FEMaterial::setTexture(FETexture* newTexture, std::string name)
+{
+	for (size_t i = 0; i < textures.size(); i++)
+	{
+		if (name == textures[i]->getName())
+		{
+			delete textures[i];
+			textures[i] = newTexture;
+			return;
+		}
+	}
+
+	addTexture(newTexture);
+}

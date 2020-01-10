@@ -17,7 +17,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
 		// to-do: add flags
-		FETexture* createTexture(const char* file_name, std::string Name = "DefaultName");
+		FETexture* createTexture(const char* file_name, std::string Name = "");
 		// to-do: put creating of framebuffers here!
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
@@ -39,5 +39,7 @@ namespace FocalEngine
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
 		std::unordered_map<std::string, FEMaterial*> materials;
+
+		std::string getFileNameFromFilePath(std::string filePath);
 	};
 }

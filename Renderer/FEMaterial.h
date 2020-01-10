@@ -35,6 +35,10 @@ namespace FocalEngine
 		void setParam(std::string name, glm::mat4 newData);
 
 		void addTexture(FETexture* newTexture);
+		//to-do: redo it
+		void setTexture(FETexture* newTexture, std::string name);
+		std::vector<std::string> getTextureList();
+		FETexture* getTexture(std::string name);
 
 		int getID();
 

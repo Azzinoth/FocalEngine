@@ -20,6 +20,7 @@ in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
 uniform float depthThreshold;
+uniform float blurSize;
 
 void main(void)
 {
@@ -37,7 +38,7 @@ void main(void)
 
 		for (int i = -5; i <= 5; i++)
 		{
-			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * 2);
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * blurSize);
 		}
 
 		gl_FragColor = vec4(0.0);
@@ -68,6 +69,7 @@ in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
 uniform float depthThreshold;
+uniform float blurSize;
 
 void main(void)
 {
@@ -85,9 +87,10 @@ void main(void)
 
 		for (int i = -5; i <= 5; i++)
 		{
-			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * 2, 0.0);
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * blurSize, 0.0);
 		}
 
+		gl_FragColor = vec4(0.0);
 		gl_FragColor = vec4(0.0);
 		gl_FragColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
 		gl_FragColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
@@ -110,6 +113,7 @@ void main(void)
 )";
 
 FocalEngine::FEEntity* testEntity2;
+FocalEngine::FELight* lightBlob;
 bool isCameraInputActive = true;
 
 void mouseButtonCallback(int button, int action, int mods)
@@ -191,13 +195,11 @@ std::string item_current = "";
 
 void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 {
-	//ImGui::ShowDemoWindow();
-	
 	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
 	materialList.push_back("testMat");
 	materialList.push_back("testMatgargr");
 
-	if (ImGui::BeginCombo("Materials", item_current.c_str(), 0))
+	if (ImGui::BeginCombo("Materials", item_current.c_str(), ImGuiWindowFlags_None))
 	{
 		for (size_t n = 0; n < materialList.size(); n++)
 		{
@@ -213,7 +215,7 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 	ImGui::Separator();
 
 	std::string text = "Parameters of " + material->getName() + " :";
-	if (ImGui::CollapsingHeader(text.c_str(), 0)) {
+	if (ImGui::CollapsingHeader(text.c_str(), ImGuiWindowFlags_None)) {
 		ImGui::PushID(0); // to create scopes and avoid ID conflicts within the same Window.
 		std::vector<std::string> params = material->getParameterList();
 		FocalEngine::FEShaderParam* param;
@@ -234,16 +236,14 @@ void displaySceneEntities()
 	std::vector<std::string> entityList = scene.getEntityList();
 	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
 
-	bool my_tool_active = true;
-	ImGui::Begin("Scene Entities", &my_tool_active, ImGuiWindowFlags_None);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(FocalEngine::FEngine::getInstance().getWindowWidth() / 3.7f, float(FocalEngine::FEngine::getInstance().getWindowHeight())));
+	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_NoCollapse);
 		for (size_t i = 0; i < entityList.size(); i++)
 		{
 			FocalEngine::FEEntity* entity = scene.getEntity(entityList[i]);
-			if (ImGui::TreeNode(entity->getName().c_str())) //ImGui::CollapsingHeader(entity->getName().c_str(), 0)
-			{ 
-				//if (ImGui::IsItemHovered())
-					//std::get<0>(sceneEntities[i])->isSelected = true;
-				
+			if (ImGui::TreeNode(entity->getName().c_str()))
+			{
 				ImGui::PushID(i); // to create scopes and avoid ID conflicts within the same Window.
 				glm::vec3 pos = entity->getPosition();
 				ImGui::Text("X pos :   ");
@@ -251,13 +251,11 @@ void displaySceneEntities()
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##X pos : ", &pos[0], -100.0f, 100.0f);
 				
-				ImGui::SameLine();
 				ImGui::Text("Y pos :   ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##Y pos : ", &pos[1], -100.0f, 100.0f);
 
-				ImGui::SameLine();
 				ImGui::Text("Z pos :   ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
@@ -273,13 +271,11 @@ void displaySceneEntities()
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##X rot : ", &rot[0], 0.0f, 360.0f);
 
-				ImGui::SameLine();
 				ImGui::Text("Y rot :   ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##Y rot : ", &rot[1], 0.0f, 360.0f);
 
-				ImGui::SameLine();
 				ImGui::Text("Z rot :   ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
@@ -296,13 +292,11 @@ void displaySceneEntities()
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##X scale : ", &scale[0], 0.01f, 10.0f);
 
-				ImGui::SameLine();
 				ImGui::Text("Y scale : ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
 				ImGui::SliderFloat("##Y scale : ", &scale[1], 0.01f, 10.0f);
 
-				ImGui::SameLine();
 				ImGui::Text("Z scale : ");
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
@@ -310,15 +304,49 @@ void displaySceneEntities()
 
 				entity->setScale(scale);
 
-				//if (ImGui::Checkbox("Show Normals", &std::get<0>(sceneEntities[i])->isDisplayNormals))
-				//{
-				//	//
-				//}
-				//ImGui::Checkbox("Show UVs", &std::get<0>(sceneEntities[i])->isDisplayUVs);
-				//ImGui::Checkbox("Wireframe", &std::get<0>(sceneEntities[i])->isWireframe);
+				if (ImGui::CollapsingHeader("Mesh", ImGuiWindowFlags_None))
+				{
+					std::string meshText = "Name : ";
+					meshText += entity->mesh->getName();
+					ImGui::Text(meshText.c_str());
+
+					ImGui::SameLine();
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+					if (ImGui::Button("Change Mesh"))
+					{
+						ImGui::OpenPopup("ChangeMesh");
+					}
+
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+
+					if (ImGui::BeginPopupModal("ChangeMesh", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						ImGui::Text("Insert mesh file path :");
+						static char filePath[256] = "";
+
+						ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+						ImGui::Separator();
+
+						if (ImGui::Button("Load", ImVec2(120, 0)))
+						{
+							entity->mesh = FocalEngine::FEResourceManager::getInstance().loadObjMeshData(filePath);
+							ImGui::CloseCurrentPopup();
+							strcpy_s(filePath, "");
+						}
+						ImGui::SetItemDefaultFocus();
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+						ImGui::EndPopup();
+					}
+				}
+				
 
 				item_current = entity->material->getName();
-				if (ImGui::BeginCombo("Materials", item_current.c_str(), 0))
+				if (ImGui::BeginCombo("Materials", item_current.c_str(), ImGuiWindowFlags_None))
 				{
 					for (size_t n = 0; n < materialList.size(); n++)
 					{
@@ -335,16 +363,59 @@ void displaySceneEntities()
 				}
 
 				std::string text = "Parameters of " + entity->material->getName() + " :";
-				if (ImGui::CollapsingHeader(text.c_str(), 0)) {
-					
+				if (ImGui::CollapsingHeader(text.c_str(), 0))
+				{
 					std::vector<std::string> params = entity->material->getParameterList();
 					FocalEngine::FEShaderParam* param;
-					for (size_t i = 0; i < params.size(); i++)
+					for (size_t j = 0; j < params.size(); j++)
 					{
-						param = entity->material->getParameter(params[i]);
+						param = entity->material->getParameter(params[j]);
 						if (param->loadedFromEngine)
 							continue;
 						displayMaterialPrameter(param);
+					}
+
+					std::vector<std::string> textures = entity->material->getTextureList();
+					for (size_t j = 0; j < textures.size(); j++)
+					{
+						ImGui::Text(textures[j].c_str());
+						ImGui::Image((void*)(intptr_t)entity->material->getTexture(textures[j])->getTextureID(), ImVec2(32, 32));
+
+						ImGui::PushID(std::to_string(j).c_str());
+						ImGui::SameLine();
+						ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+						if (ImGui::Button("Change"))
+						{
+							ImGui::OpenPopup("ChangeTexture");
+						}
+
+						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
+						
+						if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+						{
+							ImGui::Text("Insert texture file path :");
+							static char filePath[256] = "";
+							
+							ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+							ImGui::Separator();
+
+							if (ImGui::Button("Load", ImVec2(120, 0)))
+							{
+								entity->material->setTexture(FocalEngine::FEResourceManager::getInstance().createTexture(filePath), textures[j]);
+								ImGui::CloseCurrentPopup();
+								strcpy_s(filePath, "");
+							}
+							ImGui::SetItemDefaultFocus();
+							ImGui::SameLine();
+							if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+							ImGui::EndPopup();
+						}
+
+						ImGui::PopID();
 					}
 				}
 
@@ -352,6 +423,29 @@ void displaySceneEntities()
 				ImGui::TreePop();
 			}
 		}
+
+		ImGui::Text("============================================");
+		glm::vec3 pos = lightBlob->getPosition();
+		ImGui::Text("Light X pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
+
+		ImGui::Text("Light Y pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
+
+		ImGui::Text("Light Z pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
+
+		lightBlob->setPosition(pos);
+
+		float FEExposure = FocalEngine::FEngine::getInstance().getCamera()->getExposure();
+		ImGui::SliderFloat("Camera Exposure", &FEExposure, 0.001f, 4.0f);
+		FocalEngine::FEngine::getInstance().getCamera()->setExposure(FEExposure);
 
 	ImGui::End();
 }
@@ -420,16 +514,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	#define RES_FOLDER "C:/Users/kandr/Downloads/OpenGL test/resources/megascanRock/"
 	FocalEngine::FETexture* rockTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Albedo.png");
-	//FocalEngine::FETexture* rockNormalTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Normal_LOD0.png");
-	
-	scene.addEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
+	rockTexture->setName("color map");
+	FocalEngine::FETexture* rockNormalTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Normal_LOD0.png");
+	rockNormalTexture->setName("normal map");
+
+	scene.addEntity(resourceManager.loadObjMeshData("C:/Users/kandr/Downloads/OpenGL test_12.08.2019/OpenGL test_16.01.2018/OpenGL test/OpenGL test/resources/cutTree/cutTree.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
+	//scene.addEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
 	resourceManager.getMaterial("PhongMaterial")->addTexture(rockTexture);
-	//resourceManager.getMaterial("PhongMaterial")->addTexture(rockNormalTexture);
+	resourceManager.getMaterial("PhongMaterial")->addTexture(rockNormalTexture);
 	scene.getEntity("brik")->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	scene.getEntity("brik")->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene.getEntity("brik")->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	FocalEngine::FELight* lightBlob = new FocalEngine::FELight();
+	lightBlob = new FocalEngine::FELight();
 	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
 	scene.add(lightBlob);
 
@@ -442,10 +539,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
 	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
 	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS, MyFS2);
-	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
-	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
-	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
-	testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
+	for (size_t i = 0; i < 1; i++)
+	{
+		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
+		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(1.0f);
+		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
+		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(1.0f);
+	}
 	renderer.addPostProcess(testEffect);
 
 	FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
@@ -459,6 +559,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		engine.render();
 
+		//ImGui::ShowDemoWindow();
 		//displayMaterialPrameters(testMat);
 		displaySceneEntities();
 		displayPostProcess();

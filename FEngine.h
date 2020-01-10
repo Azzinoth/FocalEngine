@@ -56,5 +56,6 @@ namespace FocalEngine
 		void(*clientKeyButtonCallbackImpl)(int, int, int, int) = nullptr;
 
 		FEBasicCamera* currentCamera = nullptr;
+		void setImguiStyle();
 	};
 }
