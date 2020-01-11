@@ -44,7 +44,7 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 			iterator->second.updateData(scene.sceneLights[0]->getPosition());
 
 		if (iterator->first == std::string("FELightColor"))
-			iterator->second.updateData(scene.sceneLights[0]->getColor());
+			iterator->second.updateData(scene.sceneLights[0]->getColor() * scene.sceneLights[0]->getIntensity());
 
 		if (iterator->first == std::string("FEGamma"))
 			iterator->second.updateData(currentCamera->getGamma());

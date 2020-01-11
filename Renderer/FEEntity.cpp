@@ -6,6 +6,8 @@ FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 	mesh = Mesh;
 	material = Material;
 	name = Name;
+
+	updateWorldMatrix();
 }
 
 FEEntity::~FEEntity()

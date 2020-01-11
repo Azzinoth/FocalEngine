@@ -198,7 +198,6 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
 	materialList.push_back("testMat");
 	materialList.push_back("testMatgargr");
-
 	if (ImGui::BeginCombo("Materials", item_current.c_str(), ImGuiWindowFlags_None))
 	{
 		for (size_t n = 0; n < materialList.size(); n++)
@@ -230,6 +229,52 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 	}
 }
 
+void displayLightProperties(FocalEngine::FELight* light)
+{
+	glm::vec3 pos = light->getPosition();
+	ImGui::Text("Light X pos :   ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100);
+	ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
+
+	ImGui::Text("Light Y pos :   ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100);
+	ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
+
+	ImGui::Text("Light Z pos :   ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100);
+	ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
+
+	light->setPosition(pos);
+
+	glm::vec3 color = light->getColor();
+	ImGui::ColorEdit3("Light color", &color.x);
+	light->setColor(color);
+
+	float intensity = light->getIntensity();
+	ImGui::SliderFloat("Light intensity", &intensity, 0.0f, 20.0f);
+	light->setIntensity(intensity);
+}
+
+void addEntityButton()
+{
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+	if (ImGui::Button("Add new entity", ImVec2(220, 0)))
+	{
+		FocalEngine::FEScene::getInstance().addEntity(resourceManager.getSimpleMesh("cube"));
+	}
+	
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+}
+
 void displaySceneEntities()
 {
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
@@ -238,7 +283,9 @@ void displaySceneEntities()
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(FocalEngine::FEngine::getInstance().getWindowWidth() / 3.7f, float(FocalEngine::FEngine::getInstance().getWindowHeight())));
-	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
+		addEntityButton();
+
 		for (size_t i = 0; i < entityList.size(); i++)
 		{
 			FocalEngine::FEEntity* entity = scene.getEntity(entityList[i]);
@@ -287,23 +334,37 @@ void displaySceneEntities()
 				glm::vec3 scale = entity->getScale();
 
 				ImGui::SetNextItemWidth(40);
-				ImGui::Text("X scale : ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##X scale : ", &scale[0], 0.01f, 10.0f);
+				static bool uniformScaling = true;
+				float uniformScale = (scale[0] + scale[1] + scale[2]) / 3.0f;
 
-				ImGui::Text("Y scale : ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Y scale : ", &scale[1], 0.01f, 10.0f);
+				ImGui::Checkbox("Uniform scaling", &uniformScaling);
+				if (!uniformScaling)
+				{
+					ImGui::Text("X scale : ");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(100);
+					ImGui::SliderFloat("##X scale : ", &scale[0], 0.01f, 10.0f);
 
-				ImGui::Text("Z scale : ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Z scale : ", &scale[2], 0.01f, 10.0f);
+					ImGui::Text("Y scale : ");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(100);
+					ImGui::SliderFloat("##Y scale : ", &scale[1], 0.01f, 10.0f);
 
-				entity->setScale(scale);
-
+					ImGui::Text("Z scale : ");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(100);
+					ImGui::SliderFloat("##Z scale : ", &scale[2], 0.01f, 10.0f);
+				}
+				else
+				{
+					ImGui::Text("entity scale : ");
+					ImGui::SameLine();
+					ImGui::SetNextItemWidth(100);
+					ImGui::SliderFloat("##entity scale : ", &uniformScale, 0.01f, 10.0f);
+				}
+				
+				uniformScaling ? entity->setScale(glm::vec3(uniformScale)) : entity->setScale(scale);
+				
 				if (ImGui::CollapsingHeader("Mesh", ImGuiWindowFlags_None))
 				{
 					std::string meshText = "Name : ";
@@ -333,7 +394,9 @@ void displaySceneEntities()
 
 						if (ImGui::Button("Load", ImVec2(120, 0)))
 						{
-							entity->mesh = FocalEngine::FEResourceManager::getInstance().loadObjMeshData(filePath);
+							entity->mesh = FocalEngine::FEResourceManager::getInstance().getSimpleMesh(filePath);
+							if (!entity->mesh)
+								entity->mesh = FocalEngine::FEResourceManager::getInstance().loadObjMeshData(filePath);
 							ImGui::CloseCurrentPopup();
 							strcpy_s(filePath, "");
 						}
@@ -362,86 +425,14 @@ void displaySceneEntities()
 					ImGui::EndCombo();
 				}
 
-				std::string text = "Parameters of " + entity->material->getName() + " :";
-				if (ImGui::CollapsingHeader(text.c_str(), 0))
-				{
-					std::vector<std::string> params = entity->material->getParameterList();
-					FocalEngine::FEShaderParam* param;
-					for (size_t j = 0; j < params.size(); j++)
-					{
-						param = entity->material->getParameter(params[j]);
-						if (param->loadedFromEngine)
-							continue;
-						displayMaterialPrameter(param);
-					}
-
-					std::vector<std::string> textures = entity->material->getTextureList();
-					for (size_t j = 0; j < textures.size(); j++)
-					{
-						ImGui::Text(textures[j].c_str());
-						ImGui::Image((void*)(intptr_t)entity->material->getTexture(textures[j])->getTextureID(), ImVec2(32, 32));
-
-						ImGui::PushID(std::to_string(j).c_str());
-						ImGui::SameLine();
-						ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-						ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-						if (ImGui::Button("Change"))
-						{
-							ImGui::OpenPopup("ChangeTexture");
-						}
-
-						ImGui::PopStyleColor();
-						ImGui::PopStyleColor();
-						ImGui::PopStyleColor();
-						
-						if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-						{
-							ImGui::Text("Insert texture file path :");
-							static char filePath[256] = "";
-							
-							ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-							ImGui::Separator();
-
-							if (ImGui::Button("Load", ImVec2(120, 0)))
-							{
-								entity->material->setTexture(FocalEngine::FEResourceManager::getInstance().createTexture(filePath), textures[j]);
-								ImGui::CloseCurrentPopup();
-								strcpy_s(filePath, "");
-							}
-							ImGui::SetItemDefaultFocus();
-							ImGui::SameLine();
-							if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-							ImGui::EndPopup();
-						}
-
-						ImGui::PopID();
-					}
-				}
-
 				ImGui::PopID();
 				ImGui::TreePop();
 			}
 		}
 
 		ImGui::Text("============================================");
-		glm::vec3 pos = lightBlob->getPosition();
-		ImGui::Text("Light X pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
-
-		ImGui::Text("Light Y pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
-
-		ImGui::Text("Light Z pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
-
-		lightBlob->setPosition(pos);
+		
+		displayLightProperties(lightBlob);
 
 		float FEExposure = FocalEngine::FEngine::getInstance().getCamera()->getExposure();
 		ImGui::SliderFloat("Camera Exposure", &FEExposure, 0.001f, 4.0f);
@@ -450,14 +441,140 @@ void displaySceneEntities()
 	ImGui::End();
 }
 
+void displayMaterialEditor()
+{
+	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+
+	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
+	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
+	float windowW = mainWindowW / 3.7f;
+	float windowH = mainWindowH / 2.0f;
+
+	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
+	ImGui::Begin("Material Editor", nullptr, ImGuiWindowFlags_None); // ImGuiWindowFlags_NoCollapse
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+		if (ImGui::Button("Add new material", ImVec2(220, 0)))
+			ImGui::OpenPopup("New material");
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		if (ImGui::BeginPopupModal("New material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Insert name of new material :");
+			static char filePath[256] = "";
+
+			ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+			ImGui::Separator();
+
+			if (ImGui::Button("Create", ImVec2(120, 0)))
+			{
+				FocalEngine::FEMaterial* newMat = FocalEngine::FEResourceManager::getInstance().createMaterial(filePath);
+				if (newMat)
+				{
+					newMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
+					FocalEngine::FETexture* colorMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+					colorMap->setName("color map");
+					FocalEngine::FETexture* normalMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+					normalMap->setName("normal map");
+					//FocalEngine::FETexture* roughnessMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+					//normalMap->setName("roughness map");
+
+					newMat->addTexture(colorMap);
+					newMat->addTexture(normalMap);
+					//newMat->addTexture(roughnessMap);
+				}
+
+				ImGui::CloseCurrentPopup();
+				strcpy_s(filePath, "");
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+
+		for (size_t i = 0; i < materialList.size(); i++)
+		{
+			FocalEngine::FEMaterial* material = FocalEngine::FEResourceManager::getInstance().getMaterial(materialList[i]);
+			
+			if (ImGui::CollapsingHeader(materialList[i].c_str(), 0))
+			{
+				std::vector<std::string> params = material->getParameterList();
+				FocalEngine::FEShaderParam* param;
+				for (size_t j = 0; j < params.size(); j++)
+				{
+					param = material->getParameter(params[j]);
+					if (param->loadedFromEngine)
+						continue;
+					displayMaterialPrameter(param);
+				}
+
+				std::vector<std::string> textures = material->getTextureList();
+				for (size_t j = 0; j < textures.size(); j++)
+				{
+					ImGui::Text(textures[j].c_str());
+					ImGui::Image((void*)(intptr_t)material->getTexture(textures[j])->getTextureID(), ImVec2(32, 32));
+
+					ImGui::PushID(std::to_string(j).c_str());
+					ImGui::SameLine();
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+					if (ImGui::Button("Change"))
+					{
+						ImGui::OpenPopup("ChangeTexture");
+					}
+
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+
+					if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+					{
+						ImGui::Text("Insert texture file path :");
+						static char filePath[256] = "";
+
+						ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+						ImGui::Separator();
+
+						if (ImGui::Button("Load", ImVec2(120, 0)))
+						{
+							material->setTexture(FocalEngine::FEResourceManager::getInstance().createTexture(filePath), textures[j]);
+							ImGui::CloseCurrentPopup();
+							strcpy_s(filePath, "");
+						}
+						ImGui::SetItemDefaultFocus();
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+						ImGui::EndPopup();
+					}
+
+					ImGui::PopID();
+				}
+			}
+		}
+	ImGui::End();
+}
+
 void displayPostProcess()
 {
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
 	std::vector<std::string> postProcessList = renderer.getPostProcessList();
 
-	bool my_tool_active = true;
-	ImGui::Begin("PostProcess Effects", &my_tool_active, ImGuiWindowFlags_None);
+	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
+	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
+	float windowW = mainWindowW / 3.7f;
+	float windowH = mainWindowH / 2.0f;
 
+	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, windowH));
+	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
+	ImGui::Begin("PostProcess Effects", nullptr, ImGuiWindowFlags_None);
 		for (size_t i = 0; i < postProcessList.size(); i++)
 		{
 			FocalEngine::FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
@@ -465,7 +582,7 @@ void displayPostProcess()
 			{
 				for (size_t j = 0; j < PPEffect->stages.size(); j++)
 				{
-					ImGui::PushID(j); // to create scopes and avoid ID conflicts within the same Window.
+					ImGui::PushID(j);
 					std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
 					FocalEngine::FEShaderParam* param;
 					for (size_t i = 0; i < params.size(); i++)
@@ -518,20 +635,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FETexture* rockNormalTexture = resourceManager.createTexture(RES_FOLDER "slunl_4K_Normal_LOD0.png");
 	rockNormalTexture->setName("normal map");
 
-	scene.addEntity(resourceManager.loadObjMeshData("C:/Users/kandr/Downloads/OpenGL test_12.08.2019/OpenGL test_16.01.2018/OpenGL test/OpenGL test/resources/cutTree/cutTree.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
-	//scene.addEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
+	//scene.addEntity(resourceManager.loadObjMeshData("C:/Users/kandr/Downloads/OpenGL test_12.08.2019/OpenGL test_16.01.2018/OpenGL test/OpenGL test/resources/cutTree/cutTree.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
+	scene.addEntity(resourceManager.loadObjMeshData(RES_FOLDER "rocks1.obj"), resourceManager.getMaterial("PhongMaterial"), "brik");
 	resourceManager.getMaterial("PhongMaterial")->addTexture(rockTexture);
 	resourceManager.getMaterial("PhongMaterial")->addTexture(rockNormalTexture);
 	scene.getEntity("brik")->setPosition(glm::vec3(-10.5f, -5.0f, -10.0f));
 	scene.getEntity("brik")->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene.getEntity("brik")->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	lightBlob = new FocalEngine::FELight();
+	lightBlob = new FocalEngine::FELight(FocalEngine::FE_DIRECTIONAL_LIGHT);
 	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
 	scene.add(lightBlob);
 
 	// to-do: there is no ability to add light :)
-	FocalEngine::FELight* lightBlob2 = new FocalEngine::FELight();
+	FocalEngine::FELight* lightBlob2 = new FocalEngine::FELight(FocalEngine::FE_POINT_LIGHT);
 	lightBlob2->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
 	lightBlob2->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
 	scene.add(lightBlob2);
@@ -562,6 +679,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		//ImGui::ShowDemoWindow();
 		//displayMaterialPrameters(testMat);
 		displaySceneEntities();
+		displayMaterialEditor();
 		displayPostProcess();
 
 		engine.endFrame();

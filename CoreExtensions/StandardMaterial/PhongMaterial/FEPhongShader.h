@@ -40,7 +40,8 @@ in vec3 FragPosition;
 in mat3 TBN;
 
 @Texture@ baseColorTexture;
-@Texture@ NormalsTexture;
+@Texture@ normalsTexture;
+//@Texture@ roughnessTexture;
 @LightPosition@
 @LightColor@
 @CameraPosition@
@@ -51,7 +52,7 @@ void main(void)
 	vec3 baseColor = pow(texture(baseColorTexture, UV).rgb, vec3(FEGamma));
 	vec3 lightDirection = normalize(FELightPosition - FragPosition);
 
-    vec3 normal = texture(NormalsTexture, UV).rgb;
+    vec3 normal = texture(normalsTexture, UV).rgb;
     normal = normalize(normal * 2.0 - 1.0);
 	normal = normalize(TBN * normal);
 
@@ -63,6 +64,11 @@ void main(void)
 	vec3 reflectedDirection = reflect(-lightDirection, normal);
 	float specularFactor = pow(max(dot(viewDirection, reflectedDirection), 0.0), 32);
 	float specularStrength = 0.5;
+	//vec3 specularMap = texture(roughnessTexture, UV).rgb;
+	//float specularStrength = 1.0 - (specularMap.r + specularMap.g + specularMap.b);
+	//float specularStrength = texture(roughnessTexture, UV).r;
+	specularStrength = max(specularStrength, 0.0);
+
 	vec3 specular = specularStrength * specularFactor * FELightColor;
 	vec3 ambientColor = vec3(0.1, 0.0f, 0.6f) * 0.3f;
 	gl_FragColor = vec4(baseColor * (diffuseColor + ambientColor + specular), 1.0f);

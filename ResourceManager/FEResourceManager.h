@@ -31,7 +31,7 @@ namespace FocalEngine
 		std::vector<std::string> getMaterialList();
 		FEMaterial* getMaterial(std::string name);
 		FEMaterial* createMaterial(std::string Name = "");
-		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
+		
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 		FEMesh* plane;
@@ -41,5 +41,6 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEMaterial*> materials;
 
 		std::string getFileNameFromFilePath(std::string filePath);
+		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
 	};
 }

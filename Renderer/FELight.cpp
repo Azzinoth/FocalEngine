@@ -1,8 +1,9 @@
 #include "FELight.h"
 using namespace FocalEngine;
 
-FELight::FELight()
+FELight::FELight(FELightType Type)
 {
+	type = Type;
 }
 
 FELight::~FELight()
@@ -67,4 +68,24 @@ float FELight::getShadowBias()
 void FELight::setShadowBias(float newShadowBias)
 {
 	shadowBias = newShadowBias;
+}
+
+float FELight::getIntensity()
+{
+	return intensity;
+}
+
+void FELight::setIntensity(float newIntensity)
+{
+	intensity = newIntensity;
+}
+
+bool FELight::isCastShadows()
+{
+	return castShadows;
+}
+
+void FELight::setCastShadows(bool isCastShadows)
+{
+	castShadows = isCastShadows;
 }
