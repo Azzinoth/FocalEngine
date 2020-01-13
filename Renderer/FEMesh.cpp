@@ -8,6 +8,14 @@ FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes)
 	vertexBuffers = VertexBuffersTypes;
 }
 
+FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB)
+{
+	vaoID = VaoID;
+	vertexCount = VertexCount;
+	vertexBuffers = VertexBuffersTypes;
+	this->AABB = AABB;
+}
+
 FEMesh::~FEMesh()
 {
 	FE_GL_ERROR(glDeleteVertexArrays(1, &vaoID));
@@ -31,4 +39,9 @@ std::string FEMesh::getName()
 void FEMesh::setName(std::string newName)
 {
 	name = newName;
+}
+
+FEAABB FEMesh::getAABB()
+{
+	return AABB;
 }

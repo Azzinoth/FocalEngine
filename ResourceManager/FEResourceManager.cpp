@@ -57,7 +57,7 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION);
+	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION, FEAABB(positions));
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals)
@@ -82,7 +82,7 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL);
+	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL, FEAABB(positions));
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index)
@@ -127,7 +127,7 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
+	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions));
 }
 
 FEMesh* FEResourceManager::rawObjDataToMesh()
@@ -174,7 +174,7 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX);
+	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(objLoader.fVerC));
 }
 
 FEResourceManager::FEResourceManager()

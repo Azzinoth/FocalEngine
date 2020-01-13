@@ -59,6 +59,9 @@ void FEEntity::updateWorldMatrix()
 	worldMatrix = glm::rotate(worldMatrix, (float)rotation.z * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
 	worldMatrix = glm::scale(worldMatrix, glm::vec3(scale[0], scale[1], scale[2]));
+
+	AABB.min = (worldMatrix * glm::vec4(mesh->getAABB().min.x, mesh->getAABB().min.y, mesh->getAABB().min.z, 1.0f));
+	AABB.max = (worldMatrix * glm::vec4(mesh->getAABB().max.x, mesh->getAABB().max.y, mesh->getAABB().max.z, 1.0f));
 }
 
 void FEEntity::render()
@@ -104,4 +107,9 @@ std::string FEEntity::getName()
 void FEEntity::setName(std::string newName)
 {
 	name = newName;
+}
+
+FEAABB FEEntity::getAABB()
+{
+	return AABB;
 }

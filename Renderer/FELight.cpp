@@ -89,3 +89,38 @@ void FELight::setCastShadows(bool isCastShadows)
 {
 	castShadows = isCastShadows;
 }
+
+FELightType FELight::getType()
+{
+	return type;
+}
+
+glm::vec3 FELight::getDirection()
+{
+	return direction;
+}
+
+void FELight::setDirection(glm::vec3 newDirection)
+{
+	direction = newDirection;
+}
+
+float FELight::getSpotAngle()
+{
+	return spotAngle;
+}
+
+void FELight::setSpotAngle(float newSpotAngle)
+{
+	spotAngle = newSpotAngle;
+}
+
+float FELight::getSpotAngleOuter()
+{
+	return spotAngleOuter;
+}
+
+void FELight::setSpotAngleOuter(float newSpotAngleOuter)
+{
+	spotAngleOuter = newSpotAngleOuter;
+}

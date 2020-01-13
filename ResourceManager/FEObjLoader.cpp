@@ -248,4 +248,5 @@ void FEObjLoader::processRawData()
 	}
 
 	calculateTangents();
+
 }

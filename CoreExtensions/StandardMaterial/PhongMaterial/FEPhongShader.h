@@ -46,11 +46,49 @@ in mat3 TBN;
 @LightColor@
 @CameraPosition@
 uniform float FEGamma;
+uniform int LightType;
+uniform vec3 FELightDirection;
+uniform float LightSpotAngle;
+uniform float LightSpotAngleOuter;
 
 void main(void)
 {
 	vec3 baseColor = pow(texture(baseColorTexture, UV).rgb, vec3(FEGamma));
-	vec3 lightDirection = normalize(FELightPosition - FragPosition);
+
+	vec3 lightDirection;
+	float distance;
+	float attenuation = 1.0;
+	float intensity = 1.0;
+	if (LightType == 0)
+	{
+		lightDirection = normalize(-FELightPosition);
+	}
+	else if (LightType == 1)
+	{
+		attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
+		distance = length(FELightPosition - FragPosition);
+		lightDirection = normalize(FELightPosition - FragPosition);
+	}
+	else if (LightType == 2)
+	{
+		lightDirection = normalize(FELightPosition - FragPosition);
+		float theta = dot(lightDirection, normalize(-FELightDirection));
+		if(theta > LightSpotAngle)
+		{
+			//float epsilon = LightSpotAngle - LightSpotAngleOuter;
+			//intensity = clamp((theta - LightSpotAngleOuter) / epsilon, 0.0, 1.0);
+			float epsilon = LightSpotAngle - LightSpotAngleOuter;
+			intensity = clamp((LightSpotAngleOuter - theta) / epsilon, 0.0, 1.0);
+
+
+			attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
+		}
+		else
+		{
+			attenuation = 0.0;
+		}
+	}
+	
 
     vec3 normal = texture(normalsTexture, UV).rgb;
     normal = normalize(normal * 2.0 - 1.0);
@@ -71,6 +109,13 @@ void main(void)
 
 	vec3 specular = specularStrength * specularFactor * FELightColor;
 	vec3 ambientColor = vec3(0.1, 0.0f, 0.6f) * 0.3f;
+
+	diffuseColor *= attenuation;
+	specular *= attenuation;
+
+	diffuseColor *= intensity;
+	specular *= intensity;
+
 	gl_FragColor = vec4(baseColor * (diffuseColor + ambientColor + specular), 1.0f);
 }
 )";

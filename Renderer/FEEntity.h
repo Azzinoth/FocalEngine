@@ -33,6 +33,8 @@ namespace FocalEngine
 
 		std::string getName();
 		void setName(std::string newName);
+
+		FEAABB getAABB();
 	private:
 		std::string name;
 
@@ -44,6 +46,7 @@ namespace FocalEngine
 		glm::mat4 worldMatrix;
 
 		bool visible = true;
+		FEAABB AABB;
 	};
 }
 

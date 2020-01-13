@@ -115,16 +115,36 @@ void main(void)
 FocalEngine::FEEntity* testEntity2;
 FocalEngine::FELight* lightBlob;
 bool isCameraInputActive = true;
+std::pair<std::string, float > entityUnderMouse;
+std::string selectedEntity = "";
+bool selectedEntityWasChanged = false;
 
 void mouseButtonCallback(int button, int action, int mods)
 {
+	if ((!ImGui::GetIO().WantCaptureMouse))
+	{
+		if (entityUnderMouse.second != FLT_MAX)
+		{
+			selectedEntity = entityUnderMouse.first;
+			selectedEntityWasChanged = true;
+		}
+		else
+		{
+			selectedEntity = "";
+		}
+	}
+	
 	//FocalEngine::FEScene::getInstance().getEntity("testCube2")->material->setParam("baseColor", glm::vec3(0.1f, 0.6f, 0.1f));
 }
 
+double mouseX, mouseY;
+void determineEntityUnderMouse();
 void mouseMoveCallback(double xpos, double ypos)
 {
-	int y = 0;
-	y++;
+	mouseX = xpos;
+	mouseY = ypos;
+
+	determineEntityUnderMouse();
 }
 
 void keyButtonCallback(int key, int scancode, int action, int mods)
@@ -231,23 +251,92 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 
 void displayLightProperties(FocalEngine::FELight* light)
 {
-	glm::vec3 pos = light->getPosition();
-	ImGui::Text("Light X pos :   ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(100);
-	ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
+	if (light->getType() == FocalEngine::FE_DIRECTIONAL_LIGHT)
+	{
+		glm::vec3 pos = light->getPosition();
+		ImGui::Text("Light X pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light X pos : ", &pos[0], -1.0f, 1.0f);
 
-	ImGui::Text("Light Y pos :   ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(100);
-	ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
+		ImGui::Text("Light Y pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -1.0f, 1.0f);
 
-	ImGui::Text("Light Z pos :   ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(100);
-	ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
+		ImGui::Text("Light Z pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -1.0f, 1.0f);
 
-	light->setPosition(pos);
+		light->setPosition(pos);
+	}
+	else if (light->getType() == FocalEngine::FE_POINT_LIGHT)
+	{
+		glm::vec3 pos = light->getPosition();
+		ImGui::Text("Light X pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
+
+		ImGui::Text("Light Y pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
+
+		ImGui::Text("Light Z pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
+
+		light->setPosition(pos);
+	}
+	else if (light->getType() == FocalEngine::FE_SPOT_LIGHT)
+	{
+		glm::vec3 pos = light->getPosition();
+		ImGui::Text("Light X pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
+
+		ImGui::Text("Light Y pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
+
+		ImGui::Text("Light Z pos :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
+
+		light->setPosition(pos);
+
+		glm::vec3 dir = light->getDirection();
+		ImGui::Text("Light X dir :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light X dir : ", &dir[0], -1.0f, 1.0f);
+
+		ImGui::Text("Light Y dir :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Y dir : ", &dir[1], -1.0f, 1.0f);
+
+		ImGui::Text("Light Z dir :   ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(100);
+		ImGui::SliderFloat("##Light Z dir : ", &dir[2], -1.0f, 1.0f);
+
+		light->setPosition(pos);
+
+		float spotAngle = light->getSpotAngle();
+		ImGui::SliderFloat("Spot angle", &spotAngle, 0.0f, 90.0f);
+		light->setSpotAngle(spotAngle);
+
+		float spotAngleOuter = light->getSpotAngleOuter();
+		ImGui::SliderFloat("Spot angle outer", &spotAngleOuter, 0.0f, 90.0f);
+		light->setSpotAngleOuter(spotAngleOuter);
+	}
 
 	glm::vec3 color = light->getColor();
 	ImGui::ColorEdit3("Light color", &color.x);
@@ -285,6 +374,16 @@ void displaySceneEntities()
 	ImGui::SetNextWindowSize(ImVec2(FocalEngine::FEngine::getInstance().getWindowWidth() / 3.7f, float(FocalEngine::FEngine::getInstance().getWindowHeight())));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 		addEntityButton();
+
+		if (selectedEntityWasChanged)
+		{
+			for (size_t i = 0; i < entityList.size(); i++)
+			{
+				ImGui::GetStateStorage()->SetInt(ImGui::GetID(entityList[i].c_str()), 0);
+			}
+			selectedEntityWasChanged = false;
+			ImGui::GetStateStorage()->SetInt(ImGui::GetID(entityUnderMouse.first.c_str()), 1);
+		}
 
 		for (size_t i = 0; i < entityList.size(); i++)
 		{
@@ -575,30 +674,84 @@ void displayPostProcess()
 	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, windowH));
 	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
 	ImGui::Begin("PostProcess Effects", nullptr, ImGuiWindowFlags_None);
-		for (size_t i = 0; i < postProcessList.size(); i++)
+	for (size_t i = 0; i < postProcessList.size(); i++)
+	{
+		FocalEngine::FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
+		if (ImGui::CollapsingHeader(PPEffect->getName().c_str(), 0)) //ImGuiTreeNodeFlags_DefaultOpen
 		{
-			FocalEngine::FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
-			if (ImGui::CollapsingHeader(PPEffect->getName().c_str(), 0)) //ImGuiTreeNodeFlags_DefaultOpen
+			for (size_t j = 0; j < PPEffect->stages.size(); j++)
 			{
-				for (size_t j = 0; j < PPEffect->stages.size(); j++)
+				ImGui::PushID(j);
+				std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
+				FocalEngine::FEShaderParam* param;
+				for (size_t i = 0; i < params.size(); i++)
 				{
-					ImGui::PushID(j);
-					std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
-					FocalEngine::FEShaderParam* param;
-					for (size_t i = 0; i < params.size(); i++)
-					{
-						param = PPEffect->stages[j]->shader->getParameter(params[i]);
-						if (param->loadedFromEngine)
-							continue;
-						displayMaterialPrameter(param);
-					}
-					ImGui::PopID();
+					param = PPEffect->stages[j]->shader->getParameter(params[i]);
+					if (param->loadedFromEngine)
+						continue;
+					displayMaterialPrameter(param);
 				}
+				ImGui::PopID();
 			}
 		}
+	}
 
 	ImGui::End();
 }
+
+glm::dvec3 mouseRay()
+{
+	glm::dvec2 normalizedMouseCoords;
+	normalizedMouseCoords.x = (2.0f * mouseX) / FocalEngine::FEngine::getInstance().getWindowWidth() - 1;
+	normalizedMouseCoords.y = 1.0f - (2.0f * mouseY) / FocalEngine::FEngine::getInstance().getWindowHeight();
+
+	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
+	glm::dvec4 eyeCoords = glm::inverse(FocalEngine::FEngine::getInstance().getCamera()->getProjectionMatrix()) * clipCoords;
+	eyeCoords.z = -1.0f;
+	eyeCoords.w = 0.0f;
+	glm::dvec3 worldRay = glm::inverse(FocalEngine::FEngine::getInstance().getCamera()->getViewMatrix()) * eyeCoords;
+	worldRay = glm::normalize(worldRay);
+
+	return worldRay;
+}
+
+void determineEntityUnderMouse()
+{
+	std::vector<std::string> entityList = FocalEngine::FEScene::getInstance().getEntityList();
+	entityUnderMouse.second = FLT_MAX;
+	for (size_t i = 0; i < entityList.size(); i++)
+	{
+		float dis = 0;
+		FocalEngine::FEAABB box = FocalEngine::FEScene::getInstance().getEntity(entityList[i])->getAABB();
+
+		if (box.rayIntersect(FocalEngine::FEngine::getInstance().getCamera()->getPosition(), mouseRay(), dis))
+		{
+			if (entityUnderMouse.second > dis)
+			{
+				entityUnderMouse.first = entityList[i];
+				entityUnderMouse.second = dis;
+			}
+		}
+	}
+}
+
+//void saveMaterials()
+//{
+//	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+//
+//	std::ofstream materialFile;
+//	materialFile.open("materials.txt");
+//
+//	for (size_t i = 2; i < materialList.size(); i++)
+//	{
+//		FocalEngine::FEMaterial* mat = FocalEngine::FEResourceManager::getInstance().getMaterial(materialList[i]);
+//		
+//		materialFile << materialList[i] << "\n";
+//		//materialFile << mat->getName(); << "\n";
+//	}
+//	
+//	materialFile.close();
+//}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
@@ -643,7 +796,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	scene.getEntity("brik")->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene.getEntity("brik")->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	lightBlob = new FocalEngine::FELight(FocalEngine::FE_DIRECTIONAL_LIGHT);
+	//lightBlob = new FocalEngine::FELight(FocalEngine::FE_DIRECTIONAL_LIGHT);
+	lightBlob = new FocalEngine::FELight(FocalEngine::FE_SPOT_LIGHT);
 	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
 	scene.add(lightBlob);
 
@@ -663,7 +817,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
 		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(1.0f);
 	}
-	renderer.addPostProcess(testEffect);
+	//renderer.addPostProcess(testEffect);
 
 	FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
 	testMat->addParameter(testParam);
@@ -681,6 +835,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		displaySceneEntities();
 		displayMaterialEditor();
 		displayPostProcess();
+
+		/*if (entityUnderMouse.second != FLT_MAX)
+			ImGui::Text((entityUnderMouse.first + "  " + std::to_string(entityUnderMouse.second)).c_str());
+
+		std::string mouseRayStr = "mouseRay = ";
+		glm::dvec3 ray = mouseRay();
+		mouseRayStr += std::to_string(ray.x) + " " + std::to_string(ray.y) + " " + std::to_string(ray.z);
+		ImGui::Text(mouseRayStr.c_str());
+
+		mouseRayStr = "cameraPosition = ";
+		glm::dvec3 camPos = FocalEngine::FEngine::getInstance().getCamera()->getPosition();
+		mouseRayStr += std::to_string(camPos.x) + " " + std::to_string(camPos.y) + " " + std::to_string(camPos.z);
+		ImGui::Text(mouseRayStr.c_str());
+
+		mouseRayStr = "MouseYaw = ";
+		mouseRayStr += std::to_string(FocalEngine::FEngine::getInstance().getCamera()->getYaw());
+		ImGui::Text(mouseRayStr.c_str());*/
 
 		engine.endFrame();
 

@@ -26,8 +26,17 @@ namespace FocalEngine
 		glm::vec3 getPosition();
 		void setPosition(glm::vec3 newPosition);
 
+		glm::vec3 getDirection();
+		void setDirection(glm::vec3 newDirection);
+
 		float getRange();
 		void setRange(float newRange);
+
+		float getSpotAngle();
+		void setSpotAngle(float newSpotAngle);
+
+		float getSpotAngleOuter();
+		void setSpotAngleOuter(float newSpotAngleOuter);
 
 		bool isLightEnabled();
 		void setLightEnabled(bool isLightEnabled);
@@ -40,12 +49,17 @@ namespace FocalEngine
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
+
+		FELightType getType();
 	private:
 		FELightType type;
 
 		glm::vec3 color = glm::vec3(1.0f);
 		float intensity = 1.0f;
 		glm::vec3 position = glm::vec3(0.0f);
+		glm::vec3 direction = glm::vec3(0.0f, -1.0f, 0.0f);
+		float spotAngle = 30.0f;
+		float spotAngleOuter = 45.0f;
 
 		float range;
 		bool enabled;

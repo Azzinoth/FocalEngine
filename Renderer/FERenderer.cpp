@@ -45,7 +45,19 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 		if (iterator->first == std::string("FELightColor"))
 			iterator->second.updateData(scene.sceneLights[0]->getColor() * scene.sceneLights[0]->getIntensity());
+		// to-do: check maybe rewrite
+		if (iterator->first == std::string("LightType"))
+			iterator->second.updateData(scene.sceneLights[0]->getType());
 
+		if (iterator->first == std::string("FELightDirection"))
+			iterator->second.updateData(scene.sceneLights[0]->getDirection());
+
+		if (iterator->first == std::string("LightSpotAngle"))
+			iterator->second.updateData(glm::cos(glm::radians(/*12.5f*/scene.sceneLights[0]->getSpotAngle())));
+
+		if (iterator->first == std::string("LightSpotAngleOuter"))
+			iterator->second.updateData(glm::cos(glm::radians(/*17.5f*/scene.sceneLights[0]->getSpotAngleOuter())));
+		// to-do: check maybe rewrite END
 		if (iterator->first == std::string("FEGamma"))
 			iterator->second.updateData(currentCamera->getGamma());
 
