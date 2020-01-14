@@ -17,11 +17,13 @@ namespace FocalEngine
 		FEEntity* getEntity(std::string name);
 		std::vector<std::string> getEntityList();
 
-		void add(FELight* newLight);
+		void addLight(FELightType Type, std::string Name);
+		FELight* getLight(std::string name);
+		std::vector<std::string> getLightsList();
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
 		std::unordered_map<std::string, FEEntity*> entityMap;
-		std::vector<FELight*> sceneLights;
+		std::unordered_map<std::string, FELight*> lightsMap;
 	};
 }

@@ -16,6 +16,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <map>
 
 #define GLM_FORCE_XYZW_ONLY
 

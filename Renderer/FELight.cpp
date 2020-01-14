@@ -124,3 +124,30 @@ void FELight::setSpotAngleOuter(float newSpotAngleOuter)
 {
 	spotAngleOuter = newSpotAngleOuter;
 }
+
+glm::vec3 FELight::getRotation()
+{
+	return rotation;
+}
+
+void FELight::setRotation(glm::vec3 newRotation)
+{
+	rotation = newRotation;
+
+	glm::mat4 rotationMatrix = glm::mat4(1.0);
+	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.y * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.z * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.x * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+	
+	direction = glm::normalize(rotationMatrix * glm::vec4(defaultDirection, 1.0f));
+}
+
+std::string FELight::getName()
+{
+	return name;
+}
+
+void FELight::setName(std::string newName)
+{
+	name = newName;
+}

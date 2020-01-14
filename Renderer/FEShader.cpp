@@ -11,7 +11,6 @@ FEShaderParam::FEShaderParam(int Data, std::string Name)
 	data = new int(Data);
 	type = FE_INT_SCALAR_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(float Data, std::string Name)
@@ -19,7 +18,6 @@ FEShaderParam::FEShaderParam(float Data, std::string Name)
 	data = new float(Data);
 	type = FE_FLOAT_SCALAR_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
@@ -27,7 +25,6 @@ FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
 	data = new glm::vec2(Data);
 	type = FE_VECTOR2_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
@@ -35,7 +32,6 @@ FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
 	data = new glm::vec3(Data);
 	type = FE_VECTOR3_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
@@ -43,7 +39,6 @@ FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
 	data = new glm::vec4(Data);
 	type = FE_VECTOR4_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
@@ -51,7 +46,6 @@ FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
 	data = new glm::mat4(Data);
 	type = FE_MAT4_UNIFORM;
 	name = Name;
-	loadedFromEngine = std::find(FEStandardUniforms.begin(), FEStandardUniforms.end(), Name) != FEStandardUniforms.end() ? true : false;
 }
 
 void FEShaderParam::updateData(int Data)
@@ -253,7 +247,7 @@ void FEShader::registerUniforms()
 	GLint size;
 	GLenum type;
 
-	const GLsizei bufSize = 24;
+	const GLsizei bufSize = 64;
 	GLchar name[bufSize];
 	GLsizei length;
 
@@ -540,6 +534,14 @@ void FEShader::loadDataToGPU()
 
 void FEShader::addParameter(FEShaderParam Parameter)
 {
+	bool find = false;
+	for (size_t i = 0; i < FEStandardUniforms.size(); i++)
+	{
+		if (Parameter.getName().find(FEStandardUniforms[i]) != size_t(-1))
+			find = true;
+	}
+	Parameter.loadedFromEngine = find;
+
 	parameters[Parameter.getName()] = Parameter;
 }
 

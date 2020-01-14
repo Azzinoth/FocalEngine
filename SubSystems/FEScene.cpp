@@ -7,9 +7,23 @@ FEScene::FEScene()
 {
 }
 
-void FEScene::add(FELight* newLight)
+void FEScene::addLight(FELightType Type, std::string Name)
 {
-	sceneLights.push_back(newLight);
+	short nextID = short(lightsMap.size());
+	
+	if (Name.size())
+	{
+		// if there is light with that name already
+		if (lightsMap.find(Name) != lightsMap.end())
+			Name = "light_" + std::to_string(nextID);
+	}
+	else
+	{
+		Name = "light_" + std::to_string(nextID);
+	}
+
+	lightsMap[Name] = new FELight(Type);
+	lightsMap[Name]->setName(Name);
 }
 
 void FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
@@ -45,4 +59,17 @@ FEEntity* FEScene::getEntity(std::string name)
 std::vector<std::string> FEScene::getEntityList()
 {
 	FE_MAP_TO_STR_VECTOR(entityMap)
+}
+
+FELight* FEScene::getLight(std::string name)
+{
+	if (lightsMap.find(name) == lightsMap.end())
+		return nullptr;
+
+	return lightsMap[name];
+}
+
+std::vector<std::string> FEScene::getLightsList()
+{
+	FE_MAP_TO_STR_VECTOR(lightsMap)
 }

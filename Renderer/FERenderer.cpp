@@ -23,45 +23,84 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity)
 {
+	static char* name = new char[256];
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 
 	auto iterator = shader->parameters.begin();
 	while (iterator != shader->parameters.end())
 	{
-		if (iterator->first == std::string("FEWorldMatrix"))
+		auto parameterName = iterator->first.c_str();
+
+		strcpy_s(name, 256, "FEWorldMatrix");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(entity->worldMatrix);
 
-		if (iterator->first == std::string("FEViewMatrix"))
+		strcpy_s(name, 256, "FEViewMatrix");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getViewMatrix());
 
-		if (iterator->first == std::string("FEProjectionMatrix"))
+		strcpy_s(name, 256, "FEProjectionMatrix");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getProjectionMatrix());
 
-		if (iterator->first == std::string("FECameraPosition"))
+		strcpy_s(name, 256, "FECameraPosition");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getPosition());
 
-		if (iterator->first == std::string("FELightPosition"))
-			iterator->second.updateData(scene.sceneLights[0]->getPosition());
 
-		if (iterator->first == std::string("FELightColor"))
-			iterator->second.updateData(scene.sceneLights[0]->getColor() * scene.sceneLights[0]->getIntensity());
-		// to-do: check maybe rewrite
-		if (iterator->first == std::string("LightType"))
-			iterator->second.updateData(scene.sceneLights[0]->getType());
+		auto lightIterator = scene.lightsMap.begin();
+		char index = 48;
+		strcpy_s(name, 256, "FElight[");
+		int len = strlen(name);
+		while (lightIterator != scene.lightsMap.end())
+		{
+			name[len] = index;
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].type");
 
-		if (iterator->first == std::string("FELightDirection"))
-			iterator->second.updateData(scene.sceneLights[0]->getDirection());
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(lightIterator->second->getType());
 
-		if (iterator->first == std::string("LightSpotAngle"))
-			iterator->second.updateData(glm::cos(glm::radians(/*12.5f*/scene.sceneLights[0]->getSpotAngle())));
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].position");
 
-		if (iterator->first == std::string("LightSpotAngleOuter"))
-			iterator->second.updateData(glm::cos(glm::radians(/*17.5f*/scene.sceneLights[0]->getSpotAngleOuter())));
-		// to-do: check maybe rewrite END
-		if (iterator->first == std::string("FEGamma"))
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(lightIterator->second->getPosition());
+
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].color");
+
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(lightIterator->second->getColor() * lightIterator->second->getIntensity());
+
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].direction");
+
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(lightIterator->second->getDirection());
+
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].spotAngle");
+
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(glm::cos(glm::radians(lightIterator->second->getSpotAngle())));
+
+			name[len + 1] = '\0';
+			strcat_s(name, 256, "].spotAngleOuter");
+
+			if (strcmp(parameterName, name) == 0)
+				iterator->second.updateData(glm::cos(glm::radians(lightIterator->second->getSpotAngleOuter())));
+			
+			lightIterator++;
+			index++;
+		}
+
+		strcpy_s(name, 256, "FEGamma");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getGamma());
 
-		if (iterator->first == std::string("FEExposure"))
+		strcpy_s(name, 256, "FEExposure");
+		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getExposure());
 
 		iterator++;
@@ -87,21 +126,21 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-
+	
 	auto it = scene.entityMap.begin();
 	while (it != scene.entityMap.end())
 	{
 		auto entity = it->second;
-
+		
 		entity->material->bind();
 		loadStandardParams(entity->material->shader, currentCamera, entity);
 		entity->material->shader->loadDataToGPU();
 		entity->render();
 		entity->material->unBind();
-
+		
 		it++;
 	}
-
+	
 	sceneToTextureFB->unBind();
 	// ********* RENDER SCENE END *********
 

@@ -112,12 +112,79 @@ void main(void)
 }
 )";
 
-FocalEngine::FEEntity* testEntity2;
-FocalEngine::FELight* lightBlob;
 bool isCameraInputActive = true;
 std::pair<std::string, float > entityUnderMouse;
 std::string selectedEntity = "";
 bool selectedEntityWasChanged = false;
+
+void toolTip(const char* text)
+{
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(text);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
+void showPosition(std::string objectName, glm::vec3& position)
+{
+	ImGui::Text("Position : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X pos : ") + objectName).c_str(), &position[0], 0.1f);
+	toolTip("X position");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y pos : ") + objectName).c_str(), &position[1], 0.1f);
+	toolTip("Y position");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z pos : ") + objectName).c_str(), &position[2], 0.1f);
+	toolTip("Z position");
+}
+
+void showRotation(std::string objectName, glm::vec3& rotation)
+{
+	ImGui::Text("Rotation : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X rot : ") + objectName).c_str(), &rotation[0], 0.1f, 0.0f, 360.0f);
+	toolTip("X rotation");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y rot : ") + objectName).c_str(), &rotation[1], 0.1f, 0.0f, 360.0f);
+	toolTip("Y rotation");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z rot : ") + objectName).c_str(), &rotation[2], 0.1f, 0.0f, 360.0f);
+	toolTip("Z rotation");
+}
+
+void showScale(std::string objectName, glm::vec3& scale)
+{
+	ImGui::Text("Scale : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X scale : ") + objectName).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
+	toolTip("X scale");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y scale : ") + objectName).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
+	toolTip("Y scale");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z scale : ") + objectName).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
+	toolTip("Z scale");
+}
 
 void mouseButtonCallback(int button, int action, int mods)
 {
@@ -133,8 +200,6 @@ void mouseButtonCallback(int button, int action, int mods)
 			selectedEntity = "";
 		}
 	}
-	
-	//FocalEngine::FEScene::getInstance().getEntity("testCube2")->material->setParam("baseColor", glm::vec3(0.1f, 0.6f, 0.1f));
 }
 
 double mouseX, mouseY;
@@ -171,7 +236,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		case FocalEngine::FE_FLOAT_SCALAR_UNIFORM:
 		{
 			float fData = *(float*)param->data;
-			ImGui::SliderFloat(param->name.c_str(), &fData, 0.0f, 10.0f);
+			ImGui::DragFloat(param->name.c_str(), &fData, 0.1f, 0.0f, 100.0f);
 			param->updateData(fData);
 			break;
 		}
@@ -253,98 +318,57 @@ void displayLightProperties(FocalEngine::FELight* light)
 {
 	if (light->getType() == FocalEngine::FE_DIRECTIONAL_LIGHT)
 	{
-		glm::vec3 pos = light->getPosition();
-		ImGui::Text("Light X pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light X pos : ", &pos[0], -1.0f, 1.0f);
-
-		ImGui::Text("Light Y pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -1.0f, 1.0f);
-
-		ImGui::Text("Light Z pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -1.0f, 1.0f);
-
-		light->setPosition(pos);
+		glm::vec3 rot = light->getRotation();
+		showRotation(light->getName(), rot);
+		light->setRotation(rot);
 	}
 	else if (light->getType() == FocalEngine::FE_POINT_LIGHT)
 	{
 		glm::vec3 pos = light->getPosition();
-		ImGui::Text("Light X pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
-
-		ImGui::Text("Light Y pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
-
-		ImGui::Text("Light Z pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
-
+		showPosition(light->getName(), pos);
 		light->setPosition(pos);
 	}
 	else if (light->getType() == FocalEngine::FE_SPOT_LIGHT)
 	{
 		glm::vec3 pos = light->getPosition();
-		ImGui::Text("Light X pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light X pos : ", &pos[0], -50.0f, 50.0f);
-
-		ImGui::Text("Light Y pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Y pos : ", &pos[1], -50.0f, 50.0f);
-
-		ImGui::Text("Light Z pos :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Z pos : ", &pos[2], -50.0f, 50.0f);
-
+		showPosition(light->getName(), pos);
 		light->setPosition(pos);
 
-		glm::vec3 dir = light->getDirection();
-		ImGui::Text("Light X dir :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light X dir : ", &dir[0], -1.0f, 1.0f);
-
-		ImGui::Text("Light Y dir :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Y dir : ", &dir[1], -1.0f, 1.0f);
-
-		ImGui::Text("Light Z dir :   ");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-		ImGui::SliderFloat("##Light Z dir : ", &dir[2], -1.0f, 1.0f);
-
-		light->setPosition(pos);
+		glm::vec3 rot = light->getRotation();
+		showRotation(light->getName(), rot);
+		light->setRotation(rot);
 
 		float spotAngle = light->getSpotAngle();
-		ImGui::SliderFloat("Spot angle", &spotAngle, 0.0f, 90.0f);
+		ImGui::SliderFloat((std::string("Inner angle##") + light->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
 		light->setSpotAngle(spotAngle);
 
 		float spotAngleOuter = light->getSpotAngleOuter();
-		ImGui::SliderFloat("Spot angle outer", &spotAngleOuter, 0.0f, 90.0f);
+		ImGui::SliderFloat((std::string("Outer angle ##") + light->getName()).c_str(), &spotAngleOuter, 0.0f, 90.0f);
 		light->setSpotAngleOuter(spotAngleOuter);
 	}
 
 	glm::vec3 color = light->getColor();
-	ImGui::ColorEdit3("Light color", &color.x);
+	ImGui::ColorEdit3((std::string("Color##") + light->getName()).c_str(), &color.x);
 	light->setColor(color);
 
 	float intensity = light->getIntensity();
-	ImGui::SliderFloat("Light intensity", &intensity, 0.0f, 20.0f);
+	ImGui::SliderFloat((std::string("Intensity##") + light->getName()).c_str(), &intensity, 0.0f, 100.0f);
 	light->setIntensity(intensity);
+}
+
+void displayLightsProperties()
+{
+	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	std::vector<std::string> lightList = scene.getLightsList();
+
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (ImGui::TreeNode(lightList[i].c_str()))
+		{
+			displayLightProperties(scene.getLight(lightList[i]));
+			ImGui::TreePop();
+		}
+	}
 }
 
 void addEntityButton()
@@ -392,41 +416,12 @@ void displaySceneEntities()
 			{
 				ImGui::PushID(i); // to create scopes and avoid ID conflicts within the same Window.
 				glm::vec3 pos = entity->getPosition();
-				ImGui::Text("X pos :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##X pos : ", &pos[0], -100.0f, 100.0f);
-				
-				ImGui::Text("Y pos :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Y pos : ", &pos[1], -100.0f, 100.0f);
-
-				ImGui::Text("Z pos :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Z pos : ", &pos[2], -100.0f, 100.0f);
-
+				showPosition(entity->getName(), pos);
 				entity->setPosition(pos);
 
-				// ROTATION
+
 				glm::vec3 rot = entity->getRotation();
-
-				ImGui::Text("X rot :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##X rot : ", &rot[0], 0.0f, 360.0f);
-
-				ImGui::Text("Y rot :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Y rot : ", &rot[1], 0.0f, 360.0f);
-
-				ImGui::Text("Z rot :   ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::SliderFloat("##Z rot : ", &rot[2], 0.0f, 360.0f);
-
+				showRotation(entity->getName(), rot);
 				entity->setRotation(rot);
 
 				// SCALE
@@ -439,27 +434,14 @@ void displaySceneEntities()
 				ImGui::Checkbox("Uniform scaling", &uniformScaling);
 				if (!uniformScaling)
 				{
-					ImGui::Text("X scale : ");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(100);
-					ImGui::SliderFloat("##X scale : ", &scale[0], 0.01f, 10.0f);
-
-					ImGui::Text("Y scale : ");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(100);
-					ImGui::SliderFloat("##Y scale : ", &scale[1], 0.01f, 10.0f);
-
-					ImGui::Text("Z scale : ");
-					ImGui::SameLine();
-					ImGui::SetNextItemWidth(100);
-					ImGui::SliderFloat("##Z scale : ", &scale[2], 0.01f, 10.0f);
+					showScale(entity->getName(), scale);
 				}
 				else
 				{
 					ImGui::Text("entity scale : ");
 					ImGui::SameLine();
 					ImGui::SetNextItemWidth(100);
-					ImGui::SliderFloat("##entity scale : ", &uniformScale, 0.01f, 10.0f);
+					ImGui::DragFloat("##entity scale : ", &uniformScale, 0.01f, 0.01f, 1000.0f);
 				}
 				
 				uniformScaling ? entity->setScale(glm::vec3(uniformScale)) : entity->setScale(scale);
@@ -531,10 +513,10 @@ void displaySceneEntities()
 
 		ImGui::Text("============================================");
 		
-		displayLightProperties(lightBlob);
+		displayLightsProperties();
 
 		float FEExposure = FocalEngine::FEngine::getInstance().getCamera()->getExposure();
-		ImGui::SliderFloat("Camera Exposure", &FEExposure, 0.001f, 4.0f);
+		ImGui::DragFloat("Camera Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
 		FocalEngine::FEngine::getInstance().getCamera()->setExposure(FEExposure);
 
 	ImGui::End();
@@ -796,16 +778,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	scene.getEntity("brik")->setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene.getEntity("brik")->setScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	//lightBlob = new FocalEngine::FELight(FocalEngine::FE_DIRECTIONAL_LIGHT);
-	lightBlob = new FocalEngine::FELight(FocalEngine::FE_SPOT_LIGHT);
-	lightBlob->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
-	scene.add(lightBlob);
+	scene.addLight(FocalEngine::FE_DIRECTIONAL_LIGHT, "sun");
+	scene.getLight("sun")->setColor(glm::vec3(5.0f, 5.0f, 5.0f));
 
-	// to-do: there is no ability to add light :)
-	FocalEngine::FELight* lightBlob2 = new FocalEngine::FELight(FocalEngine::FE_POINT_LIGHT);
-	lightBlob2->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
-	lightBlob2->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
-	scene.add(lightBlob2);
+	scene.addLight(FocalEngine::FE_POINT_LIGHT, "pointLight");
+	scene.getLight("pointLight")->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
+	scene.getLight("pointLight")->setIntensity(10.0f);
+	scene.getLight("pointLight")->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
+
+	scene.addLight(FocalEngine::FE_SPOT_LIGHT, "projector");
+	scene.getLight("projector")->setColor(glm::vec3(0.0f, 1.0f, 0.0f));
+	scene.getLight("projector")->setIntensity(10.0f);
+	scene.getLight("projector")->setPosition(glm::vec3(1.0f, 1.0f, 1.0f));
 
 	FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
 	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
@@ -831,27 +815,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		engine.render();
 
 		//ImGui::ShowDemoWindow();
-		//displayMaterialPrameters(testMat);
+
 		displaySceneEntities();
 		displayMaterialEditor();
 		displayPostProcess();
-
-		/*if (entityUnderMouse.second != FLT_MAX)
-			ImGui::Text((entityUnderMouse.first + "  " + std::to_string(entityUnderMouse.second)).c_str());
-
-		std::string mouseRayStr = "mouseRay = ";
-		glm::dvec3 ray = mouseRay();
-		mouseRayStr += std::to_string(ray.x) + " " + std::to_string(ray.y) + " " + std::to_string(ray.z);
-		ImGui::Text(mouseRayStr.c_str());
-
-		mouseRayStr = "cameraPosition = ";
-		glm::dvec3 camPos = FocalEngine::FEngine::getInstance().getCamera()->getPosition();
-		mouseRayStr += std::to_string(camPos.x) + " " + std::to_string(camPos.y) + " " + std::to_string(camPos.z);
-		ImGui::Text(mouseRayStr.c_str());
-
-		mouseRayStr = "MouseYaw = ";
-		mouseRayStr += std::to_string(FocalEngine::FEngine::getInstance().getCamera()->getYaw());
-		ImGui::Text(mouseRayStr.c_str());*/
 
 		engine.endFrame();
 
