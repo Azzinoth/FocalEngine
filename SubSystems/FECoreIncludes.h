@@ -26,6 +26,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.inl"
 
+#include "jsoncpp/json/json.h"
+
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
 
 #define SINGLETON_PUBLIC_PART(CLASS_NAME)  \

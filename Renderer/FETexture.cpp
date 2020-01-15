@@ -80,3 +80,8 @@ FETexture* FETexture::createSameFormatTexture()
 {
 	return new FETexture(internalFormat, format, width, height);
 }
+
+std::string FETexture::getFileName()
+{
+	return fileName;
+}

@@ -50,16 +50,6 @@ void FELight::setLightEnabled(bool isLightEnabled)
 	enabled = isLightEnabled;
 }
 
-bool FELight::isLightProjectingShadow()
-{
-	return projectShadow;
-}
-
-void FELight::setLightProjectingShadow(bool isLightEnabled)
-{
-	projectShadow = isLightEnabled;
-}
-
 float FELight::getShadowBias()
 {
 	return shadowBias;

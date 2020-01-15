@@ -45,3 +45,8 @@ FEAABB FEMesh::getAABB()
 {
 	return AABB;
 }
+
+std::string FEMesh::getFileName()
+{
+	return fileName;
+}

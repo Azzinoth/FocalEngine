@@ -20,6 +20,8 @@ namespace FocalEngine
 		void addLight(FELightType Type, std::string Name);
 		FELight* getLight(std::string name);
 		std::vector<std::string> getLightsList();
+
+		void clear();
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 

@@ -273,3 +273,8 @@ FEPostProcess* FEngine::createPostProcess(std::string Name, int ScreenWidth, int
 
 	return RESOURCE_MANAGER_OBJ.createPostProcess(ScreenWidth, ScreenHeight, Name);
 }
+
+void FEngine::terminate()
+{
+	glfwSetWindowShouldClose(window, true);
+}

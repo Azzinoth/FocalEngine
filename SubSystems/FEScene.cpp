@@ -73,3 +73,9 @@ std::vector<std::string> FEScene::getLightsList()
 {
 	FE_MAP_TO_STR_VECTOR(lightsMap)
 }
+
+void FEScene::clear()
+{
+	entityMap.clear();
+	lightsMap.clear();
+}

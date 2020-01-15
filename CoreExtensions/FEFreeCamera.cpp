@@ -107,6 +107,10 @@ void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 	}
 
 	setYaw(currentMouseXAngle);
+	if (currentMouseYAngle > 89.0f)
+		currentMouseYAngle = 89.0f;
+	if (currentMouseYAngle < -89.0f)
+		currentMouseYAngle = -89.0f;
 	setPitch(currentMouseYAngle);
 }
 
@@ -150,4 +154,16 @@ void FEFreeCamera::keyboardInput(int key, int scancode, int action, int mods)
 	{
 		rightKeyPreesed = false;
 	}
+}
+
+void FEFreeCamera::setYaw(float newYaw)
+{
+	FEBasicCamera::setYaw(newYaw);
+	currentMouseXAngle = newYaw;
+}
+
+void FEFreeCamera::setPitch(float newPitch)
+{
+	FEBasicCamera::setPitch(newPitch);
+	currentMouseYAngle = newPitch;
 }

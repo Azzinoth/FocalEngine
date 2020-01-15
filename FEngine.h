@@ -18,6 +18,7 @@ namespace FocalEngine
 		void render(bool internalCall = false);
 
 		bool isWindowOpened();
+		void terminate();
 
 		void setCamera(FEBasicCamera* newCamera);
 		FEBasicCamera* getCamera();

@@ -28,6 +28,8 @@ namespace FocalEngine
 		std::string getName();
 		void setName(std::string newName);
 
+		std::string getFileName();
+
 		virtual void bind(const unsigned int textureUnit = 0);
 		virtual void unBind();
 
@@ -35,6 +37,7 @@ namespace FocalEngine
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";
+		std::string fileName = "";
 		bool hdr = false;
 
 		int width = 0;

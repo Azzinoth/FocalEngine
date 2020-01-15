@@ -14,6 +14,9 @@ namespace FocalEngine
 		float currentMouseYAngle = 0;
 		float speed = 0.01f;
 
+		void setYaw(float newYaw);
+		void setPitch(float newPitch);
+
 		void keyboardInput(int key, int scancode, int action, int mods) final;
 		void mouseMoveInput(double xpos, double ypos) final;
 		void move(float deltaTime = 0.0f);

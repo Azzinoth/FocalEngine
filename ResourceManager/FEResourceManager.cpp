@@ -38,6 +38,7 @@ FETexture* FEResourceManager::createTexture(const char* file_name, std::string N
 	}
 
 	newTexture->setName(Name);
+	newTexture->fileName = file_name;
 
 	return newTexture;
 }
@@ -177,12 +178,15 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(objLoader.fVerC));
 }
 
-FEResourceManager::FEResourceManager()
+void FEResourceManager::loadStandardMeshes()
 {
+	if (meshes.find("cube") != meshes.end())
+		return;
+
 	std::vector<int> cubeIndices = {
-		4, 2, 0, 9, 7, 3, 6, 5,	20,	21,	15,	
-		22,	10,	12,	18,	8, 1, 19, 4, 17, 2,	
-		9, 23, 7, 6, 13, 5, 24, 16, 15, 10,	
+		4, 2, 0, 9, 7, 3, 6, 5,	20,	21,	15,
+		22,	10,	12,	18,	8, 1, 19, 4, 17, 2,
+		9, 23, 7, 6, 13, 5, 24, 16, 15, 10,
 		14, 12, 8, 11, 1
 	};
 
@@ -244,8 +248,8 @@ FEResourceManager::FEResourceManager()
 		0.625f, 0.25f
 	};
 
-	cube = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices);
-	cube->setName("cubeMesh");
+	meshes["cube"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices);
+	meshes["cube"]->setName("cube");
 
 	std::vector<int> planeIndices = {
 		0, 1, 2, 3, 0, 2
@@ -260,45 +264,54 @@ FEResourceManager::FEResourceManager()
 		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
 
-	std::vector<float> planeTangents = { 
+	std::vector<float> planeTangents = {
 		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f
 	};
-	
-	std::vector<float> planeUV = { 
+
+	std::vector<float> planeUV = {
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
-	
-	plane = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices);
-	plane->setName("planeMesh");
+
+	meshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices);
+	meshes["plane"]->setName("plane");
+}
+
+FEResourceManager::FEResourceManager()
+{
+	loadStandardMaterial();
+	loadStandardMeshes();
 }
 
 FEResourceManager::~FEResourceManager()
 {
-	
+	clear();
 }
 
 FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 {
-	if (meshName == std::string("cube"))
-	{
-		return cube;
-	}
-
-	if (meshName == std::string("plane"))
-	{
-		return plane;
-	}
+	if (meshes.find(meshName) != meshes.end())
+		return meshes[meshName];
 
 	return nullptr;
 }
 
-FEMesh* FEResourceManager::loadObjMeshData(const char* fileName)
+FEMesh* FEResourceManager::createMesh(const char* fileName, std::string Name)
 {
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
 	objLoader.readFile(fileName);
 	FEMesh* newMesh = rawObjDataToMesh();
-	newMesh->setName(getFileNameFromFilePath(fileName));
+
+	if (Name.size() == 0)
+		Name = getFileNameFromFilePath(fileName);
+
+	if (meshes.find(Name) != meshes.end())
+		Name = "mesh_" + std::to_string(meshes.size());
+	
+	newMesh->setName(Name);
+	newMesh->fileName = fileName;
+
+	meshes[newMesh->getName()] = newMesh;
 
 	return newMesh;
 }
@@ -353,5 +366,35 @@ std::string FEResourceManager::getFileNameFromFilePath(std::string filePath)
 	}
 
 	return std::string("");
+}
+
+std::vector<std::string> FEResourceManager::getMeshList()
+{
+	FE_MAP_TO_STR_VECTOR(meshes)
+}
+
+FEMesh* FEResourceManager::getMesh(std::string name)
+{
+	if (meshes.find(name) == meshes.end())
+		return nullptr;
+
+	return meshes[name];
+}
+
+void FEResourceManager::loadStandardMaterial()
+{
+	FEMaterial* newMat = createMaterial("SolidColorMaterial");
+	newMat->shader = new FEShader(FESolidColorVS, FESolidColorFS);
+	FocalEngine::FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
+	newMat->addParameter(color);
+}
+
+void FEResourceManager::clear()
+{
+	materials.clear();
+	meshes.clear();
+
+	loadStandardMaterial();
+	loadStandardMeshes();
 }
 

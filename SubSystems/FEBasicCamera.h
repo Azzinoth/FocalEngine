@@ -17,12 +17,12 @@ namespace FocalEngine
 		float getFarPlane();
 		void setFarPlane(float newFarPlane);
 
-		float getYaw();
-		void setYaw(float newYaw);
-		float getPitch();
-		void setPitch(float newPitch);
-		float getRoll();
-		void setRoll(float newRoll);
+		virtual float getYaw();
+		virtual void setYaw(float newYaw);
+		virtual float getPitch();
+		virtual void setPitch(float newPitch);
+		virtual float getRoll();
+		virtual void setRoll(float newRoll);
 		glm::vec3 getPosition();
 		void setPosition(glm::vec3 newPosition);
 

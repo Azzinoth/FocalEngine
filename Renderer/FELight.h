@@ -44,9 +44,6 @@ namespace FocalEngine
 		bool isLightEnabled();
 		void setLightEnabled(bool isLightEnabled);
 
-		bool isLightProjectingShadow();
-		void setLightProjectingShadow(bool isLightEnabled);
-
 		float getShadowBias();
 		void setShadowBias(float newShadowBias);
 
@@ -71,10 +68,10 @@ namespace FocalEngine
 		float spotAngle = 30.0f;
 		float spotAngleOuter = 45.0f;
 
-		float range;
-		bool enabled;
-		bool projectShadow;
+		float range = 10;
+		bool enabled = true;
+
 		float shadowBias;
-		bool castShadows;
+		bool castShadows = true;
 	};
 }

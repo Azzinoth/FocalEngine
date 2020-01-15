@@ -26,19 +26,23 @@ namespace FocalEngine
 		FEMesh* rawObjDataToMesh();
 		FEMesh* getSimpleMesh(std::string meshName);
 
-		FEMesh* loadObjMeshData(const char* fileName);
-
 		std::vector<std::string> getMaterialList();
 		FEMaterial* getMaterial(std::string name);
 		FEMaterial* createMaterial(std::string Name = "");
 		
+		std::vector<std::string> getMeshList();
+		FEMesh* getMesh(std::string name);
+		FEMesh* createMesh(const char* fileName, std::string Name = "");
+
+		void clear();
+		void loadStandardMeshes();
+		void loadStandardMaterial();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
-		FEMesh* plane;
-		FEMesh* cube;
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
 		std::unordered_map<std::string, FEMaterial*> materials;
+		std::unordered_map<std::string, FEMesh*> meshes;
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);

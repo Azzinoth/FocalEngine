@@ -5,15 +5,6 @@ FERenderer* FERenderer::_instance = nullptr;
 
 FERenderer::FERenderer()
 {
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
-
-	FEMaterial* newMat = resourceManager.createMaterial("SolidColorMaterial");
-	newMat->shader = new FEShader(FESolidColorVS, FESolidColorFS);
-	FocalEngine::FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
-	newMat->addParameter(color);
-
-	newMat = resourceManager.createMaterial("PhongMaterial");
-	newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -121,12 +112,30 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess)
 
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
+	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	// ********* GENERATE SHADOW MAPS *********
+	//auto itLight = scene.lightsMap.begin();
+	//while (itLight != scene.lightsMap.end())
+	//{
+	//	if (itLight->second->isCastShadows())
+	//	{
+	//		if (itLight->second->getType() == FE_DIRECTIONAL_LIGHT)
+	//		{
+	//			glm::vec3 oldCameraPosition = currentCamera->getPosition();
+	//			// put camera to the position of light
+	//			// to-do: should put out of scene bounderies in case of direcctional light.
+	//			currentCamera->setPosition(itLight->second->getPosition());
+	//		}
+	//	}
+
+	//	itLight++;
+	//}
+	// ********* GENERATE SHADOW MAPS END *********
+
 	// ********* RENDER SCENE *********
 	sceneToTextureFB->bind();
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-	
 	auto it = scene.entityMap.begin();
 	while (it != scene.entityMap.end())
 	{
