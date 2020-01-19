@@ -3,6 +3,7 @@
 #ifndef FEENTITY_H
 #define FEENTITY_H
 
+#include "../SubSystems/FETransformComponent.h"
 #include "FEMesh.h"
 #include "FEFramebuffer.h"
 
@@ -18,13 +19,7 @@ namespace FocalEngine
 		FEMesh* mesh = nullptr;
 		FEMaterial* material = nullptr;
 
-		glm::vec3 getPosition();
-		glm::vec3 getRotation();
-		glm::vec3 getScale();
-
-		void setPosition(glm::vec3 newPosition);
-		void setRotation(glm::vec3 newRotation);
-		void setScale(glm::vec3 newScale);
+		FETransformComponent transform;
 
 		void render();
 
@@ -35,18 +30,14 @@ namespace FocalEngine
 		void setName(std::string newName);
 
 		FEAABB getAABB();
+
+		bool isCastShadows();
+		void setCastShadows(bool isCastShadows);
 	private:
 		std::string name;
 
-		glm::vec3 position = glm::vec3();
-		glm::vec3 rotation = glm::vec3();
-		glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
-
-		void updateWorldMatrix();
-		glm::mat4 worldMatrix;
-
 		bool visible = true;
-		FEAABB AABB;
+		bool castShadows = true;
 	};
 }
 

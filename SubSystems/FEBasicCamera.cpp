@@ -164,3 +164,13 @@ void FEBasicCamera::setIsInputActive(bool isActive)
 {
 	isInputActive = isActive;
 }
+
+void FEBasicCamera::setLookAt(glm::vec3 lookAt)
+{
+	/*if (lookAt.z == 0)
+		lookAt.z = 0.00001f;
+	if (lookAt.y == -1)
+		lookAt.y = -0.9999f;*/
+
+	viewMatrix = glm::lookAt(getPosition(), lookAt, glm::vec3(0.0, 1.0, 0.0));
+}

@@ -27,6 +27,9 @@ namespace FocalEngine
 		void setColorAttachment(FETexture* newTexture);
 		void setDepthAttachment(FETexture* newTexture);
 		void setStencilAttachment(FETexture* newTexture);
+
+		int getWidth();
+		int getHeight();
 	private:
 		GLuint fbo = -1;
 		bool binded = false;

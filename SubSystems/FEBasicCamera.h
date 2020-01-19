@@ -1,11 +1,14 @@
 #pragma once
 
-#include "FECoreIncludes.h"
+#include "FETransformComponent.h"
 
 namespace FocalEngine
 {
+	class FERenderer;
+
 	class FEBasicCamera
 	{
+		friend FERenderer;
 	public:
 		FEBasicCamera();
 		~FEBasicCamera();
@@ -25,6 +28,8 @@ namespace FocalEngine
 		virtual void setRoll(float newRoll);
 		glm::vec3 getPosition();
 		void setPosition(glm::vec3 newPosition);
+
+		virtual void setLookAt(glm::vec3 lookAt);
 
 		float getAspectRatio();
 		void setAspectRatio(float newAspectRatio);
@@ -48,6 +53,7 @@ namespace FocalEngine
 
 		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
 		virtual void mouseMoveInput(double xpos, double ypos) {};
+		
 	protected:
 		bool isInputActive = true;
 

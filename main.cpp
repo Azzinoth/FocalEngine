@@ -125,7 +125,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 
 	FocalEngine::FEMaterial* testMat = resourceManager.createMaterial("TestMaterial");
-	testMat->shader = new FocalEngine::FEShader(FESolidColorVS, FESolidColorFS);
+	//testMat->shader = new FocalEngine::FEShader(FESolidColorVS, FESolidColorFS);
+	testMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
 	FocalEngine::FEShaderParam color(glm::vec3(0.0f, 0.4f, 0.6f), "baseColor");
 	testMat->addParameter(color);
 
@@ -145,6 +146,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
 	testMat->addParameter(testParam);
+	//testMat->addTexture(scene.getLight("sun")->shadowMap->getDepthAttachment());
+	
 
 	while (engine.isWindowOpened())
 	{
@@ -153,7 +156,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		engine.render();
 
 		//ImGui::ShowDemoWindow();
-
 		displaySceneEntities();
 		displayMaterialEditor();
 		displayPostProcess();

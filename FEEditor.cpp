@@ -42,6 +42,71 @@ void toolTip(const char* text)
 	}
 }
 
+void showTransformConfiguration(std::string objectName, FocalEngine::FETransformComponent* transform)
+{
+	// ********************* POSITION *********************
+	glm::vec3 position = transform->getPosition();
+	ImGui::Text("Position : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X pos : ") + objectName).c_str(), &position[0], 0.1f);
+	toolTip("X position");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y pos : ") + objectName).c_str(), &position[1], 0.1f);
+	toolTip("Y position");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z pos : ") + objectName).c_str(), &position[2], 0.1f);
+	toolTip("Z position");
+	transform->setPosition(position);
+
+	// ********************* ROTATION *********************
+	glm::vec3 rotation = transform->getRotation();
+	ImGui::Text("Rotation : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X rot : ") + objectName).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
+	toolTip("X rotation");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y rot : ") + objectName).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
+	toolTip("Y rotation");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z rot : ") + objectName).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
+	toolTip("Z rotation");
+	transform->setRotation(rotation);
+
+	// ********************* SCALE *********************
+	ImGui::Checkbox("Uniform scaling", &transform->uniformScaling);
+	glm::vec3 scale = transform->getScale();
+	ImGui::Text("Scale : ");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##X scale : ") + objectName).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
+	toolTip("X scale");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Y scale : ") + objectName).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
+	toolTip("Y scale");
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(50);
+	ImGui::DragFloat((std::string("##Z scale : ") + objectName).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
+	toolTip("Z scale");
+
+	glm::vec3 oldScale = transform->getScale();
+	transform->changeXScaleBy(scale[0] - oldScale[0]);
+	transform->changeYScaleBy(scale[1] - oldScale[1]);
+	transform->changeZScaleBy(scale[2] - oldScale[2]);
+}
+
 void showPosition(std::string objectName, glm::vec3& position)
 {
 	ImGui::Text("Position : ");
@@ -66,17 +131,17 @@ void showRotation(std::string objectName, glm::vec3& rotation)
 	ImGui::Text("Rotation : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X rot : ") + objectName).c_str(), &rotation[0], 0.1f, 0.0f, 360.0f);
+	ImGui::DragFloat((std::string("##X rot : ") + objectName).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
 	toolTip("X rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y rot : ") + objectName).c_str(), &rotation[1], 0.1f, 0.0f, 360.0f);
+	ImGui::DragFloat((std::string("##Y rot : ") + objectName).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
 	toolTip("Y rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z rot : ") + objectName).c_str(), &rotation[2], 0.1f, 0.0f, 360.0f);
+	ImGui::DragFloat((std::string("##Z rot : ") + objectName).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
 	toolTip("Z rotation");
 }
 
@@ -191,27 +256,24 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 
 void displayLightProperties(FocalEngine::FELight* light)
 {
+	showTransformConfiguration(light->getName(), &light->transform);
+
 	if (light->getType() == FocalEngine::FE_DIRECTIONAL_LIGHT)
 	{
-		glm::vec3 rot = light->getRotation();
-		showRotation(light->getName(), rot);
-		light->setRotation(rot);
+		glm::vec3 d = light->getDirection();
+		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
 	}
 	else if (light->getType() == FocalEngine::FE_POINT_LIGHT)
 	{
-		glm::vec3 pos = light->getPosition();
-		showPosition(light->getName(), pos);
-		light->setPosition(pos);
 	}
 	else if (light->getType() == FocalEngine::FE_SPOT_LIGHT)
 	{
-		glm::vec3 pos = light->getPosition();
-		showPosition(light->getName(), pos);
-		light->setPosition(pos);
-
-		glm::vec3 rot = light->getRotation();
-		showRotation(light->getName(), rot);
-		light->setRotation(rot);
+		glm::vec3 d = light->getDirection();
+		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
 
 		float spotAngle = light->getSpotAngle();
 		ImGui::SliderFloat((std::string("Inner angle##") + light->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
@@ -339,37 +401,8 @@ void displaySceneEntities()
 		FocalEngine::FEEntity* entity = scene.getEntity(entityList[i]);
 		if (ImGui::TreeNode(entity->getName().c_str()))
 		{
-			ImGui::PushID(i); // to create scopes and avoid ID conflicts within the same Window.
-			glm::vec3 pos = entity->getPosition();
-			showPosition(entity->getName(), pos);
-			entity->setPosition(pos);
-
-
-			glm::vec3 rot = entity->getRotation();
-			showRotation(entity->getName(), rot);
-			entity->setRotation(rot);
-
-			// SCALE
-			glm::vec3 scale = entity->getScale();
-
-			ImGui::SetNextItemWidth(40);
-			static bool uniformScaling = true;
-			float uniformScale = (scale[0] + scale[1] + scale[2]) / 3.0f;
-
-			ImGui::Checkbox("Uniform scaling", &uniformScaling);
-			if (!uniformScaling)
-			{
-				showScale(entity->getName(), scale);
-			}
-			else
-			{
-				ImGui::Text("entity scale : ");
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(100);
-				ImGui::DragFloat("##entity scale : ", &uniformScale, 0.01f, 0.01f, 1000.0f);
-			}
-
-			uniformScaling ? entity->setScale(glm::vec3(uniformScale)) : entity->setScale(scale);
+			ImGui::PushID(i);
+			showTransformConfiguration(entity->getName(), &entity->transform);
 
 			if (ImGui::CollapsingHeader("Mesh", ImGuiWindowFlags_None))
 			{
@@ -784,6 +817,37 @@ void loadMaterials(const char* fileName)
 	materialFile.close();
 }
 
+void writeTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform)
+{
+	root["position"]["X"] = transform->getPosition()[0];
+	root["position"]["Y"] = transform->getPosition()[1];
+	root["position"]["Z"] = transform->getPosition()[2];
+	root["rotation"]["X"] = transform->getRotation()[0];
+	root["rotation"]["Y"] = transform->getRotation()[1];
+	root["rotation"]["Z"] = transform->getRotation()[2];
+	root["scale"]["uniformScaling"] = transform->uniformScaling;
+	root["scale"]["X"] = transform->getScale()[0];
+	root["scale"]["Y"] = transform->getScale()[1];
+	root["scale"]["Z"] = transform->getScale()[2];
+}
+
+void readTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform)
+{
+	transform->setPosition(glm::vec3(root["position"]["X"].asFloat(),
+									 root["position"]["Y"].asFloat(),
+									 root["position"]["Z"].asFloat()));
+
+	transform->setRotation(glm::vec3(root["rotation"]["X"].asFloat(),
+									 root["rotation"]["Y"].asFloat(),
+									 root["rotation"]["Z"].asFloat()));
+
+	transform->uniformScaling = root["scale"]["uniformScaling"].asBool();
+
+	transform->setScale(glm::vec3(root["scale"]["X"].asFloat(),
+								  root["scale"]["Y"].asFloat(),
+								  root["scale"]["Z"].asFloat()));
+}
+
 void saveScene(const char* fileName)
 {
 	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
@@ -836,15 +900,7 @@ void saveScene(const char* fileName)
 
 		entityData[entity->getName()]["mesh"] = entity->mesh->getName();
 		entityData[entity->getName()]["material"] = entity->material->getName();
-		entityData[entity->getName()]["position"]["X"] = entity->getPosition()[0];
-		entityData[entity->getName()]["position"]["Y"] = entity->getPosition()[1];
-		entityData[entity->getName()]["position"]["Z"] = entity->getPosition()[2];
-		entityData[entity->getName()]["rotation"]["X"] = entity->getRotation()[0];
-		entityData[entity->getName()]["rotation"]["Y"] = entity->getRotation()[1];
-		entityData[entity->getName()]["rotation"]["Z"] = entity->getRotation()[2];
-		entityData[entity->getName()]["scale"]["X"] = entity->getScale()[0];
-		entityData[entity->getName()]["scale"]["Y"] = entity->getScale()[1];
-		entityData[entity->getName()]["scale"]["Z"] = entity->getScale()[2];
+		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
 	}
 	root["entities"] = entityData;
 
@@ -865,12 +921,7 @@ void saveScene(const char* fileName)
 		lightData[light->getName()]["color"]["R"] = light->getColor()[0];
 		lightData[light->getName()]["color"]["G"] = light->getColor()[1];
 		lightData[light->getName()]["color"]["B"] = light->getColor()[2];
-		lightData[light->getName()]["position"]["X"] = light->getPosition()[0];
-		lightData[light->getName()]["position"]["Y"] = light->getPosition()[1];
-		lightData[light->getName()]["position"]["Z"] = light->getPosition()[2];
-		lightData[light->getName()]["rotation"]["X"] = light->getRotation()[0];
-		lightData[light->getName()]["rotation"]["Y"] = light->getRotation()[1];
-		lightData[light->getName()]["rotation"]["Z"] = light->getRotation()[2];
+		writeTransformToJSON(lightData[light->getName()]["transformation"], &light->transform);
 		lightData[light->getName()]["direction"]["X"] = light->getDirection()[0];
 		lightData[light->getName()]["direction"]["Y"] = light->getDirection()[1];
 		lightData[light->getName()]["direction"]["Z"] = light->getDirection()[2];
@@ -957,18 +1008,7 @@ void loadScene(const char* fileName)
 						resourceManager.getMaterial(root["entities"][entityList[i]]["material"].asCString()),
 						entityList[i]);
 
-		
-		scene.getEntity(entityList[i])->setPosition(glm::vec3(root["entities"][entityList[i]]["position"]["X"].asFloat(),
-															  root["entities"][entityList[i]]["position"]["Y"].asFloat(),
-															  root["entities"][entityList[i]]["position"]["Z"].asFloat()));
-
-		scene.getEntity(entityList[i])->setRotation(glm::vec3(root["entities"][entityList[i]]["rotation"]["X"].asFloat(),
-															  root["entities"][entityList[i]]["rotation"]["Y"].asFloat(),
-															  root["entities"][entityList[i]]["rotation"]["Z"].asFloat()));
-
-		scene.getEntity(entityList[i])->setScale(glm::vec3(root["entities"][entityList[i]]["scale"]["X"].asFloat(),
-														   root["entities"][entityList[i]]["scale"]["Y"].asFloat(),
-														   root["entities"][entityList[i]]["scale"]["Z"].asFloat()));
+		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &scene.getEntity(entityList[i])->transform);
 	}
 
 	// loading Lights
@@ -984,14 +1024,8 @@ void loadScene(const char* fileName)
 		light->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
 		light->setCastShadows(root["lights"][lightList[i]]["castShadows"].asBool());
 		light->setLightEnabled(root["lights"][lightList[i]]["enabled"].asBool());
-		
-		light->setPosition(glm::vec3(root["lights"][lightList[i]]["position"]["X"].asFloat(),
-									 root["lights"][lightList[i]]["position"]["Y"].asFloat(),
-									 root["lights"][lightList[i]]["position"]["Z"].asFloat()));
 
-		light->setRotation(glm::vec3(root["lights"][lightList[i]]["rotation"]["X"].asFloat(),
-									 root["lights"][lightList[i]]["rotation"]["Y"].asFloat(),
-									 root["lights"][lightList[i]]["rotation"]["Z"].asFloat()));
+		readTransformToJSON(root["lights"][lightList[i]]["transformation"], &light->transform);
 
 		light->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
 									  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),

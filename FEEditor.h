@@ -18,6 +18,7 @@ void toolTip(const char* text);
 void showPosition(std::string objectName, glm::vec3& position);
 void showRotation(std::string objectName, glm::vec3& rotation);
 void showScale(std::string objectName, glm::vec3& scale);
+void showTransformConfiguration(std::string objectName, FocalEngine::FETransformComponent* transform);
 
 void displayMaterialPrameter(FocalEngine::FEShaderParam* param);
 void displayMaterialPrameters(FocalEngine::FEMaterial* material);
@@ -31,6 +32,9 @@ void addEntityButton();
 
 void saveMaterials(const char* fileName = nullptr);
 void loadMaterials(const char* fileName = nullptr);
+
+void writeTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform);
+void readTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform);
 
 void saveScene(const char* fileName = nullptr);
 void loadScene(const char* fileName = nullptr);

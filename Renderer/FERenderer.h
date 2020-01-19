@@ -23,11 +23,15 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);
+		void loadUniformBlocks();
 
 		void standardFBInit(int WindowWidth, int WindowHeight);
 		FEFramebuffer* sceneToTextureFB = nullptr;
 
 		std::vector<FEPostProcess*> postProcessEffects;
+
+		// in current version only shadows from one directional light is supported.
+		FETexture* shadowMap = nullptr;
 	};
 }
 

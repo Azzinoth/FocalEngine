@@ -3,6 +3,9 @@ using namespace FocalEngine;
 
 FEFramebuffer::FEFramebuffer(int attachments, int Width, int Height, bool HDR)
 {
+	width = Width;
+	height = Height;
+
 	FE_GL_ERROR(glGenFramebuffers(1, &fbo));
 	bind();
 
@@ -97,4 +100,14 @@ void FEFramebuffer::setStencilAttachment(FETexture* newTexture)
 	stencilAttachment = newTexture;
 	attachTexture(GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilAttachment);
 	if (!wasBind) unBind();
+}
+
+int FEFramebuffer::getWidth()
+{
+	return width;
+}
+
+int FEFramebuffer::getHeight()
+{
+	return height;
 }

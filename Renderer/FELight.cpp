@@ -4,6 +4,14 @@ using namespace FocalEngine;
 FELight::FELight(FELightType Type)
 {
 	type = Type;
+	//if (type == FE_DIRECTIONAL_LIGHT)
+	//{
+		shadowMapProjectionSize = 50.0f;
+		shadowProjectionMatrix = glm::ortho(-shadowMapProjectionSize,
+											shadowMapProjectionSize,
+											-shadowMapProjectionSize,
+											shadowMapProjectionSize, 0.01f, 700.0f);
+	//}
 }
 
 FELight::~FELight()
@@ -18,16 +26,6 @@ glm::vec3 FELight::getColor()
 void FELight::setColor(glm::vec3 newColor)
 {
 	color = newColor;
-}
-
-glm::vec3 FELight::getPosition()
-{
-	return position;
-}
-
-void FELight::setPosition(glm::vec3 newPosition)
-{
-	position = newPosition;
 }
 
 float FELight::getRange()
@@ -87,6 +85,7 @@ FELightType FELight::getType()
 
 glm::vec3 FELight::getDirection()
 {
+	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
 	return direction;
 }
 
@@ -115,23 +114,6 @@ void FELight::setSpotAngleOuter(float newSpotAngleOuter)
 	spotAngleOuter = newSpotAngleOuter;
 }
 
-glm::vec3 FELight::getRotation()
-{
-	return rotation;
-}
-
-void FELight::setRotation(glm::vec3 newRotation)
-{
-	rotation = newRotation;
-
-	glm::mat4 rotationMatrix = glm::mat4(1.0);
-	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.y * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.z * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-	rotationMatrix = glm::rotate(rotationMatrix, (float)rotation.x * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
-	
-	direction = glm::normalize(rotationMatrix * glm::vec4(defaultDirection, 1.0f));
-}
-
 std::string FELight::getName()
 {
 	return name;
@@ -140,4 +122,32 @@ std::string FELight::getName()
 void FELight::setName(std::string newName)
 {
 	name = newName;
+}
+
+glm::mat4 FELight::getViewMatrixForShadowMap()
+{
+	static glm::vec4 basisX = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	static glm::vec4 basisY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	static glm::vec4 basisZ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+
+	glm::vec4 fbasisX = glm::normalize(transform.getTransformMatrix() * basisX);
+	glm::vec4 fbasisY = glm::normalize(transform.getTransformMatrix() * basisY);
+	glm::vec4 fbasisZ = glm::normalize(transform.getTransformMatrix() * basisZ);
+
+	glm::mat4 testView = glm::mat4(1.0f);
+	testView[0][0] = fbasisX.x;
+	testView[1][0] = fbasisX.y;
+	testView[2][0] = fbasisX.z;
+	testView[0][1] = fbasisY.x;
+	testView[1][1] = fbasisY.y;
+	testView[2][1] = fbasisY.z;
+	testView[0][2] = fbasisZ.x;
+	testView[1][2] = fbasisZ.y;
+	testView[2][2] = fbasisZ.z;
+	testView[3][0] = transform.getPosition()[0];
+	testView[3][1] = transform.getPosition()[1];
+	//to-do: fix magic number
+	testView[3][2] = -50.0f/*itLight->second->transform.getPosition()[2]*/;
+
+	return testView;
 }

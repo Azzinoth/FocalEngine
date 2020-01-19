@@ -25,6 +25,7 @@
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.inl"
+#include "glm/gtx/quaternion.hpp"
 
 #include "jsoncpp/json/json.h"
 
@@ -75,3 +76,6 @@ while (iterator != map.end())              \
 }                                          \
                                            \
 return result;
+
+#define FE_MAX_LIGHTS 10
+#define FE_SHADOW_MAP_UNIT 2

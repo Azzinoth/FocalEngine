@@ -24,7 +24,7 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 		strcpy_s(name, 256, "FEWorldMatrix");
 		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(entity->worldMatrix);
+			iterator->second.updateData(entity->transform.getTransformMatrix());
 
 		strcpy_s(name, 256, "FEViewMatrix");
 		if (strcmp(parameterName, name) == 0)
@@ -37,54 +37,6 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		strcpy_s(name, 256, "FECameraPosition");
 		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getPosition());
-
-
-		auto lightIterator = scene.lightsMap.begin();
-		char index = 48;
-		strcpy_s(name, 256, "FElight[");
-		int len = strlen(name);
-		while (lightIterator != scene.lightsMap.end())
-		{
-			name[len] = index;
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].type");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(lightIterator->second->getType());
-
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].position");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(lightIterator->second->getPosition());
-
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].color");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(lightIterator->second->getColor() * lightIterator->second->getIntensity());
-
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].direction");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(lightIterator->second->getDirection());
-
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].spotAngle");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(glm::cos(glm::radians(lightIterator->second->getSpotAngle())));
-
-			name[len + 1] = '\0';
-			strcat_s(name, 256, "].spotAngleOuter");
-
-			if (strcmp(parameterName, name) == 0)
-				iterator->second.updateData(glm::cos(glm::radians(lightIterator->second->getSpotAngleOuter())));
-			
-			lightIterator++;
-			index++;
-		}
 
 		strcpy_s(name, 256, "FEGamma");
 		if (strcmp(parameterName, name) == 0)
@@ -110,27 +62,130 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess)
 	}
 }
 
+void FERenderer::loadUniformBlocks()
+{
+	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	std::vector<FELightShaderInfo> info;
+	info.resize(FE_MAX_LIGHTS);
+
+	auto lightIterator = scene.lightsMap.begin();
+	int index = 0;
+	while (lightIterator != scene.lightsMap.end())
+	{
+		info[index].typeAndAngles = glm::vec3(lightIterator->second->getType(),
+			glm::cos(glm::radians(lightIterator->second->getSpotAngle())),
+			glm::cos(glm::radians(lightIterator->second->getSpotAngleOuter())));
+
+		info[index].position = glm::vec4(lightIterator->second->transform.getPosition(), 0.0f);
+		info[index].color = glm::vec4(lightIterator->second->getColor() * lightIterator->second->getIntensity(), 0.0f);
+		info[index].direction = glm::vec4(lightIterator->second->getDirection(), 0.0f);
+		info[index].lightSpace = lightIterator->second->shadowProjectionMatrix * lightIterator->second->getViewMatrixForShadowMap();
+
+		index++;
+		lightIterator++;
+	}
+
+	std::vector<std::string> materialsList = resourceManager.getMaterialList();
+	for (size_t i = 0; i < materialsList.size(); i++)
+	{
+		FEMaterial* material = resourceManager.getMaterial(materialsList[i]);
+
+		auto iteratorBlock = material->shader->blockUniforms.begin();
+		while (iteratorBlock != material->shader->blockUniforms.end())
+		{
+			if (iteratorBlock->first.c_str() == std::string("lightInfo"))
+			{
+				glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second);
+				auto lightIterator = scene.lightsMap.begin();
+				int index = 0;
+				while (lightIterator != scene.lightsMap.end())
+				{
+					glBufferSubData(GL_UNIFORM_BUFFER, index * 128 + 0, 16, &info[index].typeAndAngles);
+					glBufferSubData(GL_UNIFORM_BUFFER, index * 128 + 16, 16, &info[index].position);
+					glBufferSubData(GL_UNIFORM_BUFFER, index * 128 + 32, 16, &info[index].color);
+					glBufferSubData(GL_UNIFORM_BUFFER, index * 128 + 48, 16, &info[index].direction);
+					glBufferSubData(GL_UNIFORM_BUFFER, index * 128 + 64, 64, &info[index].lightSpace);
+
+					index++;
+					lightIterator++;
+				}
+				glBindBuffer(GL_UNIFORM_BUFFER, 0);
+			}
+
+			iteratorBlock++;
+		}
+	}
+}
+
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-	// ********* GENERATE SHADOW MAPS *********
-	//auto itLight = scene.lightsMap.begin();
-	//while (itLight != scene.lightsMap.end())
-	//{
-	//	if (itLight->second->isCastShadows())
-	//	{
-	//		if (itLight->second->getType() == FE_DIRECTIONAL_LIGHT)
-	//		{
-	//			glm::vec3 oldCameraPosition = currentCamera->getPosition();
-	//			// put camera to the position of light
-	//			// to-do: should put out of scene bounderies in case of direcctional light.
-	//			currentCamera->setPosition(itLight->second->getPosition());
-	//		}
-	//	}
 
-	//	itLight++;
-	//}
+	loadUniformBlocks();
+	
+	// ********* GENERATE SHADOW MAPS *********
+	auto itLight = scene.lightsMap.begin();
+	while (itLight != scene.lightsMap.end())
+	{
+		if (itLight->second->isCastShadows())
+		{
+			if (itLight->second->getType() == FE_DIRECTIONAL_LIGHT)
+			{
+				glm::vec3 oldCameraPosition = currentCamera->getPosition();
+				glm::mat4 oldViewMatrix = currentCamera->getViewMatrix();
+				glm::mat4 oldProjectionMatrix = currentCamera->getProjectionMatrix();
+				// put camera to the position of light
+				// to-do: should put out of scene bounderies in case of direcctional light.
+
+				currentCamera->projectionMatrix = itLight->second->shadowProjectionMatrix;
+				currentCamera->viewMatrix = itLight->second->getViewMatrixForShadowMap();
+
+				glViewport(0, 0, itLight->second->shadowMap->getWidth(), itLight->second->shadowMap->getHeight());
+
+				itLight->second->shadowMap->bind();
+				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
+
+				auto it = scene.entityMap.begin();
+				while (it != scene.entityMap.end())
+				{
+					auto entity = it->second;
+					if (!entity->isCastShadows())
+					{
+						it++;
+						continue;
+					}
+						
+					entity->material->bind();
+					loadStandardParams(entity->material->shader, currentCamera, entity);
+					entity->material->shader->loadDataToGPU();
+					entity->render();
+					entity->material->unBind();
+
+					it++;
+				}
+
+				itLight->second->shadowMap->unBind();
+
+				currentCamera->setPosition(oldCameraPosition);
+				currentCamera->viewMatrix = oldViewMatrix;
+				currentCamera->projectionMatrix = oldProjectionMatrix;
+
+				glViewport(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight());
+
+				// in current version only shadows from one directional light is supported.
+				shadowMap = itLight->second->shadowMap->getDepthAttachment();
+				break;
+			}
+		}
+
+		itLight++;
+	}
 	// ********* GENERATE SHADOW MAPS END *********
+
+	// in current version only shadows from one directional light is supported.
+	shadowMap->bind(FE_SHADOW_MAP_UNIT);
 
 	// ********* RENDER SCENE *********
 	sceneToTextureFB->bind();

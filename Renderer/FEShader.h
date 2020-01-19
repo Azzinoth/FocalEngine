@@ -113,6 +113,7 @@ namespace FocalEngine
 		int vertexAttributes = 0;
 
 		std::unordered_map<std::string, FEShaderParam> parameters;
+		std::unordered_map<std::string, GLuint> blockUniforms;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
 		void cleanUp();

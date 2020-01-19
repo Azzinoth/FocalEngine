@@ -299,6 +299,23 @@ void FEShader::registerUniforms()
 		}
 	}
 
+	// uniformBlocks
+	GLuint uniformBlockIndex = glGetUniformBlockIndex(programID, "lightInfo");
+	if (uniformBlockIndex != size_t(-1))
+	{
+		glUniformBlockBinding(programID, uniformBlockIndex, 0);
+
+		GLuint ubo;
+		glGenBuffers(1, &ubo);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * 128, NULL, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		// define the range of the buffer that links to a uniform binding point
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, FE_MAX_LIGHTS * 128);
+
+		blockUniforms["lightInfo"] = ubo;
+	}
+
 	start();
 	for (size_t i = 0; i < textureUniforms.size(); i++)
 	{

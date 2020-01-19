@@ -23,6 +23,10 @@ void FEScene::addLight(FELightType Type, std::string Name)
 	}
 
 	lightsMap[Name] = new FELight(Type);
+	//if (Type == FE_DIRECTIONAL_LIGHT)
+	//{
+		lightsMap[Name]->shadowMap = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024, 1024);
+	//}
 	lightsMap[Name]->setName(Name);
 }
 
