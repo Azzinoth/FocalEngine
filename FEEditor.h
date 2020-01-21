@@ -1,6 +1,9 @@
 #pragma once
 
 #include "FEngine.h"
+#include <direct.h>
+
+#define PROJECTS_FOLDER "C:/Users/kandr/Downloads/FEProjects"
 
 static double mouseX, mouseY;
 static bool isCameraInputActive = true;
@@ -26,6 +29,7 @@ void displayLightProperties(FocalEngine::FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
 void displayMaterialEditor();
+void displayContentBrowser();
 void displayPostProcess();
 
 void addEntityButton();
@@ -38,3 +42,8 @@ void readTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* t
 
 void saveScene(const char* fileName = nullptr);
 void loadScene(const char* fileName = nullptr);
+
+bool checkFolder(const char* dirPath);
+bool createFolder(const char* dirPath);
+
+void loadEditor();

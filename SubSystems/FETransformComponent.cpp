@@ -36,35 +36,24 @@ void FETransformComponent::setPosition(glm::vec3 newPosition)
 	update();
 }
 
+void FETransformComponent::rotateQuaternion(float angle, glm::vec3 axis)
+{
+	rotationQuaternion = glm::quat(cos(angle / 2),
+								   axis.x * sin(angle / 2),
+								   axis.y * sin(angle / 2),
+								   axis.z * sin(angle / 2)) * rotationQuaternion;
+}
+
 void FETransformComponent::setRotation(glm::vec3 newRotation)
 {
 	if (rotationAngles == newRotation)
 		return;
 
-	float RotationAngle = 0.0f;
-	glm::vec3 RotationAxis = glm::vec3(0.0f);
-
-	if (rotationAngles.x != newRotation.x)
-	{
-		RotationAngle = (float)(rotationAngles.x - newRotation.x) * ANGLE_TORADIANS_COF;
-		RotationAxis = glm::vec3(1, 0, 0);
-	}
-	else if (rotationAngles.y != newRotation.y)
-	{
-		RotationAngle = (float)(rotationAngles.y - newRotation.y) * ANGLE_TORADIANS_COF;
-		RotationAxis = glm::vec3(0, 1, 0);
-	}
-	else if (rotationAngles.z != newRotation.z)
-	{
-		RotationAngle = (float)(rotationAngles.z - newRotation.z) * ANGLE_TORADIANS_COF;
-		RotationAxis = glm::vec3(0, 0, 1);
-	}
-
-	rotationQuaternion = glm::quat(cos(RotationAngle / 2),
-								   RotationAxis.x * sin(RotationAngle / 2),
-								   RotationAxis.y * sin(RotationAngle / 2),
-								   RotationAxis.z * sin(RotationAngle / 2)) * rotationQuaternion;
-
+	rotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
+	rotateQuaternion((float)(newRotation.x) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+	rotateQuaternion((float)(newRotation.y) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+	rotateQuaternion((float)(newRotation.z) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+	
 	rotationAngles = newRotation;
 	update();
 }

@@ -17,12 +17,15 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
 		// to-do: add flags
-		FETexture* createTexture(const char* file_name, std::string Name = "");
-		// to-do: put creating of framebuffers here!
+		FETexture* LoadPngTexture(const char* fileName, std::string Name = "");
+		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
+		std::vector<std::string> getTextureList();
+		FETexture* getTexture(std::string name);
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index);
+		FEMesh* rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize, float* tangents, int tanSize, int* indices, int indexSize);
 		FEMesh* rawObjDataToMesh();
 		FEMesh* getSimpleMesh(std::string meshName);
 
@@ -32,7 +35,8 @@ namespace FocalEngine
 		
 		std::vector<std::string> getMeshList();
 		FEMesh* getMesh(std::string name);
-		FEMesh* createMesh(const char* fileName, std::string Name = "");
+		FEMesh* LoadOBJMesh(const char* fileName, std::string Name = "");
+		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
 
 		void clear();
 		void loadStandardMeshes();
@@ -41,10 +45,14 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
+		std::unordered_map<std::string, FETexture*> textures;
 		std::unordered_map<std::string, FEMaterial*> materials;
 		std::unordered_map<std::string, FEMesh*> meshes;
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
+
+		void saveFETexture(const char* fileName, FETexture* texture, char* textureData);
+		void saveFEMesh(const char* fileName);
 	};
 }

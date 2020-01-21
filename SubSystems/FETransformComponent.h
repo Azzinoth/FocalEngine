@@ -34,5 +34,7 @@ namespace FocalEngine
 		glm::vec3 scale;
 
 		glm::mat4 transformMatrix;
+
+		void rotateQuaternion(float angle, glm::vec3 axis);
 	};
 }

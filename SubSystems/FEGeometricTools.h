@@ -5,10 +5,12 @@
 namespace FocalEngine
 {
 	class FEEntity;
+	class FEResourceManager;
 
 	class FEAABB
 	{
 		friend FEEntity;
+		friend FEResourceManager;
 	public:
 		FEAABB();
 		FEAABB(glm::vec3 Min, glm::vec3 Max);

@@ -435,7 +435,7 @@ void displaySceneEntities()
 					{
 						entity->mesh = FocalEngine::FEResourceManager::getInstance().getSimpleMesh(filePath);
 						if (!entity->mesh)
-							entity->mesh = FocalEngine::FEResourceManager::getInstance().createMesh(filePath);
+							entity->mesh = FocalEngine::FEResourceManager::getInstance().LoadOBJMesh(filePath);
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -484,15 +484,6 @@ void displayMaterialEditor()
 {
 	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
 
-	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
-	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
-	float windowW = mainWindowW / 3.7f;
-	float windowH = mainWindowH / 2.0f;
-
-	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
-	ImGui::Begin("Material Editor", nullptr, ImGuiWindowFlags_None); // ImGuiWindowFlags_NoCollapse
-
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
@@ -517,9 +508,9 @@ void displayMaterialEditor()
 			if (newMat)
 			{
 				newMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
-				FocalEngine::FETexture* colorMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+				FocalEngine::FETexture* colorMap = FocalEngine::FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				colorMap->setName("color map");
-				FocalEngine::FETexture* normalMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+				FocalEngine::FETexture* normalMap = FocalEngine::FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				normalMap->setName("normal map");
 				//FocalEngine::FETexture* roughnessMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				//normalMap->setName("roughness map");
@@ -650,7 +641,7 @@ void displayMaterialEditor()
 
 					if (ImGui::Button("Load", ImVec2(120, 0)))
 					{
-						material->setTexture(FocalEngine::FEResourceManager::getInstance().createTexture(filePath), textures[j]);
+						material->setTexture(FocalEngine::FEResourceManager::getInstance().LoadPngTexture(filePath), textures[j]);
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -665,7 +656,6 @@ void displayMaterialEditor()
 		}
 		ImGui::PopID();
 	}
-	ImGui::End();
 }
 
 void displayPostProcess()
@@ -673,14 +663,6 @@ void displayPostProcess()
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
 	std::vector<std::string> postProcessList = renderer.getPostProcessList();
 
-	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
-	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
-	float windowW = mainWindowW / 3.7f;
-	float windowH = mainWindowH / 2.0f;
-
-	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, windowH));
-	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
-	ImGui::Begin("PostProcess Effects", nullptr, ImGuiWindowFlags_None);
 	for (size_t i = 0; i < postProcessList.size(); i++)
 	{
 		FocalEngine::FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
@@ -702,8 +684,113 @@ void displayPostProcess()
 			}
 		}
 	}
+}
 
+void displayContentBrowser()
+{
+	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
+	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
+	float windowW = mainWindowW / 3.7f;
+	float windowH = mainWindowH;
+
+	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
+	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None); // ImGuiWindowFlags_NoCollapse
+		int activeTab = 0;
+		if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
+		{
+			if (ImGui::BeginTabItem("Textures"))
+			{
+				activeTab = 0;
+				std::vector<std::string> textureList = FocalEngine::FEResourceManager::getInstance().getTextureList();
+
+				ImGui::Columns(3, "mycolumns3", false);
+				for (size_t i = 0; i < textureList.size(); i++)
+				{
+					ImGui::Image((void*)(intptr_t)FocalEngine::FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128));
+					ImGui::Text(textureList[i].c_str());
+					ImGui::NextColumn();
+				}
+				ImGui::Columns(1);
+
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("Materials"))
+			{
+				activeTab = 1;
+				displayMaterialEditor();
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("PostProcess"))
+			{
+				activeTab = 2;
+				displayPostProcess();
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
+		}
+
+		bool open_context_menu = false;
+		if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
+			open_context_menu = true;
+
+		if (open_context_menu)
+			ImGui::OpenPopup("##context_menu");
+
+		bool shouldOpenLoadTextPopUp = false;
+		if (ImGui::BeginPopup("##context_menu"))
+		{
+			switch (activeTab)
+			{
+				case 0:
+				{
+					if (ImGui::MenuItem("Load new texture..."))
+					{
+						shouldOpenLoadTextPopUp = true;
+					}
+					break;
+				}
+				case 1:
+				{
+					if (ImGui::MenuItem("Create new material..."))
+					{
+					}
+					break;
+				}
+				case 2:
+				{
+					break;
+				}
+				default:
+					break;
+			}
+			ImGui::EndPopup();
+		}
 	ImGui::End();
+
+	if (shouldOpenLoadTextPopUp)
+		ImGui::OpenPopup("Load Texture");
+
+	if (ImGui::BeginPopupModal("Load Texture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::Text("Insert texture file path :");
+		static char filePath[256] = "";
+
+		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+		ImGui::Separator();
+
+		if (ImGui::Button("Load", ImVec2(120, 0)))
+		{
+			FocalEngine::FEResourceManager::getInstance().LoadPngTexture(filePath);
+			ImGui::CloseCurrentPopup();
+			strcpy_s(filePath, "");
+		}
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+		ImGui::EndPopup();
+	}
 }
 
 glm::dvec3 mouseRay()
@@ -808,7 +895,7 @@ void loadMaterials(const char* fileName)
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
 		{
-			FocalEngine::FETexture* texture = resourceManager.createTexture(root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString());
+			FocalEngine::FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
 			texture->setName(textureList[j]);
 			newMat->addTexture(texture);
 		}
@@ -856,7 +943,7 @@ void saveScene(const char* fileName)
 
 	Json::Value root;
 	std::ofstream sceneFile;
-	!fileName ? sceneFile.open("scene.txt") : sceneFile.open(fileName);
+	!fileName ? sceneFile.open(PROJECTS_FOLDER "\\StartScene\\scene.txt") : sceneFile.open(fileName);
 
 	// saving Meshes
 	std::vector<std::string> meshList = resourceManager.getMeshList();
@@ -965,7 +1052,7 @@ void loadScene(const char* fileName)
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 	std::ifstream sceneFile;
 
-	!fileName ? sceneFile.open("scene.txt") : sceneFile.open(fileName);
+	!fileName ? sceneFile.open(PROJECTS_FOLDER "/StartScene/scene.txt") : sceneFile.open(fileName);
 
 	std::string fileData((std::istreambuf_iterator<char>(sceneFile)), std::istreambuf_iterator<char>());
 
@@ -981,7 +1068,7 @@ void loadScene(const char* fileName)
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		FocalEngine::FEMesh* newMesh = resourceManager.createMesh(root["meshes"][meshList[i]]["file"].asCString());
+		FocalEngine::FEMesh* newMesh = resourceManager.LoadFEMesh((std::string(PROJECTS_FOLDER "/StartScene/") + root["meshes"][meshList[i]]["file"].asCString()).c_str(), meshList[i]);
 	}
 
 	// loading Materials
@@ -994,7 +1081,7 @@ void loadScene(const char* fileName)
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
 		{
-			FocalEngine::FETexture* texture = resourceManager.createTexture(root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString());
+			FocalEngine::FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
 			texture->setName(textureList[j]);
 			newMat->addTexture(texture);
 		}
@@ -1055,4 +1142,22 @@ void loadScene(const char* fileName)
 	engine.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
 
 	sceneFile.close();
+}
+
+bool checkFolder(const char* dirPath)
+{
+	DWORD dwAttrib = GetFileAttributesA(dirPath);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		   (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+bool createFolder(const char* dirPath)
+{
+	return (_mkdir(dirPath) != 0);
+}
+
+void loadEditor()
+{
+	if (!checkFolder(PROJECTS_FOLDER))
+		createFolder(PROJECTS_FOLDER);
 }

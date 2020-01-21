@@ -3,16 +3,30 @@ using namespace FocalEngine;
 
 FEResourceManager* FEResourceManager::_instance = nullptr;
 
-FETexture* FEResourceManager::createTexture(const char* file_name, std::string Name)
+FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name)
 {
 	FETexture* newTexture = new FETexture();
 	std::vector<unsigned char> rawData;
 	unsigned uWidth, uHeight;
 
-	if (Name.size() == 0)
-		Name = getFileNameFromFilePath(file_name);
+	if (Name.size() == 0 || textures.find(Name) != textures.end())
+	{
+		Name = getFileNameFromFilePath(fileName);
+		size_t nextID = textures.size();
+		size_t index = 0;
+		while (textures.find(Name) != textures.end() || Name.size() == 0)
+		{
+			index++;
+			Name = "texture_" + std::to_string(nextID + index);
+		}
+	}
 
-	lodepng::decode(rawData, uWidth, uHeight, file_name);
+	lodepng::decode(rawData, uWidth, uHeight, fileName);
+	if (rawData.size() == 0)
+	{
+		//Log...
+		assert(rawData.size());
+	}
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
 
@@ -38,9 +52,85 @@ FETexture* FEResourceManager::createTexture(const char* file_name, std::string N
 	}
 
 	newTexture->setName(Name);
-	newTexture->fileName = file_name;
+	newTexture->fileName = fileName;
+
+	// save texture in internal format and add it to project\scene
+	saveFETexture((Name + ".texture").c_str(), newTexture, (char*)rawData.data());
+	textures[Name] = newTexture;
 
 	return newTexture;
+}
+
+FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name)
+{
+	FETexture* newTexture = new FETexture();
+
+	if (Name.size() == 0)
+		Name = getFileNameFromFilePath(fileName);
+
+	std::fstream file;
+
+	file.open(fileName, std::ios::in | std::ios::binary);
+	char * buffer = new char[4];
+
+	file.read(buffer, 4);
+	newTexture->width = *(int*)buffer;
+
+	file.read(buffer, 4);
+	newTexture->height = *(int*)buffer;
+
+	file.read(buffer, 4);
+	int size = *(int*)buffer;
+
+	char* textureData = new char[size];
+	file.read(textureData, size);
+
+	file.close();
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
+
+	if (newTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	newTexture->setName(Name);
+	newTexture->fileName = fileName;
+
+	delete[] buffer;
+	delete[] textureData;
+
+	return newTexture;
+}
+
+void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture, char* textureData)
+{
+	std::fstream file;
+
+	file.open(fileName, std::ios::out | std::ios::binary);
+
+	file.write((char*)&texture->width, sizeof(int));
+	file.write((char*)&texture->height, sizeof(int));
+
+	int size = strlen(textureData);
+	file.write((char*)&size, sizeof(int));
+	file.write((char*)textureData, sizeof(unsigned char) * size);
+
+	file.close();
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
@@ -129,6 +219,52 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 	FE_GL_ERROR(glBindVertexArray(0));
 
 	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions));
+}
+
+FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize,
+										 float* tangents, int tanSize, int* indices, int indexSize)
+{
+	GLuint vaoID;
+	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glBindVertexArray(vaoID));
+
+	GLuint vboID;
+	// index
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * indexSize, indices, GL_STATIC_DRAW));
+
+	// verCoords
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * posSize, positions, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	// normals
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normSize, normals, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	// tangents
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tanSize, tangents, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	// UV
+	FE_GL_ERROR(glGenBuffers(1, &vboID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, vboID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UVSize, UV, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	return new FEMesh(vaoID, indexSize, FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB());
 }
 
 FEMesh* FEResourceManager::rawObjDataToMesh()
@@ -296,7 +432,7 @@ FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 	return nullptr;
 }
 
-FEMesh* FEResourceManager::createMesh(const char* fileName, std::string Name)
+FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name)
 {
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
 	objLoader.readFile(fileName);
@@ -312,6 +448,76 @@ FEMesh* FEResourceManager::createMesh(const char* fileName, std::string Name)
 	newMesh->fileName = fileName;
 
 	meshes[newMesh->getName()] = newMesh;
+	
+	saveFEMesh((Name + std::string(".model")).c_str());
+	return newMesh;
+}
+
+FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
+{
+	std::fstream file;
+
+	file.open(fileName, std::ios::in | std::ios::binary);
+	char * buffer = new char[4];
+
+	file.read(buffer, 4);
+	int vertexCout = *(int*)buffer;
+	char* vertexBuffer = new char[vertexCout * 4];
+	file.read(vertexBuffer, vertexCout * 4);
+
+	file.read(buffer, 4);
+	int texCout = *(int*)buffer;
+	char* texBuffer = new char[texCout * 4];
+	file.read(texBuffer, texCout * 4);
+
+	file.read(buffer, 4);
+	int normCout = *(int*)buffer;
+	char* normBuffer = new char[normCout * 4];
+	file.read(normBuffer, normCout * 4);
+
+	file.read(buffer, 4);
+	int tangCout = *(int*)buffer;
+	char* tangBuffer = new char[tangCout * 4];
+	file.read(tangBuffer, tangCout * 4);
+
+	file.read(buffer, 4);
+	int indexCout = *(int*)buffer;
+	char* indexBuffer = new char[indexCout * 4];
+	file.read(indexBuffer, indexCout * 4);
+
+	FEAABB meshAABB;
+	for (size_t i = 0; i <= 2; i++)
+	{
+		file.read(buffer, 4);
+		meshAABB.min[i] = *(float*)buffer;
+	}
+
+	for (size_t i = 0; i <= 2; i++)
+	{
+		file.read(buffer, 4);
+		meshAABB.max[i] = *(float*)buffer;
+	}
+
+	file.close();
+
+	FEMesh* newMesh = rawDataToMesh((float*)vertexBuffer, vertexCout,
+		(float*)texBuffer, texCout,
+		(float*)normBuffer, normCout,
+		(float*)tangBuffer, tangCout,
+		(int*)indexBuffer, indexCout);
+
+	delete[] buffer;
+	delete[] vertexBuffer;
+	delete[] texBuffer;
+	delete[] normBuffer;
+	delete[] tangBuffer;
+	delete[] indexBuffer;
+
+	newMesh->AABB = meshAABB;
+	newMesh->setName(Name);
+	newMesh->fileName = fileName;
+
+	meshes[newMesh->getName()] = newMesh;
 
 	return newMesh;
 }
@@ -323,19 +529,18 @@ FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenH
 
 FEMaterial* FEResourceManager::createMaterial(std::string Name)
 {
-	int nextID = int(materials.size());
-	if (Name.size())
+	size_t nextID = materials.size();
+	if (Name.size() == 0 || materials.find(Name) != materials.end())
 	{
-		// if there is material with that name already
-		if (materials.find(Name) != materials.end())
-			return nullptr;
-	}
-	else
-	{
-		Name = "material_" + std::to_string(nextID);
+		size_t index = 0;
+		while (materials.find(Name) != materials.end() || Name.size() == 0)
+		{
+			index++;
+			Name = "material_" + std::to_string(nextID + index);
+		}
 	}
 
-	materials[Name] = new FEMaterial(nextID, Name);
+	materials[Name] = new FEMaterial((int)nextID, Name);
 	return materials[Name];
 }
 
@@ -398,3 +603,54 @@ void FEResourceManager::clear()
 	loadStandardMeshes();
 }
 
+// save model raw data to FocalEngine binary file format
+void FEResourceManager::saveFEMesh(const char* fileName)
+{
+	FEObjLoader& objLoader = FEObjLoader::getInstance();
+	std::fstream file;
+	
+	file.open(fileName, std::ios::out | std::ios::binary);
+	int count = objLoader.fVerC.size();
+	file.write((char*)&count, sizeof(int));
+	file.write((char*)objLoader.fVerC.data(), sizeof(float) * objLoader.fVerC.size());
+
+	count = objLoader.fTexC.size();
+	file.write((char*)&count, sizeof(int));
+	file.write((char*)objLoader.fTexC.data(), sizeof(float) * objLoader.fTexC.size());
+
+	count = objLoader.fNorC.size();
+	file.write((char*)&count, sizeof(int));
+	file.write((char*)objLoader.fNorC.data(), sizeof(float) * objLoader.fNorC.size());
+
+	count = objLoader.fTanC.size();
+	file.write((char*)&count, sizeof(int));
+	file.write((char*)objLoader.fTanC.data(), sizeof(float) * objLoader.fTanC.size());
+
+	count = objLoader.fInd.size();
+	file.write((char*)&count, sizeof(int));
+	file.write((char*)objLoader.fInd.data(), sizeof(int) * objLoader.fInd.size());
+
+	FEAABB tempAABB(objLoader.fVerC);
+	file.write((char*)&tempAABB.min[0], sizeof(float));
+	file.write((char*)&tempAABB.min[1], sizeof(float));
+	file.write((char*)&tempAABB.min[2], sizeof(float));
+
+	file.write((char*)&tempAABB.max[0], sizeof(float));
+	file.write((char*)&tempAABB.max[1], sizeof(float));
+	file.write((char*)&tempAABB.max[2], sizeof(float));
+
+	file.close();
+}
+
+std::vector<std::string> FEResourceManager::getTextureList()
+{
+	FE_MAP_TO_STR_VECTOR(textures)
+}
+
+FETexture* FEResourceManager::getTexture(std::string name)
+{
+	if (textures.find(name) == textures.end())
+		return nullptr;
+
+	return textures[name];
+}

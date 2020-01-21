@@ -132,6 +132,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwInit();
 	//if (!glfwInit())
 		//return -1;
+	//glfwWindowHint(GLFW_SAMPLES, 8);
 
 	window = glfwCreateWindow(windowW, windowH, windowTitle.c_str(), NULL, NULL);
 	if (!window)
@@ -156,8 +157,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	currentCamera->setAspectRatio(float(width) / float(height));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
-	FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	FE_GL_ERROR(glCullFace(GL_BACK));
+	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	//FE_GL_ERROR(glCullFace(GL_BACK));
 
 	RENDERER_OBJ.standardFBInit(windowW, windowH);
 	RENDERER_OBJ.addPostProcess(new FEBloomEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));

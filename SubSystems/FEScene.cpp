@@ -37,16 +37,16 @@ void FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 	if (!Material)
 		Material = resourceManager.materials["SolidColorMaterial"];
 
-	short nextID = short(entityMap.size());
-	if (Name.size())
+	
+	if (Name.size() == 0 || entityMap.find(Name) != entityMap.end())
 	{
-		// if there is entity with that name already
-		if (entityMap.find(Name) != entityMap.end())
-			Name = "entity_" + std::to_string(nextID);
-	}
-	else
-	{
-		Name = "entity_" + std::to_string(nextID);
+		size_t nextID = entityMap.size();
+		size_t index = 0;
+		while (entityMap.find(Name) != entityMap.end() || Name.size() == 0)
+		{
+			index++;
+			Name = "entity_" + std::to_string(nextID + index);
+		}
 	}
 
 	entityMap[Name] = resourceManager.createEntity(Mesh, Material, Name);

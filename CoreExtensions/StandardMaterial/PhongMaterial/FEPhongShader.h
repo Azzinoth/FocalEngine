@@ -66,6 +66,7 @@ in mat3 TBN;
 @Texture@ normalsTexture;
 @CameraPosition@
 uniform float FEGamma;
+uniform int debugFlag;
 
 struct FELight
 {
@@ -93,8 +94,15 @@ float shadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 
 void main(void)
 {
+	// checking UV
+	if (debugFlag == 3)
+	{
+		gl_FragColor = vec4(UV.x, UV.y, 0.0, 1.0);
+		return;
+	}
+
 	vec4 textureColor = texture(baseColorTexture, UV);
-	if (textureColor.a < 0.1)
+	if (textureColor.a < 0.05)
 	{
 		discard;
 	}

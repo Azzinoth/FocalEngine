@@ -10,7 +10,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEngine)
 
-		void createWindow(int width = 1280, int height = 720, std::string WindowTitle = "FEWindow");
+		void createWindow(int width = 1920, int height = 1080, std::string WindowTitle = "FEWindow");
 
 		void beginFrame(bool internalCall = false);
 		void endFrame(bool internalCall = false);

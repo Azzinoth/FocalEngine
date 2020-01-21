@@ -130,6 +130,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FEShaderParam color(glm::vec3(0.0f, 0.4f, 0.6f), "baseColor");
 	testMat->addParameter(color);
 
+	loadEditor();
 	loadScene();
 
 	FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
@@ -157,8 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		//ImGui::ShowDemoWindow();
 		displaySceneEntities();
-		displayMaterialEditor();
-		displayPostProcess();
+		displayContentBrowser();
 
 		engine.endFrame();
 
