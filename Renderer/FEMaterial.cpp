@@ -10,11 +10,6 @@ FEMaterial::FEMaterial(int ID, std::string Name)
 FEMaterial::~FEMaterial()
 {
 	delete shader;
-
-	for (size_t i = 0; i < textures.size(); i++)
-	{
-		delete textures[i];
-	}
 }
 
 void FEMaterial::bind()

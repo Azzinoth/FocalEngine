@@ -596,11 +596,47 @@ void FEResourceManager::loadStandardMaterial()
 
 void FEResourceManager::clear()
 {
-	materials.clear();
-	meshes.clear();
+	auto materialIt = materials.begin();
+	while (materialIt != materials.end())
+	{
+		if (materialIt->first != "SolidColorMaterial" && materialIt->first != "PhongMaterial")
+		{
+			delete materialIt->second;
+			auto copy = materialIt;
+			copy++;
+			materials.erase(materialIt->first);
+			materialIt = copy;
+		}
+		else
+		{
+			materialIt++;
+		}
+	}
 
-	loadStandardMaterial();
-	loadStandardMeshes();
+	auto meshIt = meshes.begin();
+	while (meshIt != meshes.end())
+	{
+		if (meshIt->first != "cube" && meshIt->first != "plane")
+		{
+			delete meshIt->second;
+			auto copy = meshIt;
+			copy++;
+			meshes.erase(meshIt->first);
+			meshIt = copy;
+		}
+		else
+		{
+			meshIt++;
+		}
+	}
+
+	auto textureIt = textures.begin();
+	while (textureIt != textures.end())
+	{
+		delete textureIt->second;
+		textureIt++;
+	}
+	textures.clear();
 }
 
 // save model raw data to FocalEngine binary file format

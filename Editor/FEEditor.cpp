@@ -1,4 +1,4 @@
-#include "FEEditor.h"
+#include "../Editor/FEEditor.h"
 
 void mouseButtonCallback(int button, int action, int mods)
 {
@@ -21,12 +21,12 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
 	{
 		isCameraInputActive = !isCameraInputActive;
-		FocalEngine::FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+		FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
 	}
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
-		FocalEngine::FEngine::getInstance().terminate();
+		FEngine::getInstance().terminate();
 	}
 }
 
@@ -42,7 +42,7 @@ void toolTip(const char* text)
 	}
 }
 
-void showTransformConfiguration(std::string objectName, FocalEngine::FETransformComponent* transform)
+void showTransformConfiguration(std::string objectName, FETransformComponent* transform)
 {
 	// ********************* POSITION *********************
 	glm::vec3 position = transform->getPosition();
@@ -164,11 +164,11 @@ void showScale(std::string objectName, glm::vec3& scale)
 	toolTip("Z scale");
 }
 
-void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
+void displayMaterialPrameter(FEShaderParam* param)
 {
 	switch (param->type)
 	{
-	case FocalEngine::FE_INT_SCALAR_UNIFORM:
+	case FE_INT_SCALAR_UNIFORM:
 	{
 		int iData = *(int*)param->data;
 		ImGui::SliderInt(param->name.c_str(), &iData, 0, 10);
@@ -176,7 +176,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		break;
 	}
 
-	case FocalEngine::FE_FLOAT_SCALAR_UNIFORM:
+	case FE_FLOAT_SCALAR_UNIFORM:
 	{
 		float fData = *(float*)param->data;
 		ImGui::DragFloat(param->name.c_str(), &fData, 0.1f, 0.0f, 100.0f);
@@ -184,7 +184,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		break;
 	}
 
-	case FocalEngine::FE_VECTOR2_UNIFORM:
+	case FE_VECTOR2_UNIFORM:
 	{
 		glm::vec2 color = *(glm::vec2*)param->data;
 		ImGui::ColorEdit3(param->name.c_str(), &color.x);
@@ -192,7 +192,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		break;
 	}
 
-	case FocalEngine::FE_VECTOR3_UNIFORM:
+	case FE_VECTOR3_UNIFORM:
 	{
 		glm::vec3 color = *(glm::vec3*)param->data;
 		ImGui::ColorEdit3(param->name.c_str(), &color.x);
@@ -200,7 +200,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		break;
 	}
 
-	case FocalEngine::FE_VECTOR4_UNIFORM:
+	case FE_VECTOR4_UNIFORM:
 	{
 		glm::vec4 color = *(glm::vec4*)param->data;
 		ImGui::ColorEdit3(param->name.c_str(), &color.x);
@@ -208,7 +208,7 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 		break;
 	}
 
-	case FocalEngine::FE_MAT4_UNIFORM:
+	case FE_MAT4_UNIFORM:
 	{
 		//loadMatrix(iterator->second.getName().c_str(), *(glm::mat4*)iterator->second.data);
 		break;
@@ -219,10 +219,10 @@ void displayMaterialPrameter(FocalEngine::FEShaderParam* param)
 	}
 }
 
-void displayMaterialPrameters(FocalEngine::FEMaterial* material)
+void displayMaterialPrameters(FEMaterial* material)
 {
 	static std::string currentMaterial = "";
-	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
 	if (ImGui::BeginCombo("Materials", material->getName().c_str(), ImGuiWindowFlags_None))
 	{
 		for (size_t n = 0; n < materialList.size(); n++)
@@ -242,7 +242,7 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 	if (ImGui::CollapsingHeader(text.c_str(), ImGuiWindowFlags_None)) {
 		ImGui::PushID(0);
 		std::vector<std::string> params = material->getParameterList();
-		FocalEngine::FEShaderParam* param;
+		FEShaderParam* param;
 		for (size_t i = 0; i < params.size(); i++)
 		{
 			param = material->getParameter(params[i]);
@@ -254,21 +254,21 @@ void displayMaterialPrameters(FocalEngine::FEMaterial* material)
 	}
 }
 
-void displayLightProperties(FocalEngine::FELight* light)
+void displayLightProperties(FELight* light)
 {
 	showTransformConfiguration(light->getName(), &light->transform);
 
-	if (light->getType() == FocalEngine::FE_DIRECTIONAL_LIGHT)
+	if (light->getType() == FE_DIRECTIONAL_LIGHT)
 	{
 		glm::vec3 d = light->getDirection();
 		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
 	}
-	else if (light->getType() == FocalEngine::FE_POINT_LIGHT)
+	else if (light->getType() == FE_POINT_LIGHT)
 	{
 	}
-	else if (light->getType() == FocalEngine::FE_SPOT_LIGHT)
+	else if (light->getType() == FE_SPOT_LIGHT)
 	{
 		glm::vec3 d = light->getDirection();
 		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
@@ -295,7 +295,7 @@ void displayLightProperties(FocalEngine::FELight* light)
 
 void displayLightsProperties()
 {
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	FEScene& scene = FEScene::getInstance();
 	std::vector<std::string> lightList = scene.getLightsList();
 
 	for (size_t i = 0; i < lightList.size(); i++)
@@ -310,14 +310,14 @@ void displayLightsProperties()
 
 void addEntityButton()
 {
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 	if (ImGui::Button("Add new entity", ImVec2(220, 0)))
 	{
-		FocalEngine::FEScene::getInstance().addEntity(resourceManager.getSimpleMesh("cube"));
+		FEScene::getInstance().addEntity(resourceManager.getSimpleMesh("cube"));
 	}
 
 	ImGui::PopStyleColor();
@@ -327,64 +327,35 @@ void addEntityButton()
 
 void displaySceneEntities()
 {
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	FEScene& scene = FEScene::getInstance();
 	std::vector<std::string> entityList = scene.getEntityList();
-	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(FocalEngine::FEngine::getInstance().getWindowWidth() / 3.7f, float(FocalEngine::FEngine::getInstance().getWindowHeight())));
+	ImGui::SetNextWindowSize(ImVec2(FEngine::getInstance().getWindowWidth() / 3.7f, float(FEngine::getInstance().getWindowHeight())));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 	addEntityButton();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Save scene", ImVec2(220, 0)))
+	if (ImGui::Button("Change project", ImVec2(220, 0)))
 	{
-		saveScene();
+		delete currentProject;
+		currentProject = nullptr;
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		ImGui::End();
+
+		return;
 	}
 
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
-
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Load scene", ImVec2(220, 0)))
-	{
-		ImGui::OpenPopup("LoadScene");
-	}
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-
-	if (ImGui::BeginPopupModal("LoadScene", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Insert scene file path :");
-		static char filePath[256] = "";
-
-		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-		ImGui::Separator();
-
-		if (ImGui::Button("Load", ImVec2(120, 0)))
-		{
-			entityList.clear();
-			materialList.clear();
-
-			scene.clear();
-			FocalEngine::FEResourceManager::getInstance().clear();
-
-			loadScene(filePath);
-			ImGui::CloseCurrentPopup();
-			strcpy_s(filePath, "");
-		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-		ImGui::EndPopup();
-	}
 
 	if (selectedEntityWasChanged)
 	{
@@ -398,7 +369,7 @@ void displaySceneEntities()
 
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		FocalEngine::FEEntity* entity = scene.getEntity(entityList[i]);
+		FEEntity* entity = scene.getEntity(entityList[i]);
 		if (ImGui::TreeNode(entity->getName().c_str()))
 		{
 			ImGui::PushID(i);
@@ -433,9 +404,9 @@ void displaySceneEntities()
 
 					if (ImGui::Button("Load", ImVec2(120, 0)))
 					{
-						entity->mesh = FocalEngine::FEResourceManager::getInstance().getSimpleMesh(filePath);
+						entity->mesh = FEResourceManager::getInstance().getSimpleMesh(filePath);
 						if (!entity->mesh)
-							entity->mesh = FocalEngine::FEResourceManager::getInstance().LoadOBJMesh(filePath);
+							entity->mesh = FEResourceManager::getInstance().LoadOBJMesh(filePath);
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -456,7 +427,7 @@ void displaySceneEntities()
 					if (ImGui::Selectable(materialList[n].c_str(), is_selected))
 					{
 						currentMaterial = materialList[n].c_str();
-						entity->material = FocalEngine::FEResourceManager::getInstance().getMaterial(materialList[n]);
+						entity->material = FEResourceManager::getInstance().getMaterial(materialList[n]);
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -473,16 +444,16 @@ void displaySceneEntities()
 
 	displayLightsProperties();
 
-	float FEExposure = FocalEngine::FEngine::getInstance().getCamera()->getExposure();
+	float FEExposure = FEngine::getInstance().getCamera()->getExposure();
 	ImGui::DragFloat("Camera Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
-	FocalEngine::FEngine::getInstance().getCamera()->setExposure(FEExposure);
+	FEngine::getInstance().getCamera()->setExposure(FEExposure);
 
 	ImGui::End();
 }
 
 void displayMaterialEditor()
 {
-	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
@@ -504,15 +475,15 @@ void displayMaterialEditor()
 
 		if (ImGui::Button("Create", ImVec2(120, 0)))
 		{
-			FocalEngine::FEMaterial* newMat = FocalEngine::FEResourceManager::getInstance().createMaterial(filePath);
+			FEMaterial* newMat = FEResourceManager::getInstance().createMaterial(filePath);
 			if (newMat)
 			{
-				newMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
-				FocalEngine::FETexture* colorMap = FocalEngine::FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+				newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
+				FETexture* colorMap = FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				colorMap->setName("color map");
-				FocalEngine::FETexture* normalMap = FocalEngine::FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+				FETexture* normalMap = FEResourceManager::getInstance().LoadPngTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				normalMap->setName("normal map");
-				//FocalEngine::FETexture* roughnessMap = FocalEngine::FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
+				//FETexture* roughnessMap = FEResourceManager::getInstance().createTexture("C:/Users/kandr/Downloads/OpenGL test/resources/empty.png");
 				//normalMap->setName("roughness map");
 
 				newMat->addTexture(colorMap);
@@ -597,12 +568,12 @@ void displayMaterialEditor()
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
 		ImGui::PushID(i);
-		FocalEngine::FEMaterial* material = FocalEngine::FEResourceManager::getInstance().getMaterial(materialList[i]);
+		FEMaterial* material = FEResourceManager::getInstance().getMaterial(materialList[i]);
 
 		if (ImGui::CollapsingHeader(materialList[i].c_str(), 0))
 		{
 			std::vector<std::string> params = material->getParameterList();
-			FocalEngine::FEShaderParam* param;
+			FEShaderParam* param;
 			for (size_t j = 0; j < params.size(); j++)
 			{
 				param = material->getParameter(params[j]);
@@ -641,7 +612,7 @@ void displayMaterialEditor()
 
 					if (ImGui::Button("Load", ImVec2(120, 0)))
 					{
-						material->setTexture(FocalEngine::FEResourceManager::getInstance().LoadPngTexture(filePath), textures[j]);
+						material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath), textures[j]);
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -660,19 +631,19 @@ void displayMaterialEditor()
 
 void displayPostProcess()
 {
-	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
+	FERenderer& renderer = FERenderer::getInstance();
 	std::vector<std::string> postProcessList = renderer.getPostProcessList();
 
 	for (size_t i = 0; i < postProcessList.size(); i++)
 	{
-		FocalEngine::FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
+		FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
 		if (ImGui::CollapsingHeader(PPEffect->getName().c_str(), 0)) //ImGuiTreeNodeFlags_DefaultOpen
 		{
 			for (size_t j = 0; j < PPEffect->stages.size(); j++)
 			{
 				ImGui::PushID(j);
 				std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
-				FocalEngine::FEShaderParam* param;
+				FEShaderParam* param;
 				for (size_t i = 0; i < params.size(); i++)
 				{
 					param = PPEffect->stages[j]->shader->getParameter(params[i]);
@@ -688,26 +659,26 @@ void displayPostProcess()
 
 void displayContentBrowser()
 {
-	float mainWindowW = float(FocalEngine::FEngine::getInstance().getWindowWidth());
-	float mainWindowH = float(FocalEngine::FEngine::getInstance().getWindowHeight());
+	float mainWindowW = float(FEngine::getInstance().getWindowWidth());
+	float mainWindowH = float(FEngine::getInstance().getWindowHeight());
 	float windowW = mainWindowW / 3.7f;
 	float windowH = mainWindowH;
 
 	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
-	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None); // ImGuiWindowFlags_NoCollapse
+	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
 		int activeTab = 0;
 		if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 		{
 			if (ImGui::BeginTabItem("Textures"))
 			{
 				activeTab = 0;
-				std::vector<std::string> textureList = FocalEngine::FEResourceManager::getInstance().getTextureList();
+				std::vector<std::string> textureList = FEResourceManager::getInstance().getTextureList();
 
 				ImGui::Columns(3, "mycolumns3", false);
 				for (size_t i = 0; i < textureList.size(); i++)
 				{
-					ImGui::Image((void*)(intptr_t)FocalEngine::FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128));
+					ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128));
 					ImGui::Text(textureList[i].c_str());
 					ImGui::NextColumn();
 				}
@@ -782,7 +753,7 @@ void displayContentBrowser()
 
 		if (ImGui::Button("Load", ImVec2(120, 0)))
 		{
-			FocalEngine::FEResourceManager::getInstance().LoadPngTexture(filePath);
+			FEResourceManager::getInstance().LoadPngTexture(filePath);
 			ImGui::CloseCurrentPopup();
 			strcpy_s(filePath, "");
 		}
@@ -796,14 +767,14 @@ void displayContentBrowser()
 glm::dvec3 mouseRay()
 {
 	glm::dvec2 normalizedMouseCoords;
-	normalizedMouseCoords.x = (2.0f * mouseX) / FocalEngine::FEngine::getInstance().getWindowWidth() - 1;
-	normalizedMouseCoords.y = 1.0f - (2.0f * mouseY) / FocalEngine::FEngine::getInstance().getWindowHeight();
+	normalizedMouseCoords.x = (2.0f * mouseX) / FEngine::getInstance().getWindowWidth() - 1;
+	normalizedMouseCoords.y = 1.0f - (2.0f * mouseY) / FEngine::getInstance().getWindowHeight();
 
 	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
-	glm::dvec4 eyeCoords = glm::inverse(FocalEngine::FEngine::getInstance().getCamera()->getProjectionMatrix()) * clipCoords;
+	glm::dvec4 eyeCoords = glm::inverse(FEngine::getInstance().getCamera()->getProjectionMatrix()) * clipCoords;
 	eyeCoords.z = -1.0f;
 	eyeCoords.w = 0.0f;
-	glm::dvec3 worldRay = glm::inverse(FocalEngine::FEngine::getInstance().getCamera()->getViewMatrix()) * eyeCoords;
+	glm::dvec3 worldRay = glm::inverse(FEngine::getInstance().getCamera()->getViewMatrix()) * eyeCoords;
 	worldRay = glm::normalize(worldRay);
 
 	return worldRay;
@@ -811,14 +782,14 @@ glm::dvec3 mouseRay()
 
 void determineEntityUnderMouse()
 {
-	std::vector<std::string> entityList = FocalEngine::FEScene::getInstance().getEntityList();
+	std::vector<std::string> entityList = FEScene::getInstance().getEntityList();
 	entityUnderMouse.second = FLT_MAX;
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		float dis = 0;
-		FocalEngine::FEAABB box = FocalEngine::FEScene::getInstance().getEntity(entityList[i])->getAABB();
+		FEAABB box = FEScene::getInstance().getEntity(entityList[i])->getAABB();
 
-		if (box.rayIntersect(FocalEngine::FEngine::getInstance().getCamera()->getPosition(), mouseRay(), dis))
+		if (box.rayIntersect(FEngine::getInstance().getCamera()->getPosition(), mouseRay(), dis))
 		{
 			if (entityUnderMouse.second > dis)
 			{
@@ -839,7 +810,7 @@ void mouseMoveCallback(double xpos, double ypos)
 
 void saveMaterials(const char* fileName)
 {
-	std::vector<std::string> materialList = FocalEngine::FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
 	std::ofstream materialFile;
 	!fileName ? materialFile.open("materials.txt") : materialFile.open(fileName);
 
@@ -847,7 +818,7 @@ void saveMaterials(const char* fileName)
 	Json::Value data;
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
-		FocalEngine::FEMaterial* mat = FocalEngine::FEResourceManager::getInstance().getMaterial(materialList[i]);
+		FEMaterial* mat = FEResourceManager::getInstance().getMaterial(materialList[i]);
 		// to-do: for now we will save only one type of material. But we need to implement robust load/save for all types.
 		if (mat->getTextureList().size() == 0)
 			continue;
@@ -871,7 +842,7 @@ void saveMaterials(const char* fileName)
 
 void loadMaterials(const char* fileName)
 {
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
 	std::ifstream materialFile;
 	!fileName ? materialFile.open("materials.txt") : materialFile.open(fileName);
@@ -889,259 +860,19 @@ void loadMaterials(const char* fileName)
 	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
 	for (size_t i = 0; i < materialsList.size(); i++)
 	{
-		FocalEngine::FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
-		newMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
+		FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
+		newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
 
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
 		{
-			FocalEngine::FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
+			FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
 			texture->setName(textureList[j]);
 			newMat->addTexture(texture);
 		}
 	}
 
 	materialFile.close();
-}
-
-void writeTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform)
-{
-	root["position"]["X"] = transform->getPosition()[0];
-	root["position"]["Y"] = transform->getPosition()[1];
-	root["position"]["Z"] = transform->getPosition()[2];
-	root["rotation"]["X"] = transform->getRotation()[0];
-	root["rotation"]["Y"] = transform->getRotation()[1];
-	root["rotation"]["Z"] = transform->getRotation()[2];
-	root["scale"]["uniformScaling"] = transform->uniformScaling;
-	root["scale"]["X"] = transform->getScale()[0];
-	root["scale"]["Y"] = transform->getScale()[1];
-	root["scale"]["Z"] = transform->getScale()[2];
-}
-
-void readTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform)
-{
-	transform->setPosition(glm::vec3(root["position"]["X"].asFloat(),
-									 root["position"]["Y"].asFloat(),
-									 root["position"]["Z"].asFloat()));
-
-	transform->setRotation(glm::vec3(root["rotation"]["X"].asFloat(),
-									 root["rotation"]["Y"].asFloat(),
-									 root["rotation"]["Z"].asFloat()));
-
-	transform->uniformScaling = root["scale"]["uniformScaling"].asBool();
-
-	transform->setScale(glm::vec3(root["scale"]["X"].asFloat(),
-								  root["scale"]["Y"].asFloat(),
-								  root["scale"]["Z"].asFloat()));
-}
-
-void saveScene(const char* fileName)
-{
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-
-	Json::Value root;
-	std::ofstream sceneFile;
-	!fileName ? sceneFile.open(PROJECTS_FOLDER "\\StartScene\\scene.txt") : sceneFile.open(fileName);
-
-	// saving Meshes
-	std::vector<std::string> meshList = resourceManager.getMeshList();
-	Json::Value meshData;
-	for (size_t i = 0; i < meshList.size(); i++)
-	{
-		FocalEngine::FEMesh* mesh = resourceManager.getMesh(meshList[i]);
-		
-		if (mesh->getFileName().size() == 0)
-			continue;
-
-		meshData[mesh->getName()]["file"] = mesh->getFileName();
-		
-	}
-	root["meshes"] = meshData;
-
-	// saving Materials
-	std::vector<std::string> materialList = resourceManager.getMaterialList();
-	Json::Value materialData;
-	for (size_t i = 0; i < materialList.size(); i++)
-	{
-		FocalEngine::FEMaterial* mat = resourceManager.getMaterial(materialList[i]);
-		// to-do: for now we will save only one type of material. But we need to implement robust load/save for all types.
-		if (mat->getTextureList().size() == 0)
-			continue;
-
-		std::vector<std::string> textureList = mat->getTextureList();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			materialData[mat->getName()]["textures"][textureList[j]]["file"] = mat->getTexture(textureList[j])->getFileName();
-		}
-	}
-	root["materials"] = materialData;
-
-	// saving Entities
-	std::vector<std::string> entityList = scene.getEntityList();
-	Json::Value entityData;
-	for (size_t i = 0; i < entityList.size(); i++)
-	{
-		FocalEngine::FEEntity* entity = scene.getEntity(entityList[i]);
-
-		entityData[entity->getName()]["mesh"] = entity->mesh->getName();
-		entityData[entity->getName()]["material"] = entity->material->getName();
-		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
-	}
-	root["entities"] = entityData;
-
-	// saving Lights
-	std::vector<std::string> LightList = scene.getLightsList();
-	Json::Value lightData;
-	for (size_t i = 0; i < LightList.size(); i++)
-	{
-		FocalEngine::FELight* light = scene.getLight(LightList[i]);
-
-		lightData[light->getName()]["type"] = light->getType();
-		lightData[light->getName()]["intensity"] = light->getIntensity();
-		lightData[light->getName()]["range"] = light->getRange();
-		lightData[light->getName()]["spotAngle"] = light->getSpotAngle();
-		lightData[light->getName()]["spotAngleOuter"] = light->getSpotAngleOuter();
-		lightData[light->getName()]["castShadows"] = light->isCastShadows();
-		lightData[light->getName()]["enabled"] = light->isLightEnabled();
-		lightData[light->getName()]["color"]["R"] = light->getColor()[0];
-		lightData[light->getName()]["color"]["G"] = light->getColor()[1];
-		lightData[light->getName()]["color"]["B"] = light->getColor()[2];
-		writeTransformToJSON(lightData[light->getName()]["transformation"], &light->transform);
-		lightData[light->getName()]["direction"]["X"] = light->getDirection()[0];
-		lightData[light->getName()]["direction"]["Y"] = light->getDirection()[1];
-		lightData[light->getName()]["direction"]["Z"] = light->getDirection()[2];
-	}
-	root["lights"] = lightData;
-
-	// saving Camera settings
-	Json::Value cameraData;
-	
-	cameraData["position"]["X"] = engine.getCamera()->getPosition()[0];
-	cameraData["position"]["Y"] = engine.getCamera()->getPosition()[1];
-	cameraData["position"]["Z"] = engine.getCamera()->getPosition()[2];
-
-	cameraData["fov"] = engine.getCamera()->getFov();
-	cameraData["nearPlane"] = engine.getCamera()->getNearPlane();
-	cameraData["farPlane"] = engine.getCamera()->getFarPlane();
-
-	cameraData["yaw"] = engine.getCamera()->getYaw();
-	cameraData["pitch"] = engine.getCamera()->getPitch();
-	cameraData["roll"] = engine.getCamera()->getRoll();
-
-	cameraData["aspectRatio"] = engine.getCamera()->getAspectRatio();
-
-	cameraData["gamma"] = engine.getCamera()->getGamma();
-	cameraData["exposure"] = engine.getCamera()->getExposure();
-
-	root["camera"] = cameraData;
-
-	// saving into file
-	Json::StreamWriterBuilder builder;
-	const std::string json_file = Json::writeString(builder, root);
-
-	sceneFile << json_file;
-	sceneFile.close();
-}
-
-void loadScene(const char* fileName)
-{
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-	std::ifstream sceneFile;
-
-	!fileName ? sceneFile.open(PROJECTS_FOLDER "/StartScene/scene.txt") : sceneFile.open(fileName);
-
-	std::string fileData((std::istreambuf_iterator<char>(sceneFile)), std::istreambuf_iterator<char>());
-
-	Json::Value root;
-	JSONCPP_STRING err;
-	Json::CharReaderBuilder builder;
-
-	const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-	if (!reader->parse(fileData.c_str(), fileData.c_str() + fileData.size(), &root, &err))
-		return;
-
-	// loading Meshes
-	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
-	for (size_t i = 0; i < meshList.size(); i++)
-	{
-		FocalEngine::FEMesh* newMesh = resourceManager.LoadFEMesh((std::string(PROJECTS_FOLDER "/StartScene/") + root["meshes"][meshList[i]]["file"].asCString()).c_str(), meshList[i]);
-	}
-
-	// loading Materials
-	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
-	for (size_t i = 0; i < materialsList.size(); i++)
-	{
-		FocalEngine::FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
-		newMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
-
-		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			FocalEngine::FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
-			texture->setName(textureList[j]);
-			newMat->addTexture(texture);
-		}
-	}
-
-	// loading Entities
-	std::vector<Json::String> entityList = root["entities"].getMemberNames();
-	for (size_t i = 0; i < entityList.size(); i++)
-	{
-		scene.addEntity(resourceManager.getSimpleMesh(root["entities"][entityList[i]]["mesh"].asCString()),
-						resourceManager.getMaterial(root["entities"][entityList[i]]["material"].asCString()),
-						entityList[i]);
-
-		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &scene.getEntity(entityList[i])->transform);
-	}
-
-	// loading Lights
-	std::vector<Json::String> lightList = root["lights"].getMemberNames();
-	for (size_t i = 0; i < lightList.size(); i++)
-	{
-		scene.addLight(static_cast<FocalEngine::FELightType>(root["lights"][lightList[i]]["type"].asInt()), lightList[i]);
-		FocalEngine::FELight* light = scene.getLight(lightList[i]);
-
-		light->setIntensity(root["lights"][lightList[i]]["intensity"].asFloat());
-		light->setRange(root["lights"][lightList[i]]["range"].asFloat());
-		light->setSpotAngle(root["lights"][lightList[i]]["spotAngle"].asFloat());
-		light->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
-		light->setCastShadows(root["lights"][lightList[i]]["castShadows"].asBool());
-		light->setLightEnabled(root["lights"][lightList[i]]["enabled"].asBool());
-
-		readTransformToJSON(root["lights"][lightList[i]]["transformation"], &light->transform);
-
-		light->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-									  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-									  root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
-
-		light->setColor(glm::vec3(root["lights"][lightList[i]]["color"]["R"].asFloat(),
-								  root["lights"][lightList[i]]["color"]["G"].asFloat(),
-								  root["lights"][lightList[i]]["color"]["B"].asFloat()));
-	}
-
-	// loading Camera settings
-	engine.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
-											  root["camera"]["position"]["Y"].asFloat(),
-											  root["camera"]["position"]["Z"].asFloat()));
-
-	engine.getCamera()->setFov(root["camera"]["fov"].asFloat());
-	engine.getCamera()->setNearPlane(root["camera"]["nearPlane"].asFloat());
-	engine.getCamera()->setFarPlane(root["camera"]["farPlane"].asFloat());
-
-	engine.getCamera()->setYaw(root["camera"]["yaw"].asFloat());
-	engine.getCamera()->setPitch(root["camera"]["pitch"].asFloat());
-	engine.getCamera()->setRoll(root["camera"]["roll"].asFloat());
-
-	engine.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
-
-	engine.getCamera()->setGamma(root["camera"]["gamma"].asFloat());
-	engine.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
-
-	sceneFile.close();
 }
 
 bool checkFolder(const char* dirPath)
@@ -1158,6 +889,87 @@ bool createFolder(const char* dirPath)
 
 void loadEditor()
 {
+	FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+
 	if (!checkFolder(PROJECTS_FOLDER))
 		createFolder(PROJECTS_FOLDER);
+
+	projectList = getFolderList(PROJECTS_FOLDER);
+}
+
+std::vector<std::string> getFolderList(const char* dirPath)
+{
+	std::vector<std::string> result;
+	std::string pattern(dirPath);
+	pattern.append("\\*");
+	WIN32_FIND_DATAA data;
+	HANDLE hFind;
+	if ((hFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
+				result.push_back(data.cFileName);
+		} while (FindNextFileA(hFind, &data) != 0);
+		FindClose(hFind);
+	}
+	
+	return result;
+}
+
+void renderEditor()
+{
+	if (currentProject)
+	{
+		displaySceneEntities();
+		displayContentBrowser();
+	}
+	else
+	{
+		displayProjectSelection();
+	}
+}
+
+void displayProjectSelection()
+{
+	float mainWindowW = float(FEngine::getInstance().getWindowWidth());
+	float mainWindowH = float(FEngine::getInstance().getWindowHeight());
+
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH));
+	ImGui::Begin("Project Browser", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+		ImGui::SetWindowFontScale(2.0f);
+		ImGui::Text("CHOOSE WHAT PROJECT TO LOAD :");
+		ImGui::SetWindowFontScale(1.0f);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+
+		for (size_t i = 0; i < projectList.size(); i++)
+		{
+			// frame_padding < 0: uses FramePadding from style (default)
+			// frame_padding = 0: no framing
+			// frame_padding > 0: set framing size
+			// The color used are the button colors.
+
+			//bool ImGui::ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
+			//ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128));
+			//ImGui::ImageButton((void*)(intptr_t)->getTextureID())
+			std::string buttonName = "Open ";
+			buttonName += projectList[i];
+			if (ImGui::Button(buttonName.c_str(), ImVec2(105, 0)))
+			{
+				currentProject = new FEProject(projectList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectList[i].c_str() + "/");
+				currentProject->loadScene();
+			}
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+	ImGui::End();
+	ImGui::PopStyleVar();
 }

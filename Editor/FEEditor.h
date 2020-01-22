@@ -1,15 +1,19 @@
 #pragma once
 
-#include "FEngine.h"
+#include "FEProject.h"
 #include <direct.h>
+
+using namespace FocalEngine;
 
 #define PROJECTS_FOLDER "C:/Users/kandr/Downloads/FEProjects"
 
 static double mouseX, mouseY;
-static bool isCameraInputActive = true;
+static bool isCameraInputActive = false;
 static std::pair<std::string, float > entityUnderMouse;
 static std::string selectedEntity = "";
 static bool selectedEntityWasChanged;
+static std::vector<std::string> projectList;
+static FEProject* currentProject = nullptr;
 
 void determineEntityUnderMouse();
 void mouseButtonCallback(int button, int action, int mods);
@@ -21,29 +25,31 @@ void toolTip(const char* text);
 void showPosition(std::string objectName, glm::vec3& position);
 void showRotation(std::string objectName, glm::vec3& rotation);
 void showScale(std::string objectName, glm::vec3& scale);
-void showTransformConfiguration(std::string objectName, FocalEngine::FETransformComponent* transform);
+void showTransformConfiguration(std::string objectName, FETransformComponent* transform);
 
-void displayMaterialPrameter(FocalEngine::FEShaderParam* param);
-void displayMaterialPrameters(FocalEngine::FEMaterial* material);
-void displayLightProperties(FocalEngine::FELight* light);
+void displayMaterialPrameter(FEShaderParam* param);
+void displayMaterialPrameters(FEMaterial* material);
+void displayLightProperties(FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
 void displayMaterialEditor();
 void displayContentBrowser();
 void displayPostProcess();
+void displayProjectSelection();
 
 void addEntityButton();
 
 void saveMaterials(const char* fileName = nullptr);
 void loadMaterials(const char* fileName = nullptr);
 
-void writeTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform);
-void readTransformToJSON(Json::Value& root, FocalEngine::FETransformComponent* transform);
-
-void saveScene(const char* fileName = nullptr);
-void loadScene(const char* fileName = nullptr);
-
+// file system
 bool checkFolder(const char* dirPath);
 bool createFolder(const char* dirPath);
+std::vector<std::string> getFolderList(const char* dirPath);
+// file system END
 
+void renderEditor();
 void loadEditor();
+
+
+

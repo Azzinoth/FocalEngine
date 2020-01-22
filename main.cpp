@@ -1,4 +1,4 @@
-#include "FEEditor.h"
+#include "../Editor/FEEditor.h"
 
 static const char* const MyVS = R"(
 #version 400 core
@@ -124,16 +124,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 
-	FocalEngine::FEMaterial* testMat = resourceManager.createMaterial("TestMaterial");
-	//testMat->shader = new FocalEngine::FEShader(FESolidColorVS, FESolidColorFS);
+	/*FocalEngine::FEMaterial* testMat = resourceManager.createMaterial("TestMaterial");
 	testMat->shader = new FocalEngine::FEShader(FEPhongVS, FEPhongFS);
 	FocalEngine::FEShaderParam color(glm::vec3(0.0f, 0.4f, 0.6f), "baseColor");
-	testMat->addParameter(color);
+	testMat->addParameter(color);*/
 
 	loadEditor();
-	loadScene();
 
-	FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
+	/*FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
 	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
 	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS, MyFS2);
 	for (size_t i = 0; i < 1; i++)
@@ -143,10 +141,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
 		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(1.0f);
 	}
-	//renderer.addPostProcess(testEffect);
+	renderer.addPostProcess(testEffect);*/
 
-	FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
-	testMat->addParameter(testParam);
+
+
+	//FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
+	//testMat->addParameter(testParam);
 	//testMat->addTexture(scene.getLight("sun")->shadowMap->getDepthAttachment());
 	
 
@@ -157,8 +157,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		engine.render();
 
 		//ImGui::ShowDemoWindow();
-		displaySceneEntities();
-		displayContentBrowser();
+		renderEditor();
 
 		engine.endFrame();
 

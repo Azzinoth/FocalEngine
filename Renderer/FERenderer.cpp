@@ -185,7 +185,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ********* GENERATE SHADOW MAPS END *********
 
 	// in current version only shadows from one directional light is supported.
-	shadowMap->bind(FE_SHADOW_MAP_UNIT);
+	if (shadowMap) shadowMap->bind(FE_SHADOW_MAP_UNIT);
 
 	// ********* RENDER SCENE *********
 	sceneToTextureFB->bind();
