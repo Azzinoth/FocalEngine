@@ -339,10 +339,27 @@ void displaySceneEntities()
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Change project", ImVec2(220, 0)))
+	if (ImGui::Button("Save project", ImVec2(220, 0)))
 	{
-		delete currentProject;
+		currentProject->saveScene();
+		FEngine::getInstance().takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.texture").c_str());
+	}
+
+	if (ImGui::Button("Close project", ImVec2(220, 0)))
+	{
+		if (currentProject->modified)
+		{
+			// ask should we save project.
+		}
+
+		for (size_t i = 0; i < projectList.size(); i++)
+		{
+			delete projectList[i];
+		}
+		projectList.clear();
 		currentProject = nullptr;
+
+		loadProjectList();
 
 		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
@@ -406,7 +423,7 @@ void displaySceneEntities()
 					{
 						entity->mesh = FEResourceManager::getInstance().getSimpleMesh(filePath);
 						if (!entity->mesh)
-							entity->mesh = FEResourceManager::getInstance().LoadOBJMesh(filePath);
+							entity->mesh = FEResourceManager::getInstance().LoadOBJMesh(filePath, "", currentProject->getProjectFolder().c_str());
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -612,7 +629,7 @@ void displayMaterialEditor()
 
 					if (ImGui::Button("Load", ImVec2(120, 0)))
 					{
-						material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath), textures[j]);
+						material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath, "", (currentProject->getProjectFolder() + material->getName() + textures[j] + ".texture").c_str()), textures[j]);
 						ImGui::CloseCurrentPopup();
 						strcpy_s(filePath, "");
 					}
@@ -887,14 +904,29 @@ bool createFolder(const char* dirPath)
 	return (_mkdir(dirPath) != 0);
 }
 
-void loadEditor()
+bool deleteFolder(const char* dirPath)
 {
-	FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+	return (_rmdir(dirPath) != 0);
+}
 
+void loadProjectList()
+{
 	if (!checkFolder(PROJECTS_FOLDER))
 		createFolder(PROJECTS_FOLDER);
 
-	projectList = getFolderList(PROJECTS_FOLDER);
+	std::vector<std::string> projectNameList = getFolderList(PROJECTS_FOLDER);
+
+	for (size_t i = 0; i < projectNameList.size(); i++)
+	{
+		projectList.push_back(new FEProject(projectNameList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i].c_str() + "/"));
+	}
+}
+
+void loadEditor()
+{
+	projectChosen = -1;
+	FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+	loadProjectList();
 }
 
 std::vector<std::string> getFolderList(const char* dirPath)
@@ -937,39 +969,140 @@ void displayProjectSelection()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH - 170.0f));
 	ImGui::Begin("Project Browser", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+	{
 		ImGui::SetWindowFontScale(2.0f);
 		ImGui::Text("CHOOSE WHAT PROJECT TO LOAD :");
 		ImGui::SetWindowFontScale(1.0f);
 
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+		int columnCount = int(mainWindowW / (512.0f + 32.0f));
+		ImGui::Columns(columnCount, "projectColumns", false);
+		static bool pushedStyle = false;
 		for (size_t i = 0; i < projectList.size(); i++)
 		{
-			// frame_padding < 0: uses FramePadding from style (default)
-			// frame_padding = 0: no framing
-			// frame_padding > 0: set framing size
-			// The color used are the button colors.
-
-			//bool ImGui::ImageButton(ImTextureID user_texture_id, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col)
-			//ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128));
-			//ImGui::ImageButton((void*)(intptr_t)->getTextureID())
-			std::string buttonName = "Open ";
-			buttonName += projectList[i];
-			if (ImGui::Button(buttonName.c_str(), ImVec2(105, 0)))
+			ImGui::PushID(i);
+			pushedStyle = false;
+			if (projectChosen == i)
 			{
-				currentProject = new FEProject(projectList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectList[i].c_str() + "/");
-				currentProject->loadScene();
+				pushedStyle = true;
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 			}
+
+			/*if (ImGui::IsMouseDoubleClicked(0) && projectChosen != -1)
+			{
+				currentProject = projectList[i];
+				currentProject->loadScene();
+			}*/
+
+			if (ImGui::ImageButton((void*)(intptr_t)projectList[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			{
+				projectChosen = i;
+			}
+			ImVec2 textWidth = ImGui::CalcTextSize(projectList[i]->getName().c_str());
+			ImGui::Text(projectList[i]->getName().c_str());
+
+			if (pushedStyle)
+			{
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::PopID();
+			ImGui::NextColumn();
+		}
+
+		ImGui::Columns(1);
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+	}
+	ImGui::End();
+	ImGui::PopStyleVar();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, mainWindowH - 170.0f));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, 170.0f));
+	ImGui::Begin("##create project", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.75f, 0.70f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+		if (ImGui::Button("Create New Project", ImVec2(200.0f, 64.0f)))
+			ImGui::OpenPopup("New Project");
+
+		ImGui::SameLine();
+		if (ImGui::Button("Open Project", ImVec2(200.0f, 64.0f)) && projectChosen != -1)
+		{
+			currentProject = projectList[projectChosen];
+			currentProject->loadScene();
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Delete Project", ImVec2(200.0f, 64.0f)) && projectChosen != -1)
+		{
+			bool f = deleteFolder(projectList[projectChosen]->getProjectFolder().c_str());
+			loadEditor();
+
+			/*ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::End();
+			ImGui::PopStyleVar();
+
+			return;*/
 		}
 
 		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
 
+		if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Insert name of new project :");
+			static char projectName[256] = "";
+
+			ImGui::InputText("", projectName, IM_ARRAYSIZE(projectName));
+			ImGui::Separator();
+
+			if (ImGui::Button("Create", ImVec2(120, 0)))
+			{
+				bool alreadyCreated = false;
+				for (size_t i = 0; i < projectList.size(); i++)
+				{
+					if (projectList[i]->getName() == std::string(projectName))
+					{
+						alreadyCreated = true;
+						break;
+					}
+				}
+
+				if (strlen(projectName) != 0 && !alreadyCreated)
+				{
+					createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
+					projectList.push_back(new FEProject(projectName, std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/"));
+					projectList.back()->createDummyScreenshot();
+					FEScene::getInstance().addLight(FE_DIRECTIONAL_LIGHT, "sun");
+					ImGui::CloseCurrentPopup();
+					strcpy_s(projectName, "");
+				}
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+	}
 	ImGui::End();
 	ImGui::PopStyleVar();
 }

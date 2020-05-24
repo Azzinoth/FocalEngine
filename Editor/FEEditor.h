@@ -12,7 +12,9 @@ static bool isCameraInputActive = false;
 static std::pair<std::string, float > entityUnderMouse;
 static std::string selectedEntity = "";
 static bool selectedEntityWasChanged;
-static std::vector<std::string> projectList;
+static std::vector<FEProject*> projectList;
+static int projectChosen = -1;
+
 static FEProject* currentProject = nullptr;
 
 void determineEntityUnderMouse();
@@ -45,10 +47,12 @@ void loadMaterials(const char* fileName = nullptr);
 // file system
 bool checkFolder(const char* dirPath);
 bool createFolder(const char* dirPath);
+bool deleteFolder(const char* dirPath);
 std::vector<std::string> getFolderList(const char* dirPath);
 // file system END
 
 void renderEditor();
+void loadProjectList();
 void loadEditor();
 
 

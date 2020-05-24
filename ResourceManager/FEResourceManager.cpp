@@ -3,7 +3,7 @@ using namespace FocalEngine;
 
 FEResourceManager* FEResourceManager::_instance = nullptr;
 
-FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name, const char* saveFETexureTo)
 {
 	FETexture* newTexture = new FETexture();
 	std::vector<unsigned char> rawData;
@@ -55,7 +55,12 @@ FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string N
 	newTexture->fileName = fileName;
 
 	// save texture in internal format and add it to project\scene
-	saveFETexture((Name + ".texture").c_str(), newTexture, (char*)rawData.data());
+	if (saveFETexureTo != nullptr)
+	{
+		saveFETexture(/*(Name + ".texture").c_str()*/saveFETexureTo, newTexture, (char*)rawData.data());
+		//newTexture->fileName = (Name + ".texture").c_str();
+	}
+
 	textures[Name] = newTexture;
 
 	return newTexture;
@@ -127,6 +132,22 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture, 
 	file.write((char*)&texture->height, sizeof(int));
 
 	int size = strlen(textureData);
+	file.write((char*)&size, sizeof(int));
+	file.write((char*)textureData, sizeof(unsigned char) * size);
+
+	file.close();
+}
+
+void FEResourceManager::saveFETexture(const char* fileName, int width, int height, char* textureData)
+{
+	std::fstream file;
+
+	file.open(fileName, std::ios::out | std::ios::binary);
+
+	file.write((char*)&width, sizeof(int));
+	file.write((char*)&height, sizeof(int));
+
+	int size = 4 * width * height;
 	file.write((char*)&size, sizeof(int));
 	file.write((char*)textureData, sizeof(unsigned char) * size);
 
@@ -432,7 +453,7 @@ FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
 	return nullptr;
 }
 
-FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name)
+FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name, const char* saveFEMeshTo)
 {
 	FEObjLoader& objLoader = FEObjLoader::getInstance();
 	objLoader.readFile(fileName);
@@ -449,7 +470,12 @@ FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name)
 
 	meshes[newMesh->getName()] = newMesh;
 	
-	saveFEMesh((Name + std::string(".model")).c_str());
+	if (saveFEMeshTo != nullptr)
+	{
+		saveFEMesh((saveFEMeshTo + Name + std::string(".model")).c_str());
+		newMesh->fileName = (Name + std::string(".model")).c_str();
+	}
+		
 	return newMesh;
 }
 
@@ -590,7 +616,7 @@ void FEResourceManager::loadStandardMaterial()
 {
 	FEMaterial* newMat = createMaterial("SolidColorMaterial");
 	newMat->shader = new FEShader(FESolidColorVS, FESolidColorFS);
-	FocalEngine::FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
+	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
 	newMat->addParameter(color);
 }
 

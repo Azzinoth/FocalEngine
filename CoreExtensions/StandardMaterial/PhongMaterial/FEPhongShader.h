@@ -109,7 +109,7 @@ void main(void)
 		
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
 	vec3 viewDirection = normalize(FECameraPosition - fragPosition);
-	vec3 ambientColor = vec3(0.1, 0.0f, 0.6f) * 0.3f;
+	vec3 ambientColor = vec3(0.55f, 0.73f, 0.87f) * 0.3f;
 
     vec3 normal = texture(normalsTexture, UV).rgb;
     normal = normalize(normal * 2.0 - 1.0);

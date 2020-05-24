@@ -16,11 +16,13 @@ public:
 	std::string getProjectFolder();
 	void saveScene();
 	void loadScene();
+
+	FETexture* sceneScreenshot;
+	bool modified = false;
+	void createDummyScreenshot();
 private:
 	std::string name;
 	std::string projectFolder;
-
-	FETexture* sceneScreenShoot;
 
 	void writeTransformToJSON(Json::Value& root, FETransformComponent* transform);
 	void readTransformToJSON(Json::Value& root, FETransformComponent* transform);

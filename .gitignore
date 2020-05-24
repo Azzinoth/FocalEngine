@@ -17,6 +17,8 @@
 *.vcxproj.user
 imgui.ini
 *.txt
+*.texture
+*.model
 
 #Folders
 Debug/

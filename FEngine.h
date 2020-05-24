@@ -37,6 +37,7 @@ namespace FocalEngine
 		float getGpuTime();
 
 		FEPostProcess* createPostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
+		void takeScreenshot(const char* fileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 

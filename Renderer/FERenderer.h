@@ -32,6 +32,8 @@ namespace FocalEngine
 
 		// in current version only shadows from one directional light is supported.
 		FETexture* shadowMap = nullptr;
+
+		void takeScreenshot(const char* fileName, int width, int height);
 	};
 }
 

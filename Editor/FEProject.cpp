@@ -4,10 +4,17 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 {
 	name = Name;
 	projectFolder = ProjectFolder;
+
+	std::ifstream screenshotFile((this->getProjectFolder() + "/projectScreenShot.texture").c_str());
+	if (!screenshotFile.good())
+		createDummyScreenshot();
+	
+	sceneScreenshot = FEResourceManager::getInstance().LoadFETexture((this->getProjectFolder() + "/projectScreenShot.texture").c_str());
 }
 
 FEProject::~FEProject()
 {
+	delete sceneScreenshot;
 	FEScene::getInstance().clear();
 	FEResourceManager::getInstance().clear();
 }
@@ -62,7 +69,6 @@ void FEProject::saveScene()
 			continue;
 
 		meshData[mesh->getName()]["file"] = mesh->getFileName();
-
 	}
 	root["meshes"] = meshData;
 
@@ -149,23 +155,24 @@ void FEProject::saveScene()
 
 	sceneFile << json_file;
 	sceneFile.close();
+	modified = false;
 }
 
 void FEProject::readTransformToJSON(Json::Value& root, FETransformComponent* transform)
 {
 	transform->setPosition(glm::vec3(root["position"]["X"].asFloat(),
-		root["position"]["Y"].asFloat(),
-		root["position"]["Z"].asFloat()));
+									 root["position"]["Y"].asFloat(),
+									 root["position"]["Z"].asFloat()));
 
 	transform->setRotation(glm::vec3(root["rotation"]["X"].asFloat(),
-		root["rotation"]["Y"].asFloat(),
-		root["rotation"]["Z"].asFloat()));
+									 root["rotation"]["Y"].asFloat(),
+									 root["rotation"]["Z"].asFloat()));
 
 	transform->uniformScaling = root["scale"]["uniformScaling"].asBool();
 
 	transform->setScale(glm::vec3(root["scale"]["X"].asFloat(),
-		root["scale"]["Y"].asFloat(),
-		root["scale"]["Z"].asFloat()));
+								  root["scale"]["Y"].asFloat(),
+								  root["scale"]["Z"].asFloat()));
 }
 
 void FEProject::loadScene()
@@ -215,8 +222,8 @@ void FEProject::loadScene()
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		scene.addEntity(resourceManager.getSimpleMesh(root["entities"][entityList[i]]["mesh"].asCString()),
-			resourceManager.getMaterial(root["entities"][entityList[i]]["material"].asCString()),
-			entityList[i]);
+						resourceManager.getMaterial(root["entities"][entityList[i]]["material"].asCString()),
+						entityList[i]);
 
 		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &scene.getEntity(entityList[i])->transform);
 	}
@@ -238,18 +245,18 @@ void FEProject::loadScene()
 		readTransformToJSON(root["lights"][lightList[i]]["transformation"], &light->transform);
 
 		light->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-			root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-			root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+									  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+									  root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
 
 		light->setColor(glm::vec3(root["lights"][lightList[i]]["color"]["R"].asFloat(),
-			root["lights"][lightList[i]]["color"]["G"].asFloat(),
-			root["lights"][lightList[i]]["color"]["B"].asFloat()));
+								  root["lights"][lightList[i]]["color"]["G"].asFloat(),
+								  root["lights"][lightList[i]]["color"]["B"].asFloat()));
 	}
 
 	// loading Camera settings
 	engine.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
-		root["camera"]["position"]["Y"].asFloat(),
-		root["camera"]["position"]["Z"].asFloat()));
+											  root["camera"]["position"]["Y"].asFloat(),
+											  root["camera"]["position"]["Z"].asFloat()));
 
 	engine.getCamera()->setFov(root["camera"]["fov"].asFloat());
 	engine.getCamera()->setNearPlane(root["camera"]["nearPlane"].asFloat());
@@ -265,4 +272,25 @@ void FEProject::loadScene()
 	engine.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
 
 	sceneFile.close();
+}
+
+void FEProject::createDummyScreenshot()
+{
+	size_t width = FEngine::getInstance().getWindowWidth();
+	size_t height = FEngine::getInstance().getWindowHeight();
+
+	char* pixels = new char[4 * width * height];
+	for (size_t j = 0; j < height; j++)
+	{
+		for (size_t i = 0; i < 4 * width; i += 4)
+		{
+			pixels[i + (j * 4 * width)] = 0;
+			pixels[i + 1 + (j * 4 * width)] = 162;
+			pixels[i + 2 + (j * 4 * width)] = 232;
+			pixels[i + 3 + (j * 4 * width)] = 255;
+		}
+	}
+	
+	FEResourceManager::getInstance().saveFETexture((getProjectFolder() + "/projectScreenShot.texture").c_str(), width, height, pixels);
+	delete[] pixels;
 }

@@ -15,7 +15,7 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity)
 {
 	static char* name = new char[256];
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	FEScene& scene = FEScene::getInstance();
 
 	auto iterator = shader->parameters.begin();
 	while (iterator != shader->parameters.end())
@@ -64,8 +64,8 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess)
 
 void FERenderer::loadUniformBlocks()
 {
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+	FEScene& scene = FEScene::getInstance();
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
 	std::vector<FELightShaderInfo> info;
 	info.resize(FE_MAX_LIGHTS);
@@ -121,7 +121,7 @@ void FERenderer::loadUniformBlocks()
 
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
-	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
+	FEScene& scene = FEScene::getInstance();
 
 	loadUniformBlocks();
 	
@@ -277,7 +277,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		effect.screenQuadShader->stop();
 	}
 	// ********* SCREEN SPACE EFFECTS END *********
-
 }
 
 FEPostProcess* FERenderer::getPostProcessEffect(std::string name)
@@ -298,4 +297,28 @@ std::vector<std::string> FERenderer::getPostProcessList()
 		result.push_back(postProcessEffects[i]->getName());
 		
 	return result;
+}
+
+void FERenderer::takeScreenshot(const char* fileName, int width, int height)
+{
+	char* pixels = new char[4 * width * height];
+	glActiveTexture(GL_TEXTURE0);
+	
+	glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID());
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	//with glGetTexImage we get upside down image data, so we flip it.
+	for (size_t j = 0; j < height / 2; j++)
+	{
+		for (size_t i = 0; i < 4 * width; i+=4)
+		{
+			std::swap(pixels[i + (j * 4 * width)], pixels[4 * width * height - (i + (j * 4 * width))]);
+			std::swap(pixels[i + 1 + (j * 4 * width)], pixels[4 * width * height - (i - 1 + (j * 4 * width))]);
+			std::swap(pixels[i + 2 + (j * 4 * width)], pixels[4 * width * height - (i - 2 + (j * 4 * width))]);
+			std::swap(pixels[i + 3 + (j * 4 * width)], pixels[4 * width * height - (i - 3 + (j * 4 * width))]);
+		}
+	}
+
+	FEResourceManager::getInstance().saveFETexture(fileName, width, height, pixels);
+	delete[] pixels;
 }

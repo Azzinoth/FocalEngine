@@ -5,8 +5,8 @@ FEngine* FEngine::_instance = nullptr;
 #define RENDERER_OBJ FERenderer::getInstance()
 #define RESOURCE_MANAGER_OBJ FEResourceManager::getInstance()
 #define ENGINE_OBJ FEngine::getInstance()
-#define SCENE_OBJ FocalEngine::FEScene::getInstance()
-#define TIME_OBJ FocalEngine::FETime::getInstance()
+#define SCENE_OBJ FEScene::getInstance()
+#define TIME_OBJ FETime::getInstance()
 
 FEngine::FEngine()
 {
@@ -148,7 +148,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
 
-	glClearColor(0.7f, 0.0f, 0.7f, 1.0f);
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 
 	// turn off v-sync
 	glfwSwapInterval(0);
@@ -278,4 +278,9 @@ FEPostProcess* FEngine::createPostProcess(std::string Name, int ScreenWidth, int
 void FEngine::terminate()
 {
 	glfwSetWindowShouldClose(window, true);
+}
+
+void FEngine::takeScreenshot(const char* fileName)
+{
+	RENDERER_OBJ.takeScreenshot(fileName, windowW, windowH);
 }
