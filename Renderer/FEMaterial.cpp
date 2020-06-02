@@ -1,10 +1,10 @@
 #include "FEMaterial.h"
 using namespace FocalEngine;
 
-FEMaterial::FEMaterial(int ID, std::string Name)
+FEMaterial::FEMaterial(/*int ID*//*, std::string Name*/)
 {
-	id = ID;
-	name = Name;
+	//id = ID;
+	//name = Name;
 }
 
 FEMaterial::~FEMaterial()
@@ -72,11 +72,6 @@ void FEMaterial::addTexture(FETexture* newTexture)
 		return;
 
 	textures.push_back(newTexture);
-}
-
-int FEMaterial::getID()
-{
-	return id;
 }
 
 void FEMaterial::addParameter(FEShaderParam newParameter)

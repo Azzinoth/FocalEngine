@@ -3,23 +3,129 @@ using namespace FocalEngine;
 
 FEResourceManager* FEResourceManager::_instance = nullptr;
 
-FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name, const char* saveFETexureTo)
+FETexture* FEResourceManager::createTexture(std::string Name)
 {
 	FETexture* newTexture = new FETexture();
-	std::vector<unsigned char> rawData;
-	unsigned uWidth, uHeight;
 
 	if (Name.size() == 0 || textures.find(Name) != textures.end())
 	{
-		Name = getFileNameFromFilePath(fileName);
 		size_t nextID = textures.size();
 		size_t index = 0;
-		while (textures.find(Name) != textures.end() || Name.size() == 0)
+		Name = "texture_" + std::to_string(nextID + index);
+		while (textures.find(Name) != textures.end())
 		{
 			index++;
 			Name = "texture_" + std::to_string(nextID + index);
 		}
 	}
+
+	newTexture->setName(Name);
+	textures[Name] = newTexture;
+
+	return newTexture;
+}
+
+bool FEResourceManager::setTextureName(FETexture* Texture, std::string TextureName)
+{
+	if (TextureName.size() == 0 || textures.find(TextureName) != textures.end())
+		return false;
+
+	textures.erase(Texture->getName());
+	textures[TextureName] = Texture;
+	
+	Texture->setName(TextureName);
+	return true;
+}
+
+FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name)
+{
+	FEMesh* newMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB);
+
+	if (Name.size() == 0 || meshes.find(Name) != meshes.end())
+	{
+		size_t nextID = meshes.size();
+		size_t index = 0;
+		Name = "mesh_" + std::to_string(nextID + index);
+		while (meshes.find(Name) != meshes.end())
+		{
+			index++;
+			Name = "mesh_" + std::to_string(nextID + index);
+		}
+	}
+
+	newMesh->setName(Name);
+	meshes[Name] = newMesh;
+
+	return newMesh;
+}
+
+bool FEResourceManager::setMeshName(FEMesh* Mesh, std::string MeshName)
+{
+	if (MeshName.size() == 0 || meshes.find(MeshName) != meshes.end())
+		return false;
+
+	Mesh->setName(MeshName);
+	return true;
+}
+
+FETexture* FEResourceManager::LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name)
+{
+	FETexture* newTexture = createTexture(Name);
+	std::vector<unsigned char> rawData;
+	unsigned uWidth, uHeight;
+
+	lodepng::decode(rawData, uWidth, uHeight, fileName);
+	if (rawData.size() == 0)
+	{
+		//Log...
+		assert(rawData.size());
+	}
+	newTexture->width = uWidth;
+	newTexture->height = uHeight;
+
+	int internalFormat = usingAlpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
+	newTexture->internalFormat = internalFormat;
+
+	if (newTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+	newTexture->fileName = fileName;
+
+	std::string filePath = newTexture->fileName;
+	std::size_t index = filePath.find_last_of("/\\");
+	std::string newFileName = filePath.substr(index + 1);
+	index = newFileName.find_last_of(".");
+	std::string fileNameWithOutExtention = newFileName.substr(0, index);
+	setTextureName(newTexture, fileNameWithOutExtention);
+	/*index = fileNameWithOutExtention.find_last_of(".");
+	fileNameWithOutExtention = fileNameWithOutExtention.substr(0, index);*/
+	
+
+	return newTexture;
+}
+
+FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name, const char* saveFETexureTo)
+{
+	FETexture* newTexture = createTexture(Name);
+	std::vector<unsigned char> rawData;
+	unsigned uWidth, uHeight;
 
 	lodepng::decode(rawData, uWidth, uHeight, fileName);
 	if (rawData.size() == 0)
@@ -33,11 +139,12 @@ FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string N
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
 	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
+	newTexture->internalFormat = GL_RGBA;
 
 	if (newTexture->mipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
@@ -50,29 +157,20 @@ FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string N
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
-
-	newTexture->setName(Name);
 	newTexture->fileName = fileName;
 
 	// save texture in internal format and add it to project\scene
 	if (saveFETexureTo != nullptr)
 	{
-		saveFETexture(/*(Name + ".texture").c_str()*/saveFETexureTo, newTexture, (char*)rawData.data());
-		//newTexture->fileName = (Name + ".texture").c_str();
+		saveFETexture(saveFETexureTo, newTexture, (char*)rawData.data());
 	}
-
-	textures[Name] = newTexture;
 
 	return newTexture;
 }
 
 FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name)
 {
-	FETexture* newTexture = new FETexture();
-
-	if (Name.size() == 0)
-		Name = getFileNameFromFilePath(fileName);
-
+	FETexture* newTexture = createTexture(Name);
 	std::fstream file;
 
 	file.open(fileName, std::ios::in | std::ios::binary);
@@ -94,7 +192,8 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT/*GL_COMPRESSED_RGBA_S3TC_DXT5_EXT*//*GL_RGBA*/, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
+	newTexture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 	if (newTexture->mipEnabled)
 	{
@@ -113,11 +212,235 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
-	newTexture->setName(Name);
 	newTexture->fileName = fileName;
 
 	delete[] buffer;
 	delete[] textureData;
+
+	return newTexture;
+}
+
+void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
+{
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture->textureID));
+	int maxDimention = std::max(texture->width, texture->height);
+	int mipCount = floor(log2(maxDimention)) + 1;
+	char** pixelData = new char*[mipCount];
+	GLint imgSize = 0;
+	std::fstream file;
+
+	file.open(fileName, std::ios::out | std::ios::binary);
+
+	file.write((char*)&texture->width, sizeof(int));
+	file.write((char*)&texture->height, sizeof(int));
+
+	texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+	file.write((char*)&texture->internalFormat, sizeof(int));
+
+	int nameSize = texture->getName().size() + 1;
+	file.write((char*)&nameSize, sizeof(int));
+
+	char* textureName = new char[nameSize];
+	strcpy_s(textureName, nameSize, texture->getName().c_str());
+	file.write((char*)textureName, sizeof(char) * nameSize);
+
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imgSize);
+
+		char* pixels = new char[imgSize * 2];
+		for (size_t i = 0; i < imgSize * 2; i++)
+		{
+			pixels[i] = ' ';
+		}
+		glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), pixels);
+
+		int realSize = 0;
+		for (size_t i = imgSize * 2 - 1; i > 0 ; i--)
+		{
+			if (pixels[i] != ' ')
+			{
+				realSize = i + 1;
+				break;
+			}
+		}
+
+		pixelData[i] = new char[realSize];
+		memcpy(pixelData[i], pixels, realSize);
+		delete[] pixels;
+
+		file.write((char*)&realSize, sizeof(int));
+		file.write((char*)pixelData[i], sizeof(char) * realSize);
+	}
+
+	file.close();
+
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		delete[] pixelData[i];
+	}
+	delete[] pixelData;
+}
+
+void FEResourceManager::LoadFETexture_(const char* fileName, FETexture* existingTexture)
+{
+	std::fstream file;
+	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::streamsize fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+	char* fileData = new char[fileSize];
+	file.read(fileData, fileSize);
+	file.close();
+
+	int currentShift = 0;
+	int width = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int height = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int internalFormat = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	int nameSize = 0;
+	nameSize = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	char* textureName = new char[nameSize];
+	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
+	currentShift += nameSize;
+
+	existingTexture->width = width;
+	existingTexture->height = height;
+	existingTexture->internalFormat = internalFormat;
+	existingTexture->fileName = fileName;
+
+	FE_GL_ERROR(glGenTextures(1, &existingTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, existingTexture->textureID));
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (existingTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	int maxDimention = std::max(existingTexture->width, existingTexture->height);
+	int mipCount = floor(log2(maxDimention)) + 1;
+	glTexStorage2D(GL_TEXTURE_2D, mipCount, existingTexture->internalFormat, existingTexture->width, existingTexture->height);
+
+	if (existingTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	int mipW = existingTexture->width / 2;
+	int mipH = existingTexture->height / 2;
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		int size = *(int*)(&fileData[currentShift]);
+		currentShift += 4;
+
+		if (i == 0)
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, existingTexture->width, existingTexture->height, existingTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+		}
+		else
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, existingTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+
+			mipW = mipW / 2;
+			mipH = mipH / 2;
+		}
+
+		currentShift += size;
+	}
+	delete[] fileData;
+	delete[] textureName;
+}
+
+FETexture* FEResourceManager::LoadFETexture_(const char* fileName, std::string Name)
+{
+	std::fstream file;
+	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::streamsize fileSize = file.tellg();
+	file.seekg(0, std::ios::beg);
+	char* fileData = new char[fileSize];
+	file.read(fileData, fileSize);
+	file.close();
+
+	int currentShift = 0;
+	int width = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int height = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int internalFormat = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	int nameSize = 0;
+	nameSize = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	char* textureName = new char[nameSize];
+	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
+	currentShift += nameSize;
+
+	FETexture* newTexture = createTexture(textureName);
+	newTexture->width = width;
+	newTexture->height = height;
+	newTexture->internalFormat = internalFormat;
+	newTexture->fileName = fileName;
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	int maxDimention = std::max(newTexture->width, newTexture->height);
+	int mipCount = floor(log2(maxDimention)) + 1;
+	glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height);
+
+	if (newTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	int mipW = newTexture->width / 2;
+	int mipH = newTexture->height / 2;
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		int size = *(int*)(&fileData[currentShift]);
+		currentShift += 4;
+
+		if (i == 0)
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+		}
+		else
+		{
+			glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+			
+			mipW = mipW / 2;
+			mipH = mipH / 2;
+		}
+
+		currentShift += size;
+	}
+	delete[] fileData;
+	delete[] textureName;
 
 	return newTexture;
 }
@@ -169,7 +492,8 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION, FEAABB(positions));
+	return newMesh;
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals)
@@ -194,7 +518,8 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL, FEAABB(positions));
+	return newMesh;
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index)
@@ -239,7 +564,8 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions));
+	return newMesh;
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize,
@@ -285,7 +611,8 @@ FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize, float* U
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, indexSize, FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB());
+	FEMesh* newMesh = createMesh(vaoID, indexSize, FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB());
+	return newMesh;
 }
 
 FEMesh* FEResourceManager::rawObjDataToMesh()
@@ -332,7 +659,8 @@ FEMesh* FEResourceManager::rawObjDataToMesh()
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	return new FEMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(objLoader.fVerC));
+	FEMesh* newMesh = createMesh(vaoID, objLoader.fInd.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(objLoader.fVerC));
+	return newMesh;
 }
 
 void FEResourceManager::loadStandardMeshes()
@@ -436,6 +764,9 @@ void FEResourceManager::loadStandardMeshes()
 
 FEResourceManager::FEResourceManager()
 {
+	noTexture = new FETexture();;
+	LoadFETexture_("noTexture.FETexture", noTexture);
+
 	loadStandardMaterial();
 	loadStandardMeshes();
 }
@@ -555,19 +886,30 @@ FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenH
 
 FEMaterial* FEResourceManager::createMaterial(std::string Name)
 {
-	size_t nextID = materials.size();
 	if (Name.size() == 0 || materials.find(Name) != materials.end())
 	{
+		size_t nextID = materials.size();
 		size_t index = 0;
-		while (materials.find(Name) != materials.end() || Name.size() == 0)
+		Name = "material_" + std::to_string(nextID + index);
+		while (materials.find(Name) != materials.end())
 		{
 			index++;
 			Name = "material_" + std::to_string(nextID + index);
 		}
 	}
 
-	materials[Name] = new FEMaterial((int)nextID, Name);
+	materials[Name] = new FEMaterial();
+	materials[Name]->setName(Name);
 	return materials[Name];
+}
+
+bool FEResourceManager::setMaterialName(FEMaterial* Material, std::string MaterialName)
+{
+	if (MaterialName.size() == 0 || materials.find(MaterialName) != materials.end())
+		return false;
+
+	Material->setName(MaterialName);
+	return true;
 }
 
 FEEntity* FEResourceManager::createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
@@ -716,3 +1058,68 @@ FETexture* FEResourceManager::getTexture(std::string name)
 
 	return textures[name];
 }
+
+void FEResourceManager::deleteFETexture(FETexture* texture)
+{
+	// looking if this texture is used in some materials
+	// to-do: should be done through list of pointers to materials that uses this texture.
+	auto materialIterator = materials.begin();
+	while (materialIterator != materials.end())
+	{
+		for (size_t i = 0; i < materialIterator->second->textures.size(); i++)
+		{
+			// if material uses this texture we will flip it to dummy texture
+			if (texture == materialIterator->second->textures[i])
+				materialIterator->second->textures[i] = noTexture;
+		}
+		materialIterator++;
+	}
+
+	// after we make sure that texture is no more referenced by any material, we can delete it
+	textures.erase(texture->getName());
+	delete texture;
+}
+
+//void FEResourceManager::addFEMeshToFile(std::fstream& file, FEMesh* Mesh)
+//{
+//	FEObjLoader& objLoader = FEObjLoader::getInstance();
+//
+//	int count = objLoader.fVerC.size();
+//	file.write((char*)&count, sizeof(int));
+//	file.write((char*)objLoader.fVerC.data(), sizeof(float) * objLoader.fVerC.size());
+//
+//	count = objLoader.fTexC.size();
+//	file.write((char*)&count, sizeof(int));
+//	file.write((char*)objLoader.fTexC.data(), sizeof(float) * objLoader.fTexC.size());
+//
+//	count = objLoader.fNorC.size();
+//	file.write((char*)&count, sizeof(int));
+//	file.write((char*)objLoader.fNorC.data(), sizeof(float) * objLoader.fNorC.size());
+//
+//	count = objLoader.fTanC.size();
+//	file.write((char*)&count, sizeof(int));
+//	file.write((char*)objLoader.fTanC.data(), sizeof(float) * objLoader.fTanC.size());
+//
+//	count = objLoader.fInd.size();
+//	file.write((char*)&count, sizeof(int));
+//	file.write((char*)objLoader.fInd.data(), sizeof(int) * objLoader.fInd.size());
+//
+//	FEAABB tempAABB(objLoader.fVerC);
+//	file.write((char*)&tempAABB.min[0], sizeof(float));
+//	file.write((char*)&tempAABB.min[1], sizeof(float));
+//	file.write((char*)&tempAABB.min[2], sizeof(float));
+//
+//	file.write((char*)&tempAABB.max[0], sizeof(float));
+//	file.write((char*)&tempAABB.max[1], sizeof(float));
+//	file.write((char*)&tempAABB.max[2], sizeof(float));
+//}
+//
+//void FEResourceManager::saveAssets(const char* fileName)
+//{
+//	std::fstream file;
+//
+//	file.open(fileName, std::ios::out | std::ios::binary);
+//	
+//
+//	file.close();
+//}

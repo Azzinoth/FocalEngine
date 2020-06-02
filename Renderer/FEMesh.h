@@ -12,7 +12,6 @@ namespace FocalEngine
 		friend FEEntity;
 		friend FEResourceManager;
 	public:
-		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes);
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB);
 		~FEMesh();
 
@@ -20,8 +19,6 @@ namespace FocalEngine
 		unsigned int getVertexCount() const;
 
 		std::string getName();
-		void setName(std::string newName);
-
 		std::string getFileName();
 
 		FEAABB getAABB();
@@ -33,5 +30,7 @@ namespace FocalEngine
 
 		int vertexBuffers = 1;
 		FEAABB AABB;
+
+		void setName(std::string newName);
 	};
 }

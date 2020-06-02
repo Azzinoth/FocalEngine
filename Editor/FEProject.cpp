@@ -158,6 +158,32 @@ void FEProject::saveScene()
 	modified = false;
 }
 
+void FEProject::saveAssets()
+{
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+
+	Json::Value root;
+	std::ofstream sceneFile;
+	sceneFile.open(projectFolder + "assets.txt");
+
+	// saving Textures list
+	std::vector<std::string> texturesList = resourceManager.getTextureList();
+	Json::Value texturesData;
+	for (size_t i = 0; i < texturesList.size(); i++)
+	{
+		FETexture* texture = resourceManager.getTexture(texturesList[i]);
+		texturesData[texture->getName()]["file"] = texture->getName() + ".FETexture";
+	}
+	root["textures"] = texturesData;
+
+	// saving into file
+	Json::StreamWriterBuilder builder;
+	const std::string json_file = Json::writeString(builder, root);
+
+	sceneFile << json_file;
+	sceneFile.close();
+}
+
 void FEProject::readTransformToJSON(Json::Value& root, FETransformComponent* transform)
 {
 	transform->setPosition(glm::vec3(root["position"]["X"].asFloat(),
@@ -194,12 +220,21 @@ void FEProject::loadScene()
 	if (!reader->parse(fileData.c_str(), fileData.c_str() + fileData.size(), &root, &err))
 		return;
 
+	// testing
+	std::ofstream file;
+	file.open("loadingTime.txt");
+	FETime::getInstance().beginTimeStamp();
+
 	// loading Meshes
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
 		FEMesh* newMesh = resourceManager.LoadFEMesh((projectFolder + root["meshes"][meshList[i]]["file"].asCString()).c_str(), meshList[i]);
 	}
+
+	// testing
+	file << "meshTime: " << std::to_string(FETime::getInstance().endTimeStamp()).c_str() << " ms" << std::endl;
+	FETime::getInstance().beginTimeStamp();
 
 	// loading Materials
 	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
@@ -211,11 +246,31 @@ void FEProject::loadScene()
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
 		{
-			FETexture* texture = resourceManager.LoadFETexture((projectFolder + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
-			texture->setName(textureList[j]);
+			// test
+			std::string filePath = projectFolder + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString();
+			std::size_t index = filePath.find_last_of("/\\");
+			std::string fileName = filePath.substr(index + 1);
+			index = fileName.find_last_of(".");
+			std::string fileNameWithOutExtention = fileName.substr(0, index);
+			index = fileNameWithOutExtention.find_last_of(".");
+			fileNameWithOutExtention = fileNameWithOutExtention.substr(0, index);
+
+			//FETexture* texture = resourceManager.LoadFETexture((projectFolder + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str(), fileNameWithOutExtention);
+			
+			fileNameWithOutExtention += ".FETexture";
+
+			
+			//FEResourceManager::getInstance().saveFETexture((projectFolder + fileNameWithOutExtention).c_str(), texture);
+
+			FETexture* texture = resourceManager.LoadFETexture_((projectFolder + fileNameWithOutExtention).c_str());
+
+			//resourceManager.setTextureName(texture, textureList[j]);
 			newMat->addTexture(texture);
 		}
 	}
+
+	file << "textureTime: " << std::to_string(FETime::getInstance().endTimeStamp()).c_str() << " ms" << std::endl;
+	file.close();
 
 	// loading Entities
 	std::vector<Json::String> entityList = root["entities"].getMemberNames();
@@ -285,9 +340,9 @@ void FEProject::createDummyScreenshot()
 		for (size_t i = 0; i < 4 * width; i += 4)
 		{
 			pixels[i + (j * 4 * width)] = 0;
-			pixels[i + 1 + (j * 4 * width)] = 162;
-			pixels[i + 2 + (j * 4 * width)] = 232;
-			pixels[i + 3 + (j * 4 * width)] = 255;
+			pixels[i + 1 + (j * 4 * width)] = (char)162;
+			pixels[i + 2 + (j * 4 * width)] = (char)232;
+			pixels[i + 3 + (j * 4 * width)] = (char)255;
 		}
 	}
 	

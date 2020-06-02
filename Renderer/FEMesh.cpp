@@ -1,13 +1,6 @@
 #include "FEMesh.h"
 using namespace FocalEngine;
 
-FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes)
-{
-	vaoID = VaoID;
-	vertexCount = VertexCount;
-	vertexBuffers = VertexBuffersTypes;
-}
-
 FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB)
 {
 	vaoID = VaoID;

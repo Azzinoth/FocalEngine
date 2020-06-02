@@ -26,8 +26,6 @@ namespace FocalEngine
 		GLuint getTextureID();
 
 		std::string getName();
-		void setName(std::string newName);
-
 		std::string getFileName();
 
 		virtual void bind(const unsigned int textureUnit = 0);
@@ -48,5 +46,7 @@ namespace FocalEngine
 
 		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;
 		bool mipEnabled = true;
+
+		void setName(std::string newName);
 	};
 }
