@@ -38,14 +38,13 @@ void displayLightProperties(FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
 void displayMaterialEditor();
+void displayTextureInMaterialEditor(FETexture*& texture);
+
 void displayContentBrowser();
 void displayPostProcess();
 void displayProjectSelection();
 
 void addEntityButton();
-
-void saveMaterials(const char* fileName = nullptr);
-void loadMaterials(const char* fileName = nullptr);
 
 // file system
 bool checkFolder(const char* dirPath);
@@ -70,7 +69,7 @@ protected:
 	bool opened;
 	char* popupCaption;
 
-	void close()
+	virtual void close()
 	{
 		opened = false;
 		ImGui::CloseCurrentPopup();
@@ -327,3 +326,143 @@ public:
 	}
 };
 static loadTexturePopUp loadTextureWindow;
+
+class selectTexturePopUp : public ImGuiModalPopup
+{
+	FETexture** textureToWorkWith;
+	int textureIndexUnderMouse = -1;
+	int textureIndexSelected = -1;
+	bool pushedStyle = false;
+	std::vector<std::string> textureList;
+	std::vector<std::string> filteredTextureList;
+	char filter[512];
+public:
+	selectTexturePopUp()
+	{
+		popupCaption = "Select texture";
+	}
+
+	void show(FETexture** texture)
+	{
+		shouldOpen = true;
+		pushedStyle = false;
+		textureToWorkWith = texture;
+		textureList = FEResourceManager::getInstance().getTextureList();
+		filteredTextureList = textureList;
+		strcpy_s(filter, "");
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		textureIndexUnderMouse = -1;
+		textureIndexSelected = -1;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredTextureList = textureList;
+				}
+				else
+				{
+					filteredTextureList.clear();
+					for (size_t i = 0; i < textureList.size(); i++)
+					{
+						if (textureList[i].find(filter) != -1)
+						{
+							filteredTextureList.push_back(textureList[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(60);
+			ImGui::Columns(5, "selectTexturePopupColumns", false);
+			for (size_t i = 0; i < filteredTextureList.size(); i++)
+			{
+				pushedStyle = false;
+				if (textureIndexSelected == i)
+				{
+					pushedStyle = true;
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				}
+
+				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				{
+					textureIndexSelected = i;
+				}
+
+				if (pushedStyle)
+				{
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+				}
+
+				if (ImGui::IsItemHovered())
+				{
+					textureIndexUnderMouse = i;
+				}
+
+				ImGui::Text(filteredTextureList[i].c_str());
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::SetCursorPosX(300);
+			ImGui::SetCursorPosY(25);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Select", ImVec2(140, 24)))
+			{
+				if (textureIndexSelected != -1)
+				{
+					*textureToWorkWith = FEResourceManager::getInstance().getTexture(filteredTextureList[textureIndexSelected]);
+					close();
+				}
+			}
+
+			ImGui::SetCursorPosX(460);
+			ImGui::SetCursorPosY(25);
+
+			if (ImGui::Button("Cancel", ImVec2(140, 24)))
+			{
+				close();
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectTexturePopUp selectTextureWindow;

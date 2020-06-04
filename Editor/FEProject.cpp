@@ -77,16 +77,14 @@ void FEProject::saveScene()
 	Json::Value materialData;
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
-		FEMaterial* mat = resourceManager.getMaterial(materialList[i]);
-		// to-do: for now we will save only one type of material. But we need to implement robust load/save for all types.
-		if (mat->getTextureList().size() == 0)
-			continue;
+		FEMaterial* material = resourceManager.getMaterial(materialList[i]);
 
-		std::vector<std::string> textureList = mat->getTextureList();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			materialData[mat->getName()]["textures"][textureList[j]]["file"] = mat->getTexture(textureList[j])->getFileName();
-		}
+		if (material->albedoMap != nullptr) materialData[material->getName()]["textures"]["albedoMap"]["file"] = material->albedoMap->getFileName();
+		if (material->normalMap != nullptr) materialData[material->getName()]["textures"]["normalMap"]["file"] = material->normalMap->getFileName();
+		if (material->roughtnessMap != nullptr) materialData[material->getName()]["textures"]["roughtnessMap"]["file"] = material->roughtnessMap->getFileName();
+		if (material->metalnessMap != nullptr) materialData[material->getName()]["textures"]["metalnessMap"]["file"] = material->metalnessMap->getFileName();
+		if (material->AOMap != nullptr) materialData[material->getName()]["textures"]["AOMap"]["file"] = material->AOMap->getFileName();
+		if (material->displacementMap != nullptr) materialData[material->getName()]["textures"]["displacementMap"]["file"] = material->displacementMap->getFileName();
 	}
 	root["materials"] = materialData;
 
@@ -256,16 +254,18 @@ void FEProject::loadScene()
 			fileNameWithOutExtention = fileNameWithOutExtention.substr(0, index);
 
 			//FETexture* texture = resourceManager.LoadFETexture((projectFolder + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str(), fileNameWithOutExtention);
-			
 			fileNameWithOutExtention += ".FETexture";
 
 			
 			//FEResourceManager::getInstance().saveFETexture((projectFolder + fileNameWithOutExtention).c_str(), texture);
-
 			FETexture* texture = resourceManager.LoadFETexture_((projectFolder + fileNameWithOutExtention).c_str());
 
 			//resourceManager.setTextureName(texture, textureList[j]);
-			newMat->addTexture(texture);
+			if (j == 0)
+				newMat->albedoMap = texture;
+
+			if (j == 1)
+				newMat->normalMap = texture;
 		}
 	}
 

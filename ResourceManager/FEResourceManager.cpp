@@ -1066,12 +1066,24 @@ void FEResourceManager::deleteFETexture(FETexture* texture)
 	auto materialIterator = materials.begin();
 	while (materialIterator != materials.end())
 	{
-		for (size_t i = 0; i < materialIterator->second->textures.size(); i++)
-		{
-			// if material uses this texture we will flip it to dummy texture
-			if (texture == materialIterator->second->textures[i])
-				materialIterator->second->textures[i] = noTexture;
-		}
+		if (texture == materialIterator->second->albedoMap)
+			materialIterator->second->albedoMap = noTexture;
+
+		if (texture == materialIterator->second->normalMap)
+			materialIterator->second->normalMap = noTexture;
+
+		if (texture == materialIterator->second->roughtnessMap)
+			materialIterator->second->roughtnessMap = noTexture;
+
+		if (texture == materialIterator->second->metalnessMap)
+			materialIterator->second->metalnessMap = noTexture;
+
+		if (texture == materialIterator->second->AOMap)
+			materialIterator->second->AOMap = noTexture;
+
+		if (texture == materialIterator->second->displacementMap)
+			materialIterator->second->displacementMap = noTexture;
+
 		materialIterator++;
 	}
 

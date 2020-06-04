@@ -496,78 +496,14 @@ void displayMaterialEditor()
 			if (newMat)
 			{
 				newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
-				newMat->addTexture(FEResourceManager::getInstance().noTexture);
-				newMat->addTexture(FEResourceManager::getInstance().noTexture);
+
+				newMat->albedoMap = FEResourceManager::getInstance().noTexture;
+				newMat->normalMap = FEResourceManager::getInstance().noTexture;
 			}
 
 			ImGui::CloseCurrentPopup();
 			strcpy_s(filePath, "");
 		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-		ImGui::EndPopup();
-	}
-
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Save materials", ImVec2(105, 0)))
-		ImGui::OpenPopup("Save material from");
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-
-	if (ImGui::BeginPopupModal("Save material from", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Insert path to material file :");
-		static char filePath[512] = "";
-
-		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-		ImGui::Separator();
-
-		if (ImGui::Button("Save", ImVec2(120, 0)))
-		{
-			saveMaterials(filePath);
-
-			ImGui::CloseCurrentPopup();
-			strcpy_s(filePath, "");
-		}
-
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-		ImGui::EndPopup();
-	}
-
-	ImGui::SameLine();
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Load materials", ImVec2(105, 0)))
-		ImGui::OpenPopup("Load material from");
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-
-	if (ImGui::BeginPopupModal("Load material from", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Insert path to material file :");
-		static char filePath[512] = "";
-
-		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-		ImGui::Separator();
-
-		if (ImGui::Button("Load", ImVec2(120, 0)))
-		{
-			loadMaterials(filePath);
-
-			ImGui::CloseCurrentPopup();
-			strcpy_s(filePath, "");
-		}
-
 		ImGui::SetItemDefaultFocus();
 		ImGui::SameLine();
 		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
@@ -591,84 +527,23 @@ void displayMaterialEditor()
 				displayMaterialPrameter(param);
 			}
 
-			std::vector<std::string> textures = material->getTextureList();
-			for (size_t j = 0; j < textures.size(); j++)
-			{
-				ImGui::Text(textures[j].c_str());
-				ImGui::Image((void*)(intptr_t)material->getTexture(textures[j])->getTextureID(), ImVec2(32, 32));
-
-				ImGui::PushID(std::to_string(j).c_str());
-				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-				if (ImGui::Button("Change"))
-				{
-					ImGui::OpenPopup("ChangeTexture");
-				}
-
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-
-				std::vector<std::string> allTextures = FEResourceManager::getInstance().getTextureList();
-				//ImVec2 combo_pos = ImGui::GetCursorScreenPos();
-				//ImGui::SetNextItemH(64);
-				if (ImGui::BeginCombo("Textures", /*""*/material->getTexture(textures[j])->getName().c_str(), ImGuiWindowFlags_None))
-				{
-					for (size_t n = 0; n < allTextures.size(); n++)
-					{
-						
-						bool is_selected = (textures[j] == allTextures[n]);
-						if (ImGui::Selectable(("##" + std::to_string(n)).c_str(), is_selected, 0, ImVec2(0, 64)))
-						{
-							//material->setTexture = materialList[n].c_str();
-							//entity->material = FEResourceManager::getInstance().getMaterial(materialList[n]);
-						}
-						ImGui::SameLine();
-						ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(allTextures[n])->getTextureID(), ImVec2(64, 64));
-						ImGui::SameLine();
-						ImGui::Text(allTextures[n].c_str());
-						
-						if (is_selected)
-							ImGui::SetItemDefaultFocus();
-					}
-					ImGui::EndCombo();
-				}
-
-				/*ImVec2 backup_pos = ImGui::GetCursorScreenPos();
-				ImGuiStyle& style = ImGui::GetStyle();
-				ImGui::SetCursorScreenPos(ImVec2(combo_pos.x + style.FramePadding.x, combo_pos.y));
-				ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(allTextures[0])->getTextureID(), ImVec2(8, 8));
-				ImGui::SameLine();
-				ImGui::Text("Hello");
-				ImGui::SetCursorScreenPos(backup_pos);*/
-
-				if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					ImGui::Text("Insert texture file path :");
-					static char filePath[512] = "";
-
-					ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-					ImGui::Separator();
-
-					if (ImGui::Button("Load", ImVec2(120, 0)))
-					{
-						material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath, "", (currentProject->getProjectFolder() + material->getName() + textures[j] + ".texture").c_str()), textures[j]);
-						ImGui::CloseCurrentPopup();
-						strcpy_s(filePath, "");
-					}
-					ImGui::SetItemDefaultFocus();
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-					ImGui::EndPopup();
-				}
-
-				ImGui::PopID();
-			}
+			ImGui::Text("albedoMap:");
+			displayTextureInMaterialEditor(material->albedoMap);
+			ImGui::Text("normalMap:");
+			displayTextureInMaterialEditor(material->normalMap);
+			ImGui::Text("roughtnessMap:");
+			displayTextureInMaterialEditor(material->roughtnessMap);
+			ImGui::Text("metalnessMap:");
+			displayTextureInMaterialEditor(material->metalnessMap);
+			ImGui::Text("AOMap:");
+			displayTextureInMaterialEditor(material->AOMap);
+			ImGui::Text("displacementMap:");
+			displayTextureInMaterialEditor(material->displacementMap);
 		}
 		ImGui::PopID();
 	}
+
+	selectTextureWindow.render();
 }
 
 void displayPostProcess()
@@ -706,13 +581,14 @@ int timesTextureUsed(FETexture* texture)
 
 	for (size_t i = 0; i < materiasList.size(); i++)
 	{
-		FEMaterial * currentMaterial = FEResourceManager::getInstance().getMaterial(materiasList[i]);
-		std::vector<std::string> textureList = currentMaterial->getTextureList();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			if (textureList[j] == texture->getName())
-				result++;
-		}
+		FEMaterial* currentMaterial = FEResourceManager::getInstance().getMaterial(materiasList[i]);
+
+		if (currentMaterial->albedoMap != nullptr && currentMaterial->albedoMap->getName() == texture->getName()) result++;
+		if (currentMaterial->normalMap != nullptr && currentMaterial->normalMap->getName() == texture->getName()) result++;
+		if (currentMaterial->roughtnessMap != nullptr && currentMaterial->roughtnessMap->getName() == texture->getName()) result++;
+		if (currentMaterial->metalnessMap != nullptr && currentMaterial->metalnessMap->getName() == texture->getName()) result++;
+		if (currentMaterial->AOMap != nullptr && currentMaterial->AOMap->getName() == texture->getName()) result++;
+		if (currentMaterial->displacementMap != nullptr && currentMaterial->displacementMap->getName() == texture->getName()) result++;
 	}
 
 	return result;
@@ -720,6 +596,7 @@ int timesTextureUsed(FETexture* texture)
 
 int textureUnderMouse = -1;
 bool isOpenContextMenuInContentBrowser = false;
+static int activeTabContentBrowser = 0;
 
 void displayContentBrowser()
 {
@@ -731,12 +608,12 @@ void displayContentBrowser()
 	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
 	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
-		int activeTab = 0;
+		ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
 		if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 		{
 			if (ImGui::BeginTabItem("Textures"))
 			{
-				activeTab = 0;
+				activeTabContentBrowser = 0;
 				std::vector<std::string> textureList = FEResourceManager::getInstance().getTextureList();
 
 				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
@@ -749,13 +626,7 @@ void displayContentBrowser()
 				{
 					if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 					{
-						/*ImGuiContext* g =*/ 
-						//ImGuiContext* g = ImGui::GetCurrentContext();
-						//g->CurrentWindow;
-						//ImGui::GetID("##Content Browser");
-
-						//g->CurrentWindow();
-						//projectChosen = i;
+						//
 					}
 
 					if (ImGui::IsItemHovered())
@@ -774,20 +645,23 @@ void displayContentBrowser()
 
 				ImGui::EndTabItem();
 			}
+
 			if (ImGui::BeginTabItem("Materials"))
 			{
-				activeTab = 1;
+				activeTabContentBrowser = 1;
 				displayMaterialEditor();
 				ImGui::EndTabItem();
 			}
+
 			if (ImGui::BeginTabItem("PostProcess"))
 			{
-				activeTab = 2;
+				activeTabContentBrowser = 2;
 				displayPostProcess();
 				ImGui::EndTabItem();
 			}
 
 			ImGui::EndTabBar();
+			ImGui::PopStyleColor();
 		}
 
 		bool open_context_menu = false;
@@ -801,7 +675,7 @@ void displayContentBrowser()
 		if (ImGui::BeginPopup("##context_menu"))
 		{
 			isOpenContextMenuInContentBrowser = true;
-			switch (activeTab)
+			switch (activeTabContentBrowser)
 			{
 				case 0:
 				{
@@ -890,73 +764,6 @@ void mouseMoveCallback(double xpos, double ypos)
 	mouseY = ypos;
 
 	determineEntityUnderMouse();
-}
-
-void saveMaterials(const char* fileName)
-{
-	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
-	std::ofstream materialFile;
-	!fileName ? materialFile.open("materials.txt") : materialFile.open(fileName);
-
-	Json::Value root;
-	Json::Value data;
-	for (size_t i = 0; i < materialList.size(); i++)
-	{
-		FEMaterial* mat = FEResourceManager::getInstance().getMaterial(materialList[i]);
-		// to-do: for now we will save only one type of material. But we need to implement robust load/save for all types.
-		if (mat->getTextureList().size() == 0)
-			continue;
-
-		data[mat->getName()]["name"] = mat->getName();
-
-		std::vector<std::string> textureList = mat->getTextureList();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			data[mat->getName()]["textures"][textureList[j]]["file"] = mat->getTexture(textureList[j])->getFileName();
-		}
-	}
-	root["materials"] = data;
-
-	Json::StreamWriterBuilder builder;
-	const std::string json_file = Json::writeString(builder, root);
-
-	materialFile << json_file;
-	materialFile.close();
-}
-
-void loadMaterials(const char* fileName)
-{
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
-
-	std::ifstream materialFile;
-	!fileName ? materialFile.open("materials.txt") : materialFile.open(fileName);
-
-	std::string fileData((std::istreambuf_iterator<char>(materialFile)), std::istreambuf_iterator<char>());
-
-	Json::Value root;
-	JSONCPP_STRING err;
-	Json::CharReaderBuilder builder;
-
-	const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
-	if (!reader->parse(fileData.c_str(), fileData.c_str() + fileData.size(), &root, &err))
-		std::cout << "error" << std::endl;
-
-	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
-	for (size_t i = 0; i < materialsList.size(); i++)
-	{
-		FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
-		newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
-
-		std::vector<Json::String> textureList = root["materials"][materialsList[i]]["textures"].getMemberNames();
-		for (size_t j = 0; j < textureList.size(); j++)
-		{
-			FETexture* texture = resourceManager.LoadFETexture((std::string(PROJECTS_FOLDER "/StartScene/") + root["materials"][materialsList[i]]["textures"][textureList[j]]["file"].asCString()).c_str());
-			resourceManager.setTextureName(texture, textureList[j]);
-			newMat->addTexture(texture);
-		}
-	}
-
-	materialFile.close();
 }
 
 bool checkFolder(const char* dirPath)
@@ -1191,4 +998,72 @@ bool deleteFile(const char* filePath)
 {
 	int result = remove(filePath);
 	return result == 0 ? true : false;
+}
+
+void displayTextureInMaterialEditor(FETexture*& texture)
+{
+	if (texture == nullptr)
+		return;
+
+	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(64, 64));
+
+	// I am using texture->getTextureID as a unique ID for ImGui correct work.
+	ImGui::PushID(texture->getTextureID());
+	ImGui::SameLine();
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+	if (ImGui::Button("Change"))
+	{
+		selectTextureWindow.show(&texture);
+		//ImGui::OpenPopup("ChangeTexture");
+	}
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+
+	// old representation of textures list
+	//std::vector<std::string> allTextures = FEResourceManager::getInstance().getTextureList();
+	//if (ImGui::BeginCombo("Textures", texture->getName().c_str(), ImGuiWindowFlags_None))
+	//{
+	//	for (size_t n = 0; n < allTextures.size(); n++)
+	//	{
+	//		bool is_selected = (texture->getName() == allTextures[n]);
+	//		if (ImGui::Selectable(("##" + std::to_string(n)).c_str(), is_selected, 0, ImVec2(0, 64)))
+	//		{
+	//			texture = FEResourceManager::getInstance().getTexture(allTextures[n]);
+	//		}
+	//		ImGui::SameLine();
+	//		ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(allTextures[n])->getTextureID(), ImVec2(64, 64));
+	//		ImGui::SameLine();
+	//		ImGui::Text(allTextures[n].c_str());
+
+	//		if (is_selected)
+	//			ImGui::SetItemDefaultFocus();
+	//	}
+	//	ImGui::EndCombo();
+
+	//	if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	//	{
+	//		ImGui::Text("Insert texture file path :");
+	//		static char filePath[512] = "";
+
+	//		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+	//		ImGui::Separator();
+
+	//		if (ImGui::Button("Load", ImVec2(120, 0)))
+	//		{
+	//			//material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath, "", (currentProject->getProjectFolder() + material->getName() + textures[j] + ".texture").c_str()), textures[j]);
+	//			ImGui::CloseCurrentPopup();
+	//			strcpy_s(filePath, "");
+	//		}
+	//		ImGui::SetItemDefaultFocus();
+	//		ImGui::SameLine();
+	//		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+	//		ImGui::EndPopup();
+	//	}
+
+	//	ImGui::PopID();
+	//}
 }
