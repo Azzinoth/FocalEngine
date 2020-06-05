@@ -10,8 +10,6 @@ FEEntity::FEEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 
 FEEntity::~FEEntity()
 {
-	delete mesh;
-	delete material;
 }
 
 void FEEntity::render()

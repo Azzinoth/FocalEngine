@@ -23,22 +23,23 @@ namespace FocalEngine
 		FETexture* LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name = "");
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
 		FETexture* LoadFETexture_(const char* fileName, std::string Name = "");
+		FETexture* LoadFETextureStandAlone(const char* fileName, std::string Name = "");
 		
 		void saveFETexture(const char* fileName, FETexture* texture, char* textureData);
 		void saveFETexture(const char* fileName, int width, int height, char* textureData);
 		void saveFETexture(const char* fileName, FETexture* texture);
+		void saveFETexture_(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed = false);
 		void deleteFETexture(FETexture* texture);
 		std::vector<std::string> getTextureList();
 		FETexture* getTexture(std::string name);
 		bool setTextureName(FETexture* Texture, std::string TextureName);
 		FETexture* noTexture;
 
-		FEMesh* rawDataToMesh(std::vector<float>& positions);
-		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals);
-		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index);
-		FEMesh* rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize, float* tangents, int tanSize, int* indices, int indexSize);
+		FEMesh* rawDataToMesh(std::vector<float>& positions, std::string Name = "");
+		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::string Name = "");
+		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name = "");
+		FEMesh* rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize, float* tangents, int tanSize, int* indices, int indexSize, std::string Name = "");
 		FEMesh* rawObjDataToMesh();
-		FEMesh* getSimpleMesh(std::string meshName);
 		bool setMeshName(FEMesh* Mesh, std::string MeshName);
 
 		std::vector<std::string> getMaterialList();
@@ -47,7 +48,7 @@ namespace FocalEngine
 		bool setMaterialName(FEMaterial* Material, std::string MaterialName);
 		
 		std::vector<std::string> getMeshList();
-		FEMesh* getMesh(std::string name);
+		FEMesh* getMesh(std::string meshName);
 		FEMesh* LoadOBJMesh(const char* fileName, std::string Name = "", const char* saveFEMeshTo = nullptr);
 		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
 		void saveFEMesh(const char* fileName);
@@ -68,6 +69,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FETexture*> textures;
 		std::unordered_map<std::string, FEMaterial*> materials;
 		std::unordered_map<std::string, FEMesh*> meshes;
+		std::unordered_map<std::string, FEMesh*> standartMeshes;
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);

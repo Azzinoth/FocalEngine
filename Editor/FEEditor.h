@@ -11,6 +11,7 @@ static double mouseX, mouseY;
 static bool isCameraInputActive = false;
 static std::pair<std::string, float > entityUnderMouse;
 static std::string selectedEntity = "";
+static std::string clipboardEntity = "";
 static bool selectedEntityWasChanged;
 static std::vector<FEProject*> projectList;
 static int projectChosen = -1;

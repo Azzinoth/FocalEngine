@@ -30,7 +30,7 @@ void FEScene::addLight(FELightType Type, std::string Name)
 	lightsMap[Name]->setName(Name);
 }
 
-void FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
+FEEntity* FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 {
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
@@ -50,6 +50,7 @@ void FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 	}
 
 	entityMap[Name] = resourceManager.createEntity(Mesh, Material, Name);
+	return entityMap[Name];
 }
 
 FEEntity* FEScene::getEntity(std::string name)
@@ -58,6 +59,16 @@ FEEntity* FEScene::getEntity(std::string name)
 		return nullptr;
 
 	return entityMap[name];
+}
+
+void FEScene::deleteEntity(std::string name)
+{
+	if (entityMap.find(name) == entityMap.end())
+		return;
+
+	FEEntity* entityToDelete = entityMap[name];
+	delete entityToDelete;
+	entityMap.erase(name);
 }
 
 std::vector<std::string> FEScene::getEntityList()

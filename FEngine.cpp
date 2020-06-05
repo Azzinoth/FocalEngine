@@ -161,8 +161,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	//FE_GL_ERROR(glCullFace(GL_BACK));
 
 	RENDERER_OBJ.standardFBInit(windowW, windowH);
-	RENDERER_OBJ.addPostProcess(new FEBloomEffect(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
-	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getSimpleMesh("plane"), windowW, windowH));
+	RENDERER_OBJ.addPostProcess(new FEBloomEffect(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
+	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();

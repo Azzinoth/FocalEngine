@@ -303,7 +303,6 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 {
 	char* pixels = new char[4 * width * height];
 	glActiveTexture(GL_TEXTURE0);
-	
 	glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID());
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
@@ -312,13 +311,13 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	{
 		for (size_t i = 0; i < 4 * width; i+=4)
 		{
-			std::swap(pixels[i + (j * 4 * width)], pixels[4 * width * height - (i + (j * 4 * width))]);
-			std::swap(pixels[i + 1 + (j * 4 * width)], pixels[4 * width * height - (i - 1 + (j * 4 * width))]);
-			std::swap(pixels[i + 2 + (j * 4 * width)], pixels[4 * width * height - (i - 2 + (j * 4 * width))]);
-			std::swap(pixels[i + 3 + (j * 4 * width)], pixels[4 * width * height - (i - 3 + (j * 4 * width))]);
+			std::swap(pixels[i + (j * 4 * width)], pixels[4 * width * height - (i + (j * 4 * width)) - 4]);
+			std::swap(pixels[i + 1 + (j * 4 * width)], pixels[4 * width * height - (i - 1 + (j * 4 * width)) - 4]);
+			std::swap(pixels[i + 2 + (j * 4 * width)], pixels[4 * width * height - (i - 2 + (j * 4 * width)) - 4]);
+			std::swap(pixels[i + 3 + (j * 4 * width)], pixels[4 * width * height - (i - 3 + (j * 4 * width)) - 4]);
 		}
 	}
-
-	FEResourceManager::getInstance().saveFETexture(fileName, width, height, pixels);
+	
+	FEResourceManager::getInstance().saveFETexture_(fileName, pixels, width, height);
 	delete[] pixels;
 }

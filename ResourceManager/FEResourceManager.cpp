@@ -40,8 +40,8 @@ bool FEResourceManager::setTextureName(FETexture* Texture, std::string TextureNa
 FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name)
 {
 	FEMesh* newMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB);
-
-	if (Name.size() == 0 || meshes.find(Name) != meshes.end())
+	
+	if (Name.size() == 0 || meshes.find(Name) != meshes.end() || standartMeshes.find(Name) != standartMeshes.end())
 	{
 		size_t nextID = meshes.size();
 		size_t index = 0;
@@ -61,7 +61,7 @@ FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, in
 
 bool FEResourceManager::setMeshName(FEMesh* Mesh, std::string MeshName)
 {
-	if (MeshName.size() == 0 || meshes.find(MeshName) != meshes.end())
+	if (MeshName.size() == 0 || meshes.find(MeshName) != meshes.end() || standartMeshes.find(MeshName) != standartMeshes.end())
 		return false;
 
 	Mesh->setName(MeshName);
@@ -234,7 +234,7 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 	file.write((char*)&texture->width, sizeof(int));
 	file.write((char*)&texture->height, sizeof(int));
 
-	texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+	//texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	file.write((char*)&texture->internalFormat, sizeof(int));
 
 	int nameSize = texture->getName().size() + 1;
@@ -280,6 +280,39 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 		delete[] pixelData[i];
 	}
 	delete[] pixelData;
+}
+
+void FEResourceManager::saveFETexture_(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed)
+{
+	FETexture* tempTexture = new FETexture();
+	tempTexture->width = width;
+	tempTexture->height = height;
+	tempTexture->internalFormat = isAlphaUsed ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+
+	FE_GL_ERROR(glGenTextures(1, &tempTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, tempTexture->textureID));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, tempTexture->internalFormat, tempTexture->width, tempTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
+	
+
+	if (tempTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (tempTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	saveFETexture(fileName, tempTexture);
+	delete tempTexture;
 }
 
 void FEResourceManager::LoadFETexture_(const char* fileName, FETexture* existingTexture)
@@ -445,6 +478,13 @@ FETexture* FEResourceManager::LoadFETexture_(const char* fileName, std::string N
 	return newTexture;
 }
 
+FETexture* FEResourceManager::LoadFETextureStandAlone(const char* fileName, std::string Name)
+{
+	FETexture* temp = LoadFETexture_(fileName, Name);
+	textures.erase(temp->getName());
+	return temp;
+}
+
 void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture, char* textureData)
 {
 	std::fstream file;
@@ -477,7 +517,7 @@ void FEResourceManager::saveFETexture(const char* fileName, int width, int heigh
 	file.close();
 }
 
-FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::string Name)
 {
 	GLuint vaoID;
 	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
@@ -492,11 +532,11 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions)
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION, FEAABB(positions), Name);
 	return newMesh;
 }
 
-FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals)
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::string Name)
 {
 	GLuint vaoID;
 	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
@@ -518,11 +558,11 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, positions.size() / 3, FE_POSITION | FE_NORMAL, FEAABB(positions), Name);
 	return newMesh;
 }
 
-FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index)
+FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name)
 {
 	GLuint vaoID;
 	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
@@ -564,12 +604,12 @@ FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vec
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	FEMesh* newMesh = createMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions));
+	FEMesh* newMesh = createMesh(vaoID, index.size(), FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(positions), Name);
 	return newMesh;
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize,
-										 float* tangents, int tanSize, int* indices, int indexSize)
+										 float* tangents, int tanSize, int* indices, int indexSize, std::string Name)
 {
 	GLuint vaoID;
 	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
@@ -611,7 +651,7 @@ FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize, float* U
 
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	FEMesh* newMesh = createMesh(vaoID, indexSize, FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB());
+	FEMesh* newMesh = createMesh(vaoID, indexSize, FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX, FEAABB(), Name);
 	return newMesh;
 }
 
@@ -733,8 +773,8 @@ void FEResourceManager::loadStandardMeshes()
 		0.625f, 0.25f
 	};
 
-	meshes["cube"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices);
-	meshes["cube"]->setName("cube");
+	standartMeshes["cube"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices, "cube");
+	meshes.erase("cube");
 
 	std::vector<int> planeIndices = {
 		0, 1, 2, 3, 0, 2
@@ -758,8 +798,8 @@ void FEResourceManager::loadStandardMeshes()
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
 
-	meshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices);
-	meshes["plane"]->setName("plane");
+	standartMeshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices, "plane");
+	meshes.erase("plane");
 }
 
 FEResourceManager::FEResourceManager()
@@ -774,14 +814,6 @@ FEResourceManager::FEResourceManager()
 FEResourceManager::~FEResourceManager()
 {
 	clear();
-}
-
-FEMesh* FEResourceManager::getSimpleMesh(std::string meshName)
-{
-	if (meshes.find(meshName) != meshes.end())
-		return meshes[meshName];
-
-	return nullptr;
 }
 
 FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name, const char* saveFEMeshTo)
@@ -858,10 +890,11 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 	file.close();
 
 	FEMesh* newMesh = rawDataToMesh((float*)vertexBuffer, vertexCout,
-		(float*)texBuffer, texCout,
-		(float*)normBuffer, normCout,
-		(float*)tangBuffer, tangCout,
-		(int*)indexBuffer, indexCout);
+									(float*)texBuffer, texCout,
+									(float*)normBuffer, normCout,
+									(float*)tangBuffer, tangCout,
+									(int*)indexBuffer, indexCout,
+									Name);
 
 	delete[] buffer;
 	delete[] vertexBuffer;
@@ -881,7 +914,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 
 FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name)
 {
-	return new FEPostProcess(getSimpleMesh("plane"), ScreenWidth, ScreenHeight, Name);
+	return new FEPostProcess(getMesh("plane"), ScreenWidth, ScreenHeight, Name);
 }
 
 FEMaterial* FEResourceManager::createMaterial(std::string Name)
@@ -946,12 +979,21 @@ std::vector<std::string> FEResourceManager::getMeshList()
 	FE_MAP_TO_STR_VECTOR(meshes)
 }
 
-FEMesh* FEResourceManager::getMesh(std::string name)
+FEMesh* FEResourceManager::getMesh(std::string meshName)
 {
-	if (meshes.find(name) == meshes.end())
+	if (meshes.find(meshName) == meshes.end())
+	{
+		if (standartMeshes.find(meshName) != standartMeshes.end())
+		{
+			return standartMeshes[meshName];
+		}
+		
 		return nullptr;
-
-	return meshes[name];
+	}
+	else
+	{
+		return meshes[meshName];
+	}
 }
 
 void FEResourceManager::loadStandardMaterial()
@@ -984,19 +1026,10 @@ void FEResourceManager::clear()
 	auto meshIt = meshes.begin();
 	while (meshIt != meshes.end())
 	{
-		if (meshIt->first != "cube" && meshIt->first != "plane")
-		{
-			delete meshIt->second;
-			auto copy = meshIt;
-			copy++;
-			meshes.erase(meshIt->first);
-			meshIt = copy;
-		}
-		else
-		{
-			meshIt++;
-		}
+		delete meshIt->second;
+		meshIt++;
 	}
+	meshes.clear();
 
 	auto textureIt = textures.begin();
 	while (textureIt != textures.end())

@@ -28,6 +28,29 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 	{
 		FEngine::getInstance().terminate();
 	}
+
+	if (key == GLFW_KEY_DELETE)
+	{
+		if (selectedEntity != "")
+			FEScene::getInstance().deleteEntity(selectedEntity);
+	}
+
+	if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_C)
+	{
+		clipboardEntity = selectedEntity;
+	}
+
+	if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_V)
+	{
+		if (clipboardEntity != "")
+		{
+			FEScene& Scene = FEScene::getInstance();
+			FEEntity* newEntity = Scene.addEntity(Scene.getEntity(clipboardEntity)->mesh, Scene.getEntity(clipboardEntity)->material, "");
+			newEntity->transform = Scene.getEntity(clipboardEntity)->transform;
+			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
+			selectedEntity = newEntity->getName();
+		}
+	}
 }
 
 void toolTip(const char* text)
@@ -317,7 +340,7 @@ void addEntityButton()
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 	if (ImGui::Button("Add new entity", ImVec2(220, 0)))
 	{
-		FEScene::getInstance().addEntity(resourceManager.getSimpleMesh("cube"));
+		FEScene::getInstance().addEntity(resourceManager.getMesh("cube"));
 	}
 
 	ImGui::PopStyleColor();
@@ -342,7 +365,7 @@ void displaySceneEntities()
 	if (ImGui::Button("Save project", ImVec2(220, 0)))
 	{
 		currentProject->saveScene();
-		FEngine::getInstance().takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.texture").c_str());
+		FEngine::getInstance().takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.FETexture").c_str());
 	}
 
 	if (ImGui::Button("Close project", ImVec2(220, 0)))
@@ -402,6 +425,7 @@ void displaySceneEntities()
 				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+
 				if (ImGui::Button("Change Mesh"))
 				{
 					ImGui::OpenPopup("ChangeMesh");
@@ -421,7 +445,7 @@ void displaySceneEntities()
 
 					if (ImGui::Button("Load", ImVec2(120, 0)))
 					{
-						entity->mesh = FEResourceManager::getInstance().getSimpleMesh(filePath);
+						entity->mesh = FEResourceManager::getInstance().getMesh(filePath);
 						if (!entity->mesh)
 							entity->mesh = FEResourceManager::getInstance().LoadOBJMesh(filePath, "", currentProject->getProjectFolder().c_str());
 						ImGui::CloseCurrentPopup();
@@ -452,6 +476,26 @@ void displaySceneEntities()
 				ImGui::EndCombo();
 			}
 
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+
+			if (ImGui::Button("Delete entity"))
+			{
+				scene.deleteEntity(entity->getName());
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+
+				ImGui::PopID();
+				ImGui::TreePop();
+				break;
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			
 			ImGui::PopID();
 			ImGui::TreePop();
 		}
@@ -926,6 +970,7 @@ void displayProjectSelection()
 		{
 			currentProject = projectList[projectChosen];
 			currentProject->loadScene();
+			projectChosen = -1;
 		}
 
 		ImGui::SameLine();
