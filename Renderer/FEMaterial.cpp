@@ -23,12 +23,10 @@ void FEMaterial::bind()
 
 	if (albedoMap != nullptr) albedoMap->bind(0);
 	if (normalMap != nullptr) normalMap->bind(1);
-	
-	/*for (size_t i = 0; i < textures.size(); i++)
-	{
-		if (textures[i] != nullptr)
-			textures[i]->bind(i);
-	}*/
+	if (roughtnessMap != nullptr) roughtnessMap->bind(2);
+	if (metalnessMap != nullptr) metalnessMap->bind(3);
+	if (AOMap != nullptr) AOMap->bind(4);
+	if (displacementMap != nullptr) displacementMap->bind(5);
 }
 
 void FEMaterial::unBind()
@@ -38,11 +36,10 @@ void FEMaterial::unBind()
 
 	if (albedoMap != nullptr) albedoMap->unBind();
 	if (normalMap != nullptr) normalMap->unBind();
-	/*for (size_t i = 0; i < textures.size(); i++)
-	{
-		if (textures[i] != nullptr)
-			textures[i]->unBind();
-	}*/
+	if (roughtnessMap != nullptr) roughtnessMap->unBind();
+	if (metalnessMap != nullptr) metalnessMap->unBind();
+	if (AOMap != nullptr) AOMap->unBind();
+	if (displacementMap != nullptr) displacementMap->unBind();
 }
 
 void FEMaterial::setParam(std::string name, int newData)
@@ -75,14 +72,6 @@ void FEMaterial::setParam(std::string name, glm::mat4 newData)
 	shader->getParameter(name)->updateData(newData);
 }
 
-//void FEMaterial::addTexture(FETexture* newTexture)
-//{
-//	if (!newTexture)
-//		return;
-//
-//	textures.push_back(newTexture);
-//}
-
 void FEMaterial::addParameter(FEShaderParam newParameter)
 {
 	shader->addParameter(newParameter);
@@ -107,40 +96,3 @@ void FEMaterial::setName(std::string newName)
 {
 	name = newName;
 }
-
-//std::vector<std::string> FEMaterial::getTextureList()
-//{
-//	std::vector<std::string> result;
-//	for (size_t i = 0; i < textures.size(); i++)
-//	{
-//		result.push_back(textures[i]->getName());
-//	}
-//
-//	return result;
-//}
-//
-//FETexture* FEMaterial::getTexture(std::string name)
-//{
-//	for (size_t i = 0; i < textures.size(); i++)
-//	{
-//		if (name == textures[i]->getName())
-//			return textures[i];
-//	}
-//
-//	return nullptr;
-//}
-//
-//void FEMaterial::setTexture(FETexture* newTexture, std::string name)
-//{
-//	for (size_t i = 0; i < textures.size(); i++)
-//	{
-//		if (name == textures[i]->getName())
-//		{
-//			delete textures[i];
-//			textures[i] = newTexture;
-//			return;
-//		}
-//	}
-//
-//	addTexture(newTexture);
-//}

@@ -121,105 +121,6 @@ FETexture* FEResourceManager::LoadPngTextureAndCompress(const char* fileName, bo
 	return newTexture;
 }
 
-FETexture* FEResourceManager::LoadPngTexture(const char* fileName, std::string Name, const char* saveFETexureTo)
-{
-	FETexture* newTexture = createTexture(Name);
-	std::vector<unsigned char> rawData;
-	unsigned uWidth, uHeight;
-
-	lodepng::decode(rawData, uWidth, uHeight, fileName);
-	if (rawData.size() == 0)
-	{
-		//Log...
-		assert(rawData.size());
-	}
-	newTexture->width = uWidth;
-	newTexture->height = uHeight;
-
-	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
-	newTexture->internalFormat = GL_RGBA;
-
-	if (newTexture->mipEnabled)
-	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
-	newTexture->fileName = fileName;
-
-	// save texture in internal format and add it to project\scene
-	if (saveFETexureTo != nullptr)
-	{
-		saveFETexture(saveFETexureTo, newTexture, (char*)rawData.data());
-	}
-
-	return newTexture;
-}
-
-FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name)
-{
-	FETexture* newTexture = createTexture(Name);
-	std::fstream file;
-
-	file.open(fileName, std::ios::in | std::ios::binary);
-	char * buffer = new char[4];
-
-	file.read(buffer, 4);
-	newTexture->width = *(int*)buffer;
-
-	file.read(buffer, 4);
-	newTexture->height = *(int*)buffer;
-
-	file.read(buffer, 4);
-	int size = *(int*)buffer;
-
-	char* textureData = new char[size];
-	file.read(textureData, size);
-
-	file.close();
-
-	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_COMPRESSED_RGBA_S3TC_DXT1_EXT/*GL_COMPRESSED_RGBA_S3TC_DXT5_EXT*//*GL_RGBA*/, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
-	newTexture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-
-	if (newTexture->mipEnabled)
-	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
-
-	newTexture->fileName = fileName;
-
-	delete[] buffer;
-	delete[] textureData;
-
-	return newTexture;
-}
-
 void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 {
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture->textureID));
@@ -234,7 +135,6 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 	file.write((char*)&texture->width, sizeof(int));
 	file.write((char*)&texture->height, sizeof(int));
 
-	//texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 	file.write((char*)&texture->internalFormat, sizeof(int));
 
 	int nameSize = texture->getName().size() + 1;
@@ -282,7 +182,7 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 	delete[] pixelData;
 }
 
-void FEResourceManager::saveFETexture_(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed)
+void FEResourceManager::saveFETexture(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed)
 {
 	FETexture* tempTexture = new FETexture();
 	tempTexture->width = width;
@@ -315,7 +215,7 @@ void FEResourceManager::saveFETexture_(const char* fileName, char* textureData, 
 	delete tempTexture;
 }
 
-void FEResourceManager::LoadFETexture_(const char* fileName, FETexture* existingTexture)
+void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingTexture)
 {
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
@@ -395,7 +295,7 @@ void FEResourceManager::LoadFETexture_(const char* fileName, FETexture* existing
 	delete[] textureName;
 }
 
-FETexture* FEResourceManager::LoadFETexture_(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name)
 {
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
@@ -480,41 +380,9 @@ FETexture* FEResourceManager::LoadFETexture_(const char* fileName, std::string N
 
 FETexture* FEResourceManager::LoadFETextureStandAlone(const char* fileName, std::string Name)
 {
-	FETexture* temp = LoadFETexture_(fileName, Name);
+	FETexture* temp = LoadFETexture(fileName, Name);
 	textures.erase(temp->getName());
 	return temp;
-}
-
-void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture, char* textureData)
-{
-	std::fstream file;
-
-	file.open(fileName, std::ios::out | std::ios::binary);
-
-	file.write((char*)&texture->width, sizeof(int));
-	file.write((char*)&texture->height, sizeof(int));
-
-	int size = strlen(textureData);
-	file.write((char*)&size, sizeof(int));
-	file.write((char*)textureData, sizeof(unsigned char) * size);
-
-	file.close();
-}
-
-void FEResourceManager::saveFETexture(const char* fileName, int width, int height, char* textureData)
-{
-	std::fstream file;
-
-	file.open(fileName, std::ios::out | std::ios::binary);
-
-	file.write((char*)&width, sizeof(int));
-	file.write((char*)&height, sizeof(int));
-
-	int size = 4 * width * height;
-	file.write((char*)&size, sizeof(int));
-	file.write((char*)textureData, sizeof(unsigned char) * size);
-
-	file.close();
 }
 
 FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::string Name)
@@ -805,7 +673,7 @@ void FEResourceManager::loadStandardMeshes()
 FEResourceManager::FEResourceManager()
 {
 	noTexture = new FETexture();;
-	LoadFETexture_("noTexture.FETexture", noTexture);
+	LoadFETexture("noTexture.FETexture", noTexture);
 
 	loadStandardMaterial();
 	loadStandardMeshes();
@@ -1124,47 +992,3 @@ void FEResourceManager::deleteFETexture(FETexture* texture)
 	textures.erase(texture->getName());
 	delete texture;
 }
-
-//void FEResourceManager::addFEMeshToFile(std::fstream& file, FEMesh* Mesh)
-//{
-//	FEObjLoader& objLoader = FEObjLoader::getInstance();
-//
-//	int count = objLoader.fVerC.size();
-//	file.write((char*)&count, sizeof(int));
-//	file.write((char*)objLoader.fVerC.data(), sizeof(float) * objLoader.fVerC.size());
-//
-//	count = objLoader.fTexC.size();
-//	file.write((char*)&count, sizeof(int));
-//	file.write((char*)objLoader.fTexC.data(), sizeof(float) * objLoader.fTexC.size());
-//
-//	count = objLoader.fNorC.size();
-//	file.write((char*)&count, sizeof(int));
-//	file.write((char*)objLoader.fNorC.data(), sizeof(float) * objLoader.fNorC.size());
-//
-//	count = objLoader.fTanC.size();
-//	file.write((char*)&count, sizeof(int));
-//	file.write((char*)objLoader.fTanC.data(), sizeof(float) * objLoader.fTanC.size());
-//
-//	count = objLoader.fInd.size();
-//	file.write((char*)&count, sizeof(int));
-//	file.write((char*)objLoader.fInd.data(), sizeof(int) * objLoader.fInd.size());
-//
-//	FEAABB tempAABB(objLoader.fVerC);
-//	file.write((char*)&tempAABB.min[0], sizeof(float));
-//	file.write((char*)&tempAABB.min[1], sizeof(float));
-//	file.write((char*)&tempAABB.min[2], sizeof(float));
-//
-//	file.write((char*)&tempAABB.max[0], sizeof(float));
-//	file.write((char*)&tempAABB.max[1], sizeof(float));
-//	file.write((char*)&tempAABB.max[2], sizeof(float));
-//}
-//
-//void FEResourceManager::saveAssets(const char* fileName)
-//{
-//	std::fstream file;
-//
-//	file.open(fileName, std::ios::out | std::ios::binary);
-//	
-//
-//	file.close();
-//}

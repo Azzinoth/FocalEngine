@@ -19,16 +19,12 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
 		// to-do: add flags
-		FETexture* LoadPngTexture(const char* fileName, std::string Name = "", const char* saveFETexureTo = nullptr);
 		FETexture* LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name = "");
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
-		FETexture* LoadFETexture_(const char* fileName, std::string Name = "");
 		FETexture* LoadFETextureStandAlone(const char* fileName, std::string Name = "");
 		
-		void saveFETexture(const char* fileName, FETexture* texture, char* textureData);
-		void saveFETexture(const char* fileName, int width, int height, char* textureData);
 		void saveFETexture(const char* fileName, FETexture* texture);
-		void saveFETexture_(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed = false);
+		void saveFETexture(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed = false);
 		void deleteFETexture(FETexture* texture);
 		std::vector<std::string> getTextureList();
 		FETexture* getTexture(std::string name);
@@ -56,9 +52,6 @@ namespace FocalEngine
 		void clear();
 		void loadStandardMeshes();
 		void loadStandardMaterial();
-
-		/*void FEResourceManager::addFEMeshToFile(std::fstream& file, FEMesh* Mesh);
-		void saveAssets(const char* fileName);*/
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -74,6 +67,6 @@ namespace FocalEngine
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
 
-		void LoadFETexture_(const char* fileName, FETexture* existingTexture);
+		void LoadFETexture(const char* fileName, FETexture* existingTexture);
 	};
 }

@@ -17,9 +17,6 @@ public:
 	void saveScene();
 	void loadScene();
 
-	void saveAssets();
-	void loadAssets();
-
 	FETexture* sceneScreenshot;
 	bool modified = false;
 	void createDummyScreenshot();

@@ -40,10 +40,6 @@ namespace FocalEngine
 		FETexture* metalnessMap;
 		FETexture* AOMap;
 		FETexture* displacementMap;
-		/*void addTexture(FETexture* newTexture);
-		void setTexture(FETexture* newTexture, std::string name);
-		std::vector<std::string> getTextureList();
-		FETexture* getTexture(std::string name);*/
 
 		void addParameter(FEShaderParam newParameter);
 		std::vector<std::string> getParameterList();
@@ -52,10 +48,7 @@ namespace FocalEngine
 		std::string getName();
 	private:
 		std::string name;
-
-		//std::vector<FETexture*> textures;
 		glm::vec3 diffuseColor;
-
 		void setName(std::string newName);
 	};
 }

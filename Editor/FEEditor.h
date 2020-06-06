@@ -145,7 +145,7 @@ public:
 			{
 				deleteFile((currentProject->getProjectFolder() + textureToWorkWith->getName() + ".FEtexture").c_str());
 				FEResourceManager::getInstance().deleteFETexture(textureToWorkWith);
-				currentProject->saveAssets();
+				currentProject->saveScene();
 
 				textureToWorkWith = nullptr;
 				ImGuiModalPopup::close();
@@ -248,7 +248,7 @@ public:
 					// also rename texture filename correspondently
 					changeFileName((currentProject->getProjectFolder() + oldName + ".FETexture").c_str(), (currentProject->getProjectFolder() + newName + ".FETexture").c_str());
 					// save assets list with new texture name
-					currentProject->saveAssets();
+					currentProject->saveScene();
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
@@ -308,7 +308,7 @@ public:
 				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath, hasAlpha);
 				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
-				currentProject->saveAssets();
+				currentProject->saveScene();
 
 				ImGuiModalPopup::close();
 				strcpy_s(filePath, "");

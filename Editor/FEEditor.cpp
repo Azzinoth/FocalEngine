@@ -1068,6 +1068,8 @@ void displayTextureInMaterialEditor(FETexture*& texture)
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 
+	ImGui::PopID();
+
 	// old representation of textures list
 	//std::vector<std::string> allTextures = FEResourceManager::getInstance().getTextureList();
 	//if (ImGui::BeginCombo("Textures", texture->getName().c_str(), ImGuiWindowFlags_None))

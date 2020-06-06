@@ -318,6 +318,6 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 		}
 	}
 	
-	FEResourceManager::getInstance().saveFETexture_(fileName, pixels, width, height);
+	FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
 }
