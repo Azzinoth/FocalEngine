@@ -76,9 +76,18 @@ void FETexture::unBind()
 	}
 }
 
-FETexture* FETexture::createSameFormatTexture()
+FETexture* FETexture::createSameFormatTexture(int differentW, int differentH)
 {
-	return new FETexture(internalFormat, format, width, height);
+	if (differentW == 0 && differentH == 0)
+		return new FETexture(internalFormat, format, width, height);
+
+	if (differentW != 0 && differentH == 0)
+		return new FETexture(internalFormat, format, differentW, height);
+
+	if (differentW == 0 && differentH != 0)
+		return new FETexture(internalFormat, format, width, differentH);
+
+	return new FETexture(internalFormat, format, differentW, differentH);
 }
 
 std::string FETexture::getFileName()

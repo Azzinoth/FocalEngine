@@ -50,9 +50,12 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	}
 }
 
-void FERenderer::addPostProcess(FEPostProcess* newPostProcess)
+void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing)
 {
 	postProcessEffects.push_back(newPostProcess);
+
+	if (noProcessing)
+		return;
 
 	for (size_t i = 0; i < postProcessEffects.back()->stages.size(); i++)
 	{
@@ -196,11 +199,12 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	{
 		auto entity = it->second;
 		
-		entity->material->bind();
+		renderEntity(entity, currentCamera);
+		/*entity->material->bind();
 		loadStandardParams(entity->material->shader, currentCamera, entity);
 		entity->material->shader->loadDataToGPU();
 		entity->render();
-		entity->material->unBind();
+		entity->material->unBind();*/
 		
 		it++;
 	}
@@ -237,6 +241,10 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 					effect.stages[j]->inTexture[k] = sceneToTextureFB->getDepthAttachment();
 					effect.stages[j]->inTexture[k]->bind(k);
 				}
+				else if (effect.stages[j]->inTextureSource[k] == FEPP_OWN_TEXTURE)
+				{
+					effect.stages[j]->inTexture[k]->bind(k);
+				}
 			}
 
 			effect.intermediateFramebuffer->setColorAttachment(effect.stages[j]->outTexture);
@@ -260,10 +268,25 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		}
 	}
 
-	if (postProcessEffects.size())
+	for (int i = postProcessEffects.size() - 1; i >= 0; i--)
 	{
-		FEPostProcess& effect = *postProcessEffects[postProcessEffects.size() - 1];
-		effect.screenQuadShader->start();
+		FEPostProcess& effect = *postProcessEffects[i];
+		
+		if (effect.active)
+		{
+			effect.renderResult();
+			break;
+		}
+	}
+
+	//if (postProcessEffects.size())
+	//{
+		//FEPostProcess& effect = *postProcessEffects[postProcessEffects.size() - 1];
+		//effect.renderResult();
+
+
+
+		/*effect.screenQuadShader->start();
 		effect.screenQuadShader->loadDataToGPU();
 		effect.stages.back()->outTexture->bind(0);
 
@@ -274,8 +297,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		FE_GL_ERROR(glBindVertexArray(0));
 
 		effect.stages.back()->outTexture->unBind();
-		effect.screenQuadShader->stop();
-	}
+		effect.screenQuadShader->stop();*/
+	//}
 	// ********* SCREEN SPACE EFFECTS END *********
 }
 
@@ -320,4 +343,13 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	
 	FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
+}
+
+void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera)
+{
+	entity->material->bind();
+	loadStandardParams(entity->material->shader, currentCamera, entity);
+	entity->material->shader->loadDataToGPU();
+	entity->render();
+	entity->material->unBind();
 }

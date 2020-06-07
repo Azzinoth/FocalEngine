@@ -31,6 +31,22 @@ FEPostProcess::~FEPostProcess()
 {
 }
 
+void FocalEngine::FEPostProcess::renderResult()
+{
+	screenQuadShader->start();
+	screenQuadShader->loadDataToGPU();
+	stages.back()->outTexture->bind(0);
+
+	FE_GL_ERROR(glBindVertexArray(screenQuad->getVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, screenQuad->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	stages.back()->outTexture->unBind();
+	screenQuadShader->stop();
+}
+
 FETexture* FEPostProcess::getInTexture()
 {
 	return finalTexture;

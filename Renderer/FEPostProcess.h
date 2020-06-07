@@ -34,6 +34,7 @@ namespace FocalEngine
 		FEPP_PREVIOUS_STAGE_RESULT0 = 0,
 		FEPP_SCENE_HDR_COLOR = 1,
 		FEPP_SCENE_DEPTH = 2,
+		FEPP_OWN_TEXTURE = 3,
 	};
 
 	struct FEPostProcessStage
@@ -64,6 +65,8 @@ namespace FocalEngine
 		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name);
 		~FEPostProcess();
 
+		void renderResult();
+
 		FETexture* getInTexture();
 		void setInTexture(FETexture* InTexture);
 
@@ -71,6 +74,8 @@ namespace FocalEngine
 
 		std::string getName();
 		void setName(std::string newName);
+
+		bool active = true;
 	private:
 		std::string name;
 

@@ -47,8 +47,6 @@ CLASS_NAME();                              \
 CLASS_NAME(const CLASS_NAME &);            \
 void operator= (const CLASS_NAME &);
 
-#define FE_DEBUG_ENABLED
-
 #ifdef FE_DEBUG_ENABLED
 	#define FE_GL_ERROR(glCall)            \
 	{                                      \

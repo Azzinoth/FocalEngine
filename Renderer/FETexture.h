@@ -31,7 +31,7 @@ namespace FocalEngine
 		virtual void bind(const unsigned int textureUnit = 0);
 		virtual void unBind();
 
-		FETexture* createSameFormatTexture();
+		FETexture* createSameFormatTexture(int differentW = 0, int differentH = 0);
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";
