@@ -22,6 +22,8 @@ namespace FocalEngine
 		FELight* getLight(std::string name);
 		std::vector<std::string> getLightsList();
 
+		void prepareForFEMeshDeletion(FEMesh* mesh);
+
 		void clear();
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)

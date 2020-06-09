@@ -284,3 +284,9 @@ void FEngine::takeScreenshot(const char* fileName)
 {
 	RENDERER_OBJ.takeScreenshot(fileName, windowW, windowH);
 }
+
+void FEngine::resetCamera()
+{
+	currentCamera->reset();
+	currentCamera->setAspectRatio(float(windowW) / float(windowH));
+}

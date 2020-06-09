@@ -161,6 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	FocalEngine::FEEntity* testEntity = nullptr;
 
 	FocalEngine::FEMaterial* haloMaterial = resourceManager.createMaterial("haloMaterial");
+	resourceManager.makeMaterialStandard(haloMaterial);
 	haloMaterial->shader = new FocalEngine::FEShader(HaloDrawObjectVS, HaloDrawObjectFS);
 
 	FocalEngine::FEPostProcess* selectionHaloEffect = engine.createPostProcess("selectionHaloEffect");

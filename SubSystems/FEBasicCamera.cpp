@@ -165,12 +165,26 @@ void FEBasicCamera::setIsInputActive(bool isActive)
 	isInputActive = isActive;
 }
 
+void FocalEngine::FEBasicCamera::reset()
+{
+	fov = 70.0f;
+	nearPlane = 0.1f;
+	farPlane = 5000.0f;
+	aspectRatio = 1.0f;
+
+	yaw = 0.0f;
+	pitch = 0.0f;
+	roll = 0.0f;
+
+	gamma = 2.2f;
+	exposure = 1.0f;
+
+	glm::vec3 position = glm::vec3(0.0f);
+
+	updateAll();
+}
+
 void FEBasicCamera::setLookAt(glm::vec3 lookAt)
 {
-	/*if (lookAt.z == 0)
-		lookAt.z = 0.00001f;
-	if (lookAt.y == -1)
-		lookAt.y = -0.9999f;*/
-
 	viewMatrix = glm::lookAt(getPosition(), lookAt, glm::vec3(0.0, 1.0, 0.0));
 }

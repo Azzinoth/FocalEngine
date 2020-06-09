@@ -28,6 +28,7 @@ FEProject::~FEProject()
 		delete sceneScreenshot;
 	FEScene::getInstance().clear();
 	FEResourceManager::getInstance().clear();
+	FEngine::getInstance().resetCamera();
 }
 
 std::string FEProject::getName()

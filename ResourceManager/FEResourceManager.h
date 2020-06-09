@@ -36,14 +36,18 @@ namespace FocalEngine
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name = "");
 		FEMesh* rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize, float* tangents, int tanSize, int* indices, int indexSize, std::string Name = "");
 		FEMesh* rawObjDataToMesh();
+		void deleteFEMesh(FEMesh* mesh);
 		bool setMeshName(FEMesh* Mesh, std::string MeshName);
 
 		std::vector<std::string> getMaterialList();
+		std::vector<std::string> getStandardMaterialList();
 		FEMaterial* getMaterial(std::string name);
 		FEMaterial* createMaterial(std::string Name = "");
+		bool makeMaterialStandard(FEMaterial* material);
 		bool setMaterialName(FEMaterial* Material, std::string MaterialName);
 		
 		std::vector<std::string> getMeshList();
+		std::vector<std::string> getStandardMeshList();
 		FEMesh* getMesh(std::string meshName);
 		FEMesh* LoadOBJMesh(const char* fileName, std::string Name = "", const char* saveFEMeshTo = nullptr);
 		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
@@ -60,9 +64,12 @@ namespace FocalEngine
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
 		std::unordered_map<std::string, FETexture*> textures;
+
 		std::unordered_map<std::string, FEMaterial*> materials;
+		std::unordered_map<std::string, FEMaterial*> standardMaterials;
+
 		std::unordered_map<std::string, FEMesh*> meshes;
-		std::unordered_map<std::string, FEMesh*> standartMeshes;
+		std::unordered_map<std::string, FEMesh*> standardMeshes;
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);

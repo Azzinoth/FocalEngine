@@ -417,51 +417,27 @@ void displaySceneEntities()
 		FEEntity* entity = scene.getEntity(entityList[i]);
 		if (ImGui::TreeNode(entity->getName().c_str()))
 		{
-			ImGui::PushID(i);
+			ImGui::PushID(entity->getName().c_str());
 			showTransformConfiguration(entity->getName(), &entity->transform);
 
-			if (ImGui::CollapsingHeader("Mesh", ImGuiWindowFlags_None))
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+
+			std::string meshText = "Mesh name : ";
+			meshText += entity->mesh->getName();
+			ImGui::Text(meshText.c_str());
+			ImGui::SameLine();
+
+			if (ImGui::Button("Change Mesh"))
 			{
-				std::string meshText = "Name : ";
-				meshText += entity->mesh->getName();
-				ImGui::Text(meshText.c_str());
-
-				ImGui::SameLine();
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-
-				if (ImGui::Button("Change Mesh"))
-				{
-					ImGui::OpenPopup("ChangeMesh");
-				}
-
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-
-				if (ImGui::BeginPopupModal("ChangeMesh", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					ImGui::Text("Insert mesh file path :");
-					static char filePath[512] = "";
-
-					ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-					ImGui::Separator();
-
-					if (ImGui::Button("Load", ImVec2(120, 0)))
-					{
-						entity->mesh = FEResourceManager::getInstance().getMesh(filePath);
-						if (!entity->mesh)
-							entity->mesh = FEResourceManager::getInstance().LoadOBJMesh(filePath, "", currentProject->getProjectFolder().c_str());
-						ImGui::CloseCurrentPopup();
-						strcpy_s(filePath, "");
-					}
-					ImGui::SetItemDefaultFocus();
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-					ImGui::EndPopup();
-				}
+				selectMeshWindow.show(&entity->mesh);
 			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
 
 			static std::string currentMaterial = "";
 			currentMaterial = entity->material->getName();
@@ -505,7 +481,6 @@ void displaySceneEntities()
 			ImGui::TreePop();
 		}
 	}
-
 	ImGui::Text("============================================");
 
 	displayLightsProperties();
@@ -515,9 +490,11 @@ void displaySceneEntities()
 	FEngine::getInstance().getCamera()->setExposure(FEExposure);
 
 	ImGui::End();
+
+	selectMeshWindow.render();
 }
 
-void displayMaterialEditor()
+void displayMaterialContentBrowser()
 {
 	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
 
@@ -595,7 +572,7 @@ void displayMaterialEditor()
 	selectTextureWindow.render();
 }
 
-void displayPostProcess()
+void displayPostProcessContentBrowser()
 {
 	FERenderer& renderer = FERenderer::getInstance();
 	std::vector<std::string> postProcessList = renderer.getPostProcessList();
@@ -643,8 +620,25 @@ int timesTextureUsed(FETexture* texture)
 	return result;
 }
 
+int timesMeshUsed(FEMesh* mesh)
+{
+	int result = 0;
+	std::vector<std::string> entitiesList = FEScene::getInstance().getEntityList();
+
+	for (size_t i = 0; i < entitiesList.size(); i++)
+	{
+		FEEntity* currentEntity = FEScene::getInstance().getEntity(entitiesList[i]);
+
+		if (currentEntity->mesh == mesh)
+			result++;
+	}
+
+	return result;
+}
+
 int textureUnderMouse = -1;
 bool isOpenContextMenuInContentBrowser = false;
+int meshUnderMouse = -1;
 static int activeTabContentBrowser = 0;
 
 void displayContentBrowser()
@@ -660,52 +654,31 @@ void displayContentBrowser()
 		ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
 		if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 		{
-			if (ImGui::BeginTabItem("Textures"))
+			if (ImGui::BeginTabItem("Meshes"))
 			{
 				activeTabContentBrowser = 0;
-				std::vector<std::string> textureList = FEResourceManager::getInstance().getTextureList();
+				displayMeshesContentBrowser();
+				ImGui::EndTabItem();
+			}
 
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-				if (!isOpenContextMenuInContentBrowser) textureUnderMouse = -1;
-				ImGui::Columns(3, "mycolumns3", false);
-				for (size_t i = 0; i < textureList.size(); i++)
-				{
-					if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-					{
-						//
-					}
-
-					if (ImGui::IsItemHovered())
-					{
-						if (!isOpenContextMenuInContentBrowser) textureUnderMouse = i;
-					}
-
-					ImGui::Text(textureList[i].c_str());
-					ImGui::NextColumn();
-				}
-				ImGui::Columns(1);
-
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-
+			if (ImGui::BeginTabItem("Textures"))
+			{
+				activeTabContentBrowser = 1;
+				displayTexturesContentBrowser();
 				ImGui::EndTabItem();
 			}
 
 			if (ImGui::BeginTabItem("Materials"))
 			{
-				activeTabContentBrowser = 1;
-				displayMaterialEditor();
+				activeTabContentBrowser = 2;
+				displayMaterialContentBrowser();
 				ImGui::EndTabItem();
 			}
 
 			if (ImGui::BeginTabItem("PostProcess"))
 			{
-				activeTabContentBrowser = 2;
-				displayPostProcess();
+				activeTabContentBrowser = 3;
+				displayPostProcessContentBrowser();
 				ImGui::EndTabItem();
 			}
 
@@ -728,6 +701,28 @@ void displayContentBrowser()
 			{
 				case 0:
 				{
+					if (ImGui::MenuItem("Load new mesh..."))
+					{
+						loadMeshWindow.show();
+					}
+
+					if (meshUnderMouse != -1)
+					{
+						if (ImGui::MenuItem("Delete"))
+						{
+							deleteMeshWindow.show(FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getMeshList()[meshUnderMouse]));
+						}
+
+						if (ImGui::MenuItem("Rename"))
+						{
+							renameMeshWindow.show(FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getMeshList()[meshUnderMouse]));
+						}
+					}
+
+					break;
+				}
+				case 1:
+				{
 					if (ImGui::MenuItem("Load new texture..."))
 					{
 						loadTextureWindow.show();
@@ -747,14 +742,14 @@ void displayContentBrowser()
 					}
 					break;
 				}
-				case 1:
+				case 2:
 				{
 					if (ImGui::MenuItem("Create new material..."))
 					{
 					}
 					break;
 				}
-				case 2:
+				case 3:
 				{
 					break;
 				}
@@ -765,10 +760,13 @@ void displayContentBrowser()
 		}
 	ImGui::End();
 	
+	loadMeshWindow.render();
 	loadTextureWindow.render();
+	renameMeshWindow.render();
 	renameTextureWindow.render();
 	renameFailedWindow.render();
 	deleteTextureWindow.render();
+	deleteMeshWindow.render();
 }
 
 glm::dvec3 mouseRay()
@@ -829,7 +827,7 @@ bool createFolder(const char* dirPath)
 
 bool deleteFolder(const char* dirPath)
 {
-	return (_rmdir(dirPath) != 0);
+	return (_rmdir(dirPath) == 0);
 }
 
 void loadProjectList()
@@ -843,12 +841,6 @@ void loadProjectList()
 	{
 		projectList.push_back(new FEProject(projectNameList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i].c_str() + "/"));
 	}
-
-	// test Delete this!
-	/*FETexture* tempTexture = FEResourceManager::getInstance().LoadFETexture("C:\\Users\\kandr\\Downloads\\FEProjects\\StartScene\\projectScreenShot.texture");
-	FEResourceManager::getInstance().saveFETexture("C:\\Users\\kandr\\Downloads\\texture.tex", tempTexture);
-
-	testTexture = FEResourceManager::getInstance().loadFETexture_("C:\\Users\\kandr\\Downloads\\texture.tex");*/
 }
 
 void loadEditor()
@@ -981,17 +973,28 @@ void displayProjectSelection()
 		ImGui::SameLine();
 		if (ImGui::Button("Delete Project", ImVec2(200.0f, 64.0f)) && projectChosen != -1)
 		{
-			bool f = deleteFolder(projectList[projectChosen]->getProjectFolder().c_str());
-			loadEditor();
+			std::string projectFolder = projectList[projectChosen]->getProjectFolder();
+			projectFolder.erase(projectFolder.begin() + projectFolder.size() - 1);
+			
+			// geting list of all files and folders in project folder
+			auto fileList = getFolderList(projectList[projectChosen]->getProjectFolder().c_str());
+			// we would delete all files in project folder, my editor would not create folders there
+			// so we are deleting only files.
+			for (size_t i = 0; i < fileList.size(); i++)
+			{
+				deleteFile((projectList[projectChosen]->getProjectFolder() + fileList[i]).c_str());
+			}
+			// then we can try to delete project folder, but if user created some folders in it we will fail.
+			deleteFolder(projectFolder.c_str());
 
-			/*ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
+			for (size_t i = 0; i < projectList.size(); i++)
+			{
+				delete projectList[i];
+			}
+			projectList.clear();
+			currentProject = nullptr;
 
-			ImGui::End();
-			ImGui::PopStyleVar();
-
-			return;*/
+			loadProjectList();
 		}
 
 		ImGui::PopStyleColor();
@@ -1118,4 +1121,68 @@ void displayTextureInMaterialEditor(FETexture*& texture)
 
 	//	ImGui::PopID();
 	//}
+}
+
+void displayTexturesContentBrowser()
+{
+	std::vector<std::string> textureList = FEResourceManager::getInstance().getTextureList();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+	if (!isOpenContextMenuInContentBrowser) textureUnderMouse = -1;
+	ImGui::Columns(3, "mycolumns3", false);
+	for (size_t i = 0; i < textureList.size(); i++)
+	{
+		if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			//
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			if (!isOpenContextMenuInContentBrowser) textureUnderMouse = i;
+		}
+
+		ImGui::Text(textureList[i].c_str());
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1);
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+}
+
+void displayMeshesContentBrowser()
+{
+	std::vector<std::string> meshList = FEResourceManager::getInstance().getMeshList();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+	if (!isOpenContextMenuInContentBrowser) meshUnderMouse = -1;
+	ImGui::Columns(3, "mycolumns3", false);
+	for (size_t i = 0; i < meshList.size(); i++)
+	{
+		if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().noTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			//
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			if (!isOpenContextMenuInContentBrowser) meshUnderMouse = i;
+		}
+
+		ImGui::Text(meshList[i].c_str());
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1);
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
 }

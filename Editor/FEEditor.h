@@ -39,11 +39,13 @@ void displayMaterialPrameters(FEMaterial* material);
 void displayLightProperties(FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
-void displayMaterialEditor();
+void displayMaterialContentBrowser();
+void displayMeshesContentBrowser();
+void displayTexturesContentBrowser();
 void displayTextureInMaterialEditor(FETexture*& texture);
 
 void displayContentBrowser();
-void displayPostProcess();
+void displayPostProcessContentBrowser();
 void displayProjectSelection();
 
 void addEntityButton();
@@ -61,8 +63,8 @@ void renderEditor();
 void loadProjectList();
 void loadEditor();
 
-
 int timesTextureUsed(FETexture* texture);
+int timesMeshUsed(FEMesh* mesh);
 
 class ImGuiModalPopup
 {
@@ -144,9 +146,11 @@ public:
 
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
-				deleteFile((currentProject->getProjectFolder() + textureToWorkWith->getName() + ".FEtexture").c_str());
+				std::string name = textureToWorkWith->getName();
 				FEResourceManager::getInstance().deleteFETexture(textureToWorkWith);
 				currentProject->saveScene();
+
+				deleteFile((currentProject->getProjectFolder() + name + ".FEtexture").c_str());
 
 				textureToWorkWith = nullptr;
 				ImGuiModalPopup::close();
@@ -170,7 +174,7 @@ class renameFailedPopUp : public ImGuiModalPopup
 public:
 	renameFailedPopUp()
 	{
-		popupCaption = "Invalid texture name";
+		popupCaption = "Invalid name";
 	}
 
 	void show()
@@ -184,7 +188,7 @@ public:
 
 		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Entered texture name is occupied");
+			ImGui::Text("Entered name is occupied");
 
 			ImGui::SetCursorPosX(60);
 			ImGui::SetCursorPosY(50);
@@ -400,6 +404,7 @@ public:
 			ImGui::Columns(5, "selectTexturePopupColumns", false);
 			for (size_t i = 0; i < filteredTextureList.size(); i++)
 			{
+				ImGui::PushID(filteredTextureList[i].c_str());
 				pushedStyle = false;
 				if (textureIndexSelected == i)
 				{
@@ -427,6 +432,7 @@ public:
 				}
 
 				ImGui::Text(filteredTextureList[i].c_str());
+				ImGui::PopID();
 				ImGui::NextColumn();
 			}
 			ImGui::Columns(1);
@@ -468,3 +474,337 @@ public:
 	}
 };
 static selectTexturePopUp selectTextureWindow;
+
+class loadMeshPopUp : public ImGuiModalPopup
+{
+public:
+	loadMeshPopUp()
+	{
+		popupCaption = "Load Mesh";
+	}
+
+	void show()
+	{
+		shouldOpen = true;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Insert mesh file path :");
+			static char filePath[512] = "";
+
+			ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
+
+			if (ImGui::Button("Load", ImVec2(120, 0)))
+			{
+				FEResourceManager::getInstance().LoadOBJMesh(filePath, "", currentProject->getProjectFolder().c_str());
+				// add asset list saving....
+				currentProject->saveScene();
+
+				ImGuiModalPopup::close();
+				strcpy_s(filePath, "");
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGuiModalPopup::close();
+			}
+			ImGui::EndPopup();
+		}
+	}
+};
+static loadMeshPopUp loadMeshWindow;
+
+class renameMeshPopUp : public ImGuiModalPopup
+{
+	FEMesh* meshToWorkWith;
+public:
+	renameMeshPopUp()
+	{
+		popupCaption = "Rename Mesh";
+		meshToWorkWith = nullptr;
+	}
+
+	void show(FEMesh* MeshToWorkWith)
+	{
+		shouldOpen = true;
+		meshToWorkWith = MeshToWorkWith;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (meshToWorkWith == nullptr)
+			{
+				ImGui::EndPopup();
+				return;
+			}
+
+			FEResourceManager& resourceManager = FEResourceManager::getInstance();
+			static std::string currentName = "";
+			if (currentName.size() == 0)
+				currentName = meshToWorkWith->getName();
+
+			ImGui::Text("New texture name :");
+			static char newName[512] = "";
+
+			if (strcmp(newName, "") == 0)
+				strcpy_s(newName, currentName.size() + 1, currentName.c_str());
+
+			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
+			ImGui::Separator();
+
+			if (ImGui::Button("Apply", ImVec2(120, 0)))
+			{
+				std::string oldName = meshToWorkWith->getName();
+				// if new name is acceptable
+				if (resourceManager.setMeshName(meshToWorkWith, newName))
+				{
+					// also rename mesh filename correspondently
+					changeFileName((currentProject->getProjectFolder() + oldName + ".model").c_str(), (currentProject->getProjectFolder() + newName + ".model").c_str());
+					// save assets list with new mesh name
+					currentProject->saveScene();
+
+					ImGuiModalPopup::close();
+					strcpy_s(newName, "");
+					currentName = "";
+				}
+				else
+				{
+					meshToWorkWith = nullptr;
+					ImGuiModalPopup::close();
+					renameFailedWindow.show();
+				}
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				meshToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+			}
+			ImGui::EndPopup();
+		}
+	}
+};
+static renameMeshPopUp renameMeshWindow;
+
+class deleteMeshPopup : public ImGuiModalPopup
+{
+	FEMesh* meshToWorkWith;
+public:
+	deleteMeshPopup()
+	{
+		popupCaption = "Delete mesh";
+		meshToWorkWith = nullptr;
+	}
+
+	void show(FEMesh* MeshToDelete)
+	{
+		shouldOpen = true;
+		meshToWorkWith = MeshToDelete;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (meshToWorkWith == nullptr)
+			{
+				ImGuiModalPopup::close();
+				return;
+			}
+
+			// check if this mesh is used in some entity
+			// to-do: should be done through counter, not by searching each time.
+			FEResourceManager& resourceManager = FEResourceManager::getInstance();
+			int result = timesMeshUsed(meshToWorkWith);
+
+			ImGui::Text(("Do you want to delete \"" + meshToWorkWith->getName() + "\" mesh ?").c_str());
+			if (result > 0)
+				ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
+
+			if (ImGui::Button("Delete", ImVec2(120, 0)))
+			{
+				std::string name = meshToWorkWith->getName();
+				FEScene::getInstance().prepareForFEMeshDeletion(meshToWorkWith);
+				FEResourceManager::getInstance().deleteFEMesh(meshToWorkWith);
+				currentProject->saveScene();
+
+				deleteFile((currentProject->getProjectFolder() + name + ".model").c_str());
+
+				meshToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGuiModalPopup::close();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static deleteMeshPopup deleteMeshWindow;
+
+class selectMeshPopUp : public ImGuiModalPopup
+{
+	FEMesh** meshToWorkWith;
+	int meshIndexUnderMouse = -1;
+	int meshIndexSelected = -1;
+	bool pushedStyle = false;
+	std::vector<std::string> meshList;
+	std::vector<std::string> filteredMeshList;
+	char filter[512];
+public:
+	selectMeshPopUp()
+	{
+		popupCaption = "Select mesh";
+	}
+
+	void show(FEMesh** mesh)
+	{
+		shouldOpen = true;
+		pushedStyle = false;
+		meshToWorkWith = mesh;
+		meshList = FEResourceManager::getInstance().getMeshList();
+		std::vector<std::string> standardMeshList = FEResourceManager::getInstance().getStandardMeshList();
+		for (size_t i = 0; i < standardMeshList.size(); i++)
+		{
+			meshList.insert(meshList.begin(), standardMeshList[i]);
+		}
+
+		filteredMeshList = meshList;
+		strcpy_s(filter, "");
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		meshIndexUnderMouse = -1;
+		meshIndexSelected = -1;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredMeshList = meshList;
+				}
+				else
+				{
+					filteredMeshList.clear();
+					for (size_t i = 0; i < meshList.size(); i++)
+					{
+						if (meshList[i].find(filter) != -1)
+						{
+							filteredMeshList.push_back(meshList[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(60);
+			ImGui::Columns(5, "selectMeshPopupColumns", false);
+			for (size_t i = 0; i < filteredMeshList.size(); i++)
+			{
+				ImGui::PushID(filteredMeshList[i].c_str());
+				pushedStyle = false;
+				if (meshIndexSelected == i)
+				{
+					pushedStyle = true;
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				}
+
+				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().noTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				{
+					meshIndexSelected = i;
+				}
+
+				if (pushedStyle)
+				{
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+				}
+
+				if (ImGui::IsItemHovered())
+				{
+					meshIndexUnderMouse = i;
+				}
+
+				ImGui::Text(filteredMeshList[i].c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::SetCursorPosX(300);
+			ImGui::SetCursorPosY(25);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Select", ImVec2(140, 24)))
+			{
+				if (meshIndexSelected != -1)
+				{
+					*meshToWorkWith = FEResourceManager::getInstance().getMesh(filteredMeshList[meshIndexSelected]);
+					close();
+				}
+			}
+
+			ImGui::SetCursorPosX(460);
+			ImGui::SetCursorPosY(25);
+
+			if (ImGui::Button("Cancel", ImVec2(140, 24)))
+			{
+				close();
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectMeshPopUp selectMeshWindow;

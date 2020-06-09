@@ -53,7 +53,8 @@ namespace FocalEngine
 
 		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
 		virtual void mouseMoveInput(double xpos, double ypos) {};
-		
+
+		virtual void reset();
 	protected:
 		bool isInputActive = true;
 

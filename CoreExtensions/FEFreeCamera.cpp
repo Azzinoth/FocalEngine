@@ -53,6 +53,14 @@ void FEFreeCamera::move(float deltaTime)
 	updateViewMatrix();
 }
 
+void FEFreeCamera::reset()
+{
+	currentMouseXAngle = 0;
+	currentMouseYAngle = 0;
+
+	FEBasicCamera::reset();
+}
+
 void FEFreeCamera::setCursorToCenter()
 {
 	if (glfwGetWindowAttrib(window, GLFW_FOCUSED))

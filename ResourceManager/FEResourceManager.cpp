@@ -41,7 +41,7 @@ FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, in
 {
 	FEMesh* newMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB);
 	
-	if (Name.size() == 0 || meshes.find(Name) != meshes.end() || standartMeshes.find(Name) != standartMeshes.end())
+	if (Name.size() == 0 || meshes.find(Name) != meshes.end() || standardMeshes.find(Name) != standardMeshes.end())
 	{
 		size_t nextID = meshes.size();
 		size_t index = 0;
@@ -61,8 +61,11 @@ FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, in
 
 bool FEResourceManager::setMeshName(FEMesh* Mesh, std::string MeshName)
 {
-	if (MeshName.size() == 0 || meshes.find(MeshName) != meshes.end() || standartMeshes.find(MeshName) != standartMeshes.end())
+	if (MeshName.size() == 0 || meshes.find(MeshName) != meshes.end() || standardMeshes.find(MeshName) != standardMeshes.end())
 		return false;
+
+	meshes.erase(Mesh->getName());
+	meshes[MeshName] = Mesh;
 
 	Mesh->setName(MeshName);
 	return true;
@@ -125,7 +128,7 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 {
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture->textureID));
 	int maxDimention = std::max(texture->width, texture->height);
-	int mipCount = floor(log2(maxDimention)) + 1;
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 	char** pixelData = new char*[mipCount];
 	GLint imgSize = 0;
 	std::fstream file;
@@ -149,7 +152,7 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imgSize);
 
 		char* pixels = new char[imgSize * 2];
-		for (size_t i = 0; i < imgSize * 2; i++)
+		for (size_t i = 0; i < size_t(imgSize * 2); i++)
 		{
 			pixels[i] = ' ';
 		}
@@ -221,7 +224,7 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
-	char* fileData = new char[fileSize];
+	char* fileData = new char[int(fileSize)];
 	file.read(fileData, fileSize);
 	file.close();
 
@@ -260,7 +263,7 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 	}
 
 	int maxDimention = std::max(existingTexture->width, existingTexture->height);
-	int mipCount = floor(log2(maxDimention)) + 1;
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 	glTexStorage2D(GL_TEXTURE_2D, mipCount, existingTexture->internalFormat, existingTexture->width, existingTexture->height);
 
 	if (existingTexture->mipEnabled)
@@ -301,7 +304,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
-	char* fileData = new char[fileSize];
+	char* fileData = new char[int(fileSize)];
 	file.read(fileData, fileSize);
 	file.close();
 
@@ -341,7 +344,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	}
 
 	int maxDimention = std::max(newTexture->width, newTexture->height);
-	int mipCount = floor(log2(maxDimention)) + 1;
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 	glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height);
 
 	if (newTexture->mipEnabled)
@@ -641,7 +644,7 @@ void FEResourceManager::loadStandardMeshes()
 		0.625f, 0.25f
 	};
 
-	standartMeshes["cube"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices, "cube");
+	standardMeshes["cube"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices, "cube");
 	meshes.erase("cube");
 
 	std::vector<int> planeIndices = {
@@ -666,7 +669,7 @@ void FEResourceManager::loadStandardMeshes()
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
 
-	standartMeshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices, "plane");
+	standardMeshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices, "plane");
 	meshes.erase("plane");
 }
 
@@ -696,7 +699,8 @@ FEMesh* FEResourceManager::LoadOBJMesh(const char* fileName, std::string Name, c
 	if (meshes.find(Name) != meshes.end())
 		Name = "mesh_" + std::to_string(meshes.size());
 	
-	newMesh->setName(Name);
+	// in rawObjDataToMesh() hidden FEMesh allocation and it will go to hash table so we need to use setMeshName() not setName.
+	setMeshName(newMesh, Name);
 	newMesh->fileName = fileName;
 
 	meshes[newMesh->getName()] = newMesh;
@@ -809,6 +813,9 @@ bool FEResourceManager::setMaterialName(FEMaterial* Material, std::string Materi
 	if (MaterialName.size() == 0 || materials.find(MaterialName) != materials.end())
 		return false;
 
+	materials.erase(Material->getName());
+	materials[MaterialName] = Material;
+
 	Material->setName(MaterialName);
 	return true;
 }
@@ -823,10 +830,22 @@ std::vector<std::string> FEResourceManager::getMaterialList()
 	FE_MAP_TO_STR_VECTOR(materials)
 }
 
+std::vector<std::string> FEResourceManager::getStandardMaterialList()
+{
+	FE_MAP_TO_STR_VECTOR(standardMaterials)
+}
+
 FEMaterial* FEResourceManager::getMaterial(std::string name)
 {
 	if (materials.find(name) == materials.end())
+	{
+		if (standardMaterials.find(name) != standardMaterials.end())
+		{
+			return standardMaterials[name];
+		}
+
 		return nullptr;
+	}
 
 	return materials[name];
 }
@@ -847,13 +866,18 @@ std::vector<std::string> FEResourceManager::getMeshList()
 	FE_MAP_TO_STR_VECTOR(meshes)
 }
 
+std::vector<std::string> FEResourceManager::getStandardMeshList()
+{
+	FE_MAP_TO_STR_VECTOR(standardMeshes)
+}
+
 FEMesh* FEResourceManager::getMesh(std::string meshName)
 {
 	if (meshes.find(meshName) == meshes.end())
 	{
-		if (standartMeshes.find(meshName) != standartMeshes.end())
+		if (standardMeshes.find(meshName) != standardMeshes.end())
 		{
-			return standartMeshes[meshName];
+			return standardMeshes[meshName];
 		}
 		
 		return nullptr;
@@ -864,12 +888,40 @@ FEMesh* FEResourceManager::getMesh(std::string meshName)
 	}
 }
 
+bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
+{
+	if (standardMaterials.find(material->getName()) == standardMaterials.end())
+	{
+		if (material->getName().size() == 0 || standardMaterials.find(material->getName()) != standardMaterials.end())
+		{
+			size_t nextID = standardMaterials.size();
+			size_t index = 0;
+			material->setName("material_" + std::to_string(nextID + index));
+			while (standardMaterials.find(material->getName()) != standardMaterials.end())
+			{
+				index++;
+				material->setName("material_" + std::to_string(nextID + index));
+			}
+		}
+
+		if (materials.find(material->getName()) != materials.end())
+			materials.erase(material->getName());
+		standardMaterials[material->getName()] = material;
+
+		return true;
+	}
+
+	return false;
+}
+
 void FEResourceManager::loadStandardMaterial()
 {
-	FEMaterial* newMat = createMaterial("SolidColorMaterial");
-	newMat->shader = new FEShader(FESolidColorVS, FESolidColorFS);
+	FEMaterial* newMaterial = createMaterial("SolidColorMaterial");
+	newMaterial->shader = new FEShader(FESolidColorVS, FESolidColorFS);
 	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
-	newMat->addParameter(color);
+	newMaterial->addParameter(color);
+
+	makeMaterialStandard(newMaterial);
 }
 
 void FEResourceManager::clear()
@@ -877,19 +929,10 @@ void FEResourceManager::clear()
 	auto materialIt = materials.begin();
 	while (materialIt != materials.end())
 	{
-		if (materialIt->first != "SolidColorMaterial" && materialIt->first != "PhongMaterial")
-		{
-			delete materialIt->second;
-			auto copy = materialIt;
-			copy++;
-			materials.erase(materialIt->first);
-			materialIt = copy;
-		}
-		else
-		{
-			materialIt++;
-		}
+		delete materialIt->second;
+		materialIt++;
 	}
+	materials.clear();
 
 	auto meshIt = meshes.begin();
 	while (meshIt != meshes.end())
@@ -991,4 +1034,10 @@ void FEResourceManager::deleteFETexture(FETexture* texture)
 	// after we make sure that texture is no more referenced by any material, we can delete it
 	textures.erase(texture->getName());
 	delete texture;
+}
+
+void FEResourceManager::deleteFEMesh(FEMesh* mesh)
+{
+	meshes.erase(mesh->getName());
+	delete mesh;
 }

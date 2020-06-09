@@ -198,14 +198,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	while (it != scene.entityMap.end())
 	{
 		auto entity = it->second;
-		
 		renderEntity(entity, currentCamera);
-		/*entity->material->bind();
-		loadStandardParams(entity->material->shader, currentCamera, entity);
-		entity->material->shader->loadDataToGPU();
-		entity->render();
-		entity->material->unBind();*/
-		
 		it++;
 	}
 	
@@ -278,27 +271,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			break;
 		}
 	}
-
-	//if (postProcessEffects.size())
-	//{
-		//FEPostProcess& effect = *postProcessEffects[postProcessEffects.size() - 1];
-		//effect.renderResult();
-
-
-
-		/*effect.screenQuadShader->start();
-		effect.screenQuadShader->loadDataToGPU();
-		effect.stages.back()->outTexture->bind(0);
-
-		FE_GL_ERROR(glBindVertexArray(effect.screenQuad->getVaoID()));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, effect.screenQuad->getVertexCount(), GL_UNSIGNED_INT, 0));
-		FE_GL_ERROR(glDisableVertexAttribArray(0));
-		FE_GL_ERROR(glBindVertexArray(0));
-
-		effect.stages.back()->outTexture->unBind();
-		effect.screenQuadShader->stop();*/
-	//}
 	// ********* SCREEN SPACE EFFECTS END *********
 }
 
@@ -330,9 +302,9 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 	//with glGetTexImage we get upside down image data, so we flip it.
-	for (size_t j = 0; j < height / 2; j++)
+	for (size_t j = 0; j < size_t(height / 2); j++)
 	{
-		for (size_t i = 0; i < 4 * width; i+=4)
+		for (size_t i = 0; i < size_t(4 * width); i+=4)
 		{
 			std::swap(pixels[i + (j * 4 * width)], pixels[4 * width * height - (i + (j * 4 * width)) - 4]);
 			std::swap(pixels[i + 1 + (j * 4 * width)], pixels[4 * width * height - (i - 1 + (j * 4 * width)) - 4]);

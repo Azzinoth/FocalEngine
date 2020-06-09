@@ -35,8 +35,7 @@ FEEntity* FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Nam
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
 	if (!Material)
-		Material = resourceManager.materials["SolidColorMaterial"];
-
+		Material = resourceManager.getMaterial("SolidColorMaterial");
 	
 	if (Name.size() == 0 || entityMap.find(Name) != entityMap.end())
 	{
@@ -93,4 +92,20 @@ void FEScene::clear()
 {
 	entityMap.clear();
 	lightsMap.clear();
+}
+
+void FEScene::prepareForFEMeshDeletion(FEMesh* mesh)
+{
+	// looking if this mesh is used in some entities
+	// to-do: should be done through list of pointers to entities that uses this mesh.
+	auto entitiesIterator = entityMap.begin();
+	while (entitiesIterator != entityMap.end())
+	{
+		if (entitiesIterator->second->mesh == mesh)
+		{
+			entitiesIterator->second->mesh = FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getStandardMeshList()[0]);
+		}
+
+		entitiesIterator++;
+	}
 }

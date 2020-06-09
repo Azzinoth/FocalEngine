@@ -38,6 +38,8 @@ namespace FocalEngine
 
 		FEPostProcess* createPostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
 		void takeScreenshot(const char* fileName);
+
+		void resetCamera();
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
