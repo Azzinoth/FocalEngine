@@ -159,12 +159,16 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						it++;
 						continue;
 					}
-						
-					entity->material->bind();
-					loadStandardParams(entity->material->shader, currentCamera, entity);
-					entity->material->shader->loadDataToGPU();
-					entity->render();
-					entity->material->unBind();
+					
+					FEMaterial* originamlMaterial = entity->material;
+					entity->material = shadowMapMaterial;
+					//#fix do it only if albedoHasAlpha
+					shadowMapMaterial->albedoMap = originamlMaterial->albedoMap;
+
+					renderEntity(entity, currentCamera);
+
+					shadowMapMaterial->albedoMap = nullptr;
+					entity->material = originamlMaterial;
 
 					it++;
 				}

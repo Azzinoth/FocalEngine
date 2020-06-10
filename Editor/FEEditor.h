@@ -1,7 +1,10 @@
 #pragma once
 
 #include "FEProject.h"
-#include <direct.h>
+#ifdef FE_WIN_32
+	#include <direct.h> // file system
+	#include <shobjidl.h> // openDialog
+#endif
 
 using namespace FocalEngine;
 
@@ -65,6 +68,24 @@ void loadEditor();
 
 int timesTextureUsed(FETexture* texture);
 int timesMeshUsed(FEMesh* mesh);
+
+#ifdef FE_WIN_32
+	// open dialog staff
+	const COMDLG_FILTERSPEC meshLoadFilter[] =
+	{
+		{ L"Wavefront OBJ files (*.obj)", L"*.obj" },
+	};
+
+	const COMDLG_FILTERSPEC textureLoadFilter[] =
+	{
+		{ L"PNG files (*.png)", L"*.png" },
+	};
+
+	std::string toString(PWSTR wString);
+	void openDialog(std::string& filePath, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
+
+#endif
+
 
 class ImGuiModalPopup
 {
@@ -205,6 +226,7 @@ static renameFailedPopUp renameFailedWindow;
 class renameTexturePopUp : public ImGuiModalPopup
 {
 	FETexture* textureToWorkWith;
+	char newName[512];
 public:
 	renameTexturePopUp()
 	{
@@ -216,6 +238,7 @@ public:
 	{
 		shouldOpen = true;
 		textureToWorkWith = TextureToWorkWith;
+		strcpy_s(newName, textureToWorkWith->getName().size() + 1, textureToWorkWith->getName().c_str());
 	}
 
 	void render() override
@@ -231,16 +254,7 @@ public:
 			}
 
 			FEResourceManager& resourceManager = FEResourceManager::getInstance();
-			static std::string currentName = "";
-			if (currentName.size() == 0)
-				currentName = textureToWorkWith->getName();
-
 			ImGui::Text("New texture name :");
-			static char newName[512] = "";
-
-			if (strcmp(newName, "") == 0)
-				strcpy_s(newName, currentName.size() + 1, currentName.c_str());
-
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
 
@@ -257,7 +271,6 @@ public:
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
-					currentName = "";
 				}
 				else
 				{
@@ -281,17 +294,17 @@ static renameTexturePopUp renameTextureWindow;
 
 class loadTexturePopUp : public ImGuiModalPopup
 {
-	bool hasAlpha;
+	std::string filePath;
 public:
 	loadTexturePopUp()
 	{
-		popupCaption = "Load Texture";
+		popupCaption = "Choose Texture Type";
 	}
 
-	void show()
+	void show(std::string FilePath)
 	{
 		shouldOpen = true;
-		hasAlpha = false;
+		filePath = FilePath;
 	}
 
 	void render() override
@@ -300,32 +313,28 @@ public:
 
 		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Insert texture file path :");
-			static char filePath[512] = "";
+			ImGui::Text("Does this texture uses alpha channel ?");
 
-			ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-			ImGui::Separator();
-
-			ImGui::Checkbox("Texture uses alpha channel", &hasAlpha);
-
-			if (ImGui::Button("Load", ImVec2(120, 0)))
+			if (ImGui::Button("Yes", ImVec2(120, 0)))
 			{
-				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath, hasAlpha);
+				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), true);
 				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
 				currentProject->saveScene();
 
 				ImGuiModalPopup::close();
-				strcpy_s(filePath, "");
-				hasAlpha = false;
 			}
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			if (ImGui::Button("No", ImVec2(120, 0)))
 			{
+				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), false);
+				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
+				// add asset list saving....
+				currentProject->saveScene();
+
 				ImGuiModalPopup::close();
-				hasAlpha = false;
 			}
 			ImGui::EndPopup();
 		}
@@ -414,6 +423,17 @@ public:
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 				}
 
+				static bool select = false;
+				ImGui::Selectable("", &select);
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					if (textureIndexUnderMouse != -1)
+					{
+						*textureToWorkWith = FEResourceManager::getInstance().getTexture(filteredTextureList[textureIndexUnderMouse]);
+						close();
+					}
+				}
+
 				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					textureIndexSelected = i;
@@ -475,55 +495,10 @@ public:
 };
 static selectTexturePopUp selectTextureWindow;
 
-class loadMeshPopUp : public ImGuiModalPopup
-{
-public:
-	loadMeshPopUp()
-	{
-		popupCaption = "Load Mesh";
-	}
-
-	void show()
-	{
-		shouldOpen = true;
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Insert mesh file path :");
-			static char filePath[512] = "";
-
-			ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-
-			if (ImGui::Button("Load", ImVec2(120, 0)))
-			{
-				FEResourceManager::getInstance().LoadOBJMesh(filePath, "", currentProject->getProjectFolder().c_str());
-				// add asset list saving....
-				currentProject->saveScene();
-
-				ImGuiModalPopup::close();
-				strcpy_s(filePath, "");
-			}
-
-			ImGui::SetItemDefaultFocus();
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				ImGuiModalPopup::close();
-			}
-			ImGui::EndPopup();
-		}
-	}
-};
-static loadMeshPopUp loadMeshWindow;
-
 class renameMeshPopUp : public ImGuiModalPopup
 {
 	FEMesh* meshToWorkWith;
+	char newName[512];
 public:
 	renameMeshPopUp()
 	{
@@ -535,6 +510,7 @@ public:
 	{
 		shouldOpen = true;
 		meshToWorkWith = MeshToWorkWith;
+		strcpy_s(newName, MeshToWorkWith->getName().size() + 1, MeshToWorkWith->getName().c_str());
 	}
 
 	void render() override
@@ -550,16 +526,7 @@ public:
 			}
 
 			FEResourceManager& resourceManager = FEResourceManager::getInstance();
-			static std::string currentName = "";
-			if (currentName.size() == 0)
-				currentName = meshToWorkWith->getName();
-
-			ImGui::Text("New texture name :");
-			static char newName[512] = "";
-
-			if (strcmp(newName, "") == 0)
-				strcpy_s(newName, currentName.size() + 1, currentName.c_str());
-
+			ImGui::Text("New mesh name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
 
@@ -576,7 +543,6 @@ public:
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
-					currentName = "";
 				}
 				else
 				{
@@ -748,6 +714,17 @@ public:
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 				}
 
+				static bool select = false;
+				ImGui::Selectable("", &select);
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					if (meshIndexUnderMouse != -1)
+					{
+						*meshToWorkWith = FEResourceManager::getInstance().getMesh(filteredMeshList[meshIndexUnderMouse]);
+						close();
+					}
+				}
+
 				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().noTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					meshIndexSelected = i;
@@ -808,3 +785,4 @@ public:
 	}
 };
 static selectMeshPopUp selectMeshWindow;
+

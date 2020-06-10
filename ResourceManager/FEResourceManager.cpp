@@ -675,7 +675,7 @@ void FEResourceManager::loadStandardMeshes()
 
 FEResourceManager::FEResourceManager()
 {
-	noTexture = new FETexture();;
+	noTexture = new FETexture();
 	LoadFETexture("noTexture.FETexture", noTexture);
 
 	loadStandardMaterial();

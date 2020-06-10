@@ -36,6 +36,8 @@ namespace FocalEngine
 
 		void standardFBInit(int WindowWidth, int WindowHeight);
 		void takeScreenshot(const char* fileName, int width, int height);
+
+		FEMaterial* shadowMapMaterial;
 	};
 }
 

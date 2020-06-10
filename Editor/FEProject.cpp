@@ -225,7 +225,9 @@ void FEProject::loadScene()
 	std::vector<Json::String> texturesList = root["textures"].getMemberNames();
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
-		resourceManager.LoadFETexture((projectFolder + root["textures"][texturesList[i]].asCString()).c_str(), texturesList[i]);
+		FETexture* justLoadedTexture = resourceManager.LoadFETexture((projectFolder + root["textures"][texturesList[i]].asCString()).c_str(), texturesList[i]);
+		// I have texture name in file but for now I will only use name from scene.txt
+		resourceManager.setTextureName(justLoadedTexture, texturesList[i]);
 	}
 
 	// loading Materials

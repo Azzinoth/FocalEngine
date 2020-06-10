@@ -23,7 +23,7 @@ std::string getSelectedEntity()
 
 void keyButtonCallback(int key, int scancode, int action, int mods)
 {
-	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+	if (!ImGui::GetIO().WantCaptureMouse && key == GLFW_KEY_SPACE && action == GLFW_PRESS)
 	{
 		isCameraInputActive = !isCameraInputActive;
 		FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
@@ -703,7 +703,14 @@ void displayContentBrowser()
 				{
 					if (ImGui::MenuItem("Load new mesh..."))
 					{
-						loadMeshWindow.show();
+						std::string filePath = "";
+						openDialog(filePath, meshLoadFilter, 1);
+						if (filePath != "")
+						{
+							FEResourceManager::getInstance().LoadOBJMesh(filePath.c_str(), "", currentProject->getProjectFolder().c_str());
+							// add asset list saving....
+							currentProject->saveScene();
+						}
 					}
 
 					if (meshUnderMouse != -1)
@@ -725,7 +732,12 @@ void displayContentBrowser()
 				{
 					if (ImGui::MenuItem("Load new texture..."))
 					{
-						loadTextureWindow.show();
+						std::string filePath = "";
+						openDialog(filePath, textureLoadFilter, 1);
+						if (filePath != "")
+						{
+							loadTextureWindow.show(filePath);
+						}
 					}
 
 					if (textureUnderMouse != -1)
@@ -760,7 +772,6 @@ void displayContentBrowser()
 		}
 	ImGui::End();
 	
-	loadMeshWindow.render();
 	loadTextureWindow.render();
 	renameMeshWindow.render();
 	renameTextureWindow.render();
@@ -916,13 +927,19 @@ void displayProjectSelection()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 			}
 
-			/*if (ImGui::IsMouseDoubleClicked(0) && projectChosen != -1)
+			static bool select = false;
+			ImGui::Selectable("", &select);
+			if (ImGui::IsMouseDoubleClicked(0))
 			{
-				currentProject = projectList[i];
-				currentProject->loadScene();
-			}*/
+				if (projectChosen != -1)
+				{
+					currentProject = projectList[projectChosen];
+					currentProject->loadScene();
+					projectChosen = -1;
+				}
+			}
 
-			if (ImGui::ImageButton((void*)(intptr_t)/*testTexture->getTextureID()*/projectList[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			if (ImGui::ImageButton((void*)(intptr_t)projectList[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
 				projectChosen = i;
 			}
@@ -1186,3 +1203,60 @@ void displayMeshesContentBrowser()
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 }
+
+#ifdef FE_WIN_32
+	// open dialog staff
+	std::string toString(PWSTR wString)
+	{
+		std::wstring wFileName = wString;
+		std::string result;
+		char *szTo = new char[wFileName.length() + 1];
+		szTo[wFileName.size()] = '\0';
+		WideCharToMultiByte(CP_ACP, 0, wFileName.c_str(), -1, szTo, (int)wFileName.length(), NULL, NULL);
+		result = szTo;
+		delete[] szTo;
+
+		return result;
+	}
+
+	void openDialog(std::string& filePath, const COMDLG_FILTERSPEC* filter, int filterCount)
+	{
+		HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+		if (SUCCEEDED(hr))
+		{
+			IFileOpenDialog *pFileOpen;
+			// Create the FileOpenDialog object.
+			hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+			if (SUCCEEDED(hr))
+			{
+				hr = pFileOpen->SetFileTypes(filterCount, filter);
+				// Show the Open dialog box.
+				hr = pFileOpen->Show(NULL);
+
+				// Get the file name from the dialog box.
+				if (SUCCEEDED(hr))
+				{
+					IShellItem *pItem;
+					hr = pFileOpen->GetResult(&pItem);
+					if (SUCCEEDED(hr))
+					{
+						PWSTR pszFilePath;
+						hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+						// Display the file name to the user.
+						if (SUCCEEDED(hr))
+						{
+							filePath = toString(pszFilePath);
+							CoTaskMemFree(pszFilePath);
+						}
+						pItem->Release();
+					}
+				}
+				pFileOpen->Release();
+			}
+			CoUninitialize();
+		}
+	}
+
+#endif

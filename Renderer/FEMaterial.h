@@ -6,6 +6,7 @@
 #include "FEShader.h"
 #include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorShader.h"
 #include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongShader.h"
+#include "../CoreExtensions/StandardMaterial/ShadowMapMaterial/FEShadowMapShader.h"
 
 #define MAX_TEXTURE_COUNT_FOR_MATERIAL = 10;
 

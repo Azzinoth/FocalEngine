@@ -189,7 +189,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 		engine.beginFrame();
 
-		// test render of...
+		// test
 		testEntity = FEScene::getInstance().getEntity(getSelectedEntity());
 
 		if (testEntity != nullptr)
@@ -207,6 +207,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		
 		engine.render();
+
+		if (FERenderer::getInstance().shadowMap != nullptr)
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().shadowMap->getTextureID(), ImVec2(128, 128));
 
 		if (testEntity != nullptr)
 		{
