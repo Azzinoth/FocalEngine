@@ -164,6 +164,12 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER_OBJ.addPostProcess(new FEBloomEffect(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
 	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
 
+	RENDERER_OBJ.addPostProcess(new FEFXAA(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in futture it should be changeable.
+	delete RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture;
+	RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
+	
+
 	RENDERER_OBJ.shadowMapMaterial = RESOURCE_MANAGER_OBJ.createMaterial("shadowMapMaterial");
 	RENDERER_OBJ.shadowMapMaterial->shader = new FEShader(FEShadowMapVS, FEShadowMapFS);
 	RESOURCE_MANAGER_OBJ.makeMaterialStandard(RENDERER_OBJ.shadowMapMaterial);

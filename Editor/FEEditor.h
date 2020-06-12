@@ -423,8 +423,9 @@ public:
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 				}
 
-				static bool select = false;
-				ImGui::Selectable("", &select);
+				//static bool select = false;
+				//ImGui::SetNextItemWidth(0);
+				//ImGui::Selectable("##sdf", &select);
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (textureIndexUnderMouse != -1)
@@ -714,8 +715,6 @@ public:
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 				}
 
-				static bool select = false;
-				ImGui::Selectable("", &select);
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (meshIndexUnderMouse != -1)

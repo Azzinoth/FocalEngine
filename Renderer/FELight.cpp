@@ -144,10 +144,20 @@ glm::mat4 FELight::getViewMatrixForShadowMap()
 	testView[0][2] = fbasisZ.x;
 	testView[1][2] = fbasisZ.y;
 	testView[2][2] = fbasisZ.z;
+
 	testView[3][0] = transform.getPosition()[0];
 	testView[3][1] = transform.getPosition()[1];
 	//to-do: fix magic number
 	testView[3][2] = -50.0f/*itLight->second->transform.getPosition()[2]*/;
 
 	return testView;
+
+
+	//glm::mat4 baseMat = glm::mat4(1.0);
+	//baseMat *= glm::toMat4(transform.getQuaternion());
+	//baseMat[3][0] = transform.getPosition()[0];
+	//baseMat[3][1] = transform.getPosition()[1];
+	//baseMat[3][2] = transform.getPosition()[2];
+
+	//return baseMat;
 }

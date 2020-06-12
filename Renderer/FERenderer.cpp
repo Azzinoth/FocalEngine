@@ -78,8 +78,8 @@ void FERenderer::loadUniformBlocks()
 	while (lightIterator != scene.lightsMap.end())
 	{
 		info[index].typeAndAngles = glm::vec3(lightIterator->second->getType(),
-			glm::cos(glm::radians(lightIterator->second->getSpotAngle())),
-			glm::cos(glm::radians(lightIterator->second->getSpotAngleOuter())));
+											  glm::cos(glm::radians(lightIterator->second->getSpotAngle())),
+											  glm::cos(glm::radians(lightIterator->second->getSpotAngleOuter())));
 
 		info[index].position = glm::vec4(lightIterator->second->transform.getPosition(), 0.0f);
 		info[index].color = glm::vec4(lightIterator->second->getColor() * lightIterator->second->getIntensity(), 0.0f);
@@ -141,7 +141,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				glm::mat4 oldProjectionMatrix = currentCamera->getProjectionMatrix();
 				// put camera to the position of light
 				// to-do: should put out of scene bounderies in case of direcctional light.
-
 				currentCamera->projectionMatrix = itLight->second->shadowProjectionMatrix;
 				currentCamera->viewMatrix = itLight->second->getViewMatrixForShadowMap();
 

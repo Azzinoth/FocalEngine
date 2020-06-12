@@ -927,8 +927,6 @@ void displayProjectSelection()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 			}
 
-			static bool select = false;
-			ImGui::Selectable("", &select);
 			if (ImGui::IsMouseDoubleClicked(0))
 			{
 				if (projectChosen != -1)

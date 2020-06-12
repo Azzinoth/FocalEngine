@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../CoreExtensions/PostProcessEffects/FEGammaAndHDRCorrection.h"
+#include "../CoreExtensions/PostProcessEffects/FEFXAA.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng.h"
 
