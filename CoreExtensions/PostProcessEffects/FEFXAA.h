@@ -18,7 +18,7 @@ void main(void)
 static const char* FEFXAAFS = R"(
 #version 400 core
 
-// take this simplified version of FXAA from :
+// took this simplified version of FXAA from :
 // https://github.com/BennyQBD/3DEngineCpp/blob/054c2dcd7c52adcf8c9da335a2baee78850504b8/res/shaders/filter-fxaa.fs
 // original paper :
 // http://developer.download.nvidia.com/assets/gamedev/files/sdk/11/FXAA_WhitePaper.pdf
@@ -32,8 +32,7 @@ uniform vec2 FXAATextuxelSize;
 
 void main(void)
 {
-    //vec2 texCoordOffset = R_inverseFilterTextureSize.xy;
-	vec2 texCoordOffset = FXAATextuxelSize;//vec2(1.0/1920.0, 1.0/1080.0);
+	vec2 texCoordOffset = FXAATextuxelSize;
 	
 	vec3 luma = vec3(0.299, 0.587, 0.114);	
 	float lumaTL = dot(luma, texture2D(inputTexture, textureCoords.xy + (vec2(-1.0, -1.0) * texCoordOffset)).xyz);

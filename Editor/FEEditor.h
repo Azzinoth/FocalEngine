@@ -423,9 +423,6 @@ public:
 					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 				}
 
-				//static bool select = false;
-				//ImGui::SetNextItemWidth(0);
-				//ImGui::Selectable("##sdf", &select);
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (textureIndexUnderMouse != -1)
