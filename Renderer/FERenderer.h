@@ -26,9 +26,11 @@ namespace FocalEngine
 		FEFramebuffer* sceneToTextureFB = nullptr;
 		std::vector<FEPostProcess*> postProcessEffects;
 
-		//#fix testing shadows
 		// in current version only shadows from one directional light is supported.
-		FETexture* shadowMap = nullptr;
+		FETexture* CSM0 = nullptr;
+		FETexture* CSM1 = nullptr;
+		FETexture* CSM2 = nullptr;
+		FETexture* CSM3 = nullptr;
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);

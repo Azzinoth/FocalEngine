@@ -208,8 +208,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		
 		engine.render();
 
-		if (FERenderer::getInstance().shadowMap != nullptr)
-			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().shadowMap->getTextureID(), ImVec2(128, 128));
+		if (FERenderer::getInstance().CSM0 != nullptr)
+		{
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM0->getTextureID(), ImVec2(256, 256));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256));
+		}
 
 		if (testEntity != nullptr)
 		{

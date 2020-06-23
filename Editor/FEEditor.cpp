@@ -288,28 +288,52 @@ void displayLightProperties(FELight* light)
 
 	if (light->getType() == FE_DIRECTIONAL_LIGHT)
 	{
-		glm::vec3 d = light->getDirection();
-		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
+		FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
+		ImGui::Separator();
+		ImGui::Text("-------------Shadow settings--------------");
+
+		ImGui::Text("Number of cascades :");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		int cascades = directionalLight->getActiveCascades();
+		ImGui::SliderInt("##cascades", &cascades, 1, 4);
+		directionalLight->setActiveCascades(cascades);
+		toolTip("How much steps of shadow quality will be used.");
+
+		ImGui::Text("Cascade exponent :");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		float cascadeDistributionExponent = directionalLight->getCascadeDistributionExponent();
+		ImGui::DragFloat("##cascade exponent", &cascadeDistributionExponent, 0.1f, 0.1f, 10.0f);
+		directionalLight->setCascadeDistributionExponent(cascadeDistributionExponent);
+		toolTip("How much size of each next cascade is bigger than previous.");
+
+		ImGui::Text("First cascade Size :");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		float firstCascadeSize = directionalLight->getFirstCascadeSize();
+		ImGui::DragFloat("##firstCascadeSize", &firstCascadeSize, 0.1f, 0.1f, 500.0f);
+		directionalLight->setFirstCascadeSize(firstCascadeSize);
+		toolTip("Size of first cascade.");
 	}
 	else if (light->getType() == FE_POINT_LIGHT)
 	{
 	}
 	else if (light->getType() == FE_SPOT_LIGHT)
 	{
-		glm::vec3 d = light->getDirection();
+		FESpotLight* spotLight = reinterpret_cast<FESpotLight*>(light);
+		glm::vec3 d = spotLight->getDirection();
 		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
 
-		float spotAngle = light->getSpotAngle();
-		ImGui::SliderFloat((std::string("Inner angle##") + light->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
-		light->setSpotAngle(spotAngle);
+		float spotAngle = spotLight->getSpotAngle();
+		ImGui::SliderFloat((std::string("Inner angle##") + spotLight->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
+		spotLight->setSpotAngle(spotAngle);
 
-		float spotAngleOuter = light->getSpotAngleOuter();
-		ImGui::SliderFloat((std::string("Outer angle ##") + light->getName()).c_str(), &spotAngleOuter, 0.0f, 90.0f);
-		light->setSpotAngleOuter(spotAngleOuter);
+		float spotAngleOuter = spotLight->getSpotAngleOuter();
+		ImGui::SliderFloat((std::string("Outer angle ##") + spotLight->getName()).c_str(), &spotAngleOuter, 0.0f, 90.0f);
+		spotLight->setSpotAngleOuter(spotAngleOuter);
 	}
 
 	glm::vec3 color = light->getColor();
@@ -553,18 +577,53 @@ void displayMaterialContentBrowser()
 				displayMaterialPrameter(param);
 			}
 
+			ImGui::PushID("albedoMap_texture");
 			ImGui::Text("albedoMap:");
 			displayTextureInMaterialEditor(material->albedoMap);
+			ImGui::PopID();
+
+			ImGui::PushID("normalMap_texture");
 			ImGui::Text("normalMap:");
 			displayTextureInMaterialEditor(material->normalMap);
+			ImGui::PopID();
+
+			ImGui::PushID("roughtnessMap_texture");
 			ImGui::Text("roughtnessMap:");
 			displayTextureInMaterialEditor(material->roughtnessMap);
+			ImGui::PopID();
+
+			ImGui::PushID("metalnessMap_texture");
 			ImGui::Text("metalnessMap:");
 			displayTextureInMaterialEditor(material->metalnessMap);
+			ImGui::PopID();
+
+			ImGui::PushID("AOMap_texture");
 			ImGui::Text("AOMap:");
+			ImGui::PopID();
 			displayTextureInMaterialEditor(material->AOMap);
+
+			//# fix I need to create shaderMap or something because this is a waste of memory and time.
+			std::vector<std::string> textureList = material->shader->getTextureList();
+			bool hasAO = false;
+			for (size_t j = 0; j < textureList.size(); j++)
+			{
+				if (textureList[j] == "AOTexture")
+				{
+					hasAO = true;
+					break;
+				}
+			}
+
+			if (!hasAO && material->AOMap != nullptr)
+			{
+				delete material->shader;
+				material->shader = new FEShader(FEPhongVS, FEPhongAOFS);
+			}
+
+			ImGui::PushID("displacementMap_texture");
 			ImGui::Text("displacementMap:");
 			displayTextureInMaterialEditor(material->displacementMap);
+			ImGui::PopID();
 		}
 		ImGui::PopID();
 	}
@@ -1071,12 +1130,26 @@ bool deleteFile(const char* filePath)
 void displayTextureInMaterialEditor(FETexture*& texture)
 {
 	if (texture == nullptr)
-		return;
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 
+		ImGui::SameLine();
+		if (ImGui::Button("Add"))
+		{
+			selectTextureWindow.show(&texture);
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		return;
+	}
+		
 	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(64, 64));
 
-	// I am using texture->getTextureID as a unique ID for ImGui correct work.
-	ImGui::PushID(texture->getTextureID());
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
@@ -1084,14 +1157,11 @@ void displayTextureInMaterialEditor(FETexture*& texture)
 	if (ImGui::Button("Change"))
 	{
 		selectTextureWindow.show(&texture);
-		//ImGui::OpenPopup("ChangeTexture");
 	}
 
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
-
-	ImGui::PopID();
 
 	// old representation of textures list
 	//std::vector<std::string> allTextures = FEResourceManager::getInstance().getTextureList();

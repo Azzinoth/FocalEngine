@@ -130,20 +130,63 @@ void FEProject::saveScene()
 	{
 		FELight* light = scene.getLight(LightList[i]);
 
-		lightData[light->getName()]["type"] = light->getType();
-		lightData[light->getName()]["intensity"] = light->getIntensity();
-		lightData[light->getName()]["range"] = light->getRange();
-		lightData[light->getName()]["spotAngle"] = light->getSpotAngle();
-		lightData[light->getName()]["spotAngleOuter"] = light->getSpotAngleOuter();
-		lightData[light->getName()]["castShadows"] = light->isCastShadows();
-		lightData[light->getName()]["enabled"] = light->isLightEnabled();
-		lightData[light->getName()]["color"]["R"] = light->getColor()[0];
-		lightData[light->getName()]["color"]["G"] = light->getColor()[1];
-		lightData[light->getName()]["color"]["B"] = light->getColor()[2];
-		writeTransformToJSON(lightData[light->getName()]["transformation"], &light->transform);
-		lightData[light->getName()]["direction"]["X"] = light->getDirection()[0];
-		lightData[light->getName()]["direction"]["Y"] = light->getDirection()[1];
-		lightData[light->getName()]["direction"]["Z"] = light->getDirection()[2];
+		if (light->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
+
+			lightData[directionalLight->getName()]["type"] = directionalLight->getType();
+			lightData[directionalLight->getName()]["intensity"] = directionalLight->getIntensity();
+			lightData[directionalLight->getName()]["range"] = 0.0f;
+			lightData[directionalLight->getName()]["spotAngle"] = 0.0f;
+			lightData[directionalLight->getName()]["spotAngleOuter"] = 0.0f;
+			lightData[directionalLight->getName()]["castShadows"] = directionalLight->isCastShadows();
+			lightData[directionalLight->getName()]["enabled"] = directionalLight->isLightEnabled();
+			lightData[directionalLight->getName()]["color"]["R"] = directionalLight->getColor()[0];
+			lightData[directionalLight->getName()]["color"]["G"] = directionalLight->getColor()[1];
+			lightData[directionalLight->getName()]["color"]["B"] = directionalLight->getColor()[2];
+			writeTransformToJSON(lightData[light->getName()]["transformation"], &directionalLight->transform);
+			lightData[directionalLight->getName()]["direction"]["X"] = directionalLight->getDirection()[0];
+			lightData[directionalLight->getName()]["direction"]["Y"] = directionalLight->getDirection()[1];
+			lightData[directionalLight->getName()]["direction"]["Z"] = directionalLight->getDirection()[2];
+		}
+		else if (light->getType() == FE_SPOT_LIGHT)
+		{
+			FESpotLight* spotLight = reinterpret_cast<FESpotLight*>(light);
+
+			lightData[spotLight->getName()]["type"] = spotLight->getType();
+			lightData[spotLight->getName()]["intensity"] = spotLight->getIntensity();
+			lightData[spotLight->getName()]["range"] = spotLight->getRange();
+			lightData[spotLight->getName()]["spotAngle"] = spotLight->getSpotAngle();
+			lightData[spotLight->getName()]["spotAngleOuter"] = spotLight->getSpotAngleOuter();
+			lightData[spotLight->getName()]["castShadows"] = spotLight->isCastShadows();
+			lightData[spotLight->getName()]["enabled"] = spotLight->isLightEnabled();
+			lightData[spotLight->getName()]["color"]["R"] = spotLight->getColor()[0];
+			lightData[spotLight->getName()]["color"]["G"] = spotLight->getColor()[1];
+			lightData[spotLight->getName()]["color"]["B"] = spotLight->getColor()[2];
+			writeTransformToJSON(lightData[light->getName()]["transformation"], &spotLight->transform);
+			lightData[spotLight->getName()]["direction"]["X"] = spotLight->getDirection()[0];
+			lightData[spotLight->getName()]["direction"]["Y"] = spotLight->getDirection()[1];
+			lightData[spotLight->getName()]["direction"]["Z"] = spotLight->getDirection()[2];
+		}
+		else if (light->getType() == FE_POINT_LIGHT)
+		{
+			FEPointLight* pointLight = reinterpret_cast<FEPointLight*>(light);
+
+			lightData[pointLight->getName()]["type"] = pointLight->getType();
+			lightData[pointLight->getName()]["intensity"] = pointLight->getIntensity();
+			lightData[pointLight->getName()]["range"] = pointLight->getRange();
+			lightData[pointLight->getName()]["spotAngle"] = 0.0f;
+			lightData[pointLight->getName()]["spotAngleOuter"] = 0.0f;
+			lightData[pointLight->getName()]["castShadows"] = pointLight->isCastShadows();
+			lightData[pointLight->getName()]["enabled"] = pointLight->isLightEnabled();
+			lightData[pointLight->getName()]["color"]["R"] = pointLight->getColor()[0];
+			lightData[pointLight->getName()]["color"]["G"] = pointLight->getColor()[1];
+			lightData[pointLight->getName()]["color"]["B"] = pointLight->getColor()[2];
+			writeTransformToJSON(lightData[light->getName()]["transformation"], &pointLight->transform);
+			lightData[pointLight->getName()]["direction"]["X"] = 0.0f;
+			lightData[pointLight->getName()]["direction"]["Y"] = 0.0f;
+			lightData[pointLight->getName()]["direction"]["Z"] = 0.0f;
+		}
 	}
 	root["lights"] = lightData;
 
@@ -237,8 +280,18 @@ void FEProject::loadScene()
 		FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
 		newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
 
-		newMat->albedoMap = resourceManager.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
-		newMat->normalMap = resourceManager.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+		std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
+		for (size_t j = 0; j < textureList.size(); j++)
+		{
+			if (textureList[j] == "albedoMap")
+				newMat->albedoMap = resourceManager.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
+
+			if (textureList[j] == "normalMap")
+				newMat->normalMap = resourceManager.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+
+			if (textureList[j] == "AOMap")
+				newMat->AOMap = resourceManager.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
+		}
 	}
 
 	// loading Entities
@@ -260,18 +313,39 @@ void FEProject::loadScene()
 		FELight* light = scene.getLight(lightList[i]);
 
 		light->setIntensity(root["lights"][lightList[i]]["intensity"].asFloat());
-		light->setRange(root["lights"][lightList[i]]["range"].asFloat());
-		light->setSpotAngle(root["lights"][lightList[i]]["spotAngle"].asFloat());
-		light->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
+		if (light->getType() == FE_SPOT_LIGHT)
+		{
+			reinterpret_cast<FESpotLight*>(light)->setRange(root["lights"][lightList[i]]["range"].asFloat());
+		}
+		else if (light->getType() == FE_POINT_LIGHT)
+		{
+			reinterpret_cast<FEPointLight*>(light)->setRange(root["lights"][lightList[i]]["range"].asFloat());
+		}
+		
+		if (light->getType() == FE_SPOT_LIGHT)
+		{
+			reinterpret_cast<FESpotLight*>(light)->setSpotAngle(root["lights"][lightList[i]]["spotAngle"].asFloat());
+			reinterpret_cast<FESpotLight*>(light)->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
+		}
+		
 		light->setCastShadows(root["lights"][lightList[i]]["castShadows"].asBool());
 		light->setLightEnabled(root["lights"][lightList[i]]["enabled"].asBool());
 
 		readTransformToJSON(root["lights"][lightList[i]]["transformation"], &light->transform);
 
-		light->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-									  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-									  root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
-
+		if (light->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			reinterpret_cast<FEDirectionalLight*>(light)->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
+																	   root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+																	   root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+		}
+		else if (light->getType() == FE_SPOT_LIGHT)
+		{
+			reinterpret_cast<FESpotLight*>(light)->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
+				                                                root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+				                                                root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+		}
+		
 		light->setColor(glm::vec3(root["lights"][lightList[i]]["color"]["R"].asFloat(),
 								  root["lights"][lightList[i]]["color"]["G"].asFloat(),
 								  root["lights"][lightList[i]]["color"]["B"].asFloat()));

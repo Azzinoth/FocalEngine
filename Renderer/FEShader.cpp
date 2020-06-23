@@ -308,12 +308,28 @@ void FEShader::registerUniforms()
 		GLuint ubo;
 		glGenBuffers(1, &ubo);
 		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * 128, NULL, GL_STATIC_DRAW);
+		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * 192, NULL, GL_STATIC_DRAW);
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 		// define the range of the buffer that links to a uniform binding point
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, FE_MAX_LIGHTS * 128);
+		glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, FE_MAX_LIGHTS * 192);
 
 		blockUniforms["lightInfo"] = ubo;
+	}
+
+	uniformBlockIndex = glGetUniformBlockIndex(programID, "directionalLightInfo");
+	if (uniformBlockIndex != size_t(-1))
+	{
+		glUniformBlockBinding(programID, uniformBlockIndex, 1);
+
+		GLuint ubo;
+		glGenBuffers(1, &ubo);
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferData(GL_UNIFORM_BUFFER, 308, NULL, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		// define the range of the buffer that links to a uniform binding point
+		glBindBufferRange(GL_UNIFORM_BUFFER, 1, ubo, 0, 308);
+
+		blockUniforms["directionalLightInfo"] = ubo;
 	}
 
 	start();
@@ -321,6 +337,18 @@ void FEShader::registerUniforms()
 	{
 		int temp = i;
 		loadScalar(textureUniforms[i].c_str(), temp);
+	}
+
+	if (CSM)
+	{
+		int temp = 16;
+		loadScalar("CSM0", temp);
+		temp = 17;
+		loadScalar("CSM1", temp);
+		temp = 18;
+		loadScalar("CSM2", temp);
+		temp = 19;
+		loadScalar("CSM3", temp);
 	}
 	stop();
 }
@@ -454,8 +482,17 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 
 		parsedShaderText.replace(index, strlen(FE_TEXTURE_MACRO), "uniform sampler2D");
 
-		textureUniforms.push_back(textureName);
+		// only 16 user textures can be used.
+		if (textureUniforms.size() < 16)
+			textureUniforms.push_back(textureName);
 		index = parsedShaderText.find(FE_TEXTURE_MACRO);
+	}
+
+	index = parsedShaderText.find(FE_CSM_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_CSM_MACRO), "uniform sampler2D CSM0; uniform sampler2D CSM1; uniform sampler2D CSM2; uniform sampler2D CSM3;");
+		CSM = true;
 	}
 	
 	return parsedShaderText;
@@ -574,3 +611,9 @@ FEShaderParam* FEShader::getParameter(std::string name)
 
 	return &parameters[name];
 }
+
+std::vector<std::string> FEShader::getTextureList()
+{
+	return textureUniforms;
+}
+

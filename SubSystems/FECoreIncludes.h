@@ -76,5 +76,5 @@ while (iterator != map.end())              \
 return result;
 
 #define FE_MAX_LIGHTS 10
-#define FE_SHADOW_MAP_UNIT 2
+#define FE_CSM_UNIT 16
 #define FE_WIN_32

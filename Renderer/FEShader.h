@@ -17,6 +17,7 @@
 #define FE_LIGHT_COLOR_MACRO "@LightColor@"
 
 #define FE_TEXTURE_MACRO "@Texture@"
+#define FE_CSM_MACRO "@CSM@"
 
 namespace FocalEngine
 {
@@ -105,6 +106,7 @@ namespace FocalEngine
 		virtual void addParameter(FEShaderParam Parameter);
 
 		std::vector<std::string> getParameterList();
+		std::vector<std::string> getTextureList();
 		FEShaderParam* getParameter(std::string name);
 	private:
 		GLuint programID;
@@ -123,5 +125,7 @@ namespace FocalEngine
 
 		std::string parseShaderForMacro(const char* shaderText);
 		void registerUniforms();
+
+		bool CSM = false;
 	};
 }

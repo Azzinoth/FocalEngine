@@ -188,3 +188,8 @@ void FEBasicCamera::setLookAt(glm::vec3 lookAt)
 {
 	viewMatrix = glm::lookAt(getPosition(), lookAt, glm::vec3(0.0, 1.0, 0.0));
 }
+
+glm::vec3 FEBasicCamera::getForward()
+{
+	return glm::normalize(glm::vec3(glm::vec4(0.0f, 0.0f, -1.0f, 0.0f) * viewMatrix));
+}

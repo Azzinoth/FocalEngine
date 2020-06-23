@@ -22,12 +22,26 @@ void FEScene::addLight(FELightType Type, std::string Name)
 		Name = "light_" + std::to_string(nextID);
 	}
 
-	lightsMap[Name] = new FELight(Type);
-	//if (Type == FE_DIRECTIONAL_LIGHT)
-	//{
-		lightsMap[Name]->shadowMap = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024, 1024);
-	//}
-	lightsMap[Name]->setName(Name);
+	if (Type == FE_DIRECTIONAL_LIGHT)
+	{
+		lightsMap[Name] = new FEDirectionalLight();
+		lightsMap[Name]->setName(Name);
+
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[0].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[1].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[2].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[3].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+	}
+	else if (Type == FE_SPOT_LIGHT)
+	{
+		lightsMap[Name] = new FESpotLight();
+		lightsMap[Name]->setName(Name);
+	}
+	else if (Type == FE_POINT_LIGHT)
+	{
+		lightsMap[Name] = new FEPointLight();
+		lightsMap[Name]->setName(Name);
+	}
 }
 
 FEEntity* FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)

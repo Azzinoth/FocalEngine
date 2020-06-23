@@ -22,9 +22,6 @@ static int projectChosen = -1;
 
 static FEProject* currentProject = nullptr;
 
-//test Delete this!
-static FETexture* testTexture;
-
 void determineEntityUnderMouse();
 void mouseButtonCallback(int button, int action, int mods);
 glm::dvec3 mouseRay();

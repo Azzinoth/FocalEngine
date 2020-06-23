@@ -4,14 +4,6 @@ using namespace FocalEngine;
 FELight::FELight(FELightType Type)
 {
 	type = Type;
-	//if (type == FE_DIRECTIONAL_LIGHT)
-	//{
-		shadowMapProjectionSize = 50.0f;
-		shadowProjectionMatrix = glm::ortho(-shadowMapProjectionSize,
-											shadowMapProjectionSize,
-											-shadowMapProjectionSize,
-											shadowMapProjectionSize, 0.01f, 700.0f);
-	//}
 }
 
 FELight::~FELight()
@@ -26,16 +18,6 @@ glm::vec3 FELight::getColor()
 void FELight::setColor(glm::vec3 newColor)
 {
 	color = newColor;
-}
-
-float FELight::getRange()
-{
-	return range;
-}
-
-void FELight::setRange(float newRange)
-{
-	range = newRange;
 }
 
 bool FELight::isLightEnabled()
@@ -83,37 +65,6 @@ FELightType FELight::getType()
 	return type;
 }
 
-glm::vec3 FELight::getDirection()
-{
-	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
-	return direction;
-}
-
-void FELight::setDirection(glm::vec3 newDirection)
-{
-	direction = newDirection;
-}
-
-float FELight::getSpotAngle()
-{
-	return spotAngle;
-}
-
-void FELight::setSpotAngle(float newSpotAngle)
-{
-	spotAngle = newSpotAngle;
-}
-
-float FELight::getSpotAngleOuter()
-{
-	return spotAngleOuter;
-}
-
-void FELight::setSpotAngleOuter(float newSpotAngleOuter)
-{
-	spotAngleOuter = newSpotAngleOuter;
-}
-
 std::string FELight::getName()
 {
 	return name;
@@ -124,7 +75,17 @@ void FELight::setName(std::string newName)
 	name = newName;
 }
 
-glm::mat4 FELight::getViewMatrixForShadowMap()
+FECascadeData::FECascadeData()
+{
+
+}
+
+FECascadeData::~FECascadeData()
+{
+
+}
+
+void FEDirectionalLight::updateCascades(glm::vec3 cameraPosition, glm::vec3 cameraDirection)
 {
 	static glm::vec4 basisX = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 	static glm::vec4 basisY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
@@ -134,30 +95,181 @@ glm::mat4 FELight::getViewMatrixForShadowMap()
 	glm::vec4 fbasisY = glm::normalize(transform.getTransformMatrix() * basisY);
 	glm::vec4 fbasisZ = glm::normalize(transform.getTransformMatrix() * basisZ);
 
-	glm::mat4 testView = glm::mat4(1.0f);
-	testView[0][0] = fbasisX.x;
-	testView[1][0] = fbasisX.y;
-	testView[2][0] = fbasisX.z;
-	testView[0][1] = fbasisY.x;
-	testView[1][1] = fbasisY.y;
-	testView[2][1] = fbasisY.z;
-	testView[0][2] = fbasisZ.x;
-	testView[1][2] = fbasisZ.y;
-	testView[2][2] = fbasisZ.z;
+	glm::mat4 cascadeView = glm::mat4(1.0f);
 
-	testView[3][0] = transform.getPosition()[0];
-	testView[3][1] = transform.getPosition()[1];
-	//to-do: fix magic number
-	testView[3][2] = -50.0f/*itLight->second->transform.getPosition()[2]*/;
+	cascadeView[0][0] = fbasisX.x;
+	cascadeView[1][0] = fbasisX.y;
+	cascadeView[2][0] = fbasisX.z;
+	cascadeView[0][1] = fbasisY.x;
+	cascadeView[1][1] = fbasisY.y;
+	cascadeView[2][1] = fbasisY.z;
+	cascadeView[0][2] = fbasisZ.x;
+	cascadeView[1][2] = fbasisZ.y;
+	cascadeView[2][2] = fbasisZ.z;
 
-	return testView;
+	for (size_t i = 0; i < 4; i++)
+	{
+		cameraPosition += cameraDirection * firstCascadeSize;
 
+		glm::vec3 newLightPosition = cameraPosition + (-getDirection() * cascadeData[i].size * 2.0f);
+		transform.setPosition(newLightPosition);
 
-	//glm::mat4 baseMat = glm::mat4(1.0);
-	//baseMat *= glm::toMat4(transform.getQuaternion());
-	//baseMat[3][0] = transform.getPosition()[0];
-	//baseMat[3][1] = transform.getPosition()[1];
-	//baseMat[3][2] = transform.getPosition()[2];
+		cascadeData[i].viewMat = cascadeView;
+		cascadeData[i].viewMat = glm::translate(cascadeData[i].viewMat, -transform.getPosition());
+	}
+}
 
-	//return baseMat;
+FEDirectionalLight::FEDirectionalLight() : FELight(FE_DIRECTIONAL_LIGHT)
+{
+	updateProjectionMat();
+}
+
+void FEDirectionalLight::updateProjectionMat()
+{
+	cascadeData[0].size = firstCascadeSize;
+	cascadeData[0].projectionMat = glm::ortho(-cascadeData[0].size,
+											  cascadeData[0].size,
+											  -cascadeData[0].size,
+											  cascadeData[0].size, 0.1f, cascadeData[0].size * 10.0f);
+
+	cascadeData[1].size = cascadeData[0].size * cascadeDistributionExponent;
+	cascadeData[1].projectionMat = glm::ortho(-cascadeData[1].size,
+											  cascadeData[1].size,
+											  -cascadeData[1].size,
+											  cascadeData[1].size, 0.1f, cascadeData[1].size * 10.0f);
+
+	cascadeData[2].size = cascadeData[1].size * cascadeDistributionExponent;
+	cascadeData[2].projectionMat = glm::ortho(-cascadeData[2].size,
+											  cascadeData[2].size,
+											  -cascadeData[2].size,
+											  cascadeData[2].size, 0.1f, cascadeData[2].size * 10.0f);
+
+	cascadeData[3].size = cascadeData[2].size * cascadeDistributionExponent;
+	cascadeData[3].projectionMat = glm::ortho(-cascadeData[3].size,
+											  cascadeData[3].size,
+											  -cascadeData[3].size,
+											  cascadeData[3].size, 0.1f, cascadeData[3].size * 10.0f);
+}
+
+glm::vec3 FEDirectionalLight::getDirection()
+{
+	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
+	return direction;
+}
+
+void FEDirectionalLight::setDirection(glm::vec3 newDirection)
+{
+	direction = newDirection;
+}
+
+FEDirectionalLight::~FEDirectionalLight()
+{
+}
+
+int FEDirectionalLight::getActiveCascades()
+{
+	return activeCascades;
+}
+
+void FEDirectionalLight::setActiveCascades(int newActiveCascades)
+{
+	if (newActiveCascades < 1 || newActiveCascades > 4)
+		newActiveCascades = 1;
+
+	activeCascades = newActiveCascades;
+}
+
+float FEDirectionalLight::getCascadeDistributionExponent()
+{
+	return cascadeDistributionExponent;
+}
+
+void FEDirectionalLight::setCascadeDistributionExponent(float newCascadeDistributionExponent)
+{
+	if (newCascadeDistributionExponent <= 1.0f)
+		newCascadeDistributionExponent = 1.1f;
+
+	cascadeDistributionExponent = newCascadeDistributionExponent;
+	updateProjectionMat();
+}
+
+float FEDirectionalLight::getFirstCascadeSize()
+{
+	return firstCascadeSize;
+}
+
+void FEDirectionalLight::setFirstCascadeSize(float newFirstCascadeSize)
+{
+	if (newFirstCascadeSize <= 0.0f)
+		newFirstCascadeSize = 0.1f;
+
+	firstCascadeSize = newFirstCascadeSize;
+	updateProjectionMat();
+}
+
+FESpotLight::FESpotLight() : FELight(FE_SPOT_LIGHT)
+{
+}
+
+FESpotLight::~FESpotLight()
+{
+}
+
+float FESpotLight::getSpotAngle()
+{
+	return spotAngle;
+}
+
+void FESpotLight::setSpotAngle(float newSpotAngle)
+{
+	spotAngle = newSpotAngle;
+}
+
+float FESpotLight::getSpotAngleOuter()
+{
+	return spotAngleOuter;
+}
+
+void FESpotLight::setSpotAngleOuter(float newSpotAngleOuter)
+{
+	spotAngleOuter = newSpotAngleOuter;
+}
+
+float FESpotLight::getRange()
+{
+	return range;
+}
+
+void FESpotLight::setRange(float newRange)
+{
+	range = newRange;
+}
+
+glm::vec3 FESpotLight::getDirection()
+{
+	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
+	return direction;
+}
+
+void FESpotLight::setDirection(glm::vec3 newDirection)
+{
+	direction = newDirection;
+}
+
+FEPointLight::FEPointLight() : FELight(FE_POINT_LIGHT)
+{
+}
+
+FEPointLight::~FEPointLight()
+{
+}
+
+float FEPointLight::getRange()
+{
+	return range;
+}
+
+void FEPointLight::setRange(float newRange)
+{
+	range = newRange;
 }
