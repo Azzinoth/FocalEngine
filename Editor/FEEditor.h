@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FEProject.h"
+#include "../Editor/FEPixelAccurateSelectionShader.h"
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
@@ -12,19 +13,33 @@ using namespace FocalEngine;
 
 static double mouseX, mouseY;
 static bool isCameraInputActive = false;
-static std::pair<std::string, float > entityUnderMouse;
+// **************************** entity selection ****************************
+glm::dvec3 mouseRay();
+
+void determineEntityUnderMouse();
+static std::vector<std::string> entitiesUnderMouse;
 static std::string selectedEntity = "";
 std::string getSelectedEntity();
-static std::string clipboardEntity = "";
+void setSelectedEntity(std::string newEntity);
 static bool selectedEntityWasChanged;
+
+static std::string clipboardEntity = "";
+
+// pixel accurate part
+static bool checkPixelAccurateSelection = false;
+static unsigned char* colorUnderMouse = new unsigned char[3];
+static FocalEngine::FEFramebuffer* pixelAccurateSelectionFB;
+static FocalEngine::FEEntity* potentiallySelectedEntity = nullptr;
+static FocalEngine::FEMaterial* pixelAccurateSelectionMaterial;
+// **************************** entity selection END ****************************
+
 static std::vector<FEProject*> projectList;
 static int projectChosen = -1;
 
 static FEProject* currentProject = nullptr;
 
-void determineEntityUnderMouse();
 void mouseButtonCallback(int button, int action, int mods);
-glm::dvec3 mouseRay();
+
 void mouseMoveCallback(double xpos, double ypos);
 void keyButtonCallback(int key, int scancode, int action, int mods);
 

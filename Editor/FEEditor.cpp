@@ -2,17 +2,9 @@
 
 void mouseButtonCallback(int button, int action, int mods)
 {
-	if ((!ImGui::GetIO().WantCaptureMouse))
+	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
 	{
-		if (entityUnderMouse.second != FLT_MAX)
-		{
-			selectedEntity = entityUnderMouse.first;
-			selectedEntityWasChanged = true;
-		}
-		else
-		{
-			selectedEntity = "";
-		}
+		checkPixelAccurateSelection = true;
 	}
 }
 
@@ -433,7 +425,7 @@ void displaySceneEntities()
 			ImGui::GetStateStorage()->SetInt(ImGui::GetID(entityList[i].c_str()), 0);
 		}
 		selectedEntityWasChanged = false;
-		ImGui::GetStateStorage()->SetInt(ImGui::GetID(entityUnderMouse.first.c_str()), 1);
+		ImGui::GetStateStorage()->SetInt(ImGui::GetID(selectedEntity.c_str()), 1);
 	}
 
 	for (size_t i = 0; i < entityList.size(); i++)
@@ -843,7 +835,7 @@ glm::dvec3 mouseRay()
 {
 	glm::dvec2 normalizedMouseCoords;
 	normalizedMouseCoords.x = (2.0f * mouseX) / FEngine::getInstance().getWindowWidth() - 1;
-	normalizedMouseCoords.y = 1.0f - (2.0f * mouseY) / FEngine::getInstance().getWindowHeight();
+	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / FEngine::getInstance().getWindowHeight();
 
 	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
 	glm::dvec4 eyeCoords = glm::inverse(FEngine::getInstance().getCamera()->getProjectionMatrix()) * clipCoords;
@@ -857,8 +849,9 @@ glm::dvec3 mouseRay()
 
 void determineEntityUnderMouse()
 {
+	entitiesUnderMouse.clear();
+
 	std::vector<std::string> entityList = FEScene::getInstance().getEntityList();
-	entityUnderMouse.second = FLT_MAX;
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		float dis = 0;
@@ -866,19 +859,22 @@ void determineEntityUnderMouse()
 
 		if (box.rayIntersect(FEngine::getInstance().getCamera()->getPosition(), mouseRay(), dis))
 		{
-			if (entityUnderMouse.second > dis)
-			{
-				entityUnderMouse.first = entityList[i];
-				entityUnderMouse.second = dis;
-			}
+			entitiesUnderMouse.push_back(entityList[i]);
 		}
 	}
+}
+
+void setSelectedEntity(std::string newEntity)
+{
+	selectedEntity = newEntity;
+	selectedEntityWasChanged = true;
 }
 
 void mouseMoveCallback(double xpos, double ypos)
 {
 	mouseX = xpos;
-	mouseY = ypos;
+	//#fix magic number, I think I need 20 pixels because of window caption but I am not sure...
+	mouseY = ypos + 20;
 
 	determineEntityUnderMouse();
 }
@@ -918,6 +914,20 @@ void loadEditor()
 	projectChosen = -1;
 	FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
 	loadProjectList();
+
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
+
+	pixelAccurateSelectionFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
+	delete pixelAccurateSelectionFB->getColorAttachment();
+	pixelAccurateSelectionFB->setColorAttachment(new FETexture(GL_RGB, GL_RGB, engine.getWindowWidth(), engine.getWindowHeight()));
+	
+	pixelAccurateSelectionMaterial = resourceManager.createMaterial("pixelAccurateSelectionMaterial");
+	resourceManager.makeMaterialStandard(pixelAccurateSelectionMaterial);
+	pixelAccurateSelectionMaterial->shader = new FocalEngine::FEShader(FEPixelAccurateSelectionVS, FEPixelAccurateSelectionFS);
+	FEShaderParam colorParam(glm::vec3(0.0f, 0.0f, 0.0f), "baseColor");
+	pixelAccurateSelectionMaterial->addParameter(colorParam);
 }
 
 std::vector<std::string> getFolderList(const char* dirPath)
@@ -946,6 +956,57 @@ void renderEditor()
 	{
 		displaySceneEntities();
 		displayContentBrowser();
+
+		if (checkPixelAccurateSelection)
+		{
+			checkPixelAccurateSelection = false;
+			FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+
+			pixelAccurateSelectionFB->bind();
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+			for (size_t i = 0; i < entitiesUnderMouse.size(); i++)
+			{
+				potentiallySelectedEntity = FEScene::getInstance().getEntity(entitiesUnderMouse[i]);
+
+				FEMaterial* regularMaterial = potentiallySelectedEntity->material;
+				potentiallySelectedEntity->material = pixelAccurateSelectionMaterial;
+
+				int r = 0;
+				int g = 0;
+				int b = 0;
+
+				r = (i + 1) & 255;
+				g = ((i + 1) >> 8) & 255;
+				b = ((i + 1) >> 16) & 255;
+				pixelAccurateSelectionMaterial->getParameter("baseColor")->updateData(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+				pixelAccurateSelectionMaterial->albedoMap = regularMaterial->albedoMap;
+				FERenderer::getInstance().renderEntity(potentiallySelectedEntity, engine.getCamera());
+				potentiallySelectedEntity->material = regularMaterial;
+				pixelAccurateSelectionMaterial->albedoMap = nullptr;
+			}
+
+			glReadPixels(GLint(mouseX), GLint(engine.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse);
+			pixelAccurateSelectionFB->unBind();
+			glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+
+			setSelectedEntity("");
+			if (entitiesUnderMouse.size() > 0)
+			{
+				int index = 0;
+				index |= int(colorUnderMouse[2]);
+				index <<= 8;
+				index |= int(colorUnderMouse[1]);
+				index <<= 8;
+				index |= int(colorUnderMouse[0]);
+
+				index -= 1;
+
+				if (index >= 0 && entitiesUnderMouse.size() > size_t(index))
+					setSelectedEntity(entitiesUnderMouse[index]);
+			}
+		}
 	}
 	else
 	{
@@ -996,7 +1057,7 @@ void displayProjectSelection()
 				}
 			}
 
-			if (ImGui::ImageButton((void*)(intptr_t)projectList[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			if (ImGui::ImageButton((void*)(intptr_t)projectList[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
 				projectChosen = i;
 			}

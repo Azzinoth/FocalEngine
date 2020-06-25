@@ -113,8 +113,6 @@ void main(void)
 }
 )";
 
-
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
@@ -150,15 +148,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 
-	//FocalEngine::FEShaderParam testParam(1.0f, "FESpecularStrength");
-	//testMat->addParameter(testParam);
-	//testMat->addTexture(scene.getLight("sun")->shadowMap->getDepthAttachment());
+	int lowerResW = engine.getWindowWidth();
+	int lowerResH = engine.getWindowHeight();
 
-	int lowerResW = engine.getWindowWidth() /*/ 2*/;
-	int lowerResH = engine.getWindowHeight() /*/ 2*/;
-
-	FocalEngine::FEFramebuffer* testFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, lowerResW, lowerResH);
-	FocalEngine::FEEntity* testEntity = nullptr;
+	FocalEngine::FEFramebuffer* haloObjectsFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, lowerResW, lowerResH);
+	FocalEngine::FEEntity* selectedEntity = nullptr;
 
 	FocalEngine::FEMaterial* haloMaterial = resourceManager.createMaterial("haloMaterial");
 	resourceManager.makeMaterialStandard(haloMaterial);
@@ -166,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	FocalEngine::FEPostProcess* selectionHaloEffect = engine.createPostProcess("selectionHaloEffect");
 	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, new FEShader(FEBloomEffectVS, FEBloomEffectHorizontalFS)));
-	selectionHaloEffect->stages.back()->inTexture.push_back(testFB->getColorAttachment());
+	selectionHaloEffect->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
 	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
 	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(lowerResW, lowerResH);
 
@@ -189,34 +183,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	{
 		engine.beginFrame();
 
-		// test
-		testEntity = FEScene::getInstance().getEntity(getSelectedEntity());
-
-		if (testEntity != nullptr)
+		selectedEntity = FEScene::getInstance().getEntity(getSelectedEntity());
+		if (selectedEntity != nullptr)
 		{
-			testFB->bind();
+			haloObjectsFB->bind();
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
-			FEMaterial* regularMaterial = testEntity->material;
-			testEntity->material = haloMaterial;
-			FERenderer::getInstance().renderEntity(testEntity, engine.getCamera());
-			testEntity->material = regularMaterial;
-			testFB->unBind();
+			FEMaterial* regularMaterial = selectedEntity->material;
+			selectedEntity->material = haloMaterial;
+			haloMaterial->albedoMap = regularMaterial->albedoMap;
+			FERenderer::getInstance().renderEntity(selectedEntity, engine.getCamera());
+			selectedEntity->material = regularMaterial;
+			haloMaterial->albedoMap = nullptr;
+
+			haloObjectsFB->unBind();
 			glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 		}
-		
+		else
+		{
+			haloObjectsFB->bind();
+			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
+
+			haloObjectsFB->unBind();
+			glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+		}
+
 		engine.render();
 
 		if (FERenderer::getInstance().CSM0 != nullptr)
 		{
-			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM0->getTextureID(), ImVec2(256, 256));
-			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256));
-			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256));
-			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM0->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		}
 
-		if (testEntity != nullptr)
+		if (selectedEntity != nullptr)
 		{
 			selectionHaloEffect->active = true;
 		}
@@ -227,7 +231,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		//ImGui::ShowDemoWindow();
 		renderEditor();
-
 		engine.endFrame();
 
 		// CPU and GPU Time

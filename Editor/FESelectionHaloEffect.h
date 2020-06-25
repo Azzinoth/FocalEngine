@@ -4,15 +4,18 @@ static const char* const HaloDrawObjectVS = R"(
 #version 400 core
 
 @In_Position@
+@In_UV@
 
 @WorldMatrix@
 @ViewMatrix@
 @ProjectionMatrix@
 
 out vec3 fragPosition;
+out vec2 UV;
 
 void main(void)
 {
+	UV = FETexCoord;
 	fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
 	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
 }
@@ -22,11 +25,19 @@ static const char* const HaloDrawObjectFS = R"(
 #version 400 core
 
 in vec3 fragPosition;
+in vec2 UV;
+
+@Texture@ objectTexture;
 @CameraPosition@
 
 void main(void)
 {
-	vec3 viewDirection = normalize(FECameraPosition - fragPosition);
+	vec4 textureColor = texture(objectTexture, UV);
+	if (textureColor.a < 0.05)
+	{
+		discard;
+	}
+
 	gl_FragColor = vec4(1.0f, 0.25f, 0.0f, 1.0f);
 }
 

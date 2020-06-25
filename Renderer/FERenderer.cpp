@@ -201,7 +201,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				glm::mat4 oldViewMatrix = currentCamera->getViewMatrix();
 				glm::mat4 oldProjectionMatrix = currentCamera->getProjectionMatrix();
 
-				for (size_t i = 0; i < light->activeCascades; i++)
+				for (size_t i = 0; i < size_t(light->activeCascades); i++)
 				{
 					// put camera to the position of light
 					// to-do: should put out of scene bounderies in case of direcctional light.
@@ -252,90 +252,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 					}
 					
 				}
-
-
-				//// put camera to the position of light
-				//// to-do: should put out of scene bounderies in case of direcctional light.
-				//currentCamera->projectionMatrix = light->cascadeData[0].projectionMat;
-				//currentCamera->viewMatrix = light->cascadeData[0].viewMat;
-
-				//glViewport(0, 0, light->cascadeData[0].frameBuffer->getWidth(), light->cascadeData[0].frameBuffer->getHeight());
-
-				//light->cascadeData[0].frameBuffer->bind();
-				//FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
-
-				//auto it = scene.entityMap.begin();
-				//while (it != scene.entityMap.end())
-				//{
-				//	auto entity = it->second;
-				//	if (!entity->isCastShadows())
-				//	{
-				//		it++;
-				//		continue;
-				//	}
-				//	
-				//	FEMaterial* originalMaterial = entity->material;
-				//	entity->material = shadowMapMaterial;
-				//	//#fix do it only if albedoHasAlpha
-				//	shadowMapMaterial->albedoMap = originalMaterial->albedoMap;
-
-				//	renderEntity(entity, currentCamera);
-
-				//	shadowMapMaterial->albedoMap = nullptr;
-				//	entity->material = originalMaterial;
-
-				//	it++;
-				//}
-
-				//light->cascadeData[0].frameBuffer->unBind();
-				//CSM0 = light->cascadeData[0].frameBuffer->getDepthAttachment();
-
-
-				////#fix it should be one of the cascades not just bigger version
-				//currentCamera->projectionMatrix = light->cascadeData[1].projectionMat;
-				//currentCamera->viewMatrix = light->cascadeData[1].viewMat;
-
-				////glViewport(0, 0, light->shadowMap->getWidth(), light->shadowMap->getHeight());
-
-				//light->cascadeData[1].frameBuffer->bind();
-				//FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
-
-				//it = scene.entityMap.begin();
-				//while (it != scene.entityMap.end())
-				//{
-				//	auto entity = it->second;
-				//	if (!entity->isCastShadows())
-				//	{
-				//		it++;
-				//		continue;
-				//	}
-
-				//	FEMaterial* originalMaterial = entity->material;
-				//	entity->material = shadowMapMaterial;
-				//	//#fix do it only if albedoHasAlpha
-				//	shadowMapMaterial->albedoMap = originalMaterial->albedoMap;
-
-				//	renderEntity(entity, currentCamera);
-
-				//	shadowMapMaterial->albedoMap = nullptr;
-				//	entity->material = originalMaterial;
-
-				//	it++;
-				//}
-
-				//light->cascadeData[1].frameBuffer->unBind();
-
-				//// in current version only shadows from one directional light is supported.
-				//CSM1 = light->cascadeData[1].frameBuffer->getDepthAttachment();
-
-
-
-
-
-
-
-
-
 
 				currentCamera->setPosition(oldCameraPosition);
 				currentCamera->viewMatrix = oldViewMatrix;
@@ -466,18 +382,6 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID());
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-
-	//with glGetTexImage we get upside down image data, so we flip it.
-	for (size_t j = 0; j < size_t(height / 2); j++)
-	{
-		for (size_t i = 0; i < size_t(4 * width); i+=4)
-		{
-			std::swap(pixels[i + (j * 4 * width)], pixels[4 * width * height - (i + (j * 4 * width)) - 4]);
-			std::swap(pixels[i + 1 + (j * 4 * width)], pixels[4 * width * height - (i - 1 + (j * 4 * width)) - 4]);
-			std::swap(pixels[i + 2 + (j * 4 * width)], pixels[4 * width * height - (i - 2 + (j * 4 * width)) - 4]);
-			std::swap(pixels[i + 3 + (j * 4 * width)], pixels[4 * width * height - (i - 3 + (j * 4 * width)) - 4]);
-		}
-	}
 	
 	FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
