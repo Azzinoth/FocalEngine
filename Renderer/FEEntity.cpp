@@ -75,3 +75,13 @@ void FEEntity::setCastShadows(bool isCastShadows)
 {
 	castShadows = isCastShadows;
 }
+
+bool FEEntity::isReceivingShadows()
+{
+	return receiveShadows;
+}
+
+void FEEntity::setReceivingShadows(bool isReceivingShadows)
+{
+	receiveShadows = isReceivingShadows;
+}

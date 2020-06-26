@@ -80,6 +80,16 @@ FEAABB::~FEAABB()
 {
 }
 
+glm::vec3 FEAABB::getMin()
+{
+	return min;
+}
+
+glm::vec3 FEAABB::getMax()
+{
+	return max;
+}
+
 bool FEAABB::rayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& distance)
 {
 	float tmin = (min.x - RayOrigin.x) / RayDirection.x;

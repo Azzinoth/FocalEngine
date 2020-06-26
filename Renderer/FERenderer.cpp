@@ -46,6 +46,10 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(currentCamera->getExposure());
 
+		strcpy_s(name, 256, "FEReceiveShadows");
+		if (strcmp(parameterName, name) == 0)
+			iterator->second.updateData(entity->isReceivingShadows());
+
 		iterator++;
 	}
 }
@@ -387,8 +391,11 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	delete[] pixels;
 }
 
-void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera)
+void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks)
 {
+	if (reloadUniformBlocks)
+		loadUniformBlocks();
+
 	entity->material->bind();
 	loadStandardParams(entity->material->shader, currentCamera, entity);
 	entity->material->shader->loadDataToGPU();

@@ -22,21 +22,6 @@ out VS_OUT
 	mat3 TBN;
 } vs_out;
 
-//struct FELight
-//{
-//	vec3 typeAndAngles;
-//	vec3 position;
-//	vec3 color;
-//	vec3 direction;
-//	mat4 lightSpace;
-//	mat4 lightSpaceBig;
-//};
-
-//layout (std140) uniform lightInfo
-//{
-//	FELight FElight[MAX_LIGHTS];
-//};
-
 void main(void)
 {
 	vs_out.UV = FETexCoord;
@@ -83,6 +68,8 @@ struct FELight
 	mat4 lightSpaceBig;
 };
 
+// is object receiving shadows.
+@RECEVESHADOWS@
 // adds cascade shadow maps, 4 cascades.
 @CSM@
 
@@ -327,6 +314,9 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	specularStrength = max(specularStrength, 0.0);
 
 	vec3 specular = specularStrength * specularFactor * directionalLight.color.xyz;
+	
+	if (FEReceiveShadows == 0)
+		return (baseColor * (diffuseColor + specular));
 
 	float shadow = 0.0;
 

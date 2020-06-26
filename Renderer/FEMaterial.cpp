@@ -13,7 +13,6 @@ FEMaterial::FEMaterial()
 
 FEMaterial::~FEMaterial()
 {
-	delete shader;
 }
 
 void FEMaterial::bind()

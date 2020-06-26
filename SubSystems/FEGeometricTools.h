@@ -18,6 +18,9 @@ namespace FocalEngine
 		FEAABB(std::vector<float>& VertexPositions);
 		~FEAABB();
 
+		glm::vec3 getMin();
+		glm::vec3 getMax();
+
 		bool rayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& distance);
 	private:
 		glm::vec3 min = glm::vec3(0.0f);

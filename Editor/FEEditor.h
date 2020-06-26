@@ -2,6 +2,7 @@
 
 #include "FEProject.h"
 #include "../Editor/FEPixelAccurateSelectionShader.h"
+#include "../Editor/FEMeshPreviewShader.h"
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
@@ -54,14 +55,35 @@ void displayMaterialPrameters(FEMaterial* material);
 void displayLightProperties(FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
+
+// **************************** General preview variables ****************************
+static FocalEngine::FEFramebuffer* previewFB;
+static FocalEngine::FEEntity* previewEntity;
+// **************************** General preview variables END ****************************
+
+// **************************** Material Content Browser ****************************
+static std::unordered_map<std::string, FETexture*> materialPreviewTextures;
+
+void createMaterialPreview(std::string materialName);
+
 void displayMaterialContentBrowser();
+// **************************** Material Content Browser END ****************************
+
+// **************************** Meshes Content Browser ****************************
+static std::unordered_map<std::string, FETexture*> meshPreviewTextures;
+static FocalEngine::FEMaterial* meshPreviewMaterial;
+
+void createMeshPreview(std::string meshName);
+
 void displayMeshesContentBrowser();
+// **************************** Meshes Content Browser END ****************************
 void displayTexturesContentBrowser();
 void displayTextureInMaterialEditor(FETexture*& texture);
 
 void displayContentBrowser();
 void displayPostProcessContentBrowser();
 void displayProjectSelection();
+void openProject(int projectIndex);
 
 void addEntityButton();
 
@@ -444,7 +466,7 @@ public:
 					}
 				}
 
-				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					textureIndexSelected = i;
 				}
@@ -551,6 +573,10 @@ public:
 					// save assets list with new mesh name
 					currentProject->saveScene();
 
+					FETexture* tempTexture = meshPreviewTextures[oldName];
+					meshPreviewTextures.erase(oldName);
+					meshPreviewTextures[newName] = tempTexture;
+
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
 				}
@@ -620,6 +646,8 @@ public:
 
 				deleteFile((currentProject->getProjectFolder() + name + ".model").c_str());
 
+				delete meshPreviewTextures[name];
+				meshPreviewTextures.erase(name);
 				meshToWorkWith = nullptr;
 				ImGuiModalPopup::close();
 			}
@@ -646,6 +674,7 @@ class selectMeshPopUp : public ImGuiModalPopup
 	std::vector<std::string> meshList;
 	std::vector<std::string> filteredMeshList;
 	char filter[512];
+	FETexture* meshPreviewTexture;
 public:
 	selectMeshPopUp()
 	{
@@ -733,7 +762,18 @@ public:
 					}
 				}
 
-				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().noTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				if (meshPreviewTextures.find(meshList[i]) != meshPreviewTextures.end())
+				{
+					meshPreviewTexture = meshPreviewTextures[meshList[i]];
+				}
+				else
+				{
+					meshPreviewTexture = FEResourceManager::getInstance().noTexture;
+					// if we somehow could not find mesh preview, we will create it.
+					createMeshPreview(meshList[i]);
+				}
+
+				if (ImGui::ImageButton((void*)(intptr_t)meshPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					meshIndexSelected = i;
 				}
@@ -794,3 +834,166 @@ public:
 };
 static selectMeshPopUp selectMeshWindow;
 
+class selectMaterialPopUp : public ImGuiModalPopup
+{
+	FEMaterial** materialToWorkWith;
+	int materialIndexUnderMouse = -1;
+	int materialIndexSelected = -1;
+	bool pushedStyle = false;
+	std::vector<std::string> materialList;
+	std::vector<std::string> filteredMaterialList;
+	char filter[512];
+	FETexture* materialPreviewTexture;
+public:
+	selectMaterialPopUp()
+	{
+		popupCaption = "Select material";
+	}
+
+	void show(FEMaterial** material)
+	{
+		shouldOpen = true;
+		pushedStyle = false;
+		materialToWorkWith = material;
+		materialList = FEResourceManager::getInstance().getMaterialList();
+
+		filteredMaterialList = materialList;
+		strcpy_s(filter, "");
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		materialIndexUnderMouse = -1;
+		materialIndexSelected = -1;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredMaterialList = materialList;
+				}
+				else
+				{
+					filteredMaterialList.clear();
+					for (size_t i = 0; i < materialList.size(); i++)
+					{
+						if (materialList[i].find(filter) != -1)
+						{
+							filteredMaterialList.push_back(materialList[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(60);
+			ImGui::Columns(5, "selectMeshPopupColumns", false);
+			for (size_t i = 0; i < filteredMaterialList.size(); i++)
+			{
+				ImGui::PushID(filteredMaterialList[i].c_str());
+				pushedStyle = false;
+				if (materialIndexSelected == i)
+				{
+					pushedStyle = true;
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				}
+
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					if (materialIndexUnderMouse != -1)
+					{
+						*materialToWorkWith = FEResourceManager::getInstance().getMaterial(filteredMaterialList[materialIndexUnderMouse]);
+						close();
+					}
+				}
+
+				if (materialPreviewTextures.find(materialList[i]) != materialPreviewTextures.end())
+				{
+					materialPreviewTexture = materialPreviewTextures[materialList[i]];
+				}
+				else
+				{
+					materialPreviewTexture = FEResourceManager::getInstance().noTexture;
+					// if we somehow could not find mesh preview, we will create it.
+					createMaterialPreview(materialList[i]);
+				}
+
+				if (ImGui::ImageButton((void*)(intptr_t)materialPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				{
+					materialIndexSelected = i;
+				}
+
+				if (pushedStyle)
+				{
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+				}
+
+				if (ImGui::IsItemHovered())
+				{
+					materialIndexUnderMouse = i;
+				}
+
+				ImGui::Text(filteredMaterialList[i].c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::SetCursorPosX(300);
+			ImGui::SetCursorPosY(25);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			if (ImGui::Button("Select", ImVec2(140, 24)))
+			{
+				if (materialIndexSelected != -1)
+				{
+					*materialToWorkWith = FEResourceManager::getInstance().getMaterial(filteredMaterialList[materialIndexSelected]);
+					close();
+				}
+			}
+
+			ImGui::SetCursorPosX(460);
+			ImGui::SetCursorPosY(25);
+
+			if (ImGui::Button("Cancel", ImVec2(140, 24)))
+			{
+				close();
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectMaterialPopUp selectMaterialWindow;

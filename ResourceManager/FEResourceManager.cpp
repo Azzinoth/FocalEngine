@@ -671,6 +671,9 @@ void FEResourceManager::loadStandardMeshes()
 
 	standardMeshes["plane"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices, "plane");
 	meshes.erase("plane");
+
+	standardMeshes["sphere"] = LoadFEMesh("sphere.model", "sphere");
+	meshes.erase("sphere");
 }
 
 FEResourceManager::FEResourceManager()

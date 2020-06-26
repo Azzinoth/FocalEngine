@@ -441,9 +441,9 @@ void displaySceneEntities()
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 
-			std::string meshText = "Mesh name : ";
-			meshText += entity->mesh->getName();
-			ImGui::Text(meshText.c_str());
+			std::string text = "Mesh name : ";
+			text += entity->mesh->getName();
+			ImGui::Text(text.c_str());
 			ImGui::SameLine();
 
 			if (ImGui::Button("Change Mesh"))
@@ -451,31 +451,15 @@ void displaySceneEntities()
 				selectMeshWindow.show(&entity->mesh);
 			}
 
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
+			text = "Material name : ";
+			text += entity->material->getName();
+			ImGui::Text(text.c_str());
+			ImGui::SameLine();
 
-			static std::string currentMaterial = "";
-			currentMaterial = entity->material->getName();
-			if (ImGui::BeginCombo("Materials", currentMaterial.c_str(), ImGuiWindowFlags_None))
+			if (ImGui::Button("Change Material"))
 			{
-				for (size_t n = 0; n < materialList.size(); n++)
-				{
-					bool is_selected = (currentMaterial == materialList[n]);
-					if (ImGui::Selectable(materialList[n].c_str(), is_selected))
-					{
-						currentMaterial = materialList[n].c_str();
-						entity->material = FEResourceManager::getInstance().getMaterial(materialList[n]);
-					}
-					if (is_selected)
-						ImGui::SetItemDefaultFocus();
-				}
-				ImGui::EndCombo();
+				selectMaterialWindow.show(&entity->material);
 			}
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 
 			if (ImGui::Button("Delete entity"))
 			{
@@ -508,6 +492,7 @@ void displaySceneEntities()
 	ImGui::End();
 
 	selectMeshWindow.render();
+	selectMaterialWindow.render();
 }
 
 void displayMaterialContentBrowser()
@@ -928,6 +913,13 @@ void loadEditor()
 	pixelAccurateSelectionMaterial->shader = new FocalEngine::FEShader(FEPixelAccurateSelectionVS, FEPixelAccurateSelectionFS);
 	FEShaderParam colorParam(glm::vec3(0.0f, 0.0f, 0.0f), "baseColor");
 	pixelAccurateSelectionMaterial->addParameter(colorParam);
+
+	// **************************** Meshes Content Browser ****************************
+	previewFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, 128, 128);
+	previewEntity = new FEEntity(nullptr, nullptr, "editorPreviewEntity");
+	meshPreviewMaterial = resourceManager.createMaterial("meshPreviewMaterial");
+	resourceManager.makeMaterialStandard(meshPreviewMaterial);
+	meshPreviewMaterial->shader = new FocalEngine::FEShader(FEMeshPreviewVS, FEMeshPreviewFS);
 }
 
 std::vector<std::string> getFolderList(const char* dirPath)
@@ -1051,9 +1043,7 @@ void displayProjectSelection()
 			{
 				if (projectChosen != -1)
 				{
-					currentProject = projectList[projectChosen];
-					currentProject->loadScene();
-					projectChosen = -1;
+					openProject(projectChosen);
 				}
 			}
 
@@ -1100,9 +1090,7 @@ void displayProjectSelection()
 		ImGui::SameLine();
 		if (ImGui::Button("Open Project", ImVec2(200.0f, 64.0f)) && projectChosen != -1)
 		{
-			currentProject = projectList[projectChosen];
-			currentProject->loadScene();
-			projectChosen = -1;
+			openProject(projectChosen);
 		}
 
 		ImGui::SameLine();
@@ -1209,7 +1197,7 @@ void displayTextureInMaterialEditor(FETexture*& texture)
 		return;
 	}
 		
-	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(64, 64));
+	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 	ImGui::SameLine();
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
@@ -1223,50 +1211,6 @@ void displayTextureInMaterialEditor(FETexture*& texture)
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
-
-	// old representation of textures list
-	//std::vector<std::string> allTextures = FEResourceManager::getInstance().getTextureList();
-	//if (ImGui::BeginCombo("Textures", texture->getName().c_str(), ImGuiWindowFlags_None))
-	//{
-	//	for (size_t n = 0; n < allTextures.size(); n++)
-	//	{
-	//		bool is_selected = (texture->getName() == allTextures[n]);
-	//		if (ImGui::Selectable(("##" + std::to_string(n)).c_str(), is_selected, 0, ImVec2(0, 64)))
-	//		{
-	//			texture = FEResourceManager::getInstance().getTexture(allTextures[n]);
-	//		}
-	//		ImGui::SameLine();
-	//		ImGui::Image((void*)(intptr_t)FEResourceManager::getInstance().getTexture(allTextures[n])->getTextureID(), ImVec2(64, 64));
-	//		ImGui::SameLine();
-	//		ImGui::Text(allTextures[n].c_str());
-
-	//		if (is_selected)
-	//			ImGui::SetItemDefaultFocus();
-	//	}
-	//	ImGui::EndCombo();
-
-	//	if (ImGui::BeginPopupModal("ChangeTexture", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	//	{
-	//		ImGui::Text("Insert texture file path :");
-	//		static char filePath[512] = "";
-
-	//		ImGui::InputText("", filePath, IM_ARRAYSIZE(filePath));
-	//		ImGui::Separator();
-
-	//		if (ImGui::Button("Load", ImVec2(120, 0)))
-	//		{
-	//			//material->setTexture(FEResourceManager::getInstance().LoadPngTexture(filePath, "", (currentProject->getProjectFolder() + material->getName() + textures[j] + ".texture").c_str()), textures[j]);
-	//			ImGui::CloseCurrentPopup();
-	//			strcpy_s(filePath, "");
-	//		}
-	//		ImGui::SetItemDefaultFocus();
-	//		ImGui::SameLine();
-	//		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-	//		ImGui::EndPopup();
-	//	}
-
-	//	ImGui::PopID();
-	//}
 }
 
 void displayTexturesContentBrowser()
@@ -1313,7 +1257,19 @@ void displayMeshesContentBrowser()
 	ImGui::Columns(3, "mycolumns3", false);
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().noTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		FETexture* meshPreviewTexture;
+		if (meshPreviewTextures.find(meshList[i]) != meshPreviewTextures.end())
+		{
+			meshPreviewTexture = meshPreviewTextures[meshList[i]];
+		}
+		else
+		{
+			meshPreviewTexture = FEResourceManager::getInstance().noTexture;
+			// if we somehow could not find mesh preview, we will create it.
+			createMeshPreview(meshList[i]);
+		}
+
+		if (ImGui::ImageButton((void*)(intptr_t)meshPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
 			//
 		}
@@ -1389,3 +1345,158 @@ void displayMeshesContentBrowser()
 	}
 
 #endif
+
+void openProject(int projectIndex)
+{
+	currentProject = projectList[projectIndex];
+	currentProject->loadScene();
+	projectChosen = -1;
+
+	// after loading project we should update our previews
+	meshPreviewTextures.clear();
+	std::vector<std::string> meshList = FEResourceManager::getInstance().getMeshList();
+	for (size_t i = 0; i < meshList.size(); i++)
+	{
+		createMeshPreview(meshList[i]);
+	}
+
+	materialPreviewTextures.clear();
+	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
+	for (size_t i = 0; i < materialList.size(); i++)
+	{
+		createMaterialPreview(materialList[i]);
+	}
+}
+
+void createMeshPreview(std::string meshName)
+{
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	FEMesh* previewMesh = resourceManager.getMesh(meshName);
+
+	if (previewMesh == nullptr)
+		return;
+
+	previewEntity->mesh = previewMesh;
+	previewEntity->material = meshPreviewMaterial;
+
+	previewFB->bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// saving currently used variables
+	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
+	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
+	float regularAspectRation = engine.getCamera()->getAspectRatio();
+	float regularCameraPitch = engine.getCamera()->getPitch();
+	float regularCameraRoll = engine.getCamera()->getRoll();
+	float regularCameraYaw = engine.getCamera()->getYaw();
+
+	// transform has influence on AABB, so before any calculations setting needed values
+	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
+	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
+	previewEntity->transform.setRotation(glm::vec3(15.0, -15.0, 0.0));
+
+	FEAABB meshAABB = previewEntity->getAABB();
+	glm::vec3 min = meshAABB.getMin();
+	glm::vec3 max = meshAABB.getMax();
+
+	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
+	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
+	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+
+	engine.getCamera()->setAspectRatio(1.0f);
+	glViewport(0, 0, 128, 128);
+
+	engine.getCamera()->setPitch(0.0f);
+	engine.getCamera()->setRoll(0.0f);
+	engine.getCamera()->setYaw(0.0f);
+
+	// rendering mesh to texture
+	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera());
+
+	// reversing all of our transformating.
+	previewEntity->transform = regularMeshTransform;
+
+	engine.getCamera()->setPosition(regularCameraPosition);
+	engine.getCamera()->setAspectRatio(regularAspectRation);
+	engine.getCamera()->setPitch(regularCameraPitch);
+	engine.getCamera()->setRoll(regularCameraRoll);
+	engine.getCamera()->setYaw(regularCameraYaw);
+
+	previewFB->unBind();
+
+	meshPreviewTextures[meshName] = previewFB->getColorAttachment();
+	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
+}
+
+void createMaterialPreview(std::string materialName)
+{
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	FEMaterial* previewMaterial = resourceManager.getMaterial(materialName);
+	if (previewMaterial == nullptr)
+		return;
+
+	FEDirectionalLight* currentDirectionalLight = nullptr;
+	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			break;
+		}
+	}
+	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
+	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
+
+	previewEntity->mesh = resourceManager.getMesh("sphere");
+	previewEntity->material = previewMaterial;
+	previewEntity->setReceivingShadows(false);
+
+	previewFB->bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// saving currently used variables
+	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
+	float regularAspectRation = engine.getCamera()->getAspectRatio();
+	float regularCameraPitch = engine.getCamera()->getPitch();
+	float regularCameraRoll = engine.getCamera()->getRoll();
+	float regularCameraYaw = engine.getCamera()->getYaw();
+
+	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
+	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
+	previewEntity->transform.setRotation(glm::vec3(0.0, 0.0, 0.0));
+
+	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, 3.0f));
+	engine.getCamera()->setAspectRatio(1.0f);
+	glViewport(0, 0, 128, 128);
+
+	engine.getCamera()->setPitch(0.0f);
+	engine.getCamera()->setRoll(0.0f);
+	engine.getCamera()->setYaw(0.0f);
+
+	// rendering mesh to texture
+	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+
+	engine.getCamera()->setPosition(regularCameraPosition);
+	engine.getCamera()->setAspectRatio(regularAspectRation);
+	engine.getCamera()->setPitch(regularCameraPitch);
+	engine.getCamera()->setRoll(regularCameraRoll);
+	engine.getCamera()->setYaw(regularCameraYaw);
+
+	currentDirectionalLight->transform.setRotation(regularLightRotation);
+
+	previewFB->unBind();
+
+	materialPreviewTextures[materialName] = previewFB->getColorAttachment();
+	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
+}

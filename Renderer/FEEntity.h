@@ -33,11 +33,15 @@ namespace FocalEngine
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
+
+		bool isReceivingShadows();
+		void setReceivingShadows(bool isReceivingShadows);
 	private:
 		std::string name;
 
 		bool visible = true;
 		bool castShadows = true;
+		bool receiveShadows = true;
 	};
 }
 

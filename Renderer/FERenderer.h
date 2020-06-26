@@ -16,7 +16,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void render(FEBasicCamera* currentCamera);
-		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera);
+		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
 
 		std::vector<std::string> getPostProcessList();

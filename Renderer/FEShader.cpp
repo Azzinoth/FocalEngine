@@ -494,6 +494,12 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		parsedShaderText.replace(index, strlen(FE_CSM_MACRO), "uniform sampler2D CSM0; uniform sampler2D CSM1; uniform sampler2D CSM2; uniform sampler2D CSM3;");
 		CSM = true;
 	}
+
+	index = parsedShaderText.find(FE_RECEVESHADOWS_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_RECEVESHADOWS_MACRO), "uniform int FEReceiveShadows;");
+	}
 	
 	return parsedShaderText;
 }

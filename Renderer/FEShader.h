@@ -17,6 +17,7 @@
 #define FE_LIGHT_COLOR_MACRO "@LightColor@"
 
 #define FE_TEXTURE_MACRO "@Texture@"
+#define FE_RECEVESHADOWS_MACRO "@RECEVESHADOWS@"
 #define FE_CSM_MACRO "@CSM@"
 
 namespace FocalEngine
@@ -44,7 +45,7 @@ namespace FocalEngine
 	static std::vector<std::string> FEStandardUniforms = 
 	{ "FEPosition", "FEColor", "FENormal", "FETangent", "FETexCoord", "FEWorldMatrix", "FEViewMatrix",
 	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor", "FEGamma", "FEExposure",
-	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[" };
+	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[", "FEReceiveShadows", "directionalLight" };
 
 	struct FEShaderParam
 	{
