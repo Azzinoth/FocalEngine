@@ -6,10 +6,7 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 	projectFolder = ProjectFolder;
 
 	std::ifstream screenshotFile((this->getProjectFolder() + "/projectScreenShot.FETexture").c_str());
-	/*if (!screenshotFile.good())
-		createDummyScreenshot();
 	
-	sceneScreenshot = FEResourceManager::getInstance().LoadFETexture((this->getProjectFolder() + "/projectScreenShot.texture").c_str());*/
 	if (!screenshotFile.good())
 	{
 		sceneScreenshot = FEResourceManager::getInstance().noTexture;
@@ -110,6 +107,18 @@ void FEProject::saveScene()
 	}
 	root["materials"] = materialData;
 
+	// saving gameModels
+	std::vector<std::string> gameModelList = resourceManager.getGameModelList();
+	Json::Value gameModelData;
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FEGameModel* gameModel = resourceManager.getGameModel(gameModelList[i]);
+
+		gameModelData[gameModel->getName()]["mesh"] = gameModel->mesh->getName();
+		gameModelData[gameModel->getName()]["material"] = gameModel->material->getName();
+	}
+	root["gameModels"] = gameModelData;
+
 	// saving Entities
 	std::vector<std::string> entityList = scene.getEntityList();
 	Json::Value entityData;
@@ -117,8 +126,7 @@ void FEProject::saveScene()
 	{
 		FEEntity* entity = scene.getEntity(entityList[i]);
 
-		entityData[entity->getName()]["mesh"] = entity->mesh->getName();
-		entityData[entity->getName()]["material"] = entity->material->getName();
+		entityData[entity->getName()]["gameModel"] = entity->gameModel->getName();
 		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
 	}
 	root["entities"] = entityData;
@@ -148,6 +156,9 @@ void FEProject::saveScene()
 			lightData[directionalLight->getName()]["direction"]["X"] = directionalLight->getDirection()[0];
 			lightData[directionalLight->getName()]["direction"]["Y"] = directionalLight->getDirection()[1];
 			lightData[directionalLight->getName()]["direction"]["Z"] = directionalLight->getDirection()[2];
+			lightData[directionalLight->getName()]["CSM"]["activeCascades"] = directionalLight->getActiveCascades();
+			lightData[directionalLight->getName()]["CSM"]["cascadeDistributionExponent"] = directionalLight->getCascadeDistributionExponent();
+			lightData[directionalLight->getName()]["CSM"]["firstCascadeSize"] = directionalLight->getFirstCascadeSize();
 		}
 		else if (light->getType() == FE_SPOT_LIGHT)
 		{
@@ -294,14 +305,20 @@ void FEProject::loadScene()
 		}
 	}
 
+	// loading gameModels
+	std::vector<Json::String> gameModelList = root["gameModels"].getMemberNames();
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FEResourceManager::getInstance().createGameModel(resourceManager.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
+														 resourceManager.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
+														 gameModelList[i]);
+	}
+
 	// loading Entities
 	std::vector<Json::String> entityList = root["entities"].getMemberNames();
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		scene.addEntity(resourceManager.getMesh(root["entities"][entityList[i]]["mesh"].asCString()),
-						resourceManager.getMaterial(root["entities"][entityList[i]]["material"].asCString()),
-						entityList[i]);
-
+		scene.addEntity(resourceManager.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i]);
 		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &scene.getEntity(entityList[i])->transform);
 	}
 
@@ -335,9 +352,15 @@ void FEProject::loadScene()
 
 		if (light->getType() == FE_DIRECTIONAL_LIGHT)
 		{
-			reinterpret_cast<FEDirectionalLight*>(light)->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-																	   root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-																	   root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+			FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
+
+			directionalLight->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
+													 root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+													 root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+			
+			directionalLight->setActiveCascades(root["lights"][lightList[i]]["CSM"]["activeCascades"].asInt());
+			directionalLight->setCascadeDistributionExponent(root["lights"][lightList[i]]["CSM"]["cascadeDistributionExponent"].asFloat());
+			directionalLight->setFirstCascadeSize(root["lights"][lightList[i]]["CSM"]["firstCascadeSize"].asFloat());
 		}
 		else if (light->getType() == FE_SPOT_LIGHT)
 		{

@@ -20,6 +20,7 @@ namespace FocalEngine
 
 		// to-do: add flags
 		FETexture* LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name = "");
+		FETexture* LoadPngTextureWithTransparencyMaskAndCompress(const char* mainfileName, const char* maskFileName, std::string Name);
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
 		FETexture* LoadFETextureStandAlone(const char* fileName, std::string Name = "");
 		
@@ -53,9 +54,18 @@ namespace FocalEngine
 		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
 		void saveFEMesh(const char* fileName);
 
+		std::vector<std::string> getGameModelList();
+		std::vector<std::string> getStandardGameModelList();
+		FEGameModel* getGameModel(std::string name);
+		FEGameModel* createGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "");
+		bool makeGameModelStandard(FEGameModel* gameModel);
+		bool setGameModelName(FEGameModel* gameModel, std::string gameModelName);
+		void deleteGameModel(FEGameModel* gameModel);
+
 		void clear();
 		void loadStandardMeshes();
 		void loadStandardMaterial();
+		void loadStandardGameModels();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -71,8 +81,11 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEMesh*> meshes;
 		std::unordered_map<std::string, FEMesh*> standardMeshes;
 
+		std::unordered_map<std::string, FEGameModel*> gameModels;
+		std::unordered_map<std::string, FEGameModel*> standardGameModels;
+
 		std::string getFileNameFromFilePath(std::string filePath);
-		FEEntity* createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
+		FEEntity* createEntity(FEGameModel* gameModel, std::string Name);
 
 		void LoadFETexture(const char* fileName, FETexture* existingTexture);
 	};

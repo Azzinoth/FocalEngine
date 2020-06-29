@@ -13,16 +13,17 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
-		FEEntity* addEntity(FEMesh* Mesh, FEMaterial* Material = nullptr, std::string Name = "");
+		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "");
 		FEEntity* getEntity(std::string name);
 		std::vector<std::string> getEntityList();
 		void deleteEntity(std::string name);
+		bool setEntityName(FEEntity* Entity, std::string EntityName);
 
 		void addLight(FELightType Type, std::string Name);
 		FELight* getLight(std::string name);
 		std::vector<std::string> getLightsList();
 
-		void prepareForFEMeshDeletion(FEMesh* mesh);
+		void prepareForGameModelDeletion(FEGameModel* gameModel);
 
 		void clear();
 	private:

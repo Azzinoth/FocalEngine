@@ -6,6 +6,7 @@
 #include "../SubSystems/FETransformComponent.h"
 #include "FEMesh.h"
 #include "FEFramebuffer.h"
+#include "FEGameModel.h"
 
 namespace FocalEngine
 {
@@ -13,11 +14,12 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 	public:
-		FEEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name);
+		FEEntity(FEGameModel* gameModel, std::string Name);
 		~FEEntity();
 
-		FEMesh* mesh = nullptr;
-		FEMaterial* material = nullptr;
+		/*FEMesh* mesh = nullptr;
+		FEMaterial* material = nullptr;*/
+		FEGameModel* gameModel = nullptr;
 
 		FETransformComponent transform;
 

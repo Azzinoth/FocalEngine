@@ -26,23 +26,23 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 		FEngine::getInstance().terminate();
 	}
 
-	if (key == GLFW_KEY_DELETE)
+	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
 	{
 		if (selectedEntity != "")
 			FEScene::getInstance().deleteEntity(selectedEntity);
 	}
 
-	if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_C)
+	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_C)
 	{
 		clipboardEntity = selectedEntity;
 	}
 
-	if (mods == GLFW_MOD_CONTROL && key == GLFW_KEY_V)
+	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_V)
 	{
 		if (clipboardEntity != "")
 		{
 			FEScene& Scene = FEScene::getInstance();
-			FEEntity* newEntity = Scene.addEntity(Scene.getEntity(clipboardEntity)->mesh, Scene.getEntity(clipboardEntity)->material, "");
+			FEEntity* newEntity = Scene.addEntity(Scene.getEntity(clipboardEntity)->gameModel, "");
 			newEntity->transform = Scene.getEntity(clipboardEntity)->transform;
 			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
 			selectedEntity = newEntity->getName();
@@ -361,12 +361,14 @@ void addEntityButton()
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 	if (ImGui::Button("Add new entity", ImVec2(220, 0)))
 	{
-		FEScene::getInstance().addEntity(resourceManager.getMesh("cube"));
+		selectGameModelWindow.show(nullptr, true);
 	}
 
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
+
+	selectGameModelWindow.render();
 }
 
 void displaySceneEntities()
@@ -436,29 +438,23 @@ void displaySceneEntities()
 			ImGui::PushID(entity->getName().c_str());
 			showTransformConfiguration(entity->getName(), &entity->transform);
 
-
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 
-			std::string text = "Mesh name : ";
-			text += entity->mesh->getName();
-			ImGui::Text(text.c_str());
-			ImGui::SameLine();
-
-			if (ImGui::Button("Change Mesh"))
+			if (ImGui::Button("Change name"))
 			{
-				selectMeshWindow.show(&entity->mesh);
+				renameEntityWindow.show(entity);
 			}
 
-			text = "Material name : ";
-			text += entity->material->getName();
+			std::string text = "Game model name : ";
+			text += entity->gameModel->getName();
 			ImGui::Text(text.c_str());
 			ImGui::SameLine();
 
-			if (ImGui::Button("Change Material"))
+			if (ImGui::Button("Change Game model"))
 			{
-				selectMaterialWindow.show(&entity->material);
+				selectGameModelWindow.show(&entity->gameModel);
 			}
 
 			if (ImGui::Button("Delete entity"))
@@ -493,6 +489,8 @@ void displaySceneEntities()
 
 	selectMeshWindow.render();
 	selectMaterialWindow.render();
+	selectGameModelWindow.render();
+	renameEntityWindow.render();
 }
 
 void displayMaterialContentBrowser()
@@ -659,13 +657,29 @@ int timesTextureUsed(FETexture* texture)
 int timesMeshUsed(FEMesh* mesh)
 {
 	int result = 0;
+	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FEGameModel* currentGameModel = FEResourceManager::getInstance().getGameModel(gameModelList[i]);
+
+		if (currentGameModel->mesh == mesh)
+			result++;
+	}
+
+	return result;
+}
+
+int timesGameModelUsed(FEGameModel* gameModel)
+{
+	int result = 0;
 	std::vector<std::string> entitiesList = FEScene::getInstance().getEntityList();
 
 	for (size_t i = 0; i < entitiesList.size(); i++)
 	{
 		FEEntity* currentEntity = FEScene::getInstance().getEntity(entitiesList[i]);
 
-		if (currentEntity->mesh == mesh)
+		if (currentEntity->gameModel == gameModel)
 			result++;
 	}
 
@@ -676,6 +690,8 @@ int textureUnderMouse = -1;
 bool isOpenContextMenuInContentBrowser = false;
 int meshUnderMouse = -1;
 static int activeTabContentBrowser = 0;
+
+int gameModelUnderMouse = -1;
 
 void displayContentBrowser()
 {
@@ -711,9 +727,16 @@ void displayContentBrowser()
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem("PostProcess"))
+			if (ImGui::BeginTabItem("Game Models"))
 			{
 				activeTabContentBrowser = 3;
+				displayGameModelContentBrowser();
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("PostProcess"))
+			{
+				activeTabContentBrowser = 4;
 				displayPostProcessContentBrowser();
 				ImGui::EndTabItem();
 			}
@@ -766,13 +789,28 @@ void displayContentBrowser()
 				}
 				case 1:
 				{
-					if (ImGui::MenuItem("Load new texture..."))
+					if (ImGui::MenuItem("Load texture..."))
 					{
 						std::string filePath = "";
 						openDialog(filePath, textureLoadFilter, 1);
 						if (filePath != "")
 						{
 							loadTextureWindow.show(filePath);
+						}
+					}
+
+					if (ImGui::MenuItem("Load texture and combine with opacity mask..."))
+					{
+						std::string filePath = "";
+						openDialog(filePath, textureLoadFilter, 1);
+
+						std::string maskFilePath = "";
+						openDialog(maskFilePath, textureLoadFilter, 1);
+
+						if (filePath != "" && maskFilePath != "")
+						{
+							FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureWithTransparencyMaskAndCompress(filePath.c_str(), maskFilePath.c_str(), "");
+							FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 						}
 					}
 
@@ -799,6 +837,32 @@ void displayContentBrowser()
 				}
 				case 3:
 				{
+					if (ImGui::MenuItem("Create new game model"))
+					{
+						FEResourceManager::getInstance().createGameModel();
+					}
+
+					if (gameModelUnderMouse != -1)
+					{
+						if (ImGui::MenuItem("Edit"))
+						{
+							editGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+						}
+						
+						if (ImGui::MenuItem("Delete"))
+						{
+							deleteGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+						}
+
+						if (ImGui::MenuItem("Rename"))
+						{
+							renameGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+						}
+					}
+					break;
+				}
+				case 4:
+				{
 					break;
 				}
 				default:
@@ -814,6 +878,9 @@ void displayContentBrowser()
 	renameFailedWindow.render();
 	deleteTextureWindow.render();
 	deleteMeshWindow.render();
+	renameGameModelWindow.render();
+	deleteGameModelWindow.render();
+	editGameModelWindow.render();
 }
 
 glm::dvec3 mouseRay()
@@ -916,7 +983,8 @@ void loadEditor()
 
 	// **************************** Meshes Content Browser ****************************
 	previewFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, 128, 128);
-	previewEntity = new FEEntity(nullptr, nullptr, "editorPreviewEntity");
+	previewGameModel = new FEGameModel(nullptr, nullptr, "editorPreviewGameModel");
+	previewEntity = new FEEntity(previewGameModel, "editorPreviewEntity");
 	meshPreviewMaterial = resourceManager.createMaterial("meshPreviewMaterial");
 	resourceManager.makeMaterialStandard(meshPreviewMaterial);
 	meshPreviewMaterial->shader = new FocalEngine::FEShader(FEMeshPreviewVS, FEMeshPreviewFS);
@@ -961,9 +1029,12 @@ void renderEditor()
 			for (size_t i = 0; i < entitiesUnderMouse.size(); i++)
 			{
 				potentiallySelectedEntity = FEScene::getInstance().getEntity(entitiesUnderMouse[i]);
+				// sometimes we can delete entity before entitiesUnderMouse update
+				if (potentiallySelectedEntity == nullptr)
+					continue;
 
-				FEMaterial* regularMaterial = potentiallySelectedEntity->material;
-				potentiallySelectedEntity->material = pixelAccurateSelectionMaterial;
+				FEMaterial* regularMaterial = potentiallySelectedEntity->gameModel->material;
+				potentiallySelectedEntity->gameModel->material = pixelAccurateSelectionMaterial;
 
 				int r = 0;
 				int g = 0;
@@ -975,7 +1046,7 @@ void renderEditor()
 				pixelAccurateSelectionMaterial->getParameter("baseColor")->updateData(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
 				pixelAccurateSelectionMaterial->albedoMap = regularMaterial->albedoMap;
 				FERenderer::getInstance().renderEntity(potentiallySelectedEntity, engine.getCamera());
-				potentiallySelectedEntity->material = regularMaterial;
+				potentiallySelectedEntity->gameModel->material = regularMaterial;
 				pixelAccurateSelectionMaterial->albedoMap = nullptr;
 			}
 
@@ -1003,6 +1074,13 @@ void renderEditor()
 	else
 	{
 		displayProjectSelection();
+	}
+
+	if (FELOG::getInstance().log.size() > 0)
+	{
+		char text[1024];
+		strcpy_s(text, FELOG::getInstance().log[0].size() + 1, FELOG::getInstance().log[0].data());
+		ImGui::InputTextMultiline("LOG", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), 0);
 	}
 }
 
@@ -1245,6 +1323,50 @@ void displayTexturesContentBrowser()
 	ImGui::PopStyleColor();
 }
 
+void displayGameModelContentBrowser()
+{
+	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+	if (!isOpenContextMenuInContentBrowser) gameModelUnderMouse = -1;
+	ImGui::Columns(3, "mycolumns3", false);
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FETexture* gameModelPreviewTexture;
+		if (gameModelPreviewTextures.find(gameModelList[i]) != gameModelPreviewTextures.end())
+		{
+			gameModelPreviewTexture = gameModelPreviewTextures[gameModelList[i]];
+		}
+		else
+		{
+			gameModelPreviewTexture = FEResourceManager::getInstance().noTexture;
+			// if we somehow could not find gameModel preview, we will create it.
+			createGameModelPreview(gameModelList[i]);
+		}
+
+		if (ImGui::ImageButton((void*)(intptr_t)gameModelPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			//
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			if (!isOpenContextMenuInContentBrowser) gameModelUnderMouse = i;
+		}
+
+		ImGui::Text(gameModelList[i].c_str());
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1);
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+}
+
 void displayMeshesContentBrowser()
 {
 	std::vector<std::string> meshList = FEResourceManager::getInstance().getMeshList();
@@ -1366,6 +1488,13 @@ void openProject(int projectIndex)
 	{
 		createMaterialPreview(materialList[i]);
 	}
+
+	gameModelPreviewTextures.clear();
+	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		createGameModelPreview(gameModelList[i]);
+	}
 }
 
 void createMeshPreview(std::string meshName)
@@ -1378,8 +1507,8 @@ void createMeshPreview(std::string meshName)
 	if (previewMesh == nullptr)
 		return;
 
-	previewEntity->mesh = previewMesh;
-	previewEntity->material = meshPreviewMaterial;
+	previewGameModel->mesh = previewMesh;
+	previewGameModel->material = meshPreviewMaterial;
 
 	previewFB->bind();
 	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
@@ -1435,6 +1564,19 @@ void createMeshPreview(std::string meshName)
 	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
 }
 
+FETexture* getMeshPreview(std::string meshName)
+{
+	// if we somehow could not find preview, we will create it.
+	if (meshPreviewTextures.find(meshName) == meshPreviewTextures.end())
+		createMeshPreview(meshName);
+
+	// if still we don't have it
+	if (meshPreviewTextures.find(meshName) == meshPreviewTextures.end())
+		return FEResourceManager::getInstance().noTexture;
+
+	return meshPreviewTextures[meshName];
+}
+
 void createMaterialPreview(std::string materialName)
 {
 	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
@@ -1457,8 +1599,11 @@ void createMaterialPreview(std::string materialName)
 	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
 	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
 
-	previewEntity->mesh = resourceManager.getMesh("sphere");
-	previewEntity->material = previewMaterial;
+	float regularLightIntensity = currentDirectionalLight->getIntensity();
+	currentDirectionalLight->setIntensity(5.0f);
+
+	previewGameModel->mesh = resourceManager.getMesh("sphere");
+	previewGameModel->material = previewMaterial;
 	previewEntity->setReceivingShadows(false);
 
 	previewFB->bind();
@@ -1471,6 +1616,8 @@ void createMaterialPreview(std::string materialName)
 	float regularCameraPitch = engine.getCamera()->getPitch();
 	float regularCameraRoll = engine.getCamera()->getRoll();
 	float regularCameraYaw = engine.getCamera()->getYaw();
+	float regularExposure = engine.getCamera()->getExposure();
+	engine.getCamera()->setExposure(1.0f);
 
 	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
 	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
@@ -1484,7 +1631,7 @@ void createMaterialPreview(std::string materialName)
 	engine.getCamera()->setRoll(0.0f);
 	engine.getCamera()->setYaw(0.0f);
 
-	// rendering mesh to texture
+	// rendering material to texture
 	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
 
 	engine.getCamera()->setPosition(regularCameraPosition);
@@ -1492,11 +1639,220 @@ void createMaterialPreview(std::string materialName)
 	engine.getCamera()->setPitch(regularCameraPitch);
 	engine.getCamera()->setRoll(regularCameraRoll);
 	engine.getCamera()->setYaw(regularCameraYaw);
+	engine.getCamera()->setExposure(regularExposure);
 
 	currentDirectionalLight->transform.setRotation(regularLightRotation);
+	currentDirectionalLight->setIntensity(regularLightIntensity);
 
 	previewFB->unBind();
 
 	materialPreviewTextures[materialName] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
+}
+
+FETexture* getMaterialPreview(std::string materialName)
+{
+	// if we somehow could not find preview, we will create it.
+	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
+		createMeshPreview(materialName);
+
+	// if still we don't have it
+	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
+		return FEResourceManager::getInstance().noTexture;
+
+	return materialPreviewTextures[materialName];
+}
+
+void createGameModelPreview(std::string gameModelName)
+{
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	FEGameModel* gameModel = resourceManager.getGameModel(gameModelName);
+
+	if (gameModel == nullptr)
+		return;
+
+	FEDirectionalLight* currentDirectionalLight = nullptr;
+	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			break;
+		}
+	}
+	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
+	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
+
+	float regularLightIntensity = currentDirectionalLight->getIntensity();
+	currentDirectionalLight->setIntensity(5.0f);
+
+	previewGameModel->mesh = gameModel->mesh;
+	previewGameModel->material = gameModel->material;
+	previewEntity->setReceivingShadows(false);
+
+	previewFB->bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// saving currently used variables
+	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
+	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
+	float regularAspectRation = engine.getCamera()->getAspectRatio();
+	float regularCameraPitch = engine.getCamera()->getPitch();
+	float regularCameraRoll = engine.getCamera()->getRoll();
+	float regularCameraYaw = engine.getCamera()->getYaw();
+	float regularExposure = engine.getCamera()->getExposure();
+	engine.getCamera()->setExposure(1.0f);
+	
+	// transform has influence on AABB, so before any calculations setting needed values
+	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
+	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
+	previewEntity->transform.setRotation(glm::vec3(15.0, -15.0, 0.0));
+
+	FEAABB meshAABB = previewEntity->getAABB();
+	glm::vec3 min = meshAABB.getMin();
+	glm::vec3 max = meshAABB.getMax();
+
+	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
+	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
+	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+
+	engine.getCamera()->setAspectRatio(1.0f);
+	glViewport(0, 0, 128, 128);
+
+	engine.getCamera()->setPitch(0.0f);
+	engine.getCamera()->setRoll(0.0f);
+	engine.getCamera()->setYaw(0.0f);
+
+	// rendering game model to texture
+	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+
+	// reversing all of our transformating.
+	previewEntity->transform = regularMeshTransform;
+
+	engine.getCamera()->setPosition(regularCameraPosition);
+	engine.getCamera()->setAspectRatio(regularAspectRation);
+	engine.getCamera()->setPitch(regularCameraPitch);
+	engine.getCamera()->setRoll(regularCameraRoll);
+	engine.getCamera()->setYaw(regularCameraYaw);
+	engine.getCamera()->setExposure(regularExposure);
+
+	currentDirectionalLight->transform.setRotation(regularLightRotation);
+	currentDirectionalLight->setIntensity(regularLightIntensity);
+
+	previewFB->unBind();
+
+	gameModelPreviewTextures[gameModelName] = previewFB->getColorAttachment();
+	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
+}
+
+void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture)
+{
+	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+
+	if (gameModel == nullptr)
+		return;
+
+	FEDirectionalLight* currentDirectionalLight = nullptr;
+	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			break;
+		}
+	}
+	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
+	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
+
+	float regularLightIntensity = currentDirectionalLight->getIntensity();
+	currentDirectionalLight->setIntensity(5.0f);
+
+	previewGameModel->mesh = gameModel->mesh;
+	previewGameModel->material = gameModel->material;
+	previewEntity->setReceivingShadows(false);
+
+	if (*resultingTexture == nullptr)
+		*resultingTexture = previewFB->getColorAttachment()->createSameFormatTexture();
+	FETexture* tempTexture = previewFB->getColorAttachment();
+	previewFB->setColorAttachment(*resultingTexture);
+	previewFB->bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// saving currently used variables
+	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
+	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
+	float regularAspectRation = engine.getCamera()->getAspectRatio();
+	float regularCameraPitch = engine.getCamera()->getPitch();
+	float regularCameraRoll = engine.getCamera()->getRoll();
+	float regularCameraYaw = engine.getCamera()->getYaw();
+	float regularExposure = engine.getCamera()->getExposure();
+	engine.getCamera()->setExposure(1.0f);
+
+	// transform has influence on AABB, so before any calculations setting needed values
+	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
+	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
+	previewEntity->transform.setRotation(glm::vec3(15.0, -15.0, 0.0));
+
+	FEAABB meshAABB = previewEntity->getAABB();
+	glm::vec3 min = meshAABB.getMin();
+	glm::vec3 max = meshAABB.getMax();
+
+	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
+	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
+	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+
+	engine.getCamera()->setAspectRatio(1.0f);
+	glViewport(0, 0, 128, 128);
+
+	engine.getCamera()->setPitch(0.0f);
+	engine.getCamera()->setRoll(0.0f);
+	engine.getCamera()->setYaw(0.0f);
+
+	// rendering game model to texture
+	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+
+	// reversing all of our transformating.
+	previewEntity->transform = regularMeshTransform;
+
+	engine.getCamera()->setPosition(regularCameraPosition);
+	engine.getCamera()->setAspectRatio(regularAspectRation);
+	engine.getCamera()->setPitch(regularCameraPitch);
+	engine.getCamera()->setRoll(regularCameraRoll);
+	engine.getCamera()->setYaw(regularCameraYaw);
+	engine.getCamera()->setExposure(regularExposure);
+
+	currentDirectionalLight->transform.setRotation(regularLightRotation);
+	currentDirectionalLight->setIntensity(regularLightIntensity);
+
+	previewFB->unBind();
+
+	previewFB->setColorAttachment(tempTexture);
+}
+
+FETexture* getGameModelPreview(std::string gameModelName)
+{
+	// if we somehow could not find preview, we will create it.
+	if (gameModelPreviewTextures.find(gameModelName) == gameModelPreviewTextures.end())
+		createMeshPreview(gameModelName);
+
+	// if still we don't have it
+	if (gameModelPreviewTextures.find(gameModelName) == gameModelPreviewTextures.end())
+		return FEResourceManager::getInstance().noTexture;
+
+	return gameModelPreviewTextures[gameModelName];
 }

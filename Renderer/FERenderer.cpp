@@ -227,15 +227,15 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 							continue;
 						}
 
-						FEMaterial* originalMaterial = entity->material;
-						entity->material = shadowMapMaterial;
+						FEMaterial* originalMaterial = entity->gameModel->material;
+						entity->gameModel->material = shadowMapMaterial;
 						//#fix do it only if albedoHasAlpha
 						shadowMapMaterial->albedoMap = originalMaterial->albedoMap;
 
 						renderEntity(entity, currentCamera);
 
 						shadowMapMaterial->albedoMap = nullptr;
-						entity->material = originalMaterial;
+						entity->gameModel->material = originalMaterial;
 
 						it++;
 					}
@@ -396,9 +396,9 @@ void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bo
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-	entity->material->bind();
-	loadStandardParams(entity->material->shader, currentCamera, entity);
-	entity->material->shader->loadDataToGPU();
+	entity->gameModel->material->bind();
+	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity);
+	entity->gameModel->material->shader->loadDataToGPU();
 	entity->render();
-	entity->material->unBind();
+	entity->gameModel->material->unBind();
 }

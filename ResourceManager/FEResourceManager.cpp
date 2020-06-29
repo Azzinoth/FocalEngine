@@ -117,9 +117,70 @@ FETexture* FEResourceManager::LoadPngTextureAndCompress(const char* fileName, bo
 	index = newFileName.find_last_of(".");
 	std::string fileNameWithOutExtention = newFileName.substr(0, index);
 	setTextureName(newTexture, fileNameWithOutExtention);
-	/*index = fileNameWithOutExtention.find_last_of(".");
-	fileNameWithOutExtention = fileNameWithOutExtention.substr(0, index);*/
-	
+
+	return newTexture;
+}
+
+FETexture* FEResourceManager::LoadPngTextureWithTransparencyMaskAndCompress(const char* mainfileName, const char* maskFileName, std::string Name)
+{
+	FETexture* newTexture = createTexture(Name);
+	std::vector<unsigned char> rawData;
+	unsigned uWidth, uHeight;
+
+	lodepng::decode(rawData, uWidth, uHeight, mainfileName);
+	if (rawData.size() == 0)
+	{
+		//Log...
+		assert(rawData.size());
+	}
+	newTexture->width = uWidth;
+	newTexture->height = uHeight;
+
+	// Transparency mask part
+	std::vector<unsigned char> maskRawData;
+	lodepng::decode(maskRawData, uWidth, uHeight, maskFileName);
+	if (maskRawData.size() == 0)
+	{
+		//Log...
+		assert(maskRawData.size());
+	}
+
+	for (size_t i = 4; i < uWidth * uHeight * 4; i+=4)
+	{
+		rawData[-1 + i] = maskRawData[-4 + i];
+	}
+
+	int internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
+	newTexture->internalFormat = internalFormat;
+
+	if (newTexture->mipEnabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+	newTexture->fileName = mainfileName;
+
+	std::string filePath = newTexture->fileName;
+	std::size_t index = filePath.find_last_of("/\\");
+	std::string newFileName = filePath.substr(index + 1);
+	index = newFileName.find_last_of(".");
+	std::string fileNameWithOutExtention = newFileName.substr(0, index);
+	setTextureName(newTexture, fileNameWithOutExtention);
 
 	return newTexture;
 }
@@ -223,6 +284,11 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
+	if (fileSize < 0)
+	{
+		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+	}
+
 	file.seekg(0, std::ios::beg);
 	char* fileData = new char[int(fileSize)];
 	file.read(fileData, fileSize);
@@ -303,6 +369,12 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
+	if (fileSize < 0)
+	{
+		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		return this->noTexture;
+	}
+	
 	file.seekg(0, std::ios::beg);
 	char* fileData = new char[int(fileSize)];
 	file.read(fileData, fileSize);
@@ -683,6 +755,7 @@ FEResourceManager::FEResourceManager()
 
 	loadStandardMaterial();
 	loadStandardMeshes();
+	loadStandardGameModels();
 }
 
 FEResourceManager::~FEResourceManager()
@@ -722,8 +795,21 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 	std::fstream file;
 
 	file.open(fileName, std::ios::in | std::ios::binary);
-	char * buffer = new char[4];
+	std::streamsize fileSize = file.tellg();
+	if (fileSize < 0)
+	{
+		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.");
+		if (standardMeshes.size() > 0)
+		{
+			return standardMeshes[0];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
 
+	char * buffer = new char[4];
 	file.read(buffer, 4);
 	int vertexCout = *(int*)buffer;
 	char* vertexBuffer = new char[vertexCout * 4];
@@ -813,7 +899,7 @@ FEMaterial* FEResourceManager::createMaterial(std::string Name)
 
 bool FEResourceManager::setMaterialName(FEMaterial* Material, std::string MaterialName)
 {
-	if (MaterialName.size() == 0 || materials.find(MaterialName) != materials.end())
+	if (MaterialName.size() == 0 || materials.find(MaterialName) != materials.end() || standardMaterials.find(MaterialName) != standardMaterials.end())
 		return false;
 
 	materials.erase(Material->getName());
@@ -823,9 +909,9 @@ bool FEResourceManager::setMaterialName(FEMaterial* Material, std::string Materi
 	return true;
 }
 
-FEEntity* FEResourceManager::createEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
+FEEntity* FEResourceManager::createEntity(FEGameModel* gameModel, std::string Name)
 {
-	return new FEEntity(Mesh, Material, Name);
+	return new FEEntity(gameModel, Name);
 }
 
 std::vector<std::string> FEResourceManager::getMaterialList()
@@ -927,6 +1013,11 @@ void FEResourceManager::loadStandardMaterial()
 	makeMaterialStandard(newMaterial);
 }
 
+void FEResourceManager::loadStandardGameModels()
+{
+	standardGameModels["standartGameModel"] = new FEGameModel(getMesh("sphere"), getMaterial("SolidColorMaterial"), "standartGameModel");
+}
+
 void FEResourceManager::clear()
 {
 	auto materialIt = materials.begin();
@@ -952,6 +1043,14 @@ void FEResourceManager::clear()
 		textureIt++;
 	}
 	textures.clear();
+
+	auto gameModelIt = gameModels.begin();
+	while (gameModelIt != gameModels.end())
+	{
+		delete gameModelIt->second;
+		gameModelIt++;
+	}
+	gameModels.clear();
 }
 
 // save model raw data to FocalEngine binary file format
@@ -1041,6 +1140,114 @@ void FEResourceManager::deleteFETexture(FETexture* texture)
 
 void FEResourceManager::deleteFEMesh(FEMesh* mesh)
 {
+	// looking if this mesh is used in some gameModels
+	// to-do: should be done through list of pointers to gameModels that uses this mesh.
+	auto gameModelIterator = gameModels.begin();
+	while (gameModelIterator != gameModels.end())
+	{
+		if (gameModelIterator->second->mesh == mesh)
+		{
+			gameModelIterator->second->mesh = getMesh("sphere");
+		}
+
+		gameModelIterator++;
+	}
+
 	meshes.erase(mesh->getName());
 	delete mesh;
 }
+
+std::vector<std::string> FEResourceManager::getGameModelList()
+{
+	FE_MAP_TO_STR_VECTOR(gameModels)
+}
+
+std::vector<std::string> FEResourceManager::getStandardGameModelList()
+{
+	FE_MAP_TO_STR_VECTOR(standardGameModels)
+}
+
+FEGameModel* FEResourceManager::getGameModel(std::string name)
+{
+	if (gameModels.find(name) == gameModels.end())
+	{
+		if (standardGameModels.find(name) != standardGameModels.end())
+		{
+			return standardGameModels[name];
+		}
+
+		return nullptr;
+	}
+
+	return gameModels[name];
+}
+
+FEGameModel* FEResourceManager::createGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name)
+{
+	if (Name.size() == 0 || gameModels.find(Name) != gameModels.end())
+	{
+		size_t nextID = gameModels.size();
+		size_t index = 0;
+		Name = "gameModel_" + std::to_string(nextID + index);
+		while (gameModels.find(Name) != gameModels.end())
+		{
+			index++;
+			Name = "gameModel_" + std::to_string(nextID + index);
+		}
+	}
+
+	if (Mesh == nullptr)
+		Mesh = getMesh("sphere");
+
+	if (Material == nullptr)
+		Material = getMaterial("SolidColorMaterial");
+
+	gameModels[Name] = new FEGameModel(Mesh, Material, Name);
+	gameModels[Name]->setName(Name);
+	return gameModels[Name];
+}
+
+bool FEResourceManager::setGameModelName(FEGameModel* gameModel, std::string gameModelName)
+{
+	if (gameModelName.size() == 0 || gameModels.find(gameModelName) != gameModels.end() || standardGameModels.find(gameModelName) != standardGameModels.end())
+		return false;
+
+	gameModels.erase(gameModel->getName());
+	gameModels[gameModelName] = gameModel;
+
+	gameModel->setName(gameModelName);
+	return true;
+}
+
+void FEResourceManager::deleteGameModel(FEGameModel* gameModel)
+{
+	gameModels.erase(gameModel->getName());
+	delete gameModel;
+}
+
+bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
+{
+	if (standardGameModels.find(gameModel->getName()) == standardGameModels.end())
+	{
+		if (gameModel->getName().size() == 0 || standardGameModels.find(gameModel->getName()) != standardGameModels.end())
+		{
+			size_t nextID = standardGameModels.size();
+			size_t index = 0;
+			gameModel->setName("gameModel_" + std::to_string(nextID + index));
+			while (standardGameModels.find(gameModel->getName()) != standardGameModels.end())
+			{
+				index++;
+				gameModel->setName("gameModel_" + std::to_string(nextID + index));
+			}
+		}
+
+		if (gameModels.find(gameModel->getName()) != gameModels.end())
+			gameModels.erase(gameModel->getName());
+		standardGameModels[gameModel->getName()] = gameModel;
+
+		return true;
+	}
+
+	return false;
+}
+

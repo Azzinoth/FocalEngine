@@ -44,13 +44,10 @@ void FEScene::addLight(FELightType Type, std::string Name)
 	}
 }
 
-FEEntity* FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Name)
+FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name)
 {
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
-	if (!Material)
-		Material = resourceManager.getMaterial("SolidColorMaterial");
-	
 	if (Name.size() == 0 || entityMap.find(Name) != entityMap.end())
 	{
 		size_t nextID = entityMap.size();
@@ -62,7 +59,7 @@ FEEntity* FEScene::addEntity(FEMesh* Mesh, FEMaterial* Material, std::string Nam
 		}
 	}
 
-	entityMap[Name] = resourceManager.createEntity(Mesh, Material, Name);
+	entityMap[Name] = resourceManager.createEntity(gameModel, Name);
 	return entityMap[Name];
 }
 
@@ -108,18 +105,30 @@ void FEScene::clear()
 	lightsMap.clear();
 }
 
-void FEScene::prepareForFEMeshDeletion(FEMesh* mesh)
+void FEScene::prepareForGameModelDeletion(FEGameModel* gameModel)
 {
-	// looking if this mesh is used in some entities
-	// to-do: should be done through list of pointers to entities that uses this mesh.
+	// looking if this gameModel is used in some entities
+	// to-do: should be done through list of pointers to entities that uses this gameModel.
 	auto entitiesIterator = entityMap.begin();
 	while (entitiesIterator != entityMap.end())
 	{
-		if (entitiesIterator->second->mesh == mesh)
+		if (entitiesIterator->second->gameModel == gameModel)
 		{
-			entitiesIterator->second->mesh = FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getStandardMeshList()[0]);
+			entitiesIterator->second->gameModel = FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getStandardGameModelList()[0]);
 		}
 
 		entitiesIterator++;
 	}
+}
+
+bool FEScene::setEntityName(FEEntity* Entity, std::string EntityName)
+{
+	if (EntityName.size() == 0 || entityMap.find(EntityName) != entityMap.end())
+		return false;
+
+	entityMap.erase(Entity->getName());
+	entityMap[EntityName] = Entity;
+
+	Entity->setName(EntityName);
+	return true;
 }

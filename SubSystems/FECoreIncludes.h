@@ -75,6 +75,33 @@ while (iterator != map.end())              \
                                            \
 return result;
 
+//class FELOG
+//{
+//public:
+//	SINGLETON_PUBLIC_PART(FELOG)
+//	void logError(std::string text);
+//	/*{
+//		log.push_back(text);
+//	}*/
+//		
+//private:
+//	SINGLETON_PRIVATE_PART(FELOG)
+//	std::vector<std::string> log;
+//};
+
+//#ifndef FE_LOG
+//#define FE_LOG
+//static std::vector<std::string> log;
+//
+//static void FELogError(std::string text)
+//{
+//	//static std::vector<std::string> log;
+//	log.push_back(text);
+//}
+//#endif
+
+
+
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 16
 #define FE_WIN_32

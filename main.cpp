@@ -177,6 +177,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	FERenderer::getInstance().addPostProcess(selectionHaloEffect, true);
 
+	/*FETexture* test = resourceManager.LoadPngTextureWithTransparencyMaskAndCompress("C:\\Users\\kandr\\Documents\\Megascans Library\\Downloaded\\own folder\\purple_woodsorrel\\plants_3d_uchkajuia\\titrbhana_2K_Albedo.png",
+		"C:\\Users\\kandr\\Documents\\Megascans Library\\Downloaded\\own folder\\purple_woodsorrel\\plants_3d_uchkajuia\\titrbhana_2K_Opacity.png", "test");
+
+	FEResourceManager::getInstance().saveFETexture(("C:\\Users\\kandr\\Downloads\\FEProjects\\Vegetation\\" + test->getName() + ".FETexture").c_str(), test);*/
+
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
@@ -188,11 +193,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
-			FEMaterial* regularMaterial = selectedEntity->material;
-			selectedEntity->material = haloMaterial;
+			FEMaterial* regularMaterial = selectedEntity->gameModel->material;
+			selectedEntity->gameModel->material = haloMaterial;
 			haloMaterial->albedoMap = regularMaterial->albedoMap;
 			FERenderer::getInstance().renderEntity(selectedEntity, engine.getCamera());
-			selectedEntity->material = regularMaterial;
+			selectedEntity->gameModel->material = regularMaterial;
 			haloMaterial->albedoMap = nullptr;
 
 			haloObjectsFB->unBind();
