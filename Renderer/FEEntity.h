@@ -31,7 +31,10 @@ namespace FocalEngine
 		std::string getName();
 		void setName(std::string newName);
 
+		int getNameHash();
+
 		FEAABB getAABB();
+		FEAABB getPureAABB();
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
@@ -40,6 +43,7 @@ namespace FocalEngine
 		void setReceivingShadows(bool isReceivingShadows);
 	private:
 		std::string name;
+		int nameHash = 0;
 
 		bool visible = true;
 		bool castShadows = true;

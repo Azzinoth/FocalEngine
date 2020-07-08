@@ -51,6 +51,9 @@ void FEFreeCamera::move(float deltaTime)
 	}
 
 	updateViewMatrix();
+
+	if (clientOnUpdateImpl)
+		clientOnUpdateImpl(this);
 }
 
 void FEFreeCamera::reset()

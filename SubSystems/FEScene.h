@@ -14,6 +14,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEScene)
 
 		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "");
+		bool addEntity(FEEntity* newEntity);
 		FEEntity* getEntity(std::string name);
 		std::vector<std::string> getEntityList();
 		void deleteEntity(std::string name);

@@ -29,6 +29,7 @@ namespace FocalEngine
 		void deleteFETexture(FETexture* texture);
 		std::vector<std::string> getTextureList();
 		FETexture* getTexture(std::string name);
+		bool makeTextureStandard(FETexture* texture);
 		bool setTextureName(FETexture* Texture, std::string TextureName);
 		FETexture* noTexture;
 
@@ -38,6 +39,7 @@ namespace FocalEngine
 		FEMesh* rawDataToMesh(float* positions, int posSize, float* UV, int UVSize, float* normals, int normSize, float* tangents, int tanSize, int* indices, int indexSize, std::string Name = "");
 		FEMesh* rawObjDataToMesh();
 		void deleteFEMesh(FEMesh* mesh);
+		bool makeMeshStandard(FEMesh* mesh);
 		bool setMeshName(FEMesh* Mesh, std::string MeshName);
 
 		std::vector<std::string> getMaterialList();
@@ -74,6 +76,7 @@ namespace FocalEngine
 
 		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
 		std::unordered_map<std::string, FETexture*> textures;
+		std::unordered_map<std::string, FETexture*> standardTextures;
 
 		std::unordered_map<std::string, FEMaterial*> materials;
 		std::unordered_map<std::string, FEMaterial*> standardMaterials;

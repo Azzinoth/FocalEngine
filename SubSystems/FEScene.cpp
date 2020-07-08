@@ -63,6 +63,19 @@ FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name)
 	return entityMap[Name];
 }
 
+bool FEScene::addEntity(FEEntity* newEntity)
+{
+	if (newEntity == nullptr || newEntity->getName().size() == 0 || entityMap.find(newEntity->getName()) != entityMap.end())
+		return false;
+
+	if (newEntity->gameModel == nullptr || newEntity->gameModel->mesh == nullptr || newEntity->gameModel->material == nullptr)
+		return false;
+
+	entityMap[newEntity->getName()] = newEntity;
+
+	return true;
+}
+
 FEEntity* FEScene::getEntity(std::string name)
 {
 	if (entityMap.find(name) == entityMap.end())

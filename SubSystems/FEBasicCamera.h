@@ -56,6 +56,8 @@ namespace FocalEngine
 		virtual void mouseMoveInput(double xpos, double ypos) {};
 
 		virtual void reset();
+
+		virtual void setOnUpdate(void(*func)(FEBasicCamera*));
 	protected:
 		bool isInputActive = true;
 
@@ -76,5 +78,7 @@ namespace FocalEngine
 		glm::mat4 projectionMatrix;
 
 		GLFWwindow* window;
+
+		void(*clientOnUpdateImpl)(FEBasicCamera*) = nullptr;
 	};
 }

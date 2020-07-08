@@ -54,7 +54,7 @@ void operator= (const CLASS_NAME &);
 		GLenum error = glGetError();	   \
 		if (error != 0)                    \
 		{								   \
-			assert(0);					   \
+			assert("FE_GL_ERROR" && 0);	   \
 		}                                  \
 	}
 #else

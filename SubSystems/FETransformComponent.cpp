@@ -58,6 +58,19 @@ void FETransformComponent::setRotation(glm::vec3 newRotation)
 	update();
 }
 
+void FETransformComponent::rotateByQuaternion(glm::quat quaternion)
+{
+	rotationQuaternion = quaternion * rotationQuaternion;
+	glm::vec3 newRotationAngle = glm::eulerAngles(getQuaternion());
+
+	newRotationAngle.x /= ANGLE_TORADIANS_COF;
+	newRotationAngle.y /= ANGLE_TORADIANS_COF;
+	newRotationAngle.z /= ANGLE_TORADIANS_COF;
+
+	rotationAngles = newRotationAngle;
+	update();
+}
+
 void FETransformComponent::changeScaleUniformlyBy(float delta)
 {
 	scale += delta;

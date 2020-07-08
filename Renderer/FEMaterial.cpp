@@ -22,7 +22,7 @@ void FEMaterial::bind()
 
 	if (albedoMap != nullptr) albedoMap->bind(0);
 	if (normalMap != nullptr) normalMap->bind(1);
-	//if (AOMap != nullptr) AOMap->bind(2);
+	if (AOMap != nullptr) AOMap->bind(2);
 	if (roughtnessMap != nullptr) roughtnessMap->bind(3);
 	if (metalnessMap != nullptr) metalnessMap->bind(4);
 	if (displacementMap != nullptr) displacementMap->bind(5);

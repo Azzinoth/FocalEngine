@@ -14,7 +14,7 @@ public:
 	void setName(std::string newName);
 
 	std::string getProjectFolder();
-	void saveScene();
+	void saveScene(std::unordered_map<int, FEEntity*>* excludedEntities);
 	void loadScene();
 
 	FETexture* sceneScreenshot;

@@ -16,6 +16,7 @@ namespace FocalEngine
 
 		void setPosition(glm::vec3 newPosition);
 		void setRotation(glm::vec3 newRotation);
+		void rotateByQuaternion(glm::quat quaternion);
 		void setScale(glm::vec3 newScale);
 
 		void changeScaleUniformlyBy(float delta);
@@ -29,8 +30,9 @@ namespace FocalEngine
 		bool uniformScaling = true;
 	private:
 		glm::vec3 position;
-		glm::vec3 rotationAngles;
 		glm::quat rotationQuaternion;
+		glm::vec3 rotationAngles;
+		
 		glm::vec3 scale;
 
 		glm::mat4 transformMatrix;

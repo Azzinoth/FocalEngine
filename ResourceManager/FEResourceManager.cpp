@@ -25,9 +25,35 @@ FETexture* FEResourceManager::createTexture(std::string Name)
 	return newTexture;
 }
 
+bool FEResourceManager::makeTextureStandard(FETexture* texture)
+{
+	if (standardTextures.find(texture->getName()) == standardTextures.end())
+	{
+		if (texture->getName().size() == 0 || standardTextures.find(texture->getName()) != standardTextures.end())
+		{
+			size_t nextID = standardTextures.size();
+			size_t index = 0;
+			texture->setName("texture_" + std::to_string(nextID + index));
+			while (standardTextures.find(texture->getName()) != standardTextures.end())
+			{
+				index++;
+				texture->setName("texture_" + std::to_string(nextID + index));
+			}
+		}
+
+		if (textures.find(texture->getName()) != textures.end())
+			textures.erase(texture->getName());
+		standardTextures[texture->getName()] = texture;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool FEResourceManager::setTextureName(FETexture* Texture, std::string TextureName)
 {
-	if (TextureName.size() == 0 || textures.find(TextureName) != textures.end())
+	if (TextureName.size() == 0 || textures.find(TextureName) != textures.end() || standardTextures.find(TextureName) != standardTextures.end())
 		return false;
 
 	textures.erase(Texture->getName());
@@ -69,6 +95,32 @@ bool FEResourceManager::setMeshName(FEMesh* Mesh, std::string MeshName)
 
 	Mesh->setName(MeshName);
 	return true;
+}
+
+bool FEResourceManager::makeMeshStandard(FEMesh* mesh)
+{
+	if (standardMeshes.find(mesh->getName()) == standardMeshes.end())
+	{
+		if (mesh->getName().size() == 0 || standardMeshes.find(mesh->getName()) != standardMeshes.end())
+		{
+			size_t nextID = standardMeshes.size();
+			size_t index = 0;
+			mesh->setName("mesh_" + std::to_string(nextID + index));
+			while (standardMeshes.find(mesh->getName()) != standardMeshes.end())
+			{
+				index++;
+				mesh->setName("mesh_" + std::to_string(nextID + index));
+			}
+		}
+
+		if (meshes.find(mesh->getName()) != meshes.end())
+			meshes.erase(mesh->getName());
+		standardMeshes[mesh->getName()] = mesh;
+
+		return true;
+	}
+
+	return false;
 }
 
 FETexture* FEResourceManager::LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name)
@@ -210,14 +262,22 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 
 	for (size_t i = 0; i < mipCount; i++)
 	{
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, i, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imgSize);
+		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, GLint(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imgSize));
 
 		char* pixels = new char[imgSize * 2];
 		for (size_t i = 0; i < size_t(imgSize * 2); i++)
 		{
 			pixels[i] = ' ';
 		}
-		glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), pixels);
+
+		char* additionalTestPixels = new char[imgSize * 2];
+		for (size_t i = 0; i < size_t(imgSize * 2); i++)
+		{
+			additionalTestPixels[i] = '1';
+		}
+
+		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), pixels));
+		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), additionalTestPixels));
 
 		int realSize = 0;
 		for (size_t i = imgSize * 2 - 1; i > 0 ; i--)
@@ -229,9 +289,22 @@ void FEResourceManager::saveFETexture(const char* fileName, FETexture* texture)
 			}
 		}
 
+		int additionalRealSize = 0;
+		for (size_t i = imgSize * 2 - 1; i > 0; i--)
+		{
+			if (additionalTestPixels[i] != '1')
+			{
+				additionalRealSize = i + 1;
+				break;
+			}
+		}
+
+		realSize = std::max(realSize, additionalRealSize);
+
 		pixelData[i] = new char[realSize];
 		memcpy(pixelData[i], pixels, realSize);
 		delete[] pixels;
+		delete[] additionalTestPixels;
 
 		file.write((char*)&realSize, sizeof(int));
 		file.write((char*)pixelData[i], sizeof(char) * realSize);
@@ -330,7 +403,7 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 
 	int maxDimention = std::max(existingTexture->width, existingTexture->height);
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-	glTexStorage2D(GL_TEXTURE_2D, mipCount, existingTexture->internalFormat, existingTexture->width, existingTexture->height);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, mipCount, existingTexture->internalFormat, existingTexture->width, existingTexture->height));
 
 	if (existingTexture->mipEnabled)
 	{
@@ -348,11 +421,11 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 
 		if (i == 0)
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, existingTexture->width, existingTexture->height, existingTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, existingTexture->width, existingTexture->height, existingTexture->internalFormat, size, (void*)(&fileData[currentShift])));
 		}
 		else
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, existingTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, existingTexture->internalFormat, size, (void*)(&fileData[currentShift])));
 
 			mipW = mipW / 2;
 			mipH = mipH / 2;
@@ -417,7 +490,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 
 	int maxDimention = std::max(newTexture->width, newTexture->height);
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-	glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height));
 
 	if (newTexture->mipEnabled)
 	{
@@ -435,11 +508,16 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 
 		if (i == 0)
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+			/*FE_GL_ERROR(*/glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift]))/*)*/;
+			GLenum error = glGetError();
+			if (error != 0)
+			{
+				assert(0);
+			}
 		}
 		else
 		{
-			glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift]));
+			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
 			
 			mipW = mipW / 2;
 			mipH = mipH / 2;
@@ -801,7 +879,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.");
 		if (standardMeshes.size() > 0)
 		{
-			return standardMeshes[0];
+			return getMesh("cube");
 		}
 		else
 		{

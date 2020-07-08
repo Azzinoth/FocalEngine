@@ -1,5 +1,5 @@
 #include "../Editor/FEEditor.h"
-#include "../Editor/FESelectionHaloEffect.h"
+
 
 static const char* const MyVS = R"(
 #version 400 core
@@ -146,73 +146,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 	renderer.addPostProcess(testEffect);*/
 
-	int lowerResW = engine.getWindowWidth();
-	int lowerResH = engine.getWindowHeight();
-
-	FocalEngine::FEFramebuffer* haloObjectsFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, lowerResW, lowerResH);
-	FocalEngine::FEEntity* selectedEntity = nullptr;
-
-	FocalEngine::FEMaterial* haloMaterial = resourceManager.createMaterial("haloMaterial");
-	resourceManager.makeMaterialStandard(haloMaterial);
-	haloMaterial->shader = new FocalEngine::FEShader(HaloDrawObjectVS, HaloDrawObjectFS);
-
-	FocalEngine::FEPostProcess* selectionHaloEffect = engine.createPostProcess("selectionHaloEffect");
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, new FEShader(FEBloomEffectVS, FEBloomEffectHorizontalFS)));
-	selectionHaloEffect->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
-	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(lowerResW, lowerResH);
-
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBloomEffectVS, FEBloomEffectVerticalFS)));
-	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->outTexture);
-	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(lowerResW, lowerResH);
-
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, new FEShader(HaloFinalVS, HaloFinalFS)));
-	selectionHaloEffect->stages.back()->inTexture.push_back(renderer.postProcessEffects[renderer.postProcessEffects.size() - 1]->stages.back()->outTexture);
-	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
-	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[1]->outTexture);
-	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
-	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->inTexture[0]);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(lowerResW, lowerResH);
-
-	FERenderer::getInstance().addPostProcess(selectionHaloEffect, true);
-
-	/*FETexture* test = resourceManager.LoadPngTextureWithTransparencyMaskAndCompress("C:\\Users\\kandr\\Documents\\Megascans Library\\Downloaded\\own folder\\purple_woodsorrel\\plants_3d_uchkajuia\\titrbhana_2K_Albedo.png",
-		"C:\\Users\\kandr\\Documents\\Megascans Library\\Downloaded\\own folder\\purple_woodsorrel\\plants_3d_uchkajuia\\titrbhana_2K_Opacity.png", "test");
-
-	FEResourceManager::getInstance().saveFETexture(("C:\\Users\\kandr\\Downloads\\FEProjects\\Vegetation\\" + test->getName() + ".FETexture").c_str(), test);*/
-
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
-
-		selectedEntity = FEScene::getInstance().getEntity(getSelectedEntity());
-		if (selectedEntity != nullptr)
-		{
-			haloObjectsFB->bind();
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
-
-			FEMaterial* regularMaterial = selectedEntity->gameModel->material;
-			selectedEntity->gameModel->material = haloMaterial;
-			haloMaterial->albedoMap = regularMaterial->albedoMap;
-			FERenderer::getInstance().renderEntity(selectedEntity, engine.getCamera());
-			selectedEntity->gameModel->material = regularMaterial;
-			haloMaterial->albedoMap = nullptr;
-
-			haloObjectsFB->unBind();
-			glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-		}
-		else
-		{
-			haloObjectsFB->bind();
-			glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-			FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
-
-			haloObjectsFB->unBind();
-			glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-		}
-
 		engine.render();
 
 		if (FERenderer::getInstance().CSM0 != nullptr)
@@ -221,15 +157,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-		}
-
-		if (selectedEntity != nullptr)
-		{
-			selectionHaloEffect->active = true;
-		}
-		else
-		{
-			selectionHaloEffect->active = false;
 		}
 
 		//ImGui::ShowDemoWindow();

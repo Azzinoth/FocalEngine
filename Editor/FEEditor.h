@@ -3,6 +3,7 @@
 #include "FEProject.h"
 #include "../Editor/FEPixelAccurateSelectionShader.h"
 #include "../Editor/FEMeshPreviewShader.h"
+#include "../Editor/FESelectionHaloEffect.h"
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
@@ -12,6 +13,7 @@ using namespace FocalEngine;
 
 #define PROJECTS_FOLDER "C:/Users/kandr/Downloads/FEProjects"
 
+static double lastMouseX, lastMouseY;
 static double mouseX, mouseY;
 static bool isCameraInputActive = false;
 // **************************** entity selection ****************************
@@ -20,7 +22,6 @@ glm::dvec3 mouseRay();
 void determineEntityUnderMouse();
 static std::vector<std::string> entitiesUnderMouse;
 static std::string selectedEntity = "";
-std::string getSelectedEntity();
 void setSelectedEntity(std::string newEntity);
 static bool selectedEntityWasChanged;
 
@@ -34,6 +35,195 @@ static FocalEngine::FEEntity* potentiallySelectedEntity = nullptr;
 static FocalEngine::FEMaterial* pixelAccurateSelectionMaterial;
 // **************************** entity selection END ****************************
 
+static std::unordered_map<int, FEEntity*> internalEditorEntities;
+static void addEntityToInternalEditorList(FEEntity* entity);
+static bool isInInternalEditorList(FEEntity* entity);
+
+static std::unordered_map<int, FEMesh*> internalEditorMesh;
+static void addMeshToInternalEditorList(FEMesh* mesh);
+static bool isInInternalEditorList(FEMesh* mesh)
+{
+	return !(internalEditorMesh.find(std::hash<std::string>{}(mesh->getName())) == internalEditorMesh.end());
+}
+
+// **************************** Gizmos ****************************
+static float gizmosScale = 0.00175f;
+
+static const int TRANSFORM_GIZMOS = 0;
+static const int SCALE_GIZMOS = 1;
+static const int ROTATE_GIZMOS = 2;
+
+static int gizmosState = TRANSFORM_GIZMOS;
+static void loadGizmos();
+
+static FEEntity* transformationXGizmoEntity = nullptr;
+static FEEntity* transformationYGizmoEntity = nullptr;
+static FEEntity* transformationZGizmoEntity = nullptr;
+
+static std::string transformationXGizmoName = "transformationXGizmoEntity";
+static int transformationXGizmoNameHash = std::hash<std::string>{}(transformationXGizmoName);
+
+static std::string transformationYGizmoName = "transformationYGizmoEntity";
+static int transformationYGizmoNameHash = std::hash<std::string>{}(transformationYGizmoName);
+
+static std::string transformationZGizmoName = "transformationZGizmoEntity";
+static int transformationZGizmoNameHash = std::hash<std::string>{}(transformationZGizmoName);
+
+static bool transformationXGizmoActive = false;
+static bool transformationYGizmoActive = false;
+static bool transformationZGizmoActive = false;
+
+static FEEntity* transformationXYGizmoEntity = nullptr;
+static FEEntity* transformationYZGizmoEntity = nullptr;
+static FEEntity* transformationXZGizmoEntity = nullptr;
+
+static std::string transformationXYGizmoName = "transformationXYGizmoEntity";
+static int transformationXYGizmoNameHash = std::hash<std::string>{}(transformationXYGizmoName);
+
+static std::string transformationYZGizmoName = "transformationYZGizmoEntity";
+static int transformationYZGizmoNameHash = std::hash<std::string>{}(transformationYZGizmoName);
+
+static std::string transformationXZGizmoName = "transformationXZGizmoEntity";
+static int transformationXZGizmoNameHash = std::hash<std::string>{}(transformationXZGizmoName);
+
+static bool transformationXYGizmoActive = false;
+static bool transformationYZGizmoActive = false;
+static bool transformationXZGizmoActive = false;
+
+// scale part
+static FEEntity* scaleXGizmoEntity = nullptr;
+static FEEntity* scaleYGizmoEntity = nullptr;
+static FEEntity* scaleZGizmoEntity = nullptr;
+
+static bool scaleXGizmoActive = false;
+static bool scaleYGizmoActive = false;
+static bool scaleZGizmoActive = false;
+
+static std::string scaleXGizmoName = "scaleXGizmoEntity";
+static int scaleXGizmoNameHash = std::hash<std::string>{}(scaleXGizmoName);
+
+static std::string scaleYGizmoName = "scaleYGizmoEntity";
+static int scaleYGizmoNameHash = std::hash<std::string>{}(scaleYGizmoName);
+
+static std::string scaleZGizmoName = "scaleZGizmoEntity";
+static int scaleZGizmoNameHash = std::hash<std::string>{}(scaleZGizmoName);
+
+// rotate part
+static FEEntity* rotateXGizmoEntity = nullptr;
+static FEEntity* rotateYGizmoEntity = nullptr;
+static FEEntity* rotateZGizmoEntity = nullptr;
+
+static bool rotateXGizmoActive = false;
+static bool rotateYGizmoActive = false;
+static bool rotateZGizmoActive = false;
+
+static glm::vec3 rotateXStandardRotation = glm::vec3(0.0f, 0.0f, -90.0f);
+static glm::vec3 rotateYStandardRotation = glm::vec3(0.0f);
+static glm::vec3 rotateZStandardRotation = glm::vec3(90.0f, 0.0f, 90.0f);
+
+static std::string rotateXGizmoName = "rotateXGizmoEntity";
+static int rotateXGizmoNameHash = std::hash<std::string>{}(rotateXGizmoName);
+
+static std::string rotateYGizmoName = "rotateYGizmoEntity";
+static int rotateYGizmoNameHash = std::hash<std::string>{}(rotateYGizmoName);
+
+static std::string rotateZGizmoName = "rotateZGizmoEntity";
+static int rotateZGizmoNameHash = std::hash<std::string>{}(rotateZGizmoName);
+
+static void changeGizmoState(int newState)
+{
+	if (newState < 0 || newState > 2)
+		newState = 0;
+
+	gizmosState = newState;
+
+	transformationXGizmoEntity->setVisibility(false);
+	transformationYGizmoEntity->setVisibility(false);
+	transformationZGizmoEntity->setVisibility(false);
+
+	transformationXYGizmoEntity->setVisibility(false);
+	transformationYZGizmoEntity->setVisibility(false);
+	transformationXZGizmoEntity->setVisibility(false);
+
+	transformationXGizmoActive = false;
+	transformationYGizmoActive = false;
+	transformationZGizmoActive = false;
+
+	transformationXYGizmoActive = false;
+	transformationYZGizmoActive = false;
+	transformationXZGizmoActive = false;
+
+	scaleXGizmoEntity->setVisibility(false);
+	scaleYGizmoEntity->setVisibility(false);
+	scaleZGizmoEntity->setVisibility(false);
+
+	scaleXGizmoActive = false;
+	scaleYGizmoActive = false;
+	scaleZGizmoActive = false;
+
+	rotateXGizmoEntity->setVisibility(false);
+	rotateYGizmoEntity->setVisibility(false);
+	rotateZGizmoEntity->setVisibility(false);
+
+	rotateXGizmoActive = false;
+	rotateYGizmoActive = false;
+	rotateZGizmoActive = false;
+
+	switch (newState)
+	{
+	case TRANSFORM_GIZMOS:
+	{
+		if (selectedEntity.size() != 0)
+		{
+			transformationXGizmoEntity->setVisibility(true);
+			transformationYGizmoEntity->setVisibility(true);
+			transformationZGizmoEntity->setVisibility(true);
+
+			transformationXYGizmoEntity->setVisibility(true);
+			transformationYZGizmoEntity->setVisibility(true);
+			transformationXZGizmoEntity->setVisibility(true);
+		}
+		break;
+	}
+	case SCALE_GIZMOS:
+	{
+		if (selectedEntity.size() != 0)
+		{
+			scaleXGizmoEntity->setVisibility(true);
+			scaleYGizmoEntity->setVisibility(true);
+			scaleZGizmoEntity->setVisibility(true);
+		}
+		break;
+	}
+	case ROTATE_GIZMOS:
+	{
+		if (selectedEntity.size() != 0)
+		{
+			rotateXGizmoEntity->setVisibility(true);
+			rotateYGizmoEntity->setVisibility(true);
+			rotateZGizmoEntity->setVisibility(true);
+		}
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static FETexture* transformationGizmoIcon = nullptr;
+static FETexture* scaleGizmoIcon = nullptr;
+static FETexture* rotateGizmoIcon = nullptr;
+
+//static std::string transformationGizmoIconName = "transformationGizmoIcon";
+//static int transformationGizmoIconNameHash = std::hash<std::string>{}(transformationGizmoIconName);
+//static std::string scaleGizmoIconName = "scaleGizmoIcon";
+//static int scaleGizmoIconNameHash = std::hash<std::string>{}(scaleGizmoIconName);
+//static std::string rotateGizmoIconName = "rotateGizmoIcon";
+//static int rotateGizmoIconNameHash = std::hash<std::string>{}(rotateGizmoIconName);
+
+void editorOnCameraUpdate(FEBasicCamera* camera);
+
+// **************************** Gizmos END ****************************
 static std::vector<FEProject*> projectList;
 static int projectChosen = -1;
 
@@ -73,13 +263,20 @@ void displayMaterialContentBrowser();
 
 // **************************** Meshes Content Browser ****************************
 static std::unordered_map<std::string, FETexture*> meshPreviewTextures;
-static FocalEngine::FEMaterial* meshPreviewMaterial;
+static FEMaterial* meshPreviewMaterial;
 
 void createMeshPreview(std::string meshName);
 FETexture* getMeshPreview(std::string meshName);
 
 void displayMeshesContentBrowser();
 // **************************** Meshes Content Browser END ****************************
+
+// **************************** Halo selection ****************************
+static FEFramebuffer* haloObjectsFB = nullptr;
+static FEEntity* selectedEntityObject = nullptr;
+static FEMaterial* haloMaterial = nullptr;
+static FEPostProcess* selectionHaloEffect = nullptr;
+// **************************** Halo selection END ****************************
 void displayTexturesContentBrowser();
 void displayTextureInMaterialEditor(FETexture*& texture);
 
@@ -212,7 +409,7 @@ public:
 			{
 				std::string name = objToWorkWith->getName();
 				FEResourceManager::getInstance().deleteFETexture(objToWorkWith);
-				currentProject->saveScene();
+				currentProject->saveScene(&internalEditorEntities);
 
 				deleteFile((currentProject->getProjectFolder() + name + ".FEtexture").c_str());
 
@@ -319,7 +516,7 @@ public:
 					// also rename texture filename correspondently
 					changeFileName((currentProject->getProjectFolder() + oldName + ".FETexture").c_str(), (currentProject->getProjectFolder() + newName + ".FETexture").c_str());
 					// save assets list with new texture name
-					currentProject->saveScene();
+					currentProject->saveScene(&internalEditorEntities);
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
@@ -372,7 +569,7 @@ public:
 				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), true);
 				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
-				currentProject->saveScene();
+				currentProject->saveScene(&internalEditorEntities);
 
 				ImGuiModalPopup::close();
 			}
@@ -384,7 +581,7 @@ public:
 				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), false);
 				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
-				currentProject->saveScene();
+				currentProject->saveScene(&internalEditorEntities);
 
 				ImGuiModalPopup::close();
 			}
@@ -484,7 +681,7 @@ public:
 					}
 				}
 
-				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					textureIndexSelected = i;
 				}
@@ -589,7 +786,7 @@ public:
 					// also rename mesh filename correspondently
 					changeFileName((currentProject->getProjectFolder() + oldName + ".model").c_str(), (currentProject->getProjectFolder() + newName + ".model").c_str());
 					// save assets list with new mesh name
-					currentProject->saveScene();
+					currentProject->saveScene(&internalEditorEntities);
 
 					FETexture* tempTexture = meshPreviewTextures[oldName];
 					meshPreviewTextures.erase(oldName);
@@ -671,7 +868,7 @@ public:
 				}
 
 				FEResourceManager::getInstance().deleteFEMesh(objToWorkWith);
-				currentProject->saveScene();
+				currentProject->saveScene(&internalEditorEntities);
 
 				// re-create game model preview
 				for (size_t i = 0; i < gameModelListToUpdate.size(); i++)
@@ -722,6 +919,8 @@ public:
 		std::vector<std::string> standardMeshList = FEResourceManager::getInstance().getStandardMeshList();
 		for (size_t i = 0; i < standardMeshList.size(); i++)
 		{
+			if (isInInternalEditorList(FEResourceManager::getInstance().getMesh(standardMeshList[i])))
+				continue;
 			meshList.insert(meshList.begin(), standardMeshList[i]);
 		}
 
@@ -876,7 +1075,8 @@ public:
 		pushedStyle = false;
 		objToWorkWith = material;
 		materialList = FEResourceManager::getInstance().getMaterialList();
-
+		materialList.insert(materialList.begin(), "SolidColorMaterial");
+		
 		filteredMaterialList = materialList;
 		strcpy_s(filter, "");
 	}
@@ -1235,7 +1435,7 @@ public:
 				if (resourceManager.setGameModelName(objToWorkWith, newName))
 				{
 					// save assets list with new texture name
-					currentProject->saveScene();
+					currentProject->saveScene(&internalEditorEntities);
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
@@ -1303,7 +1503,7 @@ public:
 				std::string name = objToWorkWith->getName();
 				FEScene::getInstance().prepareForGameModelDeletion(objToWorkWith);
 				FEResourceManager::getInstance().deleteGameModel(objToWorkWith);
-				currentProject->saveScene();
+				currentProject->saveScene(&internalEditorEntities);
 
 				objToWorkWith = nullptr;
 				ImGuiModalPopup::close();
@@ -1364,7 +1564,7 @@ public:
 				if (scene.setEntityName(objToWorkWith, newName))
 				{
 					// save assets list with new entity name
-					currentProject->saveScene();
+					currentProject->saveScene(&internalEditorEntities);
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
@@ -1393,7 +1593,7 @@ class ImGuiWindow
 {
 protected:
 	bool visible;
-	char popupCaption[512];
+	char caption[512];
 	ImVec2 position;
 	ImVec2 size;
 	int flags = ImGuiWindowFlags_None;
@@ -1428,7 +1628,7 @@ public:
 				wasClosedLastFrame = false;
 			}
 			ImGui::SetNextWindowSize(size);
-			ImGui::Begin(popupCaption, nullptr, flags);
+			ImGui::Begin(caption, nullptr, flags);
 		}
 	}
 
@@ -1468,9 +1668,9 @@ public:
 			tempModel->mesh = objToWorkWith->mesh;
 			tempModel->material = objToWorkWith->material;
 
-			std::string caption = "Edit game model:";
-			caption += " " + objToWorkWith->getName();
-			strcpy_s(popupCaption, caption.size() + 1, caption.c_str());
+			std::string tempCaption = "Edit game model:";
+			tempCaption += " " + objToWorkWith->getName();
+			strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
 			size = ImVec2(350.0f, 400.0f);
 			position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
 			ImGuiWindow::show();
@@ -1587,3 +1787,148 @@ public:
 	}
 };
 static editGameModelPopup editGameModelWindow;
+
+class gyzmosSettingsWindow : public ImGuiWindow
+{
+public:
+	gyzmosSettingsWindow()
+	{
+		flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+	}
+
+	void show()
+	{
+		std::string tempCaption = "##GizmosSettingsWindow";
+		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+		size = ImVec2(146.0f, 48.0f);
+		position = ImVec2(FEngine::getInstance().getWindowWidth() / 2.0f - 150.0f / 2.0f, 10.0f);
+		ImGuiWindow::show();
+	}
+
+	void render() override
+	{
+		ImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+		float currentX = 5.0f;
+		ImGui::SetCursorPosX(currentX);
+		ImGui::SetCursorPosY(5.0f);
+
+		if (gizmosState == TRANSFORM_GIZMOS)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		}
+
+		ImGui::PushID(0);
+		if (ImGui::ImageButton((void*)(intptr_t)transformationGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			if (gizmosState != TRANSFORM_GIZMOS)
+			{
+				changeGizmoState(TRANSFORM_GIZMOS);
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+
+		if (gizmosState == TRANSFORM_GIZMOS)
+		{
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+		}
+
+		toolTip("Translate objects. key = shift");
+
+		currentX += 32.0f + 16.0f;
+		ImGui::SetCursorPosX(currentX);
+		ImGui::SetCursorPosY(5.0f);
+
+		if (gizmosState == SCALE_GIZMOS)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		}
+
+		ImGui::PushID(1);
+		if (ImGui::ImageButton((void*)(intptr_t)scaleGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			if (gizmosState != SCALE_GIZMOS)
+			{
+				changeGizmoState(SCALE_GIZMOS);
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+
+		if (gizmosState == SCALE_GIZMOS)
+		{
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+		}
+
+		toolTip("Scale objects. key = shift");
+
+		currentX += 32.0f + 16.0f;
+		ImGui::SetCursorPosX(currentX);
+		ImGui::SetCursorPosY(5.0f);
+
+		if (gizmosState == ROTATE_GIZMOS)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		}
+
+		ImGui::PushID(2);
+		if (ImGui::ImageButton((void*)(intptr_t)rotateGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			if (gizmosState != ROTATE_GIZMOS)
+			{
+				changeGizmoState(ROTATE_GIZMOS);
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+
+		if (gizmosState == ROTATE_GIZMOS)
+		{
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+		}
+
+		toolTip("Rotate objects. key = shift");
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		ImGuiWindow::onRenderEnd();
+	}
+};
+static gyzmosSettingsWindow gyzmosSettingsWindowObject;

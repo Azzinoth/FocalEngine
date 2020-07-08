@@ -57,7 +57,7 @@ void FEProject::writeTransformToJSON(Json::Value& root, FETransformComponent* tr
 	root["scale"]["Z"] = transform->getScale()[2];
 }
 
-void FEProject::saveScene()
+void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 {
 	FEngine& engine = FEngine::getInstance();
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
@@ -125,6 +125,8 @@ void FEProject::saveScene()
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		FEEntity* entity = scene.getEntity(entityList[i]);
+		if (excludedEntities->find(entity->getNameHash()) != excludedEntities->end())
+			continue;
 
 		entityData[entity->getName()]["gameModel"] = entity->gameModel->getName();
 		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
