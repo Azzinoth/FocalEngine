@@ -2,7 +2,7 @@
 using namespace FocalEngine;
 
 FESolidColorShader::FESolidColorShader()
-	: FEShader(FESolidColorVS, FESolidColorFS)
+	: FEShader(FESolidColorVS, FESolidColorFS, "FESolidColorShader")
 {
 }
 

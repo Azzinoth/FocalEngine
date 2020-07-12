@@ -48,12 +48,6 @@ namespace FocalEngine
 		FETexture* outTexture = nullptr;
 	};
 
-	class FEScreenQuadShader : public FEShader 
-	{
-	public:
-		FEScreenQuadShader();
-	};
-
 	class FEResourceManager;
 	class FERenderer;
 
@@ -62,7 +56,7 @@ namespace FocalEngine
 		friend FEResourceManager;
 		friend FERenderer;
 	public:
-		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name);
+		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name, FEShader* screenQuadShader);
 		~FEPostProcess();
 
 		void renderResult();

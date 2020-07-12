@@ -109,7 +109,6 @@ void main(void)
 	{
 		gl_FragColor = texture(sceneTexture, textureCoords);
 	}
-
 }
 )";
 
@@ -146,6 +145,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 	renderer.addPostProcess(testEffect);*/
 
+	const int frameCountTillMeasure = 20;
+	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
+	float gpuFrameDurations[frameCountTillMeasure] = { 0.0f };
+	int frameCounter = 0;
+
+	float avarageCpuFrameDuration = 0.0f;
+	float avarageGpuFrameDuration = 0.0f;
+
 	while (engine.isWindowOpened())
 	{
 		engine.beginFrame();
@@ -160,21 +167,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		//ImGui::ShowDemoWindow();
+
 		renderEditor();
 		engine.endFrame();
 
 		// CPU and GPU Time
-		std::string cpuMS = std::to_string(engine.getCpuTime());
+		cpuFrameDurations[frameCounter++] = engine.getCpuTime();
+		gpuFrameDurations[frameCounter++] = engine.getGpuTime();
+
+		if (frameCounter > frameCountTillMeasure - 1)
+		{
+			avarageCpuFrameDuration = 0.0f;
+			avarageGpuFrameDuration = 0.0f;
+			for (size_t i = 0; i < frameCountTillMeasure; i++)
+			{
+				avarageCpuFrameDuration += cpuFrameDurations[i];
+				avarageGpuFrameDuration += gpuFrameDurations[i];
+			}
+			avarageCpuFrameDuration /= frameCountTillMeasure;
+			avarageGpuFrameDuration /= frameCountTillMeasure;
+			
+			frameCounter = 0;
+		}
+
+		std::string cpuMS = std::to_string(avarageCpuFrameDuration/*engine.getCpuTime()*/);
 		cpuMS.erase(cpuMS.begin() + 4, cpuMS.end());
 
-		std::string gpuMS = std::to_string(engine.getGpuTime());
+		std::string gpuMS = std::to_string(avarageGpuFrameDuration/*engine.getGpuTime()*/);
 		gpuMS.erase(gpuMS.begin() + 4, gpuMS.end());
+
+		std::string frameMS = std::to_string(avarageCpuFrameDuration + avarageGpuFrameDuration/*engine.getGpuTime()*/);
+		frameMS.erase(frameMS.begin() + 4, frameMS.end());
 
 		std::string caption = "CPU time : ";
 		caption += cpuMS;
 		caption += " ms";
-		caption += "  Frame time : ";
+		caption += "  GPU time : ";
 		caption += gpuMS;
+		caption += " ms";
+		caption += "  Frame time : ";
+		caption += frameMS;
 		caption += " ms";
 		engine.setWindowCaption(caption.c_str());
 	}

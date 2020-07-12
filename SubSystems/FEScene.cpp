@@ -116,6 +116,7 @@ void FEScene::clear()
 {
 	entityMap.clear();
 	lightsMap.clear();
+	terrainMap.clear();
 }
 
 void FEScene::prepareForGameModelDeletion(FEGameModel* gameModel)
@@ -144,4 +145,19 @@ bool FEScene::setEntityName(FEEntity* Entity, std::string EntityName)
 
 	Entity->setName(EntityName);
 	return true;
+}
+
+bool FEScene::addTerrain(FETerrain* newTerrain)
+{
+	if (newTerrain == nullptr || newTerrain->getName().size() == 0 || terrainMap.find(newTerrain->getName()) != terrainMap.end())
+		return false;
+
+	terrainMap[newTerrain->getName()] = newTerrain;
+
+	return true;
+}
+
+std::vector<std::string> FEScene::getTerrainList()
+{
+	FE_MAP_TO_STR_VECTOR(terrainMap)
 }

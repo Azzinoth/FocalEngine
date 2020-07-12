@@ -218,10 +218,21 @@ void FEShaderParam::setName(std::string newName)
 	name = newName;
 }
 
-FEShader::FEShader(const char* vertexText, const char* fragmentText)
+FEShader::FEShader(const char* vertexText, const char* fragmentText, std::string name, bool testCompilation)
 {
+	testCompilationMode = testCompilation;
+	setName(name);
 	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
+	size_t textLenght = strlen(vertexText);
+	vertexShaderText = new char[textLenght + 1];
+	strcpy_s(vertexShaderText, textLenght + 1, vertexText);
 	fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
+	textLenght = strlen(fragmentText);
+	fragmentShaderText = new char[textLenght + 1];
+	strcpy_s(fragmentShaderText, textLenght + 1, fragmentText);
+
+	if (testCompilationMode && compilationErrors.size() != 0)
+		return;
 
 	FE_GL_ERROR(programID = glCreateProgram());
 	FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
@@ -304,32 +315,14 @@ void FEShader::registerUniforms()
 	if (uniformBlockIndex != size_t(-1))
 	{
 		glUniformBlockBinding(programID, uniformBlockIndex, 0);
-
-		GLuint ubo;
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * 192, NULL, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		// define the range of the buffer that links to a uniform binding point
-		glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, FE_MAX_LIGHTS * 192);
-
-		blockUniforms["lightInfo"] = ubo;
+		blockUniforms["lightInfo"] = size_t(-1);
 	}
 
 	uniformBlockIndex = glGetUniformBlockIndex(programID, "directionalLightInfo");
 	if (uniformBlockIndex != size_t(-1))
 	{
 		glUniformBlockBinding(programID, uniformBlockIndex, 1);
-
-		GLuint ubo;
-		glGenBuffers(1, &ubo);
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferData(GL_UNIFORM_BUFFER, 308, NULL, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		// define the range of the buffer that links to a uniform binding point
-		glBindBufferRange(GL_UNIFORM_BUFFER, 1, ubo, 0, 308);
-
-		blockUniforms["directionalLightInfo"] = ubo;
+		blockUniforms["directionalLightInfo"] = size_t(-1);
 	}
 
 	start();
@@ -371,7 +364,12 @@ GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 		std::vector<GLchar> errorLog(logSize);
 
 		FE_GL_ERROR(glGetShaderInfoLog(shaderID, logSize, &logSize, &errorLog[0]));
-		assert(status);
+		for (size_t i = 0; i < errorLog.size(); i++)
+		{
+			compilationErrors.push_back(errorLog[i]);
+		}
+		if (!testCompilationMode)
+			assert(status);
 	}
 
 	return shaderID;
@@ -380,6 +378,8 @@ GLuint FEShader::loadShader(const char* shaderText, GLuint shaderType)
 void FEShader::cleanUp()
 {
 	stop();
+	delete[] vertexShaderText;
+	delete[] fragmentShaderText;
 	FE_GL_ERROR(glDeleteProgram(programID));
 }
 
@@ -621,5 +621,120 @@ FEShaderParam* FEShader::getParameter(std::string name)
 std::vector<std::string> FEShader::getTextureList()
 {
 	return textureUniforms;
+}
+
+std::string FEShader::getName()
+{
+	return name;
+}
+
+void FEShader::setName(std::string newName)
+{
+	name = newName;
+	nameHash = std::hash<std::string>{}(name);
+}
+
+int FEShader::getNameHash()
+{
+	return nameHash;
+}
+
+char* FEShader::getVertexShaderText()
+{
+	return vertexShaderText;
+}
+
+char* FEShader::getFragmentShaderText()
+{
+	return fragmentShaderText;
+}
+
+std::string FEShader::getCompilationErrors()
+{
+	return compilationErrors;
+}
+
+char* FEShader::getTessControlShaderText()
+{
+	return tessControlShaderText;
+}
+
+char* FEShader::getTessEvalShaderText()
+{
+	return tessEvalShaderText;
+}
+
+char* FEShader::getGeometryShaderText()
+{
+	return geometryShaderText;
+}
+
+char* FEShader::getComputeShaderText()
+{
+	return computeShaderText;
+}
+
+bool FEShader::addTessControlShader(char* tessControlShader, bool testCompilation)
+{
+	testCompilationMode = testCompilation;
+	tessControlShaderID = loadShader(tessControlShader, GL_TESS_CONTROL_SHADER);
+	size_t textLenght = strlen(tessControlShader);
+	if (tessControlShaderText != nullptr)
+		delete tessControlShaderText;
+	tessControlShaderText = new char[textLenght + 1];
+	strcpy_s(tessControlShaderText, textLenght + 1, tessControlShader);
+
+	if (compilationErrors.size() != 0)
+		return false;
+
+	return true;
+}
+
+bool FEShader::addTessEvalShader(char* tessEvalShader, bool testCompilation)
+{
+	testCompilationMode = testCompilation;
+	tessEvalShaderID = loadShader(tessEvalShader, GL_TESS_EVALUATION_SHADER);
+	size_t textLenght = strlen(tessEvalShader);
+	if (tessEvalShaderText != nullptr)
+		delete tessEvalShaderText;
+	tessEvalShaderText = new char[textLenght + 1];
+	strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalShader);
+
+	if (compilationErrors.size() != 0)
+		return false;
+
+	return true;
+}
+
+bool FEShader::addGeometryShader(char* geometryShader, bool testCompilation)
+{
+	testCompilationMode = testCompilation;
+	geometryShaderID = loadShader(geometryShader, GL_GEOMETRY_SHADER);
+	size_t textLenght = strlen(geometryShader);
+	if (geometryShaderText != nullptr)
+		delete geometryShaderText;
+	geometryShaderText = new char[textLenght + 1];
+	strcpy_s(geometryShaderText, textLenght + 1, geometryShader);
+
+	if (compilationErrors.size() != 0)
+		return false;
+
+	return true;
+}
+
+bool FEShader::addComputeShader(char* computeShader, bool testCompilation)
+{
+	testCompilationMode = testCompilation;
+	computeShaderID = loadShader(computeShader, GL_COMPUTE_SHADER);
+	size_t textLenght = strlen(computeShader);
+	if (computeShaderText != nullptr)
+		delete computeShaderText;
+	computeShaderText = new char[textLenght + 1];
+	strcpy_s(computeShaderText, textLenght + 1, computeShader);
+
+	if (compilationErrors.size() != 0)
+		return false;
+
+	return true;
 }
 

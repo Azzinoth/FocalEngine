@@ -1,23 +1,19 @@
 #pragma once
 
-#ifndef FEENTITY_H
-#define FEENTITY_H
+#ifndef FETERRAIN_H
+#define FETERRAIN_H
 
-#include "../SubSystems/FETransformComponent.h"
-#include "FEMesh.h"
-#include "FEFramebuffer.h"
-#include "FEGameModel.h"
+#include "../Renderer/FEEntity.h"
 
 namespace FocalEngine
 {
-	class FEEntity
+	class FETerrain
 	{
 		friend FERenderer;
+		friend FEResourceManager;
 	public:
-		FEEntity(FEGameModel* gameModel, std::string Name);
-		~FEEntity();
-
-		FEGameModel* gameModel = nullptr;
+		FETerrain(std::string Name);
+		~FETerrain();
 
 		FETransformComponent transform;
 
@@ -31,8 +27,8 @@ namespace FocalEngine
 
 		int getNameHash();
 
-		FEAABB getAABB();
-		FEAABB getPureAABB();
+		/*FEAABB getAABB();
+		FEAABB getPureAABB();*/
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
@@ -46,7 +42,9 @@ namespace FocalEngine
 		bool visible = true;
 		bool castShadows = true;
 		bool receiveShadows = true;
+
+		FEShader* shader = nullptr;
 	};
 }
 
-#endif FEENTITY_H
+#endif FETERRAIN_H

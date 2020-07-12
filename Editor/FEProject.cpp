@@ -291,7 +291,8 @@ void FEProject::loadScene()
 	for (size_t i = 0; i < materialsList.size(); i++)
 	{
 		FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
-		newMat->shader = new FEShader(FEPhongVS, FEPhongFS);
+		//newMat->shader = FEResourceManager::getInstance().getShader("FEPhongShader");
+		newMat->shader = FEResourceManager::getInstance().getShader("FEPBRShader");
 
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
@@ -304,6 +305,15 @@ void FEProject::loadScene()
 
 			if (textureList[j] == "AOMap")
 				newMat->AOMap = resourceManager.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
+
+			if (textureList[j] == "roughtnessMap")
+				newMat->roughtnessMap = resourceManager.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
+
+			if (textureList[j] == "metalnessMap")
+				newMat->metalnessMap = resourceManager.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
+
+			if (textureList[j] == "displacementMap")
+				newMat->displacementMap = resourceManager.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString());
 		}
 	}
 

@@ -1,9 +1,11 @@
 #pragma once
 
 #include "FEProject.h"
+#include "FEDearImguiWrapper/FEDearImguiWrapper.h"
 #include "../Editor/FEPixelAccurateSelectionShader.h"
 #include "../Editor/FEMeshPreviewShader.h"
 #include "../Editor/FESelectionHaloEffect.h"
+#include "../ThirdParty/textEditor/TextEditor.h"
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
@@ -16,6 +18,8 @@ using namespace FocalEngine;
 static double lastMouseX, lastMouseY;
 static double mouseX, mouseY;
 static bool isCameraInputActive = false;
+
+//static TextEditor editor;
 // **************************** entity selection ****************************
 glm::dvec3 mouseRay();
 
@@ -38,6 +42,13 @@ static FocalEngine::FEMaterial* pixelAccurateSelectionMaterial;
 static std::unordered_map<int, FEEntity*> internalEditorEntities;
 static void addEntityToInternalEditorList(FEEntity* entity);
 static bool isInInternalEditorList(FEEntity* entity);
+
+static std::unordered_map<int, FEGameModel*> internalEditorGameModels;
+static void addGameModelToInternalEditorList(FEGameModel* gameModel);
+static bool isInInternalEditorList(FEGameModel* gameModel)
+{
+	return !(internalEditorGameModels.find(std::hash<std::string>{}(gameModel->getName())) == internalEditorGameModels.end());
+}
 
 static std::unordered_map<int, FEMesh*> internalEditorMesh;
 static void addMeshToInternalEditorList(FEMesh* mesh);
@@ -224,6 +235,30 @@ static FETexture* rotateGizmoIcon = nullptr;
 void editorOnCameraUpdate(FEBasicCamera* camera);
 
 // **************************** Gizmos END ****************************
+
+// **************************** Default GUI Colors ****************************
+
+static ImVec4 defaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+static ImVec4 hoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
+static ImVec4 activeColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+
+static ImVec4 selectedStyle = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+
+static void setSelectedStyle(ImGuiImageButton* button)
+{
+	button->setDefaultColor(selectedStyle);
+	button->setHoveredColor(selectedStyle);
+	button->setActiveColor(selectedStyle);
+}
+
+static void setDefaultStyle(ImGuiImageButton* button)
+{
+	button->setDefaultColor(defaultColor);
+	button->setHoveredColor(hoveredColor);
+	button->setActiveColor(activeColor);
+}
+
+// **************************** Default GUI Colors END ****************************
 static std::vector<FEProject*> projectList;
 static int projectChosen = -1;
 
@@ -278,7 +313,7 @@ static FEMaterial* haloMaterial = nullptr;
 static FEPostProcess* selectionHaloEffect = nullptr;
 // **************************** Halo selection END ****************************
 void displayTexturesContentBrowser();
-void displayTextureInMaterialEditor(FETexture*& texture);
+void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture);
 
 void displayGameModelContentBrowser();
 static std::unordered_map<std::string, FETexture*> gameModelPreviewTextures;
@@ -325,48 +360,6 @@ int timesMeshUsed(FEMesh* mesh);
 	void openDialog(std::string& filePath, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
 
 #endif
-
-
-class ImGuiModalPopup
-{
-protected:
-	bool shouldOpen;
-	bool opened;
-	char* popupCaption;
-
-	virtual void close()
-	{
-		opened = false;
-		ImGui::CloseCurrentPopup();
-	}
-public:
-	ImGuiModalPopup()
-	{
-		popupCaption = "";
-		shouldOpen = false;
-		opened = false;
-	}
-
-	virtual void show()
-	{
-		shouldOpen = true;
-		opened = true;
-	}
-
-	virtual void render()
-	{
-		if (shouldOpen)
-		{
-			ImGui::OpenPopup(popupCaption);
-			shouldOpen = false;
-		}
-	}
-
-	bool isOpened()
-	{
-		return opened;
-	}
-};
 
 class deleteTexturePopup : public ImGuiModalPopup
 {
@@ -432,10 +425,21 @@ static deleteTexturePopup deleteTextureWindow;
 
 class renameFailedPopUp : public ImGuiModalPopup
 {
+	ImGuiButton* okButton = nullptr;
 public:
 	renameFailedPopUp()
 	{
 		popupCaption = "Invalid name";
+		okButton = new ImGuiButton("OK");
+		okButton->setDefaultColor(ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+		okButton->setHoveredColor(ImVec4(0.95f, 0.90f, 0.0f, 1.0f));
+		okButton->setPosition(ImVec2(33, 50));
+	}
+
+	~renameFailedPopUp()
+	{
+		if (okButton != nullptr)
+			delete okButton;
 	}
 
 	void show()
@@ -451,20 +455,11 @@ public:
 		{
 			ImGui::Text("Entered name is occupied");
 
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			ImGui::SetCursorPosX(33);
-			ImGui::SetCursorPosY(50);
-			if (ImGui::Button("OK", ImVec2(120, 0)))
+			okButton->render();
+			if (okButton->getWasClicked())
 			{
 				ImGuiModalPopup::close();
 			}
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
 
 			ImGui::EndPopup();
 		}
@@ -594,33 +589,59 @@ static loadTexturePopUp loadTextureWindow;
 class selectTexturePopUp : public ImGuiModalPopup
 {
 	FETexture** objToWorkWith;
-	int textureIndexUnderMouse = -1;
-	int textureIndexSelected = -1;
-	bool pushedStyle = false;
-	std::vector<std::string> textureList;
-	std::vector<std::string> filteredTextureList;
+	int IndexUnderMouse = -1;
+	int IndexSelected = -1;
+	std::vector<std::string> list;
+	std::vector<std::string> filteredList;
 	char filter[512];
+
+	ImGuiButton* selectButton = nullptr;
+	ImGuiButton* cancelButton = nullptr;
+	ImGuiImageButton* iconButton = nullptr;
 public:
 	selectTexturePopUp()
 	{
 		popupCaption = "Select texture";
+		iconButton = new ImGuiImageButton(nullptr);
+		iconButton->setSize(ImVec2(128, 128));
+		iconButton->setUV0(ImVec2(0.0f, 0.0f));
+		iconButton->setUV1(ImVec2(1.0f, 1.0f));
+		iconButton->setFramePadding(8);
+
+		selectButton = new ImGuiButton("Select");
+		selectButton->setSize(ImVec2(140, 24));
+		selectButton->setPosition(ImVec2(300, 25));
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setSize(ImVec2(140, 24));
+		cancelButton->setPosition(ImVec2(460, 25));
+	}
+
+	~selectTexturePopUp()
+	{
+		if (selectButton != nullptr)
+			delete selectButton;
+
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
 	}
 
 	void show(FETexture** texture)
 	{
 		shouldOpen = true;
-		pushedStyle = false;
 		objToWorkWith = texture;
-		textureList = FEResourceManager::getInstance().getTextureList();
-		filteredTextureList = textureList;
+		list = FEResourceManager::getInstance().getTextureList();
+		filteredList = list;
 		strcpy_s(filter, "");
 	}
 
 	void close() override
 	{
 		ImGuiModalPopup::close();
-		textureIndexUnderMouse = -1;
-		textureIndexSelected = -1;
+		IndexUnderMouse = -1;
+		IndexSelected = -1;
 	}
 
 	void render() override
@@ -637,104 +658,69 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredTextureList = textureList;
+					filteredList = list;
 				}
 				else
 				{
-					filteredTextureList.clear();
-					for (size_t i = 0; i < textureList.size(); i++)
+					filteredList.clear();
+					for (size_t i = 0; i < list.size(); i++)
 					{
-						if (textureList[i].find(filter) != -1)
+						if (list[i].find(filter) != -1)
 						{
-							filteredTextureList.push_back(textureList[i]);
+							filteredList.push_back(list[i]);
 						}
 					}
 				}
 			}
 			ImGui::Separator();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(60);
 			ImGui::Columns(5, "selectTexturePopupColumns", false);
-			for (size_t i = 0; i < filteredTextureList.size(); i++)
+			for (size_t i = 0; i < filteredList.size(); i++)
 			{
-				ImGui::PushID(filteredTextureList[i].c_str());
-				pushedStyle = false;
-				if (textureIndexSelected == i)
-				{
-					pushedStyle = true;
-					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-				}
-
+				ImGui::PushID(filteredList[i].c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
-					if (textureIndexUnderMouse != -1)
+					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredTextureList[textureIndexUnderMouse]);
+						*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredList[IndexUnderMouse]);
 						close();
 					}
 				}
 
-				if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(filteredTextureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(FEResourceManager::getInstance().getTexture(filteredList[i]));
+				iconButton->render();
+				if (iconButton->getWasClicked())
 				{
-					textureIndexSelected = i;
+					IndexSelected = i;
 				}
 
-				if (pushedStyle)
-				{
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-				}
+				if (iconButton->isHovered())
+					IndexUnderMouse = i;
 
-				if (ImGui::IsItemHovered())
-				{
-					textureIndexUnderMouse = i;
-				}
-
-				ImGui::Text(filteredTextureList[i].c_str());
+				ImGui::Text(filteredList[i].c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
 			}
 			ImGui::Columns(1);
 
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::SetCursorPosX(300);
-			ImGui::SetCursorPosY(25);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			if (ImGui::Button("Select", ImVec2(140, 24)))
+			selectButton->render();
+			if (selectButton->getWasClicked())
 			{
-				if (textureIndexSelected != -1)
+				if (IndexSelected != -1)
 				{
-					*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredTextureList[textureIndexSelected]);
+					*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredList[IndexSelected]);
 					close();
 				}
 			}
 
-			ImGui::SetCursorPosX(460);
-			ImGui::SetCursorPosY(25);
-
-			if (ImGui::Button("Cancel", ImVec2(140, 24)))
+			cancelButton->render();
+			if (cancelButton->getWasClicked())
 			{
 				close();
 			}
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
 
 			ImGui::EndPopup();
 		}
@@ -898,356 +884,59 @@ static deleteMeshPopup deleteMeshWindow;
 class selectMeshPopUp : public ImGuiModalPopup
 {
 	FEMesh** objToWorkWith;
-	int meshIndexUnderMouse = -1;
-	int meshIndexSelected = -1;
-	bool pushedStyle = false;
-	std::vector<std::string> meshList;
-	std::vector<std::string> filteredMeshList;
+	int IndexUnderMouse = -1;
+	int IndexSelected = -1;
+	std::vector<std::string> list;
+	std::vector<std::string> filteredList;
 	char filter[512];
+
+	ImGuiButton* selectButton = nullptr;
+	ImGuiButton* cancelButton = nullptr;
+	ImGuiImageButton* iconButton = nullptr;
 public:
 	selectMeshPopUp()
 	{
 		popupCaption = "Select mesh";
+		iconButton = new ImGuiImageButton(nullptr);
+		iconButton->setSize(ImVec2(128, 128));
+		iconButton->setUV0(ImVec2(0.0f, 1.0f));
+		iconButton->setUV1(ImVec2(1.0f, 0.0f));
+		iconButton->setFramePadding(8);
+
+		selectButton = new ImGuiButton("Select");
+		selectButton->setSize(ImVec2(140, 24));
+		selectButton->setPosition(ImVec2(300, 25));
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setSize(ImVec2(140, 24));
+		cancelButton->setPosition(ImVec2(460, 25));
+	}
+
+	~selectMeshPopUp()
+	{
+		if (selectButton != nullptr)
+			delete selectButton;
+
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
 	}
 
 	void show(FEMesh** mesh)
 	{
 		shouldOpen = true;
-		pushedStyle = false;
 		objToWorkWith = mesh;
-		meshList = FEResourceManager::getInstance().getMeshList();
+		list = FEResourceManager::getInstance().getMeshList();
 		std::vector<std::string> standardMeshList = FEResourceManager::getInstance().getStandardMeshList();
 		for (size_t i = 0; i < standardMeshList.size(); i++)
 		{
 			if (isInInternalEditorList(FEResourceManager::getInstance().getMesh(standardMeshList[i])))
 				continue;
-			meshList.insert(meshList.begin(), standardMeshList[i]);
+			list.insert(list.begin(), standardMeshList[i]);
 		}
 
-		filteredMeshList = meshList;
-		strcpy_s(filter, "");
-	}
-
-	void close() override
-	{
-		ImGuiModalPopup::close();
-		meshIndexUnderMouse = -1;
-		meshIndexSelected = -1;
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Filter: ");
-			ImGui::SameLine();
-
-			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
-			{
-				if (strlen(filter) == 0)
-				{
-					filteredMeshList = meshList;
-				}
-				else
-				{
-					filteredMeshList.clear();
-					for (size_t i = 0; i < meshList.size(); i++)
-					{
-						if (meshList[i].find(filter) != -1)
-						{
-							filteredMeshList.push_back(meshList[i]);
-						}
-					}
-				}
-			}
-			ImGui::Separator();
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
-			ImGui::Columns(5, "selectMeshPopupColumns", false);
-			for (size_t i = 0; i < filteredMeshList.size(); i++)
-			{
-				ImGui::PushID(filteredMeshList[i].c_str());
-				pushedStyle = false;
-				if (meshIndexSelected == i)
-				{
-					pushedStyle = true;
-					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-				}
-
-				if (ImGui::IsMouseDoubleClicked(0))
-				{
-					if (meshIndexUnderMouse != -1)
-					{
-						*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredMeshList[meshIndexUnderMouse]);
-						close();
-					}
-				}
-
-				if (ImGui::ImageButton((void*)(intptr_t)getMeshPreview(filteredMeshList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-				{
-					meshIndexSelected = i;
-				}
-
-				if (pushedStyle)
-				{
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-				}
-
-				if (ImGui::IsItemHovered())
-				{
-					meshIndexUnderMouse = i;
-				}
-
-				ImGui::Text(filteredMeshList[i].c_str());
-				ImGui::PopID();
-				ImGui::NextColumn();
-			}
-			ImGui::Columns(1);
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::SetCursorPosX(300);
-			ImGui::SetCursorPosY(25);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			if (ImGui::Button("Select", ImVec2(140, 24)))
-			{
-				if (meshIndexSelected != -1)
-				{
-					*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredMeshList[meshIndexSelected]);
-					close();
-				}
-			}
-
-			ImGui::SetCursorPosX(460);
-			ImGui::SetCursorPosY(25);
-
-			if (ImGui::Button("Cancel", ImVec2(140, 24)))
-			{
-				close();
-			}
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::EndPopup();
-		}
-	}
-};
-static selectMeshPopUp selectMeshWindow;
-
-class selectMaterialPopUp : public ImGuiModalPopup
-{
-	FEMaterial** objToWorkWith;
-	int materialIndexUnderMouse = -1;
-	int materialIndexSelected = -1;
-	bool pushedStyle = false;
-	std::vector<std::string> materialList;
-	std::vector<std::string> filteredMaterialList;
-	char filter[512];
-public:
-	selectMaterialPopUp()
-	{
-		popupCaption = "Select material";
-	}
-
-	void show(FEMaterial** material)
-	{
-		shouldOpen = true;
-		pushedStyle = false;
-		objToWorkWith = material;
-		materialList = FEResourceManager::getInstance().getMaterialList();
-		materialList.insert(materialList.begin(), "SolidColorMaterial");
-		
-		filteredMaterialList = materialList;
-		strcpy_s(filter, "");
-	}
-
-	void close() override
-	{
-		ImGuiModalPopup::close();
-		materialIndexUnderMouse = -1;
-		materialIndexSelected = -1;
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Filter: ");
-			ImGui::SameLine();
-
-			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
-			{
-				if (strlen(filter) == 0)
-				{
-					filteredMaterialList = materialList;
-				}
-				else
-				{
-					filteredMaterialList.clear();
-					for (size_t i = 0; i < materialList.size(); i++)
-					{
-						if (materialList[i].find(filter) != -1)
-						{
-							filteredMaterialList.push_back(materialList[i]);
-						}
-					}
-				}
-			}
-			ImGui::Separator();
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
-			ImGui::Columns(5, "selectMeshPopupColumns", false);
-			for (size_t i = 0; i < filteredMaterialList.size(); i++)
-			{
-				ImGui::PushID(filteredMaterialList[i].c_str());
-				pushedStyle = false;
-				if (materialIndexSelected == i)
-				{
-					pushedStyle = true;
-					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-				}
-
-				if (ImGui::IsMouseDoubleClicked(0))
-				{
-					if (materialIndexUnderMouse != -1)
-					{
-						*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredMaterialList[materialIndexUnderMouse]);
-						close();
-					}
-				}
-
-				if (ImGui::ImageButton((void*)(intptr_t)getMaterialPreview(filteredMaterialList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-				{
-					materialIndexSelected = i;
-				}
-
-				if (pushedStyle)
-				{
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-				}
-
-				if (ImGui::IsItemHovered())
-				{
-					materialIndexUnderMouse = i;
-				}
-
-				ImGui::Text(filteredMaterialList[i].c_str());
-				ImGui::PopID();
-				ImGui::NextColumn();
-			}
-			ImGui::Columns(1);
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::SetCursorPosX(300);
-			ImGui::SetCursorPosY(25);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			if (ImGui::Button("Select", ImVec2(140, 24)))
-			{
-				if (materialIndexSelected != -1)
-				{
-					*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredMaterialList[materialIndexSelected]);
-					close();
-				}
-			}
-
-			ImGui::SetCursorPosX(460);
-			ImGui::SetCursorPosY(25);
-
-			if (ImGui::Button("Cancel", ImVec2(140, 24)))
-			{
-				close();
-			}
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::EndPopup();
-		}
-	}
-};
-static selectMaterialPopUp selectMaterialWindow;
-
-class selectGameModelPopUp : public ImGuiModalPopup
-{
-	FEGameModel** objToWorkWith;
-	int IndexUnderMouse = -1;
-	int IndexSelected = -1;
-	bool pushedStyle = false;
-	std::vector<std::string> gameModelList;
-	std::vector<std::string> filteredGameModelList;
-	char filter[512];
-	bool newEntityFlag = false;
-	bool wasSelectedAlready = false;
-public:
-	selectGameModelPopUp()
-	{
-		popupCaption = "Select game model";
-	}
-
-	void show(FEGameModel** gameModel, bool newEntityFlag = false)
-	{
-		wasSelectedAlready = false;
-		shouldOpen = true;
-		pushedStyle = false;
-		objToWorkWith = gameModel;
-		this->newEntityFlag = newEntityFlag;
-		if (newEntityFlag)
-		{
-			popupCaption = "Select game model to create new Entity";
-		}
-		else
-		{
-			popupCaption = "Select game model";
-		}
-
-		gameModelList = FEResourceManager::getInstance().getGameModelList();
-		std::vector<std::string> standardGameModelList = FEResourceManager::getInstance().getStandardGameModelList();
-		for (size_t i = 0; i < standardGameModelList.size(); i++)
-		{
-			gameModelList.insert(gameModelList.begin(), standardGameModelList[i]);
-		}
-
-		filteredGameModelList = gameModelList;
+		filteredList = list;
 		strcpy_s(filter, "");
 	}
 
@@ -1272,120 +961,397 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredGameModelList = gameModelList;
+					filteredList = list;
 				}
 				else
 				{
-					filteredGameModelList.clear();
-					for (size_t i = 0; i < gameModelList.size(); i++)
+					filteredList.clear();
+					for (size_t i = 0; i < list.size(); i++)
 					{
-						if (gameModelList[i].find(filter) != -1)
+						if (list[i].find(filter) != -1)
 						{
-							filteredGameModelList.push_back(gameModelList[i]);
+							filteredList.push_back(list[i]);
 						}
 					}
 				}
 			}
 			ImGui::Separator();
 
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(60);
+			ImGui::Columns(5, "selectMeshPopupColumns", false);
+			for (size_t i = 0; i < filteredList.size(); i++)
+			{
+				ImGui::PushID(filteredList[i].c_str());
+
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					if (IndexUnderMouse != -1)
+					{
+						*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredList[IndexUnderMouse]);
+						close();
+					}
+				}
+
+				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(getMeshPreview(filteredList[i]));
+				iconButton->render();
+				if (iconButton->getWasClicked())
+				{
+					IndexSelected = i;
+				}
+
+				if (iconButton->isHovered())
+					IndexUnderMouse = i;
+
+				ImGui::Text(filteredList[i].c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			selectButton->render();
+			if (selectButton->getWasClicked())
+			{
+				if (IndexSelected != -1)
+				{
+					*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredList[IndexSelected]);
+					close();
+				}
+			}
+
+			cancelButton->render();
+			if (cancelButton->getWasClicked())
+			{
+				close();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectMeshPopUp selectMeshWindow;
+
+class selectMaterialPopUp : public ImGuiModalPopup
+{
+	FEMaterial** objToWorkWith;
+	int IndexUnderMouse = -1;
+	int IndexSelected = -1;
+	std::vector<std::string> list;
+	std::vector<std::string> filteredList;
+	char filter[512];
+
+	ImGuiButton* selectButton = nullptr;
+	ImGuiButton* cancelButton = nullptr;
+	ImGuiImageButton* iconButton = nullptr;
+public:
+	selectMaterialPopUp()
+	{
+		popupCaption = "Select material";
+		iconButton = new ImGuiImageButton(nullptr);
+		iconButton->setSize(ImVec2(128, 128));
+		iconButton->setUV0(ImVec2(0.0f, 1.0f));
+		iconButton->setUV1(ImVec2(1.0f, 0.0f));
+		iconButton->setFramePadding(8);
+
+		selectButton = new ImGuiButton("Select");
+		selectButton->setSize(ImVec2(140, 24));
+		selectButton->setPosition(ImVec2(300, 25));
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setSize(ImVec2(140, 24));
+		cancelButton->setPosition(ImVec2(460, 25));
+	}
+
+	~selectMaterialPopUp()
+	{
+		if (selectButton != nullptr)
+			delete selectButton;
+
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
+	}
+
+	void show(FEMaterial** material)
+	{
+		shouldOpen = true;
+		objToWorkWith = material;
+		list = FEResourceManager::getInstance().getMaterialList();
+		list.insert(list.begin(), "SolidColorMaterial");
+		
+		filteredList = list;
+		strcpy_s(filter, "");
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		IndexUnderMouse = -1;
+		IndexSelected = -1;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredList = list;
+				}
+				else
+				{
+					filteredList.clear();
+					for (size_t i = 0; i < list.size(); i++)
+					{
+						if (list[i].find(filter) != -1)
+						{
+							filteredList.push_back(list[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
 
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(60);
 			ImGui::Columns(5, "selectMeshPopupColumns", false);
-			for (size_t i = 0; i < filteredGameModelList.size(); i++)
+			for (size_t i = 0; i < filteredList.size(); i++)
 			{
-				ImGui::PushID(filteredGameModelList[i].c_str());
-				pushedStyle = false;
-				if (IndexSelected == i)
+				ImGui::PushID(filteredList[i].c_str());
+				if (ImGui::IsMouseDoubleClicked(0))
 				{
-					pushedStyle = true;
-					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+					if (IndexUnderMouse != -1)
+					{
+						*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredList[IndexUnderMouse]);
+						close();
+					}
 				}
 
+				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(getMaterialPreview(filteredList[i]));
+				iconButton->render();
+				if (iconButton->getWasClicked())
+				{
+					IndexSelected = i;
+				}
+
+				if (iconButton->isHovered())
+				{
+					IndexUnderMouse = i;
+				}
+
+				ImGui::Text(filteredList[i].c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			selectButton->render();
+			if (selectButton->getWasClicked())
+			{
+				if (IndexSelected != -1)
+				{
+					*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredList[IndexSelected]);
+					close();
+				}
+			}
+
+			cancelButton->render();
+			if (cancelButton->getWasClicked())
+			{
+				close();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectMaterialPopUp selectMaterialWindow;
+
+class selectGameModelPopUp : public ImGuiModalPopup
+{
+	FEGameModel** objToWorkWith;
+	int IndexUnderMouse = -1;
+	int IndexSelected = -1;
+	std::vector<std::string> list;
+	std::vector<std::string> filteredlList;
+	char filter[512];
+	bool newEntityFlag = false;
+	bool wasSelectedAlready = false;
+
+	ImGuiButton* selectButton = nullptr;
+	ImGuiButton* cancelButton = nullptr;
+	ImGuiImageButton* iconButton = nullptr;
+public:
+	selectGameModelPopUp()
+	{
+		popupCaption = "Select game model";
+		iconButton = new ImGuiImageButton(nullptr);
+		iconButton->setSize(ImVec2(128, 128));
+		iconButton->setUV0(ImVec2(0.0f, 1.0f));
+		iconButton->setUV1(ImVec2(1.0f, 0.0f));
+		iconButton->setFramePadding(8);
+
+		selectButton = new ImGuiButton("Select");
+		selectButton->setSize(ImVec2(140, 24));
+		selectButton->setPosition(ImVec2(300, 25));
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setSize(ImVec2(140, 24));
+		cancelButton->setPosition(ImVec2(460, 25));
+	}
+
+	~selectGameModelPopUp()
+	{
+		if (selectButton != nullptr)
+			delete selectButton;
+
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
+	}
+
+	void show(FEGameModel** gameModel, bool newEntityFlag = false)
+	{
+		wasSelectedAlready = false;
+		shouldOpen = true;
+		objToWorkWith = gameModel;
+		this->newEntityFlag = newEntityFlag;
+		if (newEntityFlag)
+		{
+			popupCaption = "Select game model to create new Entity";
+		}
+		else
+		{
+			popupCaption = "Select game model";
+		}
+
+		list = FEResourceManager::getInstance().getGameModelList();
+		std::vector<std::string> standardGameModelList = FEResourceManager::getInstance().getStandardGameModelList();
+		for (size_t i = 0; i < standardGameModelList.size(); i++)
+		{
+			if (isInInternalEditorList(FEResourceManager::getInstance().getGameModel(standardGameModelList[i])))
+				continue;
+			list.insert(list.begin(), standardGameModelList[i]);
+		}
+
+		filteredlList = list;
+		strcpy_s(filter, "");
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		IndexUnderMouse = -1;
+		IndexSelected = -1;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredlList = list;
+				}
+				else
+				{
+					filteredlList.clear();
+					for (size_t i = 0; i < list.size(); i++)
+					{
+						if (list[i].find(filter) != -1)
+						{
+							filteredlList.push_back(list[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(60);
+			ImGui::Columns(5, "selectGameModelPopupColumns", false);
+			for (size_t i = 0; i < filteredlList.size(); i++)
+			{
+				ImGui::PushID(filteredlList[i].c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (IndexUnderMouse != -1 && !wasSelectedAlready)
 					{
 						if (newEntityFlag)
 						{
-							FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredGameModelList[IndexUnderMouse]));
+							FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]));
 							wasSelectedAlready = true;
 						}
 						else
 						{
-							*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredGameModelList[IndexUnderMouse]);
+							*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]);
 						}
 						
 						close();
 					}
 				}
 
-				if (ImGui::ImageButton((void*)(intptr_t)getGameModelPreview(filteredGameModelList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(getGameModelPreview(filteredlList[i]));
+				iconButton->render();
+				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
 				}
 
-				if (pushedStyle)
-				{
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-				}
-
-				if (ImGui::IsItemHovered())
+				if (iconButton->isHovered())
 				{
 					IndexUnderMouse = i;
 				}
 
-				ImGui::Text(filteredGameModelList[i].c_str());
+				ImGui::Text(filteredlList[i].c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
 			}
 			ImGui::Columns(1);
 
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::SetCursorPosX(300);
-			ImGui::SetCursorPosY(25);
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-			if (ImGui::Button("Select", ImVec2(140, 24)))
+			selectButton->render();
+			if (selectButton->getWasClicked())
 			{
 				if (IndexSelected != -1)
 				{
 					if (newEntityFlag)
 					{
-						FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredGameModelList[IndexSelected]));
+						FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredlList[IndexSelected]));
 					}
 					else
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredGameModelList[IndexUnderMouse]);
+						*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]);
 					}
 					close();
 				}
 			}
 
-			ImGui::SetCursorPosX(460);
-			ImGui::SetCursorPosY(25);
-
-			if (ImGui::Button("Cancel", ImVec2(140, 24)))
+			cancelButton->render();
+			if (cancelButton->getWasClicked())
 			{
 				close();
 			}
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
 
 			ImGui::EndPopup();
 		}
@@ -1463,7 +1429,7 @@ static renameGameModelPopUp renameGameModelWindow;
 int timesGameModelUsed(FEGameModel* gameModel);
 class deleteGameModelPopup : public ImGuiModalPopup
 {
-	FEGameModel *objToWorkWith;
+	FEGameModel* objToWorkWith;
 public:
 	deleteGameModelPopup()
 	{
@@ -1589,61 +1555,6 @@ public:
 };
 static renameEntityPopUp renameEntityWindow;
 
-class ImGuiWindow
-{
-protected:
-	bool visible;
-	char caption[512];
-	ImVec2 position;
-	ImVec2 size;
-	int flags = ImGuiWindowFlags_None;
-	bool wasClosedLastFrame = false;
-
-	virtual void close()
-	{
-		visible = false;
-		ImGui::End();
-	}
-public:
-	ImGuiWindow()
-	{
-		position = ImVec2(0.0f, 0.0f);
-		size = ImVec2(100.0f, 100.0f);
-		visible = false;
-	}
-
-	virtual void show()
-	{
-		visible = true;
-		wasClosedLastFrame = true;
-	}
-
-	virtual void render()
-	{
-		if (visible)
-		{
-			if (wasClosedLastFrame)
-			{
-				ImGui::SetNextWindowPos(position);
-				wasClosedLastFrame = false;
-			}
-			ImGui::SetNextWindowSize(size);
-			ImGui::Begin(caption, nullptr, flags);
-		}
-	}
-
-	virtual void onRenderEnd()
-	{
-		if (visible)
-			ImGui::End();
-	}
-
-	bool isVisible()
-	{
-		return visible;
-	}
-};
-
 class editGameModelPopup : public ImGuiWindow
 {
 	FEGameModel* objToWorkWith;
@@ -1652,12 +1563,41 @@ class editGameModelPopup : public ImGuiWindow
 
 	FEMesh* previousMesh;
 	FEMaterial* previousMaterial;
+
+	ImGuiButton* cancelButton;
+	ImGuiButton* applyButton;
+	ImGuiButton* changeMaterialButton;
+	ImGuiButton* changeMeshButton;
 public:
 	editGameModelPopup()
 	{
 		tempModel = new FEGameModel(nullptr, nullptr, "tempGameModel");
 		objToWorkWith = nullptr;
 		flags = ImGuiWindowFlags_NoResize;
+
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setDefaultColor(ImVec4(0.7f, 0.5f, 0.5f, 1.0f));
+		cancelButton->setHoveredColor(ImVec4(0.95f, 0.5f, 0.0f, 1.0f));
+		cancelButton->setActiveColor(ImVec4(0.1f, 1.0f, 0.1f, 1.0f));
+
+		applyButton = new ImGuiButton("Apply");
+		changeMaterialButton = new ImGuiButton("Change Material");
+		changeMeshButton = new ImGuiButton("Change Mesh");
+	}
+
+	~editGameModelPopup()
+	{
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (applyButton != nullptr)
+			delete applyButton;
+
+		if (changeMaterialButton != nullptr)
+			delete changeMaterialButton;
+
+		if (changeMeshButton != nullptr)
+			delete changeMeshButton;
 	}
 
 	void show(FEGameModel* GameModel)
@@ -1679,6 +1619,11 @@ public:
 			previousMaterial = objToWorkWith->material;
 
 			createGameModelPreview(tempModel, &tempPreview);
+
+			changeMaterialButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, 336.0f));
+			changeMeshButton->setPosition(ImVec2(size.x / 4 - 120 / 2, -1.0f));
+			applyButton->setPosition(ImVec2(size.x / 4 - 120 / 2, size.y - 30));
+			cancelButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, -1.0f));
 		}
 	}
 
@@ -1703,10 +1648,6 @@ public:
 			return;
 		}
 
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
 		ImVec2 textSize = ImGui::CalcTextSize("Preview of game model:");
 		ImGui::SetCursorPosX(size.x / 2 - textSize.x / 2);
 		ImGui::SetCursorPosY(30);
@@ -1721,9 +1662,8 @@ public:
 		ImGui::Text("Mesh component:");
 		ImGui::SetCursorPosX(size.x / 4 - 128 / 2);
 		ImGui::Image((void*)(intptr_t)getMeshPreview(tempModel->mesh->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-		ImGui::SetCursorPosX(10);
-		ImGui::SetCursorPosX(size.x / 4 - 120 / 2);
-		if (ImGui::Button("Change Mesh", ImVec2(120, 0)))
+		changeMeshButton->render();
+		if (changeMeshButton->getWasClicked())
 		{
 			selectMeshWindow.show(&tempModel->mesh);
 		}
@@ -1735,73 +1675,180 @@ public:
 		ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 128 / 2);
 		ImGui::SetCursorPosY(203.0f);
 		ImGui::Image((void*)(intptr_t)getMaterialPreview(tempModel->material->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-		ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 120 / 2);
-		ImGui::SetCursorPosY(336.0f);
-		if (ImGui::Button("Change Material", ImVec2(120, 0)))
+		changeMaterialButton->render();
+		if (changeMaterialButton->getWasClicked())
 		{
 			selectMaterialWindow.show(&tempModel->material);
 		}
 
 		ImGui::Separator();
 		ImGui::SetItemDefaultFocus();
-		ImGui::SetCursorPosX(size.x / 4 - 120 / 2);
-		ImGui::SetCursorPosY(size.y - 30);
-		if (ImGui::Button("Apply", ImVec2(120, 0)))
+		applyButton->render();
+		if (applyButton->getWasClicked())
 		{
 			objToWorkWith->mesh = tempModel->mesh;
 			objToWorkWith->material = tempModel->material;
 			createGameModelPreview(objToWorkWith->getName());
 
 			ImGuiWindow::close();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
 			return;
 		}
 
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.7f, 0.5f, 0.5f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.5f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
 		ImGui::SameLine();
-		ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 120 / 2);
-		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		cancelButton->render();
+		if (cancelButton->getWasClicked())
 		{
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
 			ImGuiWindow::close();
 			return;
 		}
 
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-
 		ImGuiWindow::onRenderEnd();
+	}
+
+	void close()
+	{
+		ImGuiWindow::close();
 	}
 };
 static editGameModelPopup editGameModelWindow;
 
 class gyzmosSettingsWindow : public ImGuiWindow
 {
+	ImGuiImageButton* transformationGizmoButton = nullptr;
+	ImGuiImageButton* scaleGizmoButton = nullptr;
+	ImGuiImageButton* rotateGizmoButton = nullptr;
 public:
 	gyzmosSettingsWindow()
 	{
 		flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 	}
 
-	void show()
+	~gyzmosSettingsWindow() override
+	{
+		if (transformationGizmoButton != nullptr)
+			delete transformationGizmoButton;
+
+		if (scaleGizmoButton != nullptr)
+			delete scaleGizmoButton;
+
+		if (rotateGizmoButton != nullptr)
+			delete rotateGizmoButton;
+	}
+
+	void show() override
 	{
 		std::string tempCaption = "##GizmosSettingsWindow";
 		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
 		size = ImVec2(146.0f, 48.0f);
 		position = ImVec2(FEngine::getInstance().getWindowWidth() / 2.0f - 150.0f / 2.0f, 10.0f);
+		ImGuiWindow::show();
+
+		if (transformationGizmoButton == nullptr)
+			transformationGizmoButton = new ImGuiImageButton(transformationGizmoIcon);
+
+		if (scaleGizmoButton == nullptr)
+			scaleGizmoButton = new ImGuiImageButton(scaleGizmoIcon);
+
+		if (rotateGizmoButton == nullptr)
+			rotateGizmoButton = new ImGuiImageButton(rotateGizmoIcon);
+
+		float currentX = 5.0f;
+		transformationGizmoButton->setPosition(ImVec2(currentX, 5.0f));
+		currentX += 32.0f + 16.0f;
+		scaleGizmoButton->setPosition(ImVec2(currentX, 5.0f));
+		currentX += 32.0f + 16.0f;
+		rotateGizmoButton->setPosition(ImVec2(currentX, 5.0f));
+	}
+
+	void render() override
+	{
+		ImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		gizmosState == TRANSFORM_GIZMOS ? setSelectedStyle(transformationGizmoButton) : setDefaultStyle(transformationGizmoButton);
+		ImGui::PushID(0);
+		transformationGizmoButton->render();
+		if (transformationGizmoButton->getWasClicked())
+		{
+			if (gizmosState != TRANSFORM_GIZMOS)
+			{
+				changeGizmoState(TRANSFORM_GIZMOS);
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+		toolTip("Translate objects. key = shift");
+
+		gizmosState == SCALE_GIZMOS ? setSelectedStyle(scaleGizmoButton) : setDefaultStyle(scaleGizmoButton);
+		ImGui::PushID(1);
+		scaleGizmoButton->render();
+		if (scaleGizmoButton->getWasClicked())
+		{
+			if (gizmosState != SCALE_GIZMOS)
+			{
+				changeGizmoState(SCALE_GIZMOS);
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+		toolTip("Scale objects. key = shift");
+
+		gizmosState == ROTATE_GIZMOS ? setSelectedStyle(rotateGizmoButton) : setDefaultStyle(rotateGizmoButton);
+		ImGui::PushID(2);
+		rotateGizmoButton->render();
+		if (rotateGizmoButton->getWasClicked())
+		{
+			if (gizmosState != ROTATE_GIZMOS)
+			{
+				changeGizmoState(ROTATE_GIZMOS);
+				ImGui::PopID();
+				ImGuiWindow::onRenderEnd();
+				return;
+			}
+		}
+		ImGui::PopID();
+		toolTip("Rotate objects. key = shift");
+
+		ImGuiWindow::onRenderEnd();
+	}
+};
+static gyzmosSettingsWindow gyzmosSettingsWindowObject;
+
+class justTextWindow : public ImGuiWindow
+{
+	TextEditor editor;
+	ImGuiButton* okButton = nullptr;
+public:
+	justTextWindow()
+	{
+		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+		editor.SetShowWhitespaces(false);
+		editor.SetReadOnly(true);
+		size = ImVec2(800, 600);
+		okButton = new ImGuiButton("OK");
+		editor.SetPalette(TextEditor::GetLightPalette());
+	}
+
+	~justTextWindow()
+	{
+		if (okButton != nullptr)
+			delete okButton;
+	}
+
+	void show(std::string text, std::string caption)
+	{
+		editor.SetText(text);
+
+		if (caption.size() == 0)
+			caption = "Text view";
+
+		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
 		ImGuiWindow::show();
 	}
 
@@ -1812,123 +1859,207 @@ public:
 		if (!isVisible())
 			return;
 
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
-		float currentX = 5.0f;
-		ImGui::SetCursorPosX(currentX);
-		ImGui::SetCursorPosY(5.0f);
-
-		if (gizmosState == TRANSFORM_GIZMOS)
+		okButton->render();
+		if (okButton->getWasClicked())
 		{
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGuiWindow::close();
 		}
 
-		ImGui::PushID(0);
-		if (ImGui::ImageButton((void*)(intptr_t)transformationGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-		{
-			if (gizmosState != TRANSFORM_GIZMOS)
-			{
-				changeGizmoState(TRANSFORM_GIZMOS);
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
-				return;
-			}
-		}
-		ImGui::PopID();
+		//auto cpos = editor.GetCursorPosition();
+		/*ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, editor.GetTotalLines(),
+			editor.IsOverwrite() ? "Ovr" : "Ins",
+			editor.CanUndo() ? "*" : " ",
+			editor.GetLanguageDefinition().mName.c_str(), "none");*/
 
-		if (gizmosState == TRANSFORM_GIZMOS)
-		{
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-		}
-
-		toolTip("Translate objects. key = shift");
-
-		currentX += 32.0f + 16.0f;
-		ImGui::SetCursorPosX(currentX);
-		ImGui::SetCursorPosY(5.0f);
-
-		if (gizmosState == SCALE_GIZMOS)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-		}
-
-		ImGui::PushID(1);
-		if (ImGui::ImageButton((void*)(intptr_t)scaleGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-		{
-			if (gizmosState != SCALE_GIZMOS)
-			{
-				changeGizmoState(SCALE_GIZMOS);
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
-				return;
-			}
-		}
-		ImGui::PopID();
-
-		if (gizmosState == SCALE_GIZMOS)
-		{
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-		}
-
-		toolTip("Scale objects. key = shift");
-
-		currentX += 32.0f + 16.0f;
-		ImGui::SetCursorPosX(currentX);
-		ImGui::SetCursorPosY(5.0f);
-
-		if (gizmosState == ROTATE_GIZMOS)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-		}
-
-		ImGui::PushID(2);
-		if (ImGui::ImageButton((void*)(intptr_t)rotateGizmoIcon->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 4, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-		{
-			if (gizmosState != ROTATE_GIZMOS)
-			{
-				changeGizmoState(ROTATE_GIZMOS);
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
-				return;
-			}
-		}
-		ImGui::PopID();
-
-		if (gizmosState == ROTATE_GIZMOS)
-		{
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-		}
-
-		toolTip("Rotate objects. key = shift");
-
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
+		editor.Render("TextEditor");
 
 		ImGuiWindow::onRenderEnd();
 	}
 };
-static gyzmosSettingsWindow gyzmosSettingsWindowObject;
+static justTextWindow justTextWindowObj;
+
+class shaderEditorWindow : public ImGuiWindow
+{
+	FEShader* shaderToEdit = nullptr;
+	FEShader* dummyShader = nullptr;
+	TextEditor* currentEditor = nullptr;
+	TextEditor vertexShaderEditor;
+	TextEditor fragmentShaderEditor;
+
+	ImGuiButton* compileButton = nullptr;
+	//std::vector<std::string> list;
+	int activeTab = 0;
+
+	void replaceShader(FEShader* oldShader, FEShader* newShader)
+	{
+		FEResourceManager& resourceManager = FEResourceManager::getInstance();
+
+		std::vector<std::string> materialList = resourceManager.getMaterialList();
+		for (size_t i = 0; i < materialList.size(); i++)
+		{
+			FEMaterial* tempMaterial = resourceManager.getMaterial(materialList[i]);
+			if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
+			{
+				tempMaterial->shader = newShader;
+			}
+		}
+
+		materialList = resourceManager.getStandardMaterialList();
+		for (size_t i = 0; i < materialList.size(); i++)
+		{
+			FEMaterial* tempMaterial = resourceManager.getMaterial(materialList[i]);
+			if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
+			{
+				tempMaterial->shader = newShader;
+			}
+		}
+	}
+public:
+	shaderEditorWindow()
+	{
+		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+		currentEditor = &vertexShaderEditor;
+		vertexShaderEditor.SetShowWhitespaces(false);
+		fragmentShaderEditor.SetShowWhitespaces(false);
+		size = ImVec2(800, 600);
+		compileButton = new ImGuiButton("Compile");
+	}
+
+	~shaderEditorWindow()
+	{
+		if (compileButton != nullptr)
+			delete compileButton;
+	}
+
+	void show(FEShader* shader)
+	{
+		shaderToEdit = shader;
+
+		vertexShaderEditor.SetText(shaderToEdit->getVertexShaderText());
+		fragmentShaderEditor.SetText(shaderToEdit->getFragmentShaderText());
+		currentEditor = &vertexShaderEditor;
+
+		/*list = FEResourceManager::getInstance().getStandardShadersList();
+		std::string text;
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			text += list[i];
+			text += '\n';
+		}
+		ImGui::SetClipboardText(text.c_str());
+		editor.Paste();*/
+		std::string tempCaption = "Edit shader: ";
+		tempCaption += shaderToEdit->getName();
+		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+		ImGuiWindow::show();
+	}
+
+	void render() override
+	{
+		ImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		compileButton->render();
+		if (compileButton->getWasClicked())
+		{
+			if (dummyShader != nullptr)
+				delete dummyShader;
+
+			dummyShader = new FEShader(vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(), "dummyShader", true);
+			std::string errors = dummyShader->getCompilationErrors();
+			if (errors.size() != 0)
+			{
+				justTextWindowObj.show(errors, "Shader compilation error!");
+			}
+			else
+			{
+				FEShader* reCompiledShader = new FEShader(vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(), shaderToEdit->getName() + "1");
+				replaceShader(shaderToEdit, reCompiledShader);
+				FEResourceManager::getInstance().deleteShader(shaderToEdit->getName());
+				shaderToEdit = reCompiledShader;
+			}
+		}
+
+		
+		if (ImGui::BeginMenuBar())
+		{
+			if (ImGui::BeginMenu("Edit"))
+			{
+				bool ro = currentEditor->IsReadOnly();
+				if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
+					currentEditor->SetReadOnly(ro);
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Undo", "ALT-Backspace", nullptr, !ro && currentEditor->CanUndo()))
+					currentEditor->Undo();
+				if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && currentEditor->CanRedo()))
+					currentEditor->Redo();
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, currentEditor->HasSelection()))
+					currentEditor->Copy();
+				if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && currentEditor->HasSelection()))
+					currentEditor->Cut();
+				if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && currentEditor->HasSelection()))
+					currentEditor->Delete();
+				if (ImGui::MenuItem("Paste", "Ctrl-V", nullptr, !ro && ImGui::GetClipboardText() != nullptr))
+					currentEditor->Paste();
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Select all", nullptr, nullptr))
+					currentEditor->SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(currentEditor->GetTotalLines(), 0));
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("View"))
+			{
+				if (ImGui::MenuItem("Dark palette"))
+					currentEditor->SetPalette(TextEditor::GetDarkPalette());
+				if (ImGui::MenuItem("Light palette"))
+					currentEditor->SetPalette(TextEditor::GetLightPalette());
+				if (ImGui::MenuItem("Retro blue palette"))
+					currentEditor->SetPalette(TextEditor::GetRetroBluePalette());
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+
+		auto cpos = currentEditor->GetCursorPosition();
+		ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, currentEditor->GetTotalLines(),
+			currentEditor->IsOverwrite() ? "Ovr" : "Ins",
+			currentEditor->CanUndo() ? "*" : " ",
+			currentEditor->GetLanguageDefinition().mName.c_str(), "none");
+
+		ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
+		if (ImGui::BeginTabBar("##Shaders Editors", ImGuiTabBarFlags_None))
+		{
+			if (ImGui::BeginTabItem("Vertex Shader"))
+			{
+				activeTab = 0;
+				currentEditor = &vertexShaderEditor;
+				ImGui::EndTabItem();
+			}
+
+			if (ImGui::BeginTabItem("Fragment Shader"))
+			{
+				activeTab = 1;
+				currentEditor = &fragmentShaderEditor;
+				ImGui::EndTabItem();
+			}
+
+			ImGui::EndTabBar();
+		}
+		ImGui::PopStyleColor();
+		
+		currentEditor->Render("Editor");
+
+		justTextWindowObj.render();
+		ImGuiWindow::onRenderEnd();
+	}
+};
+static shaderEditorWindow shadersEditorWindow;

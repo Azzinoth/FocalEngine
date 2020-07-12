@@ -13,17 +13,13 @@ FEPostProcessStage::FEPostProcessStage(std::vector<int>&& InTextureSource, FESha
 	shader = Shader;
 }
 
-FEScreenQuadShader::FEScreenQuadShader() : FEShader(FEScreenQuadVS, FEScreenQuadFS)
-{
-}
-
-FEPostProcess::FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name)
+FEPostProcess::FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name, FEShader* screenQuadShader)
 {
 	name = Name;
 	screenWidth = ScreenWidth;
 	screenHeight = ScreenHeight;
 	screenQuad = ScreenQuad;
-	screenQuadShader = new FEScreenQuadShader();
+	this->screenQuadShader = screenQuadShader;
 	intermediateFramebuffer = new FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT, screenWidth, screenHeight);
 }
 

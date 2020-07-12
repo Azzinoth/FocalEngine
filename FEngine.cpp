@@ -89,9 +89,14 @@ void FEngine::setImguiStyle()
 	colors[ImGuiCol_FrameBg] = ImVec4(0.71f, 0.71f, 0.71f, 0.55f);
 	colors[ImGuiCol_FrameBgHovered] = ImVec4(0.94f, 0.94f, 0.94f, 0.55f);
 	colors[ImGuiCol_FrameBgActive] = ImVec4(0.71f, 0.78f, 0.69f, 0.98f);
-	colors[ImGuiCol_TitleBg] = ImVec4(0.85f, 0.85f, 0.85f, 1.00f);
-	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.82f, 0.78f, 0.78f, 0.51f);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.78f, 0.78f, 0.78f, 1.00f);
+	// old grey window titels
+	//colors[ImGuiCol_TitleBg] = ImVec4(0.85f, 0.85f, 0.85f, 1.00f);
+	//colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.82f, 0.78f, 0.78f, 0.51f);
+	//colors[ImGuiCol_TitleBgActive] = ImVec4(0.78f, 0.78f, 0.78f, 1.00f);
+	colors[ImGuiCol_TitleBg] = ImVec4(0.41f, 0.68f, 0.89f, 1.00f);
+	colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.41f, 0.68f, 0.89f, 1.00f);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.0f, 0.47f, 0.83f, 1.00f);
+
 	colors[ImGuiCol_MenuBarBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
 	colors[ImGuiCol_ScrollbarBg] = ImVec4(0.20f, 0.25f, 0.30f, 0.61f);
 	colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.90f, 0.90f, 0.90f, 0.30f);
@@ -132,7 +137,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwInit();
 	//if (!glfwInit())
 		//return -1;
-	//glfwWindowHint(GLFW_SAMPLES, 8);
 
 	window = glfwCreateWindow(windowW, windowH, windowTitle.c_str(), NULL, NULL);
 	if (!window)
@@ -157,21 +161,35 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	currentCamera->setAspectRatio(float(width) / float(height));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
-	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	//FE_GL_ERROR(glCullFace(GL_BACK));
+	FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	FE_GL_ERROR(glCullFace(GL_BACK));
+
+	FEShader* FEScreenQuadShader = RESOURCE_MANAGER_OBJ.createShader(FEScreenQuadVS, FEScreenQuadFS, "FEScreenQuadShader");
+	RESOURCE_MANAGER_OBJ.makeShaderStandard(FEScreenQuadShader);
 
 	RENDERER_OBJ.standardFBInit(windowW, windowH);
-	RENDERER_OBJ.addPostProcess(new FEBloomEffect(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
-	RENDERER_OBJ.addPostProcess(new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
+	
+	FEBloomEffect* bloomEffect = new FEBloomEffect(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(bloomEffect->shaderBluePrints);
+	bloomEffect->initialize();
+	RENDERER_OBJ.addPostProcess(bloomEffect);
 
-	RENDERER_OBJ.addPostProcess(new FEFXAA(RESOURCE_MANAGER_OBJ.getMesh("plane"), windowW, windowH));
-	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in futture it should be changeable.
+	FEGammaAndHDRCorrection* gammaHDR = new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(gammaHDR->shaderBluePrints);
+	gammaHDR->initialize();
+	RENDERER_OBJ.addPostProcess(gammaHDR);
+
+	FEFXAA* FEFXAAEffect = new FEFXAA(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(FEFXAAEffect->shaderBluePrints);
+	FEFXAAEffect->initialize();
+	RENDERER_OBJ.addPostProcess(FEFXAAEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	delete RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture;
 	RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
 	
-
 	RENDERER_OBJ.shadowMapMaterial = RESOURCE_MANAGER_OBJ.createMaterial("shadowMapMaterial");
-	RENDERER_OBJ.shadowMapMaterial->shader = new FEShader(FEShadowMapVS, FEShadowMapFS);
+	RENDERER_OBJ.shadowMapMaterial->shader = RESOURCE_MANAGER_OBJ.createShader(FEShadowMapVS, FEShadowMapFS, "FEShadowMapShader");
+	RESOURCE_MANAGER_OBJ.makeShaderStandard(RENDERER_OBJ.shadowMapMaterial->shader);
 	RESOURCE_MANAGER_OBJ.makeMaterialStandard(RENDERER_OBJ.shadowMapMaterial);
 
 	// Setup Dear ImGui context

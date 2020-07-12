@@ -953,7 +953,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 
 FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name)
 {
-	return new FEPostProcess(getMesh("plane"), ScreenWidth, ScreenHeight, Name);
+	return new FEPostProcess(getMesh("plane"), ScreenWidth, ScreenHeight, Name, getShader("FEScreenQuadShader"));
 }
 
 FEMaterial* FEResourceManager::createMaterial(std::string Name)
@@ -1084,16 +1084,26 @@ bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
 void FEResourceManager::loadStandardMaterial()
 {
 	FEMaterial* newMaterial = createMaterial("SolidColorMaterial");
-	newMaterial->shader = new FEShader(FESolidColorVS, FESolidColorFS);
+	newMaterial->shader = createShader(FESolidColorVS, FESolidColorFS, "FESolidColorShader");
+	makeShaderStandard(newMaterial->shader);
 	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
 	newMaterial->addParameter(color);
 
 	makeMaterialStandard(newMaterial);
+
+	createShader(FEPhongVS, FEPhongFS, "FEPhongShader");
+	makeShaderStandard(getShader("FEPhongShader"));
+
+	createShader(FEPBRVS, FEPBRFS, "FEPBRShader");
+	makeShaderStandard(getShader("FEPBRShader"));
+
+	createShader(FETerrainVS, FETerrainFS, "FETerrainShader");
+	makeShaderStandard(getShader("FETerrainShader"));
 }
 
 void FEResourceManager::loadStandardGameModels()
 {
-	standardGameModels["standartGameModel"] = new FEGameModel(getMesh("sphere"), getMaterial("SolidColorMaterial"), "standartGameModel");
+	standardGameModels["standardGameModel"] = new FEGameModel(getMesh("sphere"), getMaterial("SolidColorMaterial"), "standardGameModel");
 }
 
 void FEResourceManager::clear()
@@ -1262,12 +1272,12 @@ FEGameModel* FEResourceManager::getGameModel(std::string name)
 
 FEGameModel* FEResourceManager::createGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name)
 {
-	if (Name.size() == 0 || gameModels.find(Name) != gameModels.end())
+	if (Name.size() == 0 || gameModels.find(Name) != gameModels.end() || standardGameModels.find(Name) != standardGameModels.end())
 	{
 		size_t nextID = gameModels.size();
 		size_t index = 0;
 		Name = "gameModel_" + std::to_string(nextID + index);
-		while (gameModels.find(Name) != gameModels.end())
+		while (gameModels.find(Name) != gameModels.end() || standardGameModels.find(Name) != standardGameModels.end())
 		{
 			index++;
 			Name = "gameModel_" + std::to_string(nextID + index);
@@ -1329,3 +1339,170 @@ bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
 	return false;
 }
 
+FEShader* FEResourceManager::createShader(const char* vertexText, const char* fragmentText, std::string shaderName)
+{
+	if (shaderName.size() == 0 || shaders.find(shaderName) != shaders.end() || standardShaders.find(shaderName) != standardShaders.end())
+	{
+		size_t nextID = shaders.size();
+		size_t index = 0;
+		shaderName = "shader_" + std::to_string(nextID + index);
+		while (shaders.find(shaderName) != shaders.end() || standardShaders.find(shaderName) != standardShaders.end())
+		{
+			index++;
+			shaderName = "shader_" + std::to_string(nextID + index);
+		}
+	}
+
+	shaders[shaderName] = new FEShader(vertexText, fragmentText, shaderName);
+	return shaders[shaderName];
+}
+
+bool FEResourceManager::setShaderName(FEShader* shader, std::string shaderName)
+{
+	if (shaderName.size() == 0 || shaders.find(shaderName) != shaders.end() || standardShaders.find(shaderName) != standardShaders.end())
+		return false;
+
+	shaders.erase(shader->getName());
+	shaders[shaderName] = shader;
+
+	shader->setName(shaderName);
+	return true;
+}
+
+bool FEResourceManager::makeShaderStandard(FEShader* shader)
+{
+	if (standardShaders.find(shader->getName()) == standardShaders.end())
+	{
+		if (shader->getName().size() == 0 || standardShaders.find(shader->getName()) != standardShaders.end())
+		{
+			size_t nextID = standardShaders.size();
+			size_t index = 0;
+			shader->setName("shader_" + std::to_string(nextID + index));
+			while (standardShaders.find(shader->getName()) != standardShaders.end())
+			{
+				index++;
+				shader->setName("shader_" + std::to_string(nextID + index));
+			}
+		}
+
+		if (shaders.find(shader->getName()) != shaders.end())
+			shaders.erase(shader->getName());
+		standardShaders[shader->getName()] = shader;
+
+		return true;
+	}
+
+	return false;
+}
+
+FEShader* FEResourceManager::getShader(std::string shaderName)
+{
+	if (shaders.find(shaderName) == shaders.end())
+	{
+		if (standardShaders.find(shaderName) != standardShaders.end())
+		{
+			return standardShaders[shaderName];
+		}
+
+		return nullptr;
+	}
+	else
+	{
+		return shaders[shaderName];
+	}
+}
+
+std::vector<std::string> FEResourceManager::getShadersList()
+{
+	FE_MAP_TO_STR_VECTOR(shaders)
+}
+
+std::vector<std::string> FEResourceManager::getStandardShadersList()
+{
+	FE_MAP_TO_STR_VECTOR(standardShaders)
+}
+
+void FEResourceManager::initializeShaderBlueprints(std::vector<FEShaderBlueprint>& list)
+{
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		FEShader* newShader = createShader(list[i].vertexShaderText, list[i].fragmentShaderText, list[i].name);
+		list[i].pointerToShaderStorage = newShader;
+		makeShaderStandard(newShader);
+	}
+}
+
+void FEResourceManager::deleteShader(std::string shaderName)
+{
+	// for now
+	FEShader* shaderToDelete = getShader(shaderName);
+	if (shaderToDelete == nullptr)
+		return;
+
+	auto it = materials.begin();
+	while (it != materials.end())
+	{
+		if (it->second->shader->getNameHash() == shaderToDelete->getNameHash())
+			it->second->shader = getShader("FESolidColorShader");
+		
+		it++;
+	}
+
+	it = standardMaterials.begin();
+	while (it != standardMaterials.end())
+	{
+		if (it->second->shader->getNameHash() == shaderToDelete->getNameHash())
+			it->second->shader = getShader("FESolidColorShader");
+
+		it++;
+	}
+
+	shaders.erase(shaderName);
+	// for now
+	standardShaders.erase(shaderName);
+	delete shaderToDelete;
+}
+
+FETerrain* FEResourceManager::createTerrain(std::string name)
+{
+	if (name.size() == 0 || terrains.find(name) != terrains.end())
+	{
+		size_t nextID = terrains.size();
+		size_t index = 0;
+		name = "terrain_" + std::to_string(nextID + index);
+		while (terrains.find(name) != terrains.end())
+		{
+			index++;
+			name = "terrain_" + std::to_string(nextID + index);
+		}
+	}
+
+	terrains[name] = new FETerrain(name);
+	terrains[name]->shader = getShader("FETerrainShader");
+	return terrains[name];
+}
+
+FETerrain* FEResourceManager::getTerrain(std::string terrainName)
+{
+	if (terrains.find(terrainName) == terrains.end())
+		return nullptr;
+
+	return terrains[terrainName];
+}
+
+bool FEResourceManager::setTerrainName(FETerrain* terrain, std::string terrainName)
+{
+	if (terrainName.size() == 0 || terrains.find(terrainName) != terrains.end())
+		return false;
+
+	terrains.erase(terrain->getName());
+	terrains[terrainName] = terrain;
+
+	terrain->setName(terrainName);
+	return true;
+}
+
+std::vector<std::string> FEResourceManager::getTerrainList()
+{
+	FE_MAP_TO_STR_VECTOR(terrains)
+}

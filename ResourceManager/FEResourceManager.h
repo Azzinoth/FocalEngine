@@ -1,6 +1,8 @@
 #pragma once
 
 #include "../CoreExtensions/PostProcessEffects/FEFXAA.h"
+#include "../SubSystems/FETerrain.h"
+#include "../CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng.h"
 
@@ -17,6 +19,14 @@ namespace FocalEngine
 		friend FERenderer;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
+
+		FEShader* createShader(const char* vertexText, const char* fragmentText, std::string shaderName);
+		bool makeShaderStandard(FEShader* shader);
+		bool setShaderName(FEShader* shader, std::string shaderName);
+		FEShader* getShader(std::string shaderName);
+		std::vector<std::string> getShadersList();
+		std::vector<std::string> getStandardShadersList();
+		void deleteShader(std::string shaderName);
 
 		// to-do: add flags
 		FETexture* LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name = "");
@@ -64,12 +74,21 @@ namespace FocalEngine
 		bool setGameModelName(FEGameModel* gameModel, std::string gameModelName);
 		void deleteGameModel(FEGameModel* gameModel);
 
+		FETerrain* createTerrain(std::string name);
+		FETerrain* getTerrain(std::string terrainName);
+		bool setTerrainName(FETerrain* terrain, std::string terrainName);
+		std::vector<std::string> getTerrainList();
+
 		void clear();
 		void loadStandardMeshes();
 		void loadStandardMaterial();
 		void loadStandardGameModels();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
+
+		std::unordered_map<std::string, FEShader*> shaders;
+		std::unordered_map<std::string, FEShader*> standardShaders;
+		void initializeShaderBlueprints(std::vector<FEShaderBlueprint>& list);
 
 		FETexture* createTexture(std::string Name = "");
 		FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
@@ -86,6 +105,8 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FEGameModel*> gameModels;
 		std::unordered_map<std::string, FEGameModel*> standardGameModels;
+
+		std::unordered_map<std::string, FETerrain*> terrains;
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEGameModel* gameModel, std::string Name);

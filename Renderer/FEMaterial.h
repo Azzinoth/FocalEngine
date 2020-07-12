@@ -7,8 +7,7 @@
 #include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorShader.h"
 #include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongShader.h"
 #include "../CoreExtensions/StandardMaterial/ShadowMapMaterial/FEShadowMapShader.h"
-
-#define MAX_TEXTURE_COUNT_FOR_MATERIAL = 10;
+#include "../CoreExtensions/StandardMaterial/PBRMaterial/FEPBRShader.h"
 
 namespace FocalEngine
 {
@@ -47,10 +46,15 @@ namespace FocalEngine
 		FEShaderParam* getParameter(std::string name);
 
 		std::string getName();
+
+		glm::vec3 getBaseColor();
+		// Only infuence color of object if shader with such unifor is applied.
+		void setBaseColor(glm::vec3 newBaseColor);
 	private:
 		std::string name;
 		glm::vec3 diffuseColor;
 		void setName(std::string newName);
+		glm::vec3 baseColor;
 	};
 }
 

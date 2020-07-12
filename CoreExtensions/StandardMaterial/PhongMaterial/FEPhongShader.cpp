@@ -2,7 +2,7 @@
 using namespace FocalEngine;
 
 FEPhongShader::FEPhongShader()
-	: FEShader(FEPhongVS, FEPhongFS)
+	: FEShader(FEPhongVS, FEPhongFS, "FEPhongShader")
 {
 }
 

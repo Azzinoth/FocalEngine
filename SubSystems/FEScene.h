@@ -24,6 +24,9 @@ namespace FocalEngine
 		FELight* getLight(std::string name);
 		std::vector<std::string> getLightsList();
 
+		bool addTerrain(FETerrain* newTerrain);
+		std::vector<std::string> getTerrainList();
+
 		void prepareForGameModelDeletion(FEGameModel* gameModel);
 
 		void clear();
@@ -32,5 +35,6 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FEEntity*> entityMap;
 		std::unordered_map<std::string, FELight*> lightsMap;
+		std::unordered_map<std::string, FETerrain*> terrainMap;
 	};
 }

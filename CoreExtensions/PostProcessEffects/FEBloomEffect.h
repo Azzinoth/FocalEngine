@@ -2,7 +2,7 @@
 
 #include "../../Renderer/FEPostProcess.h"
 
-static const char* const FEBloomEffectVS = R"(
+static char* const FEBloomEffectVS = R"(
 #version 400 core
 
 @In_Position@
@@ -15,7 +15,7 @@ void main(void)
 }
 )";
 
-static const char* FEBloomEffectThresholdFS = R"(
+static char* FEBloomEffectThresholdFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -37,7 +37,7 @@ void main(void)
 }
 )";
 
-static const char* FEBloomEffectHorizontalFS = R"(
+static char* FEBloomEffectHorizontalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -71,7 +71,7 @@ void main(void)
 }
 )";
 
-static const char* FEBloomEffectVerticalFS = R"(
+static char* FEBloomEffectVerticalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -105,7 +105,7 @@ void main(void)
 }
 )";
 
-static const char* FEWeakBloomEffectHorizontalFS = R"(
+static char* FEWeakBloomEffectHorizontalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -138,7 +138,7 @@ void main(void)
 }
 )";
 
-static const char* FEWeakBloomEffectVerticalFS = R"(
+static char* FEWeakBloomEffectVerticalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -171,7 +171,7 @@ void main(void)
 }
 )";
 
-static const char* FEBloomEffectFinalFS = R"(
+static char* FEBloomEffectFinalFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -189,9 +189,11 @@ namespace FocalEngine
 	class FEBloomEffect : public FEPostProcess
 	{
 	public:
-		FEBloomEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		FEBloomEffect(FEMesh* ScreenQuad, FEShader* screenQuadShader, int ScreenWidth, int ScreenHeight);
 		~FEBloomEffect();
 
+		std::vector<FEShaderBlueprint> shaderBluePrints;
+		void initialize();
 	private:
 
 	};

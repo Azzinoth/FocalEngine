@@ -40,6 +40,12 @@ namespace FocalEngine
 		void takeScreenshot(const char* fileName, int width, int height);
 
 		FEMaterial* shadowMapMaterial;
+
+		int uniformBufferCount = 0;
+		const int UBufferForLightSize = 192;
+		GLuint uniformBufferForLights;
+		const int UBufferForDirectionalLightSize = 308;
+		GLuint uniformBufferForDirectionalLight;
 	};
 }
 

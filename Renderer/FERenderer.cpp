@@ -5,6 +5,17 @@ FERenderer* FERenderer::_instance = nullptr;
 
 FERenderer::FERenderer()
 {
+	glGenBuffers(1, &uniformBufferForLights);
+	glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferForLights);
+	glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBufferCount++, uniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
+
+	glGenBuffers(1, &uniformBufferForDirectionalLight);
+	glBindBuffer(GL_UNIFORM_BUFFER, uniformBufferForDirectionalLight);
+	glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBufferCount++, uniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -49,6 +60,45 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		strcpy_s(name, 256, "FEReceiveShadows");
 		if (strcmp(parameterName, name) == 0)
 			iterator->second.updateData(entity->isReceivingShadows());
+
+		strcpy_s(name, 256, "FEAO");
+		if (strcmp(parameterName, name) == 0)
+		{
+			if (entity->gameModel->material->AOMap == nullptr)
+			{
+				iterator->second.updateData(1.0f);
+			}
+			else
+			{
+				iterator->second.updateData(-1.0f);
+			}
+		}
+
+		strcpy_s(name, 256, "FERoughtness");
+		if (strcmp(parameterName, name) == 0)
+		{
+			if (entity->gameModel->material->roughtnessMap == nullptr)
+			{
+				iterator->second.updateData(0.5f);
+			}
+			else
+			{
+				iterator->second.updateData(-1.0f);
+			}
+		}
+
+		strcpy_s(name, 256, "FEMetalness");
+		if (strcmp(parameterName, name) == 0)
+		{
+			if (entity->gameModel->material->metalnessMap == nullptr)
+			{
+				iterator->second.updateData(0.1f);
+			}
+			else
+			{
+				iterator->second.updateData(-1.0f);
+			}
+		}
 
 		iterator++;
 	}
@@ -117,16 +167,19 @@ void FERenderer::loadUniformBlocks()
 		lightIterator++;
 	}
 
-	std::vector<std::string> materialsList = resourceManager.getMaterialList();
-	for (size_t i = 0; i < materialsList.size(); i++)
+	//#fix only standardShaders uniforms buffers are filled.
+	std::vector<std::string> shaderList = resourceManager.getStandardShadersList();
+	for (size_t i = 0; i < shaderList.size(); i++)
 	{
-		FEMaterial* material = resourceManager.getMaterial(materialsList[i]);
-
-		auto iteratorBlock = material->shader->blockUniforms.begin();
-		while (iteratorBlock != material->shader->blockUniforms.end())
+		FEShader* shader = resourceManager.getShader(shaderList[i]);
+		auto iteratorBlock = shader->blockUniforms.begin();
+		while (iteratorBlock != shader->blockUniforms.end())
 		{
 			if (iteratorBlock->first.c_str() == std::string("lightInfo"))
 			{
+				// if shader uniform block was not asigned yet.
+				if (iteratorBlock->second == size_t(-1))
+					iteratorBlock->second = uniformBufferForLights;
 				// adding 4 because vec3 in shader buffer will occupy 16 bytes not 12.
 				size_t sizeOfFELightShaderInfo = sizeof(FELightShaderInfo) + 4;
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
@@ -148,6 +201,10 @@ void FERenderer::loadUniformBlocks()
 			}
 			else if (iteratorBlock->first.c_str() == std::string("directionalLightInfo"))
 			{
+				// if shader uniform block was not asigned yet.
+				if (iteratorBlock->second == size_t(-1))
+					iteratorBlock->second = uniformBufferForDirectionalLight;
+
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
 				
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &directionalLightInfo.position));
@@ -280,7 +337,16 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	sceneToTextureFB->bind();
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	FEEntity* needToDrawAtEndTest = nullptr;
+	auto itTerrain = scene.terrainMap.begin();
+	while (itTerrain != scene.terrainMap.end())
+	{
+		auto terrain = itTerrain->second;
+
+		if (terrain->isVisible())
+			terrain->render();
+
+		itTerrain++;
+	}
 
 	auto it = scene.entityMap.begin();
 	while (it != scene.entityMap.end())
@@ -292,78 +358,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 		it++;
 	}
-
-	//if (needToDrawAtEndTest != nullptr)
-	//{
-	//	needToDrawAtEndTest->castShadows = false;
-	//	needToDrawAtEndTest->transform.setScale(glm::vec3(0.05f * 0.1f));
-
-	//	needToDrawAtEndTest->gameModel->material->getParameter("baseColor")->updateData(glm::vec3(0.1f, 0.9f, 0.1f));
-	//		
-
-	//	FEAABB SphereAABBS = scene.entityMap["entity_1"]->getPureAABB();
-	//	glm::vec3 mins = SphereAABBS.getMin();
-	//	glm::vec3 maxs = SphereAABBS.getMax();
-
-	//	float xSizes = sqrt((maxs.x - mins.x) * (maxs.x - mins.x));
-	//	float ySizes = sqrt((maxs.y - mins.y) * (maxs.y - mins.y));
-	//	float zSizes = sqrt((maxs.z - mins.z) * (maxs.z - mins.z));
-
-
-	//	FEAABB meshAABB = needToDrawAtEndTest->getPureAABB();
-	//	glm::vec3 min = meshAABB.getMin();
-	//	glm::vec3 max = meshAABB.getMax();
-
-	//	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-	//	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-	//	ySize *= needToDrawAtEndTest->transform.getScale()[1];
-	//	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
-
-	//	//needToDrawAtEndTest->transform.setPosition(scene.entityMap["entity_1"]->transform.getPosition() - glm::vec3(maxs.x - xSizes / 2.0f, maxs.y - ySizes / 2.0f, maxs.z - zSizes / 2.0f));
-	//	glm::vec3 sphereCenter = scene.entityMap["entity_1"]->transform.getPosition() - glm::vec3(maxs.x - xSizes / 2.0f, maxs.y - ySizes / 2.0f, maxs.z - zSizes / 2.0f);
-	//	//glm::vec3 
-	//	//needToDrawAtEndTest->transform.setPosition(sphereCenter);
-
-	//	/*needToDrawAtEndTest->transform.setPosition(glm::vec3(0.0f));
-	//	needToDrawAtEndTest->transform.setRotation(glm::vec3(0.0f));
-	//	needToDrawAtEndTest->transform.setScale(glm::vec3(1.0f));
-	//	FEAABB meshAABB = needToDrawAtEndTest->getAABB();
-	//	glm::vec3 min = meshAABB.getMin();
-	//	glm::vec3 max = meshAABB.getMax();
-
-	//	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-	//	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-	//	float zSize = sqrt((max.z - min.z) * (max.z - min.z));*/
-
-
-	//	FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	//	FE_GL_ERROR(glCullFace(GL_BACK));
-	//	//FE_GL_ERROR(glDepthFunc(GL_ALWAYS));
-
-
-	//	//needToDrawAtEndTest->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
-	//	glm::vec3 cameraPosition = currentCamera->getPosition();
-	//	glm::vec3 toObject = /*needToDrawAtEndTest->transform.getPosition()*/sphereCenter - cameraPosition;
-	//	toObject = glm::normalize(toObject);
-
-	//	needToDrawAtEndTest->transform.setPosition((currentCamera->getPosition() + toObject * 0.2f));// + glm::vec3(0.0f, ySize/*0.7f*//*ySize / 2.0f*/, 0.0f));
-
-	//	/*position = currentCamera->projectionMatrix * currentCamera->getViewMatrix() * needToDrawAtEndTest->transform.getTransformMatrix() * position;
-	//	position.x = position.x / position.w;
-	//	position.y = position.y / position.w;
-	//	position.z = position.z / position.w;
-	//	position.w = position.w / position.w;*/
-
-	//	renderEntity(needToDrawAtEndTest, currentCamera);
-
-	//	//FE_GL_ERROR(glDepthFunc(GL_LESS));
-	//	FE_GL_ERROR(glDisable(GL_CULL_FACE));
-	//	FE_GL_ERROR(glCullFace(GL_BACK));
-
-	//	//currentCamera->projectionMatrix = oldProjectionMatrix;
-
-	//	//needToDrawAtEndTest->transform.setPosition(oldPosition);
-	//}
 	
 	sceneToTextureFB->unBind();
 	// ********* RENDER SCENE END *********

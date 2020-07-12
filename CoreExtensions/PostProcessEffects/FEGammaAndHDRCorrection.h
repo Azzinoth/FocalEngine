@@ -2,7 +2,7 @@
 
 #include "FEBloomEffect.h"
 
-static const char* const FEGammaAndHDRVS = R"(
+static char* const FEGammaAndHDRVS = R"(
 #version 400 core
 
 @In_Position@
@@ -15,7 +15,7 @@ void main(void)
 }
 )";
 
-static const char* FEGammaAndHDRFS = R"(
+static char* FEGammaAndHDRFS = R"(
 #version 400 core
 
 in vec2 textureCoords;
@@ -41,9 +41,11 @@ namespace FocalEngine
 	class FEGammaAndHDRCorrection : public FEPostProcess
 	{
 	public:
-		FEGammaAndHDRCorrection(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		FEGammaAndHDRCorrection(FEMesh* ScreenQuad, FEShader* screenQuadShader, int ScreenWidth, int ScreenHeight);
 		~FEGammaAndHDRCorrection();
 
+		std::vector<FEShaderBlueprint> shaderBluePrints;
+		void initialize();
 	private:
 
 	};

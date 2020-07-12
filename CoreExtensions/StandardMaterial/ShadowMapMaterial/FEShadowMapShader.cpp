@@ -2,7 +2,7 @@
 using namespace FocalEngine;
 
 FEShadowMap::FEShadowMap()
-	: FEShader(FEShadowMapVS, FEShadowMapFS)
+	: FEShader(FEShadowMapVS, FEShadowMapFS, "FEShadowMapShader")
 {
 }
 

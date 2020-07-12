@@ -2,7 +2,7 @@
 
 #include "FEGammaAndHDRCorrection.h"
 
-static const char* const FEFXAAVS = R"(
+static char* FEFXAAVS = R"(
 #version 400 core
 
 @In_Position@
@@ -15,7 +15,7 @@ void main(void)
 }
 )";
 
-static const char* FEFXAAFS = R"(
+static char* FEFXAAFS = R"(
 #version 400 core
 
 // took this simplified version of FXAA from :
@@ -75,10 +75,12 @@ namespace FocalEngine
 	class FEFXAA : public FEPostProcess
 	{
 	public:
-		FEFXAA(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight);
+		FEFXAA(FEMesh* ScreenQuad, FEShader* screenQuadShader, int ScreenWidth, int ScreenHeight);
 		~FEFXAA();
 
+		std::vector<FEShaderBlueprint> shaderBluePrints;
+		void initialize();
 	private:
-
+		int screenW, screenH;
 	};
 }

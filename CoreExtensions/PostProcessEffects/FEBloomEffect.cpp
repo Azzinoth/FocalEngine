@@ -1,32 +1,59 @@
 #include "FEBloomEffect.h"
 using namespace FocalEngine;
 
-FEBloomEffect::FEBloomEffect(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight)
-	: FEPostProcess(ScreenQuad, ScreenWidth, ScreenHeight, "Bloom")
+FEBloomEffect::FEBloomEffect(FEMesh* ScreenQuad, FEShader* screenQuadShader, int ScreenWidth, int ScreenHeight)
+	: FEPostProcess(ScreenQuad, ScreenWidth, ScreenHeight, "Bloom", screenQuadShader)
 {
-	addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, new FEShader(FEBloomEffectVS, FEBloomEffectThresholdFS)));
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEBloomEffectThresholdFS;
+	shaderBluePrints.back().name = "FEBloomEffectShader";
+	
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEBloomEffectHorizontalFS;
+	shaderBluePrints.back().name = "FEBloomEffectHorizontalShader";
+
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEBloomEffectVerticalFS;
+	shaderBluePrints.back().name = "FEBloomEffectVerticalShader";
+
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEWeakBloomEffectHorizontalFS;
+	shaderBluePrints.back().name = "FEWeakBloomEffectHorizontalShader";
+
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEWeakBloomEffectVerticalFS;
+	shaderBluePrints.back().name = "FEWeakBloomEffectVerticalShader";
+
+	shaderBluePrints.push_back(FEShaderBlueprint());
+	shaderBluePrints.back().vertexShaderText = FEBloomEffectVS;
+	shaderBluePrints.back().fragmentShaderText = FEBloomEffectFinalFS;
+	shaderBluePrints.back().name = "FEBloomEffectFinalShader";
+}
+
+void FEBloomEffect::initialize()
+{
+	addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, shaderBluePrints[0].pointerToShaderStorage));
 	stages[0]->shader->getParameter("thresholdBrightness")->updateData(1.0f);
 
 	for (size_t i = 0; i < 1; i++)
 	{
-		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBloomEffectVS, FEBloomEffectHorizontalFS)));
+		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, shaderBluePrints[1].pointerToShaderStorage));
 		stages.back()->shader->getParameter("BloomSize")->updateData(10.0f);
-		// "randomness" for better effect
-		stages.back()->shader->getParameter("BloomSize")->updateData(4.6f);
-		/*if (i == 1)
-			stages.back()->shader->getParameter("BloomSize")->updateData(6.8f);*/
-		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBloomEffectVS, FEBloomEffectVerticalFS)));
+		stages.back()->shader->getParameter("BloomSize")->updateData(5.0f);
+		addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, shaderBluePrints[2].pointerToShaderStorage));
 		stages.back()->shader->getParameter("BloomSize")->updateData(10.0f);
-		// "randomness" for better effect
-		stages.back()->shader->getParameter("BloomSize")->updateData(5.9f);
-		/*if (i == 0)
-			stages.back()->shader->getParameter("BloomSize")->updateData(8.0f);*/
+		stages.back()->shader->getParameter("BloomSize")->updateData(5.0f);
 	}
 
-	addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBloomEffectVS, FEWeakBloomEffectHorizontalFS)));
-	addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, new FEShader(FEBloomEffectVS, FEWeakBloomEffectVerticalFS)));
+	addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, shaderBluePrints[3].pointerToShaderStorage));
+	addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, shaderBluePrints[4].pointerToShaderStorage));
 
-	addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, new FEShader(FEBloomEffectVS, FEBloomEffectFinalFS)));
+	addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, shaderBluePrints[5].pointerToShaderStorage));
 }
 
 FEBloomEffect::~FEBloomEffect()

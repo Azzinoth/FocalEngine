@@ -90,7 +90,7 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEPostProcess;
 	public:
-		FEShader(const char* vertexText, const char* fragmentText);
+		FEShader(const char* vertexText, const char* fragmentText, std::string name, bool testCompilation = false);
 		~FEShader();
 
 		virtual void start();
@@ -109,10 +109,44 @@ namespace FocalEngine
 		std::vector<std::string> getParameterList();
 		std::vector<std::string> getTextureList();
 		FEShaderParam* getParameter(std::string name);
+
+		std::string getName();
+		void setName(std::string newName);
+		int getNameHash();
+
+		char* getVertexShaderText();
+		char* getTessControlShaderText();
+		char* getTessEvalShaderText();
+		char* getGeometryShaderText();
+		char* getFragmentShaderText();
+		char* getComputeShaderText();
+
+		bool addTessControlShader(char* tessControlShader, bool testCompilation = false);
+		bool addTessEvalShader(char* tessEvalShader, bool testCompilation = false);
+		bool addGeometryShader(char* geometryShader, bool testCompilation = false);
+		bool addComputeShader(char* computeShader, bool testCompilation = false);
+
+		std::string getCompilationErrors();
 	private:
+		std::string name;
+		int nameHash = 0;
+
+		std::string compilationErrors;
+
 		GLuint programID;
 		GLuint vertexShaderID;
+		char* vertexShaderText = nullptr;
+		GLuint tessControlShaderID;
+		char* tessControlShaderText = nullptr;
+		GLuint tessEvalShaderID;
+		char* tessEvalShaderText = nullptr;
+		GLuint geometryShaderID;
+		char* geometryShaderText = nullptr;
 		GLuint fragmentShaderID;
+		char* fragmentShaderText = nullptr;
+		GLuint computeShaderID;
+		char* computeShaderText = nullptr;
+
 		int vertexAttributes = 0;
 
 		std::unordered_map<std::string, FEShaderParam> parameters;
@@ -128,5 +162,14 @@ namespace FocalEngine
 		void registerUniforms();
 
 		bool CSM = false;
+		bool testCompilationMode = false;
+	};
+
+	struct FEShaderBlueprint
+	{
+		FEShader* pointerToShaderStorage = nullptr;
+		std::string name;
+		char* vertexShaderText = nullptr;
+		char* fragmentShaderText = nullptr;
 	};
 }

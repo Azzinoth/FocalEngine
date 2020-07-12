@@ -26,6 +26,10 @@ void FEMaterial::bind()
 	if (roughtnessMap != nullptr) roughtnessMap->bind(3);
 	if (metalnessMap != nullptr) metalnessMap->bind(4);
 	if (displacementMap != nullptr) displacementMap->bind(5);
+
+	// #fix such specific if statement in this class is not clean coding
+	if (shader->getParameter("baseColor") != nullptr)
+		shader->getParameter("baseColor")->updateData(baseColor);
 }
 
 void FEMaterial::unBind()
@@ -94,4 +98,15 @@ std::string FEMaterial::getName()
 void FEMaterial::setName(std::string newName)
 {
 	name = newName;
+}
+
+glm::vec3 FEMaterial::getBaseColor()
+{
+	return baseColor;
+}
+
+// Only infuence color of object if shader with such unifor is applied.
+void FEMaterial::setBaseColor(glm::vec3 newBaseColor)
+{
+	baseColor = newBaseColor;
 }
