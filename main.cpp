@@ -190,13 +190,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			frameCounter = 0;
 		}
 
-		std::string cpuMS = std::to_string(avarageCpuFrameDuration/*engine.getCpuTime()*/);
+		std::string cpuMS = std::to_string(avarageCpuFrameDuration);
 		cpuMS.erase(cpuMS.begin() + 4, cpuMS.end());
 
-		std::string gpuMS = std::to_string(avarageGpuFrameDuration/*engine.getGpuTime()*/);
+		std::string gpuMS = std::to_string(avarageGpuFrameDuration);
 		gpuMS.erase(gpuMS.begin() + 4, gpuMS.end());
 
-		std::string frameMS = std::to_string(avarageCpuFrameDuration + avarageGpuFrameDuration/*engine.getGpuTime()*/);
+		std::string frameMS = std::to_string(avarageCpuFrameDuration + avarageGpuFrameDuration);
 		frameMS.erase(frameMS.begin() + 4, frameMS.end());
 
 		std::string caption = "CPU time : ";
