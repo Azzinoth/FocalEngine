@@ -52,8 +52,8 @@ in VS_OUT
 	mat3 TBN;
 } FS_IN;
 
-@Texture@ baseColorTexture;
-@Texture@ normalsTexture;
+@Texture@ albedoMap;
+@Texture@ normalMap;
 @Texture@ AOMap;
 uniform float FEAO;
 @Texture@ roughtnessMap;
@@ -228,7 +228,7 @@ void main(void)
 		}
 	}
 
-	vec4 textureColor = texture(baseColorTexture, FS_IN.UV);
+	vec4 textureColor = texture(albedoMap, FS_IN.UV);
 	if (textureColor.a < 0.05)
 	{
 		discard;
@@ -238,7 +238,7 @@ void main(void)
 	vec3 viewDirection = normalize(FECameraPosition - FS_IN.fragPosition);
 	vec3 ambientColor = vec3(0.55f, 0.73f, 0.87f) * 0.3f;
 
-    vec3 normal = texture(normalsTexture, FS_IN.UV).rgb;
+    vec3 normal = texture(normalMap, FS_IN.UV).rgb;
     normal = normalize(normal * 2.0 - 1.0);
 	normal = normalize(FS_IN.TBN * normal);
 
@@ -267,6 +267,19 @@ void main(void)
 	gl_FragColor += vec4(baseColor * ambientColor * 0.3 * ao, 1.0f);
 }
 
+// Produces cheap but low-quality white noise, nothing special
+float quick_hash(vec2 pos)
+{
+	return fract(sin(dot(pos * 19.19, vec2(49.5791, 97.413))) * 49831.189237);
+}
+
+float getBias(vec3 normal, vec3 lightDir)
+{
+	float minBias = 0.0005 * 2.0;
+	float baseBias = 0.001 * 2.0;
+	return max(baseBias * (1.0 - dot(normal, lightDir)), minBias);
+}
+
 float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
 	float shadow = 0.0;
@@ -275,13 +288,20 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(CSM0, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-	float bias = 0.001;
+	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM0, 0);
-	float fScale = 0.02f;
+
+	mat2 disk_rotation;
+	{
+		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
+		float sr = sin(r);
+		float cr = cos(r);
+		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
+	}
 	
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM0, projCoords.xy + filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM0, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -297,13 +317,20 @@ float shadowCalculationCSM1(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(CSM1, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-	float bias = 0.001;
+	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM1, 0);
-	float fScale = 0.02f;
 	
+	mat2 disk_rotation;
+	{
+		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
+		float sr = sin(r);
+		float cr = cos(r);
+		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
+	}
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM1, projCoords.xy + filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM1, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -319,13 +346,20 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(CSM2, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-	float bias = 0.001;
+	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM2, 0);
-	float fScale = 0.02f;
+
+	mat2 disk_rotation;
+	{
+		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
+		float sr = sin(r);
+		float cr = cos(r);
+		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
+	}
 	
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM2, projCoords.xy + filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM2, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -341,13 +375,20 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
     projCoords = projCoords * 0.5 + 0.5;
 	float closestDepth = texture(CSM3, projCoords.xy).r;
 	float currentDepth = projCoords.z;
-	float bias = 0.001;
+	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM3, 0);
-	float fScale = 0.02f;
+
+	mat2 disk_rotation;
+	{
+		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
+		float sr = sin(r);
+		float cr = cos(r);
+		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
+	}
 	
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM3, projCoords.xy + filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM3, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -365,7 +406,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	if (FEMetalness == -1)
 		metallic = texture(metalnessMap, FS_IN.UV).r;
 
-	float roughness = FEMetalness;
+	float roughness = FERoughtness;
 	if (FERoughtness == -1)
 		roughness = texture(roughtnessMap, FS_IN.UV).r;
 

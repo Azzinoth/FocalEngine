@@ -3,8 +3,13 @@
 
 namespace FocalEngine
 {
+	class FEEntity;
+	class FERenderer;
+
 	class FETransformComponent
 	{
+		friend FEEntity;
+		friend FERenderer;
 	public:
 		FETransformComponent();
 		~FETransformComponent();
@@ -29,6 +34,7 @@ namespace FocalEngine
 
 		bool uniformScaling = true;
 	private:
+		bool dirtyFlag = false;
 		glm::vec3 position;
 		glm::quat rotationQuaternion;
 		glm::vec3 rotationAngles;
@@ -36,6 +42,7 @@ namespace FocalEngine
 		glm::vec3 scale;
 
 		glm::mat4 transformMatrix;
+		glm::mat4 previousTransformMatrix;
 
 		void rotateQuaternion(float angle, glm::vec3 axis);
 	};

@@ -18,7 +18,6 @@ namespace FocalEngine
 		~FEEntity();
 
 		FEGameModel* gameModel = nullptr;
-
 		FETransformComponent transform;
 
 		void render();
@@ -46,6 +45,8 @@ namespace FocalEngine
 		bool visible = true;
 		bool castShadows = true;
 		bool receiveShadows = true;
+
+		FEAABB entityAABB;
 	};
 }
 

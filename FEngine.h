@@ -62,4 +62,8 @@ namespace FocalEngine
 		FEBasicCamera* currentCamera = nullptr;
 		void setImguiStyle();
 	};
+
+	#define RENDERER FERenderer::getInstance()
+	#define RESOURCE_MANAGER FEResourceManager::getInstance()
+	#define SCENE FEScene::getInstance()
 }

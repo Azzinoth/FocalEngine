@@ -13,7 +13,7 @@
 
 using namespace FocalEngine;
 
-#define PROJECTS_FOLDER "C:/Users/kandr/Downloads/FEProjects"
+#define PROJECTS_FOLDER "C:/Users/Azzinoth/Desktop/FocalEngine/FEProjects"
 
 static double lastMouseX, lastMouseY;
 static double mouseX, mouseY;
@@ -325,6 +325,7 @@ void displayContentBrowser();
 void displayPostProcessContentBrowser();
 void displayProjectSelection();
 void openProject(int projectIndex);
+void displayTerrainContentBrowser();
 
 void addEntityButton();
 
@@ -391,7 +392,6 @@ public:
 
 			// check if this texture is used in some materials
 			// to-do: should be done through counter, not by searching each time.
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			int result = timesTextureUsed(objToWorkWith);
 			
 			ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" texture ?").c_str());
@@ -401,7 +401,7 @@ public:
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
-				FEResourceManager::getInstance().deleteFETexture(objToWorkWith);
+				RESOURCE_MANAGER.deleteFETexture(objToWorkWith);
 				currentProject->saveScene(&internalEditorEntities);
 
 				deleteFile((currentProject->getProjectFolder() + name + ".FEtexture").c_str());
@@ -497,7 +497,6 @@ public:
 				return;
 			}
 
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			ImGui::Text("New texture name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
@@ -506,7 +505,7 @@ public:
 			{
 				std::string oldName = objToWorkWith->getName();
 				// if new name is acceptable
-				if (resourceManager.setTextureName(objToWorkWith, newName))
+				if (RESOURCE_MANAGER.setTextureName(objToWorkWith, newName))
 				{
 					// also rename texture filename correspondently
 					changeFileName((currentProject->getProjectFolder() + oldName + ".FETexture").c_str(), (currentProject->getProjectFolder() + newName + ".FETexture").c_str());
@@ -561,8 +560,8 @@ public:
 
 			if (ImGui::Button("Yes", ImVec2(120, 0)))
 			{
-				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), true);
-				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
+				FETexture* newTexture = RESOURCE_MANAGER.LoadPngTextureAndCompress(filePath.c_str(), true);
+				RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
 				currentProject->saveScene(&internalEditorEntities);
 
@@ -573,8 +572,8 @@ public:
 			ImGui::SameLine();
 			if (ImGui::Button("No", ImVec2(120, 0)))
 			{
-				FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureAndCompress(filePath.c_str(), false);
-				FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
+				FETexture* newTexture = RESOURCE_MANAGER.LoadPngTextureAndCompress(filePath.c_str(), false);
+				RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 				// add asset list saving....
 				currentProject->saveScene(&internalEditorEntities);
 
@@ -632,7 +631,7 @@ public:
 	{
 		shouldOpen = true;
 		objToWorkWith = texture;
-		list = FEResourceManager::getInstance().getTextureList();
+		list = RESOURCE_MANAGER.getTextureList();
 		filteredList = list;
 		strcpy_s(filter, "");
 	}
@@ -684,13 +683,13 @@ public:
 				{
 					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexUnderMouse]);
 						close();
 					}
 				}
 
 				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(FEResourceManager::getInstance().getTexture(filteredList[i]));
+				iconButton->setTexture(RESOURCE_MANAGER.getTexture(filteredList[i]));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
@@ -711,7 +710,7 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					*objToWorkWith = FEResourceManager::getInstance().getTexture(filteredList[IndexSelected]);
+					*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexSelected]);
 					close();
 				}
 			}
@@ -758,7 +757,6 @@ public:
 				return;
 			}
 
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			ImGui::Text("New mesh name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
@@ -767,7 +765,7 @@ public:
 			{
 				std::string oldName = objToWorkWith->getName();
 				// if new name is acceptable
-				if (resourceManager.setMeshName(objToWorkWith, newName))
+				if (RESOURCE_MANAGER.setMeshName(objToWorkWith, newName))
 				{
 					// also rename mesh filename correspondently
 					changeFileName((currentProject->getProjectFolder() + oldName + ".model").c_str(), (currentProject->getProjectFolder() + newName + ".model").c_str());
@@ -831,7 +829,6 @@ public:
 
 			// check if this mesh is used in some entity
 			// to-do: should be done through counter, not by searching each time.
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			int result = timesMeshUsed(objToWorkWith);
 
 			ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" mesh ?").c_str());
@@ -844,16 +841,16 @@ public:
 
 				// re-create game model preview
 				std::vector<std::string> gameModelListToUpdate;
-				std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+				std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 				for (size_t i = 0; i < gameModelList.size(); i++)
 				{
-					FEGameModel* currentGameModel = FEResourceManager::getInstance().getGameModel(gameModelList[i]);
+					FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
 					if (currentGameModel->mesh == objToWorkWith)
 						gameModelListToUpdate.push_back(currentGameModel->getName());
 				}
 
-				FEResourceManager::getInstance().deleteFEMesh(objToWorkWith);
+				RESOURCE_MANAGER.deleteFEMesh(objToWorkWith);
 				currentProject->saveScene(&internalEditorEntities);
 
 				// re-create game model preview
@@ -927,11 +924,11 @@ public:
 	{
 		shouldOpen = true;
 		objToWorkWith = mesh;
-		list = FEResourceManager::getInstance().getMeshList();
-		std::vector<std::string> standardMeshList = FEResourceManager::getInstance().getStandardMeshList();
+		list = RESOURCE_MANAGER.getMeshList();
+		std::vector<std::string> standardMeshList = RESOURCE_MANAGER.getStandardMeshList();
 		for (size_t i = 0; i < standardMeshList.size(); i++)
 		{
-			if (isInInternalEditorList(FEResourceManager::getInstance().getMesh(standardMeshList[i])))
+			if (isInInternalEditorList(RESOURCE_MANAGER.getMesh(standardMeshList[i])))
 				continue;
 			list.insert(list.begin(), standardMeshList[i]);
 		}
@@ -988,7 +985,7 @@ public:
 				{
 					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexUnderMouse]);
 						close();
 					}
 				}
@@ -1015,7 +1012,7 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					*objToWorkWith = FEResourceManager::getInstance().getMesh(filteredList[IndexSelected]);
+					*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexSelected]);
 					close();
 				}
 			}
@@ -1078,7 +1075,7 @@ public:
 	{
 		shouldOpen = true;
 		objToWorkWith = material;
-		list = FEResourceManager::getInstance().getMaterialList();
+		list = RESOURCE_MANAGER.getMaterialList();
 		list.insert(list.begin(), "SolidColorMaterial");
 		
 		filteredList = list;
@@ -1132,7 +1129,7 @@ public:
 				{
 					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexUnderMouse]);
 						close();
 					}
 				}
@@ -1161,7 +1158,7 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					*objToWorkWith = FEResourceManager::getInstance().getMaterial(filteredList[IndexSelected]);
+					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexSelected]);
 					close();
 				}
 			}
@@ -1237,11 +1234,11 @@ public:
 			popupCaption = "Select game model";
 		}
 
-		list = FEResourceManager::getInstance().getGameModelList();
-		std::vector<std::string> standardGameModelList = FEResourceManager::getInstance().getStandardGameModelList();
+		list = RESOURCE_MANAGER.getGameModelList();
+		std::vector<std::string> standardGameModelList = RESOURCE_MANAGER.getStandardGameModelList();
 		for (size_t i = 0; i < standardGameModelList.size(); i++)
 		{
-			if (isInInternalEditorList(FEResourceManager::getInstance().getGameModel(standardGameModelList[i])))
+			if (isInInternalEditorList(RESOURCE_MANAGER.getGameModel(standardGameModelList[i])))
 				continue;
 			list.insert(list.begin(), standardGameModelList[i]);
 		}
@@ -1299,12 +1296,12 @@ public:
 					{
 						if (newEntityFlag)
 						{
-							FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]));
+							FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]));
 							wasSelectedAlready = true;
 						}
 						else
 						{
-							*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]);
+							*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]);
 						}
 						
 						close();
@@ -1337,11 +1334,11 @@ public:
 				{
 					if (newEntityFlag)
 					{
-						FEScene::getInstance().addEntity(FEResourceManager::getInstance().getGameModel(filteredlList[IndexSelected]));
+						FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredlList[IndexSelected]));
 					}
 					else
 					{
-						*objToWorkWith = FEResourceManager::getInstance().getGameModel(filteredlList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]);
 					}
 					close();
 				}
@@ -1389,7 +1386,6 @@ public:
 				return;
 			}
 
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			ImGui::Text("New game model name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
@@ -1398,7 +1394,7 @@ public:
 			{
 				std::string oldName = objToWorkWith->getName();
 				// if new name is acceptable
-				if (resourceManager.setGameModelName(objToWorkWith, newName))
+				if (RESOURCE_MANAGER.setGameModelName(objToWorkWith, newName))
 				{
 					// save assets list with new texture name
 					currentProject->saveScene(&internalEditorEntities);
@@ -1457,7 +1453,6 @@ public:
 
 			// check if this game model is used in some entities
 			// to-do: should be done through counter, not by searching each time.
-			FEResourceManager& resourceManager = FEResourceManager::getInstance();
 			int result = timesGameModelUsed(objToWorkWith);
 
 			ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" game model ?").c_str());
@@ -1468,7 +1463,7 @@ public:
 			{
 				std::string name = objToWorkWith->getName();
 				FEScene::getInstance().prepareForGameModelDeletion(objToWorkWith);
-				FEResourceManager::getInstance().deleteGameModel(objToWorkWith);
+				RESOURCE_MANAGER.deleteGameModel(objToWorkWith);
 				currentProject->saveScene(&internalEditorEntities);
 
 				objToWorkWith = nullptr;
@@ -1884,33 +1879,49 @@ class shaderEditorWindow : public ImGuiWindow
 	FEShader* dummyShader = nullptr;
 	TextEditor* currentEditor = nullptr;
 	TextEditor vertexShaderEditor;
+	TextEditor tessControlShaderEditor;
+	TextEditor tessEvalShaderEditor;
+	TextEditor geometryShaderEditor;
 	TextEditor fragmentShaderEditor;
+	TextEditor computeShaderEditor;
+
+	bool tessControlShaderUsed = false;
+	bool tessEvalShaderUsed = false;
+	bool geometryShaderUsed = false;
+	bool computeShaderUsed = false;
 
 	ImGuiButton* compileButton = nullptr;
-	//std::vector<std::string> list;
 	int activeTab = 0;
 
 	void replaceShader(FEShader* oldShader, FEShader* newShader)
 	{
-		FEResourceManager& resourceManager = FEResourceManager::getInstance();
-
-		std::vector<std::string> materialList = resourceManager.getMaterialList();
+		std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 		for (size_t i = 0; i < materialList.size(); i++)
 		{
-			FEMaterial* tempMaterial = resourceManager.getMaterial(materialList[i]);
+			FEMaterial* tempMaterial = RESOURCE_MANAGER.getMaterial(materialList[i]);
 			if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
 			{
 				tempMaterial->shader = newShader;
 			}
 		}
 
-		materialList = resourceManager.getStandardMaterialList();
+		materialList = RESOURCE_MANAGER.getStandardMaterialList();
 		for (size_t i = 0; i < materialList.size(); i++)
 		{
-			FEMaterial* tempMaterial = resourceManager.getMaterial(materialList[i]);
+			FEMaterial* tempMaterial = RESOURCE_MANAGER.getMaterial(materialList[i]);
 			if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
 			{
 				tempMaterial->shader = newShader;
+			}
+		}
+
+		std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+		for (size_t i = 0; i < terrainList.size(); i++)
+		{
+			FETerrain* tempTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
+			if (tempTerrain->shader->getNameHash() == oldShader->getNameHash())
+			{
+				tempTerrain->shader = newShader;
 			}
 		}
 	}
@@ -1920,7 +1931,12 @@ public:
 		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
 		currentEditor = &vertexShaderEditor;
 		vertexShaderEditor.SetShowWhitespaces(false);
+		tessControlShaderEditor.SetShowWhitespaces(false);
+		tessEvalShaderEditor.SetShowWhitespaces(false);
+		geometryShaderEditor.SetShowWhitespaces(false);
 		fragmentShaderEditor.SetShowWhitespaces(false);
+		computeShaderEditor.SetShowWhitespaces(false);
+
 		size = ImVec2(800, 600);
 		compileButton = new ImGuiButton("Compile");
 	}
@@ -1939,7 +1955,25 @@ public:
 		fragmentShaderEditor.SetText(shaderToEdit->getFragmentShaderText());
 		currentEditor = &vertexShaderEditor;
 
-		/*list = FEResourceManager::getInstance().getStandardShadersList();
+		if (shaderToEdit->getTessControlShaderText() != nullptr)
+		{
+			tessControlShaderEditor.SetText(shaderToEdit->getTessControlShaderText());
+			tessControlShaderUsed = true;
+		}
+
+		if (shaderToEdit->getTessEvalShaderText() != nullptr)
+		{
+			tessEvalShaderEditor.SetText(shaderToEdit->getTessEvalShaderText());
+			tessEvalShaderUsed = true;
+		}
+
+		if (shaderToEdit->getGeometryShaderText() != nullptr)
+		{
+			geometryShaderEditor.SetText(shaderToEdit->getGeometryShaderText());
+			geometryShaderUsed = true;
+		}
+
+		/*list = RESOURCE_MANAGER.getStandardShadersList();
 		std::string text;
 		for (size_t i = 0; i < list.size(); i++)
 		{
@@ -1967,7 +2001,13 @@ public:
 			if (dummyShader != nullptr)
 				delete dummyShader;
 
-			dummyShader = new FEShader(vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(), "dummyShader", true);
+			dummyShader = new FEShader("dummyShader", vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
+									   tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
+									   tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
+									   geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
+									   computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr,
+									   true);
+
 			std::string errors = dummyShader->getCompilationErrors();
 			if (errors.size() != 0)
 			{
@@ -1975,14 +2015,18 @@ public:
 			}
 			else
 			{
-				FEShader* reCompiledShader = new FEShader(vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(), shaderToEdit->getName() + "1");
+				FEShader* reCompiledShader = new FEShader(shaderToEdit->getName() + "1", vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
+														  tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
+														  tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
+														  geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
+														  computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr);
+
 				replaceShader(shaderToEdit, reCompiledShader);
-				FEResourceManager::getInstance().deleteShader(shaderToEdit->getName());
+				RESOURCE_MANAGER.deleteShader(shaderToEdit->getName());
 				shaderToEdit = reCompiledShader;
 			}
 		}
 
-		
 		if (ImGui::BeginMenuBar())
 		{
 			if (ImGui::BeginMenu("Edit"))
@@ -2045,9 +2089,39 @@ public:
 				ImGui::EndTabItem();
 			}
 
+			if (tessControlShaderUsed)
+			{
+				if (ImGui::BeginTabItem("Tessalation Control Shader"))
+				{
+					activeTab = 1;
+					currentEditor = &tessControlShaderEditor;
+					ImGui::EndTabItem();
+				}
+			}
+
+			if (tessEvalShaderUsed)
+			{
+				if (ImGui::BeginTabItem("Tessalation Evaluation Shader"))
+				{
+					activeTab = 2;
+					currentEditor = &tessEvalShaderEditor;
+					ImGui::EndTabItem();
+				}
+			}
+
+			if (geometryShaderUsed)
+			{
+				if (ImGui::BeginTabItem("Geometry Shader"))
+				{
+					activeTab = 3;
+					currentEditor = &geometryShaderEditor;
+					ImGui::EndTabItem();
+				}
+			}
+
 			if (ImGui::BeginTabItem("Fragment Shader"))
 			{
-				activeTab = 1;
+				activeTab = 4;
 				currentEditor = &fragmentShaderEditor;
 				ImGui::EndTabItem();
 			}

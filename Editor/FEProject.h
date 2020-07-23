@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../FEngine.h"
-
 using namespace FocalEngine;
+
+#define ENGINE FEngine::getInstance()
 
 class FEProject
 {

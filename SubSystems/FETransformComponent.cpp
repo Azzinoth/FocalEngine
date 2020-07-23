@@ -74,6 +74,7 @@ void FETransformComponent::rotateByQuaternion(glm::quat quaternion)
 void FETransformComponent::changeScaleUniformlyBy(float delta)
 {
 	scale += delta;
+	update();
 }
 
 void FETransformComponent::changeXScaleBy(float delta)
@@ -131,6 +132,10 @@ void FETransformComponent::update()
 
 	transformMatrix *= glm::toMat4(rotationQuaternion);
 	transformMatrix = glm::scale(transformMatrix, glm::vec3(scale[0], scale[1], scale[2]));
+
+	if (previousTransformMatrix != transformMatrix)
+		dirtyFlag = true;
+	previousTransformMatrix = transformMatrix;
 }
 
 glm::mat4 FETransformComponent::getTransformMatrix()

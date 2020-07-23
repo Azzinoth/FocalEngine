@@ -9,11 +9,11 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 	
 	if (!screenshotFile.good())
 	{
-		sceneScreenshot = FEResourceManager::getInstance().noTexture;
+		sceneScreenshot = RESOURCE_MANAGER.noTexture;
 	}
 	else
 	{
-		sceneScreenshot = FEResourceManager::getInstance().LoadFETextureStandAlone((this->getProjectFolder() + "/projectScreenShot.FETexture").c_str());
+		sceneScreenshot = RESOURCE_MANAGER.LoadFETextureStandAlone((this->getProjectFolder() + "/projectScreenShot.FETexture").c_str());
 	}
 
 	screenshotFile.close();
@@ -21,11 +21,11 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 
 FEProject::~FEProject()
 {
-	if (sceneScreenshot != FEResourceManager::getInstance().noTexture)
+	if (sceneScreenshot != RESOURCE_MANAGER.noTexture)
 		delete sceneScreenshot;
-	FEScene::getInstance().clear();
-	FEResourceManager::getInstance().clear();
-	FEngine::getInstance().resetCamera();
+	SCENE.clear();
+	RESOURCE_MANAGER.clear();
+	ENGINE.resetCamera();
 }
 
 std::string FEProject::getName()
@@ -59,20 +59,16 @@ void FEProject::writeTransformToJSON(Json::Value& root, FETransformComponent* tr
 
 void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 {
-	FEngine& engine = FEngine::getInstance();
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
-	FEScene& scene = FEScene::getInstance();
-
 	Json::Value root;
 	std::ofstream sceneFile;
 	sceneFile.open(projectFolder + "scene.txt");
 
 	// saving Meshes
-	std::vector<std::string> meshList = resourceManager.getMeshList();
+	std::vector<std::string> meshList = RESOURCE_MANAGER.getMeshList();
 	Json::Value meshData;
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		FEMesh* mesh = resourceManager.getMesh(meshList[i]);
+		FEMesh* mesh = RESOURCE_MANAGER.getMesh(meshList[i]);
 
 		if (mesh->getFileName().size() == 0)
 			continue;
@@ -82,21 +78,21 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	root["meshes"] = meshData;
 
 	// saving Textures
-	std::vector<std::string> texturesList = resourceManager.getTextureList();
+	std::vector<std::string> texturesList = RESOURCE_MANAGER.getTextureList();
 	Json::Value texturesData;
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
-		FETexture* texture = resourceManager.getTexture(texturesList[i]);
+		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
 		texturesData[texture->getName()] = texture->getName() + ".FETexture";
 	}
 	root["textures"] = texturesData;
 
 	// saving Materials
-	std::vector<std::string> materialList = resourceManager.getMaterialList();
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 	Json::Value materialData;
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
-		FEMaterial* material = resourceManager.getMaterial(materialList[i]);
+		FEMaterial* material = RESOURCE_MANAGER.getMaterial(materialList[i]);
 
 		if (material->albedoMap != nullptr) materialData[material->getName()]["albedoMap"] = material->albedoMap->getName();
 		if (material->normalMap != nullptr) materialData[material->getName()]["normalMap"] = material->normalMap->getName();
@@ -108,11 +104,11 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	root["materials"] = materialData;
 
 	// saving gameModels
-	std::vector<std::string> gameModelList = resourceManager.getGameModelList();
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 	Json::Value gameModelData;
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
-		FEGameModel* gameModel = resourceManager.getGameModel(gameModelList[i]);
+		FEGameModel* gameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
 		gameModelData[gameModel->getName()]["mesh"] = gameModel->mesh->getName();
 		gameModelData[gameModel->getName()]["material"] = gameModel->material->getName();
@@ -120,11 +116,11 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	root["gameModels"] = gameModelData;
 
 	// saving Entities
-	std::vector<std::string> entityList = scene.getEntityList();
+	std::vector<std::string> entityList = SCENE.getEntityList();
 	Json::Value entityData;
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		FEEntity* entity = scene.getEntity(entityList[i]);
+		FEEntity* entity = SCENE.getEntity(entityList[i]);
 		if (excludedEntities->find(entity->getNameHash()) != excludedEntities->end())
 			continue;
 
@@ -133,12 +129,31 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	}
 	root["entities"] = entityData;
 
+	// saving Terrains
+	std::vector<std::string> terrainList = SCENE.getTerrainList();
+	Json::Value terrainData;
+	for (size_t i = 0; i < terrainList.size(); i++)
+	{
+		FETerrain* terrain = SCENE.getTerrain(terrainList[i]);
+		
+		terrainData[terrain->getName()]["heightMap"] = terrain->heightMap->getName();
+		terrainData[terrain->getName()]["hightScale"] = terrain->getHightScale();
+		terrainData[terrain->getName()]["tileMult"]["X"] = terrain->getTileMult().x;
+		terrainData[terrain->getName()]["tileMult"]["Y"] = terrain->getTileMult().y;
+		terrainData[terrain->getName()]["LODlevel"] = terrain->getLODlevel();
+		terrainData[terrain->getName()]["chunkPerSide"] = terrain->getChunkPerSide();
+		terrainData[terrain->getName()]["materials"]["layer0"] = terrain->layer0->getName();
+
+		writeTransformToJSON(terrainData[terrain->getName()]["transformation"], &terrain->transform);
+	}
+	root["terrains"] = terrainData;
+
 	// saving Lights
-	std::vector<std::string> LightList = scene.getLightsList();
+	std::vector<std::string> LightList = SCENE.getLightsList();
 	Json::Value lightData;
 	for (size_t i = 0; i < LightList.size(); i++)
 	{
-		FELight* light = scene.getLight(LightList[i]);
+		FELight* light = SCENE.getLight(LightList[i]);
 
 		if (light->getType() == FE_DIRECTIONAL_LIGHT)
 		{
@@ -206,22 +221,22 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	// saving Camera settings
 	Json::Value cameraData;
 
-	cameraData["position"]["X"] = engine.getCamera()->getPosition()[0];
-	cameraData["position"]["Y"] = engine.getCamera()->getPosition()[1];
-	cameraData["position"]["Z"] = engine.getCamera()->getPosition()[2];
+	cameraData["position"]["X"] = ENGINE.getCamera()->getPosition()[0];
+	cameraData["position"]["Y"] = ENGINE.getCamera()->getPosition()[1];
+	cameraData["position"]["Z"] = ENGINE.getCamera()->getPosition()[2];
 
-	cameraData["fov"] = engine.getCamera()->getFov();
-	cameraData["nearPlane"] = engine.getCamera()->getNearPlane();
-	cameraData["farPlane"] = engine.getCamera()->getFarPlane();
+	cameraData["fov"] = ENGINE.getCamera()->getFov();
+	cameraData["nearPlane"] = ENGINE.getCamera()->getNearPlane();
+	cameraData["farPlane"] = ENGINE.getCamera()->getFarPlane();
 
-	cameraData["yaw"] = engine.getCamera()->getYaw();
-	cameraData["pitch"] = engine.getCamera()->getPitch();
-	cameraData["roll"] = engine.getCamera()->getRoll();
+	cameraData["yaw"] = ENGINE.getCamera()->getYaw();
+	cameraData["pitch"] = ENGINE.getCamera()->getPitch();
+	cameraData["roll"] = ENGINE.getCamera()->getRoll();
 
-	cameraData["aspectRatio"] = engine.getCamera()->getAspectRatio();
+	cameraData["aspectRatio"] = ENGINE.getCamera()->getAspectRatio();
 
-	cameraData["gamma"] = engine.getCamera()->getGamma();
-	cameraData["exposure"] = engine.getCamera()->getExposure();
+	cameraData["gamma"] = ENGINE.getCamera()->getGamma();
+	cameraData["exposure"] = ENGINE.getCamera()->getExposure();
 
 	root["camera"] = cameraData;
 
@@ -253,11 +268,7 @@ void FEProject::readTransformToJSON(Json::Value& root, FETransformComponent* tra
 
 void FEProject::loadScene()
 {
-	FEngine& engine = FEngine::getInstance();
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
-	FEScene& scene = FEScene::getInstance();
 	std::ifstream sceneFile;
-
 	sceneFile.open(projectFolder + "scene.txt");
 
 	std::string fileData((std::istreambuf_iterator<char>(sceneFile)), std::istreambuf_iterator<char>());
@@ -274,46 +285,46 @@ void FEProject::loadScene()
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		resourceManager.LoadFEMesh((projectFolder + root["meshes"][meshList[i]].asCString()).c_str(), meshList[i]);
+		RESOURCE_MANAGER.LoadFEMesh((projectFolder + root["meshes"][meshList[i]].asCString()).c_str(), meshList[i]);
 	}
 
 	// loading Textures
 	std::vector<Json::String> texturesList = root["textures"].getMemberNames();
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
-		FETexture* justLoadedTexture = resourceManager.LoadFETexture((projectFolder + root["textures"][texturesList[i]].asCString()).c_str(), texturesList[i]);
+		FETexture* justLoadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]].asCString()).c_str(), texturesList[i]);
 		// I have texture name in file but for now I will only use name from scene.txt
-		resourceManager.setTextureName(justLoadedTexture, texturesList[i]);
+		RESOURCE_MANAGER.setTextureName(justLoadedTexture, texturesList[i]);
 	}
 
 	// loading Materials
 	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
 	for (size_t i = 0; i < materialsList.size(); i++)
 	{
-		FEMaterial* newMat = resourceManager.createMaterial(materialsList[i].c_str());
-		//newMat->shader = FEResourceManager::getInstance().getShader("FEPhongShader");
-		newMat->shader = FEResourceManager::getInstance().getShader("FEPBRShader");
+		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i].c_str());
+		//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
+		newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
 		{
 			if (textureList[j] == "albedoMap")
-				newMat->albedoMap = resourceManager.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
+				newMat->albedoMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
 
 			if (textureList[j] == "normalMap")
-				newMat->normalMap = resourceManager.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+				newMat->normalMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
 
 			if (textureList[j] == "AOMap")
-				newMat->AOMap = resourceManager.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
+				newMat->AOMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
 
 			if (textureList[j] == "roughtnessMap")
-				newMat->roughtnessMap = resourceManager.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
+				newMat->roughtnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
 
 			if (textureList[j] == "metalnessMap")
-				newMat->metalnessMap = resourceManager.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
+				newMat->metalnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
 
 			if (textureList[j] == "displacementMap")
-				newMat->displacementMap = resourceManager.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString());
+				newMat->displacementMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString());
 		}
 	}
 
@@ -321,25 +332,47 @@ void FEProject::loadScene()
 	std::vector<Json::String> gameModelList = root["gameModels"].getMemberNames();
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
-		FEResourceManager::getInstance().createGameModel(resourceManager.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
-														 resourceManager.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
-														 gameModelList[i]);
+		RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
+										 RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
+										 gameModelList[i]);
 	}
 
 	// loading Entities
 	std::vector<Json::String> entityList = root["entities"].getMemberNames();
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		scene.addEntity(resourceManager.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i]);
-		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &scene.getEntity(entityList[i])->transform);
+		SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i]);
+		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
+	}
+
+	// loading Terrains
+	std::vector<Json::String> terrainList = root["terrains"].getMemberNames();
+	for (size_t i = 0; i < terrainList.size(); i++)
+	{
+		FETerrain* terrainSample = RESOURCE_MANAGER.createTerrain("test");
+		terrainSample->heightMap = RESOURCE_MANAGER.getTexture(root["terrains"][terrainList[i]]["heightMap"].asCString());
+		terrainSample->layer0 = RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["materials"]["layer0"].asCString());
+
+		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		glm::vec2 tileMult;
+		tileMult.x = root["terrains"][terrainList[i]]["tileMult"]["X"].asFloat();
+		tileMult.y = root["terrains"][terrainList[i]]["tileMult"]["Y"].asFloat();
+		terrainSample->setTileMult(tileMult);
+		terrainSample->setLODlevel(root["terrains"][terrainList[i]]["LODlevel"].asFloat());
+		terrainSample->setChunkPerSide(root["terrains"][terrainList[i]]["chunkPerSide"].asFloat());
+		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		readTransformToJSON(root["terrains"][terrainList[i]]["transformation"], &terrainSample->transform);
+
+		SCENE.addTerrain(terrainSample);
 	}
 
 	// loading Lights
 	std::vector<Json::String> lightList = root["lights"].getMemberNames();
 	for (size_t i = 0; i < lightList.size(); i++)
 	{
-		scene.addLight(static_cast<FELightType>(root["lights"][lightList[i]]["type"].asInt()), lightList[i]);
-		FELight* light = scene.getLight(lightList[i]);
+		SCENE.addLight(static_cast<FELightType>(root["lights"][lightList[i]]["type"].asInt()), lightList[i]);
+		FELight* light = SCENE.getLight(lightList[i]);
 
 		light->setIntensity(root["lights"][lightList[i]]["intensity"].asFloat());
 		if (light->getType() == FE_SPOT_LIGHT)
@@ -387,30 +420,30 @@ void FEProject::loadScene()
 	}
 
 	// loading Camera settings
-	engine.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
+	ENGINE.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
 											  root["camera"]["position"]["Y"].asFloat(),
 											  root["camera"]["position"]["Z"].asFloat()));
 
-	engine.getCamera()->setFov(root["camera"]["fov"].asFloat());
-	engine.getCamera()->setNearPlane(root["camera"]["nearPlane"].asFloat());
-	engine.getCamera()->setFarPlane(root["camera"]["farPlane"].asFloat());
+	ENGINE.getCamera()->setFov(root["camera"]["fov"].asFloat());
+	ENGINE.getCamera()->setNearPlane(root["camera"]["nearPlane"].asFloat());
+	ENGINE.getCamera()->setFarPlane(root["camera"]["farPlane"].asFloat());
 
-	engine.getCamera()->setYaw(root["camera"]["yaw"].asFloat());
-	engine.getCamera()->setPitch(root["camera"]["pitch"].asFloat());
-	engine.getCamera()->setRoll(root["camera"]["roll"].asFloat());
+	ENGINE.getCamera()->setYaw(root["camera"]["yaw"].asFloat());
+	ENGINE.getCamera()->setPitch(root["camera"]["pitch"].asFloat());
+	ENGINE.getCamera()->setRoll(root["camera"]["roll"].asFloat());
 
-	engine.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
+	ENGINE.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
 
-	engine.getCamera()->setGamma(root["camera"]["gamma"].asFloat());
-	engine.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
+	ENGINE.getCamera()->setGamma(root["camera"]["gamma"].asFloat());
+	ENGINE.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
 
 	sceneFile.close();
 }
 
 void FEProject::createDummyScreenshot()
 {
-	size_t width = FEngine::getInstance().getWindowWidth();
-	size_t height = FEngine::getInstance().getWindowHeight();
+	size_t width = ENGINE.getWindowWidth();
+	size_t height = ENGINE.getWindowHeight();
 
 	char* pixels = new char[4 * width * height];
 	for (size_t j = 0; j < height; j++)
@@ -424,6 +457,6 @@ void FEProject::createDummyScreenshot()
 		}
 	}
 
-	FEResourceManager::getInstance().saveFETexture((getProjectFolder() + "/projectScreenShot.FETexture").c_str(), pixels, width, height);
+	RESOURCE_MANAGER.saveFETexture((getProjectFolder() + "/projectScreenShot.FETexture").c_str(), pixels, width, height);
 	delete[] pixels;
 }

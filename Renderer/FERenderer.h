@@ -17,6 +17,7 @@ namespace FocalEngine
 
 		void render(FEBasicCamera* currentCamera);
 		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
+		void renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera);
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
 
 		std::vector<std::string> getPostProcessList();
@@ -34,6 +35,7 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);
+		void loadStandardTerrainParams(FEShader* shader, FEBasicCamera* currentCamera, FETerrain* terrain);
 		void loadUniformBlocks();
 
 		void standardFBInit(int WindowWidth, int WindowHeight);

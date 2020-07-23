@@ -20,7 +20,11 @@ imgui.ini
 *.texture
 *.model
 *.FETexture
+/CoreExtensions/StandardMaterial/PhongMaterial/skyDome.h
+/CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader - Copy.h
+/CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader - Copy (2).h
 
 #Folders
 Debug/
 Release/
+.vs/

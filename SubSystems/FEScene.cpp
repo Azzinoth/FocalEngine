@@ -161,3 +161,11 @@ std::vector<std::string> FEScene::getTerrainList()
 {
 	FE_MAP_TO_STR_VECTOR(terrainMap)
 }
+
+FETerrain* FEScene::getTerrain(std::string name)
+{
+	if (terrainMap.find(name) == terrainMap.end())
+		return nullptr;
+
+	return terrainMap[name];
+}

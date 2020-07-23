@@ -3,7 +3,7 @@
 #include "../FEngine.h"
 using namespace FocalEngine;
 
-//silly winsows manager
+//silly windows manager
 class ImGuiModalPopup;
 class ImGuiWindow;
 

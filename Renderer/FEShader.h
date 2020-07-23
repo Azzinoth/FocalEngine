@@ -11,6 +11,7 @@
 #define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
 #define FE_PROJECTION_MATRIX_MACRO "@ProjectionMatrix@"
+#define FE_PVM_MATRIX_MACRO "@PVMMatrix@"
 #define FE_CAMERA_POSITION_MACRO "@CameraPosition@"
 
 #define FE_LIGHT_POSITION_MACRO "@LightPosition@"
@@ -90,7 +91,9 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEPostProcess;
 	public:
-		FEShader(const char* vertexText, const char* fragmentText, std::string name, bool testCompilation = false);
+		FEShader(std::string name, const char* vertexText, const char* fragmentText,
+				 const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
+			     const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false);
 		~FEShader();
 
 		virtual void start();
@@ -121,10 +124,10 @@ namespace FocalEngine
 		char* getFragmentShaderText();
 		char* getComputeShaderText();
 
-		bool addTessControlShader(char* tessControlShader, bool testCompilation = false);
+		/*bool addTessControlShader(char* tessControlShader, bool testCompilation = false);
 		bool addTessEvalShader(char* tessEvalShader, bool testCompilation = false);
 		bool addGeometryShader(char* geometryShader, bool testCompilation = false);
-		bool addComputeShader(char* computeShader, bool testCompilation = false);
+		bool addComputeShader(char* computeShader, bool testCompilation = false);*/
 
 		std::string getCompilationErrors();
 	private:

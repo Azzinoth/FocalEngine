@@ -35,15 +35,49 @@ namespace FocalEngine
 
 		bool isReceivingShadows();
 		void setReceivingShadows(bool isReceivingShadows);
+
+		FEShader* shader = nullptr;
+
+		FETexture* heightMap = nullptr;
+
+		FEMaterial* layer0 = nullptr;
+		/*FETexture* albedoMap = nullptr;
+		FETexture* normalMap = nullptr;
+		FETexture* AOMap = nullptr;
+		FETexture* roughtnessMap = nullptr;
+		FETexture* metalnessMap = nullptr;
+		FETexture* displacementMap = nullptr;*/
+
+		bool isWireframeMode();
+		void setWireframeMode(bool isActive);
+		
+		float getHightScale();
+		void setHightScale(float newHightScale);
+
+		glm::vec2 getTileMult();
+		void setTileMult(glm::vec2 newTileMult);
+
+		float getLODlevel();
+		void setLODlevel(float newLODlevel);
+
+		float getChunkPerSide();
+		void setChunkPerSide(float newChunkPerSide);
 	private:
 		std::string name;
 		int nameHash = 0;
 
+		bool wireframeMode = false;
 		bool visible = true;
 		bool castShadows = true;
 		bool receiveShadows = true;
 
-		FEShader* shader = nullptr;
+		float hightScale = 1.0;
+		float scaleFactor = 1.0;
+		glm::vec2 tileMult = glm::vec2(1.0);
+		glm::vec2 hightMapShift = glm::vec2(0.0);
+		float chunkPerSide = 4.0;
+
+		float LODlevel = 64.0;
 	};
 }
 

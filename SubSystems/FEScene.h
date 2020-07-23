@@ -26,6 +26,7 @@ namespace FocalEngine
 
 		bool addTerrain(FETerrain* newTerrain);
 		std::vector<std::string> getTerrainList();
+		FETerrain* getTerrain(std::string name);
 
 		void prepareForGameModelDeletion(FEGameModel* gameModel);
 

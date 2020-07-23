@@ -13,25 +13,24 @@ FETerrain::~FETerrain()
 
 void FETerrain::render()
 {
-	FE_GL_ERROR(glDrawArraysInstanced(GL_PATCHES, 0, 4, 64 * 64));
-	/*FE_GL_ERROR(glBindVertexArray(gameModel->mesh->getVaoID()));
-	if ((gameModel->mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-	if ((gameModel->mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-	if ((gameModel->mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-	if ((gameModel->mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-	if ((gameModel->mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+	//static glm::vec3 pivotPosition = transform.getPosition();
+	//pivotPosition = transform.getPosition();
 
-	if ((gameModel->mesh->vertexBuffers & FE_INDEX) == FE_INDEX)
-		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
-	if ((gameModel->mesh->vertexBuffers & FE_INDEX) != FE_INDEX)
-		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, gameModel->mesh->getVertexCount()));
+	//for (size_t i = 0; i < 4; i++)
+	//{
+	//	for (size_t j = 0; j < 4; j++)
+	//	{
+	//		transform.setPosition(glm::vec3(pivotPosition.x + i * 64.0f, pivotPosition.y, pivotPosition.z + j * 64.0f));
+	//		shader->getParameter("FEWorldMatrix")->updateData(transform.getTransformMatrix());
 
-	if ((gameModel->mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glDisableVertexAttribArray(0));
-	if ((gameModel->mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glDisableVertexAttribArray(1));
-	if ((gameModel->mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glDisableVertexAttribArray(2));
-	if ((gameModel->mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glDisableVertexAttribArray(3));
-	if ((gameModel->mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glDisableVertexAttribArray(4));
-	FE_GL_ERROR(glBindVertexArray(0));*/
+	//		//#fix that
+	//		shader->loadDataToGPU();
+	//		//shader->getParameter("hightMapShift")->updateData(glm::vec2(i * 64.0, ));
+			FE_GL_ERROR(glDrawArraysInstanced(GL_PATCHES, 0, 4, 64 * 64));
+		/*}
+	}
+	
+	transform.setPosition(pivotPosition);*/
 }
 
 bool FETerrain::isVisible()
@@ -151,4 +150,66 @@ void FETerrain::setReceivingShadows(bool isReceivingShadows)
 int FETerrain::getNameHash()
 {
 	return nameHash;
+}
+
+void FETerrain::setWireframeMode(bool isActive)
+{
+	wireframeMode = isActive;
+}
+
+bool FETerrain::isWireframeMode()
+{
+	return wireframeMode;
+}
+
+float FETerrain::getHightScale()
+{
+	return hightScale;
+}
+
+void FETerrain::setHightScale(float newHightScale)
+{
+	hightScale = newHightScale;
+}
+
+glm::vec2 FETerrain::getTileMult()
+{
+	return tileMult;
+}
+
+void FETerrain::setTileMult(glm::vec2 newTileMult)
+{
+	tileMult = newTileMult;
+}
+
+float FETerrain::getLODlevel()
+{
+	return LODlevel;
+}
+
+void FETerrain::setLODlevel(float newLODlevel)
+{
+	if (newLODlevel < 2.0)
+		newLODlevel = 2.0;
+
+	if (newLODlevel > 64.0)
+		newLODlevel = 64.0;
+
+	LODlevel = newLODlevel;
+}
+
+float FETerrain::getChunkPerSide()
+{
+	return chunkPerSide;
+}
+
+void FETerrain::setChunkPerSide(float newChunkPerSide)
+{
+	if (newChunkPerSide < 1.0f)
+		newChunkPerSide = 1.0f;
+
+	if (newChunkPerSide > 16.0f)
+		newChunkPerSide = 16.0f;
+
+	chunkPerSide = newChunkPerSide;
 }

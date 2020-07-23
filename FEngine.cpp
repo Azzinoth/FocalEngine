@@ -2,11 +2,11 @@
 using namespace FocalEngine;
 
 FEngine* FEngine::_instance = nullptr;
-#define RENDERER_OBJ FERenderer::getInstance()
-#define RESOURCE_MANAGER_OBJ FEResourceManager::getInstance()
-#define ENGINE_OBJ FEngine::getInstance()
-#define SCENE_OBJ FEScene::getInstance()
-#define TIME_OBJ FETime::getInstance()
+#define RENDERER FERenderer::getInstance()
+#define RESOURCE_MANAGER FEResourceManager::getInstance()
+#define ENGINE FEngine::getInstance()
+#define SCENE FEScene::getInstance()
+#define TIME FETime::getInstance()
 
 FEngine::FEngine()
 {
@@ -28,7 +28,7 @@ bool FEngine::isWindowOpened()
 
 void FEngine::beginFrame(bool internalCall)
 {
-	if (!internalCall) TIME_OBJ.beginTimeStamp();
+	if (!internalCall) TIME.beginTimeStamp();
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -40,20 +40,20 @@ void FEngine::beginFrame(bool internalCall)
 
 void FEngine::render(bool internalCall)
 {
-	ENGINE_OBJ.currentCamera->move(cpuTime + gpuTime);
-	RENDERER_OBJ.render(currentCamera);
+	ENGINE.currentCamera->move(cpuTime + gpuTime);
+	RENDERER.render(currentCamera);
 
-	if (!internalCall) cpuTime = TIME_OBJ.endTimeStamp();
+	if (!internalCall) cpuTime = TIME.endTimeStamp();
 }
 
 void FEngine::endFrame(bool internalCall)
 {
-	if (!internalCall) TIME_OBJ.beginTimeStamp();
+	if (!internalCall) TIME.beginTimeStamp();
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
 	glfwPollEvents();
-	if (!internalCall) gpuTime = TIME_OBJ.endTimeStamp();
+	if (!internalCall) gpuTime = TIME.endTimeStamp();
 }
 
 void FEngine::setImguiStyle()
@@ -155,7 +155,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 
 	// turn off v-sync
-	glfwSwapInterval(0);
+	//glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window);
 	currentCamera->setAspectRatio(float(width) / float(height));
@@ -164,33 +164,35 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	FE_GL_ERROR(glEnable(GL_CULL_FACE));
 	FE_GL_ERROR(glCullFace(GL_BACK));
 
-	FEShader* FEScreenQuadShader = RESOURCE_MANAGER_OBJ.createShader(FEScreenQuadVS, FEScreenQuadFS, "FEScreenQuadShader");
-	RESOURCE_MANAGER_OBJ.makeShaderStandard(FEScreenQuadShader);
+	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
 
-	RENDERER_OBJ.standardFBInit(windowW, windowH);
+	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.createShader("FEScreenQuadShader", FEScreenQuadVS, FEScreenQuadFS);
+	RESOURCE_MANAGER.makeShaderStandard(FEScreenQuadShader);
+
+	RENDERER.standardFBInit(windowW, windowH);
 	
-	FEBloomEffect* bloomEffect = new FEBloomEffect(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
-	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(bloomEffect->shaderBluePrints);
+	FEBloomEffect* bloomEffect = new FEBloomEffect(RESOURCE_MANAGER.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER.initializeShaderBlueprints(bloomEffect->shaderBluePrints);
 	bloomEffect->initialize();
-	RENDERER_OBJ.addPostProcess(bloomEffect);
+	RENDERER.addPostProcess(bloomEffect);
 
-	FEGammaAndHDRCorrection* gammaHDR = new FEGammaAndHDRCorrection(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
-	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(gammaHDR->shaderBluePrints);
+	FEGammaAndHDRCorrection* gammaHDR = new FEGammaAndHDRCorrection(RESOURCE_MANAGER.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER.initializeShaderBlueprints(gammaHDR->shaderBluePrints);
 	gammaHDR->initialize();
-	RENDERER_OBJ.addPostProcess(gammaHDR);
+	RENDERER.addPostProcess(gammaHDR);
 
-	FEFXAA* FEFXAAEffect = new FEFXAA(RESOURCE_MANAGER_OBJ.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
-	RESOURCE_MANAGER_OBJ.initializeShaderBlueprints(FEFXAAEffect->shaderBluePrints);
+	FEFXAA* FEFXAAEffect = new FEFXAA(RESOURCE_MANAGER.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
+	RESOURCE_MANAGER.initializeShaderBlueprints(FEFXAAEffect->shaderBluePrints);
 	FEFXAAEffect->initialize();
-	RENDERER_OBJ.addPostProcess(FEFXAAEffect);
+	RENDERER.addPostProcess(FEFXAAEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	delete RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture;
-	RENDERER_OBJ.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
+	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
+	RENDERER.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
 	
-	RENDERER_OBJ.shadowMapMaterial = RESOURCE_MANAGER_OBJ.createMaterial("shadowMapMaterial");
-	RENDERER_OBJ.shadowMapMaterial->shader = RESOURCE_MANAGER_OBJ.createShader(FEShadowMapVS, FEShadowMapFS, "FEShadowMapShader");
-	RESOURCE_MANAGER_OBJ.makeShaderStandard(RENDERER_OBJ.shadowMapMaterial->shader);
-	RESOURCE_MANAGER_OBJ.makeMaterialStandard(RENDERER_OBJ.shadowMapMaterial);
+	RENDERER.shadowMapMaterial = RESOURCE_MANAGER.createMaterial("shadowMapMaterial");
+	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", FEShadowMapVS, FEShadowMapFS);
+	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterial->shader);
+	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterial);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -300,7 +302,7 @@ FEPostProcess* FEngine::createPostProcess(std::string Name, int ScreenWidth, int
 		ScreenHeight = windowH;
 	}
 
-	return RESOURCE_MANAGER_OBJ.createPostProcess(ScreenWidth, ScreenHeight, Name);
+	return RESOURCE_MANAGER.createPostProcess(ScreenWidth, ScreenHeight, Name);
 }
 
 void FEngine::terminate()
@@ -310,7 +312,7 @@ void FEngine::terminate()
 
 void FEngine::takeScreenshot(const char* fileName)
 {
-	RENDERER_OBJ.takeScreenshot(fileName, windowW, windowH);
+	RENDERER.takeScreenshot(fileName, windowW, windowH);
 }
 
 void FEngine::resetCamera()

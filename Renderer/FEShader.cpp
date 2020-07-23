@@ -218,7 +218,9 @@ void FEShaderParam::setName(std::string newName)
 	name = newName;
 }
 
-FEShader::FEShader(const char* vertexText, const char* fragmentText, std::string name, bool testCompilation)
+FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
+				   const char* tessControlText, const char* tessEvalText,
+				   const char* geometryText, const char* computeText, bool testCompilation)
 {
 	testCompilationMode = testCompilation;
 	setName(name);
@@ -226,23 +228,79 @@ FEShader::FEShader(const char* vertexText, const char* fragmentText, std::string
 	size_t textLenght = strlen(vertexText);
 	vertexShaderText = new char[textLenght + 1];
 	strcpy_s(vertexShaderText, textLenght + 1, vertexText);
+
+	if (tessControlText != nullptr)
+	{
+		tessControlShaderID = loadShader(tessControlText, GL_TESS_CONTROL_SHADER);
+		size_t textLenght = strlen(tessControlText);
+		tessControlShaderText = new char[textLenght + 1];
+		strcpy_s(tessControlShaderText, textLenght + 1, tessControlText);
+	}
+
+	if (tessEvalText != nullptr)
+	{
+		tessEvalShaderID = loadShader(tessEvalText, GL_TESS_EVALUATION_SHADER);
+		size_t textLenght = strlen(tessEvalText);
+		tessEvalShaderText = new char[textLenght + 1];
+		strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalText);
+	}
+
+	if (geometryText != nullptr)
+	{
+		geometryShaderID = loadShader(geometryText, GL_GEOMETRY_SHADER);
+		size_t textLenght = strlen(geometryText);
+		geometryShaderText = new char[textLenght + 1];
+		strcpy_s(geometryShaderText, textLenght + 1, geometryText);
+	}
+
 	fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
 	textLenght = strlen(fragmentText);
 	fragmentShaderText = new char[textLenght + 1];
 	strcpy_s(fragmentShaderText, textLenght + 1, fragmentText);
+
+	if (computeText != nullptr)
+	{
+		testCompilationMode = testCompilation;
+		computeShaderID = loadShader(computeText, GL_COMPUTE_SHADER);
+		size_t textLenght = strlen(computeText);
+		computeShaderText = new char[textLenght + 1];
+		strcpy_s(computeShaderText, textLenght + 1, computeText);
+	}
 
 	if (testCompilationMode && compilationErrors.size() != 0)
 		return;
 
 	FE_GL_ERROR(programID = glCreateProgram());
 	FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
+	if (tessControlText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, tessControlShaderID));
+	if (tessEvalText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, tessEvalShaderID));
+	if (geometryText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, geometryShaderID));
+
 	FE_GL_ERROR(glAttachShader(programID, fragmentShaderID));
+
+	if (computeText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, computeShaderID));
+
 	bindAttributes();
+
 	FE_GL_ERROR(glLinkProgram(programID));
 	FE_GL_ERROR(glValidateProgram(programID)); // too slow ?
 
 	FE_GL_ERROR(glDeleteShader(vertexShaderID));
+	if (tessControlText != nullptr)
+		FE_GL_ERROR(glDeleteShader(tessControlShaderID));
+	if (tessEvalText != nullptr)
+		FE_GL_ERROR(glDeleteShader(tessEvalShaderID));
+	if (geometryText != nullptr)
+		FE_GL_ERROR(glDeleteShader(geometryShaderID));
+
 	FE_GL_ERROR(glDeleteShader(fragmentShaderID));
+
+	if (computeText != nullptr)
+		FE_GL_ERROR(glDeleteShader(computeShaderID));
 
 	registerUniforms();
 }
@@ -311,17 +369,19 @@ void FEShader::registerUniforms()
 	}
 
 	// uniformBlocks
-	GLuint uniformBlockIndex = glGetUniformBlockIndex(programID, "lightInfo");
+	GLuint uniformBlockIndex = -1;
+	FE_GL_ERROR(uniformBlockIndex = glGetUniformBlockIndex(programID, "lightInfo"));
 	if (uniformBlockIndex != size_t(-1))
 	{
-		glUniformBlockBinding(programID, uniformBlockIndex, 0);
+		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 0));
 		blockUniforms["lightInfo"] = size_t(-1);
 	}
 
-	uniformBlockIndex = glGetUniformBlockIndex(programID, "directionalLightInfo");
+	uniformBlockIndex = -1;
+	FE_GL_ERROR(uniformBlockIndex = glGetUniformBlockIndex(programID, "directionalLightInfo"));
 	if (uniformBlockIndex != size_t(-1))
 	{
-		glUniformBlockBinding(programID, uniformBlockIndex, 1);
+		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 1));
 		blockUniforms["directionalLightInfo"] = size_t(-1);
 	}
 
@@ -456,6 +516,12 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		parsedShaderText.replace(index, strlen(FE_PROJECTION_MATRIX_MACRO), "uniform mat4 FEProjectionMatrix;");
 	}
 
+	index = parsedShaderText.find(FE_PVM_MATRIX_MACRO);
+	if (index != size_t(-1))
+	{
+		parsedShaderText.replace(index, strlen(FE_PVM_MATRIX_MACRO), "uniform mat4 FEPVMMatrix;");
+	}
+
 	index = parsedShaderText.find(FE_CAMERA_POSITION_MACRO);
 	if (index != size_t(-1))
 	{
@@ -481,6 +547,23 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		std::string textureName = parsedShaderText.substr(index + strlen(FE_TEXTURE_MACRO) + 1, semicolonPos - (index + strlen(FE_TEXTURE_MACRO)) - 1);
 
 		parsedShaderText.replace(index, strlen(FE_TEXTURE_MACRO), "uniform sampler2D");
+
+		// several shaders could use same texture
+		bool wasAlreadyDefined = false;
+		for (size_t i = 0; i < textureUniforms.size(); i++)
+		{
+			if (textureName == textureUniforms[i])
+			{
+				wasAlreadyDefined = true;
+				break;
+			}
+		}
+
+		if (wasAlreadyDefined)
+		{
+			index = parsedShaderText.find(FE_TEXTURE_MACRO);
+			continue;
+		}
 
 		// only 16 user textures can be used.
 		if (textureUniforms.size() < 16)
@@ -674,67 +757,79 @@ char* FEShader::getComputeShaderText()
 	return computeShaderText;
 }
 
-bool FEShader::addTessControlShader(char* tessControlShader, bool testCompilation)
-{
-	testCompilationMode = testCompilation;
-	tessControlShaderID = loadShader(tessControlShader, GL_TESS_CONTROL_SHADER);
-	size_t textLenght = strlen(tessControlShader);
-	if (tessControlShaderText != nullptr)
-		delete tessControlShaderText;
-	tessControlShaderText = new char[textLenght + 1];
-	strcpy_s(tessControlShaderText, textLenght + 1, tessControlShader);
-
-	if (compilationErrors.size() != 0)
-		return false;
-
-	return true;
-}
-
-bool FEShader::addTessEvalShader(char* tessEvalShader, bool testCompilation)
-{
-	testCompilationMode = testCompilation;
-	tessEvalShaderID = loadShader(tessEvalShader, GL_TESS_EVALUATION_SHADER);
-	size_t textLenght = strlen(tessEvalShader);
-	if (tessEvalShaderText != nullptr)
-		delete tessEvalShaderText;
-	tessEvalShaderText = new char[textLenght + 1];
-	strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalShader);
-
-	if (compilationErrors.size() != 0)
-		return false;
-
-	return true;
-}
-
-bool FEShader::addGeometryShader(char* geometryShader, bool testCompilation)
-{
-	testCompilationMode = testCompilation;
-	geometryShaderID = loadShader(geometryShader, GL_GEOMETRY_SHADER);
-	size_t textLenght = strlen(geometryShader);
-	if (geometryShaderText != nullptr)
-		delete geometryShaderText;
-	geometryShaderText = new char[textLenght + 1];
-	strcpy_s(geometryShaderText, textLenght + 1, geometryShader);
-
-	if (compilationErrors.size() != 0)
-		return false;
-
-	return true;
-}
-
-bool FEShader::addComputeShader(char* computeShader, bool testCompilation)
-{
-	testCompilationMode = testCompilation;
-	computeShaderID = loadShader(computeShader, GL_COMPUTE_SHADER);
-	size_t textLenght = strlen(computeShader);
-	if (computeShaderText != nullptr)
-		delete computeShaderText;
-	computeShaderText = new char[textLenght + 1];
-	strcpy_s(computeShaderText, textLenght + 1, computeShader);
-
-	if (compilationErrors.size() != 0)
-		return false;
-
-	return true;
-}
+//bool FEShader::addTessControlShader(char* tessControlShader, bool testCompilation)
+//{
+//	testCompilationMode = testCompilation;
+//	tessControlShaderID = loadShader(tessControlShader, GL_TESS_CONTROL_SHADER);
+//	size_t textLenght = strlen(tessControlShader);
+//	if (tessControlShaderText != nullptr)
+//		delete tessControlShaderText;
+//	tessControlShaderText = new char[textLenght + 1];
+//	strcpy_s(tessControlShaderText, textLenght + 1, tessControlShader);
+//
+//	if (compilationErrors.size() != 0)
+//		return false;
+//
+//	FE_GL_ERROR(glAttachShader(programID, tessControlShaderID));
+//	FE_GL_ERROR(glLinkProgram(programID));
+//	FE_GL_ERROR(glValidateProgram(programID));
+//
+//	FE_GL_ERROR(glDeleteShader(tessControlShaderID));
+//
+//	return true;
+//}
+//
+//bool FEShader::addTessEvalShader(char* tessEvalShader, bool testCompilation)
+//{
+//	testCompilationMode = testCompilation;
+//	tessEvalShaderID = loadShader(tessEvalShader, GL_TESS_EVALUATION_SHADER);
+//	size_t textLenght = strlen(tessEvalShader);
+//	if (tessEvalShaderText != nullptr)
+//		delete tessEvalShaderText;
+//	tessEvalShaderText = new char[textLenght + 1];
+//	strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalShader);
+//
+//	if (compilationErrors.size() != 0)
+//		return false;
+//
+//	FE_GL_ERROR(glAttachShader(programID, tessEvalShaderID));
+//	FE_GL_ERROR(glLinkProgram(programID));
+//	FE_GL_ERROR(glValidateProgram(programID));
+//
+//	FE_GL_ERROR(glDeleteShader(tessEvalShaderID));
+//
+//	return true;
+//}
+//
+//bool FEShader::addGeometryShader(char* geometryShader, bool testCompilation)
+//{
+//	testCompilationMode = testCompilation;
+//	geometryShaderID = loadShader(geometryShader, GL_GEOMETRY_SHADER);
+//	size_t textLenght = strlen(geometryShader);
+//	if (geometryShaderText != nullptr)
+//		delete geometryShaderText;
+//	geometryShaderText = new char[textLenght + 1];
+//	strcpy_s(geometryShaderText, textLenght + 1, geometryShader);
+//
+//	if (compilationErrors.size() != 0)
+//		return false;
+//
+//	return true;
+//}
+//
+//bool FEShader::addComputeShader(char* computeShader, bool testCompilation)
+//{
+//	testCompilationMode = testCompilation;
+//	computeShaderID = loadShader(computeShader, GL_COMPUTE_SHADER);
+//	size_t textLenght = strlen(computeShader);
+//	if (computeShaderText != nullptr)
+//		delete computeShaderText;
+//	computeShaderText = new char[textLenght + 1];
+//	strcpy_s(computeShaderText, textLenght + 1, computeShader);
+//
+//	if (compilationErrors.size() != 0)
+//		return false;
+//
+//	return true;
+//}
 

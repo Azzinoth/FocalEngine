@@ -155,6 +155,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	while (engine.isWindowOpened())
 	{
+		//Sleep(10);
 		engine.beginFrame();
 		engine.render();
 

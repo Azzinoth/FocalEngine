@@ -4,7 +4,7 @@
 #include "../SubSystems/FETerrain.h"
 #include "../CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader.h"
 #include "../ResourceManager/FEObjLoader.h"
-#include "../ThirdParty/lodepng.h"
+#include "../ThirdParty/lodepng/lodepng.h"
 
 namespace FocalEngine
 {
@@ -20,7 +20,10 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
-		FEShader* createShader(const char* vertexText, const char* fragmentText, std::string shaderName);
+		FEShader* createShader(std::string shaderName, const char* vertexText, const char* fragmentText,
+							   const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
+							   const char* geometryText = nullptr, const char* computeText = nullptr);
+
 		bool makeShaderStandard(FEShader* shader);
 		bool setShaderName(FEShader* shader, std::string shaderName);
 		FEShader* getShader(std::string shaderName);
@@ -33,6 +36,7 @@ namespace FocalEngine
 		FETexture* LoadPngTextureWithTransparencyMaskAndCompress(const char* mainfileName, const char* maskFileName, std::string Name);
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
 		FETexture* LoadFETextureStandAlone(const char* fileName, std::string Name = "");
+		FETexture* LoadHeightmap(const char* fileName, std::string Name = "");
 		
 		void saveFETexture(const char* fileName, FETexture* texture);
 		void saveFETexture(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed = false);

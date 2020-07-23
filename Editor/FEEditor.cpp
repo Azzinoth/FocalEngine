@@ -32,19 +32,19 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 	if (!ImGui::GetIO().WantCaptureMouse && key == GLFW_KEY_SPACE && action == GLFW_PRESS)
 	{
 		isCameraInputActive = !isCameraInputActive;
-		FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+		ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	}
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
-		FEngine::getInstance().terminate();
+		ENGINE.terminate();
 	}
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
 	{
 		if (selectedEntity != "")
 		{
-			FEScene::getInstance().deleteEntity(selectedEntity);
+			SCENE.deleteEntity(selectedEntity);
 			setSelectedEntity("");
 		}
 	}
@@ -58,9 +58,8 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 	{
 		if (clipboardEntity != "")
 		{
-			FEScene& Scene = FEScene::getInstance();
-			FEEntity* newEntity = Scene.addEntity(Scene.getEntity(clipboardEntity)->gameModel, "");
-			newEntity->transform = Scene.getEntity(clipboardEntity)->transform;
+			FEEntity* newEntity = SCENE.addEntity(SCENE.getEntity(clipboardEntity)->gameModel, "");
+			newEntity->transform = SCENE.getEntity(clipboardEntity)->transform;
 			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
 			setSelectedEntity(newEntity->getName());
 		}
@@ -150,6 +149,33 @@ void showTransformConfiguration(std::string objectName, FETransformComponent* tr
 	transform->changeXScaleBy(scale[0] - oldScale[0]);
 	transform->changeYScaleBy(scale[1] - oldScale[1]);
 	transform->changeZScaleBy(scale[2] - oldScale[2]);
+
+	// ********************* REAL WORLD COMPARISON SCALE *********************
+	FEEntity* entity = SCENE.getEntity(objectName);
+	if (entity == nullptr)
+		return;
+
+	FEAABB realAABB = entity->getAABB();
+	glm::vec3 min = realAABB.getMin();
+	glm::vec3 max = realAABB.getMax();
+
+	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+	
+	std::string sizeInM = "Approximate object size: ";
+	sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
+	sizeInM += " m";
+
+	/*std::string dementionsInM = "Xlength: ";
+	dementionsInM += std::to_string(xSize);
+	dementionsInM += " m Ylength: ";
+	dementionsInM += std::to_string(ySize);
+	dementionsInM += " m Zlength: ";
+	dementionsInM += std::to_string(zSize);
+	dementionsInM += " m";*/
+	ImGui::Text(sizeInM.c_str());
 }
 
 void showPosition(std::string objectName, glm::vec3& position)
@@ -267,7 +293,7 @@ void displayMaterialPrameter(FEShaderParam* param)
 void displayMaterialPrameters(FEMaterial* material)
 {
 	static std::string currentMaterial = "";
-	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 	if (ImGui::BeginCombo("Materials", material->getName().c_str(), ImGuiWindowFlags_None))
 	{
 		for (size_t n = 0; n < materialList.size(); n++)
@@ -364,14 +390,13 @@ void displayLightProperties(FELight* light)
 
 void displayLightsProperties()
 {
-	FEScene& scene = FEScene::getInstance();
-	std::vector<std::string> lightList = scene.getLightsList();
+	std::vector<std::string> lightList = SCENE.getLightsList();
 
 	for (size_t i = 0; i < lightList.size(); i++)
 	{
 		if (ImGui::TreeNode(lightList[i].c_str()))
 		{
-			displayLightProperties(scene.getLight(lightList[i]));
+			displayLightProperties(SCENE.getLight(lightList[i]));
 			ImGui::TreePop();
 		}
 	}
@@ -379,8 +404,6 @@ void displayLightsProperties()
 
 void addEntityButton()
 {
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
-
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
@@ -399,12 +422,11 @@ void addEntityButton()
 int entityIndexUnderMouse = -1;
 void displaySceneEntities()
 {
-	FEScene& scene = FEScene::getInstance();
-	std::vector<std::string> entityList = scene.getEntityList();
-	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> entityList = SCENE.getEntityList();
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(FEngine::getInstance().getWindowWidth() / 3.7f, float(FEngine::getInstance().getWindowHeight())));
+	ImGui::SetNextWindowSize(ImVec2(ENGINE.getWindowWidth() / 3.7f, float(ENGINE.getWindowHeight())));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 	addEntityButton();
 
@@ -414,7 +436,7 @@ void displaySceneEntities()
 	if (ImGui::Button("Save project", ImVec2(220, 0)))
 	{
 		currentProject->saveScene(&internalEditorEntities);
-		FEngine::getInstance().takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.FETexture").c_str());
+		ENGINE.takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.FETexture").c_str());
 	}
 
 	if (ImGui::Button("Close project", ImVec2(220, 0)))
@@ -463,7 +485,7 @@ void displaySceneEntities()
 	entityIndexUnderMouse = -1;
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		FEEntity* entity = scene.getEntity(entityList[i]);
+		FEEntity* entity = SCENE.getEntity(entityList[i]);
 		if (isInInternalEditorList(entity))
 			continue;
 
@@ -497,7 +519,7 @@ void displaySceneEntities()
 
 			if (ImGui::Button("Delete entity"))
 			{
-				scene.deleteEntity(entity->getName());
+				SCENE.deleteEntity(entity->getName());
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
@@ -520,7 +542,7 @@ void displaySceneEntities()
 
 		if (ImGui::IsMouseClicked(0) && entityIndexUnderMouse != -1)
 		{
-			setSelectedEntity(scene.getEntity(entityList[entityIndexUnderMouse])->getName());
+			setSelectedEntity(SCENE.getEntity(entityList[entityIndexUnderMouse])->getName());
 			selectedEntityWasChanged = false;
 			//selectedEntity = scene.getEntity(entityList[entityIndexUnderMouse])->getName();
 		}
@@ -530,9 +552,9 @@ void displaySceneEntities()
 
 	displayLightsProperties();
 
-	float FEExposure = FEngine::getInstance().getCamera()->getExposure();
+	float FEExposure = ENGINE.getCamera()->getExposure();
 	ImGui::DragFloat("Camera Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
-	FEngine::getInstance().getCamera()->setExposure(FEExposure);
+	ENGINE.getCamera()->setExposure(FEExposure);
 
 	ImGui::End();
 
@@ -544,7 +566,7 @@ void displaySceneEntities()
 
 void displayMaterialContentBrowser()
 {
-	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
@@ -552,9 +574,29 @@ void displayMaterialContentBrowser()
 	if (ImGui::Button("Add new material", ImVec2(220, 0)))
 		ImGui::OpenPopup("New material");
 
+	ImGui::Separator();
+	static std::string selectedShader = "";
+	std::vector<std::string> shaderList = RESOURCE_MANAGER.getStandardShadersList();
+	if (ImGui::BeginCombo("Shaders", selectedShader.c_str(), ImGuiWindowFlags_None))
+	{
+		for (size_t n = 0; n < shaderList.size(); n++)
+		{
+			bool is_selected = (selectedShader == shaderList[n]);
+			if (ImGui::Selectable(shaderList[n].c_str(), is_selected))
+				selectedShader = shaderList[n].c_str();
+			if (is_selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::Button("Edit selected above shader", ImVec2(220, 0)) && selectedShader != "")
+		shadersEditorWindow.show(RESOURCE_MANAGER.getShader(selectedShader));
+
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
+	ImGui::Separator();
 
 	if (ImGui::BeginPopupModal("New material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 	{
@@ -566,14 +608,14 @@ void displayMaterialContentBrowser()
 
 		if (ImGui::Button("Create", ImVec2(120, 0)))
 		{
-			FEMaterial* newMat = FEResourceManager::getInstance().createMaterial(filePath);
+			FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(filePath);
 			if (newMat)
 			{
-				//newMat->shader = FEResourceManager::getInstance().getShader("FEPhongShader");
-				newMat->shader = FEResourceManager::getInstance().getShader("FEPBRShader");
+				newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
+				//newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 
-				newMat->albedoMap = FEResourceManager::getInstance().noTexture;
-				newMat->normalMap = FEResourceManager::getInstance().noTexture;
+				newMat->albedoMap = RESOURCE_MANAGER.noTexture;
+				newMat->normalMap = RESOURCE_MANAGER.noTexture;
 			}
 
 			ImGui::CloseCurrentPopup();
@@ -588,7 +630,7 @@ void displayMaterialContentBrowser()
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
 		ImGui::PushID(i);
-		FEMaterial* material = FEResourceManager::getInstance().getMaterial(materialList[i]);
+		FEMaterial* material = RESOURCE_MANAGER.getMaterial(materialList[i]);
 
 		if (ImGui::CollapsingHeader(materialList[i].c_str(), 0))
 		{
@@ -640,12 +682,11 @@ void displayMaterialContentBrowser()
 
 void displayPostProcessContentBrowser()
 {
-	FERenderer& renderer = FERenderer::getInstance();
-	std::vector<std::string> postProcessList = renderer.getPostProcessList();
+	std::vector<std::string> postProcessList = RENDERER.getPostProcessList();
 
 	for (size_t i = 0; i < postProcessList.size(); i++)
 	{
-		FEPostProcess* PPEffect = renderer.getPostProcessEffect(postProcessList[i]);
+		FEPostProcess* PPEffect = RENDERER.getPostProcessEffect(postProcessList[i]);
 		if (ImGui::CollapsingHeader(PPEffect->getName().c_str(), 0)) //ImGuiTreeNodeFlags_DefaultOpen
 		{
 			for (size_t j = 0; j < PPEffect->stages.size(); j++)
@@ -669,11 +710,11 @@ void displayPostProcessContentBrowser()
 int timesTextureUsed(FETexture* texture)
 {
 	int result = 0;
-	std::vector<std::string> materiasList = FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materiasList = RESOURCE_MANAGER.getMaterialList();
 
 	for (size_t i = 0; i < materiasList.size(); i++)
 	{
-		FEMaterial* currentMaterial = FEResourceManager::getInstance().getMaterial(materiasList[i]);
+		FEMaterial* currentMaterial = RESOURCE_MANAGER.getMaterial(materiasList[i]);
 
 		if (currentMaterial->albedoMap != nullptr && currentMaterial->albedoMap->getName() == texture->getName()) result++;
 		if (currentMaterial->normalMap != nullptr && currentMaterial->normalMap->getName() == texture->getName()) result++;
@@ -683,17 +724,26 @@ int timesTextureUsed(FETexture* texture)
 		if (currentMaterial->displacementMap != nullptr && currentMaterial->displacementMap->getName() == texture->getName()) result++;
 	}
 
+	std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+	for (size_t i = 0; i < terrainList.size(); i++)
+	{
+		FETerrain* currentTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
+
+		if (currentTerrain->heightMap != nullptr && currentTerrain->heightMap->getName() == texture->getName()) result++;
+		
+	}
+
 	return result;
 }
 
 int timesMeshUsed(FEMesh* mesh)
 {
 	int result = 0;
-	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
-		FEGameModel* currentGameModel = FEResourceManager::getInstance().getGameModel(gameModelList[i]);
+		FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
 		if (currentGameModel->mesh == mesh)
 			result++;
@@ -705,11 +755,11 @@ int timesMeshUsed(FEMesh* mesh)
 int timesGameModelUsed(FEGameModel* gameModel)
 {
 	int result = 0;
-	std::vector<std::string> entitiesList = FEScene::getInstance().getEntityList();
+	std::vector<std::string> entitiesList = SCENE.getEntityList();
 
 	for (size_t i = 0; i < entitiesList.size(); i++)
 	{
-		FEEntity* currentEntity = FEScene::getInstance().getEntity(entitiesList[i]);
+		FEEntity* currentEntity = SCENE.getEntity(entitiesList[i]);
 
 		if (currentEntity->gameModel == gameModel)
 			result++;
@@ -727,8 +777,8 @@ int gameModelUnderMouse = -1;
 
 void displayContentBrowser()
 {
-	float mainWindowW = float(FEngine::getInstance().getWindowWidth());
-	float mainWindowH = float(FEngine::getInstance().getWindowHeight());
+	float mainWindowW = float(ENGINE.getWindowWidth());
+	float mainWindowH = float(ENGINE.getWindowHeight());
 	float windowW = mainWindowW / 3.7f;
 	float windowH = mainWindowH;
 
@@ -769,7 +819,7 @@ void displayContentBrowser()
 			if (ImGui::BeginTabItem("Terrain"))
 			{
 				activeTabContentBrowser = 4;
-				//displayPostProcessContentBrowser();
+				displayTerrainContentBrowser();
 				ImGui::EndTabItem();
 			}
 
@@ -807,7 +857,7 @@ void displayContentBrowser()
 							openDialog(filePath, meshLoadFilter, 1);
 							if (filePath != "")
 							{
-								FEResourceManager::getInstance().LoadOBJMesh(filePath.c_str(), "", currentProject->getProjectFolder().c_str());
+								RESOURCE_MANAGER.LoadOBJMesh(filePath.c_str(), "", currentProject->getProjectFolder().c_str());
 								// add asset list saving....
 								currentProject->saveScene(&internalEditorEntities);
 							}
@@ -818,12 +868,12 @@ void displayContentBrowser()
 					{
 						if (ImGui::MenuItem("Delete"))
 						{
-							deleteMeshWindow.show(FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getMeshList()[meshUnderMouse]));
+							deleteMeshWindow.show(RESOURCE_MANAGER.getMesh(RESOURCE_MANAGER.getMeshList()[meshUnderMouse]));
 						}
 
 						if (ImGui::MenuItem("Rename"))
 						{
-							renameMeshWindow.show(FEResourceManager::getInstance().getMesh(FEResourceManager::getInstance().getMeshList()[meshUnderMouse]));
+							renameMeshWindow.show(RESOURCE_MANAGER.getMesh(RESOURCE_MANAGER.getMeshList()[meshUnderMouse]));
 						}
 					}
 
@@ -853,8 +903,8 @@ void displayContentBrowser()
 
 							if (filePath != "" && maskFilePath != "")
 							{
-								FETexture* newTexture = FEResourceManager::getInstance().LoadPngTextureWithTransparencyMaskAndCompress(filePath.c_str(), maskFilePath.c_str(), "");
-								FEResourceManager::getInstance().saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
+								FETexture* newTexture = RESOURCE_MANAGER.LoadPngTextureWithTransparencyMaskAndCompress(filePath.c_str(), maskFilePath.c_str(), "");
+								RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
 							}
 						}
 					}
@@ -863,12 +913,12 @@ void displayContentBrowser()
 					{
 						if (ImGui::MenuItem("Delete"))
 						{
-							deleteTextureWindow.show(FEResourceManager::getInstance().getTexture(FEResourceManager::getInstance().getTextureList()[textureUnderMouse]));
+							deleteTextureWindow.show(RESOURCE_MANAGER.getTexture(RESOURCE_MANAGER.getTextureList()[textureUnderMouse]));
 						}
 
 						if (ImGui::MenuItem("Rename"))
 						{
-							renameTextureWindow.show(FEResourceManager::getInstance().getTexture(FEResourceManager::getInstance().getTextureList()[textureUnderMouse]));
+							renameTextureWindow.show(RESOURCE_MANAGER.getTexture(RESOURCE_MANAGER.getTextureList()[textureUnderMouse]));
 						}
 					}
 					break;
@@ -886,7 +936,7 @@ void displayContentBrowser()
 					{
 						if (ImGui::MenuItem("Create new game model"))
 						{
-							FEResourceManager::getInstance().createGameModel();
+							RESOURCE_MANAGER.createGameModel();
 						}
 					}
 
@@ -894,17 +944,17 @@ void displayContentBrowser()
 					{
 						if (ImGui::MenuItem("Edit"))
 						{
-							editGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+							editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
 						}
 						
 						if (ImGui::MenuItem("Delete"))
 						{
-							deleteGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+							deleteGameModelWindow.show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
 						}
 
 						if (ImGui::MenuItem("Rename"))
 						{
-							renameGameModelWindow.show(FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getGameModelList()[gameModelUnderMouse]));
+							renameGameModelWindow.show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
 						}
 					}
 					break;
@@ -913,7 +963,30 @@ void displayContentBrowser()
 				{
 					if (ImGui::MenuItem("Create new terrain"))
 					{
-						//deleteTextureWindow.show(FEResourceManager::getInstance().getTexture(FEResourceManager::getInstance().getTextureList()[textureUnderMouse]));
+						std::string filePath = "";
+						openDialog(filePath, textureLoadFilter, 1);
+
+						if (filePath != "")
+						{
+							FETexture* loadedTexture = RESOURCE_MANAGER.LoadHeightmap(filePath.c_str());
+							if (loadedTexture == RESOURCE_MANAGER.noTexture)
+							{
+
+								//show Message
+								break;
+							}
+
+							RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str(), loadedTexture);
+
+							FETerrain* terrainSample = RESOURCE_MANAGER.createTerrain("test");
+							terrainSample->heightMap = loadedTexture;
+
+							/*terrainSample->layer0->albedoMap = RESOURCE_MANAGER.getTexture("rock_cliff_albedo");
+							terrainSample->layer0->normalMap = RESOURCE_MANAGER.getTexture("rock_cliff_normal");
+							terrainSample->layer0->AOMap = RESOURCE_MANAGER.getTexture("rock_cliff_AO");
+							terrainSample->layer0->roughtnessMap = RESOURCE_MANAGER.getTexture("rock_cliff_roughness");*/
+							SCENE.addTerrain(terrainSample);
+						}
 					}
 					break;
 				}
@@ -942,14 +1015,14 @@ void displayContentBrowser()
 glm::dvec3 mouseRay()
 {
 	glm::dvec2 normalizedMouseCoords;
-	normalizedMouseCoords.x = (2.0f * mouseX) / FEngine::getInstance().getWindowWidth() - 1;
-	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / FEngine::getInstance().getWindowHeight();
+	normalizedMouseCoords.x = (2.0f * mouseX) / ENGINE.getWindowWidth() - 1;
+	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / ENGINE.getWindowHeight();
 
 	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
-	glm::dvec4 eyeCoords = glm::inverse(FEngine::getInstance().getCamera()->getProjectionMatrix()) * clipCoords;
+	glm::dvec4 eyeCoords = glm::inverse(ENGINE.getCamera()->getProjectionMatrix()) * clipCoords;
 	eyeCoords.z = -1.0f;
 	eyeCoords.w = 0.0f;
-	glm::dvec3 worldRay = glm::inverse(FEngine::getInstance().getCamera()->getViewMatrix()) * eyeCoords;
+	glm::dvec3 worldRay = glm::inverse(ENGINE.getCamera()->getViewMatrix()) * eyeCoords;
 	worldRay = glm::normalize(worldRay);
 
 	return worldRay;
@@ -959,14 +1032,13 @@ void determineEntityUnderMouse()
 {
 	entitiesUnderMouse.clear();
 
-	glm::vec3 mouseRayVector = mouseRay();
-
-	std::vector<std::string> entityList = FEScene::getInstance().getEntityList();
+	/*static*/ glm::vec3 mouseRayVector = mouseRay();
+	/*static*/ std::vector<std::string> entityList = SCENE.getEntityList();
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		float dis = 0;
-		FEAABB box = FEScene::getInstance().getEntity(entityList[i])->getAABB();
-		if (box.rayIntersect(FEngine::getInstance().getCamera()->getPosition(), mouseRayVector, dis))
+		/*static*/ FEAABB box = SCENE.getEntity(entityList[i])->getAABB();
+		if (box.rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 		{
 			entitiesUnderMouse.push_back(entityList[i]);
 		}
@@ -1021,7 +1093,7 @@ void setSelectedEntity(std::string newEntity)
 
 glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal)
 {
-	FEEntity* entityToWork = FEScene::getInstance().getEntity(selectedEntity);
+	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
 	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	std::swap(mouseX, lastMouseX);
@@ -1031,7 +1103,7 @@ glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal)
 	std::swap(mouseY, lastMouseY);
 
 	glm::vec3 mouseRayVector = mouseRay();
-	glm::vec3 cameraPosition = FEngine::getInstance().getCamera()->getPosition();
+	glm::vec3 cameraPosition = ENGINE.getCamera()->getPosition();
 
 	float signedDistanceToOrigin = glm::dot(planeNormal, entitySpaceOriginInWorldSpace);
 
@@ -1053,7 +1125,7 @@ glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal)
 
 glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal, glm::vec3& lastMousePointOnPlane)
 {
-	FEEntity* entityToWork = FEScene::getInstance().getEntity(selectedEntity);
+	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
 	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	std::swap(mouseX, lastMouseX);
@@ -1063,7 +1135,7 @@ glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal, glm::vec3& la
 	std::swap(mouseY, lastMouseY);
 
 	glm::vec3 mouseRayVector = mouseRay();
-	glm::vec3 cameraPosition = FEngine::getInstance().getCamera()->getPosition();
+	glm::vec3 cameraPosition = ENGINE.getCamera()->getPosition();
 
 	float signedDistanceToOrigin = glm::dot(planeNormal, entitySpaceOriginInWorldSpace);
 
@@ -1084,31 +1156,157 @@ glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal, glm::vec3& la
 	return pointOnPlane;
 }
 
+bool raysIntersection(glm::vec3& fRayOrigin, glm::vec3& fRayDirection,
+					  glm::vec3& sRayOrigin, glm::vec3& sRayDirection,
+					  float& fT, float& sT)
+{
+	glm::vec3 directionsCross = glm::cross(fRayDirection, sRayDirection);
+	// two rays are parallel
+	if (directionsCross == glm::vec3(0.0f))
+		return false;
+
+	fT = glm::dot(glm::cross((sRayOrigin - fRayOrigin), sRayDirection), directionsCross);
+	fT /= glm::length(directionsCross) * glm::length(directionsCross);
+
+	sT = glm::dot(glm::cross((sRayOrigin - fRayOrigin), fRayDirection), directionsCross);
+	sT /= glm::length(directionsCross) * glm::length(directionsCross);
+
+	return true;
+}
+
 void mouseMoveTransformationGizmos()
 {
-	FEEntity* entityToWork = FEScene::getInstance().getEntity(selectedEntity);
-		
+	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
+	glm::vec3 viewDirection = ENGINE.getCamera()->getForward();
+
+	//// find which plane is more perpendicular to view direction.
+	//float xPlaneDotProduct = abs(glm::dot(glm::vec3(1.0f, 0.0f, 0.0f), viewDirection));
+	//float yPlaneDotProduct = abs(glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), viewDirection));
+	//float zPlaneDotProduct = abs(glm::dot(glm::vec3(0.0f, 0.0f, 1.0f), viewDirection));
+
+	//glm::vec3 suitablePlane = glm::vec3(1.0f, 0.0f, 0.0f);
+	//if (yPlaneDotProduct > xPlaneDotProduct && yPlaneDotProduct > zPlaneDotProduct)
+	//	suitablePlane = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	//if (zPlaneDotProduct > xPlaneDotProduct && zPlaneDotProduct > yPlaneDotProduct)
+	//	suitablePlane = glm::vec3(0.0f, 0.0f, 1.0f);
+
+	float fT = 0.0f;
+	float sT = 0.0f;
+
+	float lastFT = 0.0f;
+	float lastST = 0.0f;
+
 	if (transformationXGizmoActive)
 	{
-		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 0.0f, 1.0f));
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+		glm::vec3 lastMouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
+						 glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
+						 lastFT, lastST);
+
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+
+		glm::vec3 mouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
+			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
+			fT, sT);
+
+		float tDifference = sT - lastST;
 		glm::vec3 newPosition = entityToWork->transform.getPosition();
-		newPosition.x += difference.x;
+		newPosition.x += tDifference;
+		/*if (tDifference > 0)
+		{
+			newPosition.x += 0.1f;
+		}
+		else
+		{
+			newPosition.x -= 0.1f;
+		}*/
+
+		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 0.0f, 1.0f)*/);
+		//glm::vec3 newPosition = entityToWork->transform.getPosition();
+		//if (suitablePlane == glm::vec3(1.0f, 0.0f, 0.0f))
+		//{
+		//	newPosition.x -= difference.y;
+		//}
+		//else
+		//{
+		//	newPosition.x += difference.x;
+		//}
+		
 		entityToWork->transform.setPosition(newPosition);
 	}
 
 	if (transformationYGizmoActive)
 	{
-		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 0.0f, 1.0f));
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+		glm::vec3 lastMouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
+			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
+			lastFT, lastST);
+
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+
+		glm::vec3 mouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
+			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
+			fT, sT);
+
+		float tDifference = sT - lastST;
 		glm::vec3 newPosition = entityToWork->transform.getPosition();
-		newPosition.y += difference.y;
+		newPosition.y += tDifference;
+
+		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 0.0f, 1.0f)*/);
+		//glm::vec3 newPosition = entityToWork->transform.getPosition();
+		//if (suitablePlane == glm::vec3(0.0f, 1.0f, 0.0f))
+		//{
+		//	newPosition.y += difference.x;
+		//}
+		//else
+		//{
+		//	newPosition.y += difference.y;
+		//}
+		
 		entityToWork->transform.setPosition(newPosition);
 	}
 
 	if (transformationZGizmoActive)
 	{
-		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 1.0f, 0.0f));
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+		glm::vec3 lastMouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
+			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
+			lastFT, lastST);
+
+		std::swap(mouseX, lastMouseX);
+		std::swap(mouseY, lastMouseY);
+
+		glm::vec3 mouseRayVector = mouseRay();
+		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
+			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
+			fT, sT);
+
+		float tDifference = sT - lastST;
 		glm::vec3 newPosition = entityToWork->transform.getPosition();
-		newPosition.z += difference.z;
+		newPosition.z += tDifference;
+
+		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 1.0f, 0.0f)*/);
+		//glm::vec3 newPosition = entityToWork->transform.getPosition();
+		//if (suitablePlane == glm::vec3(0.0f, 0.0f, 1.0f))
+		//{
+		//	newPosition.z += difference.y;
+		//}
+		//else
+		//{
+		//	newPosition.z += difference.z;
+		//}
+		
 		entityToWork->transform.setPosition(newPosition);
 	}
 
@@ -1142,11 +1340,11 @@ void mouseMoveTransformationGizmos()
 
 void mouseMoveScaleGizmos()
 {
-	FEEntity* entityToWork = FEScene::getInstance().getEntity(selectedEntity);
+	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
 
 	if (scaleXGizmoActive && scaleYGizmoActive && scaleZGizmoActive)
 	{
-		glm::vec3 difference = getMousePositionDifferenceOnPlane(-FEngine::getInstance().getCamera()->getForward());
+		glm::vec3 difference = getMousePositionDifferenceOnPlane(-ENGINE.getCamera()->getForward());
 		float magnitude = difference.x + difference.y + difference.z;
 
 		glm::vec3 entityScale = entityToWork->transform.getScale();
@@ -1186,7 +1384,7 @@ void mouseMoveRotateGizmos()
 	if (selectedEntity.size() == 0)
 		return;
 
-	FEEntity* entityToWork = FEScene::getInstance().getEntity(selectedEntity);
+	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
 	glm::vec3 entityRotation = entityToWork->transform.getRotation();
 
 	float differenceX = float(mouseX - lastMouseX);
@@ -1401,22 +1599,17 @@ void addMeshToInternalEditorList(FEMesh* mesh)
 
 void loadGizmos()
 {
-	FEngine& engine = FocalEngine::FEngine::getInstance();
-	FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-	FERenderer& renderer = FocalEngine::FERenderer::getInstance();
-	FEScene& scene = FEScene::getInstance();
-
-	FEMesh* TransformationGizmoMesh = resourceManager.LoadFEMesh("TransformationGizmoMesh.model", "TransformationGizmoMesh");
-	resourceManager.makeMeshStandard(TransformationGizmoMesh);
+	FEMesh* TransformationGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("TransformationGizmoMesh.model", "TransformationGizmoMesh");
+	RESOURCE_MANAGER.makeMeshStandard(TransformationGizmoMesh);
 	addMeshToInternalEditorList(TransformationGizmoMesh);
 	
 	// transformationXGizmo
-	FEMaterial* currentMaterial = resourceManager.createMaterial("transformationXGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	FEMaterial* currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationXGizmoEntity = scene.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationXGizmoGM"), transformationXGizmoName);
-	resourceManager.makeGameModelStandard(transformationXGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationXGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationXGizmoGM"), transformationXGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationXGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationXGizmoEntity->gameModel);
 	transformationXGizmoEntity->setCastShadows(false);
 	transformationXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1424,12 +1617,12 @@ void loadGizmos()
 	addEntityToInternalEditorList(transformationXGizmoEntity);
 
 	// transformationYGizmo
-	currentMaterial = resourceManager.createMaterial("transformationYGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationYGizmoEntity = scene.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationYGizmoGM"), transformationYGizmoName);
-	resourceManager.makeGameModelStandard(transformationYGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationYGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationYGizmoGM"), transformationYGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationYGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationYGizmoEntity->gameModel);
 	transformationYGizmoEntity->setCastShadows(false);
 	transformationYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1437,12 +1630,12 @@ void loadGizmos()
 	addEntityToInternalEditorList(transformationYGizmoEntity);
 
 	// transformationZGizmo
-	currentMaterial = resourceManager.createMaterial("transformationZGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationZGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationZGizmoEntity = scene.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationZGizmoGM"), transformationZGizmoName);
-	resourceManager.makeGameModelStandard(transformationZGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationZGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationZGizmoGM"), transformationZGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationZGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationZGizmoEntity->gameModel);
 	transformationZGizmoEntity->setCastShadows(false);
 	transformationZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1450,36 +1643,36 @@ void loadGizmos()
 	addEntityToInternalEditorList(transformationZGizmoEntity);
 
 	// plane gizmos
-	currentMaterial = resourceManager.createMaterial("transformationXYGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXYGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationXYGizmoEntity = scene.addEntity(new FEGameModel(resourceManager.getMesh("cube"), currentMaterial, "TransformationXYGizmoGM"), transformationXYGizmoName);
-	resourceManager.makeGameModelStandard(transformationXYGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationXYGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationXYGizmoGM"), transformationXYGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationXYGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationXYGizmoEntity->gameModel);
 	transformationXYGizmoEntity->setCastShadows(false);
 	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
 	transformationXYGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 	addEntityToInternalEditorList(transformationXYGizmoEntity);
 
-	currentMaterial = resourceManager.createMaterial("transformationYZGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYZGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationYZGizmoEntity = scene.addEntity(new FEGameModel(resourceManager.getMesh("cube"), currentMaterial, "TransformationYZGizmoGM"), transformationYZGizmoName);
-	resourceManager.makeGameModelStandard(transformationYZGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationYZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationYZGizmoGM"), transformationYZGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationYZGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationYZGizmoEntity->gameModel);
 	transformationYZGizmoEntity->setCastShadows(false);
 	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
 	transformationYZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	addEntityToInternalEditorList(transformationYZGizmoEntity);
 
-	currentMaterial = resourceManager.createMaterial("transformationXZGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXZGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	transformationXZGizmoEntity = scene.addEntity(new FEGameModel(resourceManager.getMesh("cube"), currentMaterial, "TransformationXZGizmoGM"), transformationXZGizmoName);
-	resourceManager.makeGameModelStandard(transformationXZGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	transformationXZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationXZGizmoGM"), transformationXZGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(transformationXZGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(transformationXZGizmoEntity->gameModel);
 	transformationXZGizmoEntity->setCastShadows(false);
 	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
@@ -1487,17 +1680,17 @@ void loadGizmos()
 	addEntityToInternalEditorList(transformationXZGizmoEntity);
 
 	// scale gizmos
-	FEMesh* scaleGizmoMesh = resourceManager.LoadFEMesh("scaleGizmoMesh.model", "scaleGizmoMesh");
-	resourceManager.makeMeshStandard(scaleGizmoMesh);
+	FEMesh* scaleGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("scaleGizmoMesh.model", "scaleGizmoMesh");
+	RESOURCE_MANAGER.makeMeshStandard(scaleGizmoMesh);
 	addMeshToInternalEditorList(scaleGizmoMesh);
 
 	// scaleXGizmo
-	currentMaterial = resourceManager.createMaterial("scaleXGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleXGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	scaleXGizmoEntity = scene.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleXGizmoGM"), scaleXGizmoName);
-	resourceManager.makeGameModelStandard(scaleXGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	scaleXGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleXGizmoGM"), scaleXGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(scaleXGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(scaleXGizmoEntity->gameModel);
 	scaleXGizmoEntity->setCastShadows(false);
 	scaleXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1505,12 +1698,12 @@ void loadGizmos()
 	addEntityToInternalEditorList(scaleXGizmoEntity);
 
 	// scaleYGizmo
-	currentMaterial = resourceManager.createMaterial("scaleYGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleYGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	scaleYGizmoEntity = scene.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleYGizmoGM"), scaleYGizmoName);
-	resourceManager.makeGameModelStandard(scaleYGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	scaleYGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleYGizmoGM"), scaleYGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(scaleYGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(scaleYGizmoEntity->gameModel);
 	scaleYGizmoEntity->setCastShadows(false);
 	scaleYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1518,12 +1711,12 @@ void loadGizmos()
 	addEntityToInternalEditorList(scaleYGizmoEntity);
 
 	// scaleZGizmo
-	currentMaterial = resourceManager.createMaterial("scaleZGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleZGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	scaleZGizmoEntity = scene.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleZGizmoGM"), scaleZGizmoName);
-	resourceManager.makeGameModelStandard(scaleZGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	scaleZGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleZGizmoGM"), scaleZGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(scaleZGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(scaleZGizmoEntity->gameModel);
 	scaleZGizmoEntity->setCastShadows(false);
 	scaleZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -1531,17 +1724,17 @@ void loadGizmos()
 	addEntityToInternalEditorList(scaleZGizmoEntity);
 
 	// rotate gizmos
-	FEMesh* rotateGizmoMesh = resourceManager.LoadFEMesh("rotateGizmoMesh.model", "rotateGizmoMesh");
-	resourceManager.makeMeshStandard(rotateGizmoMesh);
+	FEMesh* rotateGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("rotateGizmoMesh.model", "rotateGizmoMesh");
+	RESOURCE_MANAGER.makeMeshStandard(rotateGizmoMesh);
 	addMeshToInternalEditorList(rotateGizmoMesh);
 
 	// rotateXGizmo
-	currentMaterial = resourceManager.createMaterial("rotateXGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateXGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	rotateXGizmoEntity = scene.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateXGizmoGM"), rotateXGizmoName);
-	resourceManager.makeGameModelStandard(rotateXGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	rotateXGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateXGizmoGM"), rotateXGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(rotateXGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(rotateXGizmoEntity->gameModel);
 	rotateXGizmoEntity->setCastShadows(false);
 	rotateXGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
@@ -1549,12 +1742,12 @@ void loadGizmos()
 	addEntityToInternalEditorList(rotateXGizmoEntity);
 
 	// rotateYGizmo
-	currentMaterial = resourceManager.createMaterial("rotateYGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateYGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	rotateYGizmoEntity = scene.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateYGizmoGM"), rotateYGizmoName);
-	resourceManager.makeGameModelStandard(rotateYGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	rotateYGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateYGizmoGM"), rotateYGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(rotateYGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(rotateYGizmoEntity->gameModel);
 	rotateYGizmoEntity->setCastShadows(false);
 	rotateYGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
@@ -1562,45 +1755,40 @@ void loadGizmos()
 	addEntityToInternalEditorList(rotateYGizmoEntity);
 
 	// rotateZGizmo
-	currentMaterial = resourceManager.createMaterial("rotateZGizmoMaterial");
-	currentMaterial->shader = resourceManager.getShader("FESolidColorShader");
+	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateZGizmoMaterial");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
-	resourceManager.makeMaterialStandard(currentMaterial);
-	rotateZGizmoEntity = scene.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateZGizmoGM"), rotateZGizmoName);
-	resourceManager.makeGameModelStandard(rotateZGizmoEntity->gameModel);
+	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
+	rotateZGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateZGizmoGM"), rotateZGizmoName);
+	RESOURCE_MANAGER.makeGameModelStandard(rotateZGizmoEntity->gameModel);
 	addGameModelToInternalEditorList(rotateZGizmoEntity->gameModel);
 	rotateZGizmoEntity->setCastShadows(false);
 	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateZGizmoEntity->transform.setRotation(rotateZStandardRotation);
 	addEntityToInternalEditorList(rotateZGizmoEntity);
 
-	transformationGizmoIcon = resourceManager.LoadFETexture("TG.FETexture","transformationGizmoIcon");
-	resourceManager.makeTextureStandard(transformationGizmoIcon);
-	scaleGizmoIcon = resourceManager.LoadFETexture("SG.FETexture", "scaleGizmoIcon");
-	resourceManager.makeTextureStandard(scaleGizmoIcon);
-	rotateGizmoIcon = resourceManager.LoadFETexture("RG.FETexture", "rotateGizmoIcon");
-	resourceManager.makeTextureStandard(rotateGizmoIcon);
+	transformationGizmoIcon = RESOURCE_MANAGER.LoadFETexture("TG.FETexture","transformationGizmoIcon");
+	RESOURCE_MANAGER.makeTextureStandard(transformationGizmoIcon);
+	scaleGizmoIcon = RESOURCE_MANAGER.LoadFETexture("SG.FETexture", "scaleGizmoIcon");
+	RESOURCE_MANAGER.makeTextureStandard(scaleGizmoIcon);
+	rotateGizmoIcon = RESOURCE_MANAGER.LoadFETexture("RG.FETexture", "rotateGizmoIcon");
+	RESOURCE_MANAGER.makeTextureStandard(rotateGizmoIcon);
 }
 
 void loadEditor()
 {
 	projectChosen = -1;
-	FEngine::getInstance().getCamera()->setIsInputActive(isCameraInputActive);
+	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	loadProjectList();
 
-	FEngine& engine = FocalEngine::FEngine::getInstance();
-	FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-	FERenderer& renderer = FocalEngine::FERenderer::getInstance();
-	FEScene& scene = FEScene::getInstance();
-
-	pixelAccurateSelectionFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
+	pixelAccurateSelectionFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
 	delete pixelAccurateSelectionFB->getColorAttachment();
-	pixelAccurateSelectionFB->setColorAttachment(new FETexture(GL_RGB, GL_RGB, engine.getWindowWidth(), engine.getWindowHeight()));
+	pixelAccurateSelectionFB->setColorAttachment(new FETexture(GL_RGB, GL_RGB, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
 	
-	pixelAccurateSelectionMaterial = resourceManager.createMaterial("pixelAccurateSelectionMaterial");
-	resourceManager.makeMaterialStandard(pixelAccurateSelectionMaterial);
-	pixelAccurateSelectionMaterial->shader = resourceManager.createShader(FEPixelAccurateSelectionVS, FEPixelAccurateSelectionFS, "FEPixelAccurateSelectionShader");
-	resourceManager.makeShaderStandard(pixelAccurateSelectionMaterial->shader);
+	pixelAccurateSelectionMaterial = RESOURCE_MANAGER.createMaterial("pixelAccurateSelectionMaterial");
+	RESOURCE_MANAGER.makeMaterialStandard(pixelAccurateSelectionMaterial);
+	pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.createShader("FEPixelAccurateSelectionShader", FEPixelAccurateSelectionVS, FEPixelAccurateSelectionFS);
+	RESOURCE_MANAGER.makeShaderStandard(pixelAccurateSelectionMaterial->shader);
 	FEShaderParam colorParam(glm::vec3(0.0f, 0.0f, 0.0f), "baseColor");
 	pixelAccurateSelectionMaterial->addParameter(colorParam);
 
@@ -1608,51 +1796,53 @@ void loadEditor()
 	previewFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, 128, 128);
 	previewGameModel = new FEGameModel(nullptr, nullptr, "editorPreviewGameModel");
 	previewEntity = new FEEntity(previewGameModel, "editorPreviewEntity");
-	meshPreviewMaterial = resourceManager.createMaterial("meshPreviewMaterial");
-	resourceManager.makeMaterialStandard(meshPreviewMaterial);
-	meshPreviewMaterial->shader = resourceManager.createShader(FEMeshPreviewVS, FEMeshPreviewFS, "FEMeshPreviewShader");
-	resourceManager.makeShaderStandard(meshPreviewMaterial->shader);
+	meshPreviewMaterial = RESOURCE_MANAGER.createMaterial("meshPreviewMaterial");
+	RESOURCE_MANAGER.makeMaterialStandard(meshPreviewMaterial);
+	meshPreviewMaterial->shader = RESOURCE_MANAGER.createShader("FEMeshPreviewShader", FEMeshPreviewVS, FEMeshPreviewFS);
+	RESOURCE_MANAGER.makeShaderStandard(meshPreviewMaterial->shader);
 
 	// **************************** Halo selection ****************************
-	haloObjectsFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, engine.getWindowWidth(), engine.getWindowHeight());
+	haloObjectsFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
 
-	haloMaterial = resourceManager.createMaterial("haloMaterial");
-	resourceManager.makeMaterialStandard(haloMaterial);
-	haloMaterial->shader = resourceManager.createShader(HaloDrawObjectVS, HaloDrawObjectFS, "HaloDrawObjectShader");
-	resourceManager.makeShaderStandard(haloMaterial->shader);
+	haloMaterial = RESOURCE_MANAGER.createMaterial("haloMaterial");
+	RESOURCE_MANAGER.makeMaterialStandard(haloMaterial);
+	haloMaterial->shader = RESOURCE_MANAGER.createShader("HaloDrawObjectShader", HaloDrawObjectVS, HaloDrawObjectFS);
+	RESOURCE_MANAGER.makeShaderStandard(haloMaterial->shader);
 
-	selectionHaloEffect = engine.createPostProcess("selectionHaloEffect");
-	FEShader* newShader = resourceManager.createShader(FEBloomEffectVS, FEBloomEffectHorizontalFS, "FESelectionHaloBloomEffectHorizontalShader");
+	selectionHaloEffect = ENGINE.createPostProcess("selectionHaloEffect");
+	FEShader* newShader = RESOURCE_MANAGER.createShader("FESelectionHaloBloomEffectHorizontalShader", FEBloomEffectVS, FEBloomEffectHorizontalFS);
 	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, newShader));
-	resourceManager.makeShaderStandard(newShader);
+	RESOURCE_MANAGER.makeShaderStandard(newShader);
 	selectionHaloEffect->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
 	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(engine.getWindowWidth(), engine.getWindowHeight());
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
 
-	newShader = resourceManager.createShader(FEBloomEffectVS, FEBloomEffectVerticalFS, "FESelectionHaloBloomEffectVerticalShader");
+	newShader = RESOURCE_MANAGER.createShader("FESelectionHaloBloomEffectVerticalShader", FEBloomEffectVS, FEBloomEffectVerticalFS);
 	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, newShader));
-	resourceManager.makeShaderStandard(newShader);
+	RESOURCE_MANAGER.makeShaderStandard(newShader);
 	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->outTexture);
 	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(engine.getWindowWidth(), engine.getWindowHeight());
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
 
-	newShader = resourceManager.createShader(HaloFinalVS, HaloFinalFS, "HaloFinalShader");
+	newShader = RESOURCE_MANAGER.createShader("HaloFinalShader", HaloFinalVS, HaloFinalFS);
 	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, newShader));
-	resourceManager.makeShaderStandard(newShader);
-	selectionHaloEffect->stages.back()->inTexture.push_back(renderer.postProcessEffects[renderer.postProcessEffects.size() - 1]->stages.back()->outTexture);
+	RESOURCE_MANAGER.makeShaderStandard(newShader);
+	selectionHaloEffect->stages.back()->inTexture.push_back(RENDERER.postProcessEffects[RENDERER.postProcessEffects.size() - 1]->stages.back()->outTexture);
 	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[1]->outTexture);
 	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->inTexture[0]);
-	selectionHaloEffect->stages.back()->outTexture = renderer.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(engine.getWindowWidth(), engine.getWindowHeight());
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
 
-	FERenderer::getInstance().addPostProcess(selectionHaloEffect, true);
+	RENDERER.addPostProcess(selectionHaloEffect, true);
 	// **************************** Gizmos ****************************
 	loadGizmos();
 
-	engine.getCamera()->setOnUpdate(editorOnCameraUpdate);
+	ENGINE.getCamera()->setOnUpdate(editorOnCameraUpdate);
 
-	shadersEditorWindow.show(resourceManager.getShader("FEPBRShader"));
+	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FEPBRShader"));
+	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FETerrainShader"));
+	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FEPhongShader"));
 }
 
 std::vector<std::string> getFolderList(const char* dirPath)
@@ -1677,11 +1867,7 @@ std::vector<std::string> getFolderList(const char* dirPath)
 
 void editorOnCameraUpdate(FEBasicCamera* camera)
 {
-	FEngine& engine = FEngine::getInstance();
-	FEScene& scene = FEScene::getInstance();
-	FERenderer& renderer = FERenderer::getInstance();
-
-	selectedEntityObject = scene.getEntity(selectedEntity);
+	selectedEntityObject = SCENE.getEntity(selectedEntity);
 	if (selectedEntityObject != nullptr)
 	{
 		haloObjectsFB->bind();
@@ -1691,7 +1877,7 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 		FEMaterial* regularMaterial = selectedEntityObject->gameModel->material;
 		selectedEntityObject->gameModel->material = haloMaterial;
 		haloMaterial->albedoMap = regularMaterial->albedoMap;
-		renderer.renderEntity(selectedEntityObject, engine.getCamera());
+		RENDERER.renderEntity(selectedEntityObject, ENGINE.getCamera());
 		selectedEntityObject->gameModel->material = regularMaterial;
 		haloMaterial->albedoMap = nullptr;
 
@@ -1713,24 +1899,24 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 	if (selectedEntityObject != nullptr)
 	{
 		glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(selectedEntityObject->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-		glm::vec3 toObject = objectSpaceOriginInWorldSpace - engine.getCamera()->getPosition();
+		glm::vec3 toObject = objectSpaceOriginInWorldSpace - ENGINE.getCamera()->getPosition();
 		toObject = glm::normalize(toObject);
 
 		if (gizmosState == TRANSFORM_GIZMOS)
 		{
-			transformationXGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			transformationYGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			transformationZGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
+			transformationXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			transformationYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			transformationZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 
-			glm::vec3 newP = engine.getCamera()->getPosition() + toObject * 0.15f;
+			glm::vec3 newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
 			newP.x += 0.005f;
 			newP.y += 0.005f;
 			transformationXYGizmoEntity->transform.setPosition(newP);
-			newP = engine.getCamera()->getPosition() + toObject * 0.15f;
+			newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
 			newP.z += 0.005f;
 			newP.y += 0.005f;
 			transformationYZGizmoEntity->transform.setPosition(newP);
-			newP = engine.getCamera()->getPosition() + toObject * 0.15f;
+			newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
 			newP.x += 0.005f;
 			newP.z += 0.005f;
 			transformationXZGizmoEntity->transform.setPosition(newP);
@@ -1768,9 +1954,9 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 		}
 		else if (gizmosState == SCALE_GIZMOS)
 		{
-			scaleXGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			scaleYGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			scaleZGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
+			scaleXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			scaleYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			scaleZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 
 			// X Gizmos
 			scaleXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
@@ -1789,9 +1975,9 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 		}
 		else if (gizmosState == ROTATE_GIZMOS)
 		{
-			rotateXGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			rotateYGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
-			rotateZGizmoEntity->transform.setPosition((engine.getCamera()->getPosition() + toObject * 0.15f));
+			rotateXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			rotateYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+			rotateZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 
 			if (selectedEntity.size() != 0)
 			{
@@ -1834,10 +2020,6 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 
 void renderEditor()
 {
-	FEngine& engine = FEngine::getInstance();
-	FEScene& scene = FEScene::getInstance();
-	FERenderer& renderer = FERenderer::getInstance();
-
 	if (currentProject)
 	{
 		displaySceneEntities();
@@ -1854,7 +2036,7 @@ void renderEditor()
 
 			for (size_t i = 0; i < entitiesUnderMouse.size(); i++)
 			{
-				potentiallySelectedEntity = scene.getEntity(entitiesUnderMouse[i]);
+				potentiallySelectedEntity = SCENE.getEntity(entitiesUnderMouse[i]);
 				// sometimes we can delete entity before entitiesUnderMouse update
 				if (potentiallySelectedEntity == nullptr)
 					continue;
@@ -1874,12 +2056,12 @@ void renderEditor()
 				b = ((i + 1) >> 16) & 255;
 				pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
 				pixelAccurateSelectionMaterial->albedoMap = regularMaterial->albedoMap;
-				renderer.renderEntity(potentiallySelectedEntity, engine.getCamera());
+				RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera());
 				potentiallySelectedEntity->gameModel->material = regularMaterial;
 				pixelAccurateSelectionMaterial->albedoMap = nullptr;
 			}
 
-			FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(engine.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
+			FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
 			pixelAccurateSelectionFB->unBind();
 			FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
 
@@ -1912,33 +2094,33 @@ void renderEditor()
 				{
 					newEntityFound = true;
 
-					if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXGizmoNameHash)
+					if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXGizmoNameHash)
 					{
 						transformationXGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYGizmoNameHash)
 					{
 						transformationYGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationZGizmoNameHash)
 					{
 						transformationZGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXYGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXYGizmoNameHash)
 					{
 						transformationXYGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYZGizmoNameHash)
 					{
 						transformationYZGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXZGizmoNameHash)
 					{
 						transformationXZGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleXGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleXGizmoNameHash)
 					{
-						if (FEScene::getInstance().getEntity(selectedEntity) != nullptr && FEScene::getInstance().getEntity(selectedEntity)->transform.uniformScaling)
+						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -1947,9 +2129,9 @@ void renderEditor()
 
 						scaleXGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleYGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleYGizmoNameHash)
 					{
-						if (FEScene::getInstance().getEntity(selectedEntity) != nullptr && FEScene::getInstance().getEntity(selectedEntity)->transform.uniformScaling)
+						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -1958,9 +2140,9 @@ void renderEditor()
 
 						scaleYGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleZGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleZGizmoNameHash)
 					{
-						if (FEScene::getInstance().getEntity(selectedEntity) != nullptr && FEScene::getInstance().getEntity(selectedEntity)->transform.uniformScaling)
+						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -1969,15 +2151,15 @@ void renderEditor()
 
 						scaleZGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateXGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateXGizmoNameHash)
 					{
 						rotateXGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateYGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateYGizmoNameHash)
 					{
 						rotateYGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && scene.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateZGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateZGizmoNameHash)
 					{
 						rotateZGizmoActive = true;
 					}
@@ -2009,8 +2191,8 @@ void renderEditor()
 
 void displayProjectSelection()
 {
-	float mainWindowW = float(FEngine::getInstance().getWindowWidth());
-	float mainWindowH = float(FEngine::getInstance().getWindowHeight());
+	float mainWindowW = float(ENGINE.getWindowWidth());
+	float mainWindowH = float(ENGINE.getWindowHeight());
 
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
@@ -2150,7 +2332,7 @@ void displayProjectSelection()
 					createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
 					projectList.push_back(new FEProject(projectName, std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/"));
 					projectList.back()->createDummyScreenshot();
-					FEScene::getInstance().addLight(FE_DIRECTIONAL_LIGHT, "sun");
+					SCENE.addLight(FE_DIRECTIONAL_LIGHT, "sun");
 					ImGui::CloseCurrentPopup();
 					strcpy_s(projectName, "");
 				}
@@ -2218,7 +2400,7 @@ void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture)
 
 void displayTexturesContentBrowser()
 {
-	std::vector<std::string> textureList = FEResourceManager::getInstance().getTextureList();
+	std::vector<std::string> textureList = RESOURCE_MANAGER.getTextureList();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
@@ -2228,7 +2410,7 @@ void displayTexturesContentBrowser()
 	ImGui::Columns(3, "mycolumns3", false);
 	for (size_t i = 0; i < textureList.size(); i++)
 	{
-		if (ImGui::ImageButton((void*)(intptr_t)FEResourceManager::getInstance().getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		if (ImGui::ImageButton((void*)(intptr_t)RESOURCE_MANAGER.getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
 			//
 		}
@@ -2250,7 +2432,7 @@ void displayTexturesContentBrowser()
 
 void displayGameModelContentBrowser()
 {
-	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
@@ -2267,7 +2449,7 @@ void displayGameModelContentBrowser()
 		}
 		else
 		{
-			gameModelPreviewTexture = FEResourceManager::getInstance().noTexture;
+			gameModelPreviewTexture = RESOURCE_MANAGER.noTexture;
 			// if we somehow could not find gameModel preview, we will create it.
 			createGameModelPreview(gameModelList[i]);
 		}
@@ -2294,7 +2476,7 @@ void displayGameModelContentBrowser()
 
 void displayMeshesContentBrowser()
 {
-	std::vector<std::string> meshList = FEResourceManager::getInstance().getMeshList();
+	std::vector<std::string> meshList = RESOURCE_MANAGER.getMeshList();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
@@ -2311,7 +2493,7 @@ void displayMeshesContentBrowser()
 		}
 		else
 		{
-			meshPreviewTexture = FEResourceManager::getInstance().noTexture;
+			meshPreviewTexture = RESOURCE_MANAGER.noTexture;
 			// if we somehow could not find mesh preview, we will create it.
 			createMeshPreview(meshList[i]);
 		}
@@ -2401,21 +2583,21 @@ void openProject(int projectIndex)
 
 	// after loading project we should update our previews
 	meshPreviewTextures.clear();
-	std::vector<std::string> meshList = FEResourceManager::getInstance().getMeshList();
+	std::vector<std::string> meshList = RESOURCE_MANAGER.getMeshList();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
 		createMeshPreview(meshList[i]);
 	}
 
 	materialPreviewTextures.clear();
-	std::vector<std::string> materialList = FEResourceManager::getInstance().getMaterialList();
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
 		createMaterialPreview(materialList[i]);
 	}
 
 	gameModelPreviewTextures.clear();
-	std::vector<std::string> gameModelList = FEResourceManager::getInstance().getGameModelList();
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
 		createGameModelPreview(gameModelList[i]);
@@ -2426,7 +2608,7 @@ void openProject(int projectIndex)
 	auto it = internalEditorEntities.begin();
 	while (it != internalEditorEntities.end())
 	{
-		FEScene::getInstance().addEntity(it->second);
+		SCENE.addEntity(it->second);
 		it++;
 	}
 
@@ -2437,10 +2619,7 @@ void openProject(int projectIndex)
 
 void createMeshPreview(std::string meshName)
 {
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-
-	FEMesh* previewMesh = resourceManager.getMesh(meshName);
+	FEMesh* previewMesh = RESOURCE_MANAGER.getMesh(meshName);
 
 	if (previewMesh == nullptr)
 		return;
@@ -2454,11 +2633,11 @@ void createMeshPreview(std::string meshName)
 
 	// saving currently used variables
 	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
-	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
-	float regularAspectRation = engine.getCamera()->getAspectRatio();
-	float regularCameraPitch = engine.getCamera()->getPitch();
-	float regularCameraRoll = engine.getCamera()->getRoll();
-	float regularCameraYaw = engine.getCamera()->getYaw();
+	glm::vec3 regularCameraPosition = ENGINE.getCamera()->getPosition();
+	float regularAspectRation = ENGINE.getCamera()->getAspectRatio();
+	float regularCameraPitch = ENGINE.getCamera()->getPitch();
+	float regularCameraRoll = ENGINE.getCamera()->getRoll();
+	float regularCameraYaw = ENGINE.getCamera()->getYaw();
 
 	// transform has influence on AABB, so before any calculations setting needed values
 	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
@@ -2475,26 +2654,26 @@ void createMeshPreview(std::string meshName)
 
 	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
 	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
-	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
 
-	engine.getCamera()->setAspectRatio(1.0f);
+	ENGINE.getCamera()->setAspectRatio(1.0f);
 	FE_GL_ERROR(glViewport(0, 0, 128, 128));
 
-	engine.getCamera()->setPitch(0.0f);
-	engine.getCamera()->setRoll(0.0f);
-	engine.getCamera()->setYaw(0.0f);
+	ENGINE.getCamera()->setPitch(0.0f);
+	ENGINE.getCamera()->setRoll(0.0f);
+	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering mesh to texture
-	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera());
+	RENDERER.renderEntity(previewEntity, ENGINE.getCamera());
 
 	// reversing all of our transformating.
 	previewEntity->transform = regularMeshTransform;
 
-	engine.getCamera()->setPosition(regularCameraPosition);
-	engine.getCamera()->setAspectRatio(regularAspectRation);
-	engine.getCamera()->setPitch(regularCameraPitch);
-	engine.getCamera()->setRoll(regularCameraRoll);
-	engine.getCamera()->setYaw(regularCameraYaw);
+	ENGINE.getCamera()->setPosition(regularCameraPosition);
+	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
+	ENGINE.getCamera()->setPitch(regularCameraPitch);
+	ENGINE.getCamera()->setRoll(regularCameraRoll);
+	ENGINE.getCamera()->setYaw(regularCameraYaw);
 
 	previewFB->unBind();
 
@@ -2510,27 +2689,24 @@ FETexture* getMeshPreview(std::string meshName)
 
 	// if still we don't have it
 	if (meshPreviewTextures.find(meshName) == meshPreviewTextures.end())
-		return FEResourceManager::getInstance().noTexture;
+		return RESOURCE_MANAGER.noTexture;
 
 	return meshPreviewTextures[meshName];
 }
 
 void createMaterialPreview(std::string materialName)
 {
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-
-	FEMaterial* previewMaterial = resourceManager.getMaterial(materialName);
+	FEMaterial* previewMaterial = RESOURCE_MANAGER.getMaterial(materialName);
 	if (previewMaterial == nullptr)
 		return;
 
 	FEDirectionalLight* currentDirectionalLight = nullptr;
-	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	std::vector<std::string> lightList = SCENE.getLightsList();
 	for (size_t i = 0; i < lightList.size(); i++)
 	{
-		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		if (SCENE.getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
 		{
-			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight(lightList[i]));
 			break;
 		}
 	}
@@ -2540,7 +2716,7 @@ void createMaterialPreview(std::string materialName)
 	float regularLightIntensity = currentDirectionalLight->getIntensity();
 	currentDirectionalLight->setIntensity(10.0f);
 
-	previewGameModel->mesh = resourceManager.getMesh("sphere");
+	previewGameModel->mesh = RESOURCE_MANAGER.getMesh("sphere");
 	previewGameModel->material = previewMaterial;
 	previewEntity->setReceivingShadows(false);
 
@@ -2549,35 +2725,35 @@ void createMaterialPreview(std::string materialName)
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// saving currently used variables
-	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
-	float regularAspectRation = engine.getCamera()->getAspectRatio();
-	float regularCameraPitch = engine.getCamera()->getPitch();
-	float regularCameraRoll = engine.getCamera()->getRoll();
-	float regularCameraYaw = engine.getCamera()->getYaw();
-	float regularExposure = engine.getCamera()->getExposure();
-	engine.getCamera()->setExposure(1.0f);
+	glm::vec3 regularCameraPosition = ENGINE.getCamera()->getPosition();
+	float regularAspectRation = ENGINE.getCamera()->getAspectRatio();
+	float regularCameraPitch = ENGINE.getCamera()->getPitch();
+	float regularCameraRoll = ENGINE.getCamera()->getRoll();
+	float regularCameraYaw = ENGINE.getCamera()->getYaw();
+	float regularExposure = ENGINE.getCamera()->getExposure();
+	ENGINE.getCamera()->setExposure(1.0f);
 
 	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
 	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
 	previewEntity->transform.setRotation(glm::vec3(0.0, 0.0, 0.0));
 
-	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, 70.0f));
-	engine.getCamera()->setAspectRatio(1.0f);
+	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, 70.0f));
+	ENGINE.getCamera()->setAspectRatio(1.0f);
 	FE_GL_ERROR(glViewport(0, 0, 128, 128));
 
-	engine.getCamera()->setPitch(0.0f);
-	engine.getCamera()->setRoll(0.0f);
-	engine.getCamera()->setYaw(0.0f);
+	ENGINE.getCamera()->setPitch(0.0f);
+	ENGINE.getCamera()->setRoll(0.0f);
+	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering material to texture
-	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
 
-	engine.getCamera()->setPosition(regularCameraPosition);
-	engine.getCamera()->setAspectRatio(regularAspectRation);
-	engine.getCamera()->setPitch(regularCameraPitch);
-	engine.getCamera()->setRoll(regularCameraRoll);
-	engine.getCamera()->setYaw(regularCameraYaw);
-	engine.getCamera()->setExposure(regularExposure);
+	ENGINE.getCamera()->setPosition(regularCameraPosition);
+	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
+	ENGINE.getCamera()->setPitch(regularCameraPitch);
+	ENGINE.getCamera()->setRoll(regularCameraRoll);
+	ENGINE.getCamera()->setYaw(regularCameraYaw);
+	ENGINE.getCamera()->setExposure(regularExposure);
 
 	currentDirectionalLight->transform.setRotation(regularLightRotation);
 	currentDirectionalLight->setIntensity(regularLightIntensity);
@@ -2596,28 +2772,25 @@ FETexture* getMaterialPreview(std::string materialName)
 
 	// if still we don't have it
 	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
-		return FEResourceManager::getInstance().noTexture;
+		return RESOURCE_MANAGER.noTexture;
 
 	return materialPreviewTextures[materialName];
 }
 
 void createGameModelPreview(std::string gameModelName)
 {
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-
-	FEGameModel* gameModel = resourceManager.getGameModel(gameModelName);
+	FEGameModel* gameModel = RESOURCE_MANAGER.getGameModel(gameModelName);
 
 	if (gameModel == nullptr)
 		return;
 
 	FEDirectionalLight* currentDirectionalLight = nullptr;
-	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	std::vector<std::string> lightList = SCENE.getLightsList();
 	for (size_t i = 0; i < lightList.size(); i++)
 	{
-		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		if (SCENE.getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
 		{
-			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight(lightList[i]));
 			break;
 		}
 	}
@@ -2637,13 +2810,13 @@ void createGameModelPreview(std::string gameModelName)
 
 	// saving currently used variables
 	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
-	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
-	float regularAspectRation = engine.getCamera()->getAspectRatio();
-	float regularCameraPitch = engine.getCamera()->getPitch();
-	float regularCameraRoll = engine.getCamera()->getRoll();
-	float regularCameraYaw = engine.getCamera()->getYaw();
-	float regularExposure = engine.getCamera()->getExposure();
-	engine.getCamera()->setExposure(1.0f);
+	glm::vec3 regularCameraPosition = ENGINE.getCamera()->getPosition();
+	float regularAspectRation = ENGINE.getCamera()->getAspectRatio();
+	float regularCameraPitch = ENGINE.getCamera()->getPitch();
+	float regularCameraRoll = ENGINE.getCamera()->getRoll();
+	float regularCameraYaw = ENGINE.getCamera()->getYaw();
+	float regularExposure = ENGINE.getCamera()->getExposure();
+	ENGINE.getCamera()->setExposure(1.0f);
 	
 	// transform has influence on AABB, so before any calculations setting needed values
 	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
@@ -2660,27 +2833,27 @@ void createGameModelPreview(std::string gameModelName)
 
 	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
 	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
-	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
 
-	engine.getCamera()->setAspectRatio(1.0f);
+	ENGINE.getCamera()->setAspectRatio(1.0f);
 	FE_GL_ERROR(glViewport(0, 0, 128, 128));
 
-	engine.getCamera()->setPitch(0.0f);
-	engine.getCamera()->setRoll(0.0f);
-	engine.getCamera()->setYaw(0.0f);
+	ENGINE.getCamera()->setPitch(0.0f);
+	ENGINE.getCamera()->setRoll(0.0f);
+	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering game model to texture
-	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
 
 	// reversing all of our transformating.
 	previewEntity->transform = regularMeshTransform;
 
-	engine.getCamera()->setPosition(regularCameraPosition);
-	engine.getCamera()->setAspectRatio(regularAspectRation);
-	engine.getCamera()->setPitch(regularCameraPitch);
-	engine.getCamera()->setRoll(regularCameraRoll);
-	engine.getCamera()->setYaw(regularCameraYaw);
-	engine.getCamera()->setExposure(regularExposure);
+	ENGINE.getCamera()->setPosition(regularCameraPosition);
+	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
+	ENGINE.getCamera()->setPitch(regularCameraPitch);
+	ENGINE.getCamera()->setRoll(regularCameraRoll);
+	ENGINE.getCamera()->setYaw(regularCameraYaw);
+	ENGINE.getCamera()->setExposure(regularExposure);
 
 	currentDirectionalLight->transform.setRotation(regularLightRotation);
 	currentDirectionalLight->setIntensity(regularLightIntensity);
@@ -2693,19 +2866,16 @@ void createGameModelPreview(std::string gameModelName)
 
 void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture)
 {
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
-
 	if (gameModel == nullptr)
 		return;
 
 	FEDirectionalLight* currentDirectionalLight = nullptr;
-	std::vector<std::string> lightList = FEScene::getInstance().getLightsList();
+	std::vector<std::string> lightList = SCENE.getLightsList();
 	for (size_t i = 0; i < lightList.size(); i++)
 	{
-		if (FEScene::getInstance().getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		if (SCENE.getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
 		{
-			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(FEScene::getInstance().getLight(lightList[i]));
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight(lightList[i]));
 			break;
 		}
 	}
@@ -2729,13 +2899,13 @@ void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture
 
 	// saving currently used variables
 	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
-	glm::vec3 regularCameraPosition = engine.getCamera()->getPosition();
-	float regularAspectRation = engine.getCamera()->getAspectRatio();
-	float regularCameraPitch = engine.getCamera()->getPitch();
-	float regularCameraRoll = engine.getCamera()->getRoll();
-	float regularCameraYaw = engine.getCamera()->getYaw();
-	float regularExposure = engine.getCamera()->getExposure();
-	engine.getCamera()->setExposure(1.0f);
+	glm::vec3 regularCameraPosition = ENGINE.getCamera()->getPosition();
+	float regularAspectRation = ENGINE.getCamera()->getAspectRatio();
+	float regularCameraPitch = ENGINE.getCamera()->getPitch();
+	float regularCameraRoll = ENGINE.getCamera()->getRoll();
+	float regularCameraYaw = ENGINE.getCamera()->getYaw();
+	float regularExposure = ENGINE.getCamera()->getExposure();
+	ENGINE.getCamera()->setExposure(1.0f);
 
 	// transform has influence on AABB, so before any calculations setting needed values
 	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
@@ -2752,27 +2922,27 @@ void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture
 
 	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
 	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
-	engine.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
 
-	engine.getCamera()->setAspectRatio(1.0f);
+	ENGINE.getCamera()->setAspectRatio(1.0f);
 	FE_GL_ERROR(glViewport(0, 0, 128, 128));
 
-	engine.getCamera()->setPitch(0.0f);
-	engine.getCamera()->setRoll(0.0f);
-	engine.getCamera()->setYaw(0.0f);
+	ENGINE.getCamera()->setPitch(0.0f);
+	ENGINE.getCamera()->setRoll(0.0f);
+	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering game model to texture
-	FERenderer::getInstance().renderEntity(previewEntity, engine.getCamera(), true);
+	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
 
 	// reversing all of our transformating.
 	previewEntity->transform = regularMeshTransform;
 
-	engine.getCamera()->setPosition(regularCameraPosition);
-	engine.getCamera()->setAspectRatio(regularAspectRation);
-	engine.getCamera()->setPitch(regularCameraPitch);
-	engine.getCamera()->setRoll(regularCameraRoll);
-	engine.getCamera()->setYaw(regularCameraYaw);
-	engine.getCamera()->setExposure(regularExposure);
+	ENGINE.getCamera()->setPosition(regularCameraPosition);
+	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
+	ENGINE.getCamera()->setPitch(regularCameraPitch);
+	ENGINE.getCamera()->setRoll(regularCameraRoll);
+	ENGINE.getCamera()->setYaw(regularCameraYaw);
+	ENGINE.getCamera()->setExposure(regularExposure);
 
 	currentDirectionalLight->transform.setRotation(regularLightRotation);
 	currentDirectionalLight->setIntensity(regularLightIntensity);
@@ -2790,7 +2960,51 @@ FETexture* getGameModelPreview(std::string gameModelName)
 
 	// if still we don't have it
 	if (gameModelPreviewTextures.find(gameModelName) == gameModelPreviewTextures.end())
-		return FEResourceManager::getInstance().noTexture;
+		return RESOURCE_MANAGER.noTexture;
 
 	return gameModelPreviewTextures[gameModelName];
+}
+
+void displayTerrainContentBrowser()
+{
+	static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");;
+	std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+
+	for (size_t i = 0; i < terrainList.size(); i++)
+	{
+		ImGui::PushID(i);
+
+		FETerrain* currentTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
+		bool isActive = currentTerrain->isWireframeMode();
+		ImGui::Checkbox("WireframeMode", &isActive);
+		currentTerrain->setWireframeMode(isActive);
+
+		float highScale = currentTerrain->getHightScale();
+		ImGui::DragFloat("highScale", &highScale);
+		currentTerrain->setHightScale(highScale);
+
+		float LODlevel = currentTerrain->getLODlevel();
+		ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 64.0f);
+		currentTerrain->setLODlevel(LODlevel);
+		toolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
+
+		glm::vec2 tileMult = currentTerrain->getTileMult();
+		ImGui::DragFloat2("tile multiplicator", &tileMult[0], 0.1f, 1.0f, 100.0f);
+		currentTerrain->setTileMult(tileMult);
+
+		float chunkPerSide = currentTerrain->getChunkPerSide();
+		ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
+		currentTerrain->setChunkPerSide(chunkPerSide);
+
+		changeMaterialButton->render();
+		if (changeMaterialButton->getWasClicked())
+		{
+			selectMaterialWindow.show(&currentTerrain->layer0);
+		}
+
+		showTransformConfiguration(terrainList[i], &currentTerrain->transform);
+		ImGui::Separator();
+
+		ImGui::PopID();
+	}
 }

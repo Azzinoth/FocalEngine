@@ -109,7 +109,7 @@ void FEDirectionalLight::updateCascades(glm::vec3 cameraPosition, glm::vec3 came
 
 	for (size_t i = 0; i < 4; i++)
 	{
-		cameraPosition += cameraDirection * firstCascadeSize;
+		cameraPosition += cameraDirection * firstCascadeSize / 2.0f;
 
 		glm::vec3 newLightPosition = cameraPosition + (-getDirection() * cascadeData[i].size * 2.0f);
 		transform.setPosition(newLightPosition);

@@ -119,7 +119,6 @@ void FEObjLoader::readFile(const char* fileName)
 
 glm::vec3 FEObjLoader::calculateTangent(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, std::vector<glm::vec2>&& textures)
 {
-	// to-do: code from old engine, refraction needed!
 	glm::vec3 q1 = v1 - v0;
 	glm::vec3 q2 = v2 - v0;
 	glm::vec2 uv0 = textures[0];
