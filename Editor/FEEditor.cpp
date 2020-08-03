@@ -34,6 +34,11 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 		isCameraInputActive = !isCameraInputActive;
 		ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	}
+	else if (ImGui::GetIO().WantCaptureMouse && key == GLFW_KEY_SPACE && action == GLFW_PRESS && isCameraInputActive)
+	{
+		isCameraInputActive = false;
+		ENGINE.getCamera()->setIsInputActive(false);
+	}
 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
@@ -239,89 +244,54 @@ void displayMaterialPrameter(FEShaderParam* param)
 {
 	switch (param->type)
 	{
-	case FE_INT_SCALAR_UNIFORM:
-	{
-		int iData = *(int*)param->data;
-		ImGui::SliderInt(param->name.c_str(), &iData, 0, 10);
-		param->updateData(iData);
-		break;
-	}
-
-	case FE_FLOAT_SCALAR_UNIFORM:
-	{
-		float fData = *(float*)param->data;
-		ImGui::DragFloat(param->name.c_str(), &fData, 0.1f, 0.0f, 100.0f);
-		param->updateData(fData);
-		break;
-	}
-
-	case FE_VECTOR2_UNIFORM:
-	{
-		glm::vec2 color = *(glm::vec2*)param->data;
-		ImGui::ColorEdit3(param->name.c_str(), &color.x);
-		param->updateData(color);
-		break;
-	}
-
-	case FE_VECTOR3_UNIFORM:
-	{
-		glm::vec3 color = *(glm::vec3*)param->data;
-		ImGui::ColorEdit3(param->name.c_str(), &color.x);
-		param->updateData(color);
-		break;
-	}
-
-	case FE_VECTOR4_UNIFORM:
-	{
-		glm::vec4 color = *(glm::vec4*)param->data;
-		ImGui::ColorEdit3(param->name.c_str(), &color.x);
-		param->updateData(color);
-		break;
-	}
-
-	case FE_MAT4_UNIFORM:
-	{
-		//loadMatrix(iterator->second.getName().c_str(), *(glm::mat4*)iterator->second.data);
-		break;
-	}
-
-	default:
-		break;
-	}
-}
-
-void displayMaterialPrameters(FEMaterial* material)
-{
-	static std::string currentMaterial = "";
-	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
-	if (ImGui::BeginCombo("Materials", material->getName().c_str(), ImGuiWindowFlags_None))
-	{
-		for (size_t n = 0; n < materialList.size(); n++)
+		case FE_INT_SCALAR_UNIFORM:
 		{
-			bool is_selected = (currentMaterial == materialList[n]);
-			if (ImGui::Selectable(materialList[n].c_str(), is_selected))
-				currentMaterial = materialList[n].c_str();
-			if (is_selected)
-				ImGui::SetItemDefaultFocus();
+			int iData = *(int*)param->data;
+			ImGui::SliderInt(param->name.c_str(), &iData, 0, 10);
+			param->updateData(iData);
+			break;
 		}
-		ImGui::EndCombo();
-	}
 
-	ImGui::Separator();
-
-	std::string text = "Parameters of " + material->getName() + " :";
-	if (ImGui::CollapsingHeader(text.c_str(), ImGuiWindowFlags_None)) {
-		ImGui::PushID(0);
-		std::vector<std::string> params = material->getParameterList();
-		FEShaderParam* param;
-		for (size_t i = 0; i < params.size(); i++)
+		case FE_FLOAT_SCALAR_UNIFORM:
 		{
-			param = material->getParameter(params[i]);
-			if (param->loadedFromEngine)
-				continue;
-			displayMaterialPrameter(param);
+			float fData = *(float*)param->data;
+			ImGui::DragFloat(param->name.c_str(), &fData, 0.1f, 0.0f, 100.0f);
+			param->updateData(fData);
+			break;
 		}
-		ImGui::PopID();
+
+		case FE_VECTOR2_UNIFORM:
+		{
+			glm::vec2 color = *(glm::vec2*)param->data;
+			ImGui::ColorEdit3(param->name.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FE_VECTOR3_UNIFORM:
+		{
+			glm::vec3 color = *(glm::vec3*)param->data;
+			ImGui::ColorEdit3(param->name.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FE_VECTOR4_UNIFORM:
+		{
+			glm::vec4 color = *(glm::vec4*)param->data;
+			ImGui::ColorEdit3(param->name.c_str(), &color.x);
+			param->updateData(color);
+			break;
+		}
+
+		case FE_MAT4_UNIFORM:
+		{
+			//loadMatrix(iterator->second.getName().c_str(), *(glm::mat4*)iterator->second.data);
+			break;
+		}
+
+		default:
+			break;
 	}
 }
 
@@ -343,21 +313,60 @@ void displayLightProperties(FELight* light)
 		directionalLight->setActiveCascades(cascades);
 		toolTip("How much steps of shadow quality will be used.");
 
-		ImGui::Text("Cascade exponent :");
+		/*ImGui::Text("Cascade exponent :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
 		float cascadeDistributionExponent = directionalLight->getCascadeDistributionExponent();
 		ImGui::DragFloat("##cascade exponent", &cascadeDistributionExponent, 0.1f, 0.1f, 10.0f);
 		directionalLight->setCascadeDistributionExponent(cascadeDistributionExponent);
-		toolTip("How much size of each next cascade is bigger than previous.");
+		toolTip("How much size of each next cascade is bigger than previous.");*/
 
-		ImGui::Text("First cascade Size :");
+		ImGui::Text("Shadow coverage in M :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		float firstCascadeSize = directionalLight->getFirstCascadeSize();
-		ImGui::DragFloat("##firstCascadeSize", &firstCascadeSize, 0.1f, 0.1f, 500.0f);
-		directionalLight->setFirstCascadeSize(firstCascadeSize);
-		toolTip("Size of first cascade.");
+		float firstCascadeSize = directionalLight->getShadowCoverage();
+		ImGui::DragFloat("##shadowCoverage", &firstCascadeSize, 0.1f, 0.1f, 500.0f);
+		directionalLight->setShadowCoverage(firstCascadeSize);
+		toolTip("Distance from camera at which shadows would be present.");
+
+		ImGui::Text("Z depth of shadow map :");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		float CSMZDepth = directionalLight->getCSMZDepth();
+		ImGui::DragFloat("##CSMZDepth", &CSMZDepth, 0.01f, 0.1f, 100.0f);
+		directionalLight->setCSMZDepth(CSMZDepth);
+		toolTip("If you have problems with shadow disapearing when camera is at close distance to shadow reciver, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
+
+		ImGui::Text("XY depth of shadow map :");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		float CSMXYDepth = directionalLight->getCSMXYDepth();
+		ImGui::DragFloat("##CSMXYDepth", &CSMXYDepth, 0.01f, 0.0f, 100.0f);
+		directionalLight->setCSMXYDepth(CSMXYDepth);
+		toolTip("If you have problems with shadow on edges of screen, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
+	
+		bool staticShadowBias = directionalLight->isStaticShadowBias();
+		ImGui::Checkbox("Static shadow bias :", &staticShadowBias);
+		directionalLight->setIsStaticShadowBias(staticShadowBias);
+
+		if (directionalLight->isStaticShadowBias())
+		{
+			ImGui::Text("Static shadow bias value :");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(200);
+			float shadowBias = directionalLight->getShadowBias();
+			ImGui::DragFloat("##shadowBias", &shadowBias, 0.0001f, 0.00001f, 0.1f);
+			directionalLight->setShadowBias(shadowBias);
+		}
+		else
+		{
+			ImGui::Text("Intensity of variable shadow bias :");
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(200);
+			float shadowBiasIntensity = directionalLight->getShadowBiasVariableIntensity();
+			ImGui::DragFloat("##shadowBiasIntensity", &shadowBiasIntensity, 0.01f, 0.01f, 10.0f);
+			directionalLight->setShadowBiasVariableIntensity(shadowBiasIntensity);
+		}
 	}
 	else if (light->getType() == FE_POINT_LIGHT)
 	{
@@ -644,6 +653,63 @@ void displayMaterialContentBrowser()
 				displayMaterialPrameter(param);
 			}
 
+			if (material->metalnessMap == nullptr)
+			{
+				ImGui::PushID("metalness");
+				float metalness = material->getMetalness();
+				ImGui::DragFloat("metalness", &metalness, 0.01f, 0.0f, 1.0f);
+				material->setMetalness(metalness);
+				ImGui::PopID();
+			}
+			else
+			{
+				ImGui::PushID("metalnessMapIntensity");
+				float metalness = material->getMetalnessMapIntensity();
+				ImGui::DragFloat("metalnessMapIntensity", &metalness, 0.01f, 0.0f, 10.0f);
+				material->setMetalnessMapIntensity(metalness);
+				ImGui::PopID();
+			}
+
+			if (material->roughtnessMap == nullptr)
+			{
+				ImGui::PushID("roughtness");
+				float roughtness = material->getRoughtness();
+				ImGui::DragFloat("roughtness", &roughtness, 0.01f, 0.0f, 1.0f);
+				material->setRoughtness(roughtness);
+				ImGui::PopID();
+			}
+			else
+			{
+				ImGui::PushID("roughtnessMapIntensity");
+				float roughtness = material->getRoughtnessMapIntensity();
+				ImGui::DragFloat("roughtnessMapIntensity", &roughtness, 0.01f, 0.0f, 10.0f);
+				material->setRoughtnessMapIntensity(roughtness);
+				ImGui::PopID();
+			}
+
+			ImGui::PushID("normalMapIntensity");
+			float normalMapIntensity = material->getNormalMapIntensity();
+			ImGui::DragFloat("normalMapIntensity", &normalMapIntensity, 0.01f, 0.0f, 1.0f);
+			material->setNormalMapIntensity(normalMapIntensity);
+			ImGui::PopID();
+
+			if (material->AOMap == nullptr)
+			{
+				ImGui::PushID("ambientOcclusionIntensity");
+				float ambientOcclusionIntensity = material->getAmbientOcclusionIntensity();
+				ImGui::DragFloat("ambientOcclusionIntensity", &ambientOcclusionIntensity, 0.01f, 0.0f, 10.0f);
+				material->setAmbientOcclusionIntensity(ambientOcclusionIntensity);
+				ImGui::PopID();
+			}
+			else
+			{
+				ImGui::PushID("ambientOcclusionMapIntensity");
+				float AOMapIntensity = material->getAmbientOcclusionMapIntensity();
+				ImGui::DragFloat("ambientOcclusionMapIntensity", &AOMapIntensity, 0.01f, 0.0f, 10.0f);
+				material->setAmbientOcclusionMapIntensity(AOMapIntensity);
+				ImGui::PopID();
+			}
+
 			ImGui::PushID("albedoMap_texture");
 			ImGui::Text("albedoMap:");
 			displayTextureInMaterialEditor(material, material->albedoMap);
@@ -691,12 +757,23 @@ void displayPostProcessContentBrowser()
 		{
 			for (size_t j = 0; j < PPEffect->stages.size(); j++)
 			{
+				// small hack for DOF in order not to display same settings for two times!
+				if (PPEffect->getName() == "DOF" && j > 0)
+				{
+					std::vector<std::string> params = PPEffect->stages[1]->shader->getParameterList();
+					for (size_t k = 0; k < params.size(); k++)
+					{
+						PPEffect->stages[1]->shader->getParameter(params[k])->updateData(*(float*)PPEffect->stages[0]->shader->getParameter(params[k])->data);
+					}
+					continue;
+				}
+					
 				ImGui::PushID(j);
 				std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
 				FEShaderParam* param;
-				for (size_t i = 0; i < params.size(); i++)
+				for (size_t k = 0; k < params.size(); k++)
 				{
-					param = PPEffect->stages[j]->shader->getParameter(params[i]);
+					param = PPEffect->stages[j]->shader->getParameter(params[k]);
 					if (param->loadedFromEngine)
 						continue;
 					displayMaterialPrameter(param);
@@ -785,9 +862,10 @@ void displayContentBrowser()
 	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
 	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
 	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
-		ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
 		if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 		{
+			ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
+
 			if (ImGui::BeginTabItem("Meshes"))
 			{
 				activeTabContentBrowser = 0;
@@ -2378,6 +2456,7 @@ void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture)
 		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
 
+		ImGui::Image((void*)(intptr_t)RESOURCE_MANAGER.noTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		return;
 	}
 		
@@ -2389,8 +2468,8 @@ void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture)
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
 	if (ImGui::Button("Change"))
 	{
-		selectTextureWindow.show(&texture);
-		createMaterialPreview(material->getName());
+		void* dataPtr = reinterpret_cast<void*>(material);
+		selectTextureWindow.show(&texture, [](void* dataPtr){ createMaterialPreview(reinterpret_cast<FEMaterial*>(dataPtr)->getName()); }, dataPtr);
 	}
 
 	ImGui::PopStyleColor();
@@ -2762,6 +2841,15 @@ void createMaterialPreview(std::string materialName)
 
 	materialPreviewTextures[materialName] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(previewFB->getColorAttachment()->createSameFormatTexture());
+
+	// looking for all gameModels that uses this material to also update them
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+		if (currentGameModel->material == previewMaterial)
+			createGameModelPreview(currentGameModel->getName());
+	}
 }
 
 FETexture* getMaterialPreview(std::string materialName)
@@ -2968,23 +3056,31 @@ FETexture* getGameModelPreview(std::string gameModelName)
 void displayTerrainContentBrowser()
 {
 	static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");;
-	std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+	std::vector<std::string> terrainList = SCENE.getTerrainList();
 
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
 		ImGui::PushID(i);
 
-		FETerrain* currentTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
+		FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
 		bool isActive = currentTerrain->isWireframeMode();
 		ImGui::Checkbox("WireframeMode", &isActive);
 		currentTerrain->setWireframeMode(isActive);
+
+		int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
+		ImGui::SliderInt("debugFlag", &iData, 0, 10);
+		currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
 
 		float highScale = currentTerrain->getHightScale();
 		ImGui::DragFloat("highScale", &highScale);
 		currentTerrain->setHightScale(highScale);
 
+		float displacementScale = currentTerrain->getDisplacementScale();
+		ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
+		currentTerrain->setDisplacementScale(displacementScale);
+
 		float LODlevel = currentTerrain->getLODlevel();
-		ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 64.0f);
+		ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
 		currentTerrain->setLODlevel(LODlevel);
 		toolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
 

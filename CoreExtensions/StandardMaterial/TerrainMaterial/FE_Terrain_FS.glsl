@@ -1,65 +1,37 @@
-#pragma once
-
-#include "../../../Renderer/FEShader.h"
-
-static const char* const FEPBRVS = R"(
-#version 450 core
-@In_Position@
-@In_UV@
-@In_Normal@
-@In_Tangent@
-
-@WorldMatrix@
-@ViewMatrix@
-@ProjectionMatrix@
-
-#define MAX_LIGHTS 10
-out VS_OUT
-{
-	vec2 UV;
-	vec3 fragPosition;
-	vec3 worldVertexPosition;
-	mat3 TBN;
-} vs_out;
-
-void main(void)
-{
-	vs_out.UV = FETexCoord;
-
-	vec3 T = normalize(vec3(FEWorldMatrix * vec4(FETangent, 0.0)));
-	vec3 N = normalize(vec3(FEWorldMatrix * vec4(FENormal, 0.0)));
-	// re-orthogonalize T with respect to N
-	T = normalize(T - dot(T, N) * N);
-	// then retrieve perpendicular vector B with the cross product of T and N
-	vec3 B = cross(N, T);
-    vs_out.TBN = mat3(T, B, N);
-
-	vs_out.fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
-	vs_out.worldVertexPosition = (FEWorldMatrix * vec4(FEPosition, 1.0)).xyz;
-	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
-}
-)";
-
-static const char* const FEPBRFS = R"(
 #version 450 core
 
-#define MAX_LIGHTS 10
-in VS_OUT
-{
-	vec2 UV;
-	vec3 fragPosition;
-	vec3 worldVertexPosition;
-	mat3 TBN;
-} FS_IN;
+uniform float hightScale;
+uniform float scaleFactor;
+uniform vec2 tileMult;
+uniform float drawingToShadowMap;
 
+@Texture@ heightMap;
 @Texture@ albedoMap;
 @Texture@ normalMap;
+uniform float FENormalMapPresent;
+uniform float FENormalMapIntensity;
 @Texture@ AOMap;
-uniform float FEAO;
+uniform float FEAOMapPresent;
+uniform float FEAOIntensity;
+uniform float FEAOMapIntensity;
 @Texture@ roughtnessMap;
+uniform float FERoughtnessMapPresent;
 uniform float FERoughtness;
+uniform float FERoughtnessMapIntensity;
 @Texture@ metalnessMap;
 uniform float FEMetalness;
+uniform float FEMetalnessMapPresent;
+uniform float FEMetalnessMapIntensity;
+
+#define MAX_LIGHTS 10
+in GS_OUT
+{
+	vec2 UV;
+	vec3 fragPosition;
+	vec3 worldVertexPosition;
+	mat3 TBN;
+	vec3 vertexNormal;
+} FS_IN;
 
 @CameraPosition@
 uniform float FEGamma;
@@ -94,7 +66,10 @@ struct FEDirectionalLight
 	mat4 CSM1;
 	mat4 CSM2;
 	mat4 CSM3;
+	vec4 CSMSizes;
 	int activeCascades;
+	float biasFixed;
+	float biasVariableIntensity;
 };
 
 #define CSM_MAX_CASCADE 3
@@ -166,6 +141,49 @@ vec2 filterTaps[NUM_BLUR_TAPS] = vec2[] ( vec2(-0.326212, -0.405805), vec2(-0.84
 
 void main(void)
 {
+	if (drawingToShadowMap > 0)
+	{
+		gl_FragColor = vec4(1.0);
+		return;
+	}
+
+	// checking viewDirection
+	if (debugFlag == 1)
+	{
+		vec3 normal;
+		if (FENormalMapPresent > 0.0)
+		{
+			normal = texture(normalMap, FS_IN.UV).rgb;
+			normal = normalize(normal * 2.0 - 1.0);
+			normal = normalize(FS_IN.TBN * normal);
+			normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
+		}
+		else
+		{
+			normal = FS_IN.vertexNormal;
+		}
+
+		gl_FragColor = vec4(vec3(dot(normal, normalize(FECameraPosition - FS_IN.worldVertexPosition))), 1.0);
+		return;
+	}
+	// checking normals
+	if (debugFlag == 2)
+	{
+		vec3 normal;
+		if (FENormalMapPresent > 0.0)
+		{
+			normal = texture(normalMap, FS_IN.UV).rgb;
+			normal = normalize(normal * 2.0 - 1.0);
+			normal = normalize(FS_IN.TBN * normal);
+			normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
+		}
+		else
+		{
+			normal = FS_IN.vertexNormal;
+		}
+		gl_FragColor = vec4(normal, 1.0);
+		return;
+	}
 	// checking UV
 	if (debugFlag == 3)
 	{
@@ -175,11 +193,10 @@ void main(void)
 	// debug csm
 	else if (debugFlag == 4)
 	{
+		float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
+
 		// CSM0
-		vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(FS_IN.worldVertexPosition, 1.0);
-		vec3 projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
-		projCoords = projCoords * 0.5 + 0.5;
-		if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+		if (distanceToCam <= directionalLight.CSMSizes[0])
 		{
 			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
 			return;
@@ -188,11 +205,7 @@ void main(void)
 		// CSM1
 		if (directionalLight.activeCascades > 1)
 		{
-			vertexInLightSpace = directionalLight.CSM1 * vec4(FS_IN.worldVertexPosition, 1.0);
-			projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
-			projCoords = projCoords * 0.5 + 0.5;
-
-			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+			if (distanceToCam <= directionalLight.CSMSizes[1])
 			{
 				gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
 				return;
@@ -202,11 +215,7 @@ void main(void)
 		// CSM2
 		if (directionalLight.activeCascades > 2)
 		{
-			vertexInLightSpace = directionalLight.CSM2 * vec4(FS_IN.worldVertexPosition, 1.0);
-			projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
-			projCoords = projCoords * 0.5 + 0.5;
-
-			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+			if (distanceToCam <= directionalLight.CSMSizes[2])
 			{
 				gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
 				return;
@@ -216,11 +225,7 @@ void main(void)
 		// CSM3
 		if (directionalLight.activeCascades > 3)
 		{
-			vertexInLightSpace = directionalLight.CSM3 * vec4(FS_IN.worldVertexPosition, 1.0);
-			projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
-			projCoords = projCoords * 0.5 + 0.5;
-
-			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+			if (distanceToCam <= directionalLight.CSMSizes[3])
 			{
 				gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 				return;
@@ -228,7 +233,9 @@ void main(void)
 		}
 	}
 
-	vec4 textureColor = texture(albedoMap, FS_IN.UV);
+	vec2 tiledUV = FS_IN.UV;
+
+	vec4 textureColor = texture(albedoMap, tiledUV);
 	if (textureColor.a < 0.05)
 	{
 		discard;
@@ -236,14 +243,31 @@ void main(void)
 		
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
 	vec3 viewDirection = normalize(FECameraPosition - FS_IN.fragPosition);
-	vec3 ambientColor = vec3(0.55f, 0.73f, 0.87f) * 0.3f;
+	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
 
-    vec3 normal = texture(normalMap, FS_IN.UV).rgb;
-    normal = normalize(normal * 2.0 - 1.0);
-	normal = normalize(FS_IN.TBN * normal);
-
-	//gl_FragColor = vec4(baseColor * ambientColor, 0.0f);
+	vec3 normal;
+	if (FENormalMapPresent > 0.0)
+	{
+		normal = texture(normalMap, tiledUV).rgb;
+		normal = normalize(normal * 2.0 - 1.0);
+		normal = normalize(FS_IN.TBN * normal);
+		normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
+	}
+	else
+	{
+		normal = FS_IN.vertexNormal;
+	}
 	
+	vec3 ao_base = ambientColor * FEAOIntensity;
+	if (FEAOMapPresent > 0.0)
+	{
+		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(AOMap, tiledUV).r, FEAOMapIntensity), 1.0f);
+	}
+	else
+	{
+		gl_FragColor = vec4(ao_base, 1.0f);
+	}
+
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
 		if (FElight[i].color.x == 0 && FElight[i].color.y == 0 && FElight[i].color.z == 0)
@@ -259,12 +283,7 @@ void main(void)
 		}
 	}
 
-	float ao = FEAO;
-	if (FEAO == -1)
-		ao = texture(AOMap, FS_IN.UV).r;
-
-	gl_FragColor = vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
-	gl_FragColor += vec4(baseColor * ambientColor * 0.3 * ao, 1.0f);
+	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 }
 
 // Produces cheap but low-quality white noise, nothing special
@@ -275,14 +294,29 @@ float quick_hash(vec2 pos)
 
 float getBias(vec3 normal, vec3 lightDir)
 {
-	float minBias = 0.0005 * 2.0;
-	float baseBias = 0.001 * 2.0;
-	return max(baseBias * (1.0 - dot(normal, lightDir)), minBias);
+	if (directionalLight.biasFixed != -1)
+	{
+		return directionalLight.biasFixed;
+	}
+	else
+	{
+		float minBias = 0.001 * directionalLight.biasVariableIntensity;
+		float baseBias = 0.002 * directionalLight.biasVariableIntensity;
+		return max(baseBias * (1.0 - dot(normal, lightDir)), minBias);
+	}
 }
 
 float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
 	float shadow = 0.0;
+
+	//vec4 vertex = vec4(FS_IN.worldVertexPosition, 1.0);
+	//vertex.xyz += lightDir * 0.01;
+	//vec3 normal_bias = normalize(normal) * (1.0 - max(0.0, dot(lightDir, -normalize(normal)))) * 0.8;
+	//normal_bias -= lightDir * dot(lightDir, normal_bias);
+	//vertex.xyz += normal_bias;
+
+	//fragPosLightSpace = directionalLight.CSM0 * vertex;
 	
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -290,7 +324,7 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM0, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -298,11 +332,12 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM0, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+		//shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
 
@@ -348,7 +383,7 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM2, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -356,7 +391,7 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM2, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
@@ -377,7 +412,7 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM3, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -385,7 +420,7 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM3, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
@@ -398,23 +433,16 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 baseColor)
 {
-	//return vec3(1.0, 1.0, 1.0);
 	vec3 lightDirection = normalize(-directionalLight.direction.xyz);
 
 	vec3 albedo = baseColor;
 	float metallic = FEMetalness;
-	if (FEMetalness == -1)
-		metallic = texture(metalnessMap, FS_IN.UV).r;
+	if (FEMetalnessMapPresent > 0.0)
+		metallic = texture(metalnessMap, FS_IN.UV).r * FEMetalnessMapIntensity;
 
 	float roughness = FERoughtness;
-	if (FERoughtness == -1)
-		roughness = texture(roughtnessMap, FS_IN.UV).r;
-
-	//return vec3(1.0, 1.0, 1.0);
-
-	//float metallic  = 0.1;
-    //float roughness = 0.5;
-    //float ao        = 1.0;
+	if (FERoughtnessMapPresent > 0.0)
+		roughness = texture(roughtnessMap, FS_IN.UV).r * FERoughtnessMapIntensity;
 
     vec3 N = normal;
     vec3 V = viewDir;
@@ -429,9 +457,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// calculate per-light radiance
     vec3 L = lightDirection;
     vec3 H = normalize(V + L);
-    //float distance = length(lightDirection);
-    //float attenuation = 1.0 / (distance * distance);
-    vec3 radiance = directionalLight.color.xyz;// * attenuation;
+    vec3 radiance = directionalLight.color.xyz;
 
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness);   
@@ -439,9 +465,11 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
     vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
            
     vec3 nominator    = NDF * G * F; 
-    float denominator = 4 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001; // 0.001 to prevent divide by zero.
+    float denominator = 4 * max(dot(N, V), 0.1) * max(dot(N, L), 0.0) + 0.001; // 0.001 to prevent divide by zero.
     vec3 specular = nominator / denominator;
-        
+    // brutal hack
+    //specular = specular * 0.08 * (20.0 * (metallic + 0.01));
+
     // kS is equal to Fresnel
     vec3 kS = F;
     // for energy conservation, the diffuse and specular light can't
@@ -463,12 +491,13 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		return Lo;
 
 	float shadow = 0.0;
+	float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
 
 	// first cascade
 	vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(FS_IN.worldVertexPosition, 1.0);
 	vec3 projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
-	if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+	if (distanceToCam <= directionalLight.CSMSizes[0])
 	{
 		shadow = shadowCalculationCSM0(vertexInLightSpace, normal, lightDirection);
 		return (Lo * (1.0 - shadow));
@@ -480,7 +509,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		vertexInLightSpace = directionalLight.CSM1 * vec4(FS_IN.worldVertexPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
-		if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+		if (distanceToCam <= directionalLight.CSMSizes[1])
 		{
 			shadow = shadowCalculationCSM1(vertexInLightSpace, normal, lightDirection);
 			return (Lo * (1.0 - shadow));
@@ -493,7 +522,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		vertexInLightSpace = directionalLight.CSM2 * vec4(FS_IN.worldVertexPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
-		if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+		if (distanceToCam <= directionalLight.CSMSizes[2])
 		{
 			shadow = shadowCalculationCSM2(vertexInLightSpace, normal, lightDirection);
 			return (Lo * (1.0 - shadow));
@@ -506,7 +535,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		vertexInLightSpace = directionalLight.CSM3 * vec4(FS_IN.worldVertexPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
-		if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
+		if (distanceToCam <= directionalLight.CSMSizes[3])
 		{
 			shadow = shadowCalculationCSM3(vertexInLightSpace, normal, lightDirection);
 			return (Lo * (1.0 - shadow));
@@ -562,18 +591,4 @@ vec3 spotLightColor(FELight light, vec3 normal, vec3 fragPosition, vec3 viewDir,
 	}
 
 	return vec3(0.0, 0.0, 0.0);
-}
-
-)";
-
-namespace FocalEngine 
-{
-	class FEPBRShader : public FEShader
-	{
-	public:
-		FEPBRShader();
-		~FEPBRShader();
-
-	private:
-	};
 }

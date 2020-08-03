@@ -23,180 +23,102 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 	sceneToTextureFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
 }
 
-void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity)
+void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
 {
-	static char* name = new char[256];
+	static int FEWorldMatrix_hash = std::hash<std::string>{}("FEWorldMatrix");
+	static int FEViewMatrix_hash = std::hash<std::string>{}("FEViewMatrix");
+	static int FEProjectionMatrix_hash = std::hash<std::string>{}("FEProjectionMatrix");
+	static int FEPVMMatrix_hash = std::hash<std::string>{}("FEPVMMatrix");
+	static int FECameraPosition_hash = std::hash<std::string>{}("FECameraPosition");
+	static int FEGamma_hash = std::hash<std::string>{}("FEGamma");
+	static int FEExposure_hash = std::hash<std::string>{}("FEExposure");
+	static int FEReceiveShadows_hash = std::hash<std::string>{}("FEReceiveShadows");
+	static int FEAOMapPresent_hash = std::hash<std::string>{}("FEAOMapPresent");
+	static int FEAOIntensity_hash = std::hash<std::string>{}("FEAOIntensity");
+	static int FEAOMapIntensity_hash = std::hash<std::string>{}("FEAOMapIntensity");
+	static int FENormalMapPresent_hash = std::hash<std::string>{}("FENormalMapPresent");
+	static int FENormalMapIntensity_hash = std::hash<std::string>{}("FENormalMapIntensity");
+	static int FERoughtness_hash = std::hash<std::string>{}("FERoughtness");
+	static int FERoughtnessMapPresent_hash = std::hash<std::string>{}("FERoughtnessMapPresent");
+	static int FERoughtnessMapIntensity_hash = std::hash<std::string>{}("FERoughtnessMapIntensity");
+	static int FEMetalness_hash = std::hash<std::string>{}("FEMetalness");
+	static int FEMetalnessMapPresent_hash = std::hash<std::string>{}("FEMetalnessMapPresent");
+	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
 	FEScene& scene = FEScene::getInstance();
 
+	//auto start = std::chrono::system_clock::now();
 	auto iterator = shader->parameters.begin();
 	while (iterator != shader->parameters.end())
 	{
-		auto parameterName = iterator->first.c_str();
+		if (iterator->second.nameHash == FEWorldMatrix_hash)
+			iterator->second.updateData(transform->getTransformMatrix());
 
-		strcpy_s(name, 256, "FEWorldMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(entity->transform.getTransformMatrix());
-
-		strcpy_s(name, 256, "FEViewMatrix");
-		if (strcmp(parameterName, name) == 0)
+		if (iterator->second.nameHash == FEViewMatrix_hash)
 			iterator->second.updateData(currentCamera->getViewMatrix());
 
-		strcpy_s(name, 256, "FEProjectionMatrix");
-		if (strcmp(parameterName, name) == 0)
+		if (iterator->second.nameHash == FEProjectionMatrix_hash)
 			iterator->second.updateData(currentCamera->getProjectionMatrix());
 
-		strcpy_s(name, 256, "FEPVMMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getProjectionMatrix() * currentCamera->getViewMatrix() * entity->transform.getTransformMatrix());
+		if (iterator->second.nameHash == FEPVMMatrix_hash)
+			iterator->second.updateData(currentCamera->getProjectionMatrix() * currentCamera->getViewMatrix() * transform->getTransformMatrix());
 
-		strcpy_s(name, 256, "FECameraPosition");
-		if (strcmp(parameterName, name) == 0)
+		if (iterator->second.nameHash == FECameraPosition_hash)
 			iterator->second.updateData(currentCamera->getPosition());
 
-		strcpy_s(name, 256, "FEGamma");
-		if (strcmp(parameterName, name) == 0)
+		if (iterator->second.nameHash == FEGamma_hash)
 			iterator->second.updateData(currentCamera->getGamma());
 
-		strcpy_s(name, 256, "FEExposure");
-		if (strcmp(parameterName, name) == 0)
+		if (iterator->second.nameHash == FEExposure_hash)
 			iterator->second.updateData(currentCamera->getExposure());
 
-		strcpy_s(name, 256, "FEReceiveShadows");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(entity->isReceivingShadows());
+		if (iterator->second.nameHash == FEReceiveShadows_hash)
+			iterator->second.updateData(isReceivingShadows);
 
-		strcpy_s(name, 256, "FEAO");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (entity->gameModel->material->AOMap == nullptr)
-			{
-				iterator->second.updateData(1.0f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
+		if (iterator->second.nameHash == FEAOIntensity_hash)
+			iterator->second.updateData(material->getAmbientOcclusionIntensity());
 
-		strcpy_s(name, 256, "FERoughtness");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (entity->gameModel->material->roughtnessMap == nullptr)
-			{
-				iterator->second.updateData(0.5f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
+		if (iterator->second.nameHash == FENormalMapIntensity_hash)
+			iterator->second.updateData(material->getNormalMapIntensity());
 
-		strcpy_s(name, 256, "FEMetalness");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (entity->gameModel->material->metalnessMap == nullptr)
-			{
-				iterator->second.updateData(0.1f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
+		if (iterator->second.nameHash == FENormalMapPresent_hash)
+			iterator->second.updateData(material->normalMap == nullptr ? 0.0f : 1.0f);
 
-		iterator++;
-	}
-}
+		if (iterator->second.nameHash == FEAOMapPresent_hash)
+			iterator->second.updateData(material->AOMap == nullptr ? 0.0f : 1.0f);
 
-void FERenderer::loadStandardTerrainParams(FEShader* shader, FEBasicCamera* currentCamera, FETerrain* terrain)
-{
-	static char* name = new char[256];
-	FEScene& scene = FEScene::getInstance();
+		if (iterator->second.nameHash == FEAOMapIntensity_hash)
+			iterator->second.updateData(material->getAmbientOcclusionMapIntensity());
 
-	auto iterator = shader->parameters.begin();
-	while (iterator != shader->parameters.end())
-	{
-		auto parameterName = iterator->first.c_str();
+		if (iterator->second.nameHash == FERoughtnessMapPresent_hash)
+			iterator->second.updateData(material->roughtnessMap == nullptr ? 0.0f : 1.0f);
+		
+		if (iterator->second.nameHash == FERoughtness_hash)
+			iterator->second.updateData(material->roughtness);
 
-		strcpy_s(name, 256, "FEWorldMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(terrain->transform.getTransformMatrix());
+		if (iterator->second.nameHash == FERoughtnessMapIntensity_hash)
+			iterator->second.updateData(material->getRoughtnessMapIntensity());
 
-		strcpy_s(name, 256, "FEViewMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getViewMatrix());
+		if (iterator->second.nameHash == FEMetalness_hash)
+			iterator->second.updateData(material->metalness);
 
-		strcpy_s(name, 256, "FEProjectionMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getProjectionMatrix());
+		if (iterator->second.nameHash == FEMetalnessMapPresent_hash)
+			iterator->second.updateData(material->metalnessMap == nullptr ? 0.0f : 1.0f);
 
-		strcpy_s(name, 256, "FEPVMMatrix");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getProjectionMatrix() * currentCamera->getViewMatrix() * terrain->transform.getTransformMatrix());
-
-		strcpy_s(name, 256, "FECameraPosition");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getPosition());
-
-		strcpy_s(name, 256, "FEGamma");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getGamma());
-
-		strcpy_s(name, 256, "FEExposure");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(currentCamera->getExposure());
-
-		strcpy_s(name, 256, "FEReceiveShadows");
-		if (strcmp(parameterName, name) == 0)
-			iterator->second.updateData(terrain->isReceivingShadows());
-
-		strcpy_s(name, 256, "FEAO");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (terrain->layer0->AOMap == nullptr)
-			{
-				iterator->second.updateData(1.0f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
-
-		strcpy_s(name, 256, "FERoughtness");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (terrain->layer0->roughtnessMap == nullptr)
-			{
-				iterator->second.updateData(0.5f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
-
-		strcpy_s(name, 256, "FEMetalness");
-		if (strcmp(parameterName, name) == 0)
-		{
-			if (terrain->layer0->metalnessMap == nullptr)
-			{
-				iterator->second.updateData(0.1f);
-			}
-			else
-			{
-				iterator->second.updateData(-1.0f);
-			}
-		}
+		if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
+			iterator->second.updateData(material->getMetalnessMapIntensity());
 
 		iterator++;
 	}
 
-	shader->getParameter("hightScale")->updateData(terrain->hightScale);
-	shader->getParameter("scaleFactor")->updateData(terrain->scaleFactor);
-	shader->getParameter("tileMult")->updateData(terrain->tileMult);
-	shader->getParameter("LODlevel")->updateData(terrain->LODlevel);
-	shader->getParameter("hightMapShift")->updateData(terrain->hightMapShift);
+	//auto end = std::chrono::system_clock::now();
+	////auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+	//double eTime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count() * 1000.0;
+	//if (eTime > 0.02)
+	//{
+	//	FELOG::getInstance().logError(std::to_string(eTime));
+	//	float time = 1;
+	//	time += 1;
+	//}
 }
 
 void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing)
@@ -240,7 +162,12 @@ void FERenderer::loadUniformBlocks()
 			directionalLightInfo.CSM1 = light->cascadeData[1].projectionMat * light->cascadeData[1].viewMat;
 			directionalLightInfo.CSM2 = light->cascadeData[2].projectionMat * light->cascadeData[2].viewMat;
 			directionalLightInfo.CSM3 = light->cascadeData[3].projectionMat * light->cascadeData[3].viewMat;
+			directionalLightInfo.CSMSizes = glm::vec4(light->cascadeData[0].size, light->cascadeData[1].size, light->cascadeData[2].size, light->cascadeData[3].size);
 			directionalLightInfo.activeCascades = light->activeCascades;
+			directionalLightInfo.biasFixed = light->shadowBias;
+			if (!light->staticShadowBias)
+				directionalLightInfo.biasFixed = -1.0f;
+			directionalLightInfo.biasVariableIntensity = light->shadowBiasVariableIntensity;
 		}
 		else if (lightIterator->second->getType() == FE_SPOT_LIGHT)
 		{
@@ -263,6 +190,8 @@ void FERenderer::loadUniformBlocks()
 	}
 
 	//#fix only standardShaders uniforms buffers are filled.
+	static int lightInfo_hash = std::hash<std::string>{}("lightInfo");
+	static int directionalLightInfo_hash = std::hash<std::string>{}("directionalLightInfo");
 	std::vector<std::string> shaderList = resourceManager.getStandardShadersList();
 	for (size_t i = 0; i < shaderList.size(); i++)
 	{
@@ -270,7 +199,7 @@ void FERenderer::loadUniformBlocks()
 		auto iteratorBlock = shader->blockUniforms.begin();
 		while (iteratorBlock != shader->blockUniforms.end())
 		{
-			if (iteratorBlock->first.c_str() == std::string("lightInfo"))
+			if (iteratorBlock->first == lightInfo_hash)
 			{
 				// if shader uniform block was not asigned yet.
 				if (iteratorBlock->second == size_t(-1))
@@ -294,7 +223,7 @@ void FERenderer::loadUniformBlocks()
 				}
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
-			else if (iteratorBlock->first.c_str() == std::string("directionalLightInfo"))
+			else if (iteratorBlock->first == directionalLightInfo_hash)
 			{
 				// if shader uniform block was not asigned yet.
 				if (iteratorBlock->second == size_t(-1))
@@ -309,7 +238,10 @@ void FERenderer::loadUniformBlocks()
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 112, 64, &directionalLightInfo.CSM1));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 176, 64, &directionalLightInfo.CSM2));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 240, 64, &directionalLightInfo.CSM3));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 304, 4, &directionalLightInfo.activeCascades));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 304, 64, &directionalLightInfo.CSMSizes));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 368, 4, &directionalLightInfo.activeCascades));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 372, 4, &directionalLightInfo.biasFixed));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 376, 4, &directionalLightInfo.biasVariableIntensity));
 				
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
@@ -334,7 +266,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			if (itLight->second->getType() == FE_DIRECTIONAL_LIGHT)
 			{
 				FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(itLight->second);
-				light->updateCascades(currentCamera->getPosition(), currentCamera->getForward());
+				
+				light->updateCascades(currentCamera->fov, currentCamera->aspectRatio,
+									  currentCamera->nearPlane, currentCamera->farPlane, currentCamera->viewMatrix);
 			}
 		}
 
@@ -368,7 +302,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				for (size_t i = 0; i < size_t(light->activeCascades); i++)
 				{
 					// put camera to the position of light
-					// to-do: should put out of scene bounderies in case of direcctional light.
 					currentCamera->projectionMatrix = light->cascadeData[i].projectionMat;
 					currentCamera->viewMatrix = light->cascadeData[i].viewMat;
 
@@ -493,7 +426,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		for (size_t j = 0; j < effect.stages.size(); j++)
 		{
 			effect.stages[j]->shader->start();
-			loadStandardParams(effect.stages[j]->shader, currentCamera, nullptr);
+			loadStandardParams(effect.stages[j]->shader, currentCamera, nullptr, nullptr);
 			effect.stages[j]->shader->loadDataToGPU();
 
 			for (size_t k = 0; k < effect.stages[j]->inTextureSource.size(); k++)
@@ -590,7 +523,7 @@ void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bo
 		loadUniformBlocks();
 
 	entity->gameModel->material->bind();
-	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity);
+	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity->gameModel->material, &entity->transform, entity->isReceivingShadows());
 	entity->gameModel->material->shader->loadDataToGPU();
 	entity->render();
 	entity->gameModel->material->unBind();
@@ -602,26 +535,40 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	terrain->heightMap->bind(0);
-	if (terrain->layer0->albedoMap != nullptr)
-		terrain->layer0->albedoMap->bind(1);
-	if (terrain->layer0->normalMap != nullptr)
-		terrain->layer0->normalMap->bind(2);
-	if (terrain->layer0->AOMap != nullptr)
-		terrain->layer0->AOMap->bind(3);
-	if (terrain->layer0->roughtnessMap != nullptr)
-		terrain->layer0->roughtnessMap->bind(4);
-	if (terrain->layer0->metalnessMap != nullptr)
-		terrain->layer0->metalnessMap->bind(5);
+	//#fix
 	if (terrain->layer0->displacementMap != nullptr)
-		terrain->layer0->displacementMap->bind(6);
+		terrain->layer0->displacementMap->bind(1);
+
+	if (terrain->layer0->albedoMap != nullptr)
+		terrain->layer0->albedoMap->bind(2);
+	if (terrain->layer0->normalMap != nullptr)
+		terrain->layer0->normalMap->bind(3);
+	if (terrain->layer0->AOMap != nullptr)
+		terrain->layer0->AOMap->bind(4);
+	if (terrain->layer0->roughtnessMap != nullptr)
+		terrain->layer0->roughtnessMap->bind(5);
+	if (terrain->layer0->metalnessMap != nullptr)
+		terrain->layer0->metalnessMap->bind(6);
 
 	terrain->shader->start();
 
-	loadStandardTerrainParams(terrain->shader, currentCamera, terrain);
+	//loadStandardTerrainParams(terrain->shader, currentCamera, terrain);
+	loadStandardParams(terrain->shader, currentCamera, terrain->layer0, &terrain->transform, terrain->isReceivingShadows());
+
+	terrain->shader->getParameter("hightScale")->updateData(terrain->hightScale);
+	terrain->shader->getParameter("displacementScale")->updateData(terrain->displacementScale);
+	terrain->shader->getParameter("scaleFactor")->updateData(terrain->scaleFactor);
+	terrain->shader->getParameter("tileMult")->updateData(terrain->tileMult);
+	terrain->shader->getParameter("LODlevel")->updateData(terrain->LODlevel);
+	terrain->shader->getParameter("hightMapShift")->updateData(terrain->hightMapShift);
 
 	static glm::vec3 pivotPosition = terrain->transform.getPosition();
 	pivotPosition = terrain->transform.getPosition();
 	terrain->scaleFactor = 1.0f * terrain->chunkPerSide;
+
+	static int PVMHash = std::hash<std::string>{}("FEPVMMatrix");
+	static int WMHash = std::hash<std::string>{}("FEWorldMatrix");
+	static int HShiftHash = std::hash<std::string>{}("hightMapShift");
 
 	terrain->shader->loadDataToGPU();
 	for (size_t i = 0; i < terrain->chunkPerSide; i++)
@@ -638,9 +585,9 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 			terrain->shader->getParameter("FEWorldMatrix")->updateData(terrain->transform.getTransformMatrix());
 			terrain->shader->getParameter("hightMapShift")->updateData(glm::vec2(i * (-(terrain->chunkPerSide - 1)), j * (-(terrain->chunkPerSide - 1))));
 			
-			terrain->shader->loadMatrix("FEPVMMatrix", *(glm::mat4*)terrain->shader->getParameter("FEPVMMatrix")->data);
-			terrain->shader->loadMatrix("FEWorldMatrix", *(glm::mat4*)terrain->shader->getParameter("FEWorldMatrix")->data);
-			terrain->shader->loadVector("hightMapShift", *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
+			terrain->shader->loadMatrix(PVMHash, *(glm::mat4*)terrain->shader->getParameter("FEPVMMatrix")->data);
+			terrain->shader->loadMatrix(WMHash, *(glm::mat4*)terrain->shader->getParameter("FEWorldMatrix")->data);
+			terrain->shader->loadVector(HShiftHash, *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
 			terrain->render();
 		}
 	}

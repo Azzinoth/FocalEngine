@@ -15,11 +15,13 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
+// run time checking(/RTC) makes the Microsoft implementation of std containers 
+// *very* slow in debug builds !
+// So in visual studio go to Project -> Properties -> C/C++ -> Code Generation -> Basic Runtime Checks and set to "Default"
 #include <unordered_map>
 #include <map>
-
 #define GLM_FORCE_XYZW_ONLY
-
 #include "glm/vec3.hpp"
 #include "glm/vec4.hpp"
 #include "glm/mat4x4.hpp"

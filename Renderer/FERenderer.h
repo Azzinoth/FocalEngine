@@ -34,8 +34,7 @@ namespace FocalEngine
 		FETexture* CSM3 = nullptr;
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
-		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEEntity* entity);
-		void loadStandardTerrainParams(FEShader* shader, FEBasicCamera* currentCamera, FETerrain* terrain);
+		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
 		void loadUniformBlocks();
 
 		void standardFBInit(int WindowWidth, int WindowHeight);
@@ -46,7 +45,7 @@ namespace FocalEngine
 		int uniformBufferCount = 0;
 		const int UBufferForLightSize = 192;
 		GLuint uniformBufferForLights;
-		const int UBufferForDirectionalLightSize = 308;
+		const int UBufferForDirectionalLightSize = 380;
 		GLuint uniformBufferForDirectionalLight;
 	};
 }

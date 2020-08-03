@@ -2,7 +2,7 @@
 
 
 static const char* const MyVS = R"(
-#version 400 core
+#version 450 core
 
 @In_Position@
 out vec2 textureCoords;
@@ -15,112 +15,302 @@ void main(void)
 )";
 
 static const char* const MyFS = R"(
-#version 400 core
+#version 450 core
 
 in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
 uniform float depthThreshold;
+uniform float depthThresholdFar;
 uniform float blurSize;
+uniform float intMult;
+uniform float zNear;
+uniform float zFar;
+//uniform float maxGap;
 
 void main(void)
 {
 	float depthValue = texture(depthTexture, textureCoords).r;
-	depthValue = (1 - depthValue) * 10;
-	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
+	float depthValueWorld = 2.0 * depthValue - 1.0;
+	depthValueWorld = 2.0 * zNear * zFar / (zFar + zNear - depthValueWorld * (zFar - zNear));
 
-	if (depthValue > depthThreshold)
+
+	float A = -(zFar + zNear) / (zFar - zNear);
+    float B = (-2 * zFar * zNear) / (zFar - zNear);
+	float thresholdInZbuffer = 0.5 * (-A * depthThreshold + B) / depthThreshold + 0.5;
+	float thresholdInZbufferFar = 0.5 * (-A * depthThresholdFar + B) / depthThresholdFar + 0.5;
+
+	vec4 finalColor = vec4(0.0);
+	if (depthValueWorld < depthThreshold)
 	{
-		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
+		float intensity = (thresholdInZbuffer - depthValue) * (intMult / 10.0);
 		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
 
 		vec2 blurTextureCoords[11];
-		vec2 centerTexCoords = textureCoords; // * 0.5 + 0.5
+		vec2 centerTexCoords = textureCoords;
 
 		for (int i = -5; i <= 5; i++)
 		{
-			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * blurSize);
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * blurSize * intensity);
 		}
 
-		gl_FragColor = vec4(0.0);
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+		//float maxGap = 0.01;
+		//vec4 gapColor = vec4(10.0, 10.0, 10.0, 0.3);
+		//vec4 gapColor = texture(sceneTexture, textureCoords);
+		
+		//float sampleDepth = texture(depthTexture, blurTextureCoords[0]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.0093;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		//}
+
+		//sampleDepth = texture(depthTexture, blurTextureCoords[1]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.028002;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		//}
+
+		//sampleDepth = texture(depthTexture, blurTextureCoords[2]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.065984;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		//}
+		
+		//sampleDepth = texture(depthTexture, blurTextureCoords[3]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.121703;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		//}
+		
+		//sampleDepth = texture(depthTexture, blurTextureCoords[4]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.175713;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		//}
+
+		//sampleDepth = texture(depthTexture, blurTextureCoords[5]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.198596;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		//}
+
+		//sampleDepth = texture(depthTexture, blurTextureCoords[6]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.175713;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		//}
+		
+		//sampleDepth = texture(depthTexture, blurTextureCoords[7]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.121703;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		//}
+
+		//sampleDepth = texture(depthTexture, blurTextureCoords[8]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.065984;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		//}
+		
+		//sampleDepth = texture(depthTexture, blurTextureCoords[9]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.028002;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		//}
+		
+		//sampleDepth = texture(depthTexture, blurTextureCoords[10]).r;
+		//if (abs(depthValue - sampleDepth) > maxGap)
+		//{
+		//	finalColor += gapColor * 0.0093;
+		//}
+		//else
+		//{
+		//	finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+		//}
+
+		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+	}
+	else if (depthValueWorld > depthThresholdFar)
+	{
+		float intensity = (thresholdInZbufferFar - depthValue) * (intMult * 2.0);
+		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
+
+		vec2 blurTextureCoords[11];
+		vec2 centerTexCoords = textureCoords;
+
+		for (int i = -5; i <= 5; i++)
+		{
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(0.0, tex_offset.y * i * blurSize * intensity);
+		}
+
+		//gl_FragColor = vec4(0.0);
+		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
 	}
 	else
 	{
-		gl_FragColor = texture(sceneTexture, textureCoords);
+		finalColor = texture(sceneTexture, textureCoords);
 	}
 
+	gl_FragColor = finalColor;
 }
 )";
 
 static const char* const MyFS2 = R"(
-#version 400 core
+#version 450 core
 
 in vec2 textureCoords;
 @Texture@ sceneTexture;
 @Texture@ depthTexture;
 uniform float depthThreshold;
+uniform float depthThresholdFar;
 uniform float blurSize;
+uniform float intMult;
+uniform float zNear;
+uniform float zFar;
+//uniform float maxGap;
 
 void main(void)
 {
 	float depthValue = texture(depthTexture, textureCoords).r;
-	depthValue = (1 - depthValue) * 10;
-	//gl_FragColor = vec4(vec3((1 - depthValue) * 10), 1.0); // only for perspective projection
+	float depthValueWorld = 2.0 * depthValue - 1.0;
+	depthValueWorld = 2.0 * zNear * zFar / (zFar + zNear - depthValueWorld * (zFar - zNear));
 
-	if (depthValue > depthThreshold)
+
+	float A = -(zFar + zNear) / (zFar - zNear);
+    float B = (-2 * zFar * zNear) / (zFar - zNear);
+	float thresholdInZbuffer = 0.5 * (-A * depthThreshold + B) / depthThreshold + 0.5;
+	float thresholdInZbufferFar = 0.5 * (-A * depthThresholdFar + B) / depthThresholdFar + 0.5;
+
+	vec4 finalColor = vec4(0.0);
+	if (depthValueWorld < depthThreshold)
 	{
-		//gl_FragColor = texture(depthTexture, textureCoords) * vec4(0.5);
+		float intensity = (thresholdInZbuffer - depthValue) * (intMult / 10.0);
 		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
 
 		vec2 blurTextureCoords[11];
-		vec2 centerTexCoords = textureCoords; // * 0.5 + 0.5
+		vec2 centerTexCoords = textureCoords;
 
 		for (int i = -5; i <= 5; i++)
 		{
-			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * blurSize, 0.0);
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * blurSize * intensity, 0.0);
 		}
 
-		gl_FragColor = vec4(0.0);
-		gl_FragColor = vec4(0.0);
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
-		gl_FragColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+	}
+	else if (depthValueWorld > depthThresholdFar)
+	{
+		float intensity = (thresholdInZbufferFar - depthValue) * (intMult * 2.0);
+		vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
+
+		vec2 blurTextureCoords[11];
+		vec2 centerTexCoords = textureCoords;
+
+		for (int i = -5; i <= 5; i++)
+		{
+			blurTextureCoords[i + 5] = centerTexCoords + vec2(tex_offset.x * i * blurSize * intensity, 0.0);
+		}
+
+		//gl_FragColor = vec4(0.0);
+		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
 	}
 	else
 	{
-		gl_FragColor = texture(sceneTexture, textureCoords);
+		finalColor = texture(sceneTexture, textureCoords);
 	}
+
+	gl_FragColor = finalColor;
 }
 )";
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
-	engine.createWindow();
-	engine.setKeyCallback(keyButtonCallback);
-	engine.setMouseButtonCallback(mouseButtonCallback);
-	engine.setMouseMoveCallback(mouseMoveCallback);
+	//FocalEngine::FEngine& engine = FocalEngine::FEngine::getInstance();
+	ENGINE.createWindow();
+	ENGINE.setKeyCallback(keyButtonCallback);
+	ENGINE.setMouseButtonCallback(mouseButtonCallback);
+	ENGINE.setMouseMoveCallback(mouseMoveCallback);
 
-	FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
+	//FocalEngine::FEResourceManager& resourceManager = FocalEngine::FEResourceManager::getInstance();
 	FocalEngine::FERenderer& renderer = FocalEngine::FERenderer::getInstance();
 	FocalEngine::FEScene& scene = FocalEngine::FEScene::getInstance();
 
@@ -131,19 +321,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	loadEditor();
 
-	/*FocalEngine::FEPostProcess* testEffect = engine.createPostProcess("DOF");
-	FocalEngine::FEShader* testshader = new FocalEngine::FEShader(MyVS, MyFS);
-	FocalEngine::FEShader* testshader2 = new FocalEngine::FEShader(MyVS, MyFS2);
+	FocalEngine::FEPostProcess* testEffect = ENGINE.createPostProcess("DOF");
+	FocalEngine::FEShader* testshader = RESOURCE_MANAGER.createShader("DOF0", MyVS, MyFS);
+	FocalEngine::FEShader* testshader2 = RESOURCE_MANAGER.createShader("DOF1", MyVS, MyFS2);
 	for (size_t i = 0; i < 1; i++)
 	{
 		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader));
 		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(2.0f);
-		testEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(0.1f);
+		testEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(15.0f);
+		testEffect->stages.back()->shader->getParameter("depthThresholdFar")->updateData(9000.0f);
+		testEffect->stages.back()->shader->getParameter("zNear")->updateData(0.1f);
+		testEffect->stages.back()->shader->getParameter("zFar")->updateData(5000.0f);
+		testEffect->stages.back()->shader->getParameter("intMult")->updateData(100.0f);
+		//testEffect->stages.back()->shader->getParameter("maxGap")->updateData(0.01f);
 		testEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, testshader2));
-		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(2.0f);
-		testEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(0.1f);
+		testEffect->stages.back()->shader->getParameter("blurSize")->updateData(0.0f);
+		testEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(15.0f);
+		testEffect->stages.back()->shader->getParameter("depthThresholdFar")->updateData(9000.0f);
+		testEffect->stages.back()->shader->getParameter("zNear")->updateData(0.1f);
+		testEffect->stages.back()->shader->getParameter("zFar")->updateData(5000.0f);
+		testEffect->stages.back()->shader->getParameter("intMult")->updateData(100.0f);
+		//testEffect->stages.back()->shader->getParameter("maxGap")->updateData(0.01f);
 	}
-	renderer.addPostProcess(testEffect);*/
+	renderer.addPostProcess(testEffect);
+
+	/*FocalEngine::FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
+	FocalEngine::FEShader* chromaticAberrationShader = RESOURCE_MANAGER.createShader("chromaticAberrationShader", chromaticAberrationVS, chromaticAberrationFS);
+	chromaticAberrationEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0 }, chromaticAberrationShader));
+	chromaticAberrationEffect->stages.back()->shader->getParameter("intensity")->updateData(1.0f);
+	renderer.addPostProcess(chromaticAberrationEffect);*/
 
 	const int frameCountTillMeasure = 20;
 	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
@@ -153,28 +359,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	float avarageCpuFrameDuration = 0.0f;
 	float avarageGpuFrameDuration = 0.0f;
 
-	while (engine.isWindowOpened())
+	while (ENGINE.isWindowOpened())
 	{
 		//Sleep(10);
-		engine.beginFrame();
-		engine.render();
+		ENGINE.beginFrame();
+		ENGINE.render();
 
 		if (FERenderer::getInstance().CSM0 != nullptr)
 		{
-			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM0->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM0->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)FERenderer::getInstance().CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		}
 
 		//ImGui::ShowDemoWindow();
 
 		renderEditor();
-		engine.endFrame();
+		ENGINE.endFrame();
 
 		// CPU and GPU Time
-		cpuFrameDurations[frameCounter++] = engine.getCpuTime();
-		gpuFrameDurations[frameCounter++] = engine.getGpuTime();
+		cpuFrameDurations[frameCounter++] = ENGINE.getCpuTime();
+		gpuFrameDurations[frameCounter++] = ENGINE.getGpuTime();
 
 		if (frameCounter > frameCountTillMeasure - 1)
 		{
@@ -209,7 +415,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		caption += "  Frame time : ";
 		caption += frameMS;
 		caption += " ms";
-		engine.setWindowCaption(caption.c_str());
+		ENGINE.setWindowCaption(caption.c_str());
 	}
 	
 	return 0;

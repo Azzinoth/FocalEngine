@@ -192,8 +192,8 @@ void FETerrain::setLODlevel(float newLODlevel)
 	if (newLODlevel < 2.0)
 		newLODlevel = 2.0;
 
-	if (newLODlevel > 64.0)
-		newLODlevel = 64.0;
+	if (newLODlevel > 128.0)
+		newLODlevel = 128.0;
 
 	LODlevel = newLODlevel;
 }
@@ -212,4 +212,14 @@ void FETerrain::setChunkPerSide(float newChunkPerSide)
 		newChunkPerSide = 16.0f;
 
 	chunkPerSide = newChunkPerSide;
+}
+
+float FETerrain::getDisplacementScale()
+{
+	return displacementScale;
+}
+
+void FETerrain::setDisplacementScale(float newDisplacementScale)
+{
+	displacementScale = newDisplacementScale;
 }

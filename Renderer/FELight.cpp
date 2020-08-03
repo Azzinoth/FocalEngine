@@ -85,15 +85,15 @@ FECascadeData::~FECascadeData()
 
 }
 
-void FEDirectionalLight::updateCascades(glm::vec3 cameraPosition, glm::vec3 cameraDirection)
+void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, float nearPlane, float farPlane, glm::mat4 viewMatrix)
 {
 	static glm::vec4 basisX = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 	static glm::vec4 basisY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	static glm::vec4 basisZ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
-	glm::vec4 fbasisX = glm::normalize(transform.getTransformMatrix() * basisX);
-	glm::vec4 fbasisY = glm::normalize(transform.getTransformMatrix() * basisY);
-	glm::vec4 fbasisZ = glm::normalize(transform.getTransformMatrix() * basisZ);
+	glm::vec4 fbasisX = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisX);
+	glm::vec4 fbasisY = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisY);
+	glm::vec4 fbasisZ = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisZ);
 
 	glm::mat4 cascadeView = glm::mat4(1.0f);
 
@@ -107,48 +107,69 @@ void FEDirectionalLight::updateCascades(glm::vec3 cameraPosition, glm::vec3 came
 	cascadeView[1][2] = fbasisZ.y;
 	cascadeView[2][2] = fbasisZ.z;
 
+	farPlane = nearPlane;
+	glm::mat4 inverseVM = glm::inverse(viewMatrix);
+	static std::vector<glm::vec4> frustumEdges;
+	frustumEdges.resize(8);
+
 	for (size_t i = 0; i < 4; i++)
 	{
-		cameraPosition += cameraDirection * firstCascadeSize / 2.0f;
-
-		glm::vec3 newLightPosition = cameraPosition + (-getDirection() * cascadeData[i].size * 2.0f);
-		transform.setPosition(newLightPosition);
-
 		cascadeData[i].viewMat = cascadeView;
-		cascadeData[i].viewMat = glm::translate(cascadeData[i].viewMat, -transform.getPosition());
+
+		nearPlane = farPlane;
+		farPlane = shadowCoverage * (0.0447f * float(pow(2.1867f, (i + 1))));
+		cascadeData[i].size = float(int(farPlane) - 1);
+		if (cascadeData[i].size <= 0.01f)
+			cascadeData[i].size = 1.0;
+
+		float firstCascadeY1 = nearPlane * tan(glm::radians(cameraFov / 2.0f));
+		float firstCascadeY2 = farPlane * tan(glm::radians(cameraFov / 2.0f));
+
+		float firstCascadeX1 = nearPlane * tan((aspectRatio) / 2.0f);
+		float firstCascadeX2 = farPlane * tan((aspectRatio) / 2.0f);
+		
+		frustumEdges[0] = glm::vec4(firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
+		frustumEdges[1] = glm::vec4(firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
+		frustumEdges[2] = glm::vec4(-firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
+		frustumEdges[3] = glm::vec4(-firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
+
+		frustumEdges[4] = glm::vec4(firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
+		frustumEdges[5] = glm::vec4(firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
+		frustumEdges[6] = glm::vec4(-firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
+		frustumEdges[7] = glm::vec4(-firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
+
+		for (size_t j = 0; j < frustumEdges.size(); j++)
+			frustumEdges[j] = cascadeData[0].viewMat * inverseVM * frustumEdges[j];
+
+		for (size_t j = 0; j < frustumEdges.size(); j++)
+			frustumEdges[j].z = -frustumEdges[j].z;
+
+		float minX = FLT_MAX;
+		float maxX = FLT_MIN;
+		float minY = FLT_MAX;
+		float maxY = FLT_MIN;
+		float minZ = FLT_MAX;
+		float maxZ = FLT_MIN;
+
+		for (size_t j = 0; j < frustumEdges.size(); j++)
+		{
+			minX = std::min(minX, frustumEdges[j].x);
+			minY = std::min(minY, frustumEdges[j].y);
+			minZ = std::min(minZ, frustumEdges[j].z);
+
+			maxX = std::max(maxX, frustumEdges[j].x);
+			maxY = std::max(maxY, frustumEdges[j].y);
+			maxZ = std::max(maxZ, frustumEdges[j].z);
+		}
+
+		cascadeData[i].projectionMat = glm::ortho(minX - farPlane * (CSMXYDepth / 4.0f), maxX + farPlane * (CSMXYDepth / 4.0f),
+												  minY - farPlane * (CSMXYDepth / 4.0f), maxY + farPlane * (CSMXYDepth / 4.0f),
+												  minZ - farPlane * CSMZDepth, maxZ + farPlane * CSMZDepth);
 	}
 }
 
 FEDirectionalLight::FEDirectionalLight() : FELight(FE_DIRECTIONAL_LIGHT)
 {
-	updateProjectionMat();
-}
-
-void FEDirectionalLight::updateProjectionMat()
-{
-	cascadeData[0].size = firstCascadeSize;
-	cascadeData[0].projectionMat = glm::ortho(-cascadeData[0].size,
-											  cascadeData[0].size,
-											  -cascadeData[0].size,
-											  cascadeData[0].size, 0.1f, cascadeData[0].size * 10.0f);
-
-	cascadeData[1].size = cascadeData[0].size * cascadeDistributionExponent;
-	cascadeData[1].projectionMat = glm::ortho(-cascadeData[1].size,
-											  cascadeData[1].size,
-											  -cascadeData[1].size,
-											  cascadeData[1].size, 0.1f, cascadeData[1].size * 10.0f);
-
-	cascadeData[2].size = cascadeData[1].size * cascadeDistributionExponent;
-	cascadeData[2].projectionMat = glm::ortho(-cascadeData[2].size,
-											  cascadeData[2].size,
-											  -cascadeData[2].size,
-											  cascadeData[2].size, 0.1f, cascadeData[2].size * 10.0f);
-
-	cascadeData[3].size = cascadeData[2].size * cascadeDistributionExponent;
-	cascadeData[3].projectionMat = glm::ortho(-cascadeData[3].size,
-											  cascadeData[3].size,
-											  -cascadeData[3].size,
-											  cascadeData[3].size, 0.1f, cascadeData[3].size * 10.0f);
 }
 
 glm::vec3 FEDirectionalLight::getDirection()
@@ -179,32 +200,44 @@ void FEDirectionalLight::setActiveCascades(int newActiveCascades)
 	activeCascades = newActiveCascades;
 }
 
-float FEDirectionalLight::getCascadeDistributionExponent()
+float FEDirectionalLight::getShadowCoverage()
 {
-	return cascadeDistributionExponent;
+	return shadowCoverage;
 }
 
-void FEDirectionalLight::setCascadeDistributionExponent(float newCascadeDistributionExponent)
+void FEDirectionalLight::setShadowCoverage(float newShadowCoverage)
 {
-	if (newCascadeDistributionExponent <= 1.0f)
-		newCascadeDistributionExponent = 1.1f;
+	if (newShadowCoverage <= 0.0f)
+		newShadowCoverage = 0.1f;
 
-	cascadeDistributionExponent = newCascadeDistributionExponent;
-	updateProjectionMat();
+	shadowCoverage = newShadowCoverage;
+	//updateProjectionMat();
 }
 
-float FEDirectionalLight::getFirstCascadeSize()
+float FEDirectionalLight::getCSMZDepth()
 {
-	return firstCascadeSize;
+	return CSMZDepth;
 }
 
-void FEDirectionalLight::setFirstCascadeSize(float newFirstCascadeSize)
+void FEDirectionalLight::setCSMZDepth(float newCSMZDepth)
 {
-	if (newFirstCascadeSize <= 0.0f)
-		newFirstCascadeSize = 0.1f;
+	if (newCSMZDepth <= 0.5f)
+		newCSMZDepth = 0.5f;
 
-	firstCascadeSize = newFirstCascadeSize;
-	updateProjectionMat();
+	CSMZDepth = newCSMZDepth;
+}
+
+float FEDirectionalLight::getCSMXYDepth()
+{
+	return CSMXYDepth;
+}
+
+void FEDirectionalLight::setCSMXYDepth(float newCSMXYDepth)
+{
+	if (newCSMXYDepth <= 0.5f)
+		newCSMXYDepth = 0.5f;
+
+	CSMXYDepth = newCSMXYDepth;
 }
 
 FESpotLight::FESpotLight() : FELight(FE_SPOT_LIGHT)
@@ -272,4 +305,27 @@ float FEPointLight::getRange()
 void FEPointLight::setRange(float newRange)
 {
 	range = newRange;
+}
+
+bool FELight::isStaticShadowBias()
+{
+	return staticShadowBias;
+}
+
+void FELight::setIsStaticShadowBias(bool isStaticShadowBias)
+{
+	staticShadowBias = isStaticShadowBias;
+}
+
+float FELight::getShadowBiasVariableIntensity()
+{
+	return shadowBiasVariableIntensity;
+}
+
+void FELight::setShadowBiasVariableIntensity(float newShadowBiasVariableIntensity)
+{
+	if (newShadowBiasVariableIntensity <= 0.0f)
+		newShadowBiasVariableIntensity = 0.01f;
+
+	shadowBiasVariableIntensity = newShadowBiasVariableIntensity;
 }

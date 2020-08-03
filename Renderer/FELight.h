@@ -31,7 +31,10 @@ namespace FocalEngine
 		glm::mat4 CSM1;
 		glm::mat4 CSM2;
 		glm::mat4 CSM3;
+		glm::vec4 CSMSizes;
 		int activeCascades;
+		float biasFixed;
+		float biasVariableIntensity;
 	};
 
 	class FEScene;
@@ -59,6 +62,12 @@ namespace FocalEngine
 		float getShadowBias();
 		void setShadowBias(float newShadowBias);
 
+		bool isStaticShadowBias();
+		void setIsStaticShadowBias(bool isStaticShadowBias);
+
+		float getShadowBiasVariableIntensity();
+		void setShadowBiasVariableIntensity(float newShadowBiasVariableIntensity);
+
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
 
@@ -75,7 +84,9 @@ namespace FocalEngine
 
 		bool enabled = true;
 
-		float shadowBias;
+		bool staticShadowBias = false;
+		float shadowBias = 0.001f;
+		float shadowBiasVariableIntensity = 1.0f;
 		bool castShadows = true;
 	};
 
@@ -106,24 +117,27 @@ namespace FocalEngine
 
 		int getActiveCascades();
 		void setActiveCascades(int newActiveCascades);
-		
-		float getCascadeDistributionExponent();
-		void setCascadeDistributionExponent(float newCascadeDistributionExponent);
 
-		float getFirstCascadeSize();
-		void setFirstCascadeSize(float newFirstCascadeSize);
+		float getShadowCoverage();
+		void setShadowCoverage(float newShadowCoverage);
+
+		float getCSMZDepth();
+		void setCSMZDepth(float newCSMZDepth);
+
+		float getCSMXYDepth();
+		void setCSMXYDepth(float newCSMXYDepth);
 	protected:
 		glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 defaultDirection = glm::vec3(0.0f, 0.0f, -1.0f);
 
 		bool useCascadeShadows = true;
 		int activeCascades = 4;
-		float firstCascadeSize = 50.0f;
-		float cascadeDistributionExponent = 4.0f;
+		float shadowCoverage = 50.0f;
+		float CSMZDepth = 3.0f;
+		float CSMXYDepth = 1.0f;
 		FECascadeData cascadeData[4];
 
-		void updateCascades(glm::vec3 cameraPosition, glm::vec3 cameraDirection);
-		void updateProjectionMat();
+		void updateCascades(float cameraFov, float aspectRatio, float nearPlane, float farPlane, glm::mat4 viewMatrix);
 	};
 
 	class FESpotLight : public FELight

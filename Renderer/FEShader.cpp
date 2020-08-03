@@ -11,6 +11,7 @@ FEShaderParam::FEShaderParam(int Data, std::string Name)
 	data = new int(Data);
 	type = FE_INT_SCALAR_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShaderParam::FEShaderParam(float Data, std::string Name)
@@ -18,6 +19,7 @@ FEShaderParam::FEShaderParam(float Data, std::string Name)
 	data = new float(Data);
 	type = FE_FLOAT_SCALAR_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
@@ -25,6 +27,7 @@ FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
 	data = new glm::vec2(Data);
 	type = FE_VECTOR2_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
@@ -32,6 +35,7 @@ FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
 	data = new glm::vec3(Data);
 	type = FE_VECTOR3_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
@@ -39,6 +43,7 @@ FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
 	data = new glm::vec4(Data);
 	type = FE_VECTOR4_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
@@ -46,6 +51,7 @@ FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
 	data = new glm::mat4(Data);
 	type = FE_MAT4_UNIFORM;
 	name = Name;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 void FEShaderParam::updateData(int Data)
@@ -216,6 +222,7 @@ std::string FEShaderParam::getName()
 void FEShaderParam::setName(std::string newName)
 {
 	name = newName;
+	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
@@ -374,7 +381,7 @@ void FEShader::registerUniforms()
 	if (uniformBlockIndex != size_t(-1))
 	{
 		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 0));
-		blockUniforms["lightInfo"] = size_t(-1);
+		blockUniforms[std::hash<std::string>{}("lightInfo")] = size_t(-1);
 	}
 
 	uniformBlockIndex = -1;
@@ -382,26 +389,21 @@ void FEShader::registerUniforms()
 	if (uniformBlockIndex != size_t(-1))
 	{
 		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 1));
-		blockUniforms["directionalLightInfo"] = size_t(-1);
+		blockUniforms[std::hash<std::string>{}("directionalLightInfo")] = size_t(-1);
 	}
 
 	start();
 	for (size_t i = 0; i < textureUniforms.size(); i++)
 	{
-		int temp = i;
-		loadScalar(textureUniforms[i].c_str(), temp);
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i].c_str()), i));
 	}
 
 	if (CSM)
 	{
-		int temp = 16;
-		loadScalar("CSM0", temp);
-		temp = 17;
-		loadScalar("CSM1", temp);
-		temp = 18;
-		loadScalar("CSM2", temp);
-		temp = 19;
-		loadScalar("CSM3", temp);
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM0"), 16));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM1"), 17));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM2"), 18));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM3"), 19));
 	}
 	stop();
 }
@@ -587,39 +589,39 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	return parsedShaderText;
 }
 
-GLuint FEShader::getUniformLocation(const char* name)
+GLuint FEShader::getUniformLocation(int& uniformNameHash)
 {
-	FE_GL_ERROR(return glGetUniformLocation(programID, name));
+	return uniformLocations[uniformNameHash];
 }
 
-void FEShader::loadScalar(const char* uniformName, GLfloat& value)
+void FEShader::loadScalar(int& uniformNameHash, GLfloat& value)
 {
-	FE_GL_ERROR(glUniform1f(getUniformLocation(uniformName), value));
+	FE_GL_ERROR(glUniform1f(uniformLocations[uniformNameHash], value));
 }
 
-void FEShader::loadScalar(const char* uniformName, GLint& value)
+void FEShader::loadScalar(int& uniformNameHash, GLint& value)
 {
-	FE_GL_ERROR(glUniform1i(getUniformLocation(uniformName), value));
+	FE_GL_ERROR(glUniform1i(uniformLocations[uniformNameHash], value));
 }
 
-void FEShader::loadVector(const char* uniformName, glm::vec2& vector)
+void FEShader::loadVector(int& uniformNameHash, glm::vec2& vector)
 {
-	FE_GL_ERROR(glUniform2f(getUniformLocation(uniformName), vector.x, vector.y));
+	FE_GL_ERROR(glUniform2f(uniformLocations[uniformNameHash], vector.x, vector.y));
 }
 
-void FEShader::loadVector(const char* uniformName, glm::vec3& vector)
+void FEShader::loadVector(int& uniformNameHash, glm::vec3& vector)
 {
-	FE_GL_ERROR(glUniform3f(getUniformLocation(uniformName), vector.x, vector.y, vector.z));
+	FE_GL_ERROR(glUniform3f(uniformLocations[uniformNameHash], vector.x, vector.y, vector.z));
 }
 
-void FEShader::loadVector(const char* uniformName, glm::vec4& vector)
+void FEShader::loadVector(int& uniformNameHash, glm::vec4& vector)
 {
-	FE_GL_ERROR(glUniform4f(getUniformLocation(uniformName), vector.x, vector.y, vector.z, vector.w));
+	FE_GL_ERROR(glUniform4f(uniformLocations[uniformNameHash], vector.x, vector.y, vector.z, vector.w));
 }
 
-void FEShader::loadMatrix(const char* uniformName, glm::mat4& matrix)
+void FEShader::loadMatrix(int& uniformNameHash, glm::mat4& matrix)
 {
-	FE_GL_ERROR(glUniformMatrix4fv(getUniformLocation(uniformName), 1, false, glm::value_ptr(matrix)));
+	FE_GL_ERROR(glUniformMatrix4fv(uniformLocations[uniformNameHash], 1, false, glm::value_ptr(matrix)));
 }
 
 void FEShader::loadDataToGPU()
@@ -634,37 +636,37 @@ void FEShader::loadDataToGPU()
 		{
 			case FE_INT_SCALAR_UNIFORM:
 			{
-				loadScalar(iterator->second.getName().c_str(), *(int*)iterator->second.data);
+				loadScalar(iterator->second.nameHash, *(int*)iterator->second.data);
 				break;
 			}
 
 			case FE_FLOAT_SCALAR_UNIFORM:
 			{
-				loadScalar(iterator->second.getName().c_str(), *(float*)iterator->second.data);
+				loadScalar(iterator->second.nameHash, *(float*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR2_UNIFORM:
 			{
-				loadVector(iterator->second.getName().c_str(), *(glm::vec2*)iterator->second.data);
+				loadVector(iterator->second.nameHash, *(glm::vec2*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR3_UNIFORM:
 			{
-				loadVector(iterator->second.getName().c_str(), *(glm::vec3*)iterator->second.data);
+				loadVector(iterator->second.nameHash, *(glm::vec3*)iterator->second.data);
 				break;
 			}
 
 			case FE_VECTOR4_UNIFORM:
 			{
-				loadVector(iterator->second.getName().c_str(), *(glm::vec4*)iterator->second.data);
+				loadVector(iterator->second.nameHash, *(glm::vec4*)iterator->second.data);
 				break;
 			}
 
 			case FE_MAT4_UNIFORM:
 			{
-				loadMatrix(iterator->second.getName().c_str(), *(glm::mat4*)iterator->second.data);
+				loadMatrix(iterator->second.nameHash, *(glm::mat4*)iterator->second.data);
 				break;
 			}
 
@@ -686,6 +688,9 @@ void FEShader::addParameter(FEShaderParam Parameter)
 	Parameter.loadedFromEngine = find;
 
 	parameters[Parameter.getName()] = Parameter;
+
+	parameters[Parameter.getName()].nameHash = std::hash<std::string>{}(Parameter.getName());
+	uniformLocations[parameters[Parameter.getName()].nameHash] = glGetUniformLocation(programID, Parameter.getName().c_str());
 }
 
 std::vector<std::string> FEShader::getParameterList()
@@ -756,80 +761,3 @@ char* FEShader::getComputeShaderText()
 {
 	return computeShaderText;
 }
-
-//bool FEShader::addTessControlShader(char* tessControlShader, bool testCompilation)
-//{
-//	testCompilationMode = testCompilation;
-//	tessControlShaderID = loadShader(tessControlShader, GL_TESS_CONTROL_SHADER);
-//	size_t textLenght = strlen(tessControlShader);
-//	if (tessControlShaderText != nullptr)
-//		delete tessControlShaderText;
-//	tessControlShaderText = new char[textLenght + 1];
-//	strcpy_s(tessControlShaderText, textLenght + 1, tessControlShader);
-//
-//	if (compilationErrors.size() != 0)
-//		return false;
-//
-//	FE_GL_ERROR(glAttachShader(programID, tessControlShaderID));
-//	FE_GL_ERROR(glLinkProgram(programID));
-//	FE_GL_ERROR(glValidateProgram(programID));
-//
-//	FE_GL_ERROR(glDeleteShader(tessControlShaderID));
-//
-//	return true;
-//}
-//
-//bool FEShader::addTessEvalShader(char* tessEvalShader, bool testCompilation)
-//{
-//	testCompilationMode = testCompilation;
-//	tessEvalShaderID = loadShader(tessEvalShader, GL_TESS_EVALUATION_SHADER);
-//	size_t textLenght = strlen(tessEvalShader);
-//	if (tessEvalShaderText != nullptr)
-//		delete tessEvalShaderText;
-//	tessEvalShaderText = new char[textLenght + 1];
-//	strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalShader);
-//
-//	if (compilationErrors.size() != 0)
-//		return false;
-//
-//	FE_GL_ERROR(glAttachShader(programID, tessEvalShaderID));
-//	FE_GL_ERROR(glLinkProgram(programID));
-//	FE_GL_ERROR(glValidateProgram(programID));
-//
-//	FE_GL_ERROR(glDeleteShader(tessEvalShaderID));
-//
-//	return true;
-//}
-//
-//bool FEShader::addGeometryShader(char* geometryShader, bool testCompilation)
-//{
-//	testCompilationMode = testCompilation;
-//	geometryShaderID = loadShader(geometryShader, GL_GEOMETRY_SHADER);
-//	size_t textLenght = strlen(geometryShader);
-//	if (geometryShaderText != nullptr)
-//		delete geometryShaderText;
-//	geometryShaderText = new char[textLenght + 1];
-//	strcpy_s(geometryShaderText, textLenght + 1, geometryShader);
-//
-//	if (compilationErrors.size() != 0)
-//		return false;
-//
-//	return true;
-//}
-//
-//bool FEShader::addComputeShader(char* computeShader, bool testCompilation)
-//{
-//	testCompilationMode = testCompilation;
-//	computeShaderID = loadShader(computeShader, GL_COMPUTE_SHADER);
-//	size_t textLenght = strlen(computeShader);
-//	if (computeShaderText != nullptr)
-//		delete computeShaderText;
-//	computeShaderText = new char[textLenght + 1];
-//	strcpy_s(computeShaderText, textLenght + 1, computeShader);
-//
-//	if (compilationErrors.size() != 0)
-//		return false;
-//
-//	return true;
-//}
-

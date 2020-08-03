@@ -4,10 +4,6 @@
 #define FEMATERIAL_H
 
 #include "FEShader.h"
-#include "../CoreExtensions/StandardMaterial/SolidColorMaterial/FESolidColorShader.h"
-#include "../CoreExtensions/StandardMaterial/PhongMaterial/FEPhongShader.h"
-#include "../CoreExtensions/StandardMaterial/ShadowMapMaterial/FEShadowMapShader.h"
-#include "../CoreExtensions/StandardMaterial/PBRMaterial/FEPBRShader.h"
 
 namespace FocalEngine
 {
@@ -48,13 +44,42 @@ namespace FocalEngine
 		std::string getName();
 
 		glm::vec3 getBaseColor();
-		// Only infuence color of object if shader with such unifor is applied.
+		// Only infuence color of object if shader with such uniform is applied.
 		void setBaseColor(glm::vec3 newBaseColor);
+
+		float getMetalness();
+		void setMetalness(float newMetalness);
+
+		float getRoughtness();
+		void setRoughtness(float newRoughtness);
+
+		float getRoughtnessMapIntensity();
+		void setRoughtnessMapIntensity(float newRoughtnessMapIntensity);
+
+		float getMetalnessMapIntensity();
+		void setMetalnessMapIntensity(float newMetalnessMapIntensity);
+
+		float getNormalMapIntensity();
+		void setNormalMapIntensity(float newNormalMapIntensity);
+
+		float getAmbientOcclusionIntensity();
+		void setAmbientOcclusionIntensity(float newAmbientOcclusionIntensity);
+
+		float getAmbientOcclusionMapIntensity();
+		void setAmbientOcclusionMapIntensity(float newAmbientOcclusionMapIntensity);
 	private:
 		std::string name;
 		glm::vec3 diffuseColor;
 		void setName(std::string newName);
 		glm::vec3 baseColor;
+
+		float metalness = 0.01f;
+		float metalnessMapIntensity = 1.0f;
+		float roughtness = 0.8f;
+		float roughtnessMapIntensity = 1.0f;
+		float normalMapIntensity = 1.0f;
+		float ambientOcclusionMapIntensity = 1.0f;
+		float ambientOcclusionIntensity = 1.0f;
 	};
 }
 

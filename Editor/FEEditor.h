@@ -10,6 +10,7 @@
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
 #endif
+#include <functional>
 
 using namespace FocalEngine;
 
@@ -276,7 +277,6 @@ void showScale(std::string objectName, glm::vec3& scale);
 void showTransformConfiguration(std::string objectName, FETransformComponent* transform);
 
 void displayMaterialPrameter(FEShaderParam* param);
-void displayMaterialPrameters(FEMaterial* material);
 void displayLightProperties(FELight* light);
 void displayLightsProperties();
 void displaySceneEntities();
@@ -590,6 +590,7 @@ class selectTexturePopUp : public ImGuiModalPopup
 	FETexture** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
+	std::string selectedItemName = "";
 	std::vector<std::string> list;
 	std::vector<std::string> filteredList;
 	char filter[512];
@@ -597,6 +598,9 @@ class selectTexturePopUp : public ImGuiModalPopup
 	ImGuiButton* selectButton = nullptr;
 	ImGuiButton* cancelButton = nullptr;
 	ImGuiImageButton* iconButton = nullptr;
+
+	void(*onSelect)(void*) = nullptr;
+	void* ptrOnClose = nullptr;
 public:
 	selectTexturePopUp()
 	{
@@ -627,13 +631,35 @@ public:
 			delete iconButton;
 	}
 
-	void show(FETexture** texture)
+	void show(FETexture** texture, void(*func)(void*) = nullptr, void* ptr = nullptr)
 	{
+		onSelect = func;
+		ptrOnClose = ptr;
 		shouldOpen = true;
 		objToWorkWith = texture;
 		list = RESOURCE_MANAGER.getTextureList();
+		list.insert(list.begin(), "noTexture");
 		filteredList = list;
 		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (list[i] == (*objToWorkWith)->getName())
+				{
+					IndexSelected = i;
+					selectedItemName = list[i];
+					break;
+				}
+			}
+		}
+
+		if ((*objToWorkWith) == nullptr)
+		{
+			IndexSelected = 0;
+			selectedItemName = "noTexture";
+		}
 	}
 
 	void close() override
@@ -641,6 +667,17 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
+		selectedItemName = "";
+	}
+
+	void onSelectAction()
+	{
+		if (onSelect != nullptr && ptrOnClose != nullptr)
+		{
+			onSelect(ptrOnClose);
+			onSelect = nullptr;
+			ptrOnClose = nullptr;
+		}
 	}
 
 	void render() override
@@ -683,17 +720,27 @@ public:
 				{
 					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexUnderMouse]);
+						if (filteredList[IndexUnderMouse] == "noTexture")
+						{
+							*objToWorkWith = nullptr;
+						}
+						else
+						{
+							*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexUnderMouse]);
+						}
+
+						onSelectAction();
 						close();
 					}
 				}
 
-				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(RESOURCE_MANAGER.getTexture(filteredList[i]));
+				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				filteredList[i] == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(filteredList[i]));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
+					selectedItemName = filteredList[i];
 				}
 
 				if (iconButton->isHovered())
@@ -710,7 +757,16 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexSelected]);
+					if (filteredList[IndexSelected] == "noTexture")
+					{
+						*objToWorkWith = nullptr;
+					}
+					else
+					{
+						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexSelected]);
+					}
+
+					onSelectAction();
 					close();
 				}
 			}
@@ -883,6 +939,7 @@ class selectMeshPopUp : public ImGuiModalPopup
 	FEMesh** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
+	std::string selectedItemName = "";
 	std::vector<std::string> list;
 	std::vector<std::string> filteredList;
 	char filter[512];
@@ -935,6 +992,19 @@ public:
 
 		filteredList = list;
 		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (list[i] == (*objToWorkWith)->getName())
+				{
+					IndexSelected = i;
+					selectedItemName = list[i];
+					break;
+				}
+			}
+		}
 	}
 
 	void close() override
@@ -942,6 +1012,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
+		selectedItemName = "";
 	}
 
 	void render() override
@@ -990,12 +1061,13 @@ public:
 					}
 				}
 
-				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
 				iconButton->setTexture(getMeshPreview(filteredList[i]));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
+					selectedItemName = filteredList[i];
 				}
 
 				if (iconButton->isHovered())
@@ -1034,6 +1106,7 @@ class selectMaterialPopUp : public ImGuiModalPopup
 	FEMaterial** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
+	std::string selectedItemName = "";
 	std::vector<std::string> list;
 	std::vector<std::string> filteredList;
 	char filter[512];
@@ -1080,6 +1153,19 @@ public:
 		
 		filteredList = list;
 		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (list[i] == (*objToWorkWith)->getName())
+				{
+					IndexSelected = i;
+					selectedItemName = list[i];
+					break;
+				}
+			}
+		}
 	}
 
 	void close() override
@@ -1087,6 +1173,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
+		selectedItemName = "";
 	}
 
 	void render() override
@@ -1134,12 +1221,13 @@ public:
 					}
 				}
 
-				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
 				iconButton->setTexture(getMaterialPreview(filteredList[i]));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
+					selectedItemName = filteredList[i];
 				}
 
 				if (iconButton->isHovered())
@@ -1180,8 +1268,9 @@ class selectGameModelPopUp : public ImGuiModalPopup
 	FEGameModel** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
+	std::string selectedItemName = "";
 	std::vector<std::string> list;
-	std::vector<std::string> filteredlList;
+	std::vector<std::string> filteredList;
 	char filter[512];
 	bool newEntityFlag = false;
 	bool wasSelectedAlready = false;
@@ -1243,8 +1332,21 @@ public:
 			list.insert(list.begin(), standardGameModelList[i]);
 		}
 
-		filteredlList = list;
+		filteredList = list;
 		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (list[i] == (*objToWorkWith)->getName())
+				{
+					IndexSelected = i;
+					selectedItemName = list[i];
+					break;
+				}
+			}
+		}
 	}
 
 	void close() override
@@ -1252,6 +1354,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
+		selectedItemName = "";
 	}
 
 	void render() override
@@ -1268,16 +1371,16 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredlList = list;
+					filteredList = list;
 				}
 				else
 				{
-					filteredlList.clear();
+					filteredList.clear();
 					for (size_t i = 0; i < list.size(); i++)
 					{
 						if (list[i].find(filter) != -1)
 						{
-							filteredlList.push_back(list[i]);
+							filteredList.push_back(list[i]);
 						}
 					}
 				}
@@ -1287,33 +1390,34 @@ public:
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(60);
 			ImGui::Columns(5, "selectGameModelPopupColumns", false);
-			for (size_t i = 0; i < filteredlList.size(); i++)
+			for (size_t i = 0; i < filteredList.size(); i++)
 			{
-				ImGui::PushID(filteredlList[i].c_str());
+				ImGui::PushID(filteredList[i].c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (IndexUnderMouse != -1 && !wasSelectedAlready)
 					{
 						if (newEntityFlag)
 						{
-							FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]));
+							FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
 							wasSelectedAlready = true;
 						}
 						else
 						{
-							*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]);
+							*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]);
 						}
 						
 						close();
 					}
 				}
-
-				IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(getGameModelPreview(filteredlList[i]));
+				
+				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(getGameModelPreview(filteredList[i]));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
+					selectedItemName = filteredList[i];
 				}
 
 				if (iconButton->isHovered())
@@ -1321,7 +1425,7 @@ public:
 					IndexUnderMouse = i;
 				}
 
-				ImGui::Text(filteredlList[i].c_str());
+				ImGui::Text(filteredList[i].c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
 			}
@@ -1334,11 +1438,11 @@ public:
 				{
 					if (newEntityFlag)
 					{
-						FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredlList[IndexSelected]));
+						FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexSelected]));
 					}
 					else
 					{
-						*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredlList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]);
 					}
 					close();
 				}
@@ -1931,11 +2035,17 @@ public:
 		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
 		currentEditor = &vertexShaderEditor;
 		vertexShaderEditor.SetShowWhitespaces(false);
+		vertexShaderEditor.SetPalette(TextEditor::GetLightPalette());
 		tessControlShaderEditor.SetShowWhitespaces(false);
+		tessControlShaderEditor.SetPalette(TextEditor::GetLightPalette());
 		tessEvalShaderEditor.SetShowWhitespaces(false);
+		tessEvalShaderEditor.SetPalette(TextEditor::GetLightPalette());
 		geometryShaderEditor.SetShowWhitespaces(false);
+		geometryShaderEditor.SetPalette(TextEditor::GetLightPalette());
 		fragmentShaderEditor.SetShowWhitespaces(false);
+		fragmentShaderEditor.SetPalette(TextEditor::GetLightPalette());
 		computeShaderEditor.SetShowWhitespaces(false);
+		computeShaderEditor.SetPalette(TextEditor::GetLightPalette());
 
 		size = ImVec2(800, 600);
 		compileButton = new ImGuiButton("Compile");
@@ -1960,11 +2070,21 @@ public:
 			tessControlShaderEditor.SetText(shaderToEdit->getTessControlShaderText());
 			tessControlShaderUsed = true;
 		}
+		else
+		{
+			tessControlShaderEditor.SetText("");
+			tessControlShaderUsed = false;
+		}
 
 		if (shaderToEdit->getTessEvalShaderText() != nullptr)
 		{
 			tessEvalShaderEditor.SetText(shaderToEdit->getTessEvalShaderText());
 			tessEvalShaderUsed = true;
+		}
+		else
+		{
+			tessEvalShaderEditor.SetText("");
+			tessEvalShaderUsed = false;
 		}
 
 		if (shaderToEdit->getGeometryShaderText() != nullptr)
@@ -1972,16 +2092,12 @@ public:
 			geometryShaderEditor.SetText(shaderToEdit->getGeometryShaderText());
 			geometryShaderUsed = true;
 		}
-
-		/*list = RESOURCE_MANAGER.getStandardShadersList();
-		std::string text;
-		for (size_t i = 0; i < list.size(); i++)
+		else
 		{
-			text += list[i];
-			text += '\n';
+			geometryShaderEditor.SetText("");
+			geometryShaderUsed = false;
 		}
-		ImGui::SetClipboardText(text.c_str());
-		editor.Paste();*/
+
 		std::string tempCaption = "Edit shader: ";
 		tempCaption += shaderToEdit->getName();
 		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());

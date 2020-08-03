@@ -11,11 +11,13 @@ namespace FocalEngine
 	};
 
 	class FEResourceManager;
+	class FERenderer;
 	class FEPostProcess;
 
 	class FETexture
 	{
 		friend FEResourceManager;
+		friend FERenderer;
 		friend FEPostProcess;
 	public:
 		FETexture();

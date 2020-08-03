@@ -54,6 +54,9 @@ namespace FocalEngine
 		float getHightScale();
 		void setHightScale(float newHightScale);
 
+		float getDisplacementScale();
+		void setDisplacementScale(float newDisplacementScale);
+
 		glm::vec2 getTileMult();
 		void setTileMult(glm::vec2 newTileMult);
 
@@ -71,13 +74,14 @@ namespace FocalEngine
 		bool castShadows = true;
 		bool receiveShadows = true;
 
-		float hightScale = 1.0;
-		float scaleFactor = 1.0;
+		float hightScale = 1.0f;
+		float displacementScale = 0.2f;
+		float scaleFactor = 1.0f;
 		glm::vec2 tileMult = glm::vec2(1.0);
 		glm::vec2 hightMapShift = glm::vec2(0.0);
-		float chunkPerSide = 4.0;
+		float chunkPerSide = 4.0f;
 
-		float LODlevel = 64.0;
+		float LODlevel = 64.0f;
 	};
 }
 

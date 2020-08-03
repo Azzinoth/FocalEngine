@@ -188,9 +188,20 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
 	RENDERER.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
+
+	FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
+	FEShader* chromaticAberrationShader = RESOURCE_MANAGER.createShader("chromaticAberrationShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ChromaticAberration_VS.glsl").c_str(),
+																									 RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ChromaticAberration_FS.glsl").c_str());
+	chromaticAberrationEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0 }, chromaticAberrationShader));
+	chromaticAberrationEffect->stages.back()->shader->getParameter("intensity")->updateData(1.0f);
+	RENDERER.addPostProcess(chromaticAberrationEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
+	RENDERER.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
 	
 	RENDERER.shadowMapMaterial = RESOURCE_MANAGER.createMaterial("shadowMapMaterial");
-	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", FEShadowMapVS, FEShadowMapFS);
+	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str(),
+																							RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterial->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterial);
 

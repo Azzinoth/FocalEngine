@@ -891,6 +891,7 @@ void FEResourceManager::loadStandardMeshes()
 FEResourceManager::FEResourceManager()
 {
 	noTexture = new FETexture();
+	noTexture->setName("noTexture");
 	LoadFETexture("noTexture.FETexture", noTexture);
 
 	loadStandardMaterial();
@@ -1146,21 +1147,32 @@ bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
 void FEResourceManager::loadStandardMaterial()
 {
 	FEMaterial* newMaterial = createMaterial("SolidColorMaterial");
-	newMaterial->shader = createShader("FESolidColorShader", FESolidColorVS, FESolidColorFS);
+	newMaterial->shader = createShader("FESolidColorShader", loadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str(),
+															 loadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str());
 	makeShaderStandard(newMaterial->shader);
 	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
 	newMaterial->addParameter(color);
 
 	makeMaterialStandard(newMaterial);
 
-	createShader("FEPhongShader", FEPhongVS, FEPhongFS);
+	createShader("FEPhongShader", loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str(),
+								  loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str());
 	makeShaderStandard(getShader("FEPhongShader"));
 
-	createShader("FEPBRShader", FEPBRVS, FEPBRFS);
+	createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+								loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 	makeShaderStandard(getShader("FEPBRShader"));
 
-	createShader("FETerrainShader", FETerrainVS, FETerrainFS, FETerrainTCS, FETerrainTES, FETerrainGS);
+	createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(), 
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
 	makeShaderStandard(getShader("FETerrainShader"));
+
+	createShader("FESkyDome", loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
+							  loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
+	makeShaderStandard(getShader("FESkyDome"));
 }
 
 void FEResourceManager::loadStandardGameModels()
@@ -1201,6 +1213,14 @@ void FEResourceManager::clear()
 		gameModelIt++;
 	}
 	gameModels.clear();
+
+	auto terrainIt = terrains.begin();
+	while (terrainIt != terrains.end())
+	{
+		delete terrainIt->second;
+		terrainIt++;
+	}
+	terrains.clear();
 }
 
 // save model raw data to FocalEngine binary file format
@@ -1624,4 +1644,27 @@ FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Na
 	}
 
 	return newTexture;
+}
+
+std::string FEResourceManager::loadGLSL(const char* fileName)
+{
+	std::string shaderData;
+	std::ifstream file(fileName);
+	std::string line;
+	
+	if (file.is_open())
+	{
+		while (getline(file, line))
+		{
+			shaderData += line;
+			shaderData += "\n";
+		}
+		file.close();
+	}
+	else
+	{
+		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.");
+	}
+
+	return shaderData;
 }

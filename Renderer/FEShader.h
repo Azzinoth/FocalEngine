@@ -46,7 +46,8 @@ namespace FocalEngine
 	static std::vector<std::string> FEStandardUniforms = 
 	{ "FEPosition", "FEColor", "FENormal", "FETangent", "FETexCoord", "FEWorldMatrix", "FEViewMatrix",
 	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor", "FEGamma", "FEExposure",
-	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[", "FEReceiveShadows", "directionalLight" };
+	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[", "FEReceiveShadows", "directionalLight", "FEAO",
+	  "FERoughtness", "FEMetalness", "FENormalMapIntensity", "FEAOIntensity", "FENormalMapPresent" };
 
 	struct FEShaderParam
 	{
@@ -71,6 +72,7 @@ namespace FocalEngine
 		void updateData(glm::vec4 Data);
 		void updateData(glm::mat4 Data);
 
+		int nameHash = 0;
 		std::string getName();
 		void setName(std::string newName);
 
@@ -99,12 +101,12 @@ namespace FocalEngine
 		virtual void start();
 		virtual void stop();
 
-		void loadScalar(const char* uniformName, GLfloat& value);
-		void loadScalar(const char* uniformName, GLint& value);
-		void loadVector(const char* uniformName, glm::vec2& vector);
-		void loadVector(const char* uniformName, glm::vec3& vector);
-		void loadVector(const char* uniformName, glm::vec4& vector);
-		void loadMatrix(const char* uniformName, glm::mat4& matrix);
+		void loadScalar(int& uniformNameHash, GLfloat& value);
+		void loadScalar(int& uniformNameHash, GLint& value);
+		void loadVector(int& uniformNameHash, glm::vec2& vector);
+		void loadVector(int& uniformNameHash, glm::vec3& vector);
+		void loadVector(int& uniformNameHash, glm::vec4& vector);
+		void loadMatrix(int& uniformNameHash, glm::mat4& matrix);
 
 		virtual void loadDataToGPU();
 		virtual void addParameter(FEShaderParam Parameter);
@@ -123,11 +125,6 @@ namespace FocalEngine
 		char* getGeometryShaderText();
 		char* getFragmentShaderText();
 		char* getComputeShaderText();
-
-		/*bool addTessControlShader(char* tessControlShader, bool testCompilation = false);
-		bool addTessEvalShader(char* tessEvalShader, bool testCompilation = false);
-		bool addGeometryShader(char* geometryShader, bool testCompilation = false);
-		bool addComputeShader(char* computeShader, bool testCompilation = false);*/
 
 		std::string getCompilationErrors();
 	private:
@@ -153,12 +150,13 @@ namespace FocalEngine
 		int vertexAttributes = 0;
 
 		std::unordered_map<std::string, FEShaderParam> parameters;
-		std::unordered_map<std::string, GLuint> blockUniforms;
+		std::unordered_map<int, GLuint> blockUniforms;
 
 		GLuint loadShader(const char* shaderText, GLuint shaderType);
 		void cleanUp();
 		void bindAttributes();
-		GLuint getUniformLocation(const char* name);
+		std::unordered_map<int, GLuint> uniformLocations;
+		GLuint getUniformLocation(int& uniformNameHash);
 		std::vector<std::string> textureUniforms;
 
 		std::string parseShaderForMacro(const char* shaderText);
