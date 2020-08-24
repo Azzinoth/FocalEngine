@@ -35,6 +35,7 @@ namespace FocalEngine
 		int activeCascades;
 		float biasFixed;
 		float biasVariableIntensity;
+		float intensity;
 	};
 
 	class FEScene;

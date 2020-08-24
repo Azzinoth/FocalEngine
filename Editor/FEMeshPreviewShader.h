@@ -1,7 +1,7 @@
 #pragma once
 
 static const char* const FEMeshPreviewVS = R"(
-#version 400 core
+#version 450 core
 
 @In_Position@
 @In_Normal@
@@ -22,7 +22,7 @@ void main(void)
 )";
 
 static const char* const FEMeshPreviewFS = R"(
-#version 400 core
+#version 450 core
 
 in vec3 fragPosition;
 in vec3 normal;

@@ -70,6 +70,7 @@ struct FEDirectionalLight
 	int activeCascades;
 	float biasFixed;
 	float biasVariableIntensity;
+	float intensity;
 };
 
 #define CSM_MAX_CASCADE 3
@@ -258,10 +259,10 @@ void main(void)
 		normal = FS_IN.vertexNormal;
 	}
 	
-	vec3 ao_base = ambientColor * FEAOIntensity;
+	vec3 ao_base = ambientColor * FEAOIntensity * (directionalLight.intensity / 16.0);
 	if (FEAOMapPresent > 0.0)
 	{
-		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(AOMap, tiledUV).r, FEAOMapIntensity), 1.0f);
+		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(AOMap, tiledUV).r * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
 	}
 	else
 	{

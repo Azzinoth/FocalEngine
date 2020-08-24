@@ -3,7 +3,7 @@
 #include "../../../Renderer/FEShader.h"
 
 static const char* const FEPixelAccurateSelectionVS = R"(
-#version 400 core
+#version 450 core
 
 @In_Position@
 @In_UV@
@@ -24,7 +24,7 @@ void main(void)
 )";
 
 static const char* const FEPixelAccurateSelectionFS = R"(
-#version 400 core
+#version 450 core
 
 in vec3 fragPosition;
 in vec2 UV;

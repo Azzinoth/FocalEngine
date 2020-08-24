@@ -21,6 +21,8 @@
 #define FE_RECEVESHADOWS_MACRO "@RECEVESHADOWS@"
 #define FE_CSM_MACRO "@CSM@"
 
+#define FE_DEBUG_MACRO "@DEBUG@("
+
 namespace FocalEngine
 {
 	enum FEShaderParamType
@@ -65,6 +67,7 @@ namespace FocalEngine
 
 		~FEShaderParam();
 
+		void updateData(void* Data);
 		void updateData(int Data);
 		void updateData(float Data);
 		void updateData(glm::vec2 Data);
@@ -86,17 +89,22 @@ namespace FocalEngine
 	class FEMaterial;
 	class FERenderer;
 	class FEPostProcess;
+	class FEngine;
 
 	class FEShader
 	{
 		friend FEMaterial;
 		friend FERenderer;
 		friend FEPostProcess;
+		friend FEngine;
 	public:
 		FEShader(std::string name, const char* vertexText, const char* fragmentText,
-				 const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-			     const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false);
+			const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
+			const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false);
 		~FEShader();
+
+		FEShader(const FEShader& shader);
+		void operator= (const FEShader& shader);
 
 		virtual void start();
 		virtual void stop();
@@ -127,7 +135,12 @@ namespace FocalEngine
 		char* getComputeShaderText();
 
 		std::string getCompilationErrors();
+
+		bool isDebugRequest();
+		std::vector<std::vector<float>>* getDebugData();
+		std::vector<std::string> getDebugVariables();
 	private:
+		void copyCode(const FEShader& shader);
 		std::string name;
 		int nameHash = 0;
 
@@ -164,6 +177,17 @@ namespace FocalEngine
 
 		bool CSM = false;
 		bool testCompilationMode = false;
+
+#ifdef FE_DEBUG_ENABLED
+		bool debugRequest = false;
+		GLuint SSBO = -1;
+		GLint SSBOBinding;
+		unsigned int SSBOSize = 1024 * 1024 * sizeof(float);
+		inline void createSSBO();
+		int thisFrameDebugBind = 0;
+		std::vector<std::string> debugVariables;
+		std::vector<std::vector<float>> debugData;
+#endif
 	};
 
 	struct FEShaderBlueprint

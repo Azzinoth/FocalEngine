@@ -3,7 +3,7 @@
 #include "FEEntity.h"
 
 static const char* const FEScreenQuadVS = R"(
-#version 400 core
+#version 450 core
 
 @In_Position@
 out vec2 textureCoords;
@@ -16,7 +16,7 @@ void main(void)
 )";
 
 static const char* const FEScreenQuadFS = R"(
-#version 400 core
+#version 450 core
 
 in vec2 textureCoords;
 @Texture@ quadTexture;
@@ -42,6 +42,7 @@ namespace FocalEngine
 		FEPostProcessStage(int InTextureSource, FEShader* Shader);
 		FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader);
 
+		std::vector<FEShaderParam> stageSpecificUniforms;
 		std::vector<int> inTextureSource;
 		std::vector<FETexture*> inTexture;
 		FEShader* shader = nullptr;

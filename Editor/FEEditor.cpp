@@ -565,6 +565,72 @@ void displaySceneEntities()
 	ImGui::DragFloat("Camera Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
 	ENGINE.getCamera()->setExposure(FEExposure);
 
+	float cameraSpeed = reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->getSpeed();
+	ImGui::DragFloat("Camera speed in m/s", &cameraSpeed, 0.01f, 0.01f, 100.0f);
+	reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->setSpeed(cameraSpeed);
+
+	static bool displayGrid = true;
+	ImGui::Checkbox("Display grid", &displayGrid);
+
+	static glm::vec3 color = glm::vec3(0.2f, 0.3f, 0.4f);
+
+	
+	float basicW = 0.1f;
+	float width = basicW * 4.0f;
+	if (displayGrid)
+	{
+		int gridSize = 200;
+		for (int i = -gridSize / 2; i < gridSize / 2; i++)
+		{
+			color = glm::vec3(0.4f, 0.65f, 0.73f);
+			width = basicW * 4.0f;
+			if (i % 2 != 0 && i != 0)
+			{
+				color = color / 4.0f;
+				width = width / 4.0f;
+			}
+			else if (i == 0)
+			{
+				color = glm::vec3(0.9f, 0.9f, 0.9f);
+				width = basicW * 4.0f;
+			}
+
+			RENDERER.drawLine(glm::vec3(i, 0.0f, -gridSize / 2), glm::vec3(i, 0.0f, gridSize / 2), color, width);
+			RENDERER.drawLine(glm::vec3(-gridSize / 2, 0.0f, i), glm::vec3(gridSize / 2, 0.0f, i), color, width);
+		}
+	}
+
+	//RENDERER.drawLine(glm::vec3(1.0), glm::vec3(10.0), color, 0.05f);
+	//RENDERER.drawLine(glm::vec3(10.0), glm::vec3(-7.0, 1.0, 4.0), color, 0.5f);
+
+	static bool displaySelectedEntityAABB = false;
+	ImGui::Checkbox("Display AABB of selected entity", &displaySelectedEntityAABB);
+	// draw AABB
+	if (selectedEntity.size() != 0 && displaySelectedEntityAABB)
+	{
+		FEAABB selectedAABB = SCENE.getEntity(selectedEntity)->getAABB();
+		color = glm::vec3(0.1f, 0.6f, 0.1f);
+		static float width = 0.2f;
+
+		// bottom plane
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
+
+		// upper plane
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
+	
+		// conect two planes
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
+		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
+	}
+
 	ImGui::End();
 
 	selectMeshWindow.render();
@@ -586,6 +652,12 @@ void displayMaterialContentBrowser()
 	ImGui::Separator();
 	static std::string selectedShader = "";
 	std::vector<std::string> shaderList = RESOURCE_MANAGER.getStandardShadersList();
+	std::vector<std::string> tempList = RESOURCE_MANAGER.getShadersList();
+	for (size_t i = 0; i < tempList.size(); i++)
+	{
+		shaderList.push_back(tempList[i]);
+	}
+
 	if (ImGui::BeginCombo("Shaders", selectedShader.c_str(), ImGuiWindowFlags_None))
 	{
 		for (size_t n = 0; n < shaderList.size(); n++)
@@ -756,18 +828,7 @@ void displayPostProcessContentBrowser()
 		if (ImGui::CollapsingHeader(PPEffect->getName().c_str(), 0)) //ImGuiTreeNodeFlags_DefaultOpen
 		{
 			for (size_t j = 0; j < PPEffect->stages.size(); j++)
-			{
-				// small hack for DOF in order not to display same settings for two times!
-				if (PPEffect->getName() == "DOF" && j > 0)
-				{
-					std::vector<std::string> params = PPEffect->stages[1]->shader->getParameterList();
-					for (size_t k = 0; k < params.size(); k++)
-					{
-						PPEffect->stages[1]->shader->getParameter(params[k])->updateData(*(float*)PPEffect->stages[0]->shader->getParameter(params[k])->data);
-					}
-					continue;
-				}
-					
+			{	
 				ImGui::PushID(j);
 				std::vector<std::string> params = PPEffect->stages[j]->shader->getParameterList();
 				FEShaderParam* param;
@@ -778,6 +839,17 @@ void displayPostProcessContentBrowser()
 						continue;
 					displayMaterialPrameter(param);
 				}
+				
+				for (size_t k = 0; k < PPEffect->stages[j]->stageSpecificUniforms.size(); k++)
+				{
+					ImGui::PushID(j + k + 1);
+					param = &PPEffect->stages[j]->stageSpecificUniforms[k];
+					if (param->loadedFromEngine)
+						continue;
+					displayMaterialPrameter(param);
+					ImGui::PopID();
+				}
+
 				ImGui::PopID();
 			}
 		}
@@ -1887,27 +1959,40 @@ void loadEditor()
 	haloMaterial->shader = RESOURCE_MANAGER.createShader("HaloDrawObjectShader", HaloDrawObjectVS, HaloDrawObjectFS);
 	RESOURCE_MANAGER.makeShaderStandard(haloMaterial->shader);
 
-	selectionHaloEffect = ENGINE.createPostProcess("selectionHaloEffect");
-	FEShader* newShader = RESOURCE_MANAGER.createShader("FESelectionHaloBloomEffectHorizontalShader", FEBloomEffectVS, FEBloomEffectHorizontalFS);
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, newShader));
-	RESOURCE_MANAGER.makeShaderStandard(newShader);
+	selectionHaloEffect = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+
+	FEShader* blurShader = RESOURCE_MANAGER.getShader("FEBloomBlur");
+	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, blurShader));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	// because input texture at first stage is full resolution, we should blur harder to get simular blur on both sides.
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f * 4.0f, "BloomSize"));
 	selectionHaloEffect->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
-	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
 
-	newShader = RESOURCE_MANAGER.createShader("FESelectionHaloBloomEffectVerticalShader", FEBloomEffectVS, FEBloomEffectVerticalFS);
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, newShader));
-	RESOURCE_MANAGER.makeShaderStandard(newShader);
+	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f, "BloomSize"));
 	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->outTexture);
-	selectionHaloEffect->stages.back()->shader->getParameter("BloomSize")->updateData(4.0f);
-	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
 
-	newShader = RESOURCE_MANAGER.createShader("HaloFinalShader", HaloFinalVS, HaloFinalFS);
-	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, newShader));
-	RESOURCE_MANAGER.makeShaderStandard(newShader);
+	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->outTexture);
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+
+	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	selectionHaloEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->outTexture);
+	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+
+	FEShader* haloFinalShader = RESOURCE_MANAGER.createShader("HaloFinalShader", HaloFinalVS, HaloFinalFS);
+	selectionHaloEffect->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, haloFinalShader));
+	RESOURCE_MANAGER.makeShaderStandard(haloFinalShader);
 	selectionHaloEffect->stages.back()->inTexture.push_back(RENDERER.postProcessEffects[RENDERER.postProcessEffects.size() - 1]->stages.back()->outTexture);
 	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
-	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[1]->outTexture);
+	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[3]->outTexture);
 	selectionHaloEffect->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	selectionHaloEffect->stages.back()->inTexture.push_back(selectionHaloEffect->stages[0]->inTexture[0]);
 	selectionHaloEffect->stages.back()->outTexture = RENDERER.sceneToTextureFB->getColorAttachment()->createSameFormatTexture(ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
@@ -1917,10 +2002,6 @@ void loadEditor()
 	loadGizmos();
 
 	ENGINE.getCamera()->setOnUpdate(editorOnCameraUpdate);
-
-	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FEPBRShader"));
-	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FETerrainShader"));
-	//shadersEditorWindow.show(RESOURCE_MANAGER.getShader("FEPhongShader"));
 }
 
 std::vector<std::string> getFolderList(const char* dirPath)
@@ -1949,6 +2030,7 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 	if (selectedEntityObject != nullptr)
 	{
 		haloObjectsFB->bind();
+		//FE_GL_ERROR(glViewport(0, 0, haloObjectsFB->getWidth(), haloObjectsFB->getHeight()));
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
@@ -1960,6 +2042,7 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 		haloMaterial->albedoMap = nullptr;
 
 		haloObjectsFB->unBind();
+		//FE_GL_ERROR(glViewport(0, 0, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
 		glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 		selectionHaloEffect->active = true;
 	}
@@ -2245,7 +2328,7 @@ void renderEditor()
 					{
 						setSelectedEntity(entitiesUnderMouse[index]);
 					}
-				}		
+				}
 			}
 
 			if (!newEntityFound)

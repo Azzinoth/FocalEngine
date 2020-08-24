@@ -1518,7 +1518,6 @@ void FEResourceManager::initializeShaderBlueprints(std::vector<FEShaderBlueprint
 
 void FEResourceManager::deleteShader(std::string shaderName)
 {
-	// for now
 	FEShader* shaderToDelete = getShader(shaderName);
 	if (shaderToDelete == nullptr)
 		return;
@@ -1542,9 +1541,29 @@ void FEResourceManager::deleteShader(std::string shaderName)
 	}
 
 	shaders.erase(shaderName);
-	// for now
 	standardShaders.erase(shaderName);
 	delete shaderToDelete;
+}
+
+bool FEResourceManager::replaceShader(std::string oldShaderName, FEShader* newShader)
+{
+	FEShader* shaderToReplace = getShader(oldShaderName);
+	if (shaderToReplace == nullptr)
+		return false;
+
+	if (newShader->getName().size() == 0 && (shaders.find(newShader->getName()) != shaders.end() || standardShaders.find(newShader->getName()) != standardShaders.end()))
+		return false;
+
+	if (shaders.find(newShader->getName()) != shaders.end())
+	{
+		*(shaders[oldShaderName]) = *newShader;
+	}
+	else if (standardShaders.find(newShader->getName()) != standardShaders.end())
+	{
+		*(standardShaders[oldShaderName]) = *newShader;
+	}
+
+	return true;
 }
 
 FETerrain* FEResourceManager::createTerrain(std::string name)

@@ -32,6 +32,8 @@ namespace FocalEngine
 		FETexture* CSM1 = nullptr;
 		FETexture* CSM2 = nullptr;
 		FETexture* CSM3 = nullptr;
+
+		void drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color = glm::vec3(1.0f), float width = 0.1f);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
@@ -45,8 +47,16 @@ namespace FocalEngine
 		int uniformBufferCount = 0;
 		const int UBufferForLightSize = 192;
 		GLuint uniformBufferForLights;
-		const int UBufferForDirectionalLightSize = 380;
+		const int UBufferForDirectionalLightSize = 384;
 		GLuint uniformBufferForDirectionalLight;
+
+		// Instanced lines
+		FEShader* instancedLineShader = nullptr;
+		std::vector<FELine> linesBuffer;
+		int maxLines = 10000;
+		int lineCounter = 0;
+		GLuint instancedLineVAO = 0;
+		GLenum instancedLineBuffer = 0;
 	};
 }
 

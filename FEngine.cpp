@@ -36,6 +36,23 @@ void FEngine::beginFrame(bool internalCall)
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+
+#ifdef FE_DEBUG_ENABLED
+	std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
+	std::vector<std::string> tempList = RESOURCE_MANAGER.getStandardShadersList();
+	for (size_t i = 0; i < tempList.size(); i++)
+	{
+		shaderList.push_back(tempList[i]);
+	}
+
+	for (size_t i = 0; i < shaderList.size(); i++)
+	{
+		if (RESOURCE_MANAGER.getShader(shaderList[i])->isDebugRequest())
+		{
+			RESOURCE_MANAGER.getShader(shaderList[i])->thisFrameDebugBind = 0;
+		}
+	}
+#endif
 }
 
 void FEngine::render(bool internalCall)
@@ -161,20 +178,55 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	currentCamera->setAspectRatio(float(width) / float(height));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
-	FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	FE_GL_ERROR(glCullFace(GL_BACK));
+	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	//FE_GL_ERROR(glCullFace(GL_BACK));
 
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
+
+	RENDERER.instancedLineShader = RESOURCE_MANAGER.createShader("instancedLine", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str(),
+																				  RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str());
 
 	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.createShader("FEScreenQuadShader", FEScreenQuadVS, FEScreenQuadFS);
 	RESOURCE_MANAGER.makeShaderStandard(FEScreenQuadShader);
 
 	RENDERER.standardFBInit(windowW, windowH);
 	
-	FEBloomEffect* bloomEffect = new FEBloomEffect(RESOURCE_MANAGER.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
-	RESOURCE_MANAGER.initializeShaderBlueprints(bloomEffect->shaderBluePrints);
-	bloomEffect->initialize();
+	// ************************************ Bloom ************************************
+	FEPostProcess* bloomEffect = ENGINE.createPostProcess("bloom", int(windowW / 4.0f), int(windowH / 4.0f));
+
+	FocalEngine::FEShader* BloomThresholdShader =
+		RESOURCE_MANAGER.createShader("FEBloomThreshold", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
+														  RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str());
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, BloomThresholdShader));
+	bloomEffect->stages[0]->shader->getParameter("thresholdBrightness")->updateData(1.0f);
+
+	FocalEngine::FEShader* BloomBlurShader =
+		RESOURCE_MANAGER.createShader("FEBloomBlur", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
+												     RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str());
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+	
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	FocalEngine::FEShader* BloomCompositionShader =
+		RESOURCE_MANAGER.createShader("FEBloomThreshold", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
+														  RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str());
+	bloomEffect->addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, BloomCompositionShader));
+
 	RENDERER.addPostProcess(bloomEffect);
+	// ************************************ Bloom END ************************************
 
 	FEGammaAndHDRCorrection* gammaHDR = new FEGammaAndHDRCorrection(RESOURCE_MANAGER.getMesh("plane"), FEScreenQuadShader, windowW, windowH);
 	RESOURCE_MANAGER.initializeShaderBlueprints(gammaHDR->shaderBluePrints);
@@ -188,6 +240,30 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
 	RENDERER.postProcessEffects.back()->stages[0]->outTexture = new FETexture(GL_RGB, GL_RGB, windowW, windowH);
+
+	// ************************************ DOF ************************************
+	FocalEngine::FEPostProcess* DOFEffect = ENGINE.createPostProcess("DOF");
+	FocalEngine::FEShader* DOFShader = RESOURCE_MANAGER.createShader("DOF", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_DOF_VS.glsl").c_str(),
+																			RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_DOF_FS.glsl").c_str());
+
+	DOFEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, DOFShader));
+	DOFEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->stages.back()->shader->getParameter("blurSize")->updateData(2.0f);
+	DOFEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(0.0f);
+	DOFEffect->stages.back()->shader->getParameter("depthThresholdFar")->updateData(9000.0f);
+	DOFEffect->stages.back()->shader->getParameter("zNear")->updateData(0.1f);
+	DOFEffect->stages.back()->shader->getParameter("zFar")->updateData(5000.0f);
+	DOFEffect->stages.back()->shader->getParameter("intMult")->updateData(100.0f);
+	DOFEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, DOFShader));
+	DOFEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	DOFEffect->stages.back()->shader->getParameter("blurSize")->updateData(2.0f);
+	DOFEffect->stages.back()->shader->getParameter("depthThreshold")->updateData(0.0f);
+	DOFEffect->stages.back()->shader->getParameter("depthThresholdFar")->updateData(9000.0f);
+	DOFEffect->stages.back()->shader->getParameter("zNear")->updateData(0.1f);
+	DOFEffect->stages.back()->shader->getParameter("zFar")->updateData(5000.0f);
+	DOFEffect->stages.back()->shader->getParameter("intMult")->updateData(100.0f);
+	RENDERER.addPostProcess(DOFEffect);
+	// ************************************ DOF END ************************************
 
 	FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
 	FEShader* chromaticAberrationShader = RESOURCE_MANAGER.createShader("chromaticAberrationShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ChromaticAberration_VS.glsl").c_str(),

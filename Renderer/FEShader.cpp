@@ -54,6 +54,51 @@ FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
 	nameHash = std::hash<std::string>{}(name);
 }
 
+void FEShaderParam::updateData(void* Data)
+{
+	switch (type)
+	{
+		case FE_INT_SCALAR_UNIFORM:
+		{
+			*(int*)data = *((int*)Data);
+			break;
+		}
+
+		case FE_FLOAT_SCALAR_UNIFORM:
+		{
+			*(float*)data = *((float*)Data);
+			break;
+		}
+
+		case FE_VECTOR2_UNIFORM:
+		{
+			*(glm::vec2*)data = *((glm::vec2*)Data);
+			break;
+		}
+
+		case FE_VECTOR3_UNIFORM:
+		{
+			*(glm::vec3*)data = *((glm::vec3*)Data);
+			break;
+		}
+
+		case FE_VECTOR4_UNIFORM:
+		{
+			*(glm::vec4*)data = *((glm::vec4*)Data);
+			break;
+		}
+
+		case FE_MAT4_UNIFORM:
+		{
+			*(glm::mat4*)data = *((glm::mat4*)Data);
+			break;
+		}
+
+		default:
+			break;
+	}
+}
+
 void FEShaderParam::updateData(int Data)
 {
 	if (type != FE_INT_SCALAR_UNIFORM)
@@ -109,8 +154,10 @@ void FEShaderParam::copyCode(const FEShaderParam& copy)
 
 		case FE_FLOAT_SCALAR_UNIFORM:
 		{
+			//float test = *((float*)copy.data);
 			data = new float;
 			*(float*)data = *((float*)copy.data);
+			//float test1 = *((float*)data);
 			break;
 		}
 
@@ -151,6 +198,7 @@ FEShaderParam::FEShaderParam(const FEShaderParam& copy)
 {
 	this->type = copy.type;
 	this->name = copy.name;
+	this->nameHash = copy.nameHash;
 	this->loadedFromEngine = copy.loadedFromEngine;
 
 	copyCode(copy);
@@ -158,9 +206,12 @@ FEShaderParam::FEShaderParam(const FEShaderParam& copy)
 
 void FEShaderParam::operator=(const FEShaderParam& assign)
 {
-	this->~FEShaderParam();
+	if (&assign != this)
+		this->~FEShaderParam();
+
 	this->type = assign.type;
 	this->name = assign.name;
+	this->nameHash = assign.nameHash;
 	this->loadedFromEngine = assign.loadedFromEngine;
 
 	copyCode(assign);
@@ -310,6 +361,89 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 		FE_GL_ERROR(glDeleteShader(computeShaderID));
 
 	registerUniforms();
+
+#ifdef FE_DEBUG_ENABLED
+	createSSBO();
+#endif
+}
+
+void FEShader::copyCode(const FEShader& shader)
+{
+	name = shader.name;
+	nameHash = shader.nameHash;
+	compilationErrors = shader.compilationErrors;
+
+	programID = shader.programID;
+	vertexShaderID = shader.vertexShaderID;
+	vertexShaderText = new char[strlen(shader.vertexShaderText) + 1];
+	strcpy_s(vertexShaderText, strlen(shader.vertexShaderText) + 1, shader.vertexShaderText);
+
+	tessControlShaderID = shader.tessControlShaderID;
+	if (shader.tessControlShaderText != nullptr)
+	{
+		tessControlShaderText = new char[strlen(shader.tessControlShaderText) + 1];
+		strcpy_s(tessControlShaderText, strlen(shader.tessControlShaderText) + 1, shader.tessControlShaderText);
+	}
+
+	tessEvalShaderID = shader.tessEvalShaderID;
+	if (shader.tessEvalShaderText != nullptr)
+	{
+		tessEvalShaderText = new char[strlen(shader.tessEvalShaderText) + 1];
+		strcpy_s(tessEvalShaderText, strlen(shader.tessEvalShaderText) + 1, shader.tessEvalShaderText);
+	}
+
+	geometryShaderID = shader.geometryShaderID;
+	if (shader.geometryShaderText != nullptr)
+	{
+		geometryShaderText = new char[strlen(shader.geometryShaderText) + 1];
+		strcpy_s(geometryShaderText, strlen(shader.geometryShaderText) + 1, shader.geometryShaderText);
+	}
+
+	fragmentShaderID = shader.fragmentShaderID;
+	if (shader.fragmentShaderText != nullptr)
+	{
+		fragmentShaderText = new char[strlen(shader.fragmentShaderText) + 1];
+		strcpy_s(fragmentShaderText, strlen(shader.fragmentShaderText) + 1, shader.fragmentShaderText);
+	}
+
+	computeShaderID = shader.computeShaderID;
+	if (shader.computeShaderText != nullptr)
+	{
+		computeShaderText = new char[strlen(shader.computeShaderText) + 1];
+		strcpy_s(computeShaderText, strlen(shader.computeShaderText) + 1, shader.computeShaderText);
+	}
+
+	vertexAttributes = shader.vertexAttributes;
+
+	parameters = shader.parameters;
+	blockUniforms = shader.blockUniforms;
+	uniformLocations = shader.uniformLocations;
+	textureUniforms = shader.textureUniforms;
+
+	CSM = shader.CSM;
+	testCompilationMode = shader.testCompilationMode;
+
+#ifdef FE_DEBUG_ENABLED
+	debugRequest = shader.debugRequest;
+	SSBO = shader.SSBO;
+	SSBOBinding = shader.SSBOBinding;
+	SSBOSize = shader.SSBOSize;
+	debugVariables = shader.debugVariables;
+	debugData = shader.debugData;
+#endif
+}
+
+FEShader::FEShader(const FEShader& shader)
+{
+	copyCode(shader);
+}
+
+void FEShader::operator=(const FEShader& shader)
+{
+	if (&shader != this)
+		this->cleanUp();
+
+	copyCode(shader);
 }
 
 FEShader::~FEShader()
@@ -441,7 +575,23 @@ void FEShader::cleanUp()
 {
 	stop();
 	delete[] vertexShaderText;
+	vertexShaderText = nullptr;
+	delete[] tessControlShaderText;
+	tessControlShaderText = nullptr;
+	delete[] tessEvalShaderText;
+	tessEvalShaderText = nullptr;
+	delete[] geometryShaderText;
+	geometryShaderText = nullptr;
 	delete[] fragmentShaderText;
+	fragmentShaderText = nullptr;
+	delete[] computeShaderText;
+	computeShaderText = nullptr;
+
+	parameters.clear();
+#ifdef FE_DEBUG_ENABLED
+	if (debugRequest)
+		FE_GL_ERROR(glDeleteBuffers(1, &SSBO));
+#endif
 	FE_GL_ERROR(glDeleteProgram(programID));
 }
 
@@ -457,10 +607,41 @@ void FEShader::bindAttributes()
 void FEShader::start()
 {
 	FE_GL_ERROR(glUseProgram(programID));
+#ifdef FE_DEBUG_ENABLED
+		if (SSBO == GLuint(-1))
+			return;
+
+		unsigned beginIterator = 0u;
+		FE_GL_ERROR(glNamedBufferSubData(SSBO, 0, sizeof(unsigned), &beginIterator));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SSBOBinding, SSBO));
+#endif
 }
 
 void FEShader::stop()
 {
+#ifdef FE_DEBUG_ENABLED
+	if (SSBO == GLuint(-1))
+		return;
+
+	unsigned debugSize = 0, bufferSize;
+	FE_GL_ERROR(glGetNamedBufferSubData(SSBO, 0, sizeof(unsigned), &debugSize));
+	FE_GL_ERROR(glGetNamedBufferParameteriv(SSBO, GL_BUFFER_SIZE, (GLint*)&bufferSize));
+	bufferSize /= sizeof(float);
+
+	if (debugSize > bufferSize)
+		debugSize = bufferSize;
+
+	if (debugData.size() <= size_t(thisFrameDebugBind))
+		debugData.push_back(std::vector<float>());
+
+	if (debugData[thisFrameDebugBind].size() != debugSize + 1)
+		debugData[thisFrameDebugBind].resize(debugSize + 1);
+
+	debugData[thisFrameDebugBind][0] = float(debugSize);
+	FE_GL_ERROR(glGetNamedBufferSubData(SSBO, sizeof(float), GLsizei((debugData[thisFrameDebugBind].size() - 1) * sizeof(float)), debugData[thisFrameDebugBind].data() + 1));
+
+	thisFrameDebugBind++;
+#endif
 	FE_GL_ERROR(glUseProgram(0));
 }
 
@@ -470,80 +651,80 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	std::string parsedShaderText = shaderText;
 
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_POSITION);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_POSITION), "layout (location = 0) in vec3 FEPosition;");
 		vertexAttributes |= FE_POSITION;
 	}
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_COLOR);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_COLOR), "layout (location = 1) in vec3 FEColor;");
 		vertexAttributes |= FE_COLOR;
 	}
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_NORMAL);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_NORMAL), "layout (location = 2) in vec3 FENormal;");
 		vertexAttributes |= FE_NORMAL;
 	}
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_TANGENT);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_TANGENT), "layout (location = 3) in vec3 FETangent;");
 		vertexAttributes |= FE_TANGENTS;
 	}
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_UV);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_UV), "layout (location = 4) in vec2 FETexCoord;");
 		vertexAttributes |= FE_UV;
 	}
 
 	index = parsedShaderText.find(FE_WORLD_MATRIX_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_WORLD_MATRIX_MACRO), "uniform mat4 FEWorldMatrix;");
 	}
 
 	index = parsedShaderText.find(FE_VIEW_MATRIX_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_VIEW_MATRIX_MACRO), "uniform mat4 FEViewMatrix;");
 	}
 
 	index = parsedShaderText.find(FE_PROJECTION_MATRIX_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_PROJECTION_MATRIX_MACRO), "uniform mat4 FEProjectionMatrix;");
 	}
 
 	index = parsedShaderText.find(FE_PVM_MATRIX_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_PVM_MATRIX_MACRO), "uniform mat4 FEPVMMatrix;");
 	}
 
 	index = parsedShaderText.find(FE_CAMERA_POSITION_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_CAMERA_POSITION_MACRO), "uniform vec3 FECameraPosition;");
 	}
 
 	index = parsedShaderText.find(FE_LIGHT_POSITION_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_LIGHT_POSITION_MACRO), "uniform vec3 FELightPosition;");
 	}
 
 	index = parsedShaderText.find(FE_LIGHT_COLOR_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_LIGHT_COLOR_MACRO), "uniform vec3 FELightColor;");
 	}
 
 	index = parsedShaderText.find(FE_TEXTURE_MACRO);
-	while (index != size_t(-1))
+	while (index != std::string::npos)
 	{
 		size_t semicolonPos = parsedShaderText.find(";", index);
 		std::string textureName = parsedShaderText.substr(index + strlen(FE_TEXTURE_MACRO) + 1, semicolonPos - (index + strlen(FE_TEXTURE_MACRO)) - 1);
@@ -574,17 +755,108 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	}
 
 	index = parsedShaderText.find(FE_CSM_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_CSM_MACRO), "uniform sampler2D CSM0; uniform sampler2D CSM1; uniform sampler2D CSM2; uniform sampler2D CSM3;");
 		CSM = true;
 	}
 
 	index = parsedShaderText.find(FE_RECEVESHADOWS_MACRO);
-	if (index != size_t(-1))
+	if (index != std::string::npos)
 	{
 		parsedShaderText.replace(index, strlen(FE_RECEVESHADOWS_MACRO), "uniform int FEReceiveShadows;");
 	}
+
+
+	// find out if there is any debug requests in shader text.
+	int debugRequestCount = 0;
+	int firstOccurrenceIndex = -1;
+	index = parsedShaderText.find(FE_DEBUG_MACRO);
+	while (index != std::string::npos)
+	{
+		int beginIndex = index;
+		int endIndex = -1;
+		std::string variableName = "";
+
+		for (size_t i = index + strlen(FE_DEBUG_MACRO); i < parsedShaderText.size(); i++)
+		{
+			char text = parsedShaderText[i];
+			if (parsedShaderText[i] == ')')
+			{
+				endIndex = i;
+				variableName = parsedShaderText.substr(index + strlen(FE_DEBUG_MACRO), endIndex - (index + strlen(FE_DEBUG_MACRO)));
+				break;
+			}
+		}
+		
+		if (endIndex != -1 && variableName.size() != 0)
+		{
+			parsedShaderText.erase(index, endIndex - index + 1);
+			
+			if (debugRequestCount == 0)
+				firstOccurrenceIndex = index;
+
+#ifdef FE_DEBUG_ENABLED
+			debugVariables.push_back(variableName);
+			// add replacement only in debug mode
+			std::string replacement = "debugData[printfIndex++] = ";
+			replacement += variableName;
+			replacement += ";";
+			parsedShaderText.insert(parsedShaderText.begin() + index, replacement.begin(), replacement.end());
+#endif
+			
+			debugRequestCount++;
+		}
+		else
+		{
+			// we need to delete debug macro anyway
+			parsedShaderText.erase(index, strlen(FE_DEBUG_MACRO));
+		}
+
+		// find next if it is exist
+		index = parsedShaderText.find(FE_DEBUG_MACRO);
+	}
+
+	if (debugRequestCount != 0)
+	{
+#ifdef FE_DEBUG_ENABLED
+		debugRequest = true;
+
+		std::string counterVariable = "\nuint printfIndex = min(atomicAdd(currentLocation, ";
+		counterVariable += std::to_string(debugRequestCount);
+		counterVariable += "u), debugData.length() - ";
+		counterVariable += std::to_string(debugRequestCount);
+		counterVariable += "u);\n";
+		parsedShaderText.insert(parsedShaderText.begin() + firstOccurrenceIndex, counterVariable.begin(), counterVariable.end());
+
+		size_t version = parsedShaderText.find("#version");
+		size_t extension = parsedShaderText.rfind("#extension");
+		if (extension != std::string::npos)
+			version = extension > version ? extension : version;
+
+		size_t lineAfterVersion = 2, bufferInsertOffset = 0;
+
+		if (version != std::string::npos)
+		{
+			for (size_t i = 0; i < version; ++i)
+			{
+				if (parsedShaderText[i] == '\n')
+					lineAfterVersion++;
+			}
+
+			bufferInsertOffset = version;
+			for (size_t i = version; i < parsedShaderText.length(); ++i)
+			{
+				bufferInsertOffset += 1;
+				if (parsedShaderText[i] == '\n')
+					break;
+			}
+		}
+
+		parsedShaderText = parsedShaderText.substr(0, bufferInsertOffset) + "\nbuffer debugBuffer\n{\nuint currentLocation;\nfloat debugData[];\n};\n#line " + std::to_string(lineAfterVersion) + "\n" + parsedShaderText.substr(bufferInsertOffset);
+#endif //layout (std430)
+	}
+
 	
 	return parsedShaderText;
 }
@@ -760,4 +1032,44 @@ char* FEShader::getGeometryShaderText()
 char* FEShader::getComputeShaderText()
 {
 	return computeShaderText;
+}
+
+#ifdef FE_DEBUG_ENABLED
+inline void FEShader::createSSBO()
+{
+	if (!debugRequest)
+		return;
+	FE_GL_ERROR(glCreateBuffers(1, &SSBO));
+	FE_GL_ERROR(glNamedBufferData(SSBO, SSBOSize * 4, nullptr, GL_STREAM_READ));
+
+	SSBOBinding = -1;
+	GLenum prop = GL_BUFFER_BINDING;
+	FE_GL_ERROR(glGetProgramResourceiv(this->programID, GL_SHADER_STORAGE_BLOCK, glGetProgramResourceIndex(this->programID, GL_SHADER_STORAGE_BLOCK, "debugBuffer"), 1, &prop, sizeof(SSBOBinding), nullptr, &SSBOBinding));
+}
+#endif
+
+bool FEShader::isDebugRequest()
+{
+#ifdef FE_DEBUG_ENABLED
+	return debugRequest;
+#endif
+	return false;
+}
+
+std::vector<std::vector<float>>* FEShader::getDebugData()
+{
+#ifdef FE_DEBUG_ENABLED
+	return &debugData;
+#endif
+
+	return nullptr;
+}
+
+std::vector<std::string> FEShader::getDebugVariables()
+{
+#ifdef FE_DEBUG_ENABLED
+	return debugVariables;
+#endif
+
+	return std::vector<std::string>();
 }

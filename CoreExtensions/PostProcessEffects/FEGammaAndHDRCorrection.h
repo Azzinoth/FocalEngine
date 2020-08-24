@@ -1,9 +1,8 @@
 #pragma once
-
-#include "FEBloomEffect.h"
+#include "../../Renderer/FEPostProcess.h"
 
 static char* const FEGammaAndHDRVS = R"(
-#version 400 core
+#version 450 core
 
 @In_Position@
 out vec2 textureCoords;
@@ -16,7 +15,7 @@ void main(void)
 )";
 
 static char* FEGammaAndHDRFS = R"(
-#version 400 core
+#version 450 core
 
 in vec2 textureCoords;
 uniform float FEExposure;

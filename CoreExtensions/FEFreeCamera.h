@@ -12,7 +12,10 @@ namespace FocalEngine
 
 		float currentMouseXAngle = 0;
 		float currentMouseYAngle = 0;
-		float speed = 0.03f;
+		
+
+		float getSpeed();
+		void setSpeed(float newSpeed);
 
 		void setYaw(float newYaw);
 		void setPitch(float newPitch);
@@ -25,6 +28,7 @@ namespace FocalEngine
 	private:
 		int lastMouseX = 0;
 		int lastMouseY = 0;
+		float speed = 10.0f;
 
 		bool leftKeyPreesed = false;
 		bool upKeyPreesed = false;

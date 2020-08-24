@@ -12,6 +12,8 @@ FEFramebuffer::FEFramebuffer(int attachments, int Width, int Height, bool HDR)
 	if (attachments & FE_COLOR_ATTACHMENT)
 	{
 		HDR ? colorAttachment = new FETexture(GL_RGBA16F, GL_RGBA, Width, Height) : colorAttachment = new FETexture(Width, Height);
+		// Allocate the mipmaps
+		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment);
 	}
 

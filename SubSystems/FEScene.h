@@ -3,6 +3,7 @@
 #include "../ResourceManager/FEResourceManager.h"
 #include "../CoreExtensions/FEFreeCamera.h"
 #include "../Renderer/FELight.h"
+#include "../Renderer/FELine.h"
 
 namespace FocalEngine
 {

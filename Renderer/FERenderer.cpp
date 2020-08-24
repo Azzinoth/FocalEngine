@@ -16,6 +16,46 @@ FERenderer::FERenderer()
 	glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBufferCount++, uniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
+
+	// Instanced lines
+	linesBuffer.resize(maxLines);
+
+	float quadVertices[] = {
+		0.0f,  -0.5f,  0.0f,
+		1.0f,  -0.5f,  1.0f,
+		1.0f,  0.5f,   1.0f,
+
+		0.0f,  -0.5f,  0.0f,
+		1.0f,  0.5f,   1.0f,
+		0.0f,  0.5f,   0.0f,
+	};
+	glGenVertexArrays(1, &instancedLineVAO);
+	glBindVertexArray(instancedLineVAO);
+
+	unsigned int quadVBO;
+	glGenBuffers(1, &quadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+
+	glGenBuffers(1, &instancedLineBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, instancedLineBuffer);
+	glBufferData(GL_ARRAY_BUFFER, linesBuffer.size() * sizeof(FELine), linesBuffer.data(), GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)0);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(9 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribDivisor(1, 1);
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+
+	glBindVertexArray(0);
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -132,7 +172,17 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing
 	{
 		postProcessEffects.back()->stages[i]->inTexture.resize(postProcessEffects.back()->stages[i]->inTextureSource.size());
 		//to-do: change when out texture could be different resolution or/and format.
-		postProcessEffects.back()->stages[i]->outTexture = sceneToTextureFB->getColorAttachment()->createSameFormatTexture();
+		//#fix
+		if (i == postProcessEffects.back()->stages.size() - 1)
+		{
+			postProcessEffects.back()->stages[i]->outTexture = sceneToTextureFB->getColorAttachment()->createSameFormatTexture();
+		}
+		else
+		{
+			int finalW = postProcessEffects.back()->screenWidth;
+			int finalH = postProcessEffects.back()->screenHeight;
+			postProcessEffects.back()->stages[i]->outTexture = sceneToTextureFB->getColorAttachment()->createSameFormatTexture(finalW, finalH);
+		}
 	}
 }
 
@@ -168,6 +218,7 @@ void FERenderer::loadUniformBlocks()
 			if (!light->staticShadowBias)
 				directionalLightInfo.biasFixed = -1.0f;
 			directionalLightInfo.biasVariableIntensity = light->shadowBiasVariableIntensity;
+			directionalLightInfo.intensity = light->getIntensity();
 		}
 		else if (lightIterator->second->getType() == FE_SPOT_LIGHT)
 		{
@@ -242,7 +293,8 @@ void FERenderer::loadUniformBlocks()
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 368, 4, &directionalLightInfo.activeCascades));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 372, 4, &directionalLightInfo.biasFixed));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 376, 4, &directionalLightInfo.biasVariableIntensity));
-				
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 380, 4, &directionalLightInfo.intensity));
+
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
 
@@ -393,6 +445,38 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	sceneToTextureFB->bind();
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
+	// ********* RENDER INSTANCED LINE *********
+	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
+
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedLineBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, maxLines * sizeof(FELine), this->linesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	instancedLineShader->start();
+	instancedLineShader->getParameter("FEProjectionMatrix")->updateData(currentCamera->getProjectionMatrix());
+	instancedLineShader->getParameter("FEViewMatrix")->updateData(currentCamera->getViewMatrix());
+	instancedLineShader->getParameter("resolution")->updateData(glm::vec2(sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight()));
+	instancedLineShader->loadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(instancedLineVAO));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glEnableVertexAttribArray(1));
+	FE_GL_ERROR(glEnableVertexAttribArray(2));
+	FE_GL_ERROR(glEnableVertexAttribArray(3));
+	FE_GL_ERROR(glEnableVertexAttribArray(4));
+	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, lineCounter));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glDisableVertexAttribArray(1));
+	FE_GL_ERROR(glDisableVertexAttribArray(2));
+	FE_GL_ERROR(glDisableVertexAttribArray(3));
+	FE_GL_ERROR(glDisableVertexAttribArray(4));
+	FE_GL_ERROR(glBindVertexArray(0));
+	instancedLineShader->stop();
+
+	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	//FE_GL_ERROR(glCullFace(GL_BACK));
+	// ********* RENDER INSTANCED LINE END *********
+
 	auto itTerrain = scene.terrainMap.begin();
 	while (itTerrain != scene.terrainMap.end())
 	{
@@ -416,6 +500,10 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	
 	sceneToTextureFB->unBind();
 	// ********* RENDER SCENE END *********
+
+	//Generate the mipmaps of colorAttachment
+	sceneToTextureFB->getColorAttachment()->bind();
+	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// ********* POST_PROCESS EFFECTS *********
 	FETexture* prevStageTex = sceneToTextureFB->getColorAttachment();
@@ -427,7 +515,26 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		{
 			effect.stages[j]->shader->start();
 			loadStandardParams(effect.stages[j]->shader, currentCamera, nullptr, nullptr);
+			for (size_t k = 0; k < effect.stages[j]->stageSpecificUniforms.size(); k++)
+			{
+				FEShaderParam* param = effect.stages[j]->shader->getParameter(effect.stages[j]->stageSpecificUniforms[k].getName());
+				if (param != nullptr)
+				{
+					param->updateData(effect.stages[j]->stageSpecificUniforms[k].data);
+				}
+			}
+
 			effect.stages[j]->shader->loadDataToGPU();
+
+			/*for (size_t k = 0; k < effect.stages[j]->stageSpecificUniforms.size(); k++)
+			{
+				FEShaderParam* param = effect.stages[j]->shader->getParameter(effect.stages[j]->stageSpecificUniforms[k].getName());
+				if (param != nullptr)
+				{
+					void* previousValue = param->data;
+					param->updateData(effect.stages[j]->stageSpecificUniforms[k].data);
+				}
+			}*/
 
 			for (size_t k = 0; k < effect.stages[j]->inTextureSource.size(); k++)
 			{
@@ -453,6 +560,15 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			}
 
 			effect.intermediateFramebuffer->setColorAttachment(effect.stages[j]->outTexture);
+			if (effect.stages[j]->outTexture->width != sceneToTextureFB->getWidth())
+			{
+				FE_GL_ERROR(glViewport(0, 0, effect.stages[j]->outTexture->width, effect.stages[j]->outTexture->height));
+			}
+			else
+			{
+				FE_GL_ERROR(glViewport(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight()));
+			}
+			
 			effect.intermediateFramebuffer->bind();
 
 			FE_GL_ERROR(glBindVertexArray(effect.screenQuad->getVaoID()));
@@ -484,6 +600,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		}
 	}
 	// ********* SCREEN SPACE EFFECTS END *********
+
+	lineCounter = 0;
 }
 
 FEPostProcess* FERenderer::getPostProcessEffect(std::string name)
@@ -596,4 +714,17 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 
 	if (terrain->isWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
+void FERenderer::drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color, float width)
+{
+	if (lineCounter >= maxLines)
+		return;
+
+	linesBuffer[lineCounter].begin = beginPoint;
+	linesBuffer[lineCounter].end = endPoint;
+	linesBuffer[lineCounter].color = color;
+	linesBuffer[lineCounter].width = width;
+
+	lineCounter++;
 }

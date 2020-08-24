@@ -30,6 +30,7 @@ namespace FocalEngine
 		std::vector<std::string> getShadersList();
 		std::vector<std::string> getStandardShadersList();
 		void deleteShader(std::string shaderName);
+		bool replaceShader(std::string oldShaderName, FEShader* newShader);
 		std::string loadGLSL(const char* fileName);
 
 		// to-do: add flags

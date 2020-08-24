@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "FEProject.h"
 #include "FEDearImguiWrapper/FEDearImguiWrapper.h"
@@ -1964,18 +1964,161 @@ public:
 			ImGuiWindow::close();
 		}
 
-		//auto cpos = editor.GetCursorPosition();
-		/*ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, editor.GetTotalLines(),
-			editor.IsOverwrite() ? "Ovr" : "Ins",
-			editor.CanUndo() ? "*" : " ",
-			editor.GetLanguageDefinition().mName.c_str(), "none");*/
-
 		editor.Render("TextEditor");
-
 		ImGuiWindow::onRenderEnd();
 	}
 };
 static justTextWindow justTextWindowObj;
+
+class shaderDebugWindow : public ImGuiWindow
+{
+	TextEditor editor;
+	ImGuiButton* closeButton = nullptr;
+	ImGuiButton* updateButton = nullptr;
+	FEShader* shaderToWorkWith = nullptr;
+	bool updateNeeded = true;
+	std::string selectedDebugData = "";
+	std::vector<std::string> occurrenceList;
+	std::vector<std::vector<float>>* data = nullptr;
+	std::vector<std::vector<float>> dataDump;
+public:
+	shaderDebugWindow()
+	{
+		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+		editor.SetShowWhitespaces(false);
+		editor.SetReadOnly(true);
+		size = ImVec2(800, 600);
+		closeButton = new ImGuiButton("Close");
+		updateButton = new ImGuiButton("Update");
+		editor.SetPalette(TextEditor::GetLightPalette());
+		editor.SetColorizerEnable(false);
+	}
+
+	~shaderDebugWindow()
+	{
+		if (closeButton != nullptr)
+			delete closeButton;
+
+		if (updateButton != nullptr)
+			delete updateButton;
+
+		shaderToWorkWith = nullptr;
+	}
+
+	void show(FEShader* shader, std::string caption)
+	{
+		updateNeeded = true;
+		shaderToWorkWith = shader;
+
+		selectedDebugData = "";
+		occurrenceList.clear();
+		data = nullptr;
+		dataDump.clear();
+
+		if (caption.size() == 0)
+			caption = "Text view";
+
+		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
+		ImGuiWindow::show();
+	}
+
+	void render() override
+	{
+		ImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		if (updateNeeded)
+		{
+			data = shaderToWorkWith->getDebugData();
+			if (data->size() > 0)
+			{
+				dataDump.clear();
+				occurrenceList.clear();
+				updateNeeded = false;
+				for (size_t i = 0; i < data->size(); i++)
+				{
+					std::string debugItemsCount = std::to_string(data->operator[](i)[0]);
+					for (size_t j = 0; j < debugItemsCount.size(); j++)
+					{
+						if (debugItemsCount[j] == '.')
+						{
+							debugItemsCount.erase(debugItemsCount.begin() + j, debugItemsCount.end());
+							break;
+						}
+					}
+
+					occurrenceList.push_back("occurrence with " + debugItemsCount + " debug items");
+					dataDump.push_back(data->operator[](i));
+				}
+
+				selectedDebugData = occurrenceList[0];
+
+				selectedDebugData = occurrenceList[0].c_str();
+				std::string text = "";
+				std::vector<std::string> debugVariables = shaderToWorkWith->getDebugVariables();
+				for (size_t i = 1; i < dataDump[0].size(); i++)
+				{
+					float t = dataDump[0][i];
+					text += debugVariables[(i - 1) % debugVariables.size()];
+					text += " : ";
+					text += std::to_string(t);
+					if (i < dataDump[0].size() - 1)
+						text += "\n";
+				}
+				editor.SetText(text);
+			}
+		}
+
+		if (ImGui::BeginCombo("Shader occurrence", selectedDebugData.c_str(), ImGuiWindowFlags_None))
+		{
+			for (size_t n = 0; n < occurrenceList.size(); n++)
+			{
+				ImGui::PushID(n);
+				bool is_selected = (selectedDebugData == occurrenceList[n]);
+				if (ImGui::Selectable(occurrenceList[n].c_str(), is_selected))
+				{
+					selectedDebugData = occurrenceList[n].c_str();
+					std::string text = "";
+					std::vector<std::string> debugVariables = shaderToWorkWith->getDebugVariables();
+					for (size_t i = 1; i < dataDump[n].size(); i++)
+					{
+						float t = dataDump[n][i];
+						text += debugVariables[(i - 1) % debugVariables.size()];
+						text += " : ";
+						text += std::to_string(t);
+						if (i < dataDump[n].size() - 1)
+							text += "\n";
+					}
+					editor.SetText(text);
+				}
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+
+				ImGui::PopID();
+			}
+			ImGui::EndCombo();
+		}
+
+		closeButton->render();
+		if (closeButton->getWasClicked())
+		{
+			ImGuiWindow::close();
+		}
+
+		updateButton->render();
+		if (updateButton->getWasClicked())
+		{
+			updateNeeded = true;
+		}
+
+		editor.Render("TextEditor");
+		ImGuiWindow::onRenderEnd();
+	}
+};
+static shaderDebugWindow shaderDebugWindowObj;
 
 class shaderEditorWindow : public ImGuiWindow
 {
@@ -2124,6 +2267,12 @@ public:
 									   computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr,
 									   true);
 
+			std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
+			for (size_t i = 0; i < oldParameters.size(); i++)
+			{
+				dummyShader->addParameter(*shaderToEdit->getParameter(oldParameters[i]));
+			}
+
 			std::string errors = dummyShader->getCompilationErrors();
 			if (errors.size() != 0)
 			{
@@ -2131,15 +2280,26 @@ public:
 			}
 			else
 			{
-				FEShader* reCompiledShader = new FEShader(shaderToEdit->getName() + "1", vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
+
+				FEShader* reCompiledShader = new FEShader(shaderToEdit->getName(), vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
 														  tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
 														  tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
 														  geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
 														  computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr);
 
-				replaceShader(shaderToEdit, reCompiledShader);
-				RESOURCE_MANAGER.deleteShader(shaderToEdit->getName());
-				shaderToEdit = reCompiledShader;
+				std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
+				for (size_t i = 0; i < oldParameters.size(); i++)
+				{
+					reCompiledShader->addParameter(*shaderToEdit->getParameter(oldParameters[i]));
+				}
+
+				RESOURCE_MANAGER.replaceShader(shaderToEdit->getName(), reCompiledShader);
+				
+				if (shaderToEdit->isDebugRequest())
+				{
+					//shaderToEdit->updateDebugData();
+					shaderDebugWindowObj.show(shaderToEdit, "Shader debug info");
+				}
 			}
 		}
 
@@ -2249,6 +2409,7 @@ public:
 		currentEditor->Render("Editor");
 
 		justTextWindowObj.render();
+		shaderDebugWindowObj.render();
 		ImGuiWindow::onRenderEnd();
 	}
 };
