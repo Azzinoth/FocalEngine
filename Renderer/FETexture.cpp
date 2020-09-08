@@ -94,3 +94,18 @@ std::string FETexture::getFileName()
 {
 	return fileName;
 }
+
+GLint FETexture::getInternalFormat()
+{
+	return internalFormat;
+}
+
+int FETexture::getWidth()
+{
+	return width;
+}
+
+int FETexture::getHeight()
+{
+	return height;
+}

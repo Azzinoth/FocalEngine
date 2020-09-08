@@ -40,6 +40,8 @@ namespace FocalEngine
 		void takeScreenshot(const char* fileName);
 
 		void resetCamera();
+
+		glm::dvec3 constructMouseRay();
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -48,6 +50,8 @@ namespace FocalEngine
 		std::string windowTitle;
 
 		float cpuTime, gpuTime;
+
+		double mouseX, mouseY;
 
 		GLFWwindow* window;
 		static void mouseButtonCallback(int button, int action, int mods);

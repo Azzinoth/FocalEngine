@@ -19,7 +19,6 @@ namespace FocalEngine
 		glm::vec4 color;
 		glm::vec4 direction;
 		glm::mat4 lightSpace;
-		glm::mat4 lightSpaceBig;
 	};
 
 	struct FEDirectionalLightShaderInfo

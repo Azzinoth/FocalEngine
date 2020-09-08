@@ -1,6 +1,7 @@
 #pragma once
 
 #include "..\SubSystems\FECoreIncludes.h"
+#include "..\SubSystems\FELog.h"
 
 namespace FocalEngine
 {
@@ -34,6 +35,10 @@ namespace FocalEngine
 		virtual void unBind();
 
 		FETexture* createSameFormatTexture(int differentW = 0, int differentH = 0);
+
+		GLint getInternalFormat();
+		int getWidth();
+		int getHeight();
 	private:
 		GLuint textureID = -1;
 		std::string name = "DefaultName";
@@ -51,4 +56,6 @@ namespace FocalEngine
 
 		void setName(std::string newName);
 	};
+
+	#define LOG FELOG::getInstance()
 }

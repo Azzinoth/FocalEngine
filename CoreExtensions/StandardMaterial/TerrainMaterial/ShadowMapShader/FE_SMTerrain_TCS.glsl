@@ -11,6 +11,7 @@ uniform float hightScale;
 uniform float scaleFactor;
 uniform float LODlevel;
 uniform vec2 hightMapShift;
+//uniform vec2 tileMult;
 
 in vec2 vertex_UV[];
 out vec2 TC_UV[];

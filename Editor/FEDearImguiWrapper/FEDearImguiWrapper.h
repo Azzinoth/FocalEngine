@@ -5,14 +5,14 @@ using namespace FocalEngine;
 
 //silly windows manager
 class ImGuiModalPopup;
-class ImGuiWindow;
+class FEImGuiWindow;
 
 class WindowsManager
 {
 public:
 	SINGLETON_PUBLIC_PART(WindowsManager)
 
-	void registerWindow(ImGuiWindow* window);
+	void registerWindow(FEImGuiWindow* window);
 	void registerPopup(ImGuiModalPopup* popup);
 
 	void closeAllPopups();
@@ -21,7 +21,7 @@ private:
 	SINGLETON_PRIVATE_PART(WindowsManager)
 
 	std::vector<ImGuiModalPopup*> popUps;
-	std::vector<ImGuiWindow*> windows;
+	std::vector<FEImGuiWindow*> windows;
 };
 
 class ImGuiModalPopup
@@ -140,7 +140,7 @@ public:
 	bool getWasClicked();
 };
 
-class ImGuiWindow
+class FEImGuiWindow
 {
 	friend WindowsManager;
 protected:
@@ -150,9 +150,9 @@ protected:
 	ImVec2 size;
 	int flags = ImGuiWindowFlags_None;
 	bool wasClosedLastFrame = false;
-	ImGuiWindow();
+	FEImGuiWindow();
 public:
-	virtual ~ImGuiWindow();
+	virtual ~FEImGuiWindow();
 	virtual void show();
 	virtual void close();
 	virtual void render();

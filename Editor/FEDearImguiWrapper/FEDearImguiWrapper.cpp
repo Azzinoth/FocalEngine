@@ -302,7 +302,7 @@ void ImGuiImageButton::render()
 	renderEnd();
 }
 
-ImGuiWindow::ImGuiWindow()
+FEImGuiWindow::FEImGuiWindow()
 {
 	position = ImVec2(0.0f, 0.0f);
 	size = ImVec2(100.0f, 100.0f);
@@ -310,17 +310,17 @@ ImGuiWindow::ImGuiWindow()
 	WindowsManager::getInstance().registerWindow(this);
 }
 
-ImGuiWindow::~ImGuiWindow()
+FEImGuiWindow::~FEImGuiWindow()
 {
 }
 
-void ImGuiWindow::show()
+void FEImGuiWindow::show()
 {
 	visible = true;
 	wasClosedLastFrame = true;
 }
 
-void ImGuiWindow::render()
+void FEImGuiWindow::render()
 {
 	if (visible)
 	{
@@ -343,18 +343,18 @@ void ImGuiWindow::render()
 	}
 }
 
-void ImGuiWindow::onRenderEnd()
+void FEImGuiWindow::onRenderEnd()
 {
 	if (visible)
 		ImGui::End();
 }
 
-bool ImGuiWindow::isVisible()
+bool FEImGuiWindow::isVisible()
 {
 	return visible;
 }
 
-void ImGuiWindow::close()
+void FEImGuiWindow::close()
 {
 	if (visible)
 	{
@@ -367,7 +367,7 @@ WindowsManager::WindowsManager()
 {
 }
 
-void WindowsManager::registerWindow(ImGuiWindow* window)
+void WindowsManager::registerWindow(FEImGuiWindow* window)
 {
 	windows.push_back(window);
 }

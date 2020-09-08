@@ -102,42 +102,66 @@ void FEShaderParam::updateData(void* Data)
 void FEShaderParam::updateData(int Data)
 {
 	if (type != FE_INT_SCALAR_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+		
 	*(int*)data = Data;
 }
 
 void FEShaderParam::updateData(float Data)
 {
 	if (type != FE_FLOAT_SCALAR_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+
 	*(float*)data = Data;
 }
 
 void FEShaderParam::updateData(glm::vec2 Data)
 {
 	if (type != FE_VECTOR2_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+
 	*(glm::vec2*)data = Data;
 }
 
 void FEShaderParam::updateData(glm::vec3 Data)
 {
 	if (type != FE_VECTOR3_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+
 	*(glm::vec3*)data = Data;
 }
 
 void FEShaderParam::updateData(glm::vec4 Data)
 {
 	if (type != FE_VECTOR4_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+
 	*(glm::vec4*)data = Data;
 }
 
 void FEShaderParam::updateData(glm::mat4 Data)
 {
 	if (type != FE_MAT4_UNIFORM)
-		return; // to-do: error
+	{
+		LOG.logError(std::string("updateData() incorrect type"));
+		return;
+	}
+
 	*(glm::mat4*)data = Data;
 }
 
@@ -154,10 +178,8 @@ void FEShaderParam::copyCode(const FEShaderParam& copy)
 
 		case FE_FLOAT_SCALAR_UNIFORM:
 		{
-			//float test = *((float*)copy.data);
 			data = new float;
 			*(float*)data = *((float*)copy.data);
-			//float test1 = *((float*)data);
 			break;
 		}
 
@@ -973,7 +995,10 @@ std::vector<std::string> FEShader::getParameterList()
 FEShaderParam* FEShader::getParameter(std::string name)
 {
 	if (parameters.find(name) == parameters.end())
+	{
+		LOG.logError(std::string("getParameter can't find : ") + name);
 		return nullptr;
+	}
 
 	return &parameters[name];
 }

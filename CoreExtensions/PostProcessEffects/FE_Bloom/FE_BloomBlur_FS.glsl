@@ -14,14 +14,7 @@ void main(void)
 
 	for (int i = -5; i <= 5; i++)
 	{
-		//if (FEBloomNoScale > 0.0)
-		//{
-		//	blurTextureCoords[i + 5] = centerTexCoords + (tex_offset * FEBlurDirection) * i;
-		//}
-		//else
-		//{
-			blurTextureCoords[i + 5] = centerTexCoords + (tex_offset * FEBlurDirection) * i * BloomSize;
-		//}
+		blurTextureCoords[i + 5] = centerTexCoords + (tex_offset * FEBlurDirection) * i * BloomSize;
 	}
 
 	gl_FragColor = vec4(0.0);

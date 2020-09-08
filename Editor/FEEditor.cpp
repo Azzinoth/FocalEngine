@@ -5,6 +5,11 @@ void mouseButtonCallback(int button, int action, int mods)
 	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
 	{
 		checkPixelAccurateSelection = true;
+		leftMousePressed = true;
+	}
+	else if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
+	{
+		leftMousePressed = false;
 	}
 
 	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
@@ -47,16 +52,22 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
 	{
-		if (selectedEntity != "")
+		if (selected.getEntity() != nullptr)
 		{
-			SCENE.deleteEntity(selectedEntity);
-			setSelectedEntity("");
+			SCENE.deleteEntity(selected.getEntity()->getName());
+			selected.clear();
+		}
+		else if (selected.getTerrain() != nullptr)
+		{
+			SCENE.deleteTerrain(selected.getTerrain()->getName());
+			selected.clear();
 		}
 	}
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_C && action == GLFW_RELEASE)
 	{
-		clipboardEntity = selectedEntity;
+		if (selected.getEntity() != nullptr)
+			clipboardEntity = selected.getEntity()->getName();
 	}
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_V && action == GLFW_RELEASE)
@@ -66,7 +77,7 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 			FEEntity* newEntity = SCENE.addEntity(SCENE.getEntity(clipboardEntity)->gameModel, "");
 			newEntity->transform = SCENE.getEntity(clipboardEntity)->transform;
 			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
-			setSelectedEntity(newEntity->getName());
+			selected.setEntity(newEntity);
 		}
 	}
 
@@ -76,6 +87,15 @@ void keyButtonCallback(int key, int scancode, int action, int mods)
 		if (newState > 2)
 			newState = 0;
 		changeGizmoState(newState);
+	}
+
+	if (!ImGui::GetIO().WantCaptureKeyboard && (key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE)
+	{
+		shiftPressed = false;
+	}
+	else if (!ImGui::GetIO().WantCaptureKeyboard && (key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_PRESS)
+	{
+		shiftPressed = true;
 	}
 }
 
@@ -168,7 +188,6 @@ void showTransformConfiguration(std::string objectName, FETransformComponent* tr
 	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
 	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
 
-	
 	std::string sizeInM = "Approximate object size: ";
 	sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
 	sizeInM += " m";
@@ -474,6 +493,7 @@ void displaySceneEntities()
 
 		ImGui::End();
 
+		selected.clear();
 		return;
 	}
 
@@ -481,14 +501,16 @@ void displaySceneEntities()
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 
-	if (selectedEntityWasChanged)
+	if (selected.dirtyFlag && selected.getEntity() != nullptr)
 	{
 		for (size_t i = 0; i < entityList.size(); i++)
 		{
 			ImGui::GetStateStorage()->SetInt(ImGui::GetID(entityList[i].c_str()), 0);
 		}
-		selectedEntityWasChanged = false;
-		ImGui::GetStateStorage()->SetInt(ImGui::GetID(selectedEntity.c_str()), 1);
+		selected.dirtyFlag = false;
+		std::string test = selected.getEntityName().c_str();
+		ImGuiID test_1 = ImGui::GetID(test.c_str());
+		ImGui::GetStateStorage()->SetInt(ImGui::GetID(selected.getEntityName().c_str()), 1);
 	}
 
 	entityIndexUnderMouse = -1;
@@ -551,11 +573,9 @@ void displaySceneEntities()
 
 		if (ImGui::IsMouseClicked(0) && entityIndexUnderMouse != -1)
 		{
-			setSelectedEntity(SCENE.getEntity(entityList[entityIndexUnderMouse])->getName());
-			selectedEntityWasChanged = false;
-			//selectedEntity = scene.getEntity(entityList[entityIndexUnderMouse])->getName();
+			selected.setEntity(SCENE.getEntity(entityList[entityIndexUnderMouse]));
+			selected.dirtyFlag = false;
 		}
-			
 	}
 	ImGui::Text("============================================");
 
@@ -574,7 +594,6 @@ void displaySceneEntities()
 
 	static glm::vec3 color = glm::vec3(0.2f, 0.3f, 0.4f);
 
-	
 	float basicW = 0.1f;
 	float width = basicW * 4.0f;
 	if (displayGrid)
@@ -600,15 +619,12 @@ void displaySceneEntities()
 		}
 	}
 
-	//RENDERER.drawLine(glm::vec3(1.0), glm::vec3(10.0), color, 0.05f);
-	//RENDERER.drawLine(glm::vec3(10.0), glm::vec3(-7.0, 1.0, 4.0), color, 0.5f);
-
-	static bool displaySelectedEntityAABB = false;
-	ImGui::Checkbox("Display AABB of selected entity", &displaySelectedEntityAABB);
+	static bool displaySelectedObjAABB = false;
+	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
 	// draw AABB
-	if (selectedEntity.size() != 0 && displaySelectedEntityAABB)
+	if (selected.obj != nullptr && displaySelectedObjAABB)
 	{
-		FEAABB selectedAABB = SCENE.getEntity(selectedEntity)->getAABB();
+		FEAABB selectedAABB = selected.getEntity() != nullptr ? selected.getEntity()->getAABB() : selected.getTerrain()->getAABB();;
 		color = glm::vec3(0.1f, 0.6f, 0.1f);
 		static float width = 0.2f;
 
@@ -938,6 +954,13 @@ void displayContentBrowser()
 		{
 			ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
 
+			if (selected.dirtyFlag && selected.getTerrain() != nullptr)
+			{
+				auto& ImGuiContext = *ImGui::GetCurrentContext();
+				ImGuiContext.CurrentTabBar->SelectedTabId = ImGuiContext.CurrentTabBar->Tabs[4].ID;
+				selected.dirtyFlag = false;
+			}
+
 			if (ImGui::BeginTabItem("Meshes"))
 			{
 				activeTabContentBrowser = 0;
@@ -1113,30 +1136,8 @@ void displayContentBrowser()
 				{
 					if (ImGui::MenuItem("Create new terrain"))
 					{
-						std::string filePath = "";
-						openDialog(filePath, textureLoadFilter, 1);
-
-						if (filePath != "")
-						{
-							FETexture* loadedTexture = RESOURCE_MANAGER.LoadHeightmap(filePath.c_str());
-							if (loadedTexture == RESOURCE_MANAGER.noTexture)
-							{
-
-								//show Message
-								break;
-							}
-
-							RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str(), loadedTexture);
-
-							FETerrain* terrainSample = RESOURCE_MANAGER.createTerrain("test");
-							terrainSample->heightMap = loadedTexture;
-
-							/*terrainSample->layer0->albedoMap = RESOURCE_MANAGER.getTexture("rock_cliff_albedo");
-							terrainSample->layer0->normalMap = RESOURCE_MANAGER.getTexture("rock_cliff_normal");
-							terrainSample->layer0->AOMap = RESOURCE_MANAGER.getTexture("rock_cliff_AO");
-							terrainSample->layer0->roughtnessMap = RESOURCE_MANAGER.getTexture("rock_cliff_roughness");*/
-							SCENE.addTerrain(terrainSample);
-						}
+						FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain();
+						SCENE.addTerrain(newTerrain);
 					}
 					break;
 				}
@@ -1182,69 +1183,34 @@ void determineEntityUnderMouse()
 {
 	entitiesUnderMouse.clear();
 
-	/*static*/ glm::vec3 mouseRayVector = mouseRay();
-	/*static*/ std::vector<std::string> entityList = SCENE.getEntityList();
+	glm::vec3 mouseRayVector = mouseRay();
+	std::vector<std::string> entityList = SCENE.getEntityList();
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		float dis = 0;
-		/*static*/ FEAABB box = SCENE.getEntity(entityList[i])->getAABB();
+		FEAABB box = SCENE.getEntity(entityList[i])->getAABB();
 		if (box.rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 		{
 			entitiesUnderMouse.push_back(entityList[i]);
 		}
 	}
-}
 
-void setSelectedEntity(std::string newEntity)
-{
-	if (newEntity.size() == 0)
+	std::vector<std::string> terrainList = SCENE.getTerrainList();
+	for (size_t i = 0; i < terrainList.size(); i++)
 	{
-		transformationXGizmoEntity->setVisibility(false);
-		transformationYGizmoEntity->setVisibility(false);
-		transformationZGizmoEntity->setVisibility(false);
-		transformationXYGizmoEntity->setVisibility(false);
-		transformationYZGizmoEntity->setVisibility(false);
-		transformationXZGizmoEntity->setVisibility(false);
-		scaleXGizmoEntity->setVisibility(false);
-		scaleYGizmoEntity->setVisibility(false);
-		scaleZGizmoEntity->setVisibility(false);
-		rotateXGizmoEntity->setVisibility(false);
-		rotateYGizmoEntity->setVisibility(false);
-		rotateZGizmoEntity->setVisibility(false);
-	}
-	else
-	{
-		if (gizmosState == TRANSFORM_GIZMOS)
+		float dis = 0;
+		FEAABB box = SCENE.getTerrain(terrainList[i])->getAABB();
+		if (box.rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 		{
-			transformationXGizmoEntity->setVisibility(true);
-			transformationYGizmoEntity->setVisibility(true);
-			transformationZGizmoEntity->setVisibility(true);
-			transformationXYGizmoEntity->setVisibility(true);
-			transformationYZGizmoEntity->setVisibility(true);
-			transformationXZGizmoEntity->setVisibility(true);
-		}
-		else if (gizmosState == SCALE_GIZMOS)
-		{
-			scaleXGizmoEntity->setVisibility(true);
-			scaleYGizmoEntity->setVisibility(true);
-			scaleZGizmoEntity->setVisibility(true);
-		}
-		else if (gizmosState == ROTATE_GIZMOS)
-		{
-			rotateXGizmoEntity->setVisibility(true);
-			rotateYGizmoEntity->setVisibility(true);
-			rotateZGizmoEntity->setVisibility(true);
+			entitiesUnderMouse.push_back(terrainList[i]);
 		}
 	}
-
-	selectedEntity = newEntity;
-	selectedEntityWasChanged = true;
 }
 
 glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal)
 {
-	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
-	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	FETransformComponent* objTransform = selected.getEntity() != nullptr ? &selected.getEntity()->transform : &selected.getTerrain()->transform;
+	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3( objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	std::swap(mouseX, lastMouseX);
 	std::swap(mouseY, lastMouseY);
@@ -1275,8 +1241,8 @@ glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal)
 
 glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal, glm::vec3& lastMousePointOnPlane)
 {
-	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
-	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	FETransformComponent* objTransform = selected.getEntity() != nullptr ? &selected.getEntity()->transform : &selected.getTerrain()->transform;
+	glm::vec3 entitySpaceOriginInWorldSpace = glm::vec3( objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 
 	std::swap(mouseX, lastMouseX);
 	std::swap(mouseY, lastMouseY);
@@ -1326,20 +1292,8 @@ bool raysIntersection(glm::vec3& fRayOrigin, glm::vec3& fRayDirection,
 
 void mouseMoveTransformationGizmos()
 {
-	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
+	FETransformComponent* objTransform = selected.getEntity() != nullptr ? &selected.getEntity()->transform : &selected.getTerrain()->transform;
 	glm::vec3 viewDirection = ENGINE.getCamera()->getForward();
-
-	//// find which plane is more perpendicular to view direction.
-	//float xPlaneDotProduct = abs(glm::dot(glm::vec3(1.0f, 0.0f, 0.0f), viewDirection));
-	//float yPlaneDotProduct = abs(glm::dot(glm::vec3(0.0f, 1.0f, 0.0f), viewDirection));
-	//float zPlaneDotProduct = abs(glm::dot(glm::vec3(0.0f, 0.0f, 1.0f), viewDirection));
-
-	//glm::vec3 suitablePlane = glm::vec3(1.0f, 0.0f, 0.0f);
-	//if (yPlaneDotProduct > xPlaneDotProduct && yPlaneDotProduct > zPlaneDotProduct)
-	//	suitablePlane = glm::vec3(0.0f, 1.0f, 0.0f);
-
-	//if (zPlaneDotProduct > xPlaneDotProduct && zPlaneDotProduct > yPlaneDotProduct)
-	//	suitablePlane = glm::vec3(0.0f, 0.0f, 1.0f);
 
 	float fT = 0.0f;
 	float sT = 0.0f;
@@ -1353,7 +1307,7 @@ void mouseMoveTransformationGizmos()
 		std::swap(mouseY, lastMouseY);
 		glm::vec3 lastMouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
-						 glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
 						 lastFT, lastST);
 
 		std::swap(mouseX, lastMouseX);
@@ -1361,33 +1315,13 @@ void mouseMoveTransformationGizmos()
 
 		glm::vec3 mouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
-			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
-			fT, sT);
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(1.0f, 0.0f, 0.0f),
+						 fT, sT);
 
 		float tDifference = sT - lastST;
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.x += tDifference;
-		/*if (tDifference > 0)
-		{
-			newPosition.x += 0.1f;
-		}
-		else
-		{
-			newPosition.x -= 0.1f;
-		}*/
-
-		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 0.0f, 1.0f)*/);
-		//glm::vec3 newPosition = entityToWork->transform.getPosition();
-		//if (suitablePlane == glm::vec3(1.0f, 0.0f, 0.0f))
-		//{
-		//	newPosition.x -= difference.y;
-		//}
-		//else
-		//{
-		//	newPosition.x += difference.x;
-		//}
-		
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 
 	if (transformationYGizmoActive)
@@ -1396,33 +1330,21 @@ void mouseMoveTransformationGizmos()
 		std::swap(mouseY, lastMouseY);
 		glm::vec3 lastMouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
-			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
-			lastFT, lastST);
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
+						 lastFT, lastST);
 
 		std::swap(mouseX, lastMouseX);
 		std::swap(mouseY, lastMouseY);
 
 		glm::vec3 mouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
-			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
-			fT, sT);
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 1.0f, 0.0f),
+						 fT, sT);
 
 		float tDifference = sT - lastST;
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.y += tDifference;
-
-		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 0.0f, 1.0f)*/);
-		//glm::vec3 newPosition = entityToWork->transform.getPosition();
-		//if (suitablePlane == glm::vec3(0.0f, 1.0f, 0.0f))
-		//{
-		//	newPosition.y += difference.x;
-		//}
-		//else
-		//{
-		//	newPosition.y += difference.y;
-		//}
-		
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 
 	if (transformationZGizmoActive)
@@ -1431,111 +1353,95 @@ void mouseMoveTransformationGizmos()
 		std::swap(mouseY, lastMouseY);
 		glm::vec3 lastMouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), lastMouseRayVector,
-			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
-			lastFT, lastST);
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
+						 lastFT, lastST);
 
 		std::swap(mouseX, lastMouseX);
 		std::swap(mouseY, lastMouseY);
 
 		glm::vec3 mouseRayVector = mouseRay();
 		raysIntersection(ENGINE.getCamera()->getPosition(), mouseRayVector,
-			glm::vec3(entityToWork->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
-			fT, sT);
+						 glm::vec3(objTransform->getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)), glm::vec3(0.0f, 0.0f, 1.0f),
+						 fT, sT);
 
 		float tDifference = sT - lastST;
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.z += tDifference;
-
-		//glm::vec3 difference = getMousePositionDifferenceOnPlane(suitablePlane/*glm::vec3(0.0f, 1.0f, 0.0f)*/);
-		//glm::vec3 newPosition = entityToWork->transform.getPosition();
-		//if (suitablePlane == glm::vec3(0.0f, 0.0f, 1.0f))
-		//{
-		//	newPosition.z += difference.y;
-		//}
-		//else
-		//{
-		//	newPosition.z += difference.z;
-		//}
-		
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 
 	if (transformationXYGizmoActive)
 	{
 		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 0.0f, 1.0f));
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.x += difference.x;
 		newPosition.y += difference.y;
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 
 	if (transformationYZGizmoActive)
 	{
 		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.y += difference.y;
 		newPosition.z += difference.z;
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 
 	if (transformationXZGizmoActive)
 	{
 		glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::vec3 newPosition = entityToWork->transform.getPosition();
+		glm::vec3 newPosition = objTransform->getPosition();
 		newPosition.x += difference.x;
 		newPosition.z += difference.z;
-		entityToWork->transform.setPosition(newPosition);
+		objTransform->setPosition(newPosition);
 	}
 }
 
 void mouseMoveScaleGizmos()
 {
-	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
+	FETransformComponent* objTransform = selected.getEntity() != nullptr ? &selected.getEntity()->transform : &selected.getTerrain()->transform;
 
 	if (scaleXGizmoActive && scaleYGizmoActive && scaleZGizmoActive)
 	{
 		glm::vec3 difference = getMousePositionDifferenceOnPlane(-ENGINE.getCamera()->getForward());
 		float magnitude = difference.x + difference.y + difference.z;
 
-		glm::vec3 entityScale = entityToWork->transform.getScale();
+		glm::vec3 entityScale =  objTransform->getScale();
 		entityScale += magnitude;
-		entityToWork->transform.setScale(entityScale);
+		 objTransform->setScale(entityScale);
 	}
 	else if (scaleXGizmoActive || scaleYGizmoActive || scaleZGizmoActive)
 	{
 		if (scaleXGizmoActive)
 		{
 			glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::vec3 entityScale = entityToWork->transform.getScale();
+			glm::vec3 entityScale =  objTransform->getScale();
 			entityScale.x += difference.x;
-			entityToWork->transform.setScale(entityScale);
+			 objTransform->setScale(entityScale);
 		}
 
 		if (scaleYGizmoActive)
 		{
 			glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::vec3 entityScale = entityToWork->transform.getScale();
+			glm::vec3 entityScale =  objTransform->getScale();
 			entityScale.y += difference.y;
-			entityToWork->transform.setScale(entityScale);
+			 objTransform->setScale(entityScale);
 		}
 
 		if (scaleZGizmoActive)
 		{
 			glm::vec3 difference = getMousePositionDifferenceOnPlane(glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::vec3 entityScale = entityToWork->transform.getScale();
+			glm::vec3 entityScale =  objTransform->getScale();
 			entityScale.z += difference.z;
-			entityToWork->transform.setScale(entityScale);
+			 objTransform->setScale(entityScale);
 		}
 	}
 }
 
 void mouseMoveRotateGizmos()
 {
-	if (selectedEntity.size() == 0)
-		return;
-
-	FEEntity* entityToWork = SCENE.getEntity(selectedEntity);
-	glm::vec3 entityRotation = entityToWork->transform.getRotation();
+	FETransformComponent* objTransform = selected.getEntity() != nullptr ? &selected.getEntity()->transform : &selected.getTerrain()->transform;
 
 	float differenceX = float(mouseX - lastMouseX);
 	float differenceY = float(mouseY - lastMouseY);
@@ -1545,40 +1451,40 @@ void mouseMoveRotateGizmos()
 	if (rotateXGizmoActive)
 	{
 		glm::vec3 xVector = glm::vec3(1.0f, 0.0f, 0.0f);
-		glm::vec3 xVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(selectedEntityObject->transform.getQuaternion())) * glm::vec4(xVector, 0.0f));
+		glm::vec3 xVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(objTransform->getQuaternion())) * glm::vec4(xVector, 0.0f));
 
 		glm::quat rotationQuaternion1 = glm::quat(cos(difference * ANGLE_TORADIANS_COF / 2),
 													  xVector.x * sin(difference * ANGLE_TORADIANS_COF / 2),
 													  xVector.y * sin(difference * ANGLE_TORADIANS_COF / 2),
 													  xVector.z * sin(difference * ANGLE_TORADIANS_COF / 2));
 
-		selectedEntityObject->transform.rotateByQuaternion(rotationQuaternion1);
+		objTransform->rotateByQuaternion(rotationQuaternion1);
 	}
 
 	if (rotateYGizmoActive)
 	{
 		glm::vec3 yVector = glm::vec3(0.0f, 1.0f, 0.0f);
-		glm::vec3 yVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(selectedEntityObject->transform.getQuaternion())) * glm::vec4(yVector, 0.0f));
+		glm::vec3 yVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(objTransform->getQuaternion())) * glm::vec4(yVector, 0.0f));
 		
 		glm::quat rotationQuaternion1 = glm::quat(cos(difference * ANGLE_TORADIANS_COF / 2),
 												  yVector.x * sin(difference * ANGLE_TORADIANS_COF / 2),
 												  yVector.y * sin(difference * ANGLE_TORADIANS_COF / 2),
 												  yVector.z * sin(difference * ANGLE_TORADIANS_COF / 2));
 
-		selectedEntityObject->transform.rotateByQuaternion(rotationQuaternion1);
+		objTransform->rotateByQuaternion(rotationQuaternion1);
 	}
 
 	if (rotateZGizmoActive)
 	{
 		glm::vec3 zVector = glm::vec3(0.0f, 0.0f, 1.0f);
-		glm::vec3 zVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(selectedEntityObject->transform.getQuaternion())) * glm::vec4(zVector, 0.0f));
+		glm::vec3 zVectorInEntitySpace = glm::normalize(glm::inverse(glm::toMat4(objTransform->getQuaternion())) * glm::vec4(zVector, 0.0f));
 
 		glm::quat rotationQuaternion1 = glm::quat(cos(difference * ANGLE_TORADIANS_COF / 2),
 												  zVector.x * sin(difference * ANGLE_TORADIANS_COF / 2),
 												  zVector.y * sin(difference * ANGLE_TORADIANS_COF / 2),
 												  zVector.z * sin(difference * ANGLE_TORADIANS_COF / 2));
 
-		selectedEntityObject->transform.rotateByQuaternion(rotationQuaternion1);
+		objTransform->rotateByQuaternion(rotationQuaternion1);
 	}
 }
 
@@ -1593,8 +1499,14 @@ void mouseMoveCallback(double xpos, double ypos)
 
 	determineEntityUnderMouse();
 	
-	if (selectedEntity != "")
+	if (selected.getEntity() != nullptr || selected.getTerrain() != nullptr)
 	{
+		if (selected.getTerrain() != nullptr)
+		{
+			if (selected.getTerrain()->isBrushSculptMode() || selected.getTerrain()->isBrushLevelMode() || selected.getTerrain()->isBrushSmoothMode())
+				return;
+		}
+
 		if (gizmosState == TRANSFORM_GIZMOS)
 		{
 			mouseMoveTransformationGizmos();
@@ -1937,7 +1849,10 @@ void loadEditor()
 	
 	pixelAccurateSelectionMaterial = RESOURCE_MANAGER.createMaterial("pixelAccurateSelectionMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(pixelAccurateSelectionMaterial);
-	pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.createShader("FEPixelAccurateSelectionShader", FEPixelAccurateSelectionVS, FEPixelAccurateSelectionFS);
+
+	pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.createShader("FEPixelAccurateSelection", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_VS.glsl").c_str(),
+																									   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_FS.glsl").c_str());
+
 	RESOURCE_MANAGER.makeShaderStandard(pixelAccurateSelectionMaterial->shader);
 	FEShaderParam colorParam(glm::vec3(0.0f, 0.0f, 0.0f), "baseColor");
 	pixelAccurateSelectionMaterial->addParameter(colorParam);
@@ -2001,6 +1916,13 @@ void loadEditor()
 	// **************************** Gizmos ****************************
 	loadGizmos();
 
+	sculptBrushIcon = RESOURCE_MANAGER.LoadPngTextureAndCompress("Editor/Images/sculptBrush.png" ,"sculptBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(sculptBrushIcon);
+	levelBrushIcon = RESOURCE_MANAGER.LoadPngTextureAndCompress("Editor/Images/levelBrush.png", "levelBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(levelBrushIcon);
+	smoothBrushIcon = RESOURCE_MANAGER.LoadPngTextureAndCompress("Editor/Images/smoothBrush.png", "smoothBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(smoothBrushIcon);
+
 	ENGINE.getCamera()->setOnUpdate(editorOnCameraUpdate);
 }
 
@@ -2026,12 +1948,11 @@ std::vector<std::string> getFolderList(const char* dirPath)
 
 void editorOnCameraUpdate(FEBasicCamera* camera)
 {
-	selectedEntityObject = SCENE.getEntity(selectedEntity);
+	selectedEntityObject = selected.getEntity();
 	if (selectedEntityObject != nullptr)
 	{
 		haloObjectsFB->bind();
-		//FE_GL_ERROR(glViewport(0, 0, haloObjectsFB->getWidth(), haloObjectsFB->getHeight()));
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
 		FEMaterial* regularMaterial = selectedEntityObject->gameModel->material;
@@ -2042,140 +1963,157 @@ void editorOnCameraUpdate(FEBasicCamera* camera)
 		haloMaterial->albedoMap = nullptr;
 
 		haloObjectsFB->unBind();
-		//FE_GL_ERROR(glViewport(0, 0, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
-		glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
+		selectionHaloEffect->active = true;
+	}
+	else if (selected.getTerrain() != nullptr)
+	{
+		FETerrain* selectedTerrain = selected.getTerrain();
+
+		haloObjectsFB->bind();
+		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
+
+		selectedTerrain->shader = FEResourceManager::getInstance().getShader("FESMTerrainShader");
+		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f, 0.25f, 0.0f));
+		float regularLODLevel = selectedTerrain->getLODlevel();
+		selectedTerrain->setLODlevel(0.0f);
+		RENDERER.renderTerrain(selectedTerrain, ENGINE.getCamera());
+		selectedTerrain->setLODlevel(regularLODLevel);
+		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
+		selectedTerrain->shader = FEResourceManager::getInstance().getShader("FETerrainShader");
+
+		haloObjectsFB->unBind();
+		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
 		selectionHaloEffect->active = true;
 	}
 	else
 	{
 		haloObjectsFB->bind();
-		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
 		haloObjectsFB->unBind();
-		glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
 		selectionHaloEffect->active = false;
+
+		return;
 	}
 
-	if (selectedEntityObject != nullptr)
+	glm::mat4 selectedObjTransform = selected.getTerrain() != nullptr ? selected.getTerrain()->transform.getTransformMatrix() : selectedEntityObject->transform.getTransformMatrix();
+	glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(selectedObjTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	glm::vec3 toObject = objectSpaceOriginInWorldSpace - ENGINE.getCamera()->getPosition();
+	toObject = glm::normalize(toObject);
+
+	if (gizmosState == TRANSFORM_GIZMOS)
 	{
-		glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(selectedEntityObject->transform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-		glm::vec3 toObject = objectSpaceOriginInWorldSpace - ENGINE.getCamera()->getPosition();
-		toObject = glm::normalize(toObject);
+		transformationXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		transformationYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		transformationZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 
-		if (gizmosState == TRANSFORM_GIZMOS)
+		glm::vec3 newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
+		newP.x += 0.005f;
+		newP.y += 0.005f;
+		transformationXYGizmoEntity->transform.setPosition(newP);
+		newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
+		newP.z += 0.005f;
+		newP.y += 0.005f;
+		transformationYZGizmoEntity->transform.setPosition(newP);
+		newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
+		newP.x += 0.005f;
+		newP.z += 0.005f;
+		transformationXZGizmoEntity->transform.setPosition(newP);
+
+		// X Gizmos
+		transformationXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
+		if (transformationXZGizmoActive || transformationXYGizmoActive || transformationXGizmoActive)
+			transformationXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// Y Gizmos
+		transformationYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
+		if (transformationYZGizmoActive || transformationXYGizmoActive || transformationYGizmoActive)
+			transformationYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// Z Gizmos
+		transformationZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
+		if (transformationYZGizmoActive || transformationXZGizmoActive || transformationZGizmoActive)
+			transformationZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// XY Gizmos
+		transformationXYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
+		if (transformationXYGizmoActive)
+			transformationXYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// YZ Gizmos
+		transformationYZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
+		if (transformationYZGizmoActive)
+			transformationYZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// XZ Gizmos
+		transformationXZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
+		if (transformationXZGizmoActive)
+			transformationXZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+	}
+	else if (gizmosState == SCALE_GIZMOS)
+	{
+		scaleXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		scaleYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		scaleZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+
+		// X Gizmos
+		scaleXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
+		if (scaleXGizmoActive)
+			scaleXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// Y Gizmos
+		scaleYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
+		if (scaleYGizmoActive)
+			scaleYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+
+		// Z Gizmos
+		scaleZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
+		if (scaleZGizmoActive)
+			scaleZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+	}
+	else if (gizmosState == ROTATE_GIZMOS)
+	{
+		rotateXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		rotateYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+		rotateZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
+
+		if (selected.obj != nullptr)
 		{
-			transformationXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			transformationYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			transformationZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-
-			glm::vec3 newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
-			newP.x += 0.005f;
-			newP.y += 0.005f;
-			transformationXYGizmoEntity->transform.setPosition(newP);
-			newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
-			newP.z += 0.005f;
-			newP.y += 0.005f;
-			transformationYZGizmoEntity->transform.setPosition(newP);
-			newP = ENGINE.getCamera()->getPosition() + toObject * 0.15f;
-			newP.x += 0.005f;
-			newP.z += 0.005f;
-			transformationXZGizmoEntity->transform.setPosition(newP);
-
-
-			// X Gizmos
-			transformationXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
-			if (transformationXZGizmoActive || transformationXYGizmoActive || transformationXGizmoActive)
-				transformationXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// Y Gizmos
-			transformationYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
-			if (transformationYZGizmoActive || transformationXYGizmoActive || transformationYGizmoActive)
-				transformationYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// Z Gizmos
-			transformationZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
-			if (transformationYZGizmoActive || transformationXZGizmoActive || transformationZGizmoActive)
-				transformationZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// XY Gizmos
-			transformationXYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
-			if (transformationXYGizmoActive)
-				transformationXYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// YZ Gizmos
-			transformationYZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
-			if (transformationYZGizmoActive)
-				transformationYZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// XZ Gizmos
-			transformationXZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.0f, 1.0f, 1.0f));
-			if (transformationXZGizmoActive)
-				transformationXZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+			rotateXGizmoEntity->setVisibility(true);
+			rotateYGizmoEntity->setVisibility(true);
+			rotateZGizmoEntity->setVisibility(true);
 		}
-		else if (gizmosState == SCALE_GIZMOS)
+
+		// X Gizmos
+		rotateXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
+		if (rotateXGizmoActive)
 		{
-			scaleXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			scaleYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			scaleZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-
-			// X Gizmos
-			scaleXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
-			if (scaleXGizmoActive)
-				scaleXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// Y Gizmos
-			scaleYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
-			if (scaleYGizmoActive)
-				scaleYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-
-			// Z Gizmos
-			scaleZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
-			if (scaleZGizmoActive)
-				scaleZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+			rotateXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+			rotateYGizmoEntity->setVisibility(false);
+			rotateZGizmoEntity->setVisibility(false);
 		}
-		else if (gizmosState == ROTATE_GIZMOS)
+
+		// Y Gizmos
+		rotateYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
+		if (rotateYGizmoActive)
 		{
-			rotateXGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			rotateYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-			rotateZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
-
-			if (selectedEntity.size() != 0)
-			{
-				rotateXGizmoEntity->setVisibility(true);
-				rotateYGizmoEntity->setVisibility(true);
-				rotateZGizmoEntity->setVisibility(true);
-			}
-
-			// X Gizmos
-			rotateXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.9f, 0.1f, 0.1f));
-			if (rotateXGizmoActive)
-			{
-				rotateXGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-				rotateYGizmoEntity->setVisibility(false);
-				rotateZGizmoEntity->setVisibility(false);
-			}
-
-			// Y Gizmos
-			rotateYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.9f, 0.1f));
-			if (rotateYGizmoActive)
-			{
-				rotateYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-				rotateXGizmoEntity->setVisibility(false);
-				rotateZGizmoEntity->setVisibility(false);
-			}
-
-			// Z Gizmos
-			rotateZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
-			if (rotateZGizmoActive)
-			{
-				rotateZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
-				rotateXGizmoEntity->setVisibility(false);
-				rotateYGizmoEntity->setVisibility(false);
-			}
-				
+			rotateYGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+			rotateXGizmoEntity->setVisibility(false);
+			rotateZGizmoEntity->setVisibility(false);
 		}
-		
+
+		// Z Gizmos
+		rotateZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(0.1f, 0.1f, 0.9f));
+		if (rotateZGizmoActive)
+		{
+			rotateZGizmoEntity->gameModel->material->setBaseColor(glm::vec3(1.5f, 1.5f, 0.2f));
+			rotateXGizmoEntity->setVisibility(false);
+			rotateYGizmoEntity->setVisibility(false);
+		}
 	}
 }
 
@@ -2183,6 +2121,22 @@ void renderEditor()
 {
 	if (currentProject)
 	{
+		/*glm::dvec3 currentTerrainPoint;
+		FEEntity* test = SCENE.getEntity("tree");
+		if (test != nullptr)
+		{
+			FETerrain* terrain = SCENE.getTerrain("test");
+			if (terrain != nullptr)
+			{
+				float range = 256.0f;
+				glm::dvec3 currentRay = mouseRay();
+
+				currentTerrainPoint = terrain->getPointOnTerrain(ENGINE.getCamera()->getPosition(), currentRay, 0, range);
+				if (currentTerrainPoint.x != FLT_MAX)
+					test->transform.setPosition(glm::vec3(currentTerrainPoint.x, currentTerrainPoint.y, currentTerrainPoint.z));
+			}
+		}*/
+
 		displaySceneEntities();
 		displayContentBrowser();
 		gyzmosSettingsWindowObject.render();
@@ -2200,7 +2154,26 @@ void renderEditor()
 				potentiallySelectedEntity = SCENE.getEntity(entitiesUnderMouse[i]);
 				// sometimes we can delete entity before entitiesUnderMouse update
 				if (potentiallySelectedEntity == nullptr)
+				{
+					// but it could be terrain
+					FETerrain* potentiallySelectedTerrain = SCENE.getTerrain(entitiesUnderMouse[i]);
+					if (potentiallySelectedTerrain != nullptr)
+					{
+						if (!potentiallySelectedTerrain->isVisible())
+							continue;
+
+						int r = (i + 1) & 255;
+						int g = ((i + 1) >> 8) & 255;
+						int b = ((i + 1) >> 16) & 255;
+
+						potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("FESMTerrainShader");
+						potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+						RENDERER.renderTerrain(potentiallySelectedTerrain, ENGINE.getCamera());
+						potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
+						potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("FETerrainShader");
+					}
 					continue;
+				}
 
 				if (!potentiallySelectedEntity->isVisible())
 					continue;
@@ -2251,37 +2224,40 @@ void renderEditor()
 				rotateYGizmoActive = false;
 				rotateZGizmoActive = false;
 
+				// checking gizmos selection
 				if (index >= 0 && entitiesUnderMouse.size() > size_t(index))
 				{
 					newEntityFound = true;
 
-					if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXGizmoNameHash)
+					FEEntity* selectedEntity = SCENE.getEntity(entitiesUnderMouse[index]);
+					int entityNameHash = selectedEntity == nullptr ? -1 : selectedEntity->getNameHash();
+					if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationXGizmoNameHash)
 					{
 						transformationXGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationYGizmoNameHash)
 					{
 						transformationYGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationZGizmoNameHash)
 					{
 						transformationZGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXYGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationXYGizmoNameHash)
 					{
 						transformationXYGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationYZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationYZGizmoNameHash)
 					{
 						transformationYZGizmoActive = true;
 					}
-					else if (gizmosState == TRANSFORM_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == transformationXZGizmoNameHash)
+					else if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationXZGizmoNameHash)
 					{
 						transformationXZGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleXGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && entityNameHash == scaleXGizmoNameHash)
 					{
-						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
+						if (selectedEntity != nullptr && selectedEntity->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -2290,9 +2266,9 @@ void renderEditor()
 
 						scaleXGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleYGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && entityNameHash == scaleYGizmoNameHash)
 					{
-						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
+						if (selectedEntity != nullptr && selectedEntity->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -2301,9 +2277,9 @@ void renderEditor()
 
 						scaleYGizmoActive = true;
 					}
-					else if (gizmosState == SCALE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == scaleZGizmoNameHash)
+					else if (gizmosState == SCALE_GIZMOS && entityNameHash == scaleZGizmoNameHash)
 					{
-						if (SCENE.getEntity(selectedEntity) != nullptr && SCENE.getEntity(selectedEntity)->transform.uniformScaling)
+						if (selectedEntity != nullptr && selectedEntity->transform.uniformScaling)
 						{
 							scaleXGizmoActive = true;
 							scaleYGizmoActive = true;
@@ -2312,27 +2288,38 @@ void renderEditor()
 
 						scaleZGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateXGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && entityNameHash == rotateXGizmoNameHash)
 					{
 						rotateXGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateYGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && entityNameHash == rotateYGizmoNameHash)
 					{
 						rotateYGizmoActive = true;
 					}
-					else if (gizmosState == ROTATE_GIZMOS && SCENE.getEntity(entitiesUnderMouse[index])->getNameHash() == rotateZGizmoNameHash)
+					else if (gizmosState == ROTATE_GIZMOS && entityNameHash == rotateZGizmoNameHash)
 					{
 						rotateZGizmoActive = true;
 					}
 					else
 					{
-						setSelectedEntity(entitiesUnderMouse[index]);
+						if (selectedEntity == nullptr)
+						{
+							FETerrain* selectedTerrain = SCENE.getTerrain(entitiesUnderMouse[index]);
+							if (selectedTerrain != nullptr)
+							{
+								selected.setTerrain(selectedTerrain);
+							}
+						}
+						else
+						{
+							selected.setEntity(SCENE.getEntity(entitiesUnderMouse[index]));
+						}
 					}
 				}
 			}
 
 			if (!newEntityFound)
-				setSelectedEntity("");
+				selected.clear();
 		}
 
 		shadersEditorWindow.render();
@@ -2342,10 +2329,18 @@ void renderEditor()
 		displayProjectSelection();
 	}
 
-	if (FELOG::getInstance().log.size() > 0)
+	if (LOG.log.size() > 0)
 	{
-		char text[1024];
-		strcpy_s(text, FELOG::getInstance().log[0].size() + 1, FELOG::getInstance().log[0].data());
+		char text[20000];
+		std::string text1;
+		for (size_t i = 0; i < LOG.log.size(); i++)
+		{
+			text1 += LOG.log[i];
+			text1 += "\n";
+		}
+
+		strcpy_s(text, text1.size() + 1, text1.data());
+		//strcpy_s(text, LOG.log[0].size() + 1, LOG.log[0].data());
 		ImGui::InputTextMultiline("LOG", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), 0);
 	}
 }
@@ -2776,7 +2771,31 @@ void openProject(int projectIndex)
 
 	gyzmosSettingsWindowObject.show();
 
-	setSelectedEntity("");
+	selected.clear();
+
+	//@delete
+	/*FETerrain* test = SCENE.getTerrain("test");
+	if (test != nullptr)
+	{
+		FEEntity* treeE = SCENE.getEntity("tree");
+		if (treeE != nullptr)
+		{
+			for (size_t i = 0; i < 500; i++)
+			{
+				float maxTerrainX = test->getAABB().getMin()[0] + test->getXSize();
+				float maxTerrainZ = test->getAABB().getMin()[2] + test->getZSize();
+
+				float randX = rand() % int(test->getXSize()) + test->getAABB().getMin()[0];
+				float randZ = rand() % int(test->getZSize()) + test->getAABB().getMin()[2];
+
+				FEEntity* newEntity = new FEEntity(treeE->gameModel, std::string("tree_") + std::to_string(i));
+				newEntity->transform.setScale(treeE->transform.getScale() + (rand() % 100) / 100000.0f);
+				newEntity->transform.setPosition(glm::vec3(randX, test->getHeightAt(glm::vec2(randX, randZ)) ,randZ));
+
+				SCENE.addEntity(newEntity);
+			}
+		}
+	}*/
 }
 
 void createMeshPreview(std::string meshName)
@@ -3138,52 +3157,190 @@ FETexture* getGameModelPreview(std::string gameModelName)
 
 void displayTerrainContentBrowser()
 {
-	static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");;
+	static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");
+	static ImGuiButton* loadHeightMapButton = new ImGuiButton("Load HeightMap");
+
+	static ImGuiImageButton* sculptBrushButton = new ImGuiImageButton(nullptr);
+	static ImGuiImageButton* levelBrushButton = new ImGuiImageButton(nullptr);
+	static ImGuiImageButton* smoothBrushButton = new ImGuiImageButton(nullptr);
+	static bool firstCall = true;
+	if (firstCall)
+	{
+		sculptBrushButton->setTexture(sculptBrushIcon);
+		sculptBrushButton->setSize(ImVec2(24, 24));
+
+		levelBrushButton->setTexture(levelBrushIcon);
+		levelBrushButton->setSize(ImVec2(24, 24));
+
+		smoothBrushButton->setTexture(smoothBrushIcon);
+		smoothBrushButton->setSize(ImVec2(24, 24));
+
+		firstCall = false;
+	}
+	
 	std::vector<std::string> terrainList = SCENE.getTerrainList();
+	if (selected.dirtyFlag && selected.getTerrain() != nullptr)
+	{
+		for (size_t i = 0; i < terrainList.size(); i++)
+		{
+			ImGui::GetStateStorage()->SetInt(ImGui::GetID(terrainList[i].c_str()), 0);
+		}
+		selected.dirtyFlag = false;
+		ImGui::GetStateStorage()->SetInt(ImGui::GetID(selected.getTerrainName().c_str()), 1);
+	}
 
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
-		ImGui::PushID(i);
-
 		FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
-		bool isActive = currentTerrain->isWireframeMode();
-		ImGui::Checkbox("WireframeMode", &isActive);
-		currentTerrain->setWireframeMode(isActive);
-
-		int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
-		ImGui::SliderInt("debugFlag", &iData, 0, 10);
-		currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
-
-		float highScale = currentTerrain->getHightScale();
-		ImGui::DragFloat("highScale", &highScale);
-		currentTerrain->setHightScale(highScale);
-
-		float displacementScale = currentTerrain->getDisplacementScale();
-		ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
-		currentTerrain->setDisplacementScale(displacementScale);
-
-		float LODlevel = currentTerrain->getLODlevel();
-		ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
-		currentTerrain->setLODlevel(LODlevel);
-		toolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
-
-		glm::vec2 tileMult = currentTerrain->getTileMult();
-		ImGui::DragFloat2("tile multiplicator", &tileMult[0], 0.1f, 1.0f, 100.0f);
-		currentTerrain->setTileMult(tileMult);
-
-		float chunkPerSide = currentTerrain->getChunkPerSide();
-		ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
-		currentTerrain->setChunkPerSide(chunkPerSide);
-
-		changeMaterialButton->render();
-		if (changeMaterialButton->getWasClicked())
+		if (ImGui::TreeNode(currentTerrain->getName().c_str()))
 		{
-			selectMaterialWindow.show(&currentTerrain->layer0);
+			bool isActive = currentTerrain->isWireframeMode();
+			ImGui::Checkbox("WireframeMode", &isActive);
+			currentTerrain->setWireframeMode(isActive);
+
+			loadHeightMapButton->render();
+			if (loadHeightMapButton->getWasClicked())
+			{
+				std::string filePath = "";
+				openDialog(filePath, textureLoadFilter, 1);
+
+				if (filePath != "")
+				{
+					std::string terrainName = "test";
+					if (SCENE.getTerrainList().size() > 0)
+						terrainName = "";
+
+					FETexture* loadedTexture = RESOURCE_MANAGER.LoadHeightmap(filePath.c_str(), currentTerrain);
+					if (loadedTexture == RESOURCE_MANAGER.noTexture)
+					{
+						LOG.logError(std::string("can't load height map: ") + filePath);
+					}
+					else
+					{
+						RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str(), loadedTexture);
+					}
+				}
+			}
+
+			int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
+			ImGui::SliderInt("debugFlag", &iData, 0, 10);
+			currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
+
+			float highScale = currentTerrain->getHightScale();
+			ImGui::DragFloat("highScale", &highScale);
+			currentTerrain->setHightScale(highScale);
+
+			float displacementScale = currentTerrain->getDisplacementScale();
+			ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
+			currentTerrain->setDisplacementScale(displacementScale);
+
+			float LODlevel = currentTerrain->getLODlevel();
+			ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
+			currentTerrain->setLODlevel(LODlevel);
+			toolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
+
+			glm::vec2 tileMult = currentTerrain->getTileMult();
+			ImGui::DragFloat2("tile multiplicator", &tileMult[0], 0.1f, 1.0f, 100.0f);
+			currentTerrain->setTileMult(tileMult);
+
+			float chunkPerSide = currentTerrain->getChunkPerSide();
+			ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
+			currentTerrain->setChunkPerSide(chunkPerSide);
+
+			changeMaterialButton->render();
+			if (changeMaterialButton->getWasClicked())
+			{
+				selectMaterialWindow.show(&currentTerrain->layer0);
+			}
+
+			showTransformConfiguration(terrainList[i], &currentTerrain->transform);
+
+			// ********************* REAL WORLD COMPARISON SCALE *********************
+			FEAABB realAABB = currentTerrain->getAABB();
+			glm::vec3 min = realAABB.getMin();
+			glm::vec3 max = realAABB.getMax();
+
+			float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+			float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+			float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+			std::string sizeInM = "Approximate terrain size: ";
+			sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
+			sizeInM += " m";
+			ImGui::Text(sizeInM.c_str());
+			// ********************* REAL WORLD COMPARISON SCALE END *********************
+
+			ImGui::Separator();
+
+			float currentBrushSize = currentTerrain->getBrushSize();
+			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
+			currentTerrain->setBrushSize(currentBrushSize);
+
+			float currentBrushIntensity = currentTerrain->getBrushIntensity();
+			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
+			currentTerrain->setBrushIntensity(currentBrushIntensity);
+			
+			currentTerrain->isBrushSculptMode() ? setSelectedStyle(sculptBrushButton) : setDefaultStyle(sculptBrushButton);
+			sculptBrushButton->render();
+			toolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
+
+			if (sculptBrushButton->getWasClicked())
+			{
+				currentTerrain->setBrushSculptMode(!currentTerrain->isBrushSculptMode());
+				if (currentTerrain->isBrushSculptMode())
+				{
+					currentTerrain->setBrushLevelMode(false);
+					currentTerrain->setBrushSmoothMode(false);
+				}
+			}
+
+			currentTerrain->isBrushLevelMode() ? setSelectedStyle(levelBrushButton) : setDefaultStyle(levelBrushButton);
+			ImGui::SameLine();
+			levelBrushButton->render();
+			toolTip("Level Brush.");
+
+			if (levelBrushButton->getWasClicked())
+			{
+				currentTerrain->setBrushLevelMode(!currentTerrain->isBrushLevelMode());
+				if (currentTerrain->isBrushLevelMode())
+				{
+					currentTerrain->setBrushSculptMode(false);
+					currentTerrain->setBrushSmoothMode(false);
+				}
+			}
+
+			currentTerrain->isBrushSmoothMode() ? setSelectedStyle(smoothBrushButton) : setDefaultStyle(smoothBrushButton);
+			ImGui::SameLine();
+			smoothBrushButton->render();
+			toolTip("Smooth Brush.");
+
+			if (smoothBrushButton->getWasClicked())
+			{
+				currentTerrain->setBrushSmoothMode(!currentTerrain->isBrushSmoothMode());
+				if (currentTerrain->isBrushSmoothMode())
+				{
+					currentTerrain->setBrushSculptMode(false);
+					currentTerrain->setBrushLevelMode(false);
+				}
+			}
+			
+			if (currentTerrain->isBrushSculptMode() || currentTerrain->isBrushLevelMode() || currentTerrain->isBrushSmoothMode())
+			{
+				// to hide gizmos
+				if (selected.getTerrain() != nullptr)
+					selected.setTerrain(selected.getTerrain());
+
+				currentTerrain->setBrushActive(leftMousePressed);
+				currentTerrain->setBrushInversed(shiftPressed);
+			}
+			else
+			{
+				// to show gizmos
+				if (selected.getTerrain() != nullptr)
+					selected.setTerrain(selected.getTerrain());
+			}
+
+			ImGui::TreePop();
 		}
-
-		showTransformConfiguration(terrainList[i], &currentTerrain->transform);
-		ImGui::Separator();
-
-		ImGui::PopID();
 	}
 }

@@ -83,7 +83,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
 		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
-		texturesData[texture->getName()] = texture->getName() + ".FETexture";
+		texturesData[texture->getName()]["name"] = texture->getName() + ".FETexture";
+		texturesData[texture->getName()]["type"] = texture->getInternalFormat();
 	}
 	root["textures"] = texturesData;
 
@@ -143,7 +144,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
 		FETerrain* terrain = SCENE.getTerrain(terrainList[i]);
-		
+
+		RESOURCE_MANAGER.saveFETexture((getProjectFolder() + terrain->heightMap->getName() + ".FETexture").c_str(), terrain->heightMap);
 		terrainData[terrain->getName()]["heightMap"] = terrain->heightMap->getName();
 		terrainData[terrain->getName()]["hightScale"] = terrain->getHightScale();
 		terrainData[terrain->getName()]["displacementScale"] = terrain->getDisplacementScale();
@@ -182,18 +184,6 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		{
 			FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
 
-			//lightData[directionalLight->getName()]["type"] = directionalLight->getType();
-			//lightData[directionalLight->getName()]["intensity"] = directionalLight->getIntensity();
-			//lightData[directionalLight->getName()]["range"] = 0.0f;
-			//lightData[directionalLight->getName()]["spotAngle"] = 0.0f;
-			//lightData[directionalLight->getName()]["spotAngleOuter"] = 0.0f;
-			//lightData[directionalLight->getName()]["castShadows"] = directionalLight->isCastShadows();
-			//lightData[directionalLight->getName()]["enabled"] = directionalLight->isLightEnabled();
-			//lightData[directionalLight->getName()]["color"]["R"] = directionalLight->getColor()[0];
-			//lightData[directionalLight->getName()]["color"]["G"] = directionalLight->getColor()[1];
-			//lightData[directionalLight->getName()]["color"]["B"] = directionalLight->getColor()[2];
-			//lightData[directionalLight->getName()]["staticShadowBias"] = directionalLight->isStaticShadowBias();
-			//writeTransformToJSON(lightData[light->getName()]["transformation"], &directionalLight->transform);
 			lightData[directionalLight->getName()]["direction"]["X"] = directionalLight->getDirection()[0];
 			lightData[directionalLight->getName()]["direction"]["Y"] = directionalLight->getDirection()[1];
 			lightData[directionalLight->getName()]["direction"]["Z"] = directionalLight->getDirection()[2];
@@ -206,17 +196,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		{
 			FESpotLight* spotLight = reinterpret_cast<FESpotLight*>(light);
 
-			//lightData[spotLight->getName()]["type"] = spotLight->getType();
-			//lightData[spotLight->getName()]["intensity"] = spotLight->getIntensity();
-			//lightData[spotLight->getName()]["range"] = spotLight->getRange();
 			lightData[spotLight->getName()]["spotAngle"] = spotLight->getSpotAngle();
 			lightData[spotLight->getName()]["spotAngleOuter"] = spotLight->getSpotAngleOuter();
-			//lightData[spotLight->getName()]["castShadows"] = spotLight->isCastShadows();
-			//lightData[spotLight->getName()]["enabled"] = spotLight->isLightEnabled();
-			//lightData[spotLight->getName()]["color"]["R"] = spotLight->getColor()[0];
-			//lightData[spotLight->getName()]["color"]["G"] = spotLight->getColor()[1];
-			//lightData[spotLight->getName()]["color"]["B"] = spotLight->getColor()[2];
-			//writeTransformToJSON(lightData[light->getName()]["transformation"], &spotLight->transform);
 			lightData[spotLight->getName()]["direction"]["X"] = spotLight->getDirection()[0];
 			lightData[spotLight->getName()]["direction"]["Y"] = spotLight->getDirection()[1];
 			lightData[spotLight->getName()]["direction"]["Z"] = spotLight->getDirection()[2];
@@ -225,20 +206,7 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		{
 			FEPointLight* pointLight = reinterpret_cast<FEPointLight*>(light);
 
-			//lightData[pointLight->getName()]["type"] = pointLight->getType();
-			//lightData[pointLight->getName()]["intensity"] = pointLight->getIntensity();
 			lightData[pointLight->getName()]["range"] = pointLight->getRange();
-			//lightData[pointLight->getName()]["spotAngle"] = 0.0f;
-			//lightData[pointLight->getName()]["spotAngleOuter"] = 0.0f;
-			//lightData[pointLight->getName()]["castShadows"] = pointLight->isCastShadows();
-			//lightData[pointLight->getName()]["enabled"] = pointLight->isLightEnabled();
-			//lightData[pointLight->getName()]["color"]["R"] = pointLight->getColor()[0];
-			//lightData[pointLight->getName()]["color"]["G"] = pointLight->getColor()[1];
-			//lightData[pointLight->getName()]["color"]["B"] = pointLight->getColor()[2];
-			//writeTransformToJSON(lightData[light->getName()]["transformation"], &pointLight->transform);
-			//lightData[pointLight->getName()]["direction"]["X"] = 0.0f;
-			//lightData[pointLight->getName()]["direction"]["Y"] = 0.0f;
-			//lightData[pointLight->getName()]["direction"]["Z"] = 0.0f;
 		}
 	}
 	root["lights"] = lightData;
@@ -317,7 +285,13 @@ void FEProject::loadScene()
 	std::vector<Json::String> texturesList = root["textures"].getMemberNames();
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
-		FETexture* justLoadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]].asCString()).c_str(), texturesList[i]);
+		// read type of texture if it is not standard then skip it.
+		if (root["textures"][texturesList[i]]["type"] == 33322)
+		{
+			continue;
+		}
+
+		FETexture* justLoadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]]["name"].asCString()).c_str(), texturesList[i]);
 		// I have texture name in file but for now I will only use name from scene.txt
 		RESOURCE_MANAGER.setTextureName(justLoadedTexture, texturesList[i]);
 	}
@@ -336,8 +310,6 @@ void FEProject::loadScene()
 		{
 			newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 		}
-		
-		
 
 		std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
 		for (size_t j = 0; j < textureList.size(); j++)
@@ -391,23 +363,23 @@ void FEProject::loadScene()
 	std::vector<Json::String> terrainList = root["terrains"].getMemberNames();
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
-		FETerrain* terrainSample = RESOURCE_MANAGER.createTerrain("test");
-		terrainSample->heightMap = RESOURCE_MANAGER.getTexture(root["terrains"][terrainList[i]]["heightMap"].asCString());
-		terrainSample->layer0 = RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["materials"]["layer0"].asCString());
+		FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(false, terrainList[i]);
+		newTerrain->heightMap = RESOURCE_MANAGER.LoadFEHeightmap((projectFolder + root["terrains"][terrainList[i]]["heightMap"].asCString() + ".FETexture").c_str(), newTerrain, root["terrains"][terrainList[i]]["heightMap"].asCString());
+		newTerrain->layer0 = RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["materials"]["layer0"].asCString());
 
-		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
-		terrainSample->setDisplacementScale(root["terrains"][terrainList[i]]["displacementScale"].asFloat());
+		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		newTerrain->setDisplacementScale(root["terrains"][terrainList[i]]["displacementScale"].asFloat());
 		glm::vec2 tileMult;
 		tileMult.x = root["terrains"][terrainList[i]]["tileMult"]["X"].asFloat();
 		tileMult.y = root["terrains"][terrainList[i]]["tileMult"]["Y"].asFloat();
-		terrainSample->setTileMult(tileMult);
-		terrainSample->setLODlevel(root["terrains"][terrainList[i]]["LODlevel"].asFloat());
-		terrainSample->setChunkPerSide(root["terrains"][terrainList[i]]["chunkPerSide"].asFloat());
-		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
-		terrainSample->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
-		readTransformToJSON(root["terrains"][terrainList[i]]["transformation"], &terrainSample->transform);
+		newTerrain->setTileMult(tileMult);
+		newTerrain->setLODlevel(root["terrains"][terrainList[i]]["LODlevel"].asFloat());
+		newTerrain->setChunkPerSide(root["terrains"][terrainList[i]]["chunkPerSide"].asFloat());
+		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
+		readTransformToJSON(root["terrains"][terrainList[i]]["transformation"], &newTerrain->transform);
 
-		SCENE.addTerrain(terrainSample);
+		SCENE.addTerrain(newTerrain);
 	}
 
 	// loading Lights

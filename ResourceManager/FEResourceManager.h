@@ -33,12 +33,12 @@ namespace FocalEngine
 		bool replaceShader(std::string oldShaderName, FEShader* newShader);
 		std::string loadGLSL(const char* fileName);
 
-		// to-do: add flags
 		FETexture* LoadPngTextureAndCompress(const char* fileName, bool usingAlpha, std::string Name = "");
 		FETexture* LoadPngTextureWithTransparencyMaskAndCompress(const char* mainfileName, const char* maskFileName, std::string Name);
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "");
 		FETexture* LoadFETextureStandAlone(const char* fileName, std::string Name = "");
-		FETexture* LoadHeightmap(const char* fileName, std::string Name = "");
+		FETexture* LoadHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
+		FETexture* LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
 		
 		void saveFETexture(const char* fileName, FETexture* texture);
 		void saveFETexture(const char* fileName, char* textureData, int width, int height, bool isAlphaUsed = false);
@@ -80,7 +80,7 @@ namespace FocalEngine
 		bool setGameModelName(FEGameModel* gameModel, std::string gameModelName);
 		void deleteGameModel(FEGameModel* gameModel);
 
-		FETerrain* createTerrain(std::string name);
+		FETerrain* createTerrain(bool createHeightMap = true, std::string name = "");
 		FETerrain* getTerrain(std::string terrainName);
 		bool setTerrainName(FETerrain* terrain, std::string terrainName);
 		std::vector<std::string> getTerrainList();
@@ -91,6 +91,8 @@ namespace FocalEngine
 		void loadStandardGameModels();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
+
+		static const int defaultHeighttMapResolution = 1024;
 
 		std::unordered_map<std::string, FEShader*> shaders;
 		std::unordered_map<std::string, FEShader*> standardShaders;
@@ -118,5 +120,6 @@ namespace FocalEngine
 		FEEntity* createEntity(FEGameModel* gameModel, std::string Name);
 
 		void LoadFETexture(const char* fileName, FETexture* existingTexture);
+		void initTerrainEditTools(FETerrain* terrain);
 	};
 }

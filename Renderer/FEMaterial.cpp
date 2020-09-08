@@ -105,7 +105,7 @@ glm::vec3 FEMaterial::getBaseColor()
 	return baseColor;
 }
 
-// Only infuence color of object if shader with such unifor is applied.
+// Only infuence color of object if shader with such uniform is applied.
 void FEMaterial::setBaseColor(glm::vec3 newBaseColor)
 {
 	baseColor = newBaseColor;

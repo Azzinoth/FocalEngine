@@ -45,7 +45,8 @@ namespace FocalEngine
 		FEMaterial* shadowMapMaterial;
 
 		int uniformBufferCount = 0;
-		const int UBufferForLightSize = 192;
+		//const int UBufferForLightSize = 192;
+		const int UBufferForLightSize = 128;
 		GLuint uniformBufferForLights;
 		const int UBufferForDirectionalLightSize = 384;
 		GLuint uniformBufferForDirectionalLight;
@@ -57,6 +58,11 @@ namespace FocalEngine
 		int lineCounter = 0;
 		GLuint instancedLineVAO = 0;
 		GLenum instancedLineBuffer = 0;
+
+		FEBasicCamera* engineMainCamera = nullptr;
+		glm::dvec3 mouseRay = glm::dvec3(0.0);
+
+		void updateTerrainBrush(FETerrain* terrain);
 	};
 }
 

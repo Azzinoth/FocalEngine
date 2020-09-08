@@ -3,7 +3,6 @@
 uniform float hightScale;
 uniform float scaleFactor;
 uniform vec2 tileMult;
-uniform float drawingToShadowMap;
 
 @Texture@ heightMap;
 @Texture@ albedoMap;
@@ -22,6 +21,7 @@ uniform float FERoughtnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapPresent;
 uniform float FEMetalnessMapIntensity;
+@Texture@ projectedMap;
 
 #define MAX_LIGHTS 10
 in GS_OUT
@@ -44,7 +44,6 @@ struct FELight
 	vec3 color;
 	vec3 direction;
 	mat4 lightSpace;
-	mat4 lightSpaceBig;
 };
 
 // is object receiving shadows.
@@ -142,12 +141,6 @@ vec2 filterTaps[NUM_BLUR_TAPS] = vec2[] ( vec2(-0.326212, -0.405805), vec2(-0.84
 
 void main(void)
 {
-	if (drawingToShadowMap > 0)
-	{
-		gl_FragColor = vec4(1.0);
-		return;
-	}
-
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
@@ -285,6 +278,7 @@ void main(void)
 	}
 
 	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+	gl_FragColor += vec4(texture(projectedMap, tiledUV / tileMult));
 }
 
 // Produces cheap but low-quality white noise, nothing special
@@ -448,7 +442,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
     vec3 N = normal;
     vec3 V = viewDir;
 	// calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
-    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
+    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
     vec3 F0 = vec3(0.04); 
     F0 = mix(F0, albedo, metallic);
 

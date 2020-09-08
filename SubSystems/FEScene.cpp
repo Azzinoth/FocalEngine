@@ -169,3 +169,25 @@ FETerrain* FEScene::getTerrain(std::string name)
 
 	return terrainMap[name];
 }
+
+void FEScene::deleteTerrain(std::string name)
+{
+	if (terrainMap.find(name) == terrainMap.end())
+		return;
+
+	FETerrain* terrainToDelete = terrainMap[name];
+	delete terrainToDelete;
+	terrainMap.erase(name);
+}
+
+bool FEScene::setTerrainName(FETerrain* Terrain, std::string TerrainName)
+{
+	if (TerrainName.size() == 0 || terrainMap.find(TerrainName) != terrainMap.end())
+		return false;
+
+	terrainMap.erase(Terrain->getName());
+	terrainMap[TerrainName] = Terrain;
+
+	Terrain->setName(TerrainName);
+	return true;
+}

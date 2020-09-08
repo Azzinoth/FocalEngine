@@ -4,11 +4,13 @@
 namespace FocalEngine
 {
 	class FEEntity;
+	class FETerrain;
 	class FERenderer;
 
 	class FETransformComponent
 	{
 		friend FEEntity;
+		friend FETerrain;
 		friend FERenderer;
 	public:
 		FETransformComponent();

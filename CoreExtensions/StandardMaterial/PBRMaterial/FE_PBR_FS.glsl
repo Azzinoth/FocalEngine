@@ -38,7 +38,6 @@ struct FELight
 	vec3 color;
 	vec3 direction;
 	mat4 lightSpace;
-	mat4 lightSpaceBig;
 };
 
 // is object receiving shadows.

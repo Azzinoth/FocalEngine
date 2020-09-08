@@ -57,6 +57,9 @@ void FEngine::beginFrame(bool internalCall)
 
 void FEngine::render(bool internalCall)
 {
+	RENDERER.engineMainCamera = ENGINE.currentCamera;
+	RENDERER.mouseRay = ENGINE.constructMouseRay();
+
 	ENGINE.currentCamera->move(cpuTime + gpuTime);
 	RENDERER.render(currentCamera);
 
@@ -98,7 +101,8 @@ void FEngine::setImguiStyle()
 
 	colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
 	colors[ImGuiCol_TextDisabled] = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
-	colors[ImGuiCol_WindowBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+	//colors[ImGuiCol_WindowBg] = ImVec4(0.86f, 0.86f, 0.86f, 1.00f);
+	colors[ImGuiCol_WindowBg] = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
 	colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
 	colors[ImGuiCol_PopupBg] = ImVec4(0.93f, 0.93f, 0.93f, 0.98f);
 	colors[ImGuiCol_Border] = ImVec4(0.71f, 0.71f, 0.71f, 0.08f);
@@ -332,6 +336,9 @@ void FEngine::mouseMoveCallback(double xpos, double ypos)
 		engineObj.clientMouseMoveCallbackImpl(xpos, ypos);
 
 	engineObj.currentCamera->mouseMoveInput(xpos, ypos);
+
+	engineObj.mouseX = xpos;
+	engineObj.mouseY = ypos;
 }
 
 void FEngine::keyButtonCallback(int key, int scancode, int action, int mods)
@@ -406,4 +413,20 @@ void FEngine::resetCamera()
 {
 	currentCamera->reset();
 	currentCamera->setAspectRatio(float(windowW) / float(windowH));
+}
+
+glm::dvec3 FEngine::constructMouseRay()
+{
+	glm::dvec2 normalizedMouseCoords;
+	normalizedMouseCoords.x = (2.0f * mouseX) / getWindowWidth() - 1;
+	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / getWindowHeight();
+
+	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
+	glm::dvec4 eyeCoords = glm::inverse(getCamera()->getProjectionMatrix()) * clipCoords;
+	eyeCoords.z = -1.0f;
+	eyeCoords.w = 0.0f;
+	glm::dvec3 worldRay = glm::inverse(getCamera()->getViewMatrix()) * eyeCoords;
+	worldRay = glm::normalize(worldRay);
+
+	return worldRay;
 }

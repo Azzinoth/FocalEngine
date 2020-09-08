@@ -13,5 +13,6 @@ FELOG::~FELOG()
 
 void FELOG::logError(std::string text)
 {
-	log.push_back(text);
+	if (log.size() < 100)
+		log.push_back(text);
 }

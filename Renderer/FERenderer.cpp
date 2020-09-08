@@ -155,7 +155,7 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	//double eTime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count() * 1000.0;
 	//if (eTime > 0.02)
 	//{
-	//	FELOG::getInstance().logError(std::to_string(eTime));
+	//	LOG.logError(std::to_string(eTime));
 	//	float time = 1;
 	//	time += 1;
 	//}
@@ -267,7 +267,6 @@ void FERenderer::loadUniformBlocks()
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, index * sizeOfFELightShaderInfo + 32, 16, &info[index].color));
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, index * sizeOfFELightShaderInfo + 48, 16, &info[index].direction));
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, index * sizeOfFELightShaderInfo + 64, 64, &info[index].lightSpace));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, index * sizeOfFELightShaderInfo + 128, 64, &info[index].lightSpaceBig));
 
 					index++;
 					lightIterator++;
@@ -330,14 +329,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	loadUniformBlocks();
 	
 	// ********* GENERATE SHADOW MAPS *********
-	
-	// for now I assume that all terrains uses one shader!
-	if (scene.terrainMap.size() != 0)
-	{
-		FEShader* terrainShader = scene.terrainMap.begin()->second->shader;
-		terrainShader->getParameter("drawingToShadowMap")->updateData(1.0f);
-	}
-	
 	itLight = scene.lightsMap.begin();
 	while (itLight != scene.lightsMap.end())
 	{
@@ -372,7 +363,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 							continue;
 						}
 						
+						terrain->shader = FEResourceManager::getInstance().getShader("FESMTerrainShader");
 						renderTerrain(terrain, currentCamera);
+						terrain->shader = FEResourceManager::getInstance().getShader("FETerrainShader");
 						itTerrain++;
 					}
 
@@ -428,11 +421,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		itLight++;
 	}
 
-	if (scene.terrainMap.size() != 0)
-	{
-		FEShader* terrainShader = scene.terrainMap.begin()->second->shader;
-		terrainShader->getParameter("drawingToShadowMap")->updateData(0.0f);
-	}
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
@@ -446,7 +434,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// ********* RENDER INSTANCED LINE *********
-	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
+	FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedLineBuffer));
 	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, maxLines * sizeof(FELine), this->linesBuffer.data()));
@@ -526,16 +514,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 			effect.stages[j]->shader->loadDataToGPU();
 
-			/*for (size_t k = 0; k < effect.stages[j]->stageSpecificUniforms.size(); k++)
-			{
-				FEShaderParam* param = effect.stages[j]->shader->getParameter(effect.stages[j]->stageSpecificUniforms[k].getName());
-				if (param != nullptr)
-				{
-					void* previousValue = param->data;
-					param->updateData(effect.stages[j]->stageSpecificUniforms[k].data);
-				}
-			}*/
-
 			for (size_t k = 0; k < effect.stages[j]->inTextureSource.size(); k++)
 			{
 				if (effect.stages[j]->inTextureSource[k] == FEPP_PREVIOUS_STAGE_RESULT0)
@@ -601,6 +579,18 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	}
 	// ********* SCREEN SPACE EFFECTS END *********
 
+	// **************************** TERRAIN EDITOR TOOLS ****************************
+	itTerrain = scene.terrainMap.begin();
+	while (itTerrain != scene.terrainMap.end())
+	{
+		auto terrain = itTerrain->second;
+		if (terrain->isVisible())
+			updateTerrainBrush(terrain);
+
+		itTerrain++;
+	}
+	// **************************** TERRAIN EDITOR TOOLS END ****************************
+
 	lineCounter = 0;
 }
 
@@ -653,7 +643,7 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	terrain->heightMap->bind(0);
-	//#fix
+
 	if (terrain->layer0->displacementMap != nullptr)
 		terrain->layer0->displacementMap->bind(1);
 
@@ -667,6 +657,9 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 		terrain->layer0->roughtnessMap->bind(5);
 	if (terrain->layer0->metalnessMap != nullptr)
 		terrain->layer0->metalnessMap->bind(6);
+
+	if (terrain->projectedMap != nullptr)
+		terrain->projectedMap->bind(7);
 
 	terrain->shader->start();
 
@@ -688,29 +681,31 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 	static int WMHash = std::hash<std::string>{}("FEWorldMatrix");
 	static int HShiftHash = std::hash<std::string>{}("hightMapShift");
 
+	bool wasDirty = terrain->transform.dirtyFlag;
 	terrain->shader->loadDataToGPU();
 	for (size_t i = 0; i < terrain->chunkPerSide; i++)
 	{
 		for (size_t j = 0; j < terrain->chunkPerSide; j++)
 		{
-			//terrain->transform.setPosition(glm::vec3(pivotPosition.x + i * 64.0f, pivotPosition.y, pivotPosition.z + j * 64.0f));
-			terrain->transform.transformMatrix = glm::mat4(1.0);
-			terrain->transform.transformMatrix *= glm::toMat4(terrain->transform.rotationQuaternion);
-			terrain->transform.transformMatrix = glm::scale(terrain->transform.transformMatrix, glm::vec3(terrain->transform.scale[0], terrain->transform.scale[1], terrain->transform.scale[2]));
-			terrain->transform.transformMatrix = glm::translate(terrain->transform.transformMatrix, glm::vec3(pivotPosition.x + i * 64.0f, pivotPosition.y, pivotPosition.z + j * 64.0f));
+			terrain->transform.setPosition(glm::vec3(pivotPosition.x + i * 64.0f * terrain->transform.scale[0], pivotPosition.y, pivotPosition.z + j * 64.0f * terrain->transform.scale[2]));
 
 			terrain->shader->getParameter("FEPVMMatrix")->updateData(currentCamera->getProjectionMatrix() * currentCamera->getViewMatrix() * terrain->transform.getTransformMatrix());
-			terrain->shader->getParameter("FEWorldMatrix")->updateData(terrain->transform.getTransformMatrix());
-			terrain->shader->getParameter("hightMapShift")->updateData(glm::vec2(i * (-(terrain->chunkPerSide - 1)), j * (-(terrain->chunkPerSide - 1))));
-			
+			if (terrain->shader->getParameter("FEWorldMatrix") != nullptr)
+				terrain->shader->getParameter("FEWorldMatrix")->updateData(terrain->transform.getTransformMatrix());
+			terrain->shader->getParameter("hightMapShift")->updateData(glm::vec2(i * -1.0f, j * -1.0f));
+
 			terrain->shader->loadMatrix(PVMHash, *(glm::mat4*)terrain->shader->getParameter("FEPVMMatrix")->data);
-			terrain->shader->loadMatrix(WMHash, *(glm::mat4*)terrain->shader->getParameter("FEWorldMatrix")->data);
+			if (terrain->shader->getParameter("FEWorldMatrix") != nullptr)
+				terrain->shader->loadMatrix(WMHash, *(glm::mat4*)terrain->shader->getParameter("FEWorldMatrix")->data);
 			terrain->shader->loadVector(HShiftHash, *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
 			terrain->render();
 		}
 	}
-
+	terrain->shader->stop();
 	terrain->transform.setPosition(pivotPosition);
+
+	if (!wasDirty)
+		terrain->transform.dirtyFlag = false;
 
 	if (terrain->isWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -727,4 +722,10 @@ void FERenderer::drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 co
 	linesBuffer[lineCounter].width = width;
 
 	lineCounter++;
+}
+
+void FERenderer::updateTerrainBrush(FETerrain* terrain)
+{
+	terrain->updateBrush(engineMainCamera->position, mouseRay);
+	FE_GL_ERROR(glViewport(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight()));
 }

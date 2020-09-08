@@ -2,7 +2,6 @@
 
 #include "FEProject.h"
 #include "FEDearImguiWrapper/FEDearImguiWrapper.h"
-#include "../Editor/FEPixelAccurateSelectionShader.h"
 #include "../Editor/FEMeshPreviewShader.h"
 #include "../Editor/FESelectionHaloEffect.h"
 #include "../ThirdParty/textEditor/TextEditor.h"
@@ -18,27 +17,9 @@ using namespace FocalEngine;
 
 static double lastMouseX, lastMouseY;
 static double mouseX, mouseY;
+static bool leftMousePressed = false;
+static bool shiftPressed = false;
 static bool isCameraInputActive = false;
-
-//static TextEditor editor;
-// **************************** entity selection ****************************
-glm::dvec3 mouseRay();
-
-void determineEntityUnderMouse();
-static std::vector<std::string> entitiesUnderMouse;
-static std::string selectedEntity = "";
-void setSelectedEntity(std::string newEntity);
-static bool selectedEntityWasChanged;
-
-static std::string clipboardEntity = "";
-
-// pixel accurate part
-static bool checkPixelAccurateSelection = false;
-static unsigned char* colorUnderMouse = new unsigned char[3];
-static FocalEngine::FEFramebuffer* pixelAccurateSelectionFB;
-static FocalEngine::FEEntity* potentiallySelectedEntity = nullptr;
-static FocalEngine::FEMaterial* pixelAccurateSelectionMaterial;
-// **************************** entity selection END ****************************
 
 static std::unordered_map<int, FEEntity*> internalEditorEntities;
 static void addEntityToInternalEditorList(FEEntity* entity);
@@ -142,6 +123,156 @@ static int rotateYGizmoNameHash = std::hash<std::string>{}(rotateYGizmoName);
 static std::string rotateZGizmoName = "rotateZGizmoEntity";
 static int rotateZGizmoNameHash = std::hash<std::string>{}(rotateZGizmoName);
 
+// **************************** Selection ****************************
+glm::dvec3 mouseRay();
+
+void determineEntityUnderMouse();
+static std::vector<std::string> entitiesUnderMouse;
+
+struct selectedObject
+{
+	void* obj = nullptr;
+	int type = 0;
+	bool dirtyFlag = false;
+private:
+	void gizmosUpdate()
+	{
+		if (obj == nullptr)
+		{
+			transformationXGizmoEntity->setVisibility(false);
+			transformationYGizmoEntity->setVisibility(false);
+			transformationZGizmoEntity->setVisibility(false);
+			transformationXYGizmoEntity->setVisibility(false);
+			transformationYZGizmoEntity->setVisibility(false);
+			transformationXZGizmoEntity->setVisibility(false);
+			scaleXGizmoEntity->setVisibility(false);
+			scaleYGizmoEntity->setVisibility(false);
+			scaleZGizmoEntity->setVisibility(false);
+			rotateXGizmoEntity->setVisibility(false);
+			rotateYGizmoEntity->setVisibility(false);
+			rotateZGizmoEntity->setVisibility(false);
+		}
+		else
+		{
+			if (getTerrain() != nullptr)
+			{
+				if (getTerrain()->isBrushSculptMode() || getTerrain()->isBrushLevelMode() || getTerrain()->isBrushSmoothMode())
+				{
+					transformationXGizmoEntity->setVisibility(false);
+					transformationYGizmoEntity->setVisibility(false);
+					transformationZGizmoEntity->setVisibility(false);
+					transformationXYGizmoEntity->setVisibility(false);
+					transformationYZGizmoEntity->setVisibility(false);
+					transformationXZGizmoEntity->setVisibility(false);
+					scaleXGizmoEntity->setVisibility(false);
+					scaleYGizmoEntity->setVisibility(false);
+					scaleZGizmoEntity->setVisibility(false);
+					rotateXGizmoEntity->setVisibility(false);
+					rotateYGizmoEntity->setVisibility(false);
+					rotateZGizmoEntity->setVisibility(false);
+
+					return;
+				}
+			}
+
+			if (gizmosState == TRANSFORM_GIZMOS)
+			{
+				transformationXGizmoEntity->setVisibility(true);
+				transformationYGizmoEntity->setVisibility(true);
+				transformationZGizmoEntity->setVisibility(true);
+				transformationXYGizmoEntity->setVisibility(true);
+				transformationYZGizmoEntity->setVisibility(true);
+				transformationXZGizmoEntity->setVisibility(true);
+			}
+			else if (gizmosState == SCALE_GIZMOS)
+			{
+				scaleXGizmoEntity->setVisibility(true);
+				scaleYGizmoEntity->setVisibility(true);
+				scaleZGizmoEntity->setVisibility(true);
+			}
+			else if (gizmosState == ROTATE_GIZMOS)
+			{
+				rotateXGizmoEntity->setVisibility(true);
+				rotateYGizmoEntity->setVisibility(true);
+				rotateZGizmoEntity->setVisibility(true);
+			}
+		}
+	}
+
+public:
+	FEEntity* getEntity()
+	{
+		if (type != 0)
+			return nullptr;
+
+		return reinterpret_cast<FEEntity*>(obj);
+	}
+
+	std::string getEntityName()
+	{
+		if (type != 0 || obj == nullptr)
+			return "";
+
+		return reinterpret_cast<FEEntity*>(obj)->getName();
+	}
+
+	FETerrain* getTerrain()
+	{
+		if (type != 1)
+			return nullptr;
+
+		return reinterpret_cast<FETerrain*>(obj);
+	}
+
+	std::string getTerrainName()
+	{
+		if (type != 1 || obj == nullptr)
+			return "";
+
+		return reinterpret_cast<FETerrain*>(obj)->getName();
+	}
+
+	void setEntity(FEEntity* selected)
+	{
+		if (selected == nullptr)
+			return;
+
+		type = 0;
+		obj = selected;
+		dirtyFlag = true;
+		gizmosUpdate();
+	}
+
+	void setTerrain(FETerrain* selected)
+	{
+		if (selected == nullptr)
+			return;
+
+		type = 1;
+		obj = selected;
+		dirtyFlag = true;
+		gizmosUpdate();
+	}
+
+	void clear()
+	{
+		type = 0;
+		obj = nullptr;
+		dirtyFlag = true;
+		gizmosUpdate();
+	}
+};
+static selectedObject selected;
+static std::string clipboardEntity = "";
+
+// pixel accurate part
+static bool checkPixelAccurateSelection = false;
+static unsigned char* colorUnderMouse = new unsigned char[3];
+static FocalEngine::FEFramebuffer* pixelAccurateSelectionFB;
+static FocalEngine::FEEntity* potentiallySelectedEntity = nullptr;
+static FocalEngine::FEMaterial* pixelAccurateSelectionMaterial;
+// **************************** Selection END ****************************
+
 static void changeGizmoState(int newState)
 {
 	if (newState < 0 || newState > 2)
@@ -181,57 +312,56 @@ static void changeGizmoState(int newState)
 	rotateYGizmoActive = false;
 	rotateZGizmoActive = false;
 
+	if (selected.getTerrain() != nullptr)
+	{
+		if (selected.getTerrain()->isBrushSculptMode() || selected.getTerrain()->isBrushLevelMode() || selected.getTerrain()->isBrushSmoothMode())
+			return;
+	}
+
 	switch (newState)
 	{
-	case TRANSFORM_GIZMOS:
-	{
-		if (selectedEntity.size() != 0)
+		case TRANSFORM_GIZMOS:
 		{
-			transformationXGizmoEntity->setVisibility(true);
-			transformationYGizmoEntity->setVisibility(true);
-			transformationZGizmoEntity->setVisibility(true);
+			if (selected.obj != nullptr)
+			{
+				transformationXGizmoEntity->setVisibility(true);
+				transformationYGizmoEntity->setVisibility(true);
+				transformationZGizmoEntity->setVisibility(true);
 
-			transformationXYGizmoEntity->setVisibility(true);
-			transformationYZGizmoEntity->setVisibility(true);
-			transformationXZGizmoEntity->setVisibility(true);
+				transformationXYGizmoEntity->setVisibility(true);
+				transformationYZGizmoEntity->setVisibility(true);
+				transformationXZGizmoEntity->setVisibility(true);
+			}
+			break;
 		}
-		break;
-	}
-	case SCALE_GIZMOS:
-	{
-		if (selectedEntity.size() != 0)
+		case SCALE_GIZMOS:
 		{
-			scaleXGizmoEntity->setVisibility(true);
-			scaleYGizmoEntity->setVisibility(true);
-			scaleZGizmoEntity->setVisibility(true);
+			if (selected.obj != nullptr)
+			{
+				scaleXGizmoEntity->setVisibility(true);
+				scaleYGizmoEntity->setVisibility(true);
+				scaleZGizmoEntity->setVisibility(true);
+			}
+			break;
 		}
-		break;
-	}
-	case ROTATE_GIZMOS:
-	{
-		if (selectedEntity.size() != 0)
+		case ROTATE_GIZMOS:
 		{
-			rotateXGizmoEntity->setVisibility(true);
-			rotateYGizmoEntity->setVisibility(true);
-			rotateZGizmoEntity->setVisibility(true);
+			if (selected.obj != nullptr)
+			{
+				rotateXGizmoEntity->setVisibility(true);
+				rotateYGizmoEntity->setVisibility(true);
+				rotateZGizmoEntity->setVisibility(true);
+			}
+			break;
 		}
-		break;
-	}
-	default:
-		break;
+		default:
+			break;
 	}
 }
 
 static FETexture* transformationGizmoIcon = nullptr;
 static FETexture* scaleGizmoIcon = nullptr;
 static FETexture* rotateGizmoIcon = nullptr;
-
-//static std::string transformationGizmoIconName = "transformationGizmoIcon";
-//static int transformationGizmoIconNameHash = std::hash<std::string>{}(transformationGizmoIconName);
-//static std::string scaleGizmoIconName = "scaleGizmoIcon";
-//static int scaleGizmoIconNameHash = std::hash<std::string>{}(scaleGizmoIconName);
-//static std::string rotateGizmoIconName = "rotateGizmoIcon";
-//static int rotateGizmoIconNameHash = std::hash<std::string>{}(rotateGizmoIconName);
 
 void editorOnCameraUpdate(FEBasicCamera* camera);
 
@@ -326,6 +456,9 @@ void displayPostProcessContentBrowser();
 void displayProjectSelection();
 void openProject(int projectIndex);
 void displayTerrainContentBrowser();
+static FETexture* sculptBrushIcon = nullptr;
+static FETexture* levelBrushIcon = nullptr;
+static FETexture* smoothBrushIcon = nullptr;
 
 void addEntityButton();
 
@@ -1654,7 +1787,7 @@ public:
 };
 static renameEntityPopUp renameEntityWindow;
 
-class editGameModelPopup : public ImGuiWindow
+class editGameModelPopup : public FEImGuiWindow
 {
 	FEGameModel* objToWorkWith;
 	FEGameModel* tempModel = nullptr;
@@ -1712,7 +1845,7 @@ public:
 			strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
 			size = ImVec2(350.0f, 400.0f);
 			position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
-			ImGuiWindow::show();
+			FEImGuiWindow::show();
 
 			previousMesh = objToWorkWith->mesh;
 			previousMaterial = objToWorkWith->material;
@@ -1728,7 +1861,7 @@ public:
 
 	void render() override
 	{
-		ImGuiWindow::render();
+		FEImGuiWindow::render();
 
 		if (!isVisible())
 			return;
@@ -1743,7 +1876,7 @@ public:
 
 		if (objToWorkWith == nullptr)
 		{
-			ImGuiWindow::close();
+			FEImGuiWindow::close();
 			return;
 		}
 
@@ -1789,7 +1922,7 @@ public:
 			objToWorkWith->material = tempModel->material;
 			createGameModelPreview(objToWorkWith->getName());
 
-			ImGuiWindow::close();
+			FEImGuiWindow::close();
 			return;
 		}
 
@@ -1797,21 +1930,21 @@ public:
 		cancelButton->render();
 		if (cancelButton->getWasClicked())
 		{
-			ImGuiWindow::close();
+			FEImGuiWindow::close();
 			return;
 		}
 
-		ImGuiWindow::onRenderEnd();
+		FEImGuiWindow::onRenderEnd();
 	}
 
 	void close()
 	{
-		ImGuiWindow::close();
+		FEImGuiWindow::close();
 	}
 };
 static editGameModelPopup editGameModelWindow;
 
-class gyzmosSettingsWindow : public ImGuiWindow
+class gyzmosSettingsWindow : public FEImGuiWindow
 {
 	ImGuiImageButton* transformationGizmoButton = nullptr;
 	ImGuiImageButton* scaleGizmoButton = nullptr;
@@ -1840,7 +1973,7 @@ public:
 		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
 		size = ImVec2(146.0f, 48.0f);
 		position = ImVec2(FEngine::getInstance().getWindowWidth() / 2.0f - 150.0f / 2.0f, 10.0f);
-		ImGuiWindow::show();
+		FEImGuiWindow::show();
 
 		if (transformationGizmoButton == nullptr)
 			transformationGizmoButton = new ImGuiImageButton(transformationGizmoIcon);
@@ -1861,7 +1994,7 @@ public:
 
 	void render() override
 	{
-		ImGuiWindow::render();
+		FEImGuiWindow::render();
 
 		if (!isVisible())
 			return;
@@ -1875,7 +2008,7 @@ public:
 			{
 				changeGizmoState(TRANSFORM_GIZMOS);
 				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
+				FEImGuiWindow::onRenderEnd();
 				return;
 			}
 		}
@@ -1891,7 +2024,7 @@ public:
 			{
 				changeGizmoState(SCALE_GIZMOS);
 				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
+				FEImGuiWindow::onRenderEnd();
 				return;
 			}
 		}
@@ -1907,19 +2040,19 @@ public:
 			{
 				changeGizmoState(ROTATE_GIZMOS);
 				ImGui::PopID();
-				ImGuiWindow::onRenderEnd();
+				FEImGuiWindow::onRenderEnd();
 				return;
 			}
 		}
 		ImGui::PopID();
 		toolTip("Rotate objects. key = shift");
 
-		ImGuiWindow::onRenderEnd();
+		FEImGuiWindow::onRenderEnd();
 	}
 };
 static gyzmosSettingsWindow gyzmosSettingsWindowObject;
 
-class justTextWindow : public ImGuiWindow
+class justTextWindow : public FEImGuiWindow
 {
 	TextEditor editor;
 	ImGuiButton* okButton = nullptr;
@@ -1948,12 +2081,12 @@ public:
 			caption = "Text view";
 
 		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
-		ImGuiWindow::show();
+		FEImGuiWindow::show();
 	}
 
 	void render() override
 	{
-		ImGuiWindow::render();
+		FEImGuiWindow::render();
 
 		if (!isVisible())
 			return;
@@ -1961,16 +2094,16 @@ public:
 		okButton->render();
 		if (okButton->getWasClicked())
 		{
-			ImGuiWindow::close();
+			FEImGuiWindow::close();
 		}
 
 		editor.Render("TextEditor");
-		ImGuiWindow::onRenderEnd();
+		FEImGuiWindow::onRenderEnd();
 	}
 };
 static justTextWindow justTextWindowObj;
 
-class shaderDebugWindow : public ImGuiWindow
+class shaderDebugWindow : public FEImGuiWindow
 {
 	TextEditor editor;
 	ImGuiButton* closeButton = nullptr;
@@ -2019,12 +2152,12 @@ public:
 			caption = "Text view";
 
 		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
-		ImGuiWindow::show();
+		FEImGuiWindow::show();
 	}
 
 	void render() override
 	{
-		ImGuiWindow::render();
+		FEImGuiWindow::render();
 
 		if (!isVisible())
 			return;
@@ -2105,7 +2238,7 @@ public:
 		closeButton->render();
 		if (closeButton->getWasClicked())
 		{
-			ImGuiWindow::close();
+			FEImGuiWindow::close();
 		}
 
 		updateButton->render();
@@ -2115,12 +2248,12 @@ public:
 		}
 
 		editor.Render("TextEditor");
-		ImGuiWindow::onRenderEnd();
+		FEImGuiWindow::onRenderEnd();
 	}
 };
 static shaderDebugWindow shaderDebugWindowObj;
 
-class shaderEditorWindow : public ImGuiWindow
+class shaderEditorWindow : public FEImGuiWindow
 {
 	FEShader* shaderToEdit = nullptr;
 	FEShader* dummyShader = nullptr;
@@ -2244,12 +2377,12 @@ public:
 		std::string tempCaption = "Edit shader: ";
 		tempCaption += shaderToEdit->getName();
 		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
-		ImGuiWindow::show();
+		FEImGuiWindow::show();
 	}
 
 	void render() override
 	{
-		ImGuiWindow::render();
+		FEImGuiWindow::render();
 
 		if (!isVisible())
 			return;
@@ -2410,7 +2543,7 @@ public:
 
 		justTextWindowObj.render();
 		shaderDebugWindowObj.render();
-		ImGuiWindow::onRenderEnd();
+		FEImGuiWindow::onRenderEnd();
 	}
 };
 static shaderEditorWindow shadersEditorWindow;

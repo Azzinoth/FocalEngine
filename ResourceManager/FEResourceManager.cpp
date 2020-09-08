@@ -396,7 +396,7 @@ void FEResourceManager::LoadFETexture(const char* fileName, FETexture* existingT
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
 	}
 
 	file.seekg(0, std::ios::beg);
@@ -495,7 +495,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
 		return this->noTexture;
 	}
 	
@@ -539,21 +539,9 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
-	// Height map
+	// Height map should not be loaded by this function
 	if (newTexture->internalFormat == GL_R16)
-	{
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, 1, newTexture->internalFormat, newTexture->width, newTexture->height));
-
-		int size = *(int*)(&fileData[currentShift]);
-		currentShift += 4;
-
-		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, GL_RED, GL_UNSIGNED_SHORT, (void*)(&fileData[currentShift])));
-
-		delete[] fileData;
-		delete[] textureName;
-
-		return newTexture;
-	}
+		return nullptr;
 
 	int maxDimention = std::max(newTexture->width, newTexture->height);
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
@@ -583,6 +571,9 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 			
 			mipW = mipW / 2;
 			mipH = mipH / 2;
+
+			if (mipW <= 0 || mipH <= 0)
+				break;
 		}
 
 		currentShift += size;
@@ -590,6 +581,94 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	delete[] fileData;
 	delete[] textureName;
 
+	return newTexture;
+}
+
+FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name)
+{
+	std::fstream file;
+	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::streamsize fileSize = file.tellg();
+	if (fileSize < 0)
+	{
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		terrain->heightMap = this->noTexture;
+		return this->noTexture;
+	}
+
+	file.seekg(0, std::ios::beg);
+	char* fileData = new char[int(fileSize)];
+	file.read(fileData, fileSize);
+	file.close();
+
+	int currentShift = 0;
+	int width = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int height = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int internalFormat = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	int nameSize = 0;
+	nameSize = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	char* textureName = new char[nameSize];
+	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
+	currentShift += nameSize;
+
+	FETexture* newTexture = Name.size() != 0 ? createTexture(Name.c_str()) : createTexture(textureName);
+	newTexture->width = width;
+	newTexture->height = height;
+	newTexture->internalFormat = internalFormat;
+	newTexture->fileName = fileName;
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, 1, newTexture->internalFormat, newTexture->width, newTexture->height));
+
+	int size = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	terrain->heightMapArray.resize(size / sizeof(unsigned short));
+	float max = FLT_MIN;
+	float min = FLT_MAX;
+	for (size_t i = 0; i < size / sizeof(unsigned short); i++)
+	{
+		unsigned short temp = *(unsigned short*)(&fileData[currentShift]);
+		terrain->heightMapArray[i] = temp / float(0xFFFF);
+		currentShift += sizeof(unsigned short);
+
+		if (max < terrain->heightMapArray[i])
+			max = terrain->heightMapArray[i];
+
+		if (min > terrain->heightMapArray[i])
+			min = terrain->heightMapArray[i];
+	}
+
+	currentShift -= size;
+	glm::vec3 minPoint = glm::vec3(-1.0f, min, -1.0f);
+	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
+	terrain->AABB = FEAABB(minPoint, maxPoint);
+
+	FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, GL_RED, GL_UNSIGNED_SHORT, (void*)(&fileData[currentShift])));
+
+	delete[] fileData;
+	delete[] textureName;
+
+	terrain->heightMap = newTexture;
+	initTerrainEditTools(terrain);
 	return newTexture;
 }
 
@@ -939,7 +1018,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.");
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.");
 		if (standardMeshes.size() > 0)
 		{
 			return getMesh("cube");
@@ -1170,9 +1249,27 @@ void FEResourceManager::loadStandardMaterial()
 									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
 	makeShaderStandard(getShader("FETerrainShader"));
 
+	createShader("FESMTerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str(),
+									  loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str(),
+									  loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TCS.glsl").c_str(),
+									  loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str());
+
+	FEShaderParam colorParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor");
+	getShader("FESMTerrainShader")->addParameter(colorParam);
+
+	makeShaderStandard(getShader("FESMTerrainShader"));
+
 	createShader("FESkyDome", loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
 							  loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
 	makeShaderStandard(getShader("FESkyDome"));
+
+	createShader("terrainBrushOutput", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
+									   loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str());
+	makeShaderStandard(getShader("terrainBrushOutput"));
+
+	createShader("terrainBrushVisual", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str(),
+									   loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str());
+	makeShaderStandard(getShader("terrainBrushVisual"));
 }
 
 void FEResourceManager::loadStandardGameModels()
@@ -1443,6 +1540,9 @@ FEShader* FEResourceManager::createShader(std::string shaderName, const char* ve
 
 bool FEResourceManager::setShaderName(FEShader* shader, std::string shaderName)
 {
+	if (shader == nullptr)
+		return false;
+
 	if (shaderName.size() == 0 || shaders.find(shaderName) != shaders.end() || standardShaders.find(shaderName) != standardShaders.end())
 		return false;
 
@@ -1455,6 +1555,9 @@ bool FEResourceManager::setShaderName(FEShader* shader, std::string shaderName)
 
 bool FEResourceManager::makeShaderStandard(FEShader* shader)
 {
+	if (shader == nullptr)
+		return false;
+
 	if (standardShaders.find(shader->getName()) == standardShaders.end())
 	{
 		if (shader->getName().size() == 0 || standardShaders.find(shader->getName()) != standardShaders.end())
@@ -1566,7 +1669,7 @@ bool FEResourceManager::replaceShader(std::string oldShaderName, FEShader* newSh
 	return true;
 }
 
-FETerrain* FEResourceManager::createTerrain(std::string name)
+FETerrain* FEResourceManager::createTerrain(bool createHeightMap, std::string name)
 {
 	if (name.size() == 0 || terrains.find(name) != terrains.end())
 	{
@@ -1584,7 +1687,81 @@ FETerrain* FEResourceManager::createTerrain(std::string name)
 	terrains[name]->shader = getShader("FETerrainShader");
 	terrains[name]->layer0 = getMaterial("SolidColorMaterial");
 
+	if (createHeightMap)
+	{
+		//creating blank heightMap
+		FETexture* newTexture = createTexture(name + "_heightMap");
+		std::vector<unsigned char> rawData;
+		rawData.resize(defaultHeighttMapResolution * defaultHeighttMapResolution * sizeof(unsigned short));
+		for (size_t i = 0; i < defaultHeighttMapResolution * defaultHeighttMapResolution * sizeof(unsigned short); i++)
+		{
+			rawData[i] = 0;
+		}
+
+		newTexture->width = defaultHeighttMapResolution;
+		newTexture->height = defaultHeighttMapResolution;
+		newTexture->internalFormat = GL_R16;
+		newTexture->magFilter = FE_LINEAR;
+		newTexture->fileName = "NULL";
+
+		FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+		//FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
+		FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data()));
+		//FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
+
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+
+		terrains[name]->heightMapArray.resize(rawData.size() / sizeof(unsigned short));
+		for (size_t i = 0; i < terrains[name]->heightMapArray.size(); i++)
+		{
+			terrains[name]->heightMapArray[i] = 0.0f;
+		}
+
+		glm::vec3 minPoint = glm::vec3(-1.0f, 0.0f, -1.0f);
+		glm::vec3 maxPoint = glm::vec3(1.0f, 0.0f, 1.0f);
+		terrains[name]->AABB = FEAABB(minPoint, maxPoint);
+		terrains[name]->heightMap = newTexture;
+
+		initTerrainEditTools(terrains[name]);
+	}
+
 	return terrains[name];
+}
+
+void FEResourceManager::initTerrainEditTools(FETerrain* terrain)
+{
+	if (terrain == nullptr)
+	{
+		LOG.logError("called FEResourceManager::initTerrainEditTools with nullptr terrain");
+		return;
+	}
+
+	if (terrain->brushOutputFB != nullptr)
+	{
+		delete terrain->brushOutputFB;
+		terrain->brushOutputFB = nullptr;
+	}
+
+	if (terrain->brushVisualFB != nullptr)
+	{
+		delete terrain->brushVisualFB;
+		terrain->brushVisualFB = nullptr;
+	}
+	
+	terrain->brushOutputFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, 32, 32);
+	delete terrain->brushOutputFB->getColorAttachment();
+	//terrain->brushOutputFB->setColorAttachment(new FETexture(GL_R16, GL_RED, terrain->heightMap->getWidth(), terrain->heightMap->getHeight()));
+	terrain->brushOutputFB->setColorAttachment(terrain->heightMap);
+
+	terrain->brushVisualFB = new FEFramebuffer(FE_COLOR_ATTACHMENT, terrain->heightMap->getWidth(), terrain->heightMap->getHeight());
+	terrain->projectedMap = terrain->brushVisualFB->getColorAttachment();
+
+	terrain->brushOutputShader = getShader("terrainBrushOutput");
+	terrain->brushVisualShader = getShader("terrainBrushVisual");
+
+	terrain->planeMesh = getMesh("plane");
 }
 
 FETerrain* FEResourceManager::getTerrain(std::string terrainName)
@@ -1612,7 +1789,7 @@ std::vector<std::string> FEResourceManager::getTerrainList()
 	FE_MAP_TO_STR_VECTOR(terrains)
 }
 
-FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadHeightmap(const char* fileName, FETerrain* terrain, std::string Name)
 {
 	FETexture* newTexture = createTexture(Name);
 	std::vector<unsigned char> rawData;
@@ -1621,7 +1798,7 @@ FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Na
 	if (rawData.size() == 0)
 	{
 		delete newTexture;
-		FELOG::getInstance().logError(std::string("can't read file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
+		LOG.logError(std::string("can't read file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
 		return this->noTexture;
 	}
 
@@ -1632,7 +1809,7 @@ FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Na
 	else
 	{
 		delete newTexture;
-		FELOG::getInstance().logError(std::string("texture has dementions not power of two! file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
+		LOG.logError(std::string("texture has dementions not power of two! file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
 		return this->noTexture;
 	}
 
@@ -1652,6 +1829,28 @@ FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Na
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
+	terrain->heightMapArray.resize(rawData.size() / sizeof(unsigned short));
+	float max = FLT_MIN;
+	float min = FLT_MAX;
+	int iterator = 0;
+	for (size_t i = 0; i < rawData.size(); i+=2)
+	{
+		unsigned short temp = *(unsigned short*)(&rawData[i]);
+		terrain->heightMapArray[iterator] = temp / float(0xFFFF);
+
+		if (max < terrain->heightMapArray[iterator])
+			max = terrain->heightMapArray[iterator];
+
+		if (min > terrain->heightMapArray[iterator])
+			min = terrain->heightMapArray[iterator];
+
+		iterator++;
+	}
+
+	glm::vec3 minPoint = glm::vec3(-1.0f, min, -1.0f);
+	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
+	terrain->AABB = FEAABB(minPoint, maxPoint);
+
 	if (Name.size() == 0)
 	{
 		std::string filePath = newTexture->fileName;
@@ -1661,6 +1860,11 @@ FETexture* FEResourceManager::LoadHeightmap(const char* fileName, std::string Na
 		std::string fileNameWithOutExtention = newFileName.substr(0, index);
 		setTextureName(newTexture, fileNameWithOutExtention);
 	}
+
+	if (terrain->heightMap != nullptr)
+		delete terrain->heightMap;
+	terrain->heightMap = newTexture;
+	initTerrainEditTools(terrain);
 
 	return newTexture;
 }
@@ -1682,7 +1886,7 @@ std::string FEResourceManager::loadGLSL(const char* fileName)
 	}
 	else
 	{
-		FELOG::getInstance().logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.");
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.");
 	}
 
 	return shaderData;

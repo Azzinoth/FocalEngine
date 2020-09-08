@@ -42,7 +42,6 @@ void main(void)
 	float t2 = uv2.y - uv0.y;
 	vec3 tangent = t2 * q1 - t1 * q2;
 
-
 	gl_Position = FEPVMMatrix * gl_in[0].gl_Position;
 	gs_out.fragPosition = vec3(FEWorldMatrix * vec4(gl_in[0].gl_Position.xyz, 1.0));
 	gs_out.worldVertexPosition = vec3(FEWorldMatrix * vec4(gl_in[0].gl_Position.xyz, 1.0));
