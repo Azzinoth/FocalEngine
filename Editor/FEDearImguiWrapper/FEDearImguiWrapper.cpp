@@ -20,7 +20,7 @@ void ImGuiModalPopup::render()
 {
 	if (shouldOpen)
 	{
-		ImGui::OpenPopup(popupCaption);
+		ImGui::OpenPopup(popupCaption.c_str());
 		shouldOpen = false;
 	}
 }

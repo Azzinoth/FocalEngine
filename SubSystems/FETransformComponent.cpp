@@ -147,3 +147,13 @@ glm::quat FETransformComponent::getQuaternion()
 {
 	return rotationQuaternion;
 }
+
+bool FETransformComponent::isDirty()
+{
+	return dirtyFlag;
+}
+
+void FETransformComponent::setDirty(bool isDirty)
+{
+	dirtyFlag = isDirty;
+}

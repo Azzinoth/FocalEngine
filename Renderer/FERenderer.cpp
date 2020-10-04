@@ -60,7 +60,7 @@ FERenderer::FERenderer()
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 {
-	sceneToTextureFB = new FEFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
+	sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
 }
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
@@ -84,6 +84,7 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	static int FEMetalness_hash = std::hash<std::string>{}("FEMetalness");
 	static int FEMetalnessMapPresent_hash = std::hash<std::string>{}("FEMetalnessMapPresent");
 	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
+	static int FEMRAOMapPresent_hash = std::hash<std::string>{}("FEMRAOMapPresent");
 	FEScene& scene = FEScene::getInstance();
 
 	//auto start = std::chrono::system_clock::now();
@@ -147,6 +148,9 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
 			iterator->second.updateData(material->getMetalnessMapIntensity());
 
+		if (iterator->second.nameHash == FEMRAOMapPresent_hash)
+			iterator->second.updateData(material->MRAOMap == nullptr ? 0.0f : 1.0f);
+		
 		iterator++;
 	}
 
@@ -175,13 +179,13 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing
 		//#fix
 		if (i == postProcessEffects.back()->stages.size() - 1)
 		{
-			postProcessEffects.back()->stages[i]->outTexture = sceneToTextureFB->getColorAttachment()->createSameFormatTexture();
+			postProcessEffects.back()->stages[i]->outTexture = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getColorAttachment());
 		}
 		else
 		{
 			int finalW = postProcessEffects.back()->screenWidth;
 			int finalH = postProcessEffects.back()->screenHeight;
-			postProcessEffects.back()->stages[i]->outTexture = sceneToTextureFB->getColorAttachment()->createSameFormatTexture(finalW, finalH);
+			postProcessEffects.back()->stages[i]->outTexture = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getColorAttachment(), finalW, finalH);
 		}
 	}
 }
@@ -621,7 +625,11 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID()));
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
 	
-	FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
+	FETexture* tempTexture = FEResourceManager::getInstance().rawDataToFETexture(pixels, width, height);
+	FEResourceManager::getInstance().saveFETexture(tempTexture, fileName);
+	FEResourceManager::getInstance().deleteFETexture(tempTexture);
+
+	//FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
 }
 

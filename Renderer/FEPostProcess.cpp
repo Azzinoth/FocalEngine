@@ -13,14 +13,9 @@ FEPostProcessStage::FEPostProcessStage(std::vector<int>&& InTextureSource, FESha
 	shader = Shader;
 }
 
-FEPostProcess::FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name, FEShader* screenQuadShader)
+FEPostProcess::FEPostProcess(std::string Name)
 {
 	name = Name;
-	screenWidth = ScreenWidth;
-	screenHeight = ScreenHeight;
-	screenQuad = ScreenQuad;
-	this->screenQuadShader = screenQuadShader;
-	intermediateFramebuffer = new FEFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT, screenWidth, screenHeight);
 }
 
 FEPostProcess::~FEPostProcess()
@@ -46,12 +41,6 @@ void FocalEngine::FEPostProcess::renderResult()
 FETexture* FEPostProcess::getInTexture()
 {
 	return finalTexture;
-}
-
-void FEPostProcess::setInTexture(FETexture* InTexture)
-{
-	inTexture = InTexture;
-	finalTexture = InTexture->createSameFormatTexture();
 }
 
 void FEPostProcess::addStage(FEPostProcessStage* newStage)

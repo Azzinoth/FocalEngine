@@ -300,7 +300,7 @@ void FEShaderParam::setName(std::string newName)
 
 FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
 				   const char* tessControlText, const char* tessEvalText,
-				   const char* geometryText, const char* computeText, bool testCompilation)
+				   const char* geometryText, const char* computeText, bool testCompilation) : FEAsset(FE_SHADER, name)
 {
 	testCompilationMode = testCompilation;
 	setName(name);
@@ -455,7 +455,7 @@ void FEShader::copyCode(const FEShader& shader)
 #endif
 }
 
-FEShader::FEShader(const FEShader& shader)
+FEShader::FEShader(const FEShader& shader) : FEAsset(FE_SHADER, shader.name)
 {
 	copyCode(shader);
 }
@@ -624,6 +624,7 @@ void FEShader::bindAttributes()
 	if ((vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glBindAttribLocation(programID, 2, "FENormal"));
 	if ((vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glBindAttribLocation(programID, 3, "FETangent"));
 	if ((vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glBindAttribLocation(programID, 4, "FETexCoord"));
+	if ((vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glBindAttribLocation(programID, 5, "FEMatIndex"));
 }
 
 void FEShader::start()
@@ -664,7 +665,8 @@ void FEShader::stop()
 
 	thisFrameDebugBind++;
 #endif
-	FE_GL_ERROR(glUseProgram(0));
+	// simple command but unnecessary and cause slowdown
+	//FE_GL_ERROR(glUseProgram(0));
 }
 
 std::string FEShader::parseShaderForMacro(const char* shaderText)
@@ -701,6 +703,12 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_UV), "layout (location = 4) in vec2 FETexCoord;");
 		vertexAttributes |= FE_UV;
+	}
+	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_MATINDEX);
+	if (index != std::string::npos)
+	{
+		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_MATINDEX), "layout (location = 5) in float FEMatIndex;");
+		vertexAttributes |= FE_MATINDEX;
 	}
 
 	index = parsedShaderText.find(FE_WORLD_MATRIX_MACRO);

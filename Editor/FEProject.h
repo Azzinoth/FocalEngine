@@ -21,10 +21,14 @@ public:
 	FETexture* sceneScreenshot;
 	bool modified = false;
 	void createDummyScreenshot();
+
+	void addFileToDeleteList(std::string fileName);
 private:
 	std::string name;
 	std::string projectFolder;
 
 	void writeTransformToJSON(Json::Value& root, FETransformComponent* transform);
 	void readTransformToJSON(Json::Value& root, FETransformComponent* transform);
+
+	std::vector<std::string> filesToDelete;
 };

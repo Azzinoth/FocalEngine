@@ -475,7 +475,7 @@ void renderEditor();
 void loadProjectList();
 void loadEditor();
 
-int timesTextureUsed(FETexture* texture);
+std::vector<FEMaterial*> materialsThatUsesTexture(FETexture* texture);
 int timesMeshUsed(FEMesh* mesh);
 
 #ifdef FE_WIN_32
@@ -498,6 +498,7 @@ int timesMeshUsed(FEMesh* mesh);
 class deleteTexturePopup : public ImGuiModalPopup
 {
 	FETexture* objToWorkWith;
+	std::vector<FEMaterial*> materialsThatUseTexture;
 public:
 	deleteTexturePopup()
 	{
@@ -509,35 +510,62 @@ public:
 	{
 		shouldOpen = true;
 		objToWorkWith = TextureToDelete;
+
+		// check if this texture is used in some materials
+		// to-do: should be done through counter, not by searching each time.
+		materialsThatUseTexture = materialsThatUsesTexture(objToWorkWith);
 	}
 
 	void render() override
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
 				ImGuiModalPopup::close();
 				return;
 			}
-
-			// check if this texture is used in some materials
-			// to-do: should be done through counter, not by searching each time.
-			int result = timesTextureUsed(objToWorkWith);
 			
 			ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" texture ?").c_str());
-			if (result > 0)
-				ImGui::Text(("It is used in " + std::to_string(result) + " materials !").c_str());
+			if (materialsThatUseTexture.size() > 0)
+				ImGui::Text(("It is used in " + std::to_string(materialsThatUseTexture.size()) + " materials !").c_str());
 
+			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" texture ?").c_str());
+			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(materialsThatUseTexture.size()) + " materials !").c_str());
+			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
+
+			ImGui::SetCursorPosX(windowWidth / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
-				std::string name = objToWorkWith->getName();
-				RESOURCE_MANAGER.deleteFETexture(objToWorkWith);
-				currentProject->saveScene(&internalEditorEntities);
+				std::vector<std::string> gameModelListToUpdate;
 
-				deleteFile((currentProject->getProjectFolder() + name + ".FEtexture").c_str());
+				std::string name = objToWorkWith->getName();
+				// re-create game model preview that was using material that uses this texture
+				if (materialsThatUseTexture.size() > 0)
+				{
+					
+					std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+					for (size_t i = 0; i < gameModelList.size(); i++)
+					{
+						FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+						for (size_t j = 0; j < materialsThatUseTexture.size(); j++)
+						{
+							if (currentGameModel->material == materialsThatUseTexture[j])
+								gameModelListToUpdate.push_back(currentGameModel->getName());
+						}
+					}
+				}
+
+				objToWorkWith->setDirtyFlag(true);
+				currentProject->modified = true;
+				currentProject->addFileToDeleteList(currentProject->getProjectFolder() + objToWorkWith->getAssetID() + ".texture");
+				RESOURCE_MANAGER.deleteFETexture(objToWorkWith);
+
+				// re-create game model preview
+				for (size_t i = 0; i < gameModelListToUpdate.size(); i++)
+					createGameModelPreview(gameModelListToUpdate[i]);
 
 				objToWorkWith = nullptr;
 				ImGuiModalPopup::close();
@@ -545,6 +573,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -584,7 +613,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Entered name is occupied");
 
@@ -622,7 +651,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -640,10 +669,8 @@ public:
 				// if new name is acceptable
 				if (RESOURCE_MANAGER.setTextureName(objToWorkWith, newName))
 				{
-					// also rename texture filename correspondently
-					changeFileName((currentProject->getProjectFolder() + oldName + ".FETexture").c_str(), (currentProject->getProjectFolder() + newName + ".FETexture").c_str());
-					// save assets list with new texture name
-					currentProject->saveScene(&internalEditorEntities);
+					objToWorkWith->setDirtyFlag(true);
+					currentProject->modified = true;
 
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
@@ -687,17 +714,14 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Does this texture uses alpha channel ?");
+			currentProject->modified = true;
 
 			if (ImGui::Button("Yes", ImVec2(120, 0)))
 			{
-				FETexture* newTexture = RESOURCE_MANAGER.LoadPngTextureAndCompress(filePath.c_str(), true);
-				RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
-				// add asset list saving....
-				currentProject->saveScene(&internalEditorEntities);
-
+				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(filePath.c_str(), true);
 				ImGuiModalPopup::close();
 			}
 
@@ -705,11 +729,7 @@ public:
 			ImGui::SameLine();
 			if (ImGui::Button("No", ImVec2(120, 0)))
 			{
-				FETexture* newTexture = RESOURCE_MANAGER.LoadPngTextureAndCompress(filePath.c_str(), false);
-				RESOURCE_MANAGER.saveFETexture((currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str(), newTexture);
-				// add asset list saving....
-				currentProject->saveScene(&internalEditorEntities);
-
+				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(filePath.c_str(), false);
 				ImGuiModalPopup::close();
 			}
 			ImGui::EndPopup();
@@ -818,7 +838,7 @@ public:
 		ImGuiModalPopup::render();
 
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
@@ -862,6 +882,7 @@ public:
 							*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexUnderMouse]);
 						}
 
+						currentProject->modified = true;
 						onSelectAction();
 						close();
 					}
@@ -899,6 +920,7 @@ public:
 						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexSelected]);
 					}
 
+					currentProject->modified = true;
 					onSelectAction();
 					close();
 				}
@@ -938,7 +960,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -956,10 +978,8 @@ public:
 				// if new name is acceptable
 				if (RESOURCE_MANAGER.setMeshName(objToWorkWith, newName))
 				{
-					// also rename mesh filename correspondently
-					changeFileName((currentProject->getProjectFolder() + oldName + ".model").c_str(), (currentProject->getProjectFolder() + newName + ".model").c_str());
-					// save assets list with new mesh name
-					currentProject->saveScene(&internalEditorEntities);
+					objToWorkWith->setDirtyFlag(true);
+					currentProject->modified = true;
 
 					FETexture* tempTexture = meshPreviewTextures[oldName];
 					meshPreviewTextures.erase(oldName);
@@ -1008,7 +1028,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -1024,6 +1044,11 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " game models !").c_str());
 
+			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" mesh ?").c_str());
+			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(result) + " game models !").c_str());
+			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
+
+			ImGui::SetCursorPosX(windowWidth / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -1039,14 +1064,15 @@ public:
 						gameModelListToUpdate.push_back(currentGameModel->getName());
 				}
 
+				objToWorkWith->setDirtyFlag(true);
+				currentProject->modified = true;
+				currentProject->addFileToDeleteList(currentProject->getProjectFolder() + objToWorkWith->getAssetID() + ".model");
 				RESOURCE_MANAGER.deleteFEMesh(objToWorkWith);
-				currentProject->saveScene(&internalEditorEntities);
 
 				// re-create game model preview
 				for (size_t i = 0; i < gameModelListToUpdate.size(); i++)
 					createGameModelPreview(gameModelListToUpdate[i]);
 
-				deleteFile((currentProject->getProjectFolder() + name + ".model").c_str());
 
 				delete meshPreviewTextures[name];
 				meshPreviewTextures.erase(name);
@@ -1056,6 +1082,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -1153,7 +1180,7 @@ public:
 		ImGuiModalPopup::render();
 
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
@@ -1190,6 +1217,7 @@ public:
 					if (IndexUnderMouse != -1)
 					{
 						*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexUnderMouse]);
+						currentProject->modified = true;
 						close();
 					}
 				}
@@ -1218,6 +1246,7 @@ public:
 				if (IndexSelected != -1)
 				{
 					*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexSelected]);
+					currentProject->modified = true;
 					close();
 				}
 			}
@@ -1314,7 +1343,7 @@ public:
 		ImGuiModalPopup::render();
 
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
@@ -1350,6 +1379,7 @@ public:
 					if (IndexUnderMouse != -1)
 					{
 						*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexUnderMouse]);
+						currentProject->modified = true;
 						close();
 					}
 				}
@@ -1380,6 +1410,7 @@ public:
 				if (IndexSelected != -1)
 				{
 					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexSelected]);
+					currentProject->modified = true;
 					close();
 				}
 			}
@@ -1495,7 +1526,7 @@ public:
 		ImGuiModalPopup::render();
 
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
@@ -1534,6 +1565,7 @@ public:
 						{
 							FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
 							wasSelectedAlready = true;
+							currentProject->modified = true;
 						}
 						else
 						{
@@ -1615,7 +1647,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -1633,9 +1665,7 @@ public:
 				// if new name is acceptable
 				if (RESOURCE_MANAGER.setGameModelName(objToWorkWith, newName))
 				{
-					// save assets list with new texture name
-					currentProject->saveScene(&internalEditorEntities);
-
+					currentProject->modified = true;
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
 				}
@@ -1680,7 +1710,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -1696,12 +1726,17 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
 
+			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" game model ?").c_str());
+			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(result) + " entities !").c_str());
+			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
+
+			ImGui::SetCursorPosX(windowWidth / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
 				FEScene::getInstance().prepareForGameModelDeletion(objToWorkWith);
 				RESOURCE_MANAGER.deleteGameModel(objToWorkWith);
-				currentProject->saveScene(&internalEditorEntities);
+				currentProject->modified = true;
 
 				objToWorkWith = nullptr;
 				ImGuiModalPopup::close();
@@ -1709,6 +1744,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -1742,7 +1778,7 @@ public:
 	{
 		ImGuiModalPopup::render();
 
-		if (ImGui::BeginPopupModal(popupCaption, NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
@@ -1761,9 +1797,7 @@ public:
 				// if new name is acceptable
 				if (scene.setEntityName(objToWorkWith, newName))
 				{
-					// save assets list with new entity name
-					currentProject->saveScene(&internalEditorEntities);
-
+					currentProject->modified = true;
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
 				}
@@ -2547,3 +2581,109 @@ public:
 	}
 };
 static shaderEditorWindow shadersEditorWindow;
+
+class messagePopUp : public ImGuiModalPopup
+{
+	std::string message;
+public:
+	messagePopUp()
+	{
+	}
+
+	void show(std::string newWindowCaption, std::string messageToShow)
+	{
+		shouldOpen = true;
+		message = messageToShow;
+		popupCaption = newWindowCaption;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text(message.c_str());
+			ImVec2 textSize = ImGui::CalcTextSize(message.c_str());
+			ImGui::SetCursorPosX(textSize.x / 2.0f - 120 / 2.0f);
+			if (ImGui::Button("Ok", ImVec2(120, 0)))
+				ImGuiModalPopup::close();
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static messagePopUp messagePopUpObj;
+
+void closeProject();
+static bool shouldTerminate = false;
+
+class projectWasModifiedPopUp : public ImGuiModalPopup
+{
+	FEProject* objToWorkWith;
+public:
+	projectWasModifiedPopUp()
+	{
+		popupCaption = "Save project ?";
+		objToWorkWith = nullptr;
+	}
+
+	void show(FEProject* project)
+	{
+		shouldOpen = true;
+		objToWorkWith = project;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (objToWorkWith == nullptr)
+			{
+				ImGui::EndPopup();
+				return;
+			}
+
+			bool buttonPressed = false;
+
+			ImGui::Text("Project was modified, should it be saved before exit ?");
+			ImVec2 sentenceSize = ImGui::CalcTextSize("Project was modified, should it be saved before exit ?");
+			ImGui::SetCursorPosX(sentenceSize.x / 4.0f - 140.0f / 2.0f);
+			if (ImGui::Button("Save", ImVec2(140, 0)))
+			{
+				currentProject->saveScene(&internalEditorEntities);
+				ENGINE.takeScreenshot((currentProject->getProjectFolder() + "projectScreenShot.texture").c_str());
+				objToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+				buttonPressed = true;
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(sentenceSize.x / 2.0f + sentenceSize.x / 4.0f - 140.0f / 2.0f);
+			if (ImGui::Button("Exit without saving", ImVec2(140, 0)))
+			{
+				objToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+				buttonPressed = true;
+			}
+			ImGui::EndPopup();
+
+			if (buttonPressed)
+			{
+				closeProject();
+				if (shouldTerminate)
+				{
+					ENGINE.terminate();
+					return;
+				}
+			}
+				
+		}
+	}
+};
+static projectWasModifiedPopUp projectWasModifiedPopUpWindow;
+
+void closeWindowCallBack();

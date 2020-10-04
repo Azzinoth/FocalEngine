@@ -1,11 +1,13 @@
 #include "FEProject.h"
 
+bool deleteFile(const char* filePath);
+
 FEProject::FEProject(std::string Name, std::string ProjectFolder)
 {
 	name = Name;
 	projectFolder = ProjectFolder;
 
-	std::ifstream screenshotFile((this->getProjectFolder() + "/projectScreenShot.FETexture").c_str());
+	std::ifstream screenshotFile((this->getProjectFolder() + "projectScreenShot.texture").c_str());
 	
 	if (!screenshotFile.good())
 	{
@@ -13,7 +15,7 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 	}
 	else
 	{
-		sceneScreenshot = RESOURCE_MANAGER.LoadFETextureStandAlone((this->getProjectFolder() + "/projectScreenShot.FETexture").c_str());
+		sceneScreenshot = RESOURCE_MANAGER.LoadFETextureUnmanaged((this->getProjectFolder() + "projectScreenShot.texture").c_str());
 	}
 
 	screenshotFile.close();
@@ -70,10 +72,11 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	{
 		FEMesh* mesh = RESOURCE_MANAGER.getMesh(meshList[i]);
 
-		if (mesh->getFileName().size() == 0)
-			continue;
-
-		meshData[mesh->getName()] = mesh->getName() + ".model";
+		if (mesh->getDirtyFlag())
+			RESOURCE_MANAGER.saveFEMesh(mesh, (getProjectFolder() + mesh->getAssetID() + std::string(".model")).c_str());
+		meshData[mesh->getName()]["ID"] = mesh->getAssetID();
+		meshData[mesh->getName()]["name"] = mesh->getName();
+		meshData[mesh->getName()]["fileName"] = mesh->getAssetID() + ".model";
 	}
 	root["meshes"] = meshData;
 
@@ -83,7 +86,12 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
 		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
-		texturesData[texture->getName()]["name"] = texture->getName() + ".FETexture";
+
+		if (texture->getDirtyFlag())
+			RESOURCE_MANAGER.saveFETexture(texture, (getProjectFolder() + texture->getAssetID() + std::string(".texture")).c_str());
+		texturesData[texture->getName()]["ID"] = texture->getAssetID();
+		texturesData[texture->getName()]["name"] = texture->getName();
+		texturesData[texture->getName()]["fileName"] = texture->getAssetID() + ".texture";
 		texturesData[texture->getName()]["type"] = texture->getInternalFormat();
 	}
 	root["textures"] = texturesData;
@@ -102,6 +110,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		if (material->AOMap != nullptr) materialData[material->getName()]["AOMap"] = material->AOMap->getName();
 		if (material->displacementMap != nullptr) materialData[material->getName()]["displacementMap"] = material->displacementMap->getName();
 
+		materialData[material->getName()]["ID"] = material->getAssetID();
+		materialData[material->getName()]["name"] = material->getName();
 		materialData[material->getName()]["metalness"] = material->getMetalness();
 		materialData[material->getName()]["roughtness"] = material->getRoughtness();
 		materialData[material->getName()]["normalMapIntensity"] = material->getNormalMapIntensity();
@@ -119,6 +129,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	{
 		FEGameModel* gameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
+		gameModelData[gameModel->getName()]["ID"] = gameModel->getAssetID();
+		gameModelData[gameModel->getName()]["name"] = gameModel->getName();
 		gameModelData[gameModel->getName()]["mesh"] = gameModel->mesh->getName();
 		gameModelData[gameModel->getName()]["material"] = gameModel->material->getName();
 	}
@@ -133,6 +145,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		if (excludedEntities->find(entity->getNameHash()) != excludedEntities->end())
 			continue;
 
+		entityData[entity->getName()]["ID"] = entity->getAssetID();
+		entityData[entity->getName()]["name"] = entity->getName();
 		entityData[entity->getName()]["gameModel"] = entity->gameModel->getName();
 		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
 	}
@@ -145,8 +159,10 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	{
 		FETerrain* terrain = SCENE.getTerrain(terrainList[i]);
 
-		RESOURCE_MANAGER.saveFETexture((getProjectFolder() + terrain->heightMap->getName() + ".FETexture").c_str(), terrain->heightMap);
-		terrainData[terrain->getName()]["heightMap"] = terrain->heightMap->getName();
+		terrainData[terrain->getName()]["ID"] = terrain->getAssetID();
+		terrainData[terrain->getName()]["name"] = terrain->getName();
+		terrainData[terrain->getName()]["heightMap"]["name"] = terrain->heightMap->getName();
+		terrainData[terrain->getName()]["heightMap"]["fileName"] = terrain->heightMap->getAssetID() + ".texture";
 		terrainData[terrain->getName()]["hightScale"] = terrain->getHightScale();
 		terrainData[terrain->getName()]["displacementScale"] = terrain->getDisplacementScale();
 		terrainData[terrain->getName()]["tileMult"]["X"] = terrain->getTileMult().x;
@@ -239,6 +255,12 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 
 	sceneFile << json_file;
 	sceneFile.close();
+	
+	for (size_t i = 0; i < filesToDelete.size(); i++)
+	{
+		deleteFile(filesToDelete[i].c_str());
+	}
+
 	modified = false;
 }
 
@@ -278,7 +300,7 @@ void FEProject::loadScene()
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		RESOURCE_MANAGER.LoadFEMesh((projectFolder + root["meshes"][meshList[i]].asCString()).c_str(), meshList[i]);
+		RESOURCE_MANAGER.LoadFEMesh((projectFolder + root["meshes"][meshList[i]]["fileName"].asCString()).c_str(), root["meshes"][meshList[i]]["name"].asCString());
 	}
 
 	// loading Textures
@@ -291,16 +313,14 @@ void FEProject::loadScene()
 			continue;
 		}
 
-		FETexture* justLoadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]]["name"].asCString()).c_str(), texturesList[i]);
-		// I have texture name in file but for now I will only use name from scene.txt
-		RESOURCE_MANAGER.setTextureName(justLoadedTexture, texturesList[i]);
+		FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]]["fileName"].asCString()).c_str(), root["textures"][texturesList[i]]["name"].asString());
 	}
 
 	// loading Materials
 	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
 	for (size_t i = 0; i < materialsList.size(); i++)
 	{
-		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i].c_str());
+		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i].c_str(), root["materials"][materialsList[i]]["ID"].asString());
 		//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
 		if (newMat->getName() == "skyDome")
 		{
@@ -348,14 +368,14 @@ void FEProject::loadScene()
 	{
 		RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
 										 RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
-										 gameModelList[i]);
+										 gameModelList[i], root["gameModels"][gameModelList[i]]["ID"].asString());
 	}
 
 	// loading Entities
 	std::vector<Json::String> entityList = root["entities"].getMemberNames();
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
-		SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i]);
+		SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
 		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
 	}
 
@@ -363,8 +383,8 @@ void FEProject::loadScene()
 	std::vector<Json::String> terrainList = root["terrains"].getMemberNames();
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
-		FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(false, terrainList[i]);
-		newTerrain->heightMap = RESOURCE_MANAGER.LoadFEHeightmap((projectFolder + root["terrains"][terrainList[i]]["heightMap"].asCString() + ".FETexture").c_str(), newTerrain, root["terrains"][terrainList[i]]["heightMap"].asCString());
+		FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(false, terrainList[i], root["terrains"][terrainList[i]]["ID"].asString());
+		newTerrain->heightMap = RESOURCE_MANAGER.LoadFEHeightmap((projectFolder + root["terrains"][terrainList[i]]["heightMap"]["fileName"].asCString()).c_str(), newTerrain, root["terrains"][terrainList[i]]["heightMap"]["name"].asCString());
 		newTerrain->layer0 = RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["materials"]["layer0"].asCString());
 
 		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
@@ -467,6 +487,13 @@ void FEProject::createDummyScreenshot()
 		}
 	}
 
-	RESOURCE_MANAGER.saveFETexture((getProjectFolder() + "/projectScreenShot.FETexture").c_str(), pixels, width, height);
+	FETexture* tempTexture = RESOURCE_MANAGER.rawDataToFETexture(pixels, width, height);
+	RESOURCE_MANAGER.saveFETexture(tempTexture, (getProjectFolder() + "/projectScreenShot.texture").c_str());
+	RESOURCE_MANAGER.deleteFETexture(tempTexture);
 	delete[] pixels;
+}
+
+void FEProject::addFileToDeleteList(std::string fileName)
+{
+	filesToDelete.push_back(fileName);
 }

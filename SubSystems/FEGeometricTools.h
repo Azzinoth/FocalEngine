@@ -18,6 +18,7 @@ namespace FocalEngine
 		FEAABB(glm::vec3 Min, glm::vec3 Max);
 		FEAABB(std::vector<glm::vec3>& VertexPositions);
 		FEAABB(std::vector<float>& VertexPositions);
+		FEAABB(float* VertexPositions, int VertexCount);
 		~FEAABB();
 
 		glm::vec3 getMin();

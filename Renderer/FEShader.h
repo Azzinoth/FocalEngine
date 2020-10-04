@@ -7,6 +7,7 @@
 #define FE_VERTEX_ATTRIBUTE_NORMAL "@In_Normal@"
 #define FE_VERTEX_ATTRIBUTE_TANGENT "@In_Tangent@"
 #define FE_VERTEX_ATTRIBUTE_UV "@In_UV@"
+#define FE_VERTEX_ATTRIBUTE_MATINDEX "@In_Material_Index@"
 
 #define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
@@ -43,6 +44,7 @@ namespace FocalEngine
 		FE_TANGENTS = 1 << 3,
 		FE_UV       = 1 << 4,
 		FE_INDEX    = 1 << 5,
+		FE_MATINDEX = 1 << 6
 	};
 
 	static std::vector<std::string> FEStandardUniforms = 
@@ -91,7 +93,7 @@ namespace FocalEngine
 	class FEPostProcess;
 	class FEngine;
 
-	class FEShader
+	class FEShader : public FEAsset
 	{
 		friend FEMaterial;
 		friend FERenderer;
@@ -188,13 +190,5 @@ namespace FocalEngine
 		std::vector<std::string> debugVariables;
 		std::vector<std::vector<float>> debugData;
 #endif
-	};
-
-	struct FEShaderBlueprint
-	{
-		FEShader* pointerToShaderStorage = nullptr;
-		std::string name;
-		char* vertexShaderText = nullptr;
-		char* fragmentShaderText = nullptr;
 	};
 }

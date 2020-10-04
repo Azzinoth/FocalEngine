@@ -1,7 +1,7 @@
 #include "FEEntity.h"
 using namespace FocalEngine;
 
-FEEntity::FEEntity(FEGameModel* gameModel, std::string Name)
+FEEntity::FEEntity(FEGameModel* gameModel, std::string Name) : FEAsset(FE_ENTITY, Name)
 {
 	this->gameModel = gameModel;
 	name = Name;
@@ -17,22 +17,25 @@ FEEntity::~FEEntity()
 void FEEntity::render()
 {
 	FE_GL_ERROR(glBindVertexArray(gameModel->mesh->getVaoID()));
-	if ((gameModel->mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-	if ((gameModel->mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-	if ((gameModel->mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-	if ((gameModel->mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-	if ((gameModel->mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+	if ((gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+	if ((gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+	if ((gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+	if ((gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+	if ((gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+	if ((gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
-	if ((gameModel->mesh->vertexBuffers & FE_INDEX) == FE_INDEX)
+	if ((gameModel->mesh->vertexAttributes & FE_INDEX) == FE_INDEX)
 		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
-	if ((gameModel->mesh->vertexBuffers & FE_INDEX) != FE_INDEX)
+	if ((gameModel->mesh->vertexAttributes & FE_INDEX) != FE_INDEX)
 		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, gameModel->mesh->getVertexCount()));
 
-	if ((gameModel->mesh->vertexBuffers & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glDisableVertexAttribArray(0));
-	if ((gameModel->mesh->vertexBuffers & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glDisableVertexAttribArray(1));
-	if ((gameModel->mesh->vertexBuffers & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glDisableVertexAttribArray(2));
-	if ((gameModel->mesh->vertexBuffers & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glDisableVertexAttribArray(3));
-	if ((gameModel->mesh->vertexBuffers & FE_UV) == FE_UV) FE_GL_ERROR(glDisableVertexAttribArray(4));
+	// could it be that this disable part is only slowing engine down without profit ?
+	/*if ((gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glDisableVertexAttribArray(0));
+	if ((gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glDisableVertexAttribArray(1));
+	if ((gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glDisableVertexAttribArray(2));
+	if ((gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glDisableVertexAttribArray(3));
+	if ((gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glDisableVertexAttribArray(4));
+	if ((gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glDisableVertexAttribArray(5));*/
 	FE_GL_ERROR(glBindVertexArray(0));
 }
 
@@ -63,7 +66,7 @@ FEAABB FEEntity::getAABB()
 	{
 		transform.dirtyFlag = false;
 		FEAABB& meshAABB = gameModel->mesh->AABB;
-		// firstly we generate 8 points that represent AABCube.
+		// firstly we generate 8 points that represent AABBCube.
 		// bottom 4 points
 		glm::vec4 bottomLeftFront = glm::vec4(meshAABB.min.x, meshAABB.min.y, meshAABB.max.z, 1.0f);
 		glm::vec4 bottomRightFront = glm::vec4(meshAABB.max.x, meshAABB.min.y, meshAABB.max.z, 1.0f);

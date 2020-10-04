@@ -34,6 +34,9 @@ namespace FocalEngine
 		glm::mat4 getTransformMatrix();
 		void update();
 
+		bool isDirty();
+		void setDirty(bool isDirty);
+
 		bool uniformScaling = true;
 	private:
 		bool dirtyFlag = false;

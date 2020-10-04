@@ -30,7 +30,7 @@ class ImGuiModalPopup
 protected:
 	bool shouldOpen;
 	bool opened;
-	char* popupCaption;
+	std::string popupCaption;
 	ImGuiModalPopup();
 public:
 	virtual void show();

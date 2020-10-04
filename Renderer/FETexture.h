@@ -1,7 +1,7 @@
 #pragma once
 
 #include "..\SubSystems\FECoreIncludes.h"
-#include "..\SubSystems\FELog.h"
+#include "FEAsset.h"
 
 namespace FocalEngine
 {
@@ -15,15 +15,15 @@ namespace FocalEngine
 	class FERenderer;
 	class FEPostProcess;
 
-	class FETexture
+	class FETexture : public FEAsset
 	{
 		friend FEResourceManager;
 		friend FERenderer;
 		friend FEPostProcess;
 	public:
-		FETexture();
-		FETexture(int Width, int Height);
-		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height);
+		FETexture(std::string Name);
+		FETexture(int Width, int Height, std::string Name);
+		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name);
 		~FETexture();
 
 		GLuint getTextureID();
@@ -33,8 +33,6 @@ namespace FocalEngine
 
 		virtual void bind(const unsigned int textureUnit = 0);
 		virtual void unBind();
-
-		FETexture* createSameFormatTexture(int differentW = 0, int differentH = 0);
 
 		GLint getInternalFormat();
 		int getWidth();

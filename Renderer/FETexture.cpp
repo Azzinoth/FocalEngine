@@ -1,13 +1,15 @@
 #include "FETexture.h"
 using namespace FocalEngine;
 
-FETexture::FETexture()
+FETexture::FETexture(std::string Name) : FEAsset(FE_TEXTURE, Name)
 {
+	name = Name;
 	FE_GL_ERROR(glGenTextures(1, &textureID));
 }
 
-FETexture::FETexture(int Width, int Height)
+FETexture::FETexture(int Width, int Height, std::string Name) : FEAsset(FE_TEXTURE, Name)
 {
+	name = Name;
 	width = Width;
 	height = Height;
 	FE_GL_ERROR(glGenTextures(1, &textureID));
@@ -18,7 +20,7 @@ FETexture::FETexture(int Width, int Height)
 	unBind();
 }
 
-FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height)
+FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name) : FEAsset(FE_TEXTURE, Name)
 {
 	width = Width;
 	height = Height;
@@ -74,20 +76,6 @@ void FETexture::unBind()
 		FE_GL_ERROR(glActiveTexture(GL_TEXTURE0 + defaultTextureUnit));
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, 0));
 	}
-}
-
-FETexture* FETexture::createSameFormatTexture(int differentW, int differentH)
-{
-	if (differentW == 0 && differentH == 0)
-		return new FETexture(internalFormat, format, width, height);
-
-	if (differentW != 0 && differentH == 0)
-		return new FETexture(internalFormat, format, differentW, height);
-
-	if (differentW == 0 && differentH != 0)
-		return new FETexture(internalFormat, format, width, differentH);
-
-	return new FETexture(internalFormat, format, differentW, differentH);
 }
 
 std::string FETexture::getFileName()

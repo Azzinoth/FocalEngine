@@ -11,10 +11,12 @@ namespace FocalEngine
 		FE_STENCIL_ATTACHMENT = 4,
 	};
 
+	class FEResourceManager;
+
 	class FEFramebuffer
 	{
+		friend FEResourceManager;
 	public:
-		FEFramebuffer(int attachments, int Width, int Height, bool HDR = true);
 		~FEFramebuffer();
 
 		void bind();
@@ -31,6 +33,8 @@ namespace FocalEngine
 		int getWidth();
 		int getHeight();
 	private:
+		FEFramebuffer(/*int attachments, int Width, int Height, bool HDR = true*/);
+
 		GLuint fbo = -1;
 		bool binded = false;
 

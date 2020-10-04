@@ -10,12 +10,12 @@ namespace FocalEngine
 	class FERenderer;
 	class FEResourceManager;
 
-	class FEMaterial
+	class FEMaterial : public FEAsset
 	{
 		friend FERenderer;
 		friend FEResourceManager;
 	public:
-		FEMaterial();
+		FEMaterial(std::string Name);
 		~FEMaterial();
 
 		FEShader* shader;
@@ -36,6 +36,7 @@ namespace FocalEngine
 		FETexture* metalnessMap;
 		FETexture* AOMap;
 		FETexture* displacementMap;
+		FETexture* MRAOMap;
 
 		void addParameter(FEShaderParam newParameter);
 		std::vector<std::string> getParameterList();

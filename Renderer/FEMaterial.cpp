@@ -1,8 +1,9 @@
 #include "FEMaterial.h"
 using namespace FocalEngine;
 
-FEMaterial::FEMaterial()
+FEMaterial::FEMaterial(std::string Name) : FEAsset(FE_MATERIAL, Name)
 {
+	name = Name;
 	albedoMap = nullptr;
 	normalMap = nullptr;
 	roughtnessMap = nullptr;
@@ -25,7 +26,8 @@ void FEMaterial::bind()
 	if (AOMap != nullptr) AOMap->bind(2);
 	if (roughtnessMap != nullptr) roughtnessMap->bind(3);
 	if (metalnessMap != nullptr) metalnessMap->bind(4);
-	if (displacementMap != nullptr) displacementMap->bind(5);
+	if (MRAOMap != nullptr) MRAOMap->bind(5);
+	if (displacementMap != nullptr) displacementMap->bind(6);
 
 	// #fix such specific if statement in this class is not clean coding
 	if (shader->getParameter("baseColor") != nullptr)

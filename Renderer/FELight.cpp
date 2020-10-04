@@ -112,13 +112,15 @@ void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, floa
 	static std::vector<glm::vec4> frustumEdges;
 	frustumEdges.resize(8);
 
+	float TEST_CASCADE_DISTANCE_SCALE_FACTOR = 1.8f;
+
 	for (size_t i = 0; i < 4; i++)
 	{
 		cascadeData[i].viewMat = cascadeView;
 
 		nearPlane = farPlane;
 		farPlane = shadowCoverage * (0.0447f * float(pow(2.1867f, (i + 1))));
-		cascadeData[i].size = float(int(farPlane) - 1);
+		cascadeData[i].size = float(int(farPlane) - 1) * TEST_CASCADE_DISTANCE_SCALE_FACTOR;
 		if (cascadeData[i].size <= 0.01f)
 			cascadeData[i].size = 1.0;
 

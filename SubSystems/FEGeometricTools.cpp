@@ -76,6 +76,38 @@ FEAABB::FEAABB(std::vector<float>& VertexPositions)
 	}
 }
 
+FEAABB::FEAABB(float* VertexPositions, int VertexCount)
+{
+	min.x = VertexPositions[0];
+	min.y = VertexPositions[1];
+	min.z = VertexPositions[2];
+
+	max.x = VertexPositions[0];
+	max.y = VertexPositions[1];
+	max.z = VertexPositions[2];
+
+	for (size_t i = 3; i < size_t(VertexCount); i += 3)
+	{
+		if (min.x > VertexPositions[i])
+			min.x = VertexPositions[i];
+
+		if (min.y > VertexPositions[i + 1])
+			min.y = VertexPositions[i + 1];
+
+		if (min.z > VertexPositions[i + 2])
+			min.z = VertexPositions[i + 2];
+
+		if (max.x < VertexPositions[i])
+			max.x = VertexPositions[i];
+
+		if (max.y < VertexPositions[i + 1])
+			max.y = VertexPositions[i + 1];
+
+		if (max.z < VertexPositions[i + 2])
+			max.z = VertexPositions[i + 2];
+	}
+}
+
 FEAABB::~FEAABB()
 {
 }

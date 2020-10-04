@@ -1,34 +1,61 @@
 #pragma once
 
 #include "..\SubSystems\FEGeometricTools.h"
+#include "FEAsset.h"
 
 namespace FocalEngine
 {
 	class FEEntity;
 	class FEResourceManager;
 
-	class FEMesh
+	class FEMesh : public FEAsset
 	{	
 		friend FEEntity;
 		friend FEResourceManager;
 	public:
-		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB);
+		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
 		~FEMesh();
 
 		GLuint getVaoID() const;
-		unsigned int getVertexCount() const;
+		GLuint getVertexCount() const;
+		GLuint getIndicesBufferID() const;
+		GLuint getIndicesCount() const;
+		GLuint getPositionsBufferID() const;
+		GLuint getPositionsCount() const;
+		GLuint getNormalsBufferID() const;
+		GLuint getNormalsCount() const;
+		GLuint getTangentsBufferID() const;
+		GLuint getTangentsCount() const;
+		GLuint getUVBufferID() const;
+		GLuint getUVCount() const;
+		GLuint getMaterialsIndicesBufferID() const;
+		GLuint getMaterialsIndicesCount() const;
+
+		int FEMesh::getMaterialCount() const;
 
 		std::string getName();
-		std::string getFileName();
 
 		FEAABB getAABB();
 	private:
 		GLuint vaoID = -1;
-		std::string name;
-		std::string fileName = "";
-		unsigned int vertexCount;
+		GLuint indicesBufferID = -1;
+		unsigned int indicesCount = -1;
+		GLuint positionsBufferID = -1;
+		unsigned int positionsCount = -1;
+		GLuint normalsBufferID = -1;
+		unsigned int normalsCount = -1;
+		GLuint tangentsBufferID = -1;
+		unsigned int tangentsCount = -1;
+		GLuint UVBufferID = -1;
+		unsigned int UVCount = -1;
+		GLuint materialsIndicesBufferID = -1;
+		unsigned int materialsIndicesCount = -1;
 
-		int vertexBuffers = 1;
+		std::string name;
+		unsigned int vertexCount;
+		unsigned int materialsCount;
+
+		int vertexAttributes = 1;
 		FEAABB AABB;
 
 		void setName(std::string newName);

@@ -57,14 +57,11 @@ namespace FocalEngine
 		friend FEResourceManager;
 		friend FERenderer;
 	public:
-		FEPostProcess(FEMesh* ScreenQuad, int ScreenWidth, int ScreenHeight, std::string Name, FEShader* screenQuadShader);
 		~FEPostProcess();
 
 		void renderResult();
 
 		FETexture* getInTexture();
-		void setInTexture(FETexture* InTexture);
-
 		void addStage(FEPostProcessStage* newStage);
 
 		std::string getName();
@@ -72,6 +69,8 @@ namespace FocalEngine
 
 		bool active = true;
 	private:
+		FEPostProcess(std::string Name);
+
 		std::string name;
 
 		int screenWidth, screenHeight;

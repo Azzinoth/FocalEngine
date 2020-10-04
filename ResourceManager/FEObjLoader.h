@@ -1,9 +1,16 @@
 #pragma once
 
-#include "../SubSystems/FECoreIncludes.h"
+#include "../SubSystems/FELog.h"
 
 namespace FocalEngine
 {
+	struct materialRecord
+	{
+		std::string name;
+		int firstFace = -1;
+		int lastFace = -1;
+	};
+
 	class FEResourceManager;
 
 	class FEObjLoader
@@ -18,6 +25,7 @@ namespace FocalEngine
 		std::vector<glm::vec2> rawTextureCoordinates;
 		std::vector<glm::vec3> rawNormalCoordinates;
 		std::vector<int> rawIndices;
+		int maxIndex = -1;
 
 		// final vertex coordinates
 		std::vector<float> fVerC;
@@ -29,6 +37,9 @@ namespace FocalEngine
 		std::vector<float> fTanC;
 		// final indices
 		std::vector<int> fInd;
+		// material records
+		std::vector<materialRecord> materialRecords;
+		std::vector<float> matIDs;
 
 		void readFile(const char* fileName);
 
@@ -41,7 +52,7 @@ namespace FocalEngine
 		struct vertexThatNeedDoubling
 		{
 			vertexThatNeedDoubling(int IndexInArray, int AcctualIndex, int TexIndex, int NormIndex) : indexInArray(IndexInArray),
-				                                    acctualIndex(AcctualIndex), texIndex(TexIndex), normIndex(NormIndex), wasDone(false) {};
+				                   acctualIndex(AcctualIndex), texIndex(TexIndex), normIndex(NormIndex), wasDone(false) {};
 
 			int indexInArray;
 			int acctualIndex;
@@ -55,4 +66,6 @@ namespace FocalEngine
 			}
 		};
 	};
+
+	#define LOG FELOG::getInstance()
 }

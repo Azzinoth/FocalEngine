@@ -8,6 +8,7 @@ in VS_OUT
 	vec3 worldVertexPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
+	flat float materialIndex;
 } FS_IN;
 
 @Texture@ albedoMap;
@@ -26,6 +27,10 @@ uniform float FERoughtnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapPresent;
 uniform float FEMetalnessMapIntensity;
+@Texture@ MRAOMap;
+uniform float FEMRAOMapPresent;
+
+@Texture@ albedoMapSecondMaterial;
 
 @CameraPosition@
 uniform float FEGamma;
@@ -221,12 +226,21 @@ void main(void)
 		}
 	}
 
-	vec4 textureColor = texture(albedoMap, FS_IN.UV);
+	vec4 textureColor;
+	if (FS_IN.materialIndex == 0.0)
+	{
+		textureColor = texture(albedoMap, FS_IN.UV);
+	}
+	else if (FS_IN.materialIndex == 1.0)
+	{
+		textureColor = texture(albedoMapSecondMaterial, FS_IN.UV);
+	}
+	
 	if (textureColor.a < 0.05)
 	{
 		discard;
 	}
-		
+	
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
 	vec3 viewDirection = normalize(FECameraPosition - FS_IN.fragPosition);
 	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
@@ -249,6 +263,10 @@ void main(void)
 	{
 		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(AOMap, FS_IN.UV).r * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
 	}
+	else if (FEMRAOMapPresent > 0.0)
+	{
+		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(MRAOMap, FS_IN.UV).b * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
+	}
 	else
 	{
 		gl_FragColor = vec4(ao_base, 1.0f);
@@ -270,6 +288,19 @@ void main(void)
 	}
 
 	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+
+	//if (FS_IN.materialIndex > -0.1 && FS_IN.materialIndex < 0.8)
+	//{
+	//	gl_FragColor += vec4(1.0, 0.0, 0.0, 1.0);
+	//}
+	//else if (FS_IN.materialIndex > 0.9 && FS_IN.materialIndex < 1.9)
+	//{
+	//	gl_FragColor += vec4(0.0, 1.0, 0.0, 1.0);
+	//}
+	//else if (FS_IN.materialIndex > 1.9)
+	//{
+	//	gl_FragColor += vec4(0.0, 0.0, 1.0, 1.0);
+	//}
 }
 
 // Produces cheap but low-quality white noise, nothing special
@@ -416,11 +447,23 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	vec3 albedo = baseColor;
 	float metallic = FEMetalness;
 	if (FEMetalnessMapPresent > 0.0)
+	{
 		metallic = texture(metalnessMap, FS_IN.UV).r * FEMetalnessMapIntensity;
+	}
+	else if (FEMRAOMapPresent > 0.0)
+	{
+		metallic = texture(MRAOMap, FS_IN.UV).r * FEMetalnessMapIntensity;
+	}
 
 	float roughness = FERoughtness;
 	if (FERoughtnessMapPresent > 0.0)
+	{
 		roughness = texture(roughtnessMap, FS_IN.UV).r * FERoughtnessMapIntensity;
+	}
+	else if (FEMRAOMapPresent > 0.0)
+	{
+		roughness = texture(MRAOMap, FS_IN.UV).g * FERoughtnessMapIntensity;
+	}
 
     vec3 N = normal;
     vec3 V = viewDir;

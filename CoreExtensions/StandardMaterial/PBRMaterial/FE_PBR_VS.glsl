@@ -3,6 +3,7 @@
 @In_UV@
 @In_Normal@
 @In_Tangent@
+@In_Material_Index@
 
 @WorldMatrix@
 @ViewMatrix@
@@ -16,6 +17,7 @@ out VS_OUT
 	vec3 worldVertexPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
+	float materialIndex;
 } vs_out;
 
 void main(void)
@@ -35,4 +37,6 @@ void main(void)
 	vs_out.fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
 	vs_out.worldVertexPosition = (FEWorldMatrix * vec4(FEPosition, 1.0)).xyz;
 	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
+
+	vs_out.materialIndex = FEMatIndex;
 }

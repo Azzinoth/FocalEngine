@@ -81,3 +81,8 @@ return result;
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 16
 #define FE_WIN_32
+#define FE_MESH_VERSION 0.01f
+#define FE_TEXTURE_VERSION 0.01f
+
+//#define FE_OLD_LOAD
+//#define FE_OLD_SAVE

@@ -27,10 +27,10 @@ void FEScene::addLight(FELightType Type, std::string Name)
 		lightsMap[Name] = new FEDirectionalLight();
 		lightsMap[Name]->setName(Name);
 
-		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[0].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[1].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[2].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[3].frameBuffer = new FEFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[0].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[1].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[2].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		reinterpret_cast<FEDirectionalLight*>(lightsMap[Name])->cascadeData[3].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
 	}
 	else if (Type == FE_SPOT_LIGHT)
 	{
@@ -44,7 +44,7 @@ void FEScene::addLight(FELightType Type, std::string Name)
 	}
 }
 
-FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name)
+FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name, std::string forceAssetID)
 {
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
@@ -59,7 +59,7 @@ FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name)
 		}
 	}
 
-	entityMap[Name] = resourceManager.createEntity(gameModel, Name);
+	entityMap[Name] = resourceManager.createEntity(gameModel, Name, forceAssetID);
 	return entityMap[Name];
 }
 

@@ -7,7 +7,7 @@
 
 namespace FocalEngine
 {
-	class FETerrain
+	class FETerrain : public FEAsset
 	{
 		friend FERenderer;
 		friend FEResourceManager;

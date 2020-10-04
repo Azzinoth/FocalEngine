@@ -1,21 +1,3 @@
-#pragma once
-
-#include "FEGammaAndHDRCorrection.h"
-
-static char* FEFXAAVS = R"(
-#version 450 core
-
-@In_Position@
-out vec2 textureCoords;
-
-void main(void)
-{
-	gl_Position = vec4(FEPosition, 1.0);
-	textureCoords = vec2((FEPosition.x + 1.0) / 2.0, 1 - (-FEPosition.y + 1.0) / 2.0);
-}
-)";
-
-static char* FEFXAAFS = R"(
 #version 450 core
 
 // took this simplified version of FXAA from :
@@ -67,20 +49,4 @@ void main(void)
 		gl_FragColor = vec4(result1, 1.0);
 	else
 		gl_FragColor = vec4(result2, 1.0);
-}
-)";
-
-namespace FocalEngine
-{
-	class FEFXAA : public FEPostProcess
-	{
-	public:
-		FEFXAA(FEMesh* ScreenQuad, FEShader* screenQuadShader, int ScreenWidth, int ScreenHeight);
-		~FEFXAA();
-
-		std::vector<FEShaderBlueprint> shaderBluePrints;
-		void initialize();
-	private:
-		int screenW, screenH;
-	};
 }

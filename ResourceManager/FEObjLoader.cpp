@@ -71,10 +71,35 @@ void FEObjLoader::readLine(std::stringstream& lineStream)
 			std::stringstream tempLineStrem;
 			tempLineStrem << sTemp;
 
+			int iterations = 0;
 			while (std::getline(tempLineStrem, sTemp, '/'))
 			{
 				rawIndices.push_back(std::stoi(sTemp));
+				// we should not take in to account texture or normal indices!
+				if (iterations == 0)
+				{
+					if (maxIndex < rawIndices.back())
+						maxIndex = rawIndices.back();
+				}
+
+				iterations++;
 			}
+		}
+	}
+	// if this line contains new material declaration
+	else if (sTemp.find("usemtl") != std::string::npos)
+	{
+		materialRecords.resize(materialRecords.size() + 1);
+		lineStream >> materialRecords.back().name;
+
+		if (materialRecords.size() == 1)
+		{
+			materialRecords.back().firstFace = 0;
+		}
+		else
+		{
+			materialRecords.back().firstFace = maxIndex;
+			materialRecords[materialRecords.size() - 2].lastFace = maxIndex - 1;
 		}
 	}
 }
@@ -85,17 +110,21 @@ void FEObjLoader::readFile(const char* fileName)
 	rawTextureCoordinates.resize(0);
 	rawNormalCoordinates.resize(0);
 	rawIndices.resize(0);
+	materialRecords.resize(0);
+	maxIndex = -1;
 
-	// to-do: error no file name
 	if (fileName == nullptr)
+	{
+		LOG.logError(std::string("No file name in function FEObjLoader::readFile."));
 		return;
+	}
 
 	std::ifstream file;
 	file.open(fileName);
 
 	if ((file.rdstate() & std::ifstream::failbit) != 0)
 	{
-		// to-do: error can't open file
+		LOG.logError(std::string("can't load file: ") + fileName + " in function FEObjLoader::readFile.");
 		return;
 	}
 
@@ -112,6 +141,18 @@ void FEObjLoader::readFile(const char* fileName)
 		lineStream << line;
 
 		readLine(lineStream);
+	}
+
+	// end material data preparation
+	if (materialRecords.size() > 0)
+	{
+		materialRecords.back().lastFace = maxIndex - 1;
+	}
+	else if(materialRecords.size() == 0)
+	{
+		materialRecords.resize(1);
+		materialRecords.back().firstFace = 0;
+		materialRecords.back().lastFace = maxIndex - 1;
 	}
 
 	processRawData();
@@ -183,7 +224,7 @@ void FEObjLoader::processRawData()
 			bool NormD = rawIndices[i + 2] != rawIndices[j + 2];
 			if (rawIndices[i] == rawIndices[j] && (TexD || NormD))
 			{
-				// we do not need to add first appearance of vertex that is we need to double
+				// we do not need to add first appearance of vertex that we need to double
 				FEObjLoader::vertexThatNeedDoubling newVertex = FEObjLoader::vertexThatNeedDoubling(j, rawIndices[j], rawIndices[j + 1], rawIndices[j + 2]);
 				if (std::find(vertexList.begin(), vertexList.end(), newVertex) == vertexList.end())
 				{
@@ -195,6 +236,8 @@ void FEObjLoader::processRawData()
 		}
 	}
 
+	std::vector<std::pair<int, float>> doubledVertexMatIndecies;
+
 	for (auto& ver : vertexList)
 	{
 		if (ver.wasDone) continue;
@@ -204,6 +247,15 @@ void FEObjLoader::processRawData()
 		int newVertexIndex = rawVertexCoordinates.size();
 		rawIndices[ver.indexInArray] = newVertexIndex;
 		ver.wasDone = true;
+
+		// preserve matIndex!
+		for (size_t i = 0; i < materialRecords.size(); i++)
+		{
+			if (ver.acctualIndex/*acctualIndex*/ >= materialRecords[i].firstFace && ver.acctualIndex/*acctualIndex*/ <= materialRecords[i].lastFace)
+			{
+				doubledVertexMatIndecies.push_back(std::make_pair(newVertexIndex, float(i)));
+			}
+		}
 
 		for (auto& verNext : vertexList)
 		{
@@ -221,6 +273,8 @@ void FEObjLoader::processRawData()
 	fNorC.resize(rawVertexCoordinates.size() * 3);
 	fTanC.resize(rawVertexCoordinates.size() * 3);
 	fInd.resize(0);
+	matIDs.resize(rawVertexCoordinates.size());
+	
 
 	for (size_t i = 0; i < rawIndices.size(); i += 3)
 	{
@@ -236,6 +290,15 @@ void FEObjLoader::processRawData()
 		fVerC[shiftInVerArr + 1] = rawVertexCoordinates[vIndex][1];
 		fVerC[shiftInVerArr + 2] = rawVertexCoordinates[vIndex][2];
 
+		// saving material ID in vertex attribute array
+		for (size_t i = 0; i < materialRecords.size(); i++)
+		{
+			if (vIndex >= materialRecords[i].firstFace && vIndex <= materialRecords[i].lastFace)
+			{
+				matIDs[vIndex] = float(i);
+			}
+		}
+
 		fTexC[shiftInTexArr] = rawTextureCoordinates[tIndex][0];
 		fTexC[shiftInTexArr + 1] = 1 - rawTextureCoordinates[tIndex][1];
 
@@ -244,6 +307,11 @@ void FEObjLoader::processRawData()
 		fNorC[shiftInVerArr + 2] = rawNormalCoordinates[nIndex][2];
 
 		fInd.push_back(vIndex);
+	}
+
+	for (size_t j = 0; j < doubledVertexMatIndecies.size(); j++)
+	{
+		matIDs[doubledVertexMatIndecies[j].first - 1] = doubledVertexMatIndecies[j].second;
 	}
 
 	calculateTangents();

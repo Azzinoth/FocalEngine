@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	class FEGameModel
+	class FEGameModel : public FEAsset
 	{
 		friend FERenderer;
 	public:
