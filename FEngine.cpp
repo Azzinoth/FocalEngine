@@ -156,8 +156,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	windowTitle = WindowTitle;
 
 	glfwInit();
-	//if (!glfwInit())
-		//return -1;
+	/*if (!glfwInit())
+		return -1;*/
 
 	window = glfwCreateWindow(windowW, windowH, windowTitle.c_str(), NULL, NULL);
 	if (!window)
@@ -306,6 +306,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontFromFileTTF("Cousine-Regular.ttf", 20);
+
 	unsigned char* tex_pixels = NULL;
 	int tex_w, tex_h;
 	io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);

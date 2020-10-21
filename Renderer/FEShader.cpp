@@ -487,6 +487,9 @@ void FEShader::registerUniforms()
 	for (size_t i = 0; i < size_t(count); i++)
 	{
 		FE_GL_ERROR(glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name));
+		// arrays are not currently part of params
+		if (std::string(name).find("[") != size_t(-1))
+			continue;
 		
 		switch (type)
 		{
@@ -549,9 +552,37 @@ void FEShader::registerUniforms()
 	}
 
 	start();
-	for (size_t i = 0; i < textureUniforms.size(); i++)
+
+	if (materialTexturesList)
 	{
-		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i].c_str()), i));
+		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+		{
+			std::string temp = "textures[";
+			std::string secondTemp = "textureBindings[";
+			std::string thirdTemp = "textureChannels[";
+			temp += std::to_string(i);
+			secondTemp += std::to_string(i);
+			thirdTemp += std::to_string(i);
+			temp += "]";
+			secondTemp += "]";
+			thirdTemp += "]";
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, temp.c_str()), i));
+			uniformLocations[std::hash<std::string>{}(secondTemp)] = glGetUniformLocation(programID, secondTemp.c_str());
+			uniformLocations[std::hash<std::string>{}(thirdTemp)] = glGetUniformLocation(programID, thirdTemp.c_str());
+		}
+
+		// 16 textures for material + 4 CSM textures. next available binding is 20.
+		for (size_t i = 20; i < 20 + textureUniforms.size(); i++)
+		{
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 20].c_str()), i));
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < textureUniforms.size(); i++)
+		{
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i].c_str()), i));
+		}
 	}
 
 	if (CSM)
@@ -797,6 +828,12 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		parsedShaderText.replace(index, strlen(FE_RECEVESHADOWS_MACRO), "uniform int FEReceiveShadows;");
 	}
 
+	index = parsedShaderText.find(FE_MATERIAL_TEXTURES_MACRO);
+	if (index != std::string::npos)
+	{
+		parsedShaderText.replace(index, strlen(FE_MATERIAL_TEXTURES_MACRO), "uniform int textureBindings[16];\nuniform int textureChannels[16];\nuniform sampler2D textures[16];\n");
+		materialTexturesList = true;
+	}
 
 	// find out if there is any debug requests in shader text.
 	int debugRequestCount = 0;
@@ -886,7 +923,6 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 		parsedShaderText = parsedShaderText.substr(0, bufferInsertOffset) + "\nbuffer debugBuffer\n{\nuint currentLocation;\nfloat debugData[];\n};\n#line " + std::to_string(lineAfterVersion) + "\n" + parsedShaderText.substr(bufferInsertOffset);
 #endif //layout (std430)
 	}
-
 	
 	return parsedShaderText;
 }
@@ -926,8 +962,28 @@ void FEShader::loadMatrix(int& uniformNameHash, glm::mat4& matrix)
 	FE_GL_ERROR(glUniformMatrix4fv(uniformLocations[uniformNameHash], 1, false, glm::value_ptr(matrix)));
 }
 
+void FEShader::loadIntArray(int& uniformNameHash, GLint* array, size_t arraySize)
+{
+	FE_GL_ERROR(glUniform1iv(uniformLocations[uniformNameHash], arraySize, array));
+}
+
+void FEShader::loadIntArray(GLuint uniformLocation, GLint* array, size_t arraySize)
+{
+	FE_GL_ERROR(glUniform1iv(uniformLocation, arraySize, array));
+}
+
+void FEShader::loadFloatArray(int& uniformNameHash, GLfloat* array, size_t arraySize)
+{
+	FE_GL_ERROR(glUniform1fv(uniformLocations[uniformNameHash], arraySize, array));
+}
+
 void FEShader::loadDataToGPU()
 {
+	if (parameters.size() > 10)
+	{
+		int y = 0;
+		y++;
+	}
 	auto iterator = parameters.begin();
 	while (iterator != parameters.end())
 	{

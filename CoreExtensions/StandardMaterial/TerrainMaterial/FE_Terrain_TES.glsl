@@ -3,11 +3,9 @@
 layout (quads, fractional_even_spacing) in;
 
 uniform float hightScale;
-uniform float displacementScale;
 uniform vec2 tileMult;
 
 @Texture@ heightMap;
-@Texture@ displacementMap;
 
 in vec2 TC_UV[];
 out vec2 TES_UV;
@@ -15,7 +13,7 @@ out vec3 TES_normal;
 
 float height(float u, float v)
 {
-	return (texture(heightMap, vec2(u,v)).r * hightScale) + texture(displacementMap, vec2(u * tileMult[0],v * tileMult[1])).r * displacementScale;
+	return (texture(heightMap, vec2(u,v)).r * hightScale);
 }
 
 void main(void)

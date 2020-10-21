@@ -4,24 +4,24 @@ uniform float hightScale;
 uniform float scaleFactor;
 uniform vec2 tileMult;
 
-@Texture@ heightMap;
-@Texture@ albedoMap;
-@Texture@ normalMap;
+@MaterialTextures@
+
+//Texture@ albedoMap;
+//Texture@ normalMap;
 uniform float FENormalMapPresent;
 uniform float FENormalMapIntensity;
-@Texture@ AOMap;
+//Texture@ AOMap;
 uniform float FEAOMapPresent;
 uniform float FEAOIntensity;
 uniform float FEAOMapIntensity;
-@Texture@ roughtnessMap;
+//Texture@ roughtnessMap;
 uniform float FERoughtnessMapPresent;
 uniform float FERoughtness;
 uniform float FERoughtnessMapIntensity;
-@Texture@ metalnessMap;
+//Texture@ metalnessMap;
 uniform float FEMetalness;
 uniform float FEMetalnessMapPresent;
 uniform float FEMetalnessMapIntensity;
-@Texture@ projectedMap;
 
 #define MAX_LIGHTS 10
 in GS_OUT
@@ -51,6 +51,9 @@ struct FELight
 // adds cascade shadow maps, 4 cascades.
 @CSM@
 
+@Texture@ heightMap;
+@Texture@ projectedMap;
+
 layout (set = 0, binding = 0, std140) uniform lightInfo
 {
 	FELight FElight[MAX_LIGHTS];
@@ -78,6 +81,71 @@ layout (set = 0, binding = 1, std140) uniform directionalLightInfo
 {
 	FEDirectionalLight directionalLight;
 };
+
+vec4 getAlbedo()
+{
+	vec4 result = vec4(0);
+	result = texture(textures[textureBindings[0]], FS_IN.UV);
+	return result;
+}
+
+vec3 getNormal()
+{
+	vec3 result = vec3(0);
+	if (textureBindings[1] != -1)
+	{
+		result = texture(textures[textureBindings[1]], FS_IN.UV).rgb;
+		result = normalize(result * 2.0 - 1.0);
+		result = normalize(FS_IN.TBN * result);
+		result = mix(FS_IN.vertexNormal, result, FENormalMapIntensity);
+	}
+	else
+	{
+		result = FS_IN.vertexNormal;
+	}
+
+	return result;
+}
+
+float getAO()
+{
+	float result = 0;
+
+	if (textureBindings[2] != -1)
+		result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
+	
+	return result;
+}
+
+float getRoughtness()
+{
+	float result = FERoughtness;
+
+	if (textureBindings[3] != -1)
+		result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
+
+	return result;
+}
+
+float getMetalness()
+{
+	float result = FEMetalness;
+
+	if (textureBindings[4] != -1)
+		result = texture(textures[textureBindings[4]], FS_IN.UV)[textureChannels[4]] * FEMetalnessMapIntensity;
+
+	return result;
+}
+
+float getDisplacement()
+{
+	float result = 0;
+
+	if (textureBindings[5] != -1)
+		result = texture(textures[textureBindings[5]], FS_IN.UV)[textureChannels[5]];
+	
+	return result;
+}
 
 const float PI = 3.14159265359;
 // ----------------------------------------------------------------------------
@@ -144,38 +212,13 @@ void main(void)
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
-		vec3 normal;
-		if (FENormalMapPresent > 0.0)
-		{
-			normal = texture(normalMap, FS_IN.UV).rgb;
-			normal = normalize(normal * 2.0 - 1.0);
-			normal = normalize(FS_IN.TBN * normal);
-			normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
-		}
-		else
-		{
-			normal = FS_IN.vertexNormal;
-		}
-
-		gl_FragColor = vec4(vec3(dot(normal, normalize(FECameraPosition - FS_IN.worldVertexPosition))), 1.0);
+		gl_FragColor = vec4(vec3(dot(getNormal(), normalize(FECameraPosition - FS_IN.worldVertexPosition))), 1.0);
 		return;
 	}
 	// checking normals
 	if (debugFlag == 2)
 	{
-		vec3 normal;
-		if (FENormalMapPresent > 0.0)
-		{
-			normal = texture(normalMap, FS_IN.UV).rgb;
-			normal = normalize(normal * 2.0 - 1.0);
-			normal = normalize(FS_IN.TBN * normal);
-			normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
-		}
-		else
-		{
-			normal = FS_IN.vertexNormal;
-		}
-		gl_FragColor = vec4(normal, 1.0);
+		gl_FragColor = vec4(getNormal(), 1.0);
 		return;
 	}
 	// checking UV
@@ -227,9 +270,7 @@ void main(void)
 		}
 	}
 
-	vec2 tiledUV = FS_IN.UV;
-
-	vec4 textureColor = texture(albedoMap, tiledUV);
+	vec4 textureColor = getAlbedo();
 	if (textureColor.a < 0.05)
 	{
 		discard;
@@ -239,23 +280,13 @@ void main(void)
 	vec3 viewDirection = normalize(FECameraPosition - FS_IN.fragPosition);
 	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
 
-	vec3 normal;
-	if (FENormalMapPresent > 0.0)
-	{
-		normal = texture(normalMap, tiledUV).rgb;
-		normal = normalize(normal * 2.0 - 1.0);
-		normal = normalize(FS_IN.TBN * normal);
-		normal = mix(FS_IN.vertexNormal, normal, FENormalMapIntensity);
-	}
-	else
-	{
-		normal = FS_IN.vertexNormal;
-	}
+	vec3 normal = getNormal();
 	
 	vec3 ao_base = ambientColor * FEAOIntensity * (directionalLight.intensity / 16.0);
-	if (FEAOMapPresent > 0.0)
+	float textureAO = getAO();
+	if (textureAO != 0)
 	{
-		gl_FragColor = vec4(mix(ao_base, ambientColor * texture(AOMap, tiledUV).r * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
+		gl_FragColor = vec4(mix(ao_base, ambientColor * textureAO * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
 	}
 	else
 	{
@@ -278,7 +309,7 @@ void main(void)
 	}
 
 	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
-	gl_FragColor += vec4(texture(projectedMap, tiledUV / tileMult));
+	gl_FragColor += vec4(texture(projectedMap, FS_IN.UV / tileMult));
 }
 
 // Produces cheap but low-quality white noise, nothing special
@@ -431,13 +462,8 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	vec3 lightDirection = normalize(-directionalLight.direction.xyz);
 
 	vec3 albedo = baseColor;
-	float metallic = FEMetalness;
-	if (FEMetalnessMapPresent > 0.0)
-		metallic = texture(metalnessMap, FS_IN.UV).r * FEMetalnessMapIntensity;
-
-	float roughness = FERoughtness;
-	if (FERoughtnessMapPresent > 0.0)
-		roughness = texture(roughtnessMap, FS_IN.UV).r * FERoughtnessMapIntensity;
+	float metallic = getMetalness();
+	float roughness = getRoughtness();
 
     vec3 N = normal;
     vec3 V = viewDir;

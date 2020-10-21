@@ -13,7 +13,7 @@
 
 using namespace FocalEngine;
 
-#define PROJECTS_FOLDER "C:/Users/Azzinoth/Desktop/FocalEngine/FEProjects"
+#define PROJECTS_FOLDER "C:/Users/Kindr/Desktop/FocalEngine/FEProjects"
 
 static double lastMouseX, lastMouseY;
 static double mouseX, mouseY;
@@ -443,7 +443,6 @@ static FEMaterial* haloMaterial = nullptr;
 static FEPostProcess* selectionHaloEffect = nullptr;
 // **************************** Halo selection END ****************************
 void displayTexturesContentBrowser();
-void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture);
 
 void displayGameModelContentBrowser();
 static std::unordered_map<std::string, FETexture*> gameModelPreviewTextures;
@@ -532,11 +531,7 @@ public:
 			if (materialsThatUseTexture.size() > 0)
 				ImGui::Text(("It is used in " + std::to_string(materialsThatUseTexture.size()) + " materials !").c_str());
 
-			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" texture ?").c_str());
-			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(materialsThatUseTexture.size()) + " materials !").c_str());
-			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
-
-			ImGui::SetCursorPosX(windowWidth / 4.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::vector<std::string> gameModelListToUpdate;
@@ -573,7 +568,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -663,6 +658,7 @@ public:
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
 
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Apply", ImVec2(120, 0)))
 			{
 				std::string oldName = objToWorkWith->getName();
@@ -684,6 +680,7 @@ public:
 			}
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				objToWorkWith = nullptr;
@@ -719,14 +716,17 @@ public:
 			ImGui::Text("Does this texture uses alpha channel ?");
 			currentProject->modified = true;
 
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Yes", ImVec2(120, 0)))
 			{
 				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(filePath.c_str(), true);
+				newTexture->setDirtyFlag(true);
 				ImGuiModalPopup::close();
 			}
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("No", ImVec2(120, 0)))
 			{
 				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(filePath.c_str(), false);
@@ -766,10 +766,10 @@ public:
 
 		selectButton = new ImGuiButton("Select");
 		selectButton->setSize(ImVec2(140, 24));
-		selectButton->setPosition(ImVec2(300, 25));
+		selectButton->setPosition(ImVec2(500, 35));
 		cancelButton = new ImGuiButton("Cancel");
 		cancelButton->setSize(ImVec2(140, 24));
-		cancelButton->setPosition(ImVec2(460, 25));
+		cancelButton->setPosition(ImVec2(660, 35));
 	}
 
 	~selectTexturePopUp()
@@ -791,6 +791,41 @@ public:
 		shouldOpen = true;
 		objToWorkWith = texture;
 		list = RESOURCE_MANAGER.getTextureList();
+		list.insert(list.begin(), "noTexture");
+		filteredList = list;
+		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (list[i] == (*objToWorkWith)->getName())
+				{
+					IndexSelected = i;
+					selectedItemName = list[i];
+					break;
+				}
+			}
+		}
+
+		if ((*objToWorkWith) == nullptr)
+		{
+			IndexSelected = 0;
+			selectedItemName = "noTexture";
+		}
+	}
+
+	void showWithCustomList(FETexture** texture, std::vector<FETexture*> customList)
+	{
+		shouldOpen = true;
+		objToWorkWith = texture;
+
+		list.clear();
+		for (size_t i = 0; i < customList.size(); i++)
+		{
+			if (customList[i] != nullptr)
+				list.push_back(customList[i]->getName());
+		}
 		list.insert(list.begin(), "noTexture");
 		filteredList = list;
 		strcpy_s(filter, "");
@@ -840,9 +875,11 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			ImGui::SetCursorPosY(40);
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
 
+			ImGui::SetCursorPosY(35);
 			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
 			{
 				if (strlen(filter) == 0)
@@ -864,7 +901,7 @@ public:
 			ImGui::Separator();
 
 			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
+			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectTexturePopupColumns", false);
 			for (size_t i = 0; i < filteredList.size(); i++)
 			{
@@ -971,7 +1008,7 @@ public:
 			ImGui::Text("New mesh name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
-
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Apply", ImVec2(120, 0)))
 			{
 				std::string oldName = objToWorkWith->getName();
@@ -997,6 +1034,7 @@ public:
 			}
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				objToWorkWith = nullptr;
@@ -1036,7 +1074,7 @@ public:
 				return;
 			}
 
-			// check if this mesh is used in some entity
+			// check if this mesh is used in some game model
 			// to-do: should be done through counter, not by searching each time.
 			int result = timesMeshUsed(objToWorkWith);
 
@@ -1044,11 +1082,7 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " game models !").c_str());
 
-			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" mesh ?").c_str());
-			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(result) + " game models !").c_str());
-			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
-
-			ImGui::SetCursorPosX(windowWidth / 4.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -1082,7 +1116,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -1119,10 +1153,10 @@ public:
 
 		selectButton = new ImGuiButton("Select");
 		selectButton->setSize(ImVec2(140, 24));
-		selectButton->setPosition(ImVec2(300, 25));
+		selectButton->setPosition(ImVec2(500, 35));
 		cancelButton = new ImGuiButton("Cancel");
 		cancelButton->setSize(ImVec2(140, 24));
-		cancelButton->setPosition(ImVec2(460, 25));
+		cancelButton->setPosition(ImVec2(660, 35));
 	}
 
 	~selectMeshPopUp()
@@ -1182,9 +1216,11 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			ImGui::SetCursorPosY(40);
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
 
+			ImGui::SetCursorPosY(35);
 			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
 			{
 				if (strlen(filter) == 0)
@@ -1206,7 +1242,7 @@ public:
 			ImGui::Separator();
 
 			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
+			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectMeshPopupColumns", false);
 			for (size_t i = 0; i < filteredList.size(); i++)
 			{
@@ -1288,10 +1324,10 @@ public:
 
 		selectButton = new ImGuiButton("Select");
 		selectButton->setSize(ImVec2(140, 24));
-		selectButton->setPosition(ImVec2(300, 25));
+		selectButton->setPosition(ImVec2(500, 35));
 		cancelButton = new ImGuiButton("Cancel");
 		cancelButton->setSize(ImVec2(140, 24));
-		cancelButton->setPosition(ImVec2(460, 25));
+		cancelButton->setPosition(ImVec2(660, 35));
 	}
 
 	~selectMaterialPopUp()
@@ -1345,9 +1381,11 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			ImGui::SetCursorPosY(40);
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
 
+			ImGui::SetCursorPosY(35);
 			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
 			{
 				if (strlen(filter) == 0)
@@ -1369,7 +1407,7 @@ public:
 			ImGui::Separator();
 
 			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
+			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectMeshPopupColumns", false);
 			for (size_t i = 0; i < filteredList.size(); i++)
 			{
@@ -1454,10 +1492,10 @@ public:
 
 		selectButton = new ImGuiButton("Select");
 		selectButton->setSize(ImVec2(140, 24));
-		selectButton->setPosition(ImVec2(300, 25));
+		selectButton->setPosition(ImVec2(500, 35));
 		cancelButton = new ImGuiButton("Cancel");
 		cancelButton->setSize(ImVec2(140, 24));
-		cancelButton->setPosition(ImVec2(460, 25));
+		cancelButton->setPosition(ImVec2(660, 35));
 	}
 
 	~selectGameModelPopUp()
@@ -1528,9 +1566,11 @@ public:
 		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
+			ImGui::SetCursorPosY(40);
 			ImGui::Text("Filter: ");
 			ImGui::SameLine();
 
+			ImGui::SetCursorPosY(35);
 			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
 			{
 				if (strlen(filter) == 0)
@@ -1552,7 +1592,7 @@ public:
 			ImGui::Separator();
 
 			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(60);
+			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectGameModelPopupColumns", false);
 			for (size_t i = 0; i < filteredList.size(); i++)
 			{
@@ -1658,7 +1698,7 @@ public:
 			ImGui::Text("New game model name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
-
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Apply", ImVec2(120, 0)))
 			{
 				std::string oldName = objToWorkWith->getName();
@@ -1678,6 +1718,7 @@ public:
 			}
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				objToWorkWith = nullptr;
@@ -1726,11 +1767,7 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
 
-			ImVec2 firstSentenceSize = ImGui::CalcTextSize(("Do you want to delete \"" + objToWorkWith->getName() + "\" game model ?").c_str());
-			ImVec2 secondSentenceSize = ImGui::CalcTextSize(("It is used in " + std::to_string(result) + " entities !").c_str());
-			float windowWidth = firstSentenceSize.x > secondSentenceSize.x ? firstSentenceSize.x : secondSentenceSize.x;
-
-			ImGui::SetCursorPosX(windowWidth / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -1744,7 +1781,7 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(windowWidth / 2.0f + windowWidth / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
@@ -1790,7 +1827,7 @@ public:
 			ImGui::Text("New entity name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
 			ImGui::Separator();
-
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Apply", ImVec2(120, 0)))
 			{
 				std::string oldName = objToWorkWith->getName();
@@ -1810,6 +1847,7 @@ public:
 			}
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				objToWorkWith = nullptr;
@@ -1877,7 +1915,7 @@ public:
 			std::string tempCaption = "Edit game model:";
 			tempCaption += " " + objToWorkWith->getName();
 			strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
-			size = ImVec2(350.0f, 400.0f);
+			size = ImVec2(460.0f, 435.0f);
 			position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
 			FEImGuiWindow::show();
 
@@ -1886,10 +1924,12 @@ public:
 
 			createGameModelPreview(tempModel, &tempPreview);
 
-			changeMaterialButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, 336.0f));
-			changeMeshButton->setPosition(ImVec2(size.x / 4 - 120 / 2, -1.0f));
-			applyButton->setPosition(ImVec2(size.x / 4 - 120 / 2, size.y - 30));
-			cancelButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, -1.0f));
+			changeMaterialButton->setSize(ImVec2(180, 30));
+			changeMaterialButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - changeMaterialButton->getSize().x / 2, 340.0f));
+			changeMeshButton->setSize(ImVec2(180, 30));
+			changeMeshButton->setPosition(ImVec2(size.x / 4 - changeMeshButton->getSize().x / 2, 340.0f));
+			applyButton->setPosition(ImVec2(size.x / 4 - applyButton->getSize().x / 2, size.y - 40));
+			cancelButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - cancelButton->getSize().x / 2, size.y - 40));
 		}
 	}
 
@@ -1927,6 +1967,7 @@ public:
 		ImGui::SetCursorPosX(size.x / 4 - textSize.x / 2);
 		ImGui::Text("Mesh component:");
 		ImGui::SetCursorPosX(size.x / 4 - 128 / 2);
+		ImGui::SetCursorPosY(210.0f);
 		ImGui::Image((void*)(intptr_t)getMeshPreview(tempModel->mesh->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		changeMeshButton->render();
 		if (changeMeshButton->getWasClicked())
@@ -1939,7 +1980,7 @@ public:
 		ImGui::SetCursorPosY(187.0f);
 		ImGui::Text("Material component:");
 		ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 128 / 2);
-		ImGui::SetCursorPosY(203.0f);
+		ImGui::SetCursorPosY(210.0f);
 		ImGui::Image((void*)(intptr_t)getMaterialPreview(tempModel->material->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		changeMaterialButton->render();
 		if (changeMaterialButton->getWasClicked())
@@ -2687,3 +2728,771 @@ public:
 static projectWasModifiedPopUp projectWasModifiedPopUpWindow;
 
 void closeWindowCallBack();
+
+class editMaterialPopup : public FEImGuiWindow
+{
+	FEMaterial* objToWorkWith;
+	
+	ImGuiButton* cancelButton;
+	ImGuiImageButton* iconButton = nullptr;
+	int textureCount = 0;
+
+	std::vector<std::string> channels = { "r", "g", "b", "a" };
+	int textureFromListUnderMouse = -1;
+	//int materialParameterUnderMouse = -1;
+	FETexture* tempContainer = nullptr;
+	int textureDestination = -1;
+public:
+	editMaterialPopup()
+	{
+		objToWorkWith = nullptr;
+		flags = ImGuiWindowFlags_NoResize;
+
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setDefaultColor(ImVec4(0.7f, 0.5f, 0.5f, 1.0f));
+		cancelButton->setHoveredColor(ImVec4(0.95f, 0.5f, 0.0f, 1.0f));
+		cancelButton->setActiveColor(ImVec4(0.1f, 1.0f, 0.1f, 1.0f));
+	}
+
+	~editMaterialPopup()
+	{
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
+	}
+
+	void show(FEMaterial* material)
+	{
+		if (material != nullptr)
+		{
+			tempContainer = RESOURCE_MANAGER.getTexture("noTexture");
+			objToWorkWith = material;
+
+			std::string tempCaption = "Edit material:";
+			tempCaption += " " + objToWorkWith->getName();
+			strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+			size = ImVec2(1000.0f, 500.0f);
+			position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
+			FEImGuiWindow::show();
+
+			iconButton = new ImGuiImageButton(nullptr);
+			iconButton->setSize(ImVec2(128, 128));
+			iconButton->setUV0(ImVec2(0.0f, 1.0f));
+			iconButton->setUV1(ImVec2(1.0f, 0.0f));
+			iconButton->setFramePadding(8);
+
+			/*previousMesh = objToWorkWith->mesh;
+			previousMaterial = objToWorkWith->material;
+
+			createGameModelPreview(tempModel, &tempPreview);
+
+			changeMaterialButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, 336.0f));
+			changeMeshButton->setPosition(ImVec2(size.x / 4 - 120 / 2, -1.0f));
+			applyButton->setPosition(ImVec2(size.x / 4 - 120 / 2, size.y - 30));
+			cancelButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - 120 / 2, -1.0f));*/
+		}
+	}
+
+	void render() override
+	{
+		FEImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		if (objToWorkWith == nullptr)
+		{
+			FEImGuiWindow::close();
+			return;
+		}
+
+		// lame callback
+		if (tempContainer != RESOURCE_MANAGER.noTexture)
+		{
+			if (textureDestination == -1)
+			{
+				objToWorkWith->addTexture(tempContainer);
+			}
+			else
+			{
+				int subMaterial = textureDestination > 5;
+				if (subMaterial)
+					textureDestination -= 6;
+
+				switch (textureDestination)
+				{
+					case 0:
+					{
+						objToWorkWith->setAlbedoMap(tempContainer, subMaterial);
+						break;
+					}
+					case 1:
+					{
+						objToWorkWith->setNormalMap(tempContainer, subMaterial);
+						break;
+					}
+					case 2:
+					{
+						objToWorkWith->setAOMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 3:
+					{
+						objToWorkWith->setRoughtnessMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 4:
+					{
+						objToWorkWith->setMetalnessMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 5:
+					{
+						objToWorkWith->setDisplacementMap(tempContainer, 0, subMaterial);
+						break;
+					}
+				}
+			}
+
+			tempContainer = RESOURCE_MANAGER.noTexture;
+			createMaterialPreview(objToWorkWith->getName());
+			currentProject->modified = true;
+		}
+
+		ImGui::Text("Textures (%d out of 16):", textureCount);
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(size.x * 0.36f);
+		ImGui::Text("Bindings:", textureCount);
+		{
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(0, 162, 232, 50));
+			ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+			ImGui::BeginChild("Textures", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.35f, 400), true, window_flags);
+
+			if (!ImGui::IsPopupOpen("##materialPropertiesContext_menu"))
+				textureFromListUnderMouse = -1;
+
+			if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
+				ImGui::OpenPopup("##materialPropertiesContext_menu");
+			
+			if (ImGui::BeginPopup("##materialPropertiesContext_menu"))
+			{
+				if (textureFromListUnderMouse == -1)
+				{
+					if (ImGui::MenuItem("Add texture..."))
+					{
+						textureDestination = -1;
+						selectTextureWindow.show(&tempContainer);
+					}
+				}
+				else
+				{
+					if (ImGui::MenuItem("Remove"))
+					{
+						objToWorkWith->removeTexture(textureFromListUnderMouse);
+						currentProject->modified = true;
+					}
+				}
+
+				ImGui::EndPopup();
+			}
+
+			ImGui::Columns(2, "TextureColumns", false);
+			textureCount = 0;
+			for (size_t i = 0; i < objToWorkWith->textures.size(); i++)
+			{
+				if (objToWorkWith->textures[i] == nullptr)
+					continue;
+
+				textureCount++;
+				ImGui::PushID(objToWorkWith->textures[i]->getName().c_str());
+
+				objToWorkWith->textures[i]->getName() == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(objToWorkWith->textures[i]->getName()));
+				iconButton->render();
+
+				if (iconButton->isHovered())
+					textureFromListUnderMouse = i;
+
+				ImGui::Text(objToWorkWith->textures[i]->getName().c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			ImGui::PopStyleColor();
+			ImGui::EndChild();
+		}
+
+		// material options
+		{
+			ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+			ImGui::SameLine();
+			ImGui::PushStyleColor(ImGuiCol_ChildBg, IM_COL32(0, 162, 232, 50));
+			ImGui::BeginChild("Bindings", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.65f, 400), true, window_flags);
+
+			ImGui::Text("First sub material:");
+
+			// ************* Albedo *************
+			ImGui::SetCursorPosX(10);
+			ImGui::SetCursorPosY(38);
+			ImGui::Text("Albedo:");
+			objToWorkWith->getAlbedoMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getAlbedoMap());
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 0;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getAlbedoMap() != nullptr)
+			{
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##albedo", "rgba", ImGuiWindowFlags_None))
+				{
+					bool is_selected = true;
+					ImGui::Selectable("rgba", is_selected);
+					ImGui::SetItemDefaultFocus();
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Normal *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			ImGui::SetCursorPosY(38);
+			ImGui::Text("Normal:");
+			objToWorkWith->getNormalMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getNormalMap());
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 1;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getNormalMap() != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##normal", "rgb", ImGuiWindowFlags_None))
+				{
+					bool is_selected = true;
+					ImGui::Selectable("rgb", is_selected);
+					ImGui::SetItemDefaultFocus();
+					ImGui::EndCombo();
+				}
+			}
+			
+			// ************* AO *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			ImGui::SetCursorPosY(38);
+			ImGui::Text("AO:");
+			objToWorkWith->getAOMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getAOMap());
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 2;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getAOMap() != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##ao", channels[objToWorkWith->getAOMapChannel()].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getAOMap()->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getAOMapChannel()] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setAOMap(objToWorkWith->getAOMap(), i);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Roughtness *************
+			ImGui::SetCursorPosX(10);
+			ImGui::SetCursorPosY(38 + 128 + 80);
+			ImGui::Text("Roughtness:");
+			objToWorkWith->getRoughtnessMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getRoughtnessMap());
+			ImGui::SetCursorPosX(10);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 3;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getRoughtnessMap() != nullptr)
+			{
+				ImGui::SetCursorPosX(10);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##roughtness", channels[objToWorkWith->getRoughtnessMapChannel()].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getRoughtnessMap()->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getRoughtnessMapChannel()] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setRoughtnessMap(objToWorkWith->getRoughtnessMap(), i);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Metalness *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			ImGui::SetCursorPosY(38 + 128 + 80);
+			ImGui::Text("Metalness:");
+			objToWorkWith->getMetalnessMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getMetalnessMap());
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 4;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getMetalnessMap() != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##metalness", channels[objToWorkWith->getMetalnessMapChannel()].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getMetalnessMap()->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getMetalnessMapChannel()] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setMetalnessMap(objToWorkWith->getMetalnessMap(), i);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Displacement *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			ImGui::SetCursorPosY(38 + 128 + 80);
+			ImGui::Text("Displacement:");
+			objToWorkWith->getDisplacementMap() == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getDisplacementMap());
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 5;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getDisplacementMap() != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##displacement", channels[objToWorkWith->getDisplacementMapChannel()].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getDisplacementMap()->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getDisplacementMapChannel()] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setDisplacementMap(objToWorkWith->getDisplacementMap(), i);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			ImGui::SetCursorPosY(38 + 128 + 80 + 128 + 80);
+			ImGui::Separator();
+
+			ImGui::Text("Second sub material:");
+			// ************* Albedo *************
+			ImGui::SetCursorPosX(10);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80);
+			ImGui::Text("Albedo:");
+			objToWorkWith->getAlbedoMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getAlbedoMap(1));
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 6;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getAlbedoMap(1) != nullptr)
+			{
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##albedoSubmaterial", "rgba", ImGuiWindowFlags_None))
+				{
+					bool is_selected = true;
+					ImGui::Selectable("rgba", is_selected);
+					ImGui::SetItemDefaultFocus();
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Normal *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80);
+			ImGui::Text("Normal:");
+			objToWorkWith->getNormalMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getNormalMap(1));
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 7;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getNormalMap(1) != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##normalSubmaterial", "rgb", ImGuiWindowFlags_None))
+				{
+					bool is_selected = true;
+					ImGui::Selectable("rgb", is_selected);
+					ImGui::SetItemDefaultFocus();
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* AO *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80);
+			ImGui::Text("AO:");
+			objToWorkWith->getAOMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getAOMap(1));
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 8;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getAOMap(1) != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##aoSubmaterial", channels[objToWorkWith->getAOMapChannel(1)].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getAOMap(1)->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getAOMapChannel(1)] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setAOMap(objToWorkWith->getAOMap(1), i, 1);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Roughtness *************
+			ImGui::SetCursorPosX(10);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80 + 128 + 80);
+			ImGui::Text("Roughtness:");
+			objToWorkWith->getRoughtnessMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getRoughtnessMap(1));
+			ImGui::SetCursorPosX(10);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 9;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getRoughtnessMap(1) != nullptr)
+			{
+				ImGui::SetCursorPosX(10);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##roughtnessSubmaterial", channels[objToWorkWith->getRoughtnessMapChannel(1)].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getRoughtnessMap(1)->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getRoughtnessMapChannel(1)] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setRoughtnessMap(objToWorkWith->getRoughtnessMap(1), i, 1);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Metalness *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80 + 128 + 80);
+			ImGui::Text("Metalness:");
+			objToWorkWith->getMetalnessMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getMetalnessMap(1));
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 10;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getMetalnessMap(1) != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##metalnessSubmaterial", channels[objToWorkWith->getMetalnessMapChannel(1)].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getMetalnessMap(1)->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getMetalnessMapChannel(1)] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setMetalnessMap(objToWorkWith->getMetalnessMap(1), i, 1);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			// ************* Displacement *************
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			ImGui::SetCursorPosY(64 + 128 + 80 + 128 + 80 + 128 + 80);
+			ImGui::Text("Displacement:");
+			objToWorkWith->getDisplacementMap(1) == nullptr ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(objToWorkWith->getDisplacementMap(1));
+			ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+			iconButton->render();
+			if (iconButton->getWasClicked())
+			{
+				textureDestination = 11;
+				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
+			}
+
+			if (objToWorkWith->getDisplacementMap(1) != nullptr)
+			{
+				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f * 2.0f);
+				ImGui::SetNextItemWidth(85);
+				if (ImGui::BeginCombo("Channel##displacementSubmaterial", channels[objToWorkWith->getDisplacementMapChannel(1)].c_str(), ImGuiWindowFlags_None))
+				{
+					for (size_t i = 0; i < channels.size(); i++)
+					{
+						// if texture was compresed with out alpha channel
+						if (i == 3 && objToWorkWith->getDisplacementMap(1)->getInternalFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+							continue;
+
+						bool is_selected = (channels[objToWorkWith->getDisplacementMapChannel(1)] == channels[i]);
+						if (ImGui::Selectable(channels[i].c_str(), is_selected))
+							objToWorkWith->setDisplacementMap(objToWorkWith->getDisplacementMap(1), i, 1);
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::EndChild();
+		}
+
+		cancelButton->render();
+		if (cancelButton->getWasClicked())
+		{
+			FEImGuiWindow::close();
+			return;
+		}
+
+		FEImGuiWindow::onRenderEnd();
+
+		selectTextureWindow.render();
+	}
+
+	void close()
+	{
+		FEImGuiWindow::close();
+	}
+};
+static editMaterialPopup editMaterialWindow;
+
+class renameMaterialPopUp : public ImGuiModalPopup
+{
+	FEMaterial* objToWorkWith;
+	char newName[512];
+public:
+	renameMaterialPopUp()
+	{
+		popupCaption = "Rename material";
+		objToWorkWith = nullptr;
+	}
+
+	void show(FEMaterial* ObjToWorkWith)
+	{
+		shouldOpen = true;
+		objToWorkWith = ObjToWorkWith;
+		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (objToWorkWith == nullptr)
+			{
+				ImGui::EndPopup();
+				return;
+			}
+
+			ImGui::Text("New material name :");
+			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
+			ImGui::Separator();
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			if (ImGui::Button("Apply", ImVec2(120, 0)))
+			{
+				std::string oldName = objToWorkWith->getName();
+				// if new name is acceptable
+				if (RESOURCE_MANAGER.setMaterialName(objToWorkWith, newName))
+				{
+					currentProject->modified = true;
+					ImGuiModalPopup::close();
+					strcpy_s(newName, "");
+				}
+				else
+				{
+					objToWorkWith = nullptr;
+					ImGuiModalPopup::close();
+					renameFailedWindow.show();
+				}
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				objToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+			}
+			ImGui::EndPopup();
+		}
+	}
+};
+static renameMaterialPopUp renameMaterialWindow;
+
+int timesMaterialUsed(FEMaterial* gameModel);
+class deleteMaterialPopup : public ImGuiModalPopup
+{
+	FEMaterial* objToWorkWith;
+public:
+	deleteMaterialPopup()
+	{
+		popupCaption = "Delete material";
+		objToWorkWith = nullptr;
+	}
+
+	void show(FEMaterial* material)
+	{
+		shouldOpen = true;
+		objToWorkWith = material;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			if (objToWorkWith == nullptr)
+			{
+				ImGuiModalPopup::close();
+				return;
+			}
+
+			// check if this material is used in some game model
+			// to-do: should be done through counter, not by searching each time.
+			int result = timesMaterialUsed(objToWorkWith);
+
+			ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" material ?").c_str());
+			if (result > 0)
+				ImGui::Text(("It is used in " + std::to_string(result) + " game models !").c_str());
+
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			if (ImGui::Button("Delete", ImVec2(120, 0)))
+			{
+				std::string name = objToWorkWith->getName();
+
+				// re-create game model preview
+				std::vector<std::string> gameModelListToUpdate;
+				std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+				for (size_t i = 0; i < gameModelList.size(); i++)
+				{
+					FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+
+					if (currentGameModel->material == objToWorkWith)
+						gameModelListToUpdate.push_back(currentGameModel->getName());
+				}
+
+				objToWorkWith->setDirtyFlag(true);
+				currentProject->modified = true;
+				RESOURCE_MANAGER.deleteMaterial(objToWorkWith);
+
+				// re-create game model preview
+				for (size_t i = 0; i < gameModelListToUpdate.size(); i++)
+					createGameModelPreview(gameModelListToUpdate[i]);
+
+
+				delete materialPreviewTextures[name];
+				materialPreviewTextures.erase(name);
+				objToWorkWith = nullptr;
+				ImGuiModalPopup::close();
+			}
+
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			{
+				ImGuiModalPopup::close();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static deleteMaterialPopup deleteMaterialWindow;

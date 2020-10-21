@@ -37,8 +37,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//	}
 	//}
 	
-	
-
 	ENGINE.createWindow();
 	ENGINE.setKeyCallback(keyButtonCallback);
 	ENGINE.setMouseButtonCallback(mouseButtonCallback);

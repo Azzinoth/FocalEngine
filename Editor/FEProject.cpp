@@ -103,12 +103,24 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	{
 		FEMaterial* material = RESOURCE_MANAGER.getMaterial(materialList[i]);
 
-		if (material->albedoMap != nullptr) materialData[material->getName()]["albedoMap"] = material->albedoMap->getName();
+		for (size_t j = 0; j < FE_MAX_TEXTURES_PER_MATERIAL; j++)
+		{
+			if (material->textures[j] != nullptr)
+				materialData[material->getName()]["textures"][std::to_string(j).c_str()] = material->textures[j]->getName();
+
+			if (material->textureBindings[j] != -1)
+				materialData[material->getName()]["textureBindings"][std::to_string(j).c_str()] = material->textureBindings[j];
+
+			if (material->textureChannels[j] != -1)
+				materialData[material->getName()]["textureChannels"][std::to_string(j).c_str()] = material->textureChannels[j];
+		}
+
+		/*if (material->albedoMap != nullptr) materialData[material->getName()]["albedoMap"] = material->albedoMap->getName();
 		if (material->normalMap != nullptr) materialData[material->getName()]["normalMap"] = material->normalMap->getName();
 		if (material->roughtnessMap != nullptr) materialData[material->getName()]["roughtnessMap"] = material->roughtnessMap->getName();
 		if (material->metalnessMap != nullptr) materialData[material->getName()]["metalnessMap"] = material->metalnessMap->getName();
 		if (material->AOMap != nullptr) materialData[material->getName()]["AOMap"] = material->AOMap->getName();
-		if (material->displacementMap != nullptr) materialData[material->getName()]["displacementMap"] = material->displacementMap->getName();
+		if (material->displacementMap != nullptr) materialData[material->getName()]["displacementMap"] = material->displacementMap->getName();*/
 
 		materialData[material->getName()]["ID"] = material->getAssetID();
 		materialData[material->getName()]["name"] = material->getName();
@@ -320,7 +332,8 @@ void FEProject::loadScene()
 	std::vector<Json::String> materialsList = root["materials"].getMemberNames();
 	for (size_t i = 0; i < materialsList.size(); i++)
 	{
-		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i].c_str(), root["materials"][materialsList[i]]["ID"].asString());
+		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i], root["materials"][materialsList[i]]["ID"].asString());
+
 		//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
 		if (newMat->getName() == "skyDome")
 		{
@@ -331,35 +344,109 @@ void FEProject::loadScene()
 			newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 		}
 
-		std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
-		for (size_t j = 0; j < textureList.size(); j++)
+		std::vector<Json::String> membersList = root["materials"][materialsList[i]].getMemberNames();
+		for (size_t j = 0; j < membersList.size(); j++)
 		{
-			if (textureList[j] == "albedoMap")
-				newMat->albedoMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
+			if (membersList[j] == "textures")
+			{
+				for (size_t k = 0; k < FE_MAX_TEXTURES_PER_MATERIAL; k++)
+				{
+					if (root["materials"][materialsList[i]]["textures"].isMember(std::to_string(k).c_str()))
+					{
+						std::string textureName = root["materials"][materialsList[i]]["textures"][std::to_string(k).c_str()].asCString();
+						newMat->textures[k] = RESOURCE_MANAGER.getTexture(textureName);
+					}
+				}
+			}
 
-			if (textureList[j] == "normalMap")
-				newMat->normalMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+			if (membersList[j] == "textureBindings")
+			{
+				for (size_t k = 0; k < FE_MAX_TEXTURES_PER_MATERIAL; k++)
+				{
+					if (root["materials"][materialsList[i]]["textureBindings"].isMember(std::to_string(k).c_str()))
+					{
+						int binding = root["materials"][materialsList[i]]["textureBindings"][std::to_string(k).c_str()].asInt();
+						newMat->textureBindings[k] = binding;
+					}
+				}
+			}
 
-			if (textureList[j] == "AOMap")
-				newMat->AOMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
-
-			if (textureList[j] == "roughtnessMap")
-				newMat->roughtnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
-
-			if (textureList[j] == "metalnessMap")
-				newMat->metalnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
-
-			if (textureList[j] == "displacementMap")
-				newMat->displacementMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString());
-
-			newMat->setMetalness(root["materials"][materialsList[i]]["metalness"].asFloat());
-			newMat->setRoughtness(root["materials"][materialsList[i]]["roughtness"].asFloat());
-			newMat->setNormalMapIntensity(root["materials"][materialsList[i]]["normalMapIntensity"].asFloat());
-			newMat->setAmbientOcclusionIntensity(root["materials"][materialsList[i]]["ambientOcclusionIntensity"].asFloat());
-			newMat->setAmbientOcclusionMapIntensity(root["materials"][materialsList[i]]["ambientOcclusionMapIntensity"].asFloat());
-			newMat->setRoughtnessMapIntensity(root["materials"][materialsList[i]]["roughtnessMapIntensity"].asFloat());
-			newMat->setMetalnessMapIntensity(root["materials"][materialsList[i]]["metalnessMapIntensity"].asFloat());
+			if (membersList[j] == "textureChannels")
+			{
+				for (size_t k = 0; k < FE_MAX_TEXTURES_PER_MATERIAL; k++)
+				{
+					if (root["materials"][materialsList[i]]["textureChannels"].isMember(std::to_string(k).c_str()))
+					{
+						int binding = root["materials"][materialsList[i]]["textureChannels"][std::to_string(k).c_str()].asInt();
+						newMat->textureChannels[k] = binding;
+					}
+				}
+			}
 		}
+
+
+		//std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
+		//for (size_t j = 0; j < textureList.size(); j++)
+		//{
+		//	if (textureList[j] == "albedoMap")
+		//	{
+		//		//newMat->albedoMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
+
+		//		newMat->setAlbedoMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString()));
+		//		//newMat->textures[0] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
+		//		//newMat->textureBindings[0] = 0;
+		//	}
+		//	
+		//	if (textureList[j] == "normalMap")
+		//	{
+		//		//newMat->normalMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+
+		//		newMat->setNormalMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString()));
+		//		//newMat->textures[15] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
+		//		//newMat->textureBindings[1] = 15;
+		//	}
+		//	
+		//	if (textureList[j] == "AOMap")
+		//	{
+		//		//newMat->AOMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
+
+		//		newMat->setAOMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString()));
+		//		//newMat->textures[2] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
+		//		//newMat->textureBindings[2] = 2;
+		//	}
+
+		//	if (textureList[j] == "roughtnessMap")
+		//	{
+		//		//newMat->roughtnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
+
+		//		newMat->setRoughtnessMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString()));
+		//		//newMat->textures[3] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
+		//		//newMat->textureBindings[3] = 3;
+		//	}
+		//	
+		//	if (textureList[j] == "metalnessMap")
+		//	{
+		//		//newMat->metalnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
+
+		//		newMat->setMetalnessMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString()));
+		//		//newMat->textures[4] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
+		//		//newMat->textureBindings[4] = 4;
+		//	}
+		//		
+		//	if (textureList[j] == "displacementMap")
+		//	{
+		//		//newMat->setAlbedoMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString()), 1);
+		//		newMat->setDisplacementMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString()));
+		//	}
+		//}
+
+		newMat->setMetalness(root["materials"][materialsList[i]]["metalness"].asFloat());
+		newMat->setRoughtness(root["materials"][materialsList[i]]["roughtness"].asFloat());
+		newMat->setNormalMapIntensity(root["materials"][materialsList[i]]["normalMapIntensity"].asFloat());
+		newMat->setAmbientOcclusionIntensity(root["materials"][materialsList[i]]["ambientOcclusionIntensity"].asFloat());
+		newMat->setAmbientOcclusionMapIntensity(root["materials"][materialsList[i]]["ambientOcclusionMapIntensity"].asFloat());
+		newMat->setRoughtnessMapIntensity(root["materials"][materialsList[i]]["roughtnessMapIntensity"].asFloat());
+		newMat->setMetalnessMapIntensity(root["materials"][materialsList[i]]["metalnessMapIntensity"].asFloat());
 	}
 
 	// loading gameModels

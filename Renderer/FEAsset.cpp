@@ -24,11 +24,6 @@ std::string FEAsset::getAssetID() const
 	return ID;
 }
 
-//std::string FEAsset::getAssetIDinHex() const
-//{
-//	return IDinHex;
-//}
-
 FEAssetType FEAsset::getType() const
 {
 	return type;

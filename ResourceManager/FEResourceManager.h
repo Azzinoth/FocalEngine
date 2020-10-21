@@ -79,6 +79,7 @@ namespace FocalEngine
 		FEMaterial* createMaterial(std::string Name = "", std::string forceAssetID = "");
 		bool makeMaterialStandard(FEMaterial* material);
 		bool setMaterialName(FEMaterial* Material, std::string MaterialName);
+		void deleteMaterial(FEMaterial* Material);
 
 		std::vector<std::string> getGameModelList();
 		std::vector<std::string> getStandardGameModelList();

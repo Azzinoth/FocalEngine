@@ -6,19 +6,17 @@ layout (vertices = 4) out;
 @CameraPosition@
 
 @Texture@ heightMap;
-@Texture@ displacementMap;
 uniform float hightScale;
 uniform float scaleFactor;
 uniform float LODlevel;
 uniform vec2 hightMapShift;
-//uniform vec2 tileMult;
 
 in vec2 vertex_UV[];
 out vec2 TC_UV[];
 
 float height(float u, float v)
 {
-	return (texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * hightScale);// + texture(displacementMap, vec2(u * tileMult[0],v * tileMult[1])).r);
+	return (texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * hightScale);
 }
 
 // frustum_edge should be 1, but I gave additional 10% for less aggressive culling. 

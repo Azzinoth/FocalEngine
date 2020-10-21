@@ -335,14 +335,6 @@ void displayLightProperties(FELight* light)
 		directionalLight->setActiveCascades(cascades);
 		toolTip("How much steps of shadow quality will be used.");
 
-		/*ImGui::Text("Cascade exponent :");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(200);
-		float cascadeDistributionExponent = directionalLight->getCascadeDistributionExponent();
-		ImGui::DragFloat("##cascade exponent", &cascadeDistributionExponent, 0.1f, 0.1f, 10.0f);
-		directionalLight->setCascadeDistributionExponent(cascadeDistributionExponent);
-		toolTip("How much size of each next cascade is bigger than previous.");*/
-
 		ImGui::Text("Shadow coverage in M :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
@@ -952,226 +944,6 @@ void loadEditor()
 	ENGINE.setWindowCloseCallback(closeWindowCallBack);
 }
 
-void displayMaterialContentBrowser()
-{
-	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
-
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Add new material", ImVec2(220, 0)))
-		ImGui::OpenPopup("New material");
-
-	ImGui::Separator();
-	static std::string selectedShader = "";
-	std::vector<std::string> shaderList = RESOURCE_MANAGER.getStandardShadersList();
-	std::vector<std::string> tempList = RESOURCE_MANAGER.getShadersList();
-	for (size_t i = 0; i < tempList.size(); i++)
-	{
-		shaderList.push_back(tempList[i]);
-	}
-
-	if (ImGui::BeginCombo("Shaders", selectedShader.c_str(), ImGuiWindowFlags_None))
-	{
-		for (size_t n = 0; n < shaderList.size(); n++)
-		{
-			bool is_selected = (selectedShader == shaderList[n]);
-			if (ImGui::Selectable(shaderList[n].c_str(), is_selected))
-				selectedShader = shaderList[n].c_str();
-			if (is_selected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
-
-	if (ImGui::Button("Edit selected above shader", ImVec2(220, 0)) && selectedShader != "")
-		shadersEditorWindow.show(RESOURCE_MANAGER.getShader(selectedShader));
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::Separator();
-
-	if (ImGui::BeginPopupModal("New material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		ImGui::Text("Insert name of new material :");
-		static char materialName[512] = "";
-
-		ImGui::InputText("", materialName, IM_ARRAYSIZE(materialName));
-		ImGui::Separator();
-
-		if (ImGui::Button("Create", ImVec2(120, 0)))
-		{
-			FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialName);
-			if (newMat)
-			{
-				//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
-				newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
-
-				newMat->albedoMap = RESOURCE_MANAGER.noTexture;
-				newMat->normalMap = RESOURCE_MANAGER.noTexture;
-			}
-
-			ImGui::CloseCurrentPopup();
-			strcpy_s(materialName, "");
-		}
-		ImGui::SetItemDefaultFocus();
-		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
-		ImGui::EndPopup();
-	}
-
-	for (size_t i = 0; i < materialList.size(); i++)
-	{
-		ImGui::PushID(i);
-		FEMaterial* material = RESOURCE_MANAGER.getMaterial(materialList[i]);
-
-		if (ImGui::CollapsingHeader(materialList[i].c_str(), 0))
-		{
-			std::vector<std::string> params = material->getParameterList();
-			FEShaderParam* param;
-			for (size_t j = 0; j < params.size(); j++)
-			{
-				param = material->getParameter(params[j]);
-				if (param->loadedFromEngine)
-					continue;
-				displayMaterialPrameter(param);
-			}
-
-			if (material->metalnessMap == nullptr && material->MRAOMap == nullptr)
-			{
-				ImGui::PushID("metalness");
-				float metalness = material->getMetalness();
-				ImGui::DragFloat("metalness", &metalness, 0.01f, 0.0f, 1.0f);
-				material->setMetalness(metalness);
-				ImGui::PopID();
-			}
-			else
-			{
-				ImGui::PushID("metalnessMapIntensity");
-				float metalness = material->getMetalnessMapIntensity();
-				ImGui::DragFloat("metalnessMapIntensity", &metalness, 0.01f, 0.0f, 10.0f);
-				material->setMetalnessMapIntensity(metalness);
-				ImGui::PopID();
-			}
-
-			if (material->roughtnessMap == nullptr && material->MRAOMap == nullptr)
-			{
-				ImGui::PushID("roughtness");
-				float roughtness = material->getRoughtness();
-				ImGui::DragFloat("roughtness", &roughtness, 0.01f, 0.0f, 1.0f);
-				material->setRoughtness(roughtness);
-				ImGui::PopID();
-			}
-			else
-			{
-				ImGui::PushID("roughtnessMapIntensity");
-				float roughtness = material->getRoughtnessMapIntensity();
-				ImGui::DragFloat("roughtnessMapIntensity", &roughtness, 0.01f, 0.0f, 10.0f);
-				material->setRoughtnessMapIntensity(roughtness);
-				ImGui::PopID();
-			}
-
-			ImGui::PushID("normalMapIntensity");
-			float normalMapIntensity = material->getNormalMapIntensity();
-			ImGui::DragFloat("normalMapIntensity", &normalMapIntensity, 0.01f, 0.0f, 1.0f);
-			material->setNormalMapIntensity(normalMapIntensity);
-			ImGui::PopID();
-
-			if (material->AOMap == nullptr && material->MRAOMap == nullptr)
-			{
-				ImGui::PushID("ambientOcclusionIntensity");
-				float ambientOcclusionIntensity = material->getAmbientOcclusionIntensity();
-				ImGui::DragFloat("ambientOcclusionIntensity", &ambientOcclusionIntensity, 0.01f, 0.0f, 10.0f);
-				material->setAmbientOcclusionIntensity(ambientOcclusionIntensity);
-				ImGui::PopID();
-			}
-			else
-			{
-				ImGui::PushID("ambientOcclusionMapIntensity");
-				float AOMapIntensity = material->getAmbientOcclusionMapIntensity();
-				ImGui::DragFloat("ambientOcclusionMapIntensity", &AOMapIntensity, 0.01f, 0.0f, 10.0f);
-				material->setAmbientOcclusionMapIntensity(AOMapIntensity);
-				ImGui::PopID();
-			}
-
-			ImGui::PushID("albedoMap_texture");
-			ImGui::Text("albedoMap:");
-			displayTextureInMaterialEditor(material, material->albedoMap);
-			ImGui::PopID();
-
-			ImGui::PushID("normalMap_texture");
-			ImGui::Text("normalMap:");
-			displayTextureInMaterialEditor(material, material->normalMap);
-			ImGui::PopID();
-
-			// user did not choose what textures to use
-			if (material->MRAOMap == nullptr && material->metalnessMap == nullptr  && material->roughtnessMap == nullptr && material->AOMap == nullptr)
-			{
-				ImGui::PushID("roughtnessMap_texture");
-				ImGui::Text("roughtnessMap:");
-				displayTextureInMaterialEditor(material, material->roughtnessMap);
-				ImGui::PopID();
-
-				ImGui::PushID("metalnessMap_texture");
-				ImGui::Text("metalnessMap:");
-				displayTextureInMaterialEditor(material, material->metalnessMap);
-				ImGui::PopID();
-
-				ImGui::PushID("AOMap_texture");
-				ImGui::Text("AOMap:");
-				displayTextureInMaterialEditor(material, material->AOMap);
-				ImGui::PopID();
-
-				ImGui::PushID("MRAOMap_texture");
-				ImGui::Text("MRAOMap:");
-				displayTextureInMaterialEditor(material, material->MRAOMap);
-				ImGui::PopID();
-			}
-			// user choose combaine metalness + roughtness + AO textures to use
-			else if (material->MRAOMap != nullptr)
-			{
-				material->metalnessMap = nullptr;
-				material->roughtnessMap = nullptr;
-				material->AOMap = nullptr;
-
-				ImGui::PushID("MRAOMap_texture");
-				ImGui::Text("MRAOMap:");
-				displayTextureInMaterialEditor(material, material->MRAOMap);
-				ImGui::PopID();
-			}
-			// default
-			else
-			{
-				material->MRAOMap = nullptr;
-
-				ImGui::PushID("roughtnessMap_texture");
-				ImGui::Text("roughtnessMap:");
-				displayTextureInMaterialEditor(material, material->roughtnessMap);
-				ImGui::PopID();
-
-				ImGui::PushID("metalnessMap_texture");
-				ImGui::Text("metalnessMap:");
-				displayTextureInMaterialEditor(material, material->metalnessMap);
-				ImGui::PopID();
-
-				ImGui::PushID("AOMap_texture");
-				ImGui::Text("AOMap:");
-				displayTextureInMaterialEditor(material, material->AOMap);
-				ImGui::PopID();
-			}
-
-			ImGui::PushID("displacementMap_texture");
-			ImGui::Text("displacementMap:");
-			displayTextureInMaterialEditor(material, material->displacementMap);
-			ImGui::PopID();
-		}
-		ImGui::PopID();
-	}
-
-	selectTextureWindow.render();
-}
-
 void displayPostProcessContentBrowser()
 {
 	std::vector<std::string> postProcessList = RENDERER.getPostProcessList();
@@ -1282,6 +1054,22 @@ int timesMeshUsed(FEMesh* mesh)
 	return result;
 }
 
+int timesMaterialUsed(FEMaterial* material)
+{
+	int result = 0;
+	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+
+	for (size_t i = 0; i < gameModelList.size(); i++)
+	{
+		FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+
+		if (currentGameModel->material == material)
+			result++;
+	}
+
+	return result;
+}
+
 int timesGameModelUsed(FEGameModel* gameModel)
 {
 	int result = 0;
@@ -1304,6 +1092,7 @@ int meshUnderMouse = -1;
 static int activeTabContentBrowser = 0;
 
 int gameModelUnderMouse = -1;
+int materialUnderMouse = -1;
 
 void displayContentBrowser()
 {
@@ -1452,7 +1241,8 @@ void displayContentBrowser()
 							if (filePath != "" && maskFilePath != "")
 							{
 								FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTextureWithTransparencyMask(filePath.c_str(), maskFilePath.c_str(), "");
-								RESOURCE_MANAGER.saveFETexture(newTexture, (currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str());
+								newTexture->setDirtyFlag(true);
+								//RESOURCE_MANAGER.saveFETexture(newTexture, (currentProject->getProjectFolder() + newTexture->getName() + ".FETexture").c_str());
 								currentProject->modified = true;
 							}
 						}
@@ -1474,8 +1264,41 @@ void displayContentBrowser()
 				}
 				case 2:
 				{
-					if (ImGui::MenuItem("Create new material..."))
+					if (materialUnderMouse == -1)
 					{
+						if (ImGui::MenuItem("Create new material..."))
+						{
+							//ImGui::OpenPopup("New material");
+							FEMaterial* newMat = RESOURCE_MANAGER.createMaterial("");
+							if (newMat)
+							{
+								currentProject->modified = true;
+								newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
+
+								newMat->albedoMap = RESOURCE_MANAGER.noTexture;
+								newMat->normalMap = RESOURCE_MANAGER.noTexture;
+							}
+
+						}
+						break;
+					}
+
+					if (materialUnderMouse != -1)
+					{
+						if (ImGui::MenuItem("Edit"))
+						{
+							editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+						}
+
+						if (ImGui::MenuItem("Delete"))
+						{
+							deleteMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+						}
+
+						if (ImGui::MenuItem("Rename"))
+						{
+							renameMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+						}
 					}
 					break;
 				}
@@ -1539,7 +1362,280 @@ void displayContentBrowser()
 	renameGameModelWindow.render();
 	deleteGameModelWindow.render();
 	editGameModelWindow.render();
+	editMaterialWindow.render();
+	renameMaterialWindow.render();
+	deleteMaterialWindow.render();
 	messagePopUpObj.render();
+}
+
+void displayMaterialContentBrowser()
+{
+	//std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
+
+	//ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+	//ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+	//ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+	//if (ImGui::Button("Add new material", ImVec2(220, 0)))
+	//	ImGui::OpenPopup("New material");
+
+	//ImGui::Separator();
+	static std::string selectedShader = "";
+	std::vector<std::string> shaderList = RESOURCE_MANAGER.getStandardShadersList();
+	std::vector<std::string> tempList = RESOURCE_MANAGER.getShadersList();
+	for (size_t i = 0; i < tempList.size(); i++)
+	{
+		shaderList.push_back(tempList[i]);
+	}
+
+	if (ImGui::BeginCombo("Shaders", selectedShader.c_str(), ImGuiWindowFlags_None))
+	{
+		for (size_t n = 0; n < shaderList.size(); n++)
+		{
+			bool is_selected = (selectedShader == shaderList[n]);
+			if (ImGui::Selectable(shaderList[n].c_str(), is_selected))
+				selectedShader = shaderList[n].c_str();
+			if (is_selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	if (ImGui::Button("Edit selected above shader", ImVec2(220, 0)) && selectedShader != "")
+		shadersEditorWindow.show(RESOURCE_MANAGER.getShader(selectedShader));
+
+	//ImGui::PopStyleColor();
+	//ImGui::PopStyleColor();
+	//ImGui::PopStyleColor();
+	//ImGui::Separator();
+
+	//if (ImGui::BeginPopupModal("New material", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	//{
+	//	ImGui::Text("Insert name of new material :");
+	//	static char materialName[512] = "";
+
+	//	ImGui::InputText("", materialName, IM_ARRAYSIZE(materialName));
+	//	ImGui::Separator();
+
+	//	if (ImGui::Button("Create", ImVec2(120, 0)))
+	//	{
+	//		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialName);
+	//		if (newMat)
+	//		{
+	//			//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
+	//			newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
+
+	//			newMat->albedoMap = RESOURCE_MANAGER.noTexture;
+	//			newMat->normalMap = RESOURCE_MANAGER.noTexture;
+	//		}
+
+	//		ImGui::CloseCurrentPopup();
+	//		strcpy_s(materialName, "");
+	//	}
+	//	ImGui::SetItemDefaultFocus();
+	//	ImGui::SameLine();
+	//	if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+	//	ImGui::EndPopup();
+	//}
+
+	//for (size_t i = 0; i < materialList.size(); i++)
+	//{
+	//	ImGui::PushID(i);
+	//	FEMaterial* material = RESOURCE_MANAGER.getMaterial(materialList[i]);
+
+	//	if (ImGui::CollapsingHeader(materialList[i].c_str(), 0))
+	//	{
+	//		std::vector<std::string> params = material->getParameterList();
+	//		for (size_t j = 0; j < params.size(); j++)
+	//		{
+	//			FEShaderParam* param = material->getParameter(params[j]);
+	//			if (param->loadedFromEngine)
+	//				continue;
+	//			displayMaterialPrameter(param);
+	//		}
+
+	//		if (material->metalnessMap == nullptr && material->MRAOMap == nullptr)
+	//		{
+	//			ImGui::PushID("metalness");
+	//			float metalness = material->getMetalness();
+	//			ImGui::DragFloat("metalness", &metalness, 0.01f, 0.0f, 1.0f);
+	//			material->setMetalness(metalness);
+	//			ImGui::PopID();
+	//		}
+	//		else
+	//		{
+	//			ImGui::PushID("metalnessMapIntensity");
+	//			float metalness = material->getMetalnessMapIntensity();
+	//			ImGui::DragFloat("metalnessMapIntensity", &metalness, 0.01f, 0.0f, 10.0f);
+	//			material->setMetalnessMapIntensity(metalness);
+	//			ImGui::PopID();
+	//		}
+
+	//		if (material->roughtnessMap == nullptr && material->MRAOMap == nullptr)
+	//		{
+	//			ImGui::PushID("roughtness");
+	//			float roughtness = material->getRoughtness();
+	//			ImGui::DragFloat("roughtness", &roughtness, 0.01f, 0.0f, 1.0f);
+	//			material->setRoughtness(roughtness);
+	//			ImGui::PopID();
+	//		}
+	//		else
+	//		{
+	//			ImGui::PushID("roughtnessMapIntensity");
+	//			float roughtness = material->getRoughtnessMapIntensity();
+	//			ImGui::DragFloat("roughtnessMapIntensity", &roughtness, 0.01f, 0.0f, 10.0f);
+	//			material->setRoughtnessMapIntensity(roughtness);
+	//			ImGui::PopID();
+	//		}
+
+	//		ImGui::PushID("normalMapIntensity");
+	//		float normalMapIntensity = material->getNormalMapIntensity();
+	//		ImGui::DragFloat("normalMapIntensity", &normalMapIntensity, 0.01f, 0.0f, 1.0f);
+	//		material->setNormalMapIntensity(normalMapIntensity);
+	//		ImGui::PopID();
+
+	//		if (material->AOMap == nullptr && material->MRAOMap == nullptr)
+	//		{
+	//			ImGui::PushID("ambientOcclusionIntensity");
+	//			float ambientOcclusionIntensity = material->getAmbientOcclusionIntensity();
+	//			ImGui::DragFloat("ambientOcclusionIntensity", &ambientOcclusionIntensity, 0.01f, 0.0f, 10.0f);
+	//			material->setAmbientOcclusionIntensity(ambientOcclusionIntensity);
+	//			ImGui::PopID();
+	//		}
+	//		else
+	//		{
+	//			ImGui::PushID("ambientOcclusionMapIntensity");
+	//			float AOMapIntensity = material->getAmbientOcclusionMapIntensity();
+	//			ImGui::DragFloat("ambientOcclusionMapIntensity", &AOMapIntensity, 0.01f, 0.0f, 10.0f);
+	//			material->setAmbientOcclusionMapIntensity(AOMapIntensity);
+	//			ImGui::PopID();
+	//		}
+
+	//		ImGui::PushID("albedoMap_texture");
+	//		ImGui::Text("albedoMap:");
+	//		displayTextureInMaterialEditor(material, material->albedoMap);
+	//		ImGui::PopID();
+
+	//		ImGui::PushID("normalMap_texture");
+	//		ImGui::Text("normalMap:");
+	//		displayTextureInMaterialEditor(material, material->normalMap);
+	//		ImGui::PopID();
+
+	//		// user did not choose what textures to use
+	//		if (material->MRAOMap == nullptr && material->metalnessMap == nullptr  && material->roughtnessMap == nullptr && material->AOMap == nullptr)
+	//		{
+	//			ImGui::PushID("roughtnessMap_texture");
+	//			ImGui::Text("roughtnessMap:");
+	//			displayTextureInMaterialEditor(material, material->roughtnessMap);
+	//			ImGui::PopID();
+
+	//			ImGui::PushID("metalnessMap_texture");
+	//			ImGui::Text("metalnessMap:");
+	//			displayTextureInMaterialEditor(material, material->metalnessMap);
+	//			ImGui::PopID();
+
+	//			ImGui::PushID("AOMap_texture");
+	//			ImGui::Text("AOMap:");
+	//			displayTextureInMaterialEditor(material, material->AOMap);
+	//			ImGui::PopID();
+
+	//			ImGui::PushID("MRAOMap_texture");
+	//			ImGui::Text("MRAOMap:");
+	//			displayTextureInMaterialEditor(material, material->MRAOMap);
+	//			ImGui::PopID();
+	//		}
+	//		// user choose combaine metalness + roughtness + AO textures to use
+	//		else if (material->MRAOMap != nullptr)
+	//		{
+	//			material->metalnessMap = nullptr;
+	//			material->roughtnessMap = nullptr;
+	//			material->AOMap = nullptr;
+
+	//			ImGui::PushID("MRAOMap_texture");
+	//			ImGui::Text("MRAOMap:");
+	//			displayTextureInMaterialEditor(material, material->MRAOMap);
+	//			ImGui::PopID();
+	//		}
+	//		// default
+	//		else
+	//		{
+	//			material->MRAOMap = nullptr;
+
+	//			ImGui::PushID("roughtnessMap_texture");
+	//			ImGui::Text("roughtnessMap:");
+	//			displayTextureInMaterialEditor(material, material->roughtnessMap);
+	//			ImGui::PopID();
+
+	//			ImGui::PushID("metalnessMap_texture");
+	//			ImGui::Text("metalnessMap:");
+	//			displayTextureInMaterialEditor(material, material->metalnessMap);
+	//			ImGui::PopID();
+
+	//			ImGui::PushID("AOMap_texture");
+	//			ImGui::Text("AOMap:");
+	//			displayTextureInMaterialEditor(material, material->AOMap);
+	//			ImGui::PopID();
+	//		}
+
+	//		ImGui::PushID("displacementMap_texture");
+	//		ImGui::Text("displacementMap:");
+	//		displayTextureInMaterialEditor(material, material->displacementMap);
+	//		ImGui::PopID();
+	//	}
+	//	ImGui::PopID();
+	//}
+
+	//selectTextureWindow.render();
+
+	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+	if (!isOpenContextMenuInContentBrowser) materialUnderMouse = -1;
+	ImGui::Columns(3, "mycolumns3", false);
+	for (size_t i = 0; i < materialList.size(); i++)
+	{
+		FETexture* materialPreviewTexture;
+		if (materialPreviewTextures.find(materialList[i]) != materialPreviewTextures.end())
+		{
+			materialPreviewTexture = materialPreviewTextures[materialList[i]];
+		}
+		else
+		{
+			materialPreviewTexture = RESOURCE_MANAGER.noTexture;
+			// if we somehow could not find gameModel preview, we will create it.
+			createMaterialPreview(materialList[i]);
+		}
+
+		if (ImGui::ImageButton((void*)(intptr_t)materialPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		{
+			//if (!isOpenContextMenuInContentBrowser && !editMaterialWindow.isVisible())
+			//{
+				//materialUnderMouse = i;
+				//editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+			//}
+		}
+
+		if (ImGui::IsItemHovered())
+		{
+			if (!isOpenContextMenuInContentBrowser) materialUnderMouse = i;
+		}
+
+		if (ImGui::IsMouseDoubleClicked(0))
+		{
+			if (materialUnderMouse != -1 && !editMaterialWindow.isVisible())
+				editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+		}
+
+		ImGui::Text(materialList[i].c_str());
+		ImGui::NextColumn();
+	}
+	ImGui::Columns(1);
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
 }
 
 glm::dvec3 mouseRay()
@@ -2525,46 +2621,6 @@ bool deleteFile(const char* filePath)
 	return result == 0 ? true : false;
 }
 
-void displayTextureInMaterialEditor(FEMaterial* material, FETexture*& texture)
-{
-	if (texture == nullptr)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-
-		ImGui::SameLine();
-		if (ImGui::Button("Add"))
-		{
-			selectTextureWindow.show(&texture);
-			createMaterialPreview(material->getName());
-		}
-
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-
-		ImGui::Image((void*)(intptr_t)RESOURCE_MANAGER.noTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
-		return;
-	}
-		
-	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
-
-	ImGui::SameLine();
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-	if (ImGui::Button("Change"))
-	{
-		void* dataPtr = reinterpret_cast<void*>(material);
-		selectTextureWindow.show(&texture, [](void* dataPtr){ createMaterialPreview(reinterpret_cast<FEMaterial*>(dataPtr)->getName()); }, dataPtr);
-	}
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-}
-
 void displayTexturesContentBrowser()
 {
 	std::vector<std::string> textureList = RESOURCE_MANAGER.getTextureList();
@@ -2623,7 +2679,11 @@ void displayGameModelContentBrowser()
 
 		if (ImGui::ImageButton((void*)(intptr_t)gameModelPreviewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
-			//
+			if (!isOpenContextMenuInContentBrowser && !editGameModelWindow.isVisible())
+			{
+				gameModelUnderMouse = i;
+				editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
+			}
 		}
 
 		if (ImGui::IsItemHovered())
@@ -2690,11 +2750,10 @@ void displayMeshesContentBrowser()
 	std::string toString(PWSTR wString)
 	{
 		std::wstring wFileName = wString;
-		std::string result;
 		char *szTo = new char[wFileName.length() + 1];
 		szTo[wFileName.size()] = '\0';
 		WideCharToMultiByte(CP_ACP, 0, wFileName.c_str(), -1, szTo, (int)wFileName.length(), NULL, NULL);
-		result = szTo;
+		std::string result = szTo;
 		delete[] szTo;
 
 		return result;

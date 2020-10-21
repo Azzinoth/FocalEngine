@@ -1862,7 +1862,6 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 
 			return result;
-			break;
 		}
 		case FocalEngine::FE_TEXTURE:
 		{
@@ -1876,7 +1875,6 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 			
 			return result;
-			break;
 		}
 		case FocalEngine::FE_MESH:
 		{
@@ -1890,7 +1888,6 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 
 			return result;
-			break;
 		}
 		case FocalEngine::FE_MATERIAL:
 		{
@@ -1904,7 +1901,6 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 
 			return result;
-			break;
 		}
 		case FocalEngine::FE_GAMEMODEL:
 		{
@@ -1918,12 +1914,10 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 
 			return result;
-			break;
 		}
 		case FocalEngine::FE_ENTITY:
 		{
 			return result;
-			break;
 		}
 		case FocalEngine::FE_TERRAIN:
 		{
@@ -1937,12 +1931,10 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 			}
 
 			return result;
-			break;
 		}
 		default:
 		{
 			return result;
-			break;
 		}	
 	}
 
@@ -1987,5 +1979,21 @@ void FEResourceManager::reSaveStandardTextures()
 		saveFETexture(it->second, (std::string("C://Users//Azzinoth//Desktop//FocalEngine//FocalEnginePrivate//") + it->second->getAssetID() + std::string(".texture")).c_str());
 		it++;
 	}
+}
 
+void FEResourceManager::deleteMaterial(FEMaterial* Material)
+{
+	// looking if this mesh is used in some gameModels
+	// to-do: should be done through list of pointers to gameModels that uses this mesh.
+	auto gameModelIterator = gameModels.begin();
+	while (gameModelIterator != gameModels.end())
+	{
+		if (gameModelIterator->second->material == Material)
+			gameModelIterator->second->material = getMaterial("SolidColorMaterial");
+
+		gameModelIterator++;
+	}
+
+	materials.erase(Material->getName());
+	delete Material;
 }

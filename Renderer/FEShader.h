@@ -24,6 +24,8 @@
 
 #define FE_DEBUG_MACRO "@DEBUG@("
 
+#define FE_MATERIAL_TEXTURES_MACRO "@MaterialTextures@"
+
 namespace FocalEngine
 {
 	enum FEShaderParamType
@@ -52,6 +54,9 @@ namespace FocalEngine
 	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor", "FEGamma", "FEExposure",
 	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[", "FEReceiveShadows", "directionalLight", "FEAO",
 	  "FERoughtness", "FEMetalness", "FENormalMapIntensity", "FEAOIntensity", "FENormalMapPresent" };
+
+	const int FE_MAX_TEXTURES_PER_MATERIAL = 16;
+	const int FE_MAX_SUBMATERIALS_PER_MATERIAL = 2;
 
 	struct FEShaderParam
 	{
@@ -117,6 +122,9 @@ namespace FocalEngine
 		void loadVector(int& uniformNameHash, glm::vec3& vector);
 		void loadVector(int& uniformNameHash, glm::vec4& vector);
 		void loadMatrix(int& uniformNameHash, glm::mat4& matrix);
+		void loadIntArray(int& uniformNameHash, GLint* array, size_t arraySize);
+		void loadIntArray(GLuint uniformLocation, GLint* array, size_t arraySize);
+		void loadFloatArray(int& uniformNameHash, GLfloat* array, size_t arraySize);
 
 		virtual void loadDataToGPU();
 		virtual void addParameter(FEShaderParam Parameter);
@@ -179,6 +187,7 @@ namespace FocalEngine
 
 		bool CSM = false;
 		bool testCompilationMode = false;
+		bool materialTexturesList = false;
 
 #ifdef FE_DEBUG_ENABLED
 		bool debugRequest = false;

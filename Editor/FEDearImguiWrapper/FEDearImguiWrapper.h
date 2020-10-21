@@ -145,6 +145,7 @@ class FEImGuiWindow
 	friend WindowsManager;
 protected:
 	bool visible;
+	//bool lastFrameVisible;
 	char caption[512];
 	ImVec2 position;
 	ImVec2 size;

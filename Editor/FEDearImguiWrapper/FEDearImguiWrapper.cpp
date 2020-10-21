@@ -339,8 +339,15 @@ void FEImGuiWindow::render()
 		}
 
 		wasClosedLastFrame = false;
-		ImGui::Begin(caption, nullptr, flags);
+		ImGui::Begin(caption, nullptr/*&visible*/, flags);
 	}
+
+	/*if (!visible && lastFrameVisible != visible)
+	{
+		ImGui::End();
+	}
+
+	lastFrameVisible = visible;*/
 }
 
 void FEImGuiWindow::onRenderEnd()

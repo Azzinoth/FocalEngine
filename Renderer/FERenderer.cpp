@@ -85,7 +85,16 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	static int FEMetalnessMapPresent_hash = std::hash<std::string>{}("FEMetalnessMapPresent");
 	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
 	static int FEMRAOMapPresent_hash = std::hash<std::string>{}("FEMRAOMapPresent");
-	FEScene& scene = FEScene::getInstance();
+
+	static int FETextureBindingsUniformLocations_hash = std::hash<std::string>{}("textureBindings[0]");
+	static int FETextureChannelsBindingsUniformLocations_hash = std::hash<std::string>{}("textureChannels[0]");
+	
+	if (shader->materialTexturesList)
+	{
+		shader->loadIntArray(FETextureBindingsUniformLocations_hash, material->textureBindings.data(), material->textureBindings.size());
+		shader->loadIntArray(FETextureChannelsBindingsUniformLocations_hash, material->textureChannels.data(), material->textureChannels.size());
+	}
+		
 
 	//auto start = std::chrono::system_clock::now();
 	auto iterator = shader->parameters.begin();
@@ -387,12 +396,22 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						entity->gameModel->material = shadowMapMaterial;
 						//#fix do it only if albedoHasAlpha
 						shadowMapMaterial->albedoMap = originalMaterial->albedoMap;
+						// if material have submaterial
+						if (originalMaterial->getAlbedoMap(1) != nullptr)
+						{
+							shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
+							shadowMapMaterial->getAlbedoMap(1)->bind(1);
+						}
 
 						renderEntity(entity, currentCamera);
 
-						shadowMapMaterial->albedoMap = nullptr;
+						for (size_t j = 0; j < shadowMapMaterial->textures.size(); j++)
+						{
+							shadowMapMaterial->textures[j] = nullptr;
+							shadowMapMaterial->textureBindings[j] = -1;
+						}
+						
 						entity->gameModel->material = originalMaterial;
-
 						it++;
 					}
 
@@ -650,7 +669,25 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 	if (terrain->isWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	terrain->heightMap->bind(0);
+
+	if (terrain->shader->getName() == "FESMTerrainShader")
+	{
+		terrain->heightMap->bind(0);
+	}
+	else
+	{
+		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+		{
+			if (terrain->layer0->textures[i] != nullptr)
+				terrain->layer0->textures[i]->bind(i);
+		}
+
+		terrain->heightMap->bind(20);
+		if (terrain->projectedMap != nullptr)
+			terrain->projectedMap->bind(21);
+	}
+	
+	/*terrain->heightMap->bind(0);
 
 	if (terrain->layer0->displacementMap != nullptr)
 		terrain->layer0->displacementMap->bind(1);
@@ -667,17 +704,16 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 		terrain->layer0->metalnessMap->bind(6);
 
 	if (terrain->projectedMap != nullptr)
-		terrain->projectedMap->bind(7);
+		terrain->projectedMap->bind(7);*/
 
 	terrain->shader->start();
 
-	//loadStandardTerrainParams(terrain->shader, currentCamera, terrain);
 	loadStandardParams(terrain->shader, currentCamera, terrain->layer0, &terrain->transform, terrain->isReceivingShadows());
 
 	terrain->shader->getParameter("hightScale")->updateData(terrain->hightScale);
-	terrain->shader->getParameter("displacementScale")->updateData(terrain->displacementScale);
 	terrain->shader->getParameter("scaleFactor")->updateData(terrain->scaleFactor);
-	terrain->shader->getParameter("tileMult")->updateData(terrain->tileMult);
+	if (terrain->shader->getName() != "FESMTerrainShader")
+		terrain->shader->getParameter("tileMult")->updateData(terrain->tileMult);
 	terrain->shader->getParameter("LODlevel")->updateData(terrain->LODlevel);
 	terrain->shader->getParameter("hightMapShift")->updateData(terrain->hightMapShift);
 
