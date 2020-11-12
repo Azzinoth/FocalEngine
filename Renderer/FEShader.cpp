@@ -6,6 +6,17 @@ FEShaderParam::FEShaderParam()
 	data = nullptr;
 }
 
+std::string FEShaderParam::getName()
+{
+	return name;
+}
+
+void FEShaderParam::setName(std::string newName)
+{
+	name = newName;
+	nameHash = std::hash<std::string>{}(name);
+}
+
 FEShaderParam::FEShaderParam(int Data, std::string Name)
 {
 	data = new int(Data);
@@ -221,7 +232,6 @@ FEShaderParam::FEShaderParam(const FEShaderParam& copy)
 	this->type = copy.type;
 	this->name = copy.name;
 	this->nameHash = copy.nameHash;
-	this->loadedFromEngine = copy.loadedFromEngine;
 
 	copyCode(copy);
 }
@@ -234,7 +244,6 @@ void FEShaderParam::operator=(const FEShaderParam& assign)
 	this->type = assign.type;
 	this->name = assign.name;
 	this->nameHash = assign.nameHash;
-	this->loadedFromEngine = assign.loadedFromEngine;
 
 	copyCode(assign);
 }
@@ -285,17 +294,6 @@ FEShaderParam::~FEShaderParam()
 		default:
 			break;
 	}
-}
-
-std::string FEShaderParam::getName()
-{
-	return name;
-}
-
-void FEShaderParam::setName(std::string newName)
-{
-	name = newName;
-	nameHash = std::hash<std::string>{}(name);
 }
 
 FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
@@ -656,6 +654,7 @@ void FEShader::bindAttributes()
 	if ((vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glBindAttribLocation(programID, 3, "FETangent"));
 	if ((vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glBindAttribLocation(programID, 4, "FETexCoord"));
 	if ((vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glBindAttribLocation(programID, 5, "FEMatIndex"));
+	if ((vertexAttributes & FE_INSTANCEDATA) == FE_INSTANCEDATA) FE_GL_ERROR(glBindAttribLocation(programID, 6, "FEInstanceData"));
 }
 
 void FEShader::start()
@@ -740,6 +739,13 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	{
 		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_MATINDEX), "layout (location = 5) in float FEMatIndex;");
 		vertexAttributes |= FE_MATINDEX;
+	}
+
+	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_INSTANCEDATA);
+	if (index != std::string::npos)
+	{
+		parsedShaderText.replace(index, strlen(FE_VERTEX_ATTRIBUTE_INSTANCEDATA), "layout (location = 6) in mat4 FEInstanceData;");
+		vertexAttributes |= FE_INSTANCEDATA;
 	}
 
 	index = parsedShaderText.find(FE_WORLD_MATRIX_MACRO);
@@ -1037,13 +1043,13 @@ void FEShader::loadDataToGPU()
 
 void FEShader::addParameter(FEShaderParam Parameter)
 {
-	bool find = false;
+	/*bool find = false;
 	for (size_t i = 0; i < FEStandardUniforms.size(); i++)
 	{
 		if (Parameter.getName().find(FEStandardUniforms[i]) != size_t(-1))
 			find = true;
 	}
-	Parameter.loadedFromEngine = find;
+	Parameter.loadedFromEngine = find;*/
 
 	parameters[Parameter.getName()] = Parameter;
 
@@ -1070,22 +1076,6 @@ FEShaderParam* FEShader::getParameter(std::string name)
 std::vector<std::string> FEShader::getTextureList()
 {
 	return textureUniforms;
-}
-
-std::string FEShader::getName()
-{
-	return name;
-}
-
-void FEShader::setName(std::string newName)
-{
-	name = newName;
-	nameHash = std::hash<std::string>{}(name);
-}
-
-int FEShader::getNameHash()
-{
-	return nameHash;
 }
 
 char* FEShader::getVertexShaderText()

@@ -191,3 +191,73 @@ bool FEScene::setTerrainName(FETerrain* Terrain, std::string TerrainName)
 	Terrain->setName(TerrainName);
 	return true;
 }
+
+FEEntityInstanced* FEScene::addEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceAssetID)
+{
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+
+	if (Name.size() == 0 || entityMap.find(Name) != entityMap.end())
+	{
+		size_t nextID = entityMap.size();
+		size_t index = 0;
+		while (entityMap.find(Name) != entityMap.end() || Name.size() == 0)
+		{
+			index++;
+			Name = "entityInstanced_" + std::to_string(nextID + index);
+		}
+	}
+
+	entityMap[Name] = resourceManager.createEntityInstanced(gameModel, Name, forceAssetID);
+	return reinterpret_cast<FEEntityInstanced*>(entityMap[Name]);
+}
+
+bool FEScene::addEntityInstanced(FEEntityInstanced* newEntityInstanced)
+{
+	if (newEntityInstanced == nullptr || newEntityInstanced->getName().size() == 0 || entityMap.find(newEntityInstanced->getName()) != entityMap.end())
+		return false;
+
+	if (newEntityInstanced->gameModel == nullptr || newEntityInstanced->gameModel->mesh == nullptr || newEntityInstanced->gameModel->material == nullptr)
+		return false;
+
+	entityMap[newEntityInstanced->getName()] = newEntityInstanced;
+
+	return true;
+}
+
+FEEntityInstanced* FEScene::getEntityInstanced(std::string name)
+{
+	if (entityMap.find(name) == entityMap.end())
+		return nullptr;
+
+	if (entityMap[name]->getType() != FE_ENTITY_INSTANCED)
+		return nullptr;
+
+	return reinterpret_cast<FEEntityInstanced*>(entityMap[name]);
+}
+
+//void FEScene::deleteEntityInstanced(std::string name)
+//{
+//	if (entityInstancedMap.find(name) == entityInstancedMap.end())
+//		return;
+//
+//	FEEntityInstanced* entityInstancedToDelete = entityInstancedMap[name];
+//	delete entityInstancedToDelete;
+//	entityInstancedMap.erase(name);
+//}
+//
+//std::vector<std::string> FEScene::getEntityInstancedList()
+//{
+//	FE_MAP_TO_STR_VECTOR(entityInstancedMap)
+//}
+//
+//bool FEScene::setEntityInstancedName(FEEntityInstanced* EntityInstanced, std::string EntityInstancedName)
+//{
+//	if (EntityInstancedName.size() == 0 || entityInstancedMap.find(EntityInstancedName) != entityInstancedMap.end())
+//		return false;
+//
+//	entityInstancedMap.erase(EntityInstanced->getName());
+//	entityInstancedMap[EntityInstancedName] = EntityInstanced;
+//
+//	EntityInstanced->setName(EntityInstancedName);
+//	return true;
+//}

@@ -6,11 +6,15 @@
 namespace FocalEngine
 {
 	class FEEntity;
+	class FEEntityInstanced;
+	class FERenderer;
 	class FEResourceManager;
 
 	class FEMesh : public FEAsset
 	{	
 		friend FEEntity;
+		friend FEEntityInstanced;
+		friend FERenderer;
 		friend FEResourceManager;
 	public:
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
@@ -33,8 +37,6 @@ namespace FocalEngine
 
 		int FEMesh::getMaterialCount() const;
 
-		std::string getName();
-
 		FEAABB getAABB();
 	private:
 		GLuint vaoID = -1;
@@ -51,13 +53,10 @@ namespace FocalEngine
 		GLuint materialsIndicesBufferID = -1;
 		unsigned int materialsIndicesCount = -1;
 
-		std::string name;
 		unsigned int vertexCount;
 		unsigned int materialsCount;
 
 		int vertexAttributes = 1;
 		FEAABB AABB;
-
-		void setName(std::string newName);
 	};
 }

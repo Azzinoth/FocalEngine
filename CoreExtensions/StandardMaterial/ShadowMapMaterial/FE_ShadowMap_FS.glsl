@@ -19,7 +19,7 @@ void main(void)
 		textureColor = texture(baseColorTextureSecondMaterial, UV);
 	}
 
-	if (textureColor.a < 0.05)
+	if (textureColor.a < 0.2)
 	{
 		discard;
 	}

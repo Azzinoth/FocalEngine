@@ -401,3 +401,29 @@ void WindowsManager::closeAllWindows()
 		//windows[i]->close();
 	}
 }
+
+void showToolTip(const char* text)
+{
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(text);
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
+}
+
+void setSelectedStyle(ImGuiImageButton* button)
+{
+	button->setDefaultColor(selectedStyle);
+	button->setHoveredColor(selectedStyle);
+	button->setActiveColor(selectedStyle);
+}
+
+void setDefaultStyle(ImGuiImageButton* button)
+{
+	button->setDefaultColor(defaultColor);
+	button->setHoveredColor(hoveredColor);
+	button->setActiveColor(activeColor);
+}

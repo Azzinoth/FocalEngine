@@ -5,6 +5,7 @@
 #include "../CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng/lodepng.h"
+#include "../SubSystems/FEFileSystem.h"
 
 namespace FocalEngine
 {
@@ -129,6 +130,8 @@ namespace FocalEngine
 
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEGameModel* gameModel, std::string Name, std::string forceAssetID = "");
+
+		FEEntityInstanced* createEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceAssetID = "");
 
 		void initTerrainEditTools(FETerrain* terrain);
 

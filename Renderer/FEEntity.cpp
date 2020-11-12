@@ -4,8 +4,7 @@ using namespace FocalEngine;
 FEEntity::FEEntity(FEGameModel* gameModel, std::string Name) : FEAsset(FE_ENTITY, Name)
 {
 	this->gameModel = gameModel;
-	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	setName(Name);
 	if (this->gameModel->mesh != nullptr)
 		entityAABB = this->gameModel->mesh->getAABB();
 }
@@ -29,7 +28,7 @@ void FEEntity::render()
 	if ((gameModel->mesh->vertexAttributes & FE_INDEX) != FE_INDEX)
 		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, gameModel->mesh->getVertexCount()));
 
-	// could it be that this disable part is only slowing engine down without profit ?
+	// could it be that this disabled part is only slowing engine down without any profit ?
 	/*if ((gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glDisableVertexAttribArray(0));
 	if ((gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glDisableVertexAttribArray(1));
 	if ((gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glDisableVertexAttribArray(2));
@@ -47,17 +46,6 @@ bool FEEntity::isVisible()
 void FEEntity::setVisibility(bool isVisible)
 {
 	visible = isVisible;
-}
-
-std::string FEEntity::getName()
-{
-	return name;
-}
-
-void FEEntity::setName(std::string newName)
-{
-	name = newName;
-	nameHash = std::hash<std::string>{}(name);
 }
 
 FEAABB FEEntity::getAABB()
@@ -151,9 +139,4 @@ bool FEEntity::isReceivingShadows()
 void FEEntity::setReceivingShadows(bool isReceivingShadows)
 {
 	receiveShadows = isReceivingShadows;
-}
-
-int FEEntity::getNameHash()
-{
-	return nameHash;
 }

@@ -20,17 +20,12 @@ namespace FocalEngine
 		FEGameModel* gameModel = nullptr;
 		FETransformComponent transform;
 
-		void render();
+		virtual void render();
 
 		bool isVisible();
 		void setVisibility(bool isVisible);
 
-		std::string getName();
-		void setName(std::string newName);
-
-		int getNameHash();
-
-		FEAABB getAABB();
+		virtual FEAABB getAABB();
 		FEAABB getPureAABB();
 
 		bool isCastShadows();
@@ -38,10 +33,7 @@ namespace FocalEngine
 
 		bool isReceivingShadows();
 		void setReceivingShadows(bool isReceivingShadows);
-	private:
-		std::string name;
-		int nameHash = 0;
-
+	protected:
 		bool visible = true;
 		bool castShadows = true;
 		bool receiveShadows = true;

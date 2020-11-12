@@ -28,7 +28,9 @@ namespace FocalEngine
 		virtual void setRoll(float newRoll);
 		glm::vec3 getPosition();
 		void setPosition(glm::vec3 newPosition);
+		virtual glm::vec3 getUp();
 		virtual glm::vec3 getForward();
+		virtual glm::vec3 getRight();
 
 		virtual void setLookAt(glm::vec3 lookAt);
 

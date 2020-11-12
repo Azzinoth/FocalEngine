@@ -135,7 +135,7 @@ void main(void)
 	}
 
 	vec4 textureColor = texture(baseColorTexture, FS_IN.UV);
-	if (textureColor.a < 0.05)
+	if (textureColor.a < 0.2)
 	{
 		discard;
 	}

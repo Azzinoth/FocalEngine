@@ -5,12 +5,14 @@
 namespace FocalEngine
 {
 	class FEEntity;
+	class FEEntityInstanced;
 	class FETerrain;
 	class FEResourceManager;
 
 	class FEAABB
 	{
 		friend FEEntity;
+		friend FEEntityInstanced;
 		friend FETerrain;
 		friend FEResourceManager;
 	public:

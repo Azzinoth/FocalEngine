@@ -56,6 +56,10 @@ FERenderer::FERenderer()
 	glVertexAttribDivisor(4, 1);
 
 	glBindVertexArray(0);
+
+	skyDome = FEResourceManager::getInstance().createEntity(FEResourceManager::getInstance().getGameModel("skyDomeGameModel"), "skyDomeEntity");
+	skyDome->visible = false;
+	skyDome->transform.setScale(glm::vec3(50.0f));
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -315,8 +319,29 @@ void FERenderer::loadUniformBlocks()
 	}
 }
 
+void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, bool shadowMap, bool reloadUniformBlocks)
+{
+	if (reloadUniformBlocks)
+		loadUniformBlocks();
+
+	FEShader* originalShader = entityInstanced->gameModel->material->shader;
+	if (originalShader->getName() == "FEPBRShader")
+		entityInstanced->gameModel->material->shader = FEResourceManager::getInstance().getShader("FEPBRInstancedShader");
+	
+	entityInstanced->gameModel->material->bind();
+	loadStandardParams(entityInstanced->gameModel->material->shader, currentCamera, entityInstanced->gameModel->material, &entityInstanced->transform, entityInstanced->isReceivingShadows());
+	entityInstanced->gameModel->material->shader->loadDataToGPU();
+
+	testTime += entityInstanced->render(currentCamera->position);
+
+	if (originalShader->getName() == "FEPBRShader")
+		entityInstanced->gameModel->material->shader = originalShader;
+	entityInstanced->gameModel->material->unBind();
+}
+
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
+	testTime = 0.0f;
 	FEScene& scene = FEScene::getInstance();
 
 	// there is only 1 directional light, sun.
@@ -332,7 +357,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(itLight->second);
 				
 				light->updateCascades(currentCamera->fov, currentCamera->aspectRatio,
-									  currentCamera->nearPlane, currentCamera->farPlane, currentCamera->viewMatrix);
+									  currentCamera->nearPlane, currentCamera->farPlane, currentCamera->viewMatrix, currentCamera->getForward(), currentCamera->getRight(), currentCamera->getUp());
 			}
 		}
 
@@ -393,25 +418,45 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						}
 
 						FEMaterial* originalMaterial = entity->gameModel->material;
-						entity->gameModel->material = shadowMapMaterial;
-						//#fix do it only if albedoHasAlpha
-						shadowMapMaterial->albedoMap = originalMaterial->albedoMap;
-						// if material have submaterial
-						if (originalMaterial->getAlbedoMap(1) != nullptr)
+						if (entity->getType() == FE_ENTITY)
 						{
-							shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
-							shadowMapMaterial->getAlbedoMap(1)->bind(1);
+							entity->gameModel->material = shadowMapMaterial;
+							//#fix do it only if albedoHasAlpha
+							shadowMapMaterial->albedoMap = originalMaterial->getAlbedoMap();
+							// if material have submaterial
+							if (originalMaterial->getAlbedoMap(1) != nullptr)
+							{
+								shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
+								shadowMapMaterial->getAlbedoMap(1)->bind(1);
+							}
+
+							renderEntity(entity, currentCamera);
+						}
+						else if (entity->getType() == FE_ENTITY_INSTANCED)
+						{
+							entity->gameModel->material = shadowMapMaterialInstanced;
+							//#fix do it only if albedoHasAlpha
+							shadowMapMaterialInstanced->albedoMap = originalMaterial->getAlbedoMap();
+							// if material have submaterial
+							if (originalMaterial->getAlbedoMap(1) != nullptr)
+							{
+								shadowMapMaterialInstanced->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
+								shadowMapMaterialInstanced->getAlbedoMap(1)->bind(1);
+							}
+
+							renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, true);
 						}
 
-						renderEntity(entity, currentCamera);
-
+						entity->gameModel->material = originalMaterial;
 						for (size_t j = 0; j < shadowMapMaterial->textures.size(); j++)
 						{
 							shadowMapMaterial->textures[j] = nullptr;
 							shadowMapMaterial->textureBindings[j] = -1;
+
+							shadowMapMaterialInstanced->textures[j] = nullptr;
+							shadowMapMaterialInstanced->textureBindings[j] = -1;
 						}
 						
-						entity->gameModel->material = originalMaterial;
 						it++;
 					}
 
@@ -455,6 +500,10 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ********* RENDER SCENE *********
 	sceneToTextureFB->bind();
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// ********* RENDER SKY *********
+	if (isSkyEnabled())
+		renderEntity(skyDome, currentCamera);
 
 	// ********* RENDER INSTANCED LINE *********
 	FE_GL_ERROR(glDisable(GL_CULL_FACE));
@@ -504,11 +553,19 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		auto entity = it->second;
 		
 		if (entity->isVisible())
-			renderEntity(entity, currentCamera);
+		{
+			if (entity->getType() == FE_ENTITY)
+			{
+				renderEntity(entity, currentCamera);
+			}
+			else if (entity->getType() == FE_ENTITY_INSTANCED)
+			{
+				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, false);
+			}
+		}
 
 		it++;
 	}
-	
 	sceneToTextureFB->unBind();
 	// ********* RENDER SCENE END *********
 
@@ -772,4 +829,193 @@ void FERenderer::updateTerrainBrush(FETerrain* terrain)
 {
 	terrain->updateBrush(engineMainCamera->position, mouseRay);
 	FE_GL_ERROR(glViewport(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight()));
+}
+
+bool FERenderer::isSkyEnabled()
+{
+	return skyDome->isVisible();
+}
+
+void FERenderer::setSkyEnabld(bool newValue)
+{
+	skyDome->setVisibility(newValue);
+}
+
+float FERenderer::getDistanceToSky()
+{
+	return skyDome->transform.scale[0];
+}
+
+void FERenderer::setDistanceToSky(float newValue)
+{
+	skyDome->transform.setScale(glm::vec3(newValue));
+}
+
+bool FERenderer::isDistanceFogEnabled()
+{
+	return distanceFogEnabled;
+}
+
+void FERenderer::setDistanceFogEnabld(bool newValue)
+{
+	if (distanceFogEnabled == false && newValue == true)
+	{
+		distanceFogDensity = 0.007f;
+		distanceFogGradient = 2.5f;
+	}
+	distanceFogEnabled = newValue;
+	updateFogInShaders();
+}
+
+float FERenderer::getDistanceFogDensity()
+{
+	return distanceFogDensity;
+}
+
+void FERenderer::setDistanceFogDensity(float newValue)
+{
+	distanceFogDensity = newValue;
+	updateFogInShaders();
+}
+
+float FERenderer::getDistanceFogGradient()
+{
+	return distanceFogGradient;
+}
+
+void FERenderer::setDistanceFogGradient(float newValue)
+{
+	distanceFogGradient = newValue;
+	updateFogInShaders();
+}
+
+void FERenderer::updateFogInShaders()
+{
+	if (distanceFogEnabled)
+	{
+		FEResourceManager::getInstance().getShader("FEPBRShader")->getParameter("fogDensity")->updateData(distanceFogDensity);
+		FEResourceManager::getInstance().getShader("FEPBRShader")->getParameter("fogGradient")->updateData(distanceFogGradient);
+
+		FEResourceManager::getInstance().getShader("FEPBRInstancedShader")->getParameter("fogDensity")->updateData(distanceFogDensity);
+		FEResourceManager::getInstance().getShader("FEPBRInstancedShader")->getParameter("fogGradient")->updateData(distanceFogGradient);
+
+		FEResourceManager::getInstance().getShader("FETerrainShader")->getParameter("fogDensity")->updateData(distanceFogDensity);
+		FEResourceManager::getInstance().getShader("FETerrainShader")->getParameter("fogGradient")->updateData(distanceFogGradient);
+	}
+	else
+	{
+		FEResourceManager::getInstance().getShader("FEPBRShader")->getParameter("fogDensity")->updateData(-1.0f);
+		FEResourceManager::getInstance().getShader("FEPBRShader")->getParameter("fogGradient")->updateData(-1.0f);
+
+		FEResourceManager::getInstance().getShader("FEPBRInstancedShader")->getParameter("fogDensity")->updateData(-1.0f);
+		FEResourceManager::getInstance().getShader("FEPBRInstancedShader")->getParameter("fogGradient")->updateData(-1.0f);
+
+		FEResourceManager::getInstance().getShader("FETerrainShader")->getParameter("fogDensity")->updateData(-1.0f);
+		FEResourceManager::getInstance().getShader("FETerrainShader")->getParameter("fogGradient")->updateData(-1.0f);
+	}
+}
+
+float FERenderer::getChromaticAberrationIntensity()
+{
+	return *(float*)getPostProcessEffect("chromaticAberration")->stages[0]->shader->getParameter("intensity")->data;
+}
+
+void FERenderer::setChromaticAberrationIntensity(float newValue)
+{
+	getPostProcessEffect("chromaticAberration")->stages[0]->shader->getParameter("intensity")->updateData(newValue);
+}
+
+float FERenderer::getDOFNearDistance()
+{
+	return *(float*)getPostProcessEffect("DOF")->stages[0]->shader->getParameter("depthThreshold")->data;
+}
+
+void FERenderer::setDOFNearDistance(float newValue)
+{
+	getPostProcessEffect("DOF")->stages[0]->shader->getParameter("depthThreshold")->updateData(newValue);
+	getPostProcessEffect("DOF")->stages[1]->shader->getParameter("depthThreshold")->updateData(newValue);
+}
+
+float FERenderer::getDOFFarDistance()
+{
+	return *(float*)getPostProcessEffect("DOF")->stages[0]->shader->getParameter("depthThresholdFar")->data;
+}
+
+void FERenderer::setDOFFarDistance(float newValue)
+{
+	getPostProcessEffect("DOF")->stages[0]->shader->getParameter("depthThresholdFar")->updateData(newValue);
+	getPostProcessEffect("DOF")->stages[1]->shader->getParameter("depthThresholdFar")->updateData(newValue);
+}
+
+float FERenderer::getDOFStrength()
+{
+	return *(float*)getPostProcessEffect("DOF")->stages[0]->shader->getParameter("blurSize")->data;
+}
+
+void FERenderer::setDOFStrength(float newValue)
+{
+	getPostProcessEffect("DOF")->stages[0]->shader->getParameter("blurSize")->updateData(newValue);
+	getPostProcessEffect("DOF")->stages[1]->shader->getParameter("blurSize")->updateData(newValue);
+}
+
+float FERenderer::getDOFDistanceDependentStrength()
+{
+	return *(float*)getPostProcessEffect("DOF")->stages[0]->shader->getParameter("intMult")->data;
+}
+
+void FERenderer::setDOFDistanceDependentStrength(float newValue)
+{
+	getPostProcessEffect("DOF")->stages[0]->shader->getParameter("intMult")->updateData(newValue);
+	getPostProcessEffect("DOF")->stages[1]->shader->getParameter("intMult")->updateData(newValue);
+}
+
+float FERenderer::getBloomThreshold()
+{
+	return *(float*)getPostProcessEffect("bloom")->stages[0]->shader->getParameter("thresholdBrightness")->data;
+}
+
+void FERenderer::setBloomThreshold(float newValue)
+{
+	getPostProcessEffect("bloom")->stages[0]->shader->getParameter("thresholdBrightness")->updateData(newValue);
+}
+
+float FERenderer::getBloomSize()
+{
+	return *(float*)getPostProcessEffect("bloom")->stages[1]->stageSpecificUniforms[1].data;
+}
+
+void FERenderer::setBloomSize(float newValue)
+{
+	getPostProcessEffect("bloom")->stages[1]->stageSpecificUniforms[1].updateData(newValue);
+	getPostProcessEffect("bloom")->stages[2]->stageSpecificUniforms[1].updateData(newValue);
+}
+
+float FERenderer::getFXAASpanMax()
+{
+	return *(float*)getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAASpanMax")->data;
+}
+
+void FERenderer::setFXAASpanMax(float newValue)
+{
+	getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAASpanMax")->updateData(newValue);
+}
+
+float FERenderer::getFXAAReduceMin()
+{
+	return *(float*)getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAAReduceMin")->data;
+}
+
+void FERenderer::setFXAAReduceMin(float newValue)
+{
+	getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAAReduceMin")->updateData(newValue);
+}
+
+float FERenderer::getFXAAReduceMul()
+{
+	return *(float*)getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAAReduceMul")->data;
+}
+
+void FERenderer::setFXAAReduceMul(float newValue)
+{
+	getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAAReduceMul")->updateData(newValue);
 }

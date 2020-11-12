@@ -17,11 +17,7 @@ namespace FocalEngine
 
 		FEMesh* mesh = nullptr;
 		FEMaterial* material = nullptr;
-
-		std::string getName();
-		void setName(std::string newName);
 	private:
-		std::string name;
 	};
 }
 

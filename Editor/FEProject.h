@@ -1,9 +1,12 @@
 #pragma once
 
 #include "../FEngine.h"
-using namespace FocalEngine;
+#include "FEDearImguiWrapper/FEDearImguiWrapper.h"
+#include "../Editor/FEEditorGizmoManager.h"
+#include "../Editor/FEEditorPreviewManager.h"
+#include "FEEditorInternalResources.h"
 
-#define ENGINE FEngine::getInstance()
+using namespace FocalEngine;
 
 class FEProject
 {
@@ -15,7 +18,7 @@ public:
 	void setName(std::string newName);
 
 	std::string getProjectFolder();
-	void saveScene(std::unordered_map<int, FEEntity*>* excludedEntities);
+	void saveScene();
 	void loadScene();
 
 	FETexture* sceneScreenshot;
@@ -32,3 +35,30 @@ private:
 
 	std::vector<std::string> filesToDelete;
 };
+
+#define PROJECTS_FOLDER "C:/Users/Kindr/Desktop/FocalEngine/FEProjects"
+
+class FEProjectManager
+{
+	std::vector<FEProject*> list;
+	int indexChosen = -1;
+	FEProject* current = nullptr;
+public:
+	SINGLETON_PUBLIC_PART(FEProjectManager)
+	SINGLETON_PRIVATE_PART(FEProjectManager)
+
+	void initializeResources();
+
+	FEProject* getCurrent();
+	void setCurrent(FEProject* project);
+
+	std::vector<FEProject*> getList();
+
+	void openProject(int projectIndex);
+	void loadProjectList();
+	void closeCurrentProject();
+
+	void displayProjectSelection();
+};
+
+#define PROJECT_MANAGER FEProjectManager::getInstance()

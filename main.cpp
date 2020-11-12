@@ -2,47 +2,8 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	//srand(time(NULL));
-
-	//int max = 0;
-	//int min = 999;
-
-	//std::unordered_map<int, std::string> IDs;
-	//
-	//for (size_t i = 0; i < 10000000; i++)
-	//{
-	//	std::string finalHashedString = "";
-	//	finalHashedString += char(rand() % 128);
-	//	for (size_t j = 0; j < 11; j++)
-	//	{
-	//		finalHashedString.insert(rand() % finalHashedString.size(), 1, char(rand() % 128));
-	//	}
-	//	int ID = std::hash<std::string>{}(finalHashedString);
-
-	//	if (IDs.find(ID) == IDs.end())
-	//	{
-	//		IDs[ID] = finalHashedString;
-	//	}
-	//	else
-	//	{
-	//		i;
-	//		bool strEqual = finalHashedString == IDs.find(ID)->second;
-	//		if (strEqual)
-	//		{
-	//			int y = 0;
-	//			y++;
-	//		}
-	//		int wasID = IDs.find(ID)->first;
-	//		std::string wasString = IDs.find(ID)->second;
-	//	}
-	//}
-	
 	ENGINE.createWindow();
-	ENGINE.setKeyCallback(keyButtonCallback);
-	ENGINE.setMouseButtonCallback(mouseButtonCallback);
-	ENGINE.setMouseMoveCallback(mouseMoveCallback);
-
-	loadEditor();
+	EDITOR.initializeResources();
 
 	const int frameCountTillMeasure = 20;
 	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
@@ -66,8 +27,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		//ImGui::ShowDemoWindow();
-
-		renderEditor();
+		EDITOR.render();
 		ENGINE.endFrame();
 
 		// CPU and GPU Time

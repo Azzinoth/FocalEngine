@@ -3,7 +3,7 @@ using namespace FocalEngine;
 
 FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name) : FEAsset(FE_MESH, Name)
 {
-	name = Name;
+	setName(Name);
 	vaoID = VaoID;
 	vertexCount = VertexCount;
 	vertexAttributes = VertexBuffersTypes;
@@ -88,16 +88,6 @@ GLuint FEMesh::getMaterialsIndicesCount() const
 int FEMesh::getMaterialCount() const
 {
 	return materialsCount;
-}
-
-std::string FEMesh::getName()
-{
-	return name;
-}
-
-void FEMesh::setName(std::string newName)
-{
-	name = newName;
 }
 
 FEAABB FEMesh::getAABB()

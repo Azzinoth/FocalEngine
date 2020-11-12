@@ -8,6 +8,7 @@
 #define FE_VERTEX_ATTRIBUTE_TANGENT "@In_Tangent@"
 #define FE_VERTEX_ATTRIBUTE_UV "@In_UV@"
 #define FE_VERTEX_ATTRIBUTE_MATINDEX "@In_Material_Index@"
+#define FE_VERTEX_ATTRIBUTE_INSTANCEDATA "@In_Instance_Data@"
 
 #define FE_WORLD_MATRIX_MACRO "@WorldMatrix@"
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
@@ -46,14 +47,9 @@ namespace FocalEngine
 		FE_TANGENTS = 1 << 3,
 		FE_UV       = 1 << 4,
 		FE_INDEX    = 1 << 5,
-		FE_MATINDEX = 1 << 6
+		FE_MATINDEX = 1 << 6,
+		FE_INSTANCEDATA = 1 << 7
 	};
-
-	static std::vector<std::string> FEStandardUniforms = 
-	{ "FEPosition", "FEColor", "FENormal", "FETangent", "FETexCoord", "FEWorldMatrix", "FEViewMatrix",
-	  "FEProjectionMatrix", "FECameraPosition", "FELightPosition", "FELightColor", "FEGamma", "FEExposure",
-	  "FELightType", "FELightDirection", "FELightSpotAngle", "FELightSpotAngleOuter", "FElight[", "FEReceiveShadows", "directionalLight", "FEAO",
-	  "FERoughtness", "FEMetalness", "FENormalMapIntensity", "FEAOIntensity", "FENormalMapPresent" };
 
 	const int FE_MAX_TEXTURES_PER_MATERIAL = 16;
 	const int FE_MAX_SUBMATERIALS_PER_MATERIAL = 2;
@@ -89,8 +85,6 @@ namespace FocalEngine
 		void* data;
 		FEShaderParamType type;
 		std::string name;
-
-		bool loadedFromEngine = false;
 	};
 
 	class FEMaterial;
@@ -133,10 +127,6 @@ namespace FocalEngine
 		std::vector<std::string> getTextureList();
 		FEShaderParam* getParameter(std::string name);
 
-		std::string getName();
-		void setName(std::string newName);
-		int getNameHash();
-
 		char* getVertexShaderText();
 		char* getTessControlShaderText();
 		char* getTessEvalShaderText();
@@ -151,8 +141,6 @@ namespace FocalEngine
 		std::vector<std::string> getDebugVariables();
 	private:
 		void copyCode(const FEShader& shader);
-		std::string name;
-		int nameHash = 0;
 
 		std::string compilationErrors;
 

@@ -32,6 +32,8 @@
 
 #include "jsoncpp/json/json.h"
 
+#include <xmmintrin.h>
+
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
 
 #define SINGLETON_PUBLIC_PART(CLASS_NAME)  \

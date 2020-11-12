@@ -10,7 +10,7 @@ uniform vec3 baseColor;
 void main(void)
 {
 	vec4 textureColor = texture(objectTexture, UV);
-	if (textureColor.a < 0.05)
+	if (textureColor.a < 0.2)
 	{
 		discard;
 	}

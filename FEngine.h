@@ -10,7 +10,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEngine)
 
-		void createWindow(int width = 1920, int height = 1080, std::string WindowTitle = "FEWindow");
+		void createWindow(int width = 1920 * 2, int height = 1080 * 2, std::string WindowTitle = "FEWindow");
 
 		void beginFrame(bool internalCall = false);
 		void endFrame(bool internalCall = false);
@@ -70,8 +70,9 @@ namespace FocalEngine
 		FEBasicCamera* currentCamera = nullptr;
 		void setImguiStyle();
 	};
-
-	#define RENDERER FERenderer::getInstance()
-	#define RESOURCE_MANAGER FEResourceManager::getInstance()
-	#define SCENE FEScene::getInstance()
 }
+
+#define ENGINE FEngine::getInstance()
+#define RENDERER FERenderer::getInstance()
+#define RESOURCE_MANAGER FEResourceManager::getInstance()
+#define SCENE FEScene::getInstance()

@@ -14,7 +14,9 @@ out float materialIndex;
 void main(void)
 {
 	UV = FETexCoord;
-	fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
-	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
+
+	vec4 finalPosition = FEWorldMatrix * vec4(FEPosition, 1.0);
+	fragPosition = finalPosition.xyz;
+	gl_Position = FEProjectionMatrix * FEViewMatrix * finalPosition;
 	materialIndex = FEMatIndex;
 }

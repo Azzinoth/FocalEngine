@@ -38,3 +38,19 @@ void FEAsset::setDirtyFlag(bool newDirtyFlag)
 {
 	dirtyFlag = newDirtyFlag;
 }
+
+std::string FEAsset::getName()
+{
+	return name;
+}
+
+void FEAsset::setName(std::string newName)
+{
+	name = newName;
+	nameHash = std::hash<std::string>{}(name);
+}
+
+int FEAsset::getNameHash()
+{
+	return nameHash;
+}

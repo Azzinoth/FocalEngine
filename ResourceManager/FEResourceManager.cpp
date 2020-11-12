@@ -1106,16 +1106,21 @@ void FEResourceManager::loadStandardMaterial()
 	makeShaderStandard(newMaterial->shader);
 	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
 	newMaterial->addParameter(color);
-
 	makeMaterialStandard(newMaterial);
 
 	createShader("FEPhongShader", loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str(),
 								  loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str());
 	makeShaderStandard(getShader("FEPhongShader"));
 
+	// ****************************** PBR SHADER ******************************
 	createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
 								loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 	makeShaderStandard(getShader("FEPBRShader"));
+
+	createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
+										 loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+	makeShaderStandard(getShader("FEPBRInstancedShader"));
+	// ****************************** PBR SHADER END ******************************
 
 	createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
 									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS.glsl").c_str(),
@@ -1134,9 +1139,11 @@ void FEResourceManager::loadStandardMaterial()
 
 	makeShaderStandard(getShader("FESMTerrainShader"));
 
-	createShader("FESkyDome", loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
-							  loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
-	makeShaderStandard(getShader("FESkyDome"));
+	FEMaterial* skyDomeMaterial = createMaterial("skyDomeMaterial");
+	skyDomeMaterial->shader = createShader("FESkyDome", loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
+														loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
+	makeShaderStandard(skyDomeMaterial->shader);
+	makeMaterialStandard(skyDomeMaterial);
 
 	createShader("terrainBrushOutput", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
 									   loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str());
@@ -1145,14 +1152,28 @@ void FEResourceManager::loadStandardMaterial()
 	createShader("terrainBrushVisual", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str(),
 									   loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str());
 	makeShaderStandard(getShader("terrainBrushVisual"));
+
+	// same as FERenderer::updateFogInShaders()
+	getShader("FEPBRShader")->getParameter("fogDensity")->updateData(0.007f);
+	getShader("FEPBRShader")->getParameter("fogGradient")->updateData(2.5f);
+	getShader("FEPBRShader")->getParameter("shadowBlurFactor")->updateData(1.0f);
+
+	getShader("FEPBRInstancedShader")->getParameter("fogDensity")->updateData(0.007f);
+	getShader("FEPBRInstancedShader")->getParameter("fogGradient")->updateData(2.5f);
+	getShader("FEPBRInstancedShader")->getParameter("shadowBlurFactor")->updateData(1.0f);
+
+	getShader("FETerrainShader")->getParameter("fogDensity")->updateData(0.007f);
+	getShader("FETerrainShader")->getParameter("fogGradient")->updateData(2.5f);
+	getShader("FETerrainShader")->getParameter("shadowBlurFactor")->updateData(1.0f);
 }
 
 void FEResourceManager::loadStandardGameModels()
 {
 	FEGameModel* newGameModel = new FEGameModel(getMesh("sphere"), getMaterial("SolidColorMaterial"), "standardGameModel");
 	makeGameModelStandard(newGameModel);
-		
-	standardGameModels["standardGameModel"] = new FEGameModel(getMesh("sphere"), getMaterial("SolidColorMaterial"), "standardGameModel");
+
+	newGameModel = new FEGameModel(getMesh("sphere"), getMaterial("skyDomeMaterial"), "skyDomeGameModel");
+	makeGameModelStandard(newGameModel);
 }
 
 void FEResourceManager::clear()
@@ -1308,23 +1329,14 @@ void FEResourceManager::deleteFETexture(FETexture* texture)
 	auto materialIterator = materials.begin();
 	while (materialIterator != materials.end())
 	{
-		if (texture == materialIterator->second->albedoMap)
-			materialIterator->second->albedoMap = noTexture;
-
-		if (texture == materialIterator->second->normalMap)
-			materialIterator->second->normalMap = noTexture;
-
-		if (texture == materialIterator->second->roughtnessMap)
-			materialIterator->second->roughtnessMap = noTexture;
-
-		if (texture == materialIterator->second->metalnessMap)
-			materialIterator->second->metalnessMap = noTexture;
-
-		if (texture == materialIterator->second->AOMap)
-			materialIterator->second->AOMap = noTexture;
-
-		if (texture == materialIterator->second->displacementMap)
-			materialIterator->second->displacementMap = noTexture;
+		for (size_t i = 0; i < materialIterator->second->textures.size(); i++)
+		{
+			if (materialIterator->second->textures[i] == texture)
+			{
+				materialIterator->second->textures[i] = noTexture;
+				break;
+			}
+		}
 
 		materialIterator++;
 	}
@@ -1735,7 +1747,8 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* 
 	}
 
 	if (terrain->heightMap != nullptr)
-		delete terrain->heightMap;
+		deleteFETexture(terrain->heightMap);
+	
 	terrain->heightMap = newTexture;
 	initTerrainEditTools(terrain);
 
@@ -1848,7 +1861,6 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 		case FocalEngine::FE_NULL:
 		{
 			return result;
-			break;
 		}
 		case FocalEngine::FE_SHADER:
 		{
@@ -1932,6 +1944,10 @@ std::string FEResourceManager::freeAssetName(FEAssetType assetType)
 
 			return result;
 		}
+		case FocalEngine::FE_ENTITY_INSTANCED:
+		{
+			return result;
+		}
 		default:
 		{
 			return result;
@@ -1996,4 +2012,12 @@ void FEResourceManager::deleteMaterial(FEMaterial* Material)
 
 	materials.erase(Material->getName());
 	delete Material;
+}
+
+FEEntityInstanced* FEResourceManager::createEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceAssetID)
+{
+	FEEntityInstanced* newEntityInstanced = new FEEntityInstanced(gameModel, Name);
+	if (forceAssetID != "")
+		newEntityInstanced->ID = forceAssetID;
+	return newEntityInstanced;
 }

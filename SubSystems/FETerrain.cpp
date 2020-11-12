@@ -26,17 +26,6 @@ void FETerrain::setVisibility(bool isVisible)
 	visible = isVisible;
 }
 
-std::string FETerrain::getName()
-{
-	return name;
-}
-
-void FETerrain::setName(std::string newName)
-{
-	name = newName;
-	nameHash = std::hash<std::string>{}(name);
-}
-
 FEAABB FETerrain::getAABB()
 {
 	if (transform.dirtyFlag)
@@ -145,11 +134,6 @@ void FETerrain::setReceivingShadows(bool isReceivingShadows)
 	receiveShadows = isReceivingShadows;
 }
 
-int FETerrain::getNameHash()
-{
-	return nameHash;
-}
-
 void FETerrain::setWireframeMode(bool isActive)
 {
 	wireframeMode = isActive;
@@ -234,6 +218,9 @@ float FETerrain::getHeightAt(glm::vec2 XZWorldPosition)
 	localX -= finalAABB.getMin()[0];
 	localZ -= finalAABB.getMin()[2];
 
+	if (xSize == 0 || zSize == 0)
+		getAABB();
+
 	localX = localX / xSize;
 	localZ = localZ / zSize;
 
@@ -243,7 +230,7 @@ float FETerrain::getHeightAt(glm::vec2 XZWorldPosition)
 		localZ = float(int(localZ * this->heightMap->getHeight()));
 
 		int index = int(localZ * this->heightMap->getWidth() + localX);
-		return heightMapArray[index] * hightScale * transform.getScale()[1] + transform.getPosition()[1] * transform.getScale()[1];
+		return heightMapArray[index] * hightScale * transform.getScale()[1] + transform.getPosition()[1];
 	}
 
 	return -FLT_MAX;
@@ -500,6 +487,7 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 	if (isBrushActive())
 	{
 		CPUHeightInfoDirtyFlag = true;
+		heightMap->setDirtyFlag(true);
 
 		if (localX > 0 && localZ > 0 && localX < 1.0 && localZ < 1.0)
 		{

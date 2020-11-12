@@ -118,16 +118,6 @@ FEShaderParam* FEMaterial::getParameter(std::string name)
 	return shader->getParameter(name);
 }
 
-std::string FEMaterial::getName()
-{
-	return name;
-}
-
-void FEMaterial::setName(std::string newName)
-{
-	name = newName;
-}
-
 glm::vec3 FEMaterial::getBaseColor()
 {
 	return baseColor;

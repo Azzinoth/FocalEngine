@@ -22,28 +22,28 @@ void FEFreeCamera::move(float deltaTime)
 	glm::normalize(right);
 	glm::normalize(forward);
 
-	if (leftKeyPreesed)
+	if (leftKeyPressed)
 	{
 		position.x -= right.x;
 		position.y -= right.y;
 		position.z -= right.z;
 	}
 
-	if (upKeyPreesed)
+	if (upKeyPressed)
 	{
 		position.x += forward.x;
 		position.y += forward.y;
 		position.z += forward.z;
 	}
 
-	if (rightKeyPreesed)
+	if (rightKeyPressed)
 	{
 		position.x += right.x;
 		position.y += right.y;
 		position.z += right.z;
 	}
 
-	if (downKeyPreesed)
+	if (downKeyPressed)
 	{
 		position.x -= forward.x;
 		position.y -= forward.y;
@@ -54,6 +54,23 @@ void FEFreeCamera::move(float deltaTime)
 
 	if (clientOnUpdateImpl)
 		clientOnUpdateImpl(this);
+}
+
+void FEFreeCamera::setIsInputActive(bool isActive)
+{
+	if (isActive)
+	{
+		setCursorToCenter();
+	}
+	else
+	{
+		leftKeyPressed = false;
+		upKeyPressed = false;
+		downKeyPressed = false;
+		rightKeyPressed = false;
+	}
+
+	FEBasicCamera::setIsInputActive(isActive);
 }
 
 void FEFreeCamera::reset()
@@ -88,7 +105,8 @@ void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 {
 	if (!isInputActive)
 		return;
-
+	// additional request for new mouse position to overcome some glitches.
+	glfwGetCursorPos(window, &xpos, &ypos);
 	int mouseX = int(xpos);
 	int mouseY = int(ypos);
 
@@ -130,40 +148,40 @@ void FEFreeCamera::keyboardInput(int key, int scancode, int action, int mods)
 	if (!isInputActive)
 		return;
 
-	if (key == GLFW_KEY_LEFT && action == GLFW_PRESS)
+	if (key == GLFW_KEY_A && action == GLFW_PRESS)
 	{
-		leftKeyPreesed = true;
+		leftKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_LEFT && action == GLFW_RELEASE)
+	else if (key == GLFW_KEY_A && action == GLFW_RELEASE)
 	{
-		leftKeyPreesed = false;
-	}
-
-	if (key == GLFW_KEY_UP && action == GLFW_PRESS)
-	{
-		upKeyPreesed = true;
-	}
-	else if (key == GLFW_KEY_UP && action == GLFW_RELEASE)
-	{
-		upKeyPreesed = false;
+		leftKeyPressed = false;
 	}
 
-	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS)
+	if (key == GLFW_KEY_W && action == GLFW_PRESS)
 	{
-		downKeyPreesed = true;
+		upKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_DOWN && action == GLFW_RELEASE)
+	else if (key == GLFW_KEY_W && action == GLFW_RELEASE)
 	{
-		downKeyPreesed = false;
+		upKeyPressed = false;
 	}
 
-	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+	if (key == GLFW_KEY_S && action == GLFW_PRESS)
 	{
-		rightKeyPreesed = true;
+		downKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_RIGHT && action == GLFW_RELEASE)
+	else if (key == GLFW_KEY_S && action == GLFW_RELEASE)
 	{
-		rightKeyPreesed = false;
+		downKeyPressed = false;
+	}
+
+	if (key == GLFW_KEY_D && action == GLFW_PRESS)
+	{
+		rightKeyPressed = true;
+	}
+	else if (key == GLFW_KEY_D && action == GLFW_RELEASE)
+	{
+		rightKeyPressed = false;
 	}
 }
 

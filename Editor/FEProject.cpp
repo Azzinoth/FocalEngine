@@ -1,6 +1,247 @@
 #include "FEProject.h"
 
-bool deleteFile(const char* filePath);
+FEProjectManager* FEProjectManager::_instance = nullptr;
+FEProjectManager::FEProjectManager() {}
+FEProjectManager::~FEProjectManager() {}
+
+void FEProjectManager::initializeResources()
+{
+	indexChosen = -1;
+	loadProjectList();
+}
+
+FEProject* FEProjectManager::getCurrent()
+{
+	return current;
+}
+
+void FEProjectManager::setCurrent(FEProject* project)
+{
+	current = project;
+}
+
+std::vector<FEProject*> FEProjectManager::getList()
+{
+	return list;
+}
+
+void FEProjectManager::loadProjectList()
+{
+	if (!FILESYSTEM.checkFolder(PROJECTS_FOLDER))
+		FILESYSTEM.createFolder(PROJECTS_FOLDER);
+
+	std::vector<std::string> projectNameList = FILESYSTEM.getFolderList(PROJECTS_FOLDER);
+
+	for (size_t i = 0; i < projectNameList.size(); i++)
+	{
+		list.push_back(new FEProject(projectNameList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i].c_str() + "/"));
+	}
+}
+
+void FEProjectManager::closeCurrentProject()
+{
+	//closing all windows or popups.
+	WindowsManager::getInstance().closeAllWindows();
+	WindowsManager::getInstance().closeAllPopups();
+
+	for (size_t i = 0; i < list.size(); i++)
+	{
+		delete list[i];
+	}
+	list.clear();
+	PROJECT_MANAGER.setCurrent(nullptr);
+
+	loadProjectList();
+	SELECTED.clear();
+}
+
+void FEProjectManager::openProject(int projectIndex)
+{
+	PROJECT_MANAGER.setCurrent(list[projectIndex]);
+	PROJECT_MANAGER.getCurrent()->loadScene();
+	indexChosen = -1;
+
+	// all parts of Gizmos are standard resources except entities, so we need to register them again.
+	// if it is first start and those entities are already registered these calls just returns false.
+	auto it = EDITOR_INTERNAL_RESOURCES.internalEditorEntities.begin();
+	while (it != EDITOR_INTERNAL_RESOURCES.internalEditorEntities.end())
+	{
+		SCENE.addEntity(it->second);
+		it++;
+	}
+
+	// after loading project we should update our previews
+	PREVIEW_MANAGER.updateAll();
+	SELECTED.clear();
+
+	// cleaning dirty flag of entities
+	std::vector<std::string> entityList = SCENE.getEntityList();
+	for (size_t i = 0; i < entityList.size(); i++)
+	{
+		FEEntity* entity = SCENE.getEntity(entityList[i]);
+		// but before that update AABB
+		entity->getAABB();
+		entity->transform.setDirty(false);
+	}
+}
+
+void FEProjectManager::displayProjectSelection()
+{
+	float mainWindowW = float(ENGINE.getWindowWidth());
+	float mainWindowH = float(ENGINE.getWindowHeight());
+
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH - 170.0f));
+	ImGui::Begin("Project Browser", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
+	{
+		ImGui::SetWindowFontScale(2.0f);
+		ImGui::Text("CHOOSE WHAT PROJECT TO LOAD :");
+		ImGui::SetWindowFontScale(1.0f);
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+		int columnCount = int(mainWindowW / (512.0f + 32.0f));
+		ImGui::Columns(columnCount, "projectColumns", false);
+		static bool pushedStyle = false;
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			ImGui::PushID(i);
+			pushedStyle = false;
+			if (indexChosen == i)
+			{
+				pushedStyle = true;
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			}
+
+			if (ImGui::IsMouseDoubleClicked(0))
+			{
+				if (indexChosen != -1)
+				{
+					openProject(indexChosen);
+				}
+			}
+
+			if (ImGui::ImageButton((void*)(intptr_t)list[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			{
+				indexChosen = i;
+			}
+
+			ImVec2 textWidth = ImGui::CalcTextSize(list[i]->getName().c_str());
+			ImGui::Text(list[i]->getName().c_str());
+
+			if (pushedStyle)
+			{
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::PopID();
+			ImGui::NextColumn();
+		}
+
+		ImGui::Columns(1);
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+	}
+	ImGui::End();
+	ImGui::PopStyleVar();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
+	ImGui::SetNextWindowPos(ImVec2(0.0f, mainWindowH - 170.0f));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, 170.0f));
+	ImGui::Begin("##create project", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.75f, 0.70f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+		if (ImGui::Button("Create New Project", ImVec2(200.0f, 64.0f)))
+			ImGui::OpenPopup("New Project");
+
+		ImGui::SameLine();
+		if (ImGui::Button("Open Project", ImVec2(200.0f, 64.0f)) && indexChosen != -1)
+		{
+			openProject(indexChosen);
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Delete Project", ImVec2(200.0f, 64.0f)) && indexChosen != -1)
+		{
+			std::string projectFolder = list[indexChosen]->getProjectFolder();
+			projectFolder.erase(projectFolder.begin() + projectFolder.size() - 1);
+
+			// geting list of all files and folders in project folder
+			auto fileList = FILESYSTEM.getFolderList(list[indexChosen]->getProjectFolder().c_str());
+			// we would delete all files in project folder, my editor would not create folders there
+			// so we are deleting only files.
+			for (size_t i = 0; i < fileList.size(); i++)
+			{
+				FILESYSTEM.deleteFile((list[indexChosen]->getProjectFolder() + fileList[i]).c_str());
+			}
+			// then we can try to delete project folder, but if user created some folders in it we will fail.
+			FILESYSTEM.deleteFolder(projectFolder.c_str());
+
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				delete list[i];
+			}
+			list.clear();
+			PROJECT_MANAGER.setCurrent(nullptr);
+
+			loadProjectList();
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		if (ImGui::BeginPopupModal("New Project", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Insert name of new project :");
+			static char projectName[512] = "";
+
+			ImGui::InputText("", projectName, IM_ARRAYSIZE(projectName));
+			ImGui::Separator();
+
+			if (ImGui::Button("Create", ImVec2(120, 0)))
+			{
+				bool alreadyCreated = false;
+				for (size_t i = 0; i < list.size(); i++)
+				{
+					if (list[i]->getName() == std::string(projectName))
+					{
+						alreadyCreated = true;
+						break;
+					}
+				}
+
+				if (strlen(projectName) != 0 && !alreadyCreated)
+				{
+					FILESYSTEM.createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
+					list.push_back(new FEProject(projectName, std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/"));
+					list.back()->createDummyScreenshot();
+					SCENE.addLight(FE_DIRECTIONAL_LIGHT, "sun");
+					ImGui::CloseCurrentPopup();
+					strcpy_s(projectName, "");
+				}
+			}
+			ImGui::SetItemDefaultFocus();
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) { ImGui::CloseCurrentPopup(); }
+			ImGui::EndPopup();
+		}
+	}
+	ImGui::End();
+	ImGui::PopStyleVar();
+}
 
 FEProject::FEProject(std::string Name, std::string ProjectFolder)
 {
@@ -59,7 +300,7 @@ void FEProject::writeTransformToJSON(Json::Value& root, FETransformComponent* tr
 	root["scale"]["Z"] = transform->getScale()[2];
 }
 
-void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
+void FEProject::saveScene()
 {
 	Json::Value root;
 	std::ofstream sceneFile;
@@ -77,6 +318,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		meshData[mesh->getName()]["ID"] = mesh->getAssetID();
 		meshData[mesh->getName()]["name"] = mesh->getName();
 		meshData[mesh->getName()]["fileName"] = mesh->getAssetID() + ".model";
+
+		mesh->setDirtyFlag(false);
 	}
 	root["meshes"] = meshData;
 
@@ -93,6 +336,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		texturesData[texture->getName()]["name"] = texture->getName();
 		texturesData[texture->getName()]["fileName"] = texture->getAssetID() + ".texture";
 		texturesData[texture->getName()]["type"] = texture->getInternalFormat();
+
+		texture->setDirtyFlag(false);
 	}
 	root["textures"] = texturesData;
 
@@ -115,13 +360,6 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 				materialData[material->getName()]["textureChannels"][std::to_string(j).c_str()] = material->textureChannels[j];
 		}
 
-		/*if (material->albedoMap != nullptr) materialData[material->getName()]["albedoMap"] = material->albedoMap->getName();
-		if (material->normalMap != nullptr) materialData[material->getName()]["normalMap"] = material->normalMap->getName();
-		if (material->roughtnessMap != nullptr) materialData[material->getName()]["roughtnessMap"] = material->roughtnessMap->getName();
-		if (material->metalnessMap != nullptr) materialData[material->getName()]["metalnessMap"] = material->metalnessMap->getName();
-		if (material->AOMap != nullptr) materialData[material->getName()]["AOMap"] = material->AOMap->getName();
-		if (material->displacementMap != nullptr) materialData[material->getName()]["displacementMap"] = material->displacementMap->getName();*/
-
 		materialData[material->getName()]["ID"] = material->getAssetID();
 		materialData[material->getName()]["name"] = material->getName();
 		materialData[material->getName()]["metalness"] = material->getMetalness();
@@ -131,6 +369,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		materialData[material->getName()]["ambientOcclusionMapIntensity"] = material->getAmbientOcclusionMapIntensity();
 		materialData[material->getName()]["roughtnessMapIntensity"] = material->getRoughtnessMapIntensity();
 		materialData[material->getName()]["metalnessMapIntensity"] = material->getMetalnessMapIntensity();
+
+		material->setDirtyFlag(false);
 	}
 	root["materials"] = materialData;
 
@@ -145,6 +385,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		gameModelData[gameModel->getName()]["name"] = gameModel->getName();
 		gameModelData[gameModel->getName()]["mesh"] = gameModel->mesh->getName();
 		gameModelData[gameModel->getName()]["material"] = gameModel->material->getName();
+
+		gameModel->setDirtyFlag(false);
 	}
 	root["gameModels"] = gameModelData;
 
@@ -154,13 +396,15 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	for (size_t i = 0; i < entityList.size(); i++)
 	{
 		FEEntity* entity = SCENE.getEntity(entityList[i]);
-		if (excludedEntities->find(entity->getNameHash()) != excludedEntities->end())
+		if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(entity))
 			continue;
 
 		entityData[entity->getName()]["ID"] = entity->getAssetID();
 		entityData[entity->getName()]["name"] = entity->getName();
 		entityData[entity->getName()]["gameModel"] = entity->gameModel->getName();
 		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
+
+		entity->setDirtyFlag(false);
 	}
 	root["entities"] = entityData;
 
@@ -184,6 +428,8 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 		terrainData[terrain->getName()]["materials"]["layer0"] = terrain->layer0->getName();
 
 		writeTransformToJSON(terrainData[terrain->getName()]["transformation"], &terrain->transform);
+
+		terrain->setDirtyFlag(false);
 	}
 	root["terrains"] = terrainData;
 
@@ -239,6 +485,34 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	}
 	root["lights"] = lightData;
 
+	// saving Effects settings
+	Json::Value effectsData;
+	// *********** Gamma Correction & Exposure ***********
+	effectsData["Gamma Correction & Exposure"]["Gamma"] = ENGINE.getCamera()->getGamma();
+	effectsData["Gamma Correction & Exposure"]["Exposure"] = ENGINE.getCamera()->getExposure();
+	// *********** Anti-Aliasing(FXAA) ***********
+	effectsData["Anti-Aliasing(FXAA)"]["FXAASpanMax"] = RENDERER.getFXAASpanMax();
+	effectsData["Anti-Aliasing(FXAA)"]["FXAAReduceMin"] = RENDERER.getFXAAReduceMin();
+	effectsData["Anti-Aliasing(FXAA)"]["FXAAReduceMul"] = RENDERER.getFXAAReduceMul();
+	// *********** Bloom ***********
+	effectsData["Bloom"]["thresholdBrightness"] = RENDERER.getBloomThreshold();
+	effectsData["Bloom"]["BloomSize"] = RENDERER.getBloomSize();
+	// *********** Depth of Field ***********
+	effectsData["Depth of Field"]["Near distance"] = RENDERER.getDOFNearDistance();
+	effectsData["Depth of Field"]["Far distance"] = RENDERER.getDOFFarDistance();
+	effectsData["Depth of Field"]["Strength"] = RENDERER.getDOFStrength();
+	effectsData["Depth of Field"]["Distance dependent strength"] = RENDERER.getDOFDistanceDependentStrength();
+	// *********** Distance fog ***********
+	effectsData["Distance fog"]["Density"] = RENDERER.getDistanceFogDensity();
+	effectsData["Distance fog"]["Gradient"] = RENDERER.getDistanceFogGradient();
+	// *********** Chromatic Aberration ***********
+	effectsData["Chromatic Aberration"]["Shift strength"] = RENDERER.getChromaticAberrationIntensity();
+	// *********** Sky ***********
+	effectsData["Sky"]["Enabled"] = RENDERER.isSkyEnabled() ? 1.0f : 0.0f;
+	effectsData["Sky"]["Sphere size"] = RENDERER.getDistanceToSky();
+
+	root["effects"] = effectsData;
+
 	// saving Camera settings
 	Json::Value cameraData;
 
@@ -256,9 +530,6 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 
 	cameraData["aspectRatio"] = ENGINE.getCamera()->getAspectRatio();
 
-	cameraData["gamma"] = ENGINE.getCamera()->getGamma();
-	cameraData["exposure"] = ENGINE.getCamera()->getExposure();
-
 	root["camera"] = cameraData;
 
 	// saving into file
@@ -270,7 +541,7 @@ void FEProject::saveScene(std::unordered_map<int, FEEntity*>* excludedEntities)
 	
 	for (size_t i = 0; i < filesToDelete.size(); i++)
 	{
-		deleteFile(filesToDelete[i].c_str());
+		FILESYSTEM.deleteFile(filesToDelete[i].c_str());
 	}
 
 	modified = false;
@@ -335,14 +606,7 @@ void FEProject::loadScene()
 		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i], root["materials"][materialsList[i]]["ID"].asString());
 
 		//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
-		if (newMat->getName() == "skyDome")
-		{
-			newMat->shader = RESOURCE_MANAGER.getShader("FESkyDome");
-		}
-		else
-		{
-			newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
-		}
+		newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 
 		std::vector<Json::String> membersList = root["materials"][materialsList[i]].getMemberNames();
 		for (size_t j = 0; j < membersList.size(); j++)
@@ -383,62 +647,6 @@ void FEProject::loadScene()
 				}
 			}
 		}
-
-
-		//std::vector<Json::String> textureList = root["materials"][materialsList[i]].getMemberNames();
-		//for (size_t j = 0; j < textureList.size(); j++)
-		//{
-		//	if (textureList[j] == "albedoMap")
-		//	{
-		//		//newMat->albedoMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
-
-		//		newMat->setAlbedoMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString()));
-		//		//newMat->textures[0] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["albedoMap"].asCString());
-		//		//newMat->textureBindings[0] = 0;
-		//	}
-		//	
-		//	if (textureList[j] == "normalMap")
-		//	{
-		//		//newMat->normalMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
-
-		//		newMat->setNormalMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString()));
-		//		//newMat->textures[15] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["normalMap"].asCString());
-		//		//newMat->textureBindings[1] = 15;
-		//	}
-		//	
-		//	if (textureList[j] == "AOMap")
-		//	{
-		//		//newMat->AOMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
-
-		//		newMat->setAOMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString()));
-		//		//newMat->textures[2] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["AOMap"].asCString());
-		//		//newMat->textureBindings[2] = 2;
-		//	}
-
-		//	if (textureList[j] == "roughtnessMap")
-		//	{
-		//		//newMat->roughtnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
-
-		//		newMat->setRoughtnessMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString()));
-		//		//newMat->textures[3] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["roughtnessMap"].asCString());
-		//		//newMat->textureBindings[3] = 3;
-		//	}
-		//	
-		//	if (textureList[j] == "metalnessMap")
-		//	{
-		//		//newMat->metalnessMap = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
-
-		//		newMat->setMetalnessMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString()));
-		//		//newMat->textures[4] = RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["metalnessMap"].asCString());
-		//		//newMat->textureBindings[4] = 4;
-		//	}
-		//		
-		//	if (textureList[j] == "displacementMap")
-		//	{
-		//		//newMat->setAlbedoMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString()), 1);
-		//		newMat->setDisplacementMap(RESOURCE_MANAGER.getTexture(root["materials"][materialsList[i]]["displacementMap"].asCString()));
-		//	}
-		//}
 
 		newMat->setMetalness(root["materials"][materialsList[i]]["metalness"].asFloat());
 		newMat->setRoughtness(root["materials"][materialsList[i]]["roughtness"].asFloat());
@@ -536,6 +744,33 @@ void FEProject::loadScene()
 		}
 	}
 
+	// loading Effects settings
+	// *********** Gamma Correction & Exposure ***********
+	ENGINE.getCamera()->setGamma(root["effects"]["Gamma Correction & Exposure"] ["Gamma"].asFloat());
+	ENGINE.getCamera()->setExposure(root["effects"]["Gamma Correction & Exposure"]["Exposure"].asFloat());
+	// *********** Anti-Aliasing(FXAA) ***********
+	RENDERER.setFXAASpanMax(root["effects"]["Anti-Aliasing(FXAA)"]["FXAASpanMax"].asFloat());
+	RENDERER.setFXAAReduceMin(root["effects"]["Anti-Aliasing(FXAA)"]["FXAAReduceMin"].asFloat());
+	RENDERER.setFXAAReduceMul(root["effects"]["Anti-Aliasing(FXAA)"]["FXAAReduceMul"].asFloat());
+	// *********** Bloom ***********
+	//PPEffect = RENDERER.getPostProcessEffect("bloom");
+	RENDERER.setBloomThreshold(root["effects"]["Bloom"]["thresholdBrightness"].asFloat());
+	RENDERER.setBloomSize(root["effects"]["Bloom"]["BloomSize"].asFloat());
+	// *********** Depth of Field ***********
+	RENDERER.setDOFNearDistance(root["effects"]["Depth of Field"]["Near distance"].asFloat());
+	RENDERER.setDOFFarDistance(root["effects"]["Depth of Field"]["Far distance"].asFloat());
+	RENDERER.setDOFStrength(root["effects"]["Depth of Field"]["Strength"].asFloat());
+	RENDERER.setDOFDistanceDependentStrength(root["effects"]["Depth of Field"]["Distance dependent strength"].asFloat());
+	// *********** Distance fog ***********
+	RENDERER.setDistanceFogEnabld(root["effects"]["Distance fog"]["Density"].asFloat() > -1.0f ? true : false);
+	RENDERER.setDistanceFogDensity(root["effects"]["Distance fog"]["Density"].asFloat());
+	RENDERER.setDistanceFogGradient(root["effects"]["Distance fog"]["Gradient"].asFloat());
+	// *********** Chromatic Aberration ***********
+	RENDERER.setChromaticAberrationIntensity(root["effects"]["Chromatic Aberration"]["Shift strength"].asFloat());
+	// *********** Sky ***********
+	RENDERER.setSkyEnabld(root["effects"]["Sky"]["Enabled"].asFloat() > 0.0f ? true : false);
+	RENDERER.setDistanceToSky(root["effects"]["Sky"]["Sphere size"].asFloat());
+
 	// loading Camera settings
 	ENGINE.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
 											  root["camera"]["position"]["Y"].asFloat(),
@@ -550,9 +785,6 @@ void FEProject::loadScene()
 	ENGINE.getCamera()->setRoll(root["camera"]["roll"].asFloat());
 
 	ENGINE.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
-
-	ENGINE.getCamera()->setGamma(root["camera"]["gamma"].asFloat());
-	ENGINE.getCamera()->setExposure(root["camera"]["exposure"].asFloat());
 
 	sceneFile.close();
 }

@@ -36,6 +36,10 @@ in GS_OUT
 @CameraPosition@
 uniform float FEGamma;
 uniform int debugFlag;
+uniform float shadowBlurFactor;
+
+uniform float fogDensity;
+uniform float fogGradient;
 
 struct FELight
 {
@@ -271,7 +275,7 @@ void main(void)
 	}
 
 	vec4 textureColor = getAlbedo();
-	if (textureColor.a < 0.05)
+	if (textureColor.a < 0.2)
 	{
 		discard;
 	}
@@ -310,9 +314,21 @@ void main(void)
 
 	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 	gl_FragColor += vec4(texture(projectedMap, FS_IN.UV / tileMult));
+
+	// test fog
+	if (fogDensity > 0.0f && fogGradient > 0.0f)
+	{
+		float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
+
+		float visibility = exp(-pow((distanceToCam * fogDensity), fogGradient));
+		visibility = clamp(visibility, 0.0, 1.0);
+
+		gl_FragColor = mix(vec4(0.55f, 0.73f, 0.87f, 1.0), gl_FragColor, visibility);
+	}
 }
 
 // Produces cheap but low-quality white noise, nothing special
+// Taken from Godot engine
 float quick_hash(vec2 pos)
 {
 	return fract(sin(dot(pos * 19.19, vec2(49.5791, 97.413))) * 49831.189237);
@@ -361,7 +377,7 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM0, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM0, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 		//shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 	}
@@ -391,7 +407,7 @@ float shadowCalculationCSM1(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM1, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM1, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -420,7 +436,7 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM2, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM2, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
@@ -449,7 +465,7 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
-		float pcfDepth = texture(CSM3, projCoords.xy + disk_rotation * filterTaps[i] * texelSize).r;
+		float pcfDepth = texture(CSM3, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;

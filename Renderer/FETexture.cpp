@@ -52,16 +52,6 @@ GLuint FETexture::getTextureID()
 	return textureID;
 }
 
-std::string FETexture::getName()
-{
-	return name;
-}
-
-void FETexture::setName(std::string newName)
-{
-	name = newName;
-}
-
 void FETexture::bind(const unsigned int textureUnit)
 {
 	defaultTextureUnit = textureUnit;

@@ -180,11 +180,15 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	//glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window);
-	currentCamera->setAspectRatio(float(width) / float(height));
+	int finalWidth, finalHeight;
+	glfwGetWindowSize(window, &finalWidth, &finalHeight);
+	windowW = finalWidth;
+	windowH = finalHeight;
+	currentCamera->setAspectRatio(float(windowW) / float(windowH));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
-	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	//FE_GL_ERROR(glCullFace(GL_BACK));
+	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	FE_GL_ERROR(glCullFace(GL_BACK));*/
 
 	// tessellation parameter
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
@@ -192,7 +196,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER.instancedLineShader = RESOURCE_MANAGER.createShader("instancedLine", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str(),
 																				  RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str());
 
-	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.createShader("FEScreenQuadShader", FEScreenQuadVS, FEScreenQuadFS);
+	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.createShader("FEScreenQuadShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
+																					   RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str());
 	RESOURCE_MANAGER.makeShaderStandard(FEScreenQuadShader);
 
 	RENDERER.standardFBInit(windowW, windowH);
@@ -301,6 +306,13 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 																							RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterial->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterial);
+
+	RENDERER.shadowMapMaterialInstanced = RESOURCE_MANAGER.createMaterial("shadowMapMaterialInstanced");
+	RENDERER.shadowMapMaterialInstanced->shader = RESOURCE_MANAGER.createShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str(),
+																											  RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
+	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterialInstanced->shader);
+	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterialInstanced);
+
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();

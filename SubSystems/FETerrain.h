@@ -3,7 +3,7 @@
 #ifndef FETERRAIN_H
 #define FETERRAIN_H
 
-#include "../Renderer/FEEntity.h"
+#include "../Renderer/FEEntityInstanced.h"
 
 namespace FocalEngine
 {
@@ -21,11 +21,6 @@ namespace FocalEngine
 
 		bool isVisible();
 		void setVisibility(bool isVisible);
-
-		std::string getName();
-		void setName(std::string newName);
-
-		int getNameHash();
 
 		FEAABB getAABB();
 		FEAABB getPureAABB();
@@ -93,9 +88,6 @@ namespace FocalEngine
 		void setBrushSmoothMode(bool newBrushSmoothMode);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 	private:
-		std::string name;
-		int nameHash = 0;
-
 		bool wireframeMode = false;
 		bool visible = true;
 		bool castShadows = true;

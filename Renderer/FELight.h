@@ -137,7 +137,7 @@ namespace FocalEngine
 		float CSMXYDepth = 1.0f;
 		FECascadeData cascadeData[4];
 
-		void updateCascades(float cameraFov, float aspectRatio, float nearPlane, float farPlane, glm::mat4 viewMatrix);
+		void updateCascades(float cameraFov, float aspectRatio, float nearPlane, float farPlane, glm::mat4 viewMatrix, glm::vec3 cameraForward, glm::vec3 cameraRight, glm::vec3 cameraUp);
 	};
 
 	class FESpotLight : public FELight

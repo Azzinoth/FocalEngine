@@ -34,9 +34,10 @@ void main(void)
 	vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);
 
-	vs_out.fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
-	vs_out.worldVertexPosition = (FEWorldMatrix * vec4(FEPosition, 1.0)).xyz;
-	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
+	vec4 finalPosition = FEWorldMatrix * vec4(FEPosition, 1.0);
+	vs_out.fragPosition = finalPosition.xyz;
+	vs_out.worldVertexPosition = finalPosition.xyz;
+	gl_Position = FEProjectionMatrix * FEViewMatrix * finalPosition;
 
 	vs_out.materialIndex = FEMatIndex;
 }

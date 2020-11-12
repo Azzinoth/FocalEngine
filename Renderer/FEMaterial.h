@@ -46,8 +46,6 @@ namespace FocalEngine
 		std::vector<std::string> getParameterList();
 		FEShaderParam* getParameter(std::string name);
 
-		std::string getName();
-
 		glm::vec3 getBaseColor();
 		// Only infuence color of object if shader with such uniform is applied.
 		void setBaseColor(glm::vec3 newBaseColor);
@@ -106,9 +104,7 @@ namespace FocalEngine
 		void removeTexture(int textureIndex);
 
 	private:
-		std::string name;
 		glm::vec3 diffuseColor;
-		void setName(std::string newName);
 		glm::vec3 baseColor;
 
 		int placeTextureInList(FETexture* texture);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../FEngine.h"
+#include "../ThirdParty/textEditor/TextEditor.h"
 using namespace FocalEngine;
 
 //silly windows manager
@@ -161,3 +162,94 @@ public:
 	bool isVisible();
 };
 
+void showToolTip(const char* text);
+static ImVec4 defaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+static ImVec4 hoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
+static ImVec4 activeColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+static ImVec4 selectedStyle = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+void setSelectedStyle(ImGuiImageButton* button);
+void setDefaultStyle(ImGuiImageButton* button);
+
+class justTextWindow : public FEImGuiWindow
+{
+	TextEditor editor;
+	ImGuiButton* okButton = nullptr;
+public:
+	justTextWindow()
+	{
+		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+		editor.SetShowWhitespaces(false);
+		editor.SetReadOnly(true);
+		size = ImVec2(800, 600);
+		okButton = new ImGuiButton("OK");
+		editor.SetPalette(TextEditor::GetLightPalette());
+	}
+
+	~justTextWindow()
+	{
+		if (okButton != nullptr)
+			delete okButton;
+	}
+
+	void show(std::string text, std::string caption)
+	{
+		editor.SetText(text);
+
+		if (caption.size() == 0)
+			caption = "Text view";
+
+		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
+		FEImGuiWindow::show();
+	}
+
+	void render() override
+	{
+		FEImGuiWindow::render();
+
+		if (!isVisible())
+			return;
+
+		okButton->render();
+		if (okButton->getWasClicked())
+		{
+			FEImGuiWindow::close();
+		}
+
+		editor.Render("TextEditor");
+		FEImGuiWindow::onRenderEnd();
+	}
+};
+static justTextWindow justTextWindowObj;
+
+class messagePopUp : public ImGuiModalPopup
+{
+	std::string message;
+public:
+	messagePopUp()
+	{
+	}
+
+	void show(std::string newWindowCaption, std::string messageToShow)
+	{
+		shouldOpen = true;
+		message = messageToShow;
+		popupCaption = newWindowCaption;
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text(message.c_str());
+			ImVec2 textSize = ImGui::CalcTextSize(message.c_str());
+			ImGui::SetCursorPosX(textSize.x / 2.0f - 120 / 2.0f);
+			if (ImGui::Button("Ok", ImVec2(120, 0)))
+				ImGuiModalPopup::close();
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static messagePopUp messagePopUpObj;
