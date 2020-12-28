@@ -202,15 +202,14 @@ void FEEditor::displayContentBrowser()
 			{
 				if (ImGui::MenuItem("Create new material..."))
 				{
-					//ImGui::OpenPopup("New material");
 					FEMaterial* newMat = RESOURCE_MANAGER.createMaterial("");
 					if (newMat)
 					{
 						PROJECT_MANAGER.getCurrent()->modified = true;
 						newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 
-						newMat->albedoMap = RESOURCE_MANAGER.noTexture;
-						newMat->normalMap = RESOURCE_MANAGER.noTexture;
+						newMat->setAlbedoMap(RESOURCE_MANAGER.noTexture);
+						newMat->setNormalMap(RESOURCE_MANAGER.noTexture);
 					}
 
 				}
@@ -553,6 +552,8 @@ void FEEditor::displayTerrainContentBrowser()
 		ImGui::GetStateStorage()->SetInt(ImGui::GetID(SELECTED.getTerrainName().c_str()), 1);
 	}
 
+	static int testCount = 0;
+
 	for (size_t i = 0; i < terrainList.size(); i++)
 	{
 		FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
@@ -561,296 +562,106 @@ void FEEditor::displayTerrainContentBrowser()
 			testButton->render();
 			if (testButton->getWasClicked())
 			{
-				FEEntity* test = SCENE.getEntity("grass_0");
-				FEEntityInstanced* testInstanced = SCENE.addEntityInstanced(test->gameModel, "firstInstanced");
-				int dist = 150 * 100 * 2;
-				int count_mult = 30;
-				float foliageVisibilityDistance = 50.0f;
-				for (size_t i = 0; i < 1000 * count_mult; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = 64 + (rand() % dist - dist / 2) / 100.0f;
-					float z = 85 + (rand() % dist - dist / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = 64 + (rand() % dist - dist / 2) / 100.0f;
-						z = 85 + (rand() % dist - dist / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
+				int count_mult = 40;
+				FEEntityInstanced* testInstanced;
 
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
+				// ************** grass_simple_01 **************
+				FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_01");
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "firstInstanced");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+				FESpawnInfo spawnInfo;
+				spawnInfo.objectCount = 1500 * count_mult;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = 8774;
+				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 10) / 100.0f;
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
 
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+				// ************** grass_simple_02 **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_02");
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "secondInstanced");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-					testInstanced->addInstance(newMat);
-					testInstanced->cullDistance = foliageVisibilityDistance;
-				}
+				spawnInfo.objectCount = 300 * count_mult;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = 234234;
+				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-				test = SCENE.getEntity("grass_1");
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "secondInstanced");
-				for (size_t i = 0; i < 300 * count_mult; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = 64 + (rand() % dist - dist / 2) / 100.0f;
-					float z = 85 + (rand() % dist - dist / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = 64 + (rand() % dist - dist / 2) / 100.0f;
-						z = 85 + (rand() % dist - dist / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
 
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
+				// ************** perennials **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("perennials");
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "second_Instanced");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+				spawnInfo.objectCount = 30 * count_mult;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = 1300;
+				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 10) / 100.0f;
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
+				
+				// ************** SM_forest_heather_01 **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("SM_forest_heather_01");
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "thirdInstanced");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+				spawnInfo.objectCount = 300 * count_mult;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = 11500;
+				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-					testInstanced->addInstance(newMat);
-					testInstanced->cullDistance = foliageVisibilityDistance;
-				}
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
+				
+				// ************** SM_Small_Rock_05 **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("SM_Small_Rock_05");
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-				test = SCENE.getEntity("grass_2");
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "thirdInstanced");
-				for (size_t i = 0; i < 300 * count_mult; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = 64 + (rand() % dist - dist / 2) / 100.0f;
-					float z = 85 + (rand() % dist - dist / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = 64 + (rand() % dist - dist / 2) / 100.0f;
-						z = 85 + (rand() % dist - dist / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
+				spawnInfo.objectCount = 25 * count_mult;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = -11500;
+				spawnInfo.rotationDeviation = glm::vec3(0.1f, 1.0f, 0.1f);
 
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
 
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+				// ************** Fir_05_LOD0 **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("Fir_05_LOD0");
+				currentGameModel->material->setRoughtnessMapIntensity(1.5);
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced1");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 10) / 100.0f;
+				spawnInfo.objectCount = 600;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = -1500;
+				spawnInfo.rotationDeviation = glm::vec3(0.005f, 1.0f, 0.005f);
 
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 5) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
 
-					testInstanced->addInstance(newMat);
-					testInstanced->cullDistance = foliageVisibilityDistance;
-				}
+				// ************** amurcork **************
+				currentGameModel = RESOURCE_MANAGER.getGameModel("amurcork");
+				currentGameModel->material->setRoughtnessMapIntensity(1.5);
+				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced2");
+				testInstanced->cullingType = FE_CULLING_LODS;
 
+				spawnInfo.objectCount = 100;
+				spawnInfo.radius = 200.0f;
+				spawnInfo.seed = -6791500;
 
-				test = SCENE.getEntity("rock_0");
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "fourthInstanced");
-				for (size_t i = 0; i < 25 * count_mult; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = 64 + (rand() % dist - dist / 2) / 100.0f;
-					float z = 85 + (rand() % dist - dist / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = 64 + (rand() % dist - dist / 2) / 100.0f;
-						z = 85 + (rand() % dist - dist / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
-
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
-
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 20) / 100.0f;
-
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 36) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 36) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
-
-					testInstanced->addInstance(newMat);
-					testInstanced->cullDistance = foliageVisibilityDistance;
-				}
-
-				test = SCENE.getEntity("Fir_05_LOD0");
-				test->gameModel->material->setRoughtnessMapIntensity(1.5);
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "fourthInstanced1");
-				for (size_t i = 0; i < 600; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float z = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = (rand() % 20000 - 20000 / 2) / 100.0f;
-						z = (rand() % 20000 - 20000 / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
-
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
-
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 5) / 100.0f;
-
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
-
-					testInstanced->addInstance(newMat);
-					testInstanced->testLOD0 = test->gameModel->mesh;
-					testInstanced->testLOD1 = SCENE.getEntity("Fir_05_LOD3")->gameModel->mesh;
-				}
-
-
-				test = SCENE.getEntity("amur_cork_LOD0");
-				test->gameModel->material->setRoughtnessMapIntensity(1.5);
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "fourthInstanced2");
-				for (size_t i = 0; i < 100; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float z = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = (rand() % 20000 - 20000 / 2) / 100.0f;
-						z = (rand() % 20000 - 20000 / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
-
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
-
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 5) / 100.0f;
-
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
-
-					testInstanced->addInstance(newMat);
-					testInstanced->testLOD0 = test->gameModel->mesh;
-					testInstanced->testLOD1 = SCENE.getEntity("amur_cork_LOD2")->gameModel->mesh;
-				}
-
-
-				/*test = SCENE.getEntity("Fir_05_LOD3");
-				test->gameModel->material->setRoughtnessMapIntensity(1.5);
-				testInstanced = SCENE.addEntityInstanced(test->gameModel, "fourthInstanced2");
-				for (size_t i = 0; i < 250 * count_mult; i++)
-				{
-					glm::mat4 newMat = glm::mat4(1.0);
-					float x = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float z = (rand() % 20000 - 20000 / 2) / 100.0f;
-					float y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-					int count = 0;
-					while (y == -FLT_MAX)
-					{
-						x = (rand() % 20000 - 20000 / 2) / 100.0f;
-						z = (rand() % 20000 - 20000 / 2) / 100.0f;
-						y = SCENE.getTerrain(SCENE.getTerrainList()[0])->getHeightAt(glm::vec2(x, z));
-						count++;
-					}
-
-					FEAABB entityAABB = test->getAABB();
-					glm::vec3 min = entityAABB.getMin();
-					glm::vec3 max = entityAABB.getMax();
-
-					float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-
-					newMat = glm::translate(newMat, glm::vec3(x, y, z));
-					float standardScale = test->transform.getScale()[0];
-					standardScale += standardScale * (rand() % 5) / 100.0f;
-
-					newMat = glm::scale(newMat, glm::vec3(standardScale));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-					newMat = glm::rotate(newMat, (rand() % 360) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-					newMat = glm::rotate(newMat, (rand() % 2) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
-
-					testInstanced->addInstance(newMat);
-				}*/
-
-
-
-
-				//auto start = std::chrono::system_clock::now();
-
-
-				//std::vector<float> distVector;
-				//distVector.resize(testInstanced->getInstanceCount());
-				//glm::vec3 cameraPosition = ENGINE.getCamera()->getPosition();
-
-				//for (size_t i = 0; i < testInstanced->getInstanceCount(); i++)
-				//{
-				//	distVector[i] = abs(testInstanced->instancedPositions[i].x - cameraPosition.x) + abs(testInstanced->instancedPositions[i].z - cameraPosition.z);
-				//}
-
-
-				//auto end = std::chrono::system_clock::now();
-				////auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-				//double eTime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count() * 1000.0;
-				//if (eTime > 0.002)
-				//{
-				//	messagePopUpObj.show("time",std::to_string(eTime));
-				//	LOG.logError(std::to_string(eTime));
-				//	float time = 1;
-				//	time += 1;
-				//}
-
+				testInstanced->populate(spawnInfo);
+				testInstanced->clear();
+				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+				testInstanced->populate(spawnInfo);
 			}
+
+			ImGui::Text((std::string("was spawned : ") + std::to_string(testCount)).c_str());
 
 			bool isActive = currentTerrain->isWireframeMode();
 			ImGui::Checkbox("WireframeMode", &isActive);
@@ -1286,7 +1097,7 @@ void FEEditor::displayEffectsContentBrowser()
 		bool enabledFog = RENDERER.isDistanceFogEnabled();
 		if (ImGui::Checkbox("Enable fog", &enabledFog))
 		{
-			RENDERER.setDistanceFogEnabld(enabledFog);
+			RENDERER.setDistanceFogEnabled(enabledFog);
 		}
 
 		if (enabledFog)

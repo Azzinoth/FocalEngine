@@ -77,12 +77,20 @@ void FELight::setName(std::string newName)
 
 FECascadeData::FECascadeData()
 {
-
+	frustum = new float* [6];
+	for (size_t i = 0; i < 6; i++)
+	{
+		frustum[i] = new float[4];
+	}
 }
 
 FECascadeData::~FECascadeData()
 {
-
+	for (size_t i = 0; i < 6; i++)
+	{
+		delete[] frustum[i];
+	}
+	delete[] frustum;
 }
 
 // old
@@ -183,7 +191,6 @@ void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, floa
 	glm::vec4 fbasisZ = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisZ);
 
 	glm::mat4 cascadeView = glm::mat4(1.0f);
-
 	cascadeView[0][0] = fbasisX.x;
 	cascadeView[1][0] = fbasisX.y;
 	cascadeView[2][0] = fbasisX.z;
@@ -331,9 +338,111 @@ void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, floa
 				maxZ = std::max(maxZ, frustumEdges[j].z);
 			}
 
-			cascadeData[i].projectionMat = glm::ortho(minX - farPlane * (CSMXYDepth / 4.0f), maxX + farPlane * (CSMXYDepth / 4.0f),
-				minY - farPlane * (CSMXYDepth / 4.0f), maxY + farPlane * (CSMXYDepth / 4.0f),
-				minZ - farPlane * CSMZDepth, maxZ + farPlane * CSMZDepth);
+			float left = minX - farPlane * (CSMXYDepth / 4.0f);
+			float right = maxX + farPlane * (CSMXYDepth / 4.0f);
+
+			float bottom = minY - farPlane * (CSMXYDepth / 4.0f);
+			float top = maxY + farPlane * (CSMXYDepth / 4.0f);
+
+			float zNear = minZ - farPlane * CSMZDepth;
+			float zFar = maxZ + farPlane * CSMZDepth;
+
+			cascadeData[i].projectionMat = glm::ortho(left, right,
+													  bottom, top,
+													  zNear, zFar);
+
+			float   clip[16];
+			float   t;
+
+			glm::mat4 cliping = cascadeData[i].projectionMat * cascadeView;
+			for (size_t j = 0; j < 4; j++)
+			{
+				clip[j * 4] = cliping[j][0];
+				clip[j * 4 + 1] = cliping[j][1];
+				clip[j * 4 + 2] = cliping[j][2];
+				clip[j * 4 + 3] = cliping[j][3];
+			}
+
+			/* Extract the numbers for the RIGHT plane */
+			cascadeData[i].frustum[0][0] = clip[3] - clip[0];
+			cascadeData[i].frustum[0][1] = clip[7] - clip[4];
+			cascadeData[i].frustum[0][2] = clip[11] - clip[8];
+			cascadeData[i].frustum[0][3] = clip[15] - clip[12];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[0][0] * cascadeData[i].frustum[0][0] + cascadeData[i].frustum[0][1] * cascadeData[i].frustum[0][1] + cascadeData[i].frustum[0][2] * cascadeData[i].frustum[0][2]);
+			cascadeData[i].frustum[0][0] /= t;
+			cascadeData[i].frustum[0][1] /= t;
+			cascadeData[i].frustum[0][2] /= t;
+			cascadeData[i].frustum[0][3] /= t;
+
+			/* Extract the numbers for the LEFT plane */
+			cascadeData[i].frustum[1][0] = clip[3] + clip[0];
+			cascadeData[i].frustum[1][1] = clip[7] + clip[4];
+			cascadeData[i].frustum[1][2] = clip[11] + clip[8];
+			cascadeData[i].frustum[1][3] = clip[15] + clip[12];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[1][0] * cascadeData[i].frustum[1][0] + cascadeData[i].frustum[1][1] * cascadeData[i].frustum[1][1] + cascadeData[i].frustum[1][2] * cascadeData[i].frustum[1][2]);
+			cascadeData[i].frustum[1][0] /= t;
+			cascadeData[i].frustum[1][1] /= t;
+			cascadeData[i].frustum[1][2] /= t;
+			cascadeData[i].frustum[1][3] /= t;
+
+			/* Extract the BOTTOM plane */
+			cascadeData[i].frustum[2][0] = clip[3] + clip[1];
+			cascadeData[i].frustum[2][1] = clip[7] + clip[5];
+			cascadeData[i].frustum[2][2] = clip[11] + clip[9];
+			cascadeData[i].frustum[2][3] = clip[15] + clip[13];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[2][0] * cascadeData[i].frustum[2][0] + cascadeData[i].frustum[2][1] * cascadeData[i].frustum[2][1] + cascadeData[i].frustum[2][2] * cascadeData[i].frustum[2][2]);
+			cascadeData[i].frustum[2][0] /= t;
+			cascadeData[i].frustum[2][1] /= t;
+			cascadeData[i].frustum[2][2] /= t;
+			cascadeData[i].frustum[2][3] /= t;
+
+			/* Extract the TOP plane */
+			cascadeData[i].frustum[3][0] = clip[3] - clip[1];
+			cascadeData[i].frustum[3][1] = clip[7] - clip[5];
+			cascadeData[i].frustum[3][2] = clip[11] - clip[9];
+			cascadeData[i].frustum[3][3] = clip[15] - clip[13];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[3][0] * cascadeData[i].frustum[3][0] + cascadeData[i].frustum[3][1] * cascadeData[i].frustum[3][1] + cascadeData[i].frustum[3][2] * cascadeData[i].frustum[3][2]);
+			cascadeData[i].frustum[3][0] /= t;
+			cascadeData[i].frustum[3][1] /= t;
+			cascadeData[i].frustum[3][2] /= t;
+			cascadeData[i].frustum[3][3] /= t;
+
+			/* Extract the FAR plane */
+			cascadeData[i].frustum[4][0] = clip[3] - clip[2];
+			cascadeData[i].frustum[4][1] = clip[7] - clip[6];
+			cascadeData[i].frustum[4][2] = clip[11] - clip[10];
+			cascadeData[i].frustum[4][3] = clip[15] - clip[14];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[4][0] * cascadeData[i].frustum[4][0] + cascadeData[i].frustum[4][1] * cascadeData[i].frustum[4][1] + cascadeData[i].frustum[4][2] * cascadeData[i].frustum[4][2]);
+			cascadeData[i].frustum[4][0] /= t;
+			cascadeData[i].frustum[4][1] /= t;
+			cascadeData[i].frustum[4][2] /= t;
+			cascadeData[i].frustum[4][3] /= t;
+
+			/* Extract the NEAR plane */
+			cascadeData[i].frustum[5][0] = clip[3] + clip[2];
+			cascadeData[i].frustum[5][1] = clip[7] + clip[6];
+			cascadeData[i].frustum[5][2] = clip[11] + clip[10];
+			cascadeData[i].frustum[5][3] = clip[15] + clip[14];
+
+			/* Normalize the result */
+			t = sqrt(cascadeData[i].frustum[5][0] * cascadeData[i].frustum[5][0] + cascadeData[i].frustum[5][1] * cascadeData[i].frustum[5][1] + cascadeData[i].frustum[5][2] * cascadeData[i].frustum[5][2]);
+			cascadeData[i].frustum[5][0] /= t;
+			cascadeData[i].frustum[5][1] /= t;
+			cascadeData[i].frustum[5][2] /= t;
+			cascadeData[i].frustum[5][3] /= t;
+
+			int ty = 0;
+			ty++;
 		}
 	}
 	// my way of frustum reconstruction
@@ -453,6 +562,10 @@ void FEDirectionalLight::setDirection(glm::vec3 newDirection)
 
 FEDirectionalLight::~FEDirectionalLight()
 {
+	delete cascadeData[0].frameBuffer;
+	delete cascadeData[1].frameBuffer;
+	delete cascadeData[2].frameBuffer;
+	delete cascadeData[3].frameBuffer;
 }
 
 int FEDirectionalLight::getActiveCascades()

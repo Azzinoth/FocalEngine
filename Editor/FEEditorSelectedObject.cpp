@@ -204,21 +204,23 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 		FEMaterial* regularMaterial = potentiallySelectedEntity->gameModel->material;
 		potentiallySelectedEntity->gameModel->material = pixelAccurateSelectionMaterial;
 
-		int r = 0;
-		int g = 0;
-		int b = 0;
-
-		r = (i + 1) & 255;
-		g = ((i + 1) >> 8) & 255;
-		b = ((i + 1) >> 16) & 255;
+		int r = (i + 1) & 255;
+		int g = ((i + 1) >> 8) & 255;
+		int b = ((i + 1) >> 16) & 255;
 		pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
-		pixelAccurateSelectionMaterial->albedoMap = regularMaterial->albedoMap;
+		pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+		pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
 		if (potentiallySelectedEntity->getType() == FE_ENTITY_INSTANCED)
 		{
 			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateInstancedSelection");
-			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(potentiallySelectedEntity), ENGINE.getCamera());
+			FEMaterial* regularBillboardMaterial = potentiallySelectedEntity->gameModel->getBillboardMaterial();
+			potentiallySelectedEntity->gameModel->setBillboardMaterial(pixelAccurateSelectionMaterial);
+
+			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(potentiallySelectedEntity), ENGINE.getCamera(), nullptr);
+
 			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateSelection");
+			potentiallySelectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
 		}
 		else
 		{
@@ -226,7 +228,8 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 		}
 
 		potentiallySelectedEntity->gameModel->material = regularMaterial;
-		pixelAccurateSelectionMaterial->albedoMap = nullptr;
+		pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
+		pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
 	}
 
 	FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
@@ -235,17 +238,17 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 	if (SELECTED.entitiesUnderMouse.size() > 0)
 	{
-		int index = 0;
-		index |= int(colorUnderMouse[2]);
-		index <<= 8;
-		index |= int(colorUnderMouse[1]);
-		index <<= 8;
-		index |= int(colorUnderMouse[0]);
+		colorIndex = 0;
+		colorIndex |= int(colorUnderMouse[2]);
+		colorIndex <<= 8;
+		colorIndex |= int(colorUnderMouse[1]);
+		colorIndex <<= 8;
+		colorIndex |= int(colorUnderMouse[0]);
 
-		index -= 1;
+		colorIndex -= 1;
 
-		if (SELECTED.entitiesUnderMouse.size() > size_t(index))
-			return index;
+		if (SELECTED.entitiesUnderMouse.size() > size_t(colorIndex))
+			return colorIndex;
 
 		SELECTED.clear();
 	}
@@ -269,13 +272,19 @@ void FEEditorSelectedObject::onCameraUpdate()
 
 		FEMaterial* regularMaterial = HALO_SELECTION_EFFECT.selectedEntity->gameModel->material;
 		HALO_SELECTION_EFFECT.selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
-		HALO_SELECTION_EFFECT.haloMaterial->albedoMap = regularMaterial->getAlbedoMap();
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
 		if (HALO_SELECTION_EFFECT.selectedEntity->getType() == FE_ENTITY_INSTANCED)
 		{
 			HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawInstancedObjectShader");
-			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(HALO_SELECTION_EFFECT.selectedEntity), ENGINE.getCamera());
+			FEMaterial* regularBillboardMaterial = HALO_SELECTION_EFFECT.selectedEntity->gameModel->getBillboardMaterial();
+			HALO_SELECTION_EFFECT.selectedEntity->gameModel->setBillboardMaterial(HALO_SELECTION_EFFECT.haloMaterial);
+
+			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(HALO_SELECTION_EFFECT.selectedEntity), ENGINE.getCamera(), nullptr/*ENGINE.getCamera()->getFrustumPlanes()*/);
+
 			HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawObjectShader");
+			HALO_SELECTION_EFFECT.selectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
 		}
 		else
 		{
@@ -283,7 +292,8 @@ void FEEditorSelectedObject::onCameraUpdate()
 		}
 
 		HALO_SELECTION_EFFECT.selectedEntity->gameModel->material = regularMaterial;
-		HALO_SELECTION_EFFECT.haloMaterial->albedoMap = nullptr;
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(nullptr);
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(nullptr, 1);
 
 		HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
 		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));  
@@ -322,4 +332,9 @@ void FEEditorSelectedObject::onCameraUpdate()
 
 		return;
 	}
+}
+
+int FEEditorSelectedObject::debugGetLastColorIndex()
+{
+	return colorIndex;
 }

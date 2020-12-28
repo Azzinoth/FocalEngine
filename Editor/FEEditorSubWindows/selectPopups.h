@@ -424,6 +424,8 @@ class selectMaterialPopUp : public ImGuiModalPopup
 	ImGuiButton* selectButton = nullptr;
 	ImGuiButton* cancelButton = nullptr;
 	ImGuiImageButton* iconButton = nullptr;
+
+	FEShader* allowedShader = nullptr;
 public:
 	selectMaterialPopUp()
 	{
@@ -454,12 +456,30 @@ public:
 			delete iconButton;
 	}
 
+	void setAllowedShader(FEShader* shader)
+	{
+		allowedShader = shader;
+	}
+
 	void show(FEMaterial** material)
 	{
 		shouldOpen = true;
 		objToWorkWith = material;
 		list = RESOURCE_MANAGER.getMaterialList();
 		list.insert(list.begin(), "SolidColorMaterial");
+
+		if (allowedShader != nullptr)
+		{
+			for (size_t i = 0; i < list.size(); i++)
+			{
+				if (RESOURCE_MANAGER.getMaterial(list[i])->shader->getAssetID() != allowedShader->getAssetID())
+				{
+					list.erase(list.begin() + i);
+					i--;
+				}
+			}
+			allowedShader = nullptr;
+		}
 
 		filteredList = list;
 		strcpy_s(filter, "");
@@ -587,6 +607,7 @@ class selectGameModelPopUp : public ImGuiModalPopup
 	std::vector<std::string> filteredList;
 	char filter[512];
 	bool newEntityFlag = false;
+	bool isInstanced = false;
 	bool wasSelectedAlready = false;
 
 	ImGuiButton* selectButton = nullptr;
@@ -622,8 +643,9 @@ public:
 			delete iconButton;
 	}
 
-	void show(FEGameModel** gameModel, bool newEntityFlag = false)
+	void show(FEGameModel** gameModel, bool newEntityFlag = false, bool isInstanced = false)
 	{
+		this->isInstanced = isInstanced;
 		wasSelectedAlready = false;
 		shouldOpen = true;
 		objToWorkWith = gameModel;
@@ -716,12 +738,24 @@ public:
 					{
 						if (newEntityFlag)
 						{
-							FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
-							newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-							SELECTED.setEntity(newEntity);
+							if (isInstanced)
+							{
+								FEEntityInstanced* newEntity = FEScene::getInstance().addEntityInstanced(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
+								newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+								SELECTED.setEntity(newEntity);
 
-							wasSelectedAlready = true;
-							PROJECT_MANAGER.getCurrent()->modified = true;
+								wasSelectedAlready = true;
+								PROJECT_MANAGER.getCurrent()->modified = true;
+							}
+							else
+							{
+								FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
+								newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+								SELECTED.setEntity(newEntity);
+
+								wasSelectedAlready = true;
+								PROJECT_MANAGER.getCurrent()->modified = true;
+							}
 						}
 						else
 						{

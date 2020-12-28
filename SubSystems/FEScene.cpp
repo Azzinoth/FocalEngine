@@ -114,8 +114,35 @@ std::vector<std::string> FEScene::getLightsList()
 
 void FEScene::clear()
 {
+	// memory leak, need to delete entities not only clearing map.
 	entityMap.clear();
+
+	auto lightIterator = lightsMap.begin();
+	while (lightIterator != lightsMap.end())
+	{
+		if (lightIterator->second->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			delete reinterpret_cast<FEDirectionalLight*>(lightIterator->second);
+		}
+		else if (lightIterator->second->getType() == FE_POINT_LIGHT)
+		{
+			delete reinterpret_cast<FEPointLight*>(lightIterator->second);
+		}
+		else if (lightIterator->second->getType() == FE_SPOT_LIGHT)
+		{
+			delete reinterpret_cast<FESpotLight*>(lightIterator->second);
+		}
+
+		lightIterator++;
+	}
 	lightsMap.clear();
+
+	auto terrainIterator = terrainMap.begin();
+	while (terrainIterator != terrainMap.end())
+	{
+		delete terrainIterator->second;
+		terrainIterator++;
+	}
 	terrainMap.clear();
 }
 

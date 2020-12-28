@@ -1,5 +1,3 @@
-#version 450 core
-
 @In_Position@
 out vec2 textureCoords;
 

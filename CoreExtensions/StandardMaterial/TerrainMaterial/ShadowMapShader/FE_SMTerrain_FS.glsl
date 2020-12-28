@@ -1,5 +1,3 @@
-#version 450 core
-
 uniform vec3 baseColor;
 
 void main(void)

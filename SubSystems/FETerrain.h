@@ -87,6 +87,9 @@ namespace FocalEngine
 		bool isBrushSmoothMode();
 		void setBrushSmoothMode(bool newBrushSmoothMode);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
+
+		void snapInstancedEntity(FEEntityInstanced* entityToSnap);
+		void unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap);
 	private:
 		bool wireframeMode = false;
 		bool visible = true;
@@ -130,9 +133,11 @@ namespace FocalEngine
 		FEShader* brushVisualShader = nullptr;
 		FEMesh* planeMesh = nullptr;
 
-		size_t callCount = 0;
 		void updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection);
+		size_t waitBeforeUpdateMS = 50;
+		std::chrono::system_clock::time_point lastChangesTimeStamp;
 		void updateCPUHeightInfo();
+		void updateSnapedInstancedEntities();
 
 		bool CPUHeightInfoDirtyFlag = false;
 		char* pixelBuffer = nullptr;
@@ -140,6 +145,8 @@ namespace FocalEngine
 		size_t framesBeforeUpdate = 50;
 		bool brushVisualFBCleared = false;
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
+
+		std::vector<FEEntityInstanced*> snapedInstancedEntities;
 	};
 }
 

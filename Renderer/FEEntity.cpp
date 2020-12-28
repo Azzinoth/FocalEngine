@@ -1,12 +1,17 @@
 #include "FEEntity.h"
 using namespace FocalEngine;
 
+FEEntity::FEEntity() : FEAsset(FE_ENTITY, "")
+{
+}
+
 FEEntity::FEEntity(FEGameModel* gameModel, std::string Name) : FEAsset(FE_ENTITY, Name)
 {
 	this->gameModel = gameModel;
 	setName(Name);
 	if (this->gameModel->mesh != nullptr)
 		entityAABB = this->gameModel->mesh->getAABB();
+	transform.setScale(glm::vec3(this->gameModel->getScaleFactor()));
 }
 
 FEEntity::~FEEntity()

@@ -1,5 +1,3 @@
-#version 450 core
-
 in VS_OUT
 {
 	vec3 fragPosition;

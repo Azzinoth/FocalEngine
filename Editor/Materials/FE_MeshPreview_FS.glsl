@@ -1,5 +1,3 @@
-#version 450 core
-
 in vec3 fragPosition;
 in vec3 normal;
 @CameraPosition@

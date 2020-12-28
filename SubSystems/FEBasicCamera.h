@@ -60,6 +60,9 @@ namespace FocalEngine
 		virtual void reset();
 
 		virtual void setOnUpdate(void(*func)(FEBasicCamera*));
+
+		virtual void updateFrustumPlanes();
+		virtual float** getFrustumPlanes();
 	protected:
 		bool isInputActive = true;
 
@@ -82,5 +85,7 @@ namespace FocalEngine
 		GLFWwindow* window;
 
 		void(*clientOnUpdateImpl)(FEBasicCamera*) = nullptr;
+
+		float** frustum;
 	};
 }

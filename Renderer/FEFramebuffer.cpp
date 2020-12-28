@@ -50,6 +50,10 @@ FEFramebuffer::FEFramebuffer(/*int attachments, int Width, int Height, bool HDR*
 FEFramebuffer::~FEFramebuffer()
 {
 	FE_GL_ERROR(glDeleteFramebuffers(1, &fbo));
+	delete colorAttachment;
+	delete depthAttachment;
+	depthAttachment = nullptr;
+	delete stencilAttachment;
 }
 
 void FEFramebuffer::bind()

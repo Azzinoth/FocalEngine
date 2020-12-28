@@ -1,5 +1,3 @@
-#version 450 core
-
 layout (quads, fractional_even_spacing) in;
 
 uniform float hightScale;

@@ -20,6 +20,63 @@ namespace FocalEngine
 		FE_ENTITY_INSTANCED = 8
 	};
 
+	static std::string FEAssetTypeToString(FEAssetType type)
+	{
+		switch (type)
+		{
+			case FocalEngine::FE_NULL:
+			{
+				return "FE_NULL";
+				break;
+			}
+			case FocalEngine::FE_SHADER:
+			{
+				return "FE_SHADER";
+				break;
+			}
+			case FocalEngine::FE_TEXTURE:
+			{
+				return "FE_TEXTURE";
+				break;
+			}
+			case FocalEngine::FE_MESH:
+			{
+				return "FE_MESH";
+				break;
+			}
+			case FocalEngine::FE_MATERIAL:
+			{
+				return "FE_MATERIAL";
+				break;
+			}
+			case FocalEngine::FE_GAMEMODEL:
+			{
+				return "FE_GAMEMODEL";
+				break;
+			}
+			case FocalEngine::FE_ENTITY:
+			{
+				return "FE_ENTITY";
+				break;
+			}
+			
+			case FocalEngine::FE_TERRAIN:
+			{
+				return "FE_TERRAIN";
+				break;
+			}
+			case FocalEngine::FE_ENTITY_INSTANCED:
+			{
+				return "FE_ENTITY_INSTANCED";
+				break;
+			}
+			default:
+				break;
+		}
+
+		return "FE_NULL";
+	}
+
 	class FEResourceManager;
 
 	// This function can produce ID's that are identical but it is extremely rare

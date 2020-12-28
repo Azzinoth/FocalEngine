@@ -1,4 +1,5 @@
 #pragma once
+#pragma warning (disable: 4752)     // found Intel(R) Advanced Vector Extensions; consider using / arch:AVX	FocalEnginePrivate
 
 #include "FETime.h"
 
@@ -33,6 +34,10 @@
 #include "jsoncpp/json/json.h"
 
 #include <xmmintrin.h>
+#include <stdlib.h>
+
+#include <thread>
+#include <atomic>
 
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
 
@@ -80,11 +85,26 @@ while (iterator != map.end())              \
                                            \
 return result;
 
+static double FENextPowerOfTwo(double currentNumber)
+{
+	double next = 0.0;
+	int iteration = 0;
+	while (currentNumber >= next)
+	{
+		next = pow(2.0, iteration);
+		iteration++;
+	}                         
+
+	return next;
+}
+
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 16
 #define FE_WIN_32
 #define FE_MESH_VERSION 0.01f
 #define FE_TEXTURE_VERSION 0.01f
+
+#define FE_SIMD_ENABLED
 
 //#define FE_OLD_LOAD
 //#define FE_OLD_SAVE

@@ -1,4 +1,3 @@
-#version 450 core
 @In_Position@
 @In_UV@
 @In_Material_Index@

@@ -101,7 +101,7 @@ namespace FocalEngine
 	public:
 		FEShader(std::string name, const char* vertexText, const char* fragmentText,
 			const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-			const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false);
+			const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false, int glslVersion = 450);
 		~FEShader();
 
 		FEShader(const FEShader& shader);
@@ -176,6 +176,7 @@ namespace FocalEngine
 		bool CSM = false;
 		bool testCompilationMode = false;
 		bool materialTexturesList = false;
+		int glslVersion;
 
 #ifdef FE_DEBUG_ENABLED
 		bool debugRequest = false;

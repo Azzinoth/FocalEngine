@@ -34,14 +34,6 @@ namespace FocalEngine
 		std::vector<int> textureBindings;
 		std::vector<int> textureChannels;
 
-		FETexture* albedoMap;
-		FETexture* normalMap;
-		FETexture* roughtnessMap;
-		FETexture* metalnessMap;
-		FETexture* AOMap;
-		FETexture* displacementMap;
-		FETexture* MRAOMap;
-
 		void addParameter(FEShaderParam newParameter);
 		std::vector<std::string> getParameterList();
 		FEShaderParam* getParameter(std::string name);

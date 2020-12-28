@@ -5,7 +5,7 @@
 #include "../CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng/lodepng.h"
-#include "../SubSystems/FEFileSystem.h"
+#include "../SubSystems/FEJobManager.h"
 
 namespace FocalEngine
 {
@@ -38,6 +38,8 @@ namespace FocalEngine
 		FETexture* LoadPNGTextureWithTransparencyMask(const char* mainfileName, const char* maskFileName, std::string Name);
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const char* fileName, std::string Name = "");
+		FETexture* LoadFETexture(char* fileData, std::string Name = "", FETexture* existingTexture = nullptr);
+		FETexture* LoadFETextureAsync(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr);
 		FETexture* LoadPNGHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
 		FETexture* LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
 		FETexture* rawDataToFETexture(char* textureData, int width, int height, bool isAlphaUsed = false);
@@ -102,6 +104,11 @@ namespace FocalEngine
 
 		void reSaveStandardTextures();
 		void reSaveStandardMeshes();
+
+		float totalTimeDisk = 0.0f;
+		float TimeOpenGL = 0.0f;
+		float TimeOpenGLmip = 0.0f;
+		float TimeOpenGLmipload = 0.0f;
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 

@@ -1,5 +1,3 @@
-#version 450 core
-
 out vec2 vertex_UV;
 
 void main(void)

@@ -160,3 +160,84 @@ bool FEAABB::rayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& di
 	distance = std::fmax(std::fmax(std::fmin(tmin, tmax), std::fmin(tymin, tymax)), std::fmin(tzmin, tzmax));
 	return true;
 }
+
+// only for uniform sized AABB
+FEAABB::FEAABB(glm::vec3 center, float size)
+{
+	float halfSize = size / 2.0f;
+	min[0] = center[0] - halfSize;
+	min[1] = center[1] - halfSize;
+	min[2] = center[2] - halfSize;
+
+	max[0] = center[0] + halfSize;
+	max[1] = center[1] + halfSize;
+	max[2] = center[2] + halfSize;
+}
+
+FEAABB::FEAABB(FEAABB other, glm::mat4 transformMatrix)
+{
+	// firstly we generate 8 points that represent AABBCube.
+	// bottom 4 points
+	glm::vec4 bottomLeftFront = glm::vec4(other.min.x, other.min.y, other.max.z, 1.0f);
+	glm::vec4 bottomRightFront = glm::vec4(other.max.x, other.min.y, other.max.z, 1.0f);
+	glm::vec4 bottomRightBack = glm::vec4(other.max.x, other.min.y, other.min.z, 1.0f);
+	glm::vec4 bottomLeftBack = glm::vec4(other.min.x, other.min.y, other.min.z, 1.0f);
+	// top 4 points
+	glm::vec4 topLeftFront = glm::vec4(other.min.x, other.max.y, other.max.z, 1.0f);
+	glm::vec4 topRightFront = glm::vec4(other.max.x, other.max.y, other.max.z, 1.0f);
+	glm::vec4 topRightBack = glm::vec4(other.max.x, other.max.y, other.min.z, 1.0f);
+	glm::vec4 topLeftBack = glm::vec4(other.min.x, other.max.y, other.min.z, 1.0f);
+
+	// transform each point of this cube
+	bottomLeftFront = transformMatrix * bottomLeftFront;
+	bottomRightFront = transformMatrix * bottomRightFront;
+	bottomRightBack = transformMatrix * bottomRightBack;
+	bottomLeftBack = transformMatrix * bottomLeftBack;
+
+	topLeftFront = transformMatrix * topLeftFront;
+	topRightFront = transformMatrix * topRightFront;
+	topRightBack = transformMatrix * topRightBack;
+	topLeftBack = transformMatrix * topLeftBack;
+
+	// for more convenient searching
+	std::vector<glm::vec4> allPoints;
+	allPoints.push_back(bottomLeftFront);
+	allPoints.push_back(bottomRightFront);
+	allPoints.push_back(bottomRightBack);
+	allPoints.push_back(bottomLeftBack);
+
+	allPoints.push_back(topLeftFront);
+	allPoints.push_back(topRightFront);
+	allPoints.push_back(topRightBack);
+	allPoints.push_back(topLeftBack);
+
+	min = glm::vec3(FLT_MAX);
+	max = glm::vec3(-FLT_MAX);
+	for (auto point : allPoints)
+	{
+		if (point.x < min.x)
+			min.x = point.x;
+
+		if (point.x > max.x)
+			max.x = point.x;
+
+		if (point.y < min.y)
+			min.y = point.y;
+
+		if (point.y > max.y)
+			max.y = point.y;
+
+		if (point.z < min.z)
+			min.z = point.z;
+
+		if (point.z > max.z)
+			max.z = point.z;
+	}
+
+	size = abs(max.x - min.x);
+	if (abs(max.y - min.y) > size)
+		size = abs(max.y - min.y);
+
+	if (abs(max.z - min.z) > size)
+		size = abs(max.z - min.z);
+}

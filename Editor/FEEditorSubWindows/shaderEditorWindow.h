@@ -293,11 +293,11 @@ public:
 				delete dummyShader;
 
 			dummyShader = new FEShader("dummyShader", vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
-				tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
-				tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
-				geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
-				computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr,
-				true);
+													  tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
+													  tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
+													  geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
+													  computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr,
+													  true);
 
 			std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
 			for (size_t i = 0; i < oldParameters.size(); i++)
@@ -312,12 +312,11 @@ public:
 			}
 			else
 			{
-
 				FEShader* reCompiledShader = new FEShader(shaderToEdit->getName(), vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
-					tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
-					tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
-					geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
-					computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr);
+														  tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
+														  tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
+														  geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
+														  computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr);
 
 				std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
 				for (size_t i = 0; i < oldParameters.size(); i++)

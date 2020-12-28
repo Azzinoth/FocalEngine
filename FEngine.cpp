@@ -166,6 +166,9 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 		//return -1;
 	}
 
+	//glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	//test_offscreen_context = glfwCreateWindow(640, 480, "", NULL, window);
+
 	glfwMakeContextCurrent(window);
 	glewInit();
 

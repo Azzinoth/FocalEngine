@@ -44,6 +44,14 @@ ImGuiButton::ImGuiButton(std::string caption)
 	strcpy_s(this->caption, caption.size() + 1, caption.c_str());
 }
 
+void ImGuiButton::setCaption(std::string newCaption)
+{
+	if (newCaption.size() + 1 > BUTTON_CAPTION_SIZE)
+		newCaption.erase(newCaption.begin() + BUTTON_CAPTION_SIZE - 1, newCaption.end() - (BUTTON_CAPTION_SIZE + 1));
+
+	strcpy_s(this->caption, newCaption.size() + 1, newCaption.c_str());
+}
+
 ImVec2 ImGuiButton::getPosition()
 {
 	return position;
@@ -426,4 +434,283 @@ void setDefaultStyle(ImGuiImageButton* button)
 	button->setDefaultColor(defaultColor);
 	button->setHoveredColor(hoveredColor);
 	button->setActiveColor(activeColor);
+}
+
+float FERangeRecord::getRangeSpan()
+{
+	return rangeSpan;
+}
+
+std::string FERangeRecord::getCaption()
+{
+	return caption;
+}
+
+void FERangeRecord::setCaption(std::string newValue)
+{
+	caption = newValue;
+}
+
+std::string FERangeRecord::getToolTipText()
+{
+	return toolTipText;
+}
+
+void FERangeRecord::setToolTipText(std::string newValue)
+{
+	toolTipText = newValue;
+}
+
+ImColor FERangeRecord::getColor()
+{
+	return color;
+}
+
+void FERangeRecord::setColor(ImColor newValue)
+{
+	color = newValue;
+}
+
+FERangeConfigurator::FERangeConfigurator()
+{
+}
+
+ImVec2 FERangeConfigurator::getPosition()
+{
+	return position;
+}
+
+void FERangeConfigurator::setPosition(ImVec2 newPosition)
+{
+	position = newPosition;
+}
+
+ImVec2 FERangeConfigurator::getSize()
+{
+	return size;
+}
+
+void FERangeConfigurator::setSize(ImVec2 newSize)
+{
+	if (newSize.x < 100)
+		newSize.x = 100;
+	size = newSize;
+}
+
+bool FERangeConfigurator::isVisible()
+{
+	return visible;
+}
+
+void FERangeConfigurator::recalculateRangeInfo()
+{
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		if (i == 0)
+		{
+			ranges[i].rect.left = LONG(position.x);
+		}
+		else
+		{
+			ranges[i].rect.left = LONG(ranges[i - 1].rect.right);
+		}
+
+		ranges[i].rect.right = LONG(ranges[i].rect.left + size.x * ranges[i].rangeSpan);
+		ranges[i].rect.top = LONG(position.y);
+		ranges[i].rect.bottom = LONG(ranges[i].rect.top + size.y);
+
+		ranges[i].scrollRect.left = LONG(ranges[i].rect.right - SCROLLER_SIZE / 2.0f);
+		ranges[i].scrollRect.right = LONG(ranges[i].rect.right + SCROLLER_SIZE / 2.0f);
+		ranges[i].scrollRect.top = LONG(ranges[i].rect.top - SCROLLER_SIZE);
+		ranges[i].scrollRect.bottom = LONG(ranges[i].rect.top);
+	}
+}
+
+bool FERangeConfigurator::addRange(float rangeSpan, std::string caption, std::string toolTipText, ImColor color)
+{
+	if (ranges.size() >= 100)
+		return false;
+
+	FERangeRecord newRange;
+	newRange.rangeSpan = rangeSpan;
+
+	newRange.caption = caption;
+	newRange.toolTipText = toolTipText;
+	newRange.color = color;
+
+	ranges.push_back(newRange);
+	recalculateRangeInfo();
+
+	return true;
+}
+
+void FERangeConfigurator::normalizeRanges()
+{
+	float coverage = 0.0f;
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		coverage += ranges[i].rangeSpan;
+	}
+
+	float scale = 1.0f / coverage;
+	if (abs(1.0f - coverage) > 0.01f)
+	{
+		for (size_t i = 0; i < ranges.size(); i++)
+		{
+			ranges[i].rangeSpan *= scale;
+		}
+
+		recalculateRangeInfo();
+	}
+}
+
+void FERangeConfigurator::inputCalculations()
+{
+	float mouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
+	float mouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
+
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		if (mouseXWindows >= ranges[i].rect.left && mouseXWindows < ranges[i].rect.right &&
+			mouseYWindows >= ranges[i].rect.top && mouseYWindows < ranges[i].rect.bottom)
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(ranges[i].toolTipText.c_str());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+
+		if (i == ranges.size() - 1)
+			break;
+
+		if (ImGui::GetIO().MouseClicked[0])
+		{
+			if (mouseXWindows >= ranges[i].scrollRect.left && mouseXWindows < ranges[i].scrollRect.right &&
+				mouseYWindows >= ranges[i].scrollRect.top && mouseYWindows < ranges[i].scrollRect.bottom)
+			{
+				ranges[i].scrollSelected = true;
+				break;
+			}
+			else
+			{
+				ranges[i].scrollSelected = false;
+			}
+		}
+	}
+
+	if (ImGui::GetIO().MouseReleased[0])
+	{
+		for (size_t i = 0; i < ranges.size(); i++)
+		{
+			ranges[i].scrollSelected = false;
+		}
+	}
+
+	ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_None;
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		if (ranges[i].scrollSelected)
+		{
+			ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_NoMove;
+			float needToAdd = (mouseXWindows - lastMouseX) / size.x;
+			if (ranges[i + 1].rangeSpan - needToAdd < 0.001f || ranges[i].rangeSpan + needToAdd < 0.001f)
+				break;
+			
+			ranges[i + 1].rangeSpan -= needToAdd;
+			ranges[i].rangeSpan += needToAdd;
+			recalculateRangeInfo();
+			
+			break;
+		}
+	}
+
+	lastMouseX = mouseXWindows;
+}
+
+void FERangeConfigurator::render()
+{
+	normalizeRanges();
+	inputCalculations();
+
+	screenX = ImGui::GetCurrentWindow()->Pos.x + position.x;
+	screenY = ImGui::GetCurrentWindow()->Pos.y + position.y;
+
+	float beginX = screenX;
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenX + (ranges[i].rect.left - position.x), screenY), ImVec2(beginX + (ranges[i].rect.right - ranges[i].rect.left), screenY + size.y), ranges[i].color);
+		ImVec2 textSize = ImGui::CalcTextSize(ranges[i].caption.c_str());
+		ImGui::SetCursorPosX(ranges[i].rect.left + (ranges[i].rect.right - ranges[i].rect.left) / 2.0f - textSize.x / 2.0f);
+		ImGui::SetCursorPosY(position.y + size.y / 2.0f - textSize.y / 2.0f);
+		ImGui::Text(ranges[i].caption.c_str());
+
+		if (i == ranges.size() - 1)
+			break;
+
+		ImVec2 P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.left,
+						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.top);
+		ImVec2 P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.right,
+						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.top);
+		ImVec2 P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.left + (ranges[i].scrollRect.right - ranges[i].scrollRect.left) / 2.0f,
+						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.bottom);
+
+		if (ranges[i].scrollSelected)
+		{
+			ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, ImColor(115, 115, 255, 255));
+			ImGui::GetWindowDrawList()->AddRect(ImVec2(screenX + (ranges[i].rect.left - position.x), screenY), ImVec2(beginX + (ranges[i].rect.right - ranges[i].rect.left), screenY + size.y), ImColor(10, 10, 10, 255), 0.0f, 0, 3.0f);
+			
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(ranges[i].toolTipText.c_str());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
+		else
+		{
+			ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, ImColor(10, 10, 10, 255));
+		}
+
+		beginX += ranges[i].rect.right - ranges[i].rect.left;
+	}
+
+	if (ranges.size() == 0)
+	{
+		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenX, screenY), ImVec2(screenX + size.x, screenY + size.y), ImColor(125, 125, 125, 255));
+		ImVec2 textSize = ImGui::CalcTextSize("No ranges");
+		ImGui::SetCursorPosX(position.x + size.x / 2.0f - textSize.x / 2.0f);
+		ImGui::SetCursorPosY(position.y + size.y / 2.0f - textSize.y / 2.0f);
+		ImGui::Text("No ranges");
+	}
+}
+
+void FERangeConfigurator::deleteRange(size_t index)
+{
+	if (index >= ranges.size())
+		return;
+
+	ranges.erase(ranges.begin() + index);
+}
+
+std::vector<FERangeRecord> FERangeConfigurator::getRangesRecordsCopy()
+{
+	return ranges;
+}
+
+FERangeRecord* FERangeConfigurator::getRangesRecord(size_t index)
+{
+	if (index >= ranges.size())
+		return nullptr;
+
+	return &ranges[index];
+}
+
+int FERangeConfigurator::getRangesCount()
+{
+	return ranges.size();
+}
+
+void FERangeConfigurator::clear()
+{
+	ranges.clear();
 }

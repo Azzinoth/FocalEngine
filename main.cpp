@@ -5,6 +5,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ENGINE.createWindow();
 	EDITOR.initializeResources();
 
+	//GLFWwindow* window = glfwGetCurrentContext();
+
+	//glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	//offscreen_context = glfwCreateWindow(640, 480, "", NULL, ENGINE.window);
+
+	//window = glfwGetCurrentContext();
+	//glfwMakeContextCurrent(ENGINE.window);
+
+	//window = glfwGetCurrentContext();
+
+	
+
 	const int frameCountTillMeasure = 20;
 	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
 	float gpuFrameDurations[frameCountTillMeasure] = { 0.0f };
@@ -12,6 +24,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	float avarageCpuFrameDuration = 0.0f;
 	float avarageGpuFrameDuration = 0.0f;
+
+	int countOfFalse = 0;
 
 	while (ENGINE.isWindowOpened())
 	{
@@ -24,6 +38,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Image((void*)(intptr_t)RENDERER.CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			ImGui::Image((void*)(intptr_t)RENDERER.CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			ImGui::Image((void*)(intptr_t)RENDERER.CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
+			std::string totalTimeDisk = "totalTimeDisk: " + std::to_string(RESOURCE_MANAGER.totalTimeDisk);
+			ImGui::Text(totalTimeDisk.c_str());
+
+			std::string TimeOpenGL = "TimeOpenGL: " + std::to_string(RESOURCE_MANAGER.TimeOpenGL);
+			ImGui::Text(TimeOpenGL.c_str());
+
+			std::string TimeOpenGLmip = "TimeOpenGLmip: " + std::to_string(RESOURCE_MANAGER.TimeOpenGLmip);
+			ImGui::Text(TimeOpenGLmip.c_str());
+
+			std::string TimeOpenGLmipload = "TimeOpenGLmipload: " + std::to_string(RESOURCE_MANAGER.TimeOpenGLmipload);
+			ImGui::Text(TimeOpenGLmipload.c_str());
 		}
 
 		//ImGui::ShowDemoWindow();

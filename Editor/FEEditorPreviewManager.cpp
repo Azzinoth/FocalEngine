@@ -20,21 +20,20 @@ void FEEditorPreviewManager::initializeResources()
 
 void FEEditorPreviewManager::updateAll()
 {
-	meshPreviewTextures.clear();
+	clear();
+
 	std::vector<std::string> meshList = RESOURCE_MANAGER.getMeshList();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
 		createMeshPreview(meshList[i]);
 	}
 
-	materialPreviewTextures.clear();
 	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
 		createMaterialPreview(materialList[i]);
 	}
 
-	gameModelPreviewTextures.clear();
 	std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
@@ -101,6 +100,10 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshName)
 	ENGINE.getCamera()->setYaw(regularCameraYaw);
 
 	previewFB->unBind();
+
+	// if we are updating preview we should delete old texture.
+	if (meshPreviewTextures.find(meshName) != meshPreviewTextures.end())
+		delete meshPreviewTextures[meshName];
 
 	meshPreviewTextures[meshName] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
@@ -185,6 +188,10 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
 
 	previewFB->unBind();
 
+	// if we are updating preview we should delete old texture.
+	if (materialPreviewTextures.find(materialName) != materialPreviewTextures.end())
+		delete materialPreviewTextures[materialName];
+
 	materialPreviewTextures[materialName] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
 
@@ -193,13 +200,20 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
 		FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
-		if (currentGameModel->material == previewMaterial)
+		if (currentGameModel->material == previewMaterial && currentGameModel != previewGameModel)
 			createGameModelPreview(currentGameModel->getName());
 	}
 }
 
 FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialName)
 {
+	// if matrial's dirty flag is set we need to update preview
+	if (RESOURCE_MANAGER.getMaterial(materialName)->getDirtyFlag())
+	{
+		createMaterialPreview(materialName);
+		RESOURCE_MANAGER.getMaterial(materialName)->setDirtyFlag(false);
+	}	
+
 	// if we somehow could not find preview, we will create it.
 	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
 		createMaterialPreview(materialName);
@@ -233,6 +247,9 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 
 	float regularLightIntensity = currentDirectionalLight->getIntensity();
 	currentDirectionalLight->setIntensity(10.0f);
+
+	bool regularFog = RENDERER.isDistanceFogEnabled();
+	RENDERER.setDistanceFogEnabled(false);
 
 	previewGameModel->mesh = gameModel->mesh;
 	previewGameModel->material = gameModel->material;
@@ -292,7 +309,13 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 	currentDirectionalLight->transform.setRotation(regularLightRotation);
 	currentDirectionalLight->setIntensity(regularLightIntensity);
 
+	RENDERER.setDistanceFogEnabled(regularFog);
+
 	previewFB->unBind();
+
+	// if we are updating preview we should delete old texture.
+	if (gameModelPreviewTextures.find(gameModelName) != gameModelPreviewTextures.end())
+		delete gameModelPreviewTextures[gameModelName];
 
 	gameModelPreviewTextures[gameModelName] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
@@ -397,4 +420,31 @@ FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelName
 		return RESOURCE_MANAGER.noTexture;
 
 	return gameModelPreviewTextures[gameModelName];
+}
+
+void FEEditorPreviewManager::clear()
+{
+	auto iterator = meshPreviewTextures.begin();
+	while (iterator != meshPreviewTextures.end())
+	{
+		delete iterator->second;
+		iterator++;
+	}
+	meshPreviewTextures.clear();
+
+	iterator = materialPreviewTextures.begin();
+	while (iterator != materialPreviewTextures.end())
+	{
+		delete iterator->second;
+		iterator++;
+	}
+	materialPreviewTextures.clear();
+
+	iterator = gameModelPreviewTextures.begin();
+	while (iterator != gameModelPreviewTextures.end())
+	{
+		delete iterator->second;
+		iterator++;
+	}
+	gameModelPreviewTextures.clear();
 }

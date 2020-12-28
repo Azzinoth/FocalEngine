@@ -4,12 +4,6 @@ using namespace FocalEngine;
 FEMaterial::FEMaterial(std::string Name) : FEAsset(FE_MATERIAL, Name)
 {
 	name = Name;
-	albedoMap = nullptr;
-	normalMap = nullptr;
-	roughtnessMap = nullptr;
-	metalnessMap = nullptr;
-	AOMap = nullptr;
-	displacementMap = nullptr;
 
 	textures.resize(FE_MAX_TEXTURES_PER_MATERIAL);
 	std::for_each(textures.begin(), textures.end(), [](FETexture*& item) {
@@ -36,23 +30,10 @@ void FEMaterial::bind()
 	if (shader != nullptr)
 		shader->start();
 
-	if (shader->getName().find("PBR") == size_t(-1))
+	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
-		if (albedoMap != nullptr) albedoMap->bind(0);
-		if (normalMap != nullptr) normalMap->bind(1);
-		if (AOMap != nullptr) AOMap->bind(2);
-		if (roughtnessMap != nullptr) roughtnessMap->bind(3);
-		if (metalnessMap != nullptr) metalnessMap->bind(4);
-		if (MRAOMap != nullptr) MRAOMap->bind(5);
-		if (displacementMap != nullptr) displacementMap->bind(6);
-	}
-	else
-	{
-		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
-		{
-			if (textures[i] != nullptr)
-				textures[i]->bind(i);
-		}
+		if (textures[i] != nullptr)
+			textures[i]->bind(i);
 	}
 
 	// #fix such specific if statement in this class is not clean coding
@@ -65,12 +46,11 @@ void FEMaterial::unBind()
 	if (shader != nullptr)
 		shader->stop();
 
-	if (albedoMap != nullptr) albedoMap->unBind();
-	if (normalMap != nullptr) normalMap->unBind();
-	if (roughtnessMap != nullptr) roughtnessMap->unBind();
-	if (metalnessMap != nullptr) metalnessMap->unBind();
-	if (AOMap != nullptr) AOMap->unBind();
-	if (displacementMap != nullptr) displacementMap->unBind();
+	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+	{
+		if (textures[i] != nullptr)
+			textures[i]->unBind();
+	}
 }
 
 void FEMaterial::setParam(std::string name, int newData)

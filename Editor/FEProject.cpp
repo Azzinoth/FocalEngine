@@ -50,6 +50,7 @@ void FEProjectManager::closeCurrentProject()
 	}
 	list.clear();
 	PROJECT_MANAGER.setCurrent(nullptr);
+	PREVIEW_MANAGER.clear();
 
 	loadProjectList();
 	SELECTED.clear();
@@ -385,7 +386,24 @@ void FEProject::saveScene()
 		gameModelData[gameModel->getName()]["name"] = gameModel->getName();
 		gameModelData[gameModel->getName()]["mesh"] = gameModel->mesh->getName();
 		gameModelData[gameModel->getName()]["material"] = gameModel->material->getName();
+		gameModelData[gameModel->getName()]["scaleFactor"] = gameModel->getScaleFactor();
 
+		gameModelData[gameModel->getName()]["LODs"]["haveLODlevels"] = gameModel->useLODlevels();
+		if (gameModel->useLODlevels())
+		{
+			gameModelData[gameModel->getName()]["LODs"]["cullDistance"] = gameModel->getCullDistance();
+			gameModelData[gameModel->getName()]["LODs"]["billboardZeroRotaion"] = gameModel->getBillboardZeroRotaion();
+			gameModelData[gameModel->getName()]["LODs"]["LODCount"] = gameModel->getLODCount();
+			for (size_t j = 0; j < gameModel->getLODCount(); j++)
+			{
+				gameModelData[gameModel->getName()]["LODs"][std::to_string(j)]["mesh"] = gameModel->getLODMesh(j)->getName();
+				gameModelData[gameModel->getName()]["LODs"][std::to_string(j)]["maxDrawDistance"] = gameModel->getLODMaxDrawDistance(j);
+				gameModelData[gameModel->getName()]["LODs"][std::to_string(j)]["isBillboard"] = gameModel->isLODBillboard(j);
+				if (gameModel->isLODBillboard(j))
+					gameModelData[gameModel->getName()]["LODs"][std::to_string(j)]["billboardMaterial"] = gameModel->getBillboardMaterial()->getName();
+			}
+		}
+		
 		gameModel->setDirtyFlag(false);
 	}
 	root["gameModels"] = gameModelData;
@@ -400,9 +418,30 @@ void FEProject::saveScene()
 			continue;
 
 		entityData[entity->getName()]["ID"] = entity->getAssetID();
+		entityData[entity->getName()]["type"] = FEAssetTypeToString(entity->getType());
 		entityData[entity->getName()]["name"] = entity->getName();
 		entityData[entity->getName()]["gameModel"] = entity->gameModel->getName();
 		writeTransformToJSON(entityData[entity->getName()]["transformation"], &entity->transform);
+
+		if (entity->getType() == FE_ENTITY_INSTANCED)
+		{
+			FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entity);
+			entityData[entity->getName()]["spawnInfo"]["seed"] = instancedEntity->spawnInfo.seed;
+			entityData[entity->getName()]["spawnInfo"]["objectCount"] = instancedEntity->spawnInfo.objectCount;
+			entityData[entity->getName()]["spawnInfo"]["radius"] = instancedEntity->spawnInfo.radius;
+			entityData[entity->getName()]["spawnInfo"]["scaleDeviation"] = instancedEntity->spawnInfo.scaleDeviation;
+			entityData[entity->getName()]["spawnInfo"]["rotationDeviation.x"] = instancedEntity->spawnInfo.rotationDeviation.x;
+			entityData[entity->getName()]["spawnInfo"]["rotationDeviation.y"] = instancedEntity->spawnInfo.rotationDeviation.y;
+			entityData[entity->getName()]["spawnInfo"]["rotationDeviation.z"] = instancedEntity->spawnInfo.rotationDeviation.z;
+			if (instancedEntity->getSnappedToTerrain() == nullptr)
+			{
+				entityData[entity->getName()]["snappedToTerrain"] = "none";
+			}
+			else
+			{
+				entityData[entity->getName()]["snappedToTerrain"] = instancedEntity->getSnappedToTerrain()->getName();
+			}
+		}
 
 		entity->setDirtyFlag(false);
 	}
@@ -596,7 +635,7 @@ void FEProject::loadScene()
 			continue;
 		}
 
-		FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["textures"][texturesList[i]]["fileName"].asCString()).c_str(), root["textures"][texturesList[i]]["name"].asString());
+		FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETextureAsync((projectFolder + root["textures"][texturesList[i]]["fileName"].asCString()).c_str(), root["textures"][texturesList[i]]["name"].asString());
 	}
 
 	// loading Materials
@@ -606,6 +645,7 @@ void FEProject::loadScene()
 		FEMaterial* newMat = RESOURCE_MANAGER.createMaterial(materialsList[i], root["materials"][materialsList[i]]["ID"].asString());
 
 		//newMat->shader = RESOURCE_MANAGER.getShader("FEPhongShader");
+		//newMat->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 		newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
 
 		std::vector<Json::String> membersList = root["materials"][materialsList[i]].getMemberNames();
@@ -661,17 +701,30 @@ void FEProject::loadScene()
 	std::vector<Json::String> gameModelList = root["gameModels"].getMemberNames();
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
-		RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
-										 RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
-										 gameModelList[i], root["gameModels"][gameModelList[i]]["ID"].asString());
-	}
+		FEGameModel* newGameModel = RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
+																	 RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
+																	 gameModelList[i], root["gameModels"][gameModelList[i]]["ID"].asString());
+		newGameModel->setScaleFactor(root["gameModels"][gameModelList[i]]["scaleFactor"].asFloat());
 
-	// loading Entities
-	std::vector<Json::String> entityList = root["entities"].getMemberNames();
-	for (size_t i = 0; i < entityList.size(); i++)
-	{
-		SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
-		readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
+		bool haveLODLevels = root["gameModels"][gameModelList[i]]["LODs"]["haveLODlevels"].asBool();
+		newGameModel->setUsingLODlevels(haveLODLevels);
+		if (haveLODLevels)
+		{
+			newGameModel->setCullDistance(root["gameModels"][gameModelList[i]]["LODs"]["cullDistance"].asFloat());
+			newGameModel->setBillboardZeroRotaion(root["gameModels"][gameModelList[i]]["LODs"]["billboardZeroRotaion"].asFloat());
+
+			size_t LODCount = root["gameModels"][gameModelList[i]]["LODs"]["LODCount"].asInt();
+			for (size_t j = 0; j < LODCount; j++)
+			{
+				newGameModel->setLODMesh(j, RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["LODs"][std::to_string(j)]["mesh"].asString()));
+				newGameModel->setLODMaxDrawDistance(j, root["gameModels"][gameModelList[i]]["LODs"][std::to_string(j)]["maxDrawDistance"].asFloat());
+
+				bool isLODBillboard = root["gameModels"][gameModelList[i]]["LODs"][std::to_string(j)]["isBillboard"].asBool();
+				newGameModel->setIsLODBillboard(j, isLODBillboard);
+				if (isLODBillboard)
+					newGameModel->setBillboardMaterial(RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["LODs"][std::to_string(j)]["billboardMaterial"].asString()));
+			}
+		}
 	}
 
 	// loading Terrains
@@ -695,6 +748,46 @@ void FEProject::loadScene()
 		readTransformToJSON(root["terrains"][terrainList[i]]["transformation"], &newTerrain->transform);
 
 		SCENE.addTerrain(newTerrain);
+	}
+
+	// loading Entities
+	std::vector<Json::String> entityList = root["entities"].getMemberNames();
+	for (size_t i = 0; i < entityList.size(); i++)
+	{
+		if (root["entities"][entityList[i]].isMember("type"))
+		{
+			if (root["entities"][entityList[i]]["type"] == "FE_ENTITY_INSTANCED")
+			{
+				FEEntityInstanced* instancedEntity = SCENE.addEntityInstanced(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
+				readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
+
+				instancedEntity->spawnInfo.seed = root["entities"][entityList[i]]["spawnInfo"]["seed"].asInt();
+				instancedEntity->spawnInfo.objectCount = root["entities"][entityList[i]]["spawnInfo"]["objectCount"].asInt();
+				instancedEntity->spawnInfo.radius = root["entities"][entityList[i]]["spawnInfo"]["radius"].asFloat();
+				instancedEntity->spawnInfo.scaleDeviation = root["entities"][entityList[i]]["spawnInfo"]["scaleDeviation"].asFloat();
+				instancedEntity->spawnInfo.rotationDeviation.x = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.x"].asFloat();
+				instancedEntity->spawnInfo.rotationDeviation.y = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.y"].asFloat();
+				instancedEntity->spawnInfo.rotationDeviation.z = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.z"].asFloat();
+
+				if (root["entities"][entityList[i]]["snappedToTerrain"].asString() != "none")
+				{
+					FETerrain* terrain = SCENE.getTerrain(root["entities"][entityList[i]]["snappedToTerrain"].asString());
+					terrain->snapInstancedEntity(instancedEntity);
+				}
+
+				instancedEntity->populate(instancedEntity->spawnInfo);
+			}
+			else
+			{
+				SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
+				readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
+			}
+		}
+		else
+		{
+			SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
+			readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
+		}
 	}
 
 	// loading Lights
@@ -762,7 +855,7 @@ void FEProject::loadScene()
 	RENDERER.setDOFStrength(root["effects"]["Depth of Field"]["Strength"].asFloat());
 	RENDERER.setDOFDistanceDependentStrength(root["effects"]["Depth of Field"]["Distance dependent strength"].asFloat());
 	// *********** Distance fog ***********
-	RENDERER.setDistanceFogEnabld(root["effects"]["Distance fog"]["Density"].asFloat() > -1.0f ? true : false);
+	RENDERER.setDistanceFogEnabled(root["effects"]["Distance fog"]["Density"].asFloat() > -1.0f ? true : false);
 	RENDERER.setDistanceFogDensity(root["effects"]["Distance fog"]["Density"].asFloat());
 	RENDERER.setDistanceFogGradient(root["effects"]["Distance fog"]["Gradient"].asFloat());
 	// *********** Chromatic Aberration ***********

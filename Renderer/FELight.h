@@ -102,6 +102,7 @@ namespace FocalEngine
 		glm::mat4 projectionMat;
 		glm::mat4 viewMat;
 		FEFramebuffer* frameBuffer = nullptr;
+		float** frustum;
 	};
 
 	class FEDirectionalLight : public FELight

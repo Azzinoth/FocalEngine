@@ -54,6 +54,8 @@ private:
 	void createGameModelPreview(std::string gameModelName);
 	void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture);
 	FETexture* getGameModelPreview(std::string gameModelName);
+
+	void clear();
 };
 
 #define PREVIEW_MANAGER FEEditorPreviewManager::getInstance()

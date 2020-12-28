@@ -43,6 +43,9 @@ namespace FocalEngine
 		void resetCamera();
 
 		glm::dvec3 constructMouseRay();
+		//GLFWwindow* window;
+
+		//GLFWwindow* test_offscreen_context = nullptr;
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 

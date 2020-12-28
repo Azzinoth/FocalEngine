@@ -60,6 +60,8 @@ public:
 	ImGuiButton(std::string caption);
 	void render();
 
+	void setCaption(std::string newCaption);
+
 	ImVec4 getDefaultColor();
 	void setDefaultColor(ImVec4 newDefaultColor);
 
@@ -146,7 +148,6 @@ class FEImGuiWindow
 	friend WindowsManager;
 protected:
 	bool visible;
-	//bool lastFrameVisible;
 	char caption[512];
 	ImVec2 position;
 	ImVec2 size;
@@ -160,6 +161,71 @@ public:
 	virtual void render();
 	virtual void onRenderEnd();
 	bool isVisible();
+};
+
+class FERangeConfigurator;
+struct FERangeRecord
+{
+	friend FERangeConfigurator;
+private:
+	float rangeSpan;
+	std::string caption;
+	std::string toolTipText;
+	ImColor color;
+
+	RECT rect;
+	RECT scrollRect;
+	bool scrollSelected = false;
+public:
+	float getRangeSpan();
+
+	std::string getCaption();
+	void setCaption(std::string newValue);
+
+	std::string getToolTipText();
+	void setToolTipText(std::string newValue);
+
+	ImColor getColor();
+	void setColor(ImColor newValue);
+};
+
+class FERangeConfigurator
+{
+	const float SCROLLER_SIZE = 20.0f;
+
+	bool visible;
+	ImVec2 position;
+	ImVec2 size;
+	RECT rect;
+
+	std::vector<FERangeRecord> ranges;
+	float screenX, screenY;
+	float lastMouseX;
+
+	void recalculateRangeInfo();
+	void normalizeRanges();
+	void inputCalculations();
+public:
+	FERangeConfigurator();
+
+	ImVec2 getPosition();
+	void setPosition(ImVec2 newPosition);
+
+	ImVec2 getSize();
+	void setSize(ImVec2 newSize);
+
+	bool isVisible();
+	void render();
+
+	int getRangesCount();
+
+	bool addRange(float rangeSpan, std::string caption, std::string toolTipText, ImColor color);
+	void deleteRange(size_t index);
+
+	std::vector<FERangeRecord> getRangesRecordsCopy();
+	FERangeRecord* getRangesRecord(size_t index);
+
+	void clear();
 };
 
 void showToolTip(const char* text);

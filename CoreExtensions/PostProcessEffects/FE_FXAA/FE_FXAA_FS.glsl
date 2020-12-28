@@ -1,5 +1,3 @@
-#version 450 core
-
 // took this simplified version of FXAA from :
 // https://github.com/BennyQBD/3DEngineCpp/blob/054c2dcd7c52adcf8c9da335a2baee78850504b8/res/shaders/filter-fxaa.fs
 // original paper :

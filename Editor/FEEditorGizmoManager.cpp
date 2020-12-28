@@ -14,6 +14,7 @@ void GizmoManager::initializeResources()
 
 	// transformationXGizmo
 	FEMaterial* currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -25,6 +26,7 @@ void GizmoManager::initializeResources()
 
 	// transformationYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -36,6 +38,7 @@ void GizmoManager::initializeResources()
 
 	// transformationZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationZGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -47,6 +50,7 @@ void GizmoManager::initializeResources()
 
 	// plane gizmos
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXYGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -57,6 +61,7 @@ void GizmoManager::initializeResources()
 	transformationXYGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYZGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -67,6 +72,7 @@ void GizmoManager::initializeResources()
 	transformationYZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXZGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -82,6 +88,7 @@ void GizmoManager::initializeResources()
 
 	// scaleXGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleXGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -93,6 +100,7 @@ void GizmoManager::initializeResources()
 
 	// scaleYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleYGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -104,6 +112,7 @@ void GizmoManager::initializeResources()
 
 	// scaleZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleZGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -119,6 +128,7 @@ void GizmoManager::initializeResources()
 
 	// rotateXGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateXGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -130,6 +140,7 @@ void GizmoManager::initializeResources()
 
 	// rotateYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateYGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -141,6 +152,7 @@ void GizmoManager::initializeResources()
 
 	// rotateZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateZGizmoMaterial");
+	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
@@ -273,6 +285,13 @@ void GizmoManager::render()
 	glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(selectedObjTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	glm::vec3 toObject = objectSpaceOriginInWorldSpace - ENGINE.getCamera()->getPosition();
 	toObject = glm::normalize(toObject);
+
+	if (SELECTED.getEntity() != nullptr && SELECTED.getEntity()->getType() == FE_ENTITY_INSTANCED)
+	{
+		FEAABB AABB = SELECTED.getEntity()->getAABB();
+		glm::vec3 center = AABB.getMin() + ((AABB.getMax() - AABB.getMin()) / 2.0f);
+		toObject = glm::normalize(center - ENGINE.getCamera()->getPosition());
+	}
 
 	if (GIZMO_MANAGER.gizmosState == TRANSFORM_GIZMOS)
 	{

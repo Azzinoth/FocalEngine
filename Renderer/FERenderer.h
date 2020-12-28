@@ -17,7 +17,7 @@ namespace FocalEngine
 
 		void render(FEBasicCamera* currentCamera);
 		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
-		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, bool shadowMap = false, bool reloadUniformBlocks = false);
+		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap = false, bool reloadUniformBlocks = false);
 		void renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera);
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
 
@@ -71,7 +71,7 @@ namespace FocalEngine
 
 		// *********** Distance fog ***********
 		bool isDistanceFogEnabled();
-		void setDistanceFogEnabld(bool newValue);
+		void setDistanceFogEnabled(bool newValue);
 
 		float getDistanceFogDensity();
 		void setDistanceFogDensity(float newValue);
@@ -85,6 +85,11 @@ namespace FocalEngine
 
 		float getDistanceToSky();
 		void setDistanceToSky(float newValue);
+
+		float testTime = 0.0f;
+		float lastTestTime = 0.0f;
+
+		bool freezeCulling = false;
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
@@ -114,7 +119,6 @@ namespace FocalEngine
 		glm::dvec3 mouseRay = glm::dvec3(0.0);
 
 		void updateTerrainBrush(FETerrain* terrain);
-		float testTime = 0.0f;
 
 		FEEntity* skyDome = nullptr;
 
@@ -122,6 +126,7 @@ namespace FocalEngine
 		float distanceFogGradient = 2.5f;
 		bool distanceFogEnabled = false;
 		void updateFogInShaders();
+		void checkForLoadedResources();
 	};
 }
 

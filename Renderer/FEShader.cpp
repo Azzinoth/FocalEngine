@@ -298,8 +298,9 @@ FEShaderParam::~FEShaderParam()
 
 FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
 				   const char* tessControlText, const char* tessEvalText,
-				   const char* geometryText, const char* computeText, bool testCompilation) : FEAsset(FE_SHADER, name)
+				   const char* geometryText, const char* computeText, bool testCompilation, int glslVersion) : FEAsset(FE_SHADER, name)
 {
+	this->glslVersion = glslVersion;
 	testCompilationMode = testCompilation;
 	setName(name);
 	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
@@ -703,6 +704,9 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 {
 	size_t index = -1;
 	std::string parsedShaderText = shaderText;
+
+	std::string glslVersionText = "#version " + std::to_string(glslVersion) + " core\n";
+	parsedShaderText.insert(0, glslVersionText);
 
 	index = parsedShaderText.find(FE_VERTEX_ATTRIBUTE_POSITION);
 	if (index != std::string::npos)

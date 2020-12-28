@@ -77,18 +77,13 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	static int FEGamma_hash = std::hash<std::string>{}("FEGamma");
 	static int FEExposure_hash = std::hash<std::string>{}("FEExposure");
 	static int FEReceiveShadows_hash = std::hash<std::string>{}("FEReceiveShadows");
-	static int FEAOMapPresent_hash = std::hash<std::string>{}("FEAOMapPresent");
 	static int FEAOIntensity_hash = std::hash<std::string>{}("FEAOIntensity");
 	static int FEAOMapIntensity_hash = std::hash<std::string>{}("FEAOMapIntensity");
-	static int FENormalMapPresent_hash = std::hash<std::string>{}("FENormalMapPresent");
 	static int FENormalMapIntensity_hash = std::hash<std::string>{}("FENormalMapIntensity");
 	static int FERoughtness_hash = std::hash<std::string>{}("FERoughtness");
-	static int FERoughtnessMapPresent_hash = std::hash<std::string>{}("FERoughtnessMapPresent");
 	static int FERoughtnessMapIntensity_hash = std::hash<std::string>{}("FERoughtnessMapIntensity");
 	static int FEMetalness_hash = std::hash<std::string>{}("FEMetalness");
-	static int FEMetalnessMapPresent_hash = std::hash<std::string>{}("FEMetalnessMapPresent");
 	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
-	static int FEMRAOMapPresent_hash = std::hash<std::string>{}("FEMRAOMapPresent");
 
 	static int FETextureBindingsUniformLocations_hash = std::hash<std::string>{}("textureBindings[0]");
 	static int FETextureChannelsBindingsUniformLocations_hash = std::hash<std::string>{}("textureChannels[0]");
@@ -97,8 +92,7 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	{
 		shader->loadIntArray(FETextureBindingsUniformLocations_hash, material->textureBindings.data(), material->textureBindings.size());
 		shader->loadIntArray(FETextureChannelsBindingsUniformLocations_hash, material->textureChannels.data(), material->textureChannels.size());
-	}
-		
+	}	
 
 	//auto start = std::chrono::system_clock::now();
 	auto iterator = shader->parameters.begin();
@@ -134,17 +128,8 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		if (iterator->second.nameHash == FENormalMapIntensity_hash)
 			iterator->second.updateData(material->getNormalMapIntensity());
 
-		if (iterator->second.nameHash == FENormalMapPresent_hash)
-			iterator->second.updateData(material->normalMap == nullptr ? 0.0f : 1.0f);
-
-		if (iterator->second.nameHash == FEAOMapPresent_hash)
-			iterator->second.updateData(material->AOMap == nullptr ? 0.0f : 1.0f);
-
 		if (iterator->second.nameHash == FEAOMapIntensity_hash)
 			iterator->second.updateData(material->getAmbientOcclusionMapIntensity());
-
-		if (iterator->second.nameHash == FERoughtnessMapPresent_hash)
-			iterator->second.updateData(material->roughtnessMap == nullptr ? 0.0f : 1.0f);
 		
 		if (iterator->second.nameHash == FERoughtness_hash)
 			iterator->second.updateData(material->roughtness);
@@ -155,14 +140,8 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		if (iterator->second.nameHash == FEMetalness_hash)
 			iterator->second.updateData(material->metalness);
 
-		if (iterator->second.nameHash == FEMetalnessMapPresent_hash)
-			iterator->second.updateData(material->metalnessMap == nullptr ? 0.0f : 1.0f);
-
 		if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
 			iterator->second.updateData(material->getMetalnessMapIntensity());
-
-		if (iterator->second.nameHash == FEMRAOMapPresent_hash)
-			iterator->second.updateData(material->MRAOMap == nullptr ? 0.0f : 1.0f);
 		
 		iterator++;
 	}
@@ -319,28 +298,77 @@ void FERenderer::loadUniformBlocks()
 	}
 }
 
-void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, bool shadowMap, bool reloadUniformBlocks)
+void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap, bool reloadUniformBlocks)
 {
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-	FEShader* originalShader = entityInstanced->gameModel->material->shader;
+	float originalCullingDistance = entityInstanced->gameModel->cullDistance;
+
+	if (shadowMap)
+	{
+		frustum[5][0] = currentCamera->getFrustumPlanes()[5][0];
+		frustum[5][1] = currentCamera->getFrustumPlanes()[5][1];
+		frustum[5][2] = currentCamera->getFrustumPlanes()[5][2];
+		frustum[5][3] = currentCamera->getFrustumPlanes()[5][3];
+	}
+	testTime += entityInstanced->cullInstances(currentCamera->position, frustum, freezeCulling);
+
+	FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
 	if (originalShader->getName() == "FEPBRShader")
-		entityInstanced->gameModel->material->shader = FEResourceManager::getInstance().getShader("FEPBRInstancedShader");
+		entityInstanced->gameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("FEPBRInstancedShader");
 	
-	entityInstanced->gameModel->material->bind();
-	loadStandardParams(entityInstanced->gameModel->material->shader, currentCamera, entityInstanced->gameModel->material, &entityInstanced->transform, entityInstanced->isReceivingShadows());
-	entityInstanced->gameModel->material->shader->loadDataToGPU();
+	entityInstanced->gameModel->getMaterial()->bind();
+	loadStandardParams(entityInstanced->gameModel->getMaterial()->shader, currentCamera, entityInstanced->gameModel->material, &entityInstanced->transform, entityInstanced->isReceivingShadows());
+	entityInstanced->gameModel->getMaterial()->shader->loadDataToGPU();
 
-	testTime += entityInstanced->render(currentCamera->position);
+	entityInstanced->render();
 
+	entityInstanced->gameModel->getMaterial()->unBind();
 	if (originalShader->getName() == "FEPBRShader")
-		entityInstanced->gameModel->material->shader = originalShader;
-	entityInstanced->gameModel->material->unBind();
+	{
+		entityInstanced->gameModel->getMaterial()->shader = originalShader;
+		if (entityInstanced->gameModel->getBillboardMaterial() != nullptr)
+			entityInstanced->gameModel->getBillboardMaterial()->shader = originalShader;
+	}
+
+	// Billboards part
+	if (entityInstanced->gameModel->getBillboardMaterial() != nullptr)
+	{
+		FEMaterial* regularBillboardMaterial = entityInstanced->gameModel->getBillboardMaterial();
+		if (shadowMap)
+		{
+			shadowMapMaterialInstanced->setAlbedoMap(regularBillboardMaterial->getAlbedoMap());
+			entityInstanced->gameModel->setBillboardMaterial(shadowMapMaterialInstanced);
+		}
+
+		FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
+		if (originalShader->getName() == "FEPBRShader")
+			entityInstanced->gameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("FEPBRInstancedShader");
+
+		entityInstanced->gameModel->getBillboardMaterial()->bind();
+		loadStandardParams(entityInstanced->gameModel->getBillboardMaterial()->shader, currentCamera, entityInstanced->gameModel->getBillboardMaterial(), &entityInstanced->transform, entityInstanced->isReceivingShadows());
+		entityInstanced->gameModel->getBillboardMaterial()->shader->loadDataToGPU();
+
+		entityInstanced->renderOnlyBillbords(currentCamera->getPosition());
+
+		entityInstanced->gameModel->getBillboardMaterial()->unBind();
+		if (originalShader->getName() == "FEPBRShader")
+			entityInstanced->gameModel->getBillboardMaterial()->shader = originalShader;
+
+		if (shadowMap)
+		{
+			entityInstanced->gameModel->setBillboardMaterial(regularBillboardMaterial);
+		}
+	}
 }
 
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
+	checkForLoadedResources();
+	currentCamera->updateFrustumPlanes();
+
+	lastTestTime = testTime;
 	testTime = 0.0f;
 	FEScene& scene = FEScene::getInstance();
 
@@ -421,8 +449,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						if (entity->getType() == FE_ENTITY)
 						{
 							entity->gameModel->material = shadowMapMaterial;
-							//#fix do it only if albedoHasAlpha
-							shadowMapMaterial->albedoMap = originalMaterial->getAlbedoMap();
+							shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap());
 							// if material have submaterial
 							if (originalMaterial->getAlbedoMap(1) != nullptr)
 							{
@@ -435,8 +462,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						else if (entity->getType() == FE_ENTITY_INSTANCED)
 						{
 							entity->gameModel->material = shadowMapMaterialInstanced;
-							//#fix do it only if albedoHasAlpha
-							shadowMapMaterialInstanced->albedoMap = originalMaterial->getAlbedoMap();
+							shadowMapMaterialInstanced->setAlbedoMap(originalMaterial->getAlbedoMap());
 							// if material have submaterial
 							if (originalMaterial->getAlbedoMap(1) != nullptr)
 							{
@@ -444,7 +470,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 								shadowMapMaterialInstanced->getAlbedoMap(1)->bind(1);
 							}
 
-							renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, true);
+							renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, /*currentCamera->getFrustumPlanes()*/light->cascadeData[i].frustum, true);
 						}
 
 						entity->gameModel->material = originalMaterial;
@@ -474,7 +500,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						default:
 							break;
 					}
-					
 				}
 
 				currentCamera->setPosition(oldCameraPosition);
@@ -492,10 +517,13 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
-	if (CSM0) CSM0->bind(FE_CSM_UNIT);
-	if (CSM1) CSM1->bind(FE_CSM_UNIT + 1);
-	if (CSM2) CSM2->bind(FE_CSM_UNIT + 2);
-	if (CSM3) CSM3->bind(FE_CSM_UNIT + 3);
+	if (scene.lightsMap.size() != 0)
+	{
+		if (CSM0) CSM0->bind(FE_CSM_UNIT);
+		if (CSM1) CSM1->bind(FE_CSM_UNIT + 1);
+		if (CSM2) CSM2->bind(FE_CSM_UNIT + 2);
+		if (CSM3) CSM3->bind(FE_CSM_UNIT + 3);
+	}
 
 	// ********* RENDER SCENE *********
 	sceneToTextureFB->bind();
@@ -506,7 +534,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		renderEntity(skyDome, currentCamera);
 
 	// ********* RENDER INSTANCED LINE *********
-	FE_GL_ERROR(glDisable(GL_CULL_FACE));
+	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedLineBuffer));
 	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, maxLines * sizeof(FELine), this->linesBuffer.data()));
@@ -533,8 +561,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	FE_GL_ERROR(glBindVertexArray(0));
 	instancedLineShader->stop();
 
-	//FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	//FE_GL_ERROR(glCullFace(GL_BACK));
+	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	FE_GL_ERROR(glCullFace(GL_BACK));*/
 	// ********* RENDER INSTANCED LINE END *********
 
 	auto itTerrain = scene.terrainMap.begin();
@@ -546,6 +574,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		
 		itTerrain++;
 	}
+
+	FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
 	auto it = scene.entityMap.begin();
 	while (it != scene.entityMap.end())
@@ -560,7 +590,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			}
 			else if (entity->getType() == FE_ENTITY_INSTANCED)
 			{
-				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, false);
+				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
 			}
 		}
 
@@ -856,7 +886,7 @@ bool FERenderer::isDistanceFogEnabled()
 	return distanceFogEnabled;
 }
 
-void FERenderer::setDistanceFogEnabld(bool newValue)
+void FERenderer::setDistanceFogEnabled(bool newValue)
 {
 	if (distanceFogEnabled == false && newValue == true)
 	{
@@ -1018,4 +1048,75 @@ float FERenderer::getFXAAReduceMul()
 void FERenderer::setFXAAReduceMul(float newValue)
 {
 	getPostProcessEffect("FE_FXAA")->stages[0]->shader->getParameter("FXAAReduceMul")->updateData(newValue);
+}
+
+static int totalJobs = 0;
+
+void FERenderer::checkForLoadedResources()
+{
+	FEResourceManager& R_M = FEResourceManager::getInstance();
+	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
+	{
+		size_t count = JOB_MANAGER.textureLoadJobs[i]->getReadyJobCount();
+		if (count == 0)
+			continue;
+
+		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
+		{
+			totalJobs += count;
+			for (size_t j = 0; j < count; j++)
+			{
+				std::pair<char**, void*> jobInfo = JOB_MANAGER.textureLoadJobs[i]->getJobByIndex(j);
+				FETexture* testTexture = reinterpret_cast<FETexture*>(jobInfo.second);
+				R_M.LoadFETexture(*jobInfo.first, "", reinterpret_cast<FETexture*>(jobInfo.second));
+			}
+
+			JOB_MANAGER.textureLoadJobs[i]->clearJobs();
+			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
+		}
+
+		// a bit waste of time, after each batch of textures loads just set dirtyFlag to recreate all materials preview
+		std::vector<std::string> materialList = R_M.getMaterialList();
+		for (size_t i = 0; i < materialList.size(); i++)
+		{
+			R_M.getMaterial(materialList[i])->setDirtyFlag(true);
+		}
+	}
+
+	int jobsToHandle = JOB_MANAGER.textureListToLoad.size();
+	int freeThreadCount = JOB_MANAGER.getFreeTextureThreadCount();
+	if (freeThreadCount == 0 || jobsToHandle == 0)
+		return;
+
+	size_t jobsPerThread = jobsToHandle / freeThreadCount;
+
+	if (JOB_MANAGER.textureListToLoad.size() == 0)
+		return;
+
+	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
+	{
+		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
+		{
+			size_t lastElement = jobsPerThread < JOB_MANAGER.textureListToLoad.size() ? jobsPerThread : JOB_MANAGER.textureListToLoad.size();
+			if (jobsPerThread == 0)
+				lastElement = JOB_MANAGER.textureListToLoad.size();
+			for (size_t j = 0; j < lastElement; j++)
+			{
+				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
+			}
+
+			std::vector<std::pair<std::string, void*>>& list = JOB_MANAGER.textureListToLoad;
+			JOB_MANAGER.textureListToLoad.erase(JOB_MANAGER.textureListToLoad.begin(), JOB_MANAGER.textureListToLoad.begin() + lastElement);
+			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
+
+			/*for (size_t j = 0; j < JOB_MANAGER.textureListToLoad.size(); j++)
+			{
+				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
+			}
+			JOB_MANAGER.textureListToLoad.clear();
+			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
+
+			break;*/
+		}
+	}
 }

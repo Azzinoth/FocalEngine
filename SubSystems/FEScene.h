@@ -24,9 +24,6 @@ namespace FocalEngine
 		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceAssetID = "");
 		bool addEntityInstanced(FEEntityInstanced* newEntityInstanced);
 		FEEntityInstanced* getEntityInstanced(std::string name);
-		/*std::vector<std::string> getEntityInstancedList();
-		void deleteEntityInstanced(std::string name);
-		bool setEntityInstancedName(FEEntityInstanced* EntityInstanced, std::string EntityInstancedName);*/
 
 		void addLight(FELightType Type, std::string Name);
 		FELight* getLight(std::string name);
@@ -41,6 +38,8 @@ namespace FocalEngine
 		void prepareForGameModelDeletion(FEGameModel* gameModel);
 
 		void clear();
+
+		FEOctree* testTree;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 

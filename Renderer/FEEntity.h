@@ -10,9 +10,13 @@
 
 namespace FocalEngine
 {
+	class FEOctree;
+
 	class FEEntity : public FEAsset
 	{
 		friend FERenderer;
+		friend FEOctree;
+		FEEntity();
 	public:
 		FEEntity(FEGameModel* gameModel, std::string Name);
 		~FEEntity();

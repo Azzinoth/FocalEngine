@@ -39,6 +39,8 @@ public:
 	int getIndexOfObjectUnderMouse(double mouseX, double mouseY);
 
 	void onCameraUpdate();
+
+	int debugGetLastColorIndex();
 private:
 	void* obj = nullptr;
 	int type = 0;
@@ -50,6 +52,8 @@ private:
 	FEFramebuffer* pixelAccurateSelectionFB;
 	FEEntity* potentiallySelectedEntity = nullptr;
 	FEMaterial* pixelAccurateSelectionMaterial;
+
+	int colorIndex = -1;
 };
 
 #define SELECTED FEEditorSelectedObject::getInstance()

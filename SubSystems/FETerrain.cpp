@@ -464,12 +464,14 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 		return;
 	}
 
-	callCount++;
-	if (callCount > framesBeforeUpdate && CPUHeightInfoDirtyFlag)
+	if (CPUHeightInfoDirtyFlag)
 	{
-		callCount = 0;
-		CPUHeightInfoDirtyFlag = false;
-		updateCPUHeightInfo();
+		if (std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::system_clock::now() - lastChangesTimeStamp).count() * 1000.0f > waitBeforeUpdateMS)
+		{
+			CPUHeightInfoDirtyFlag = false;
+			updateCPUHeightInfo();
+			updateSnapedInstancedEntities();
+		}
 	}
 
 	float range = getXSize() * 2.0f;
@@ -486,6 +488,7 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 
 	if (isBrushActive())
 	{
+		lastChangesTimeStamp = std::chrono::system_clock::now();
 		CPUHeightInfoDirtyFlag = true;
 		heightMap->setDirtyFlag(true);
 
@@ -557,3 +560,40 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 	brushVisualFBCleared = false;
 }
 // **************************** TERRAIN EDITOR TOOLS END ****************************
+
+void FETerrain::snapInstancedEntity(FEEntityInstanced* entityToSnap)
+{
+	entityToSnap->terrainToSnap = this;
+	entityToSnap->getTerrainY = &FETerrain::getHeightAt;
+	snapedInstancedEntities.push_back(entityToSnap);
+}
+
+void FETerrain::updateSnapedInstancedEntities()
+{
+	for (size_t i = 0; i < snapedInstancedEntities.size(); i++)
+	{
+		// safety check
+		if (snapedInstancedEntities[i] == nullptr)
+			continue;
+		// if entity is still snaped
+		if (snapedInstancedEntities[i]->getSnappedToTerrain() != this)
+			continue;
+
+		snapedInstancedEntities[i]->clear();
+		snapedInstancedEntities[i]->populate(snapedInstancedEntities[i]->spawnInfo);
+	}
+}
+
+void FETerrain::unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap)
+{
+	for (size_t i = 0; i < snapedInstancedEntities.size(); i++)
+	{
+		if (snapedInstancedEntities[i] == entityToUnSnap)
+		{
+			snapedInstancedEntities.erase(snapedInstancedEntities.begin() + i);
+			break;
+		}
+	}
+
+	entityToUnSnap->terrainToSnap = nullptr;
+}

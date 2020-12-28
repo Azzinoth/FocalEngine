@@ -1,4 +1,5 @@
 #include "../Editor/FEEditor.h"
+#include "nmmintrin.h"
 
 FEEditor* FEEditor::_instance = nullptr;
 FEEditor::FEEditor() {}
@@ -487,6 +488,11 @@ void FEEditor::displaySceneEntities()
 		selectGameModelWindow.show(nullptr, true);
 	}
 
+	if (ImGui::Button("Add new instanced entity", ImVec2(220, 0)))
+	{
+		selectGameModelWindow.show(nullptr, true, true);
+	}
+
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
@@ -590,6 +596,119 @@ void FEEditor::displaySceneEntities()
 				break;
 			}
 
+			if (entity->getType() == FE_ENTITY_INSTANCED)
+			{
+				FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entity);
+				ImGui::Text("Snapped to: ");
+				ImGui::SameLine();
+
+				std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+				static std::string currentTerrain = "none";
+
+				if (instancedEntity->getSnappedToTerrain() == nullptr)
+				{
+					currentTerrain = "none";
+				}
+				else
+				{
+					currentTerrain = instancedEntity->getSnappedToTerrain()->getName();
+				}
+
+				if (ImGui::BeginCombo("##Terrain", currentTerrain.c_str(), ImGuiWindowFlags_None))
+				{
+					bool is_selected = (currentTerrain == "none");
+					if (ImGui::Selectable("none", is_selected))
+					{
+						if (instancedEntity->getSnappedToTerrain() != nullptr)
+							instancedEntity->getSnappedToTerrain()->unSnapInstancedEntity(instancedEntity);
+					}
+
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+
+					for (size_t i = 0; i < terrainList.size(); i++)
+					{
+						bool is_selected = (currentTerrain == terrainList[i]);
+						if (ImGui::Selectable(terrainList[i].c_str(), is_selected))
+						{
+							RESOURCE_MANAGER.getTerrain(terrainList[i])->snapInstancedEntity(instancedEntity);
+						}
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+
+
+				ImGui::Text("Seed:");
+				int seed = instancedEntity->spawnInfo.seed;
+				ImGui::SameLine();
+				ImGui::DragInt("##Seed", &seed);
+				instancedEntity->spawnInfo.seed = seed;
+
+				ImGui::Text("Object count:");
+				int objectCount = instancedEntity->spawnInfo.objectCount;
+				ImGui::SameLine();
+				ImGui::DragInt("##Object count", &objectCount);
+				if (objectCount <= 0)
+					objectCount = 1;
+				instancedEntity->spawnInfo.objectCount = objectCount;
+
+				ImGui::Text("Radius:");
+				float radius = instancedEntity->spawnInfo.radius;
+				ImGui::SameLine();
+				ImGui::DragFloat("##Radius", &radius);
+				if (radius < 0.0f)
+					radius = 0.1f;
+				instancedEntity->spawnInfo.radius = radius;
+
+				ImGui::Text("Scale deviation:");
+				float scaleDeviation = instancedEntity->spawnInfo.scaleDeviation;
+				ImGui::SameLine();
+				ImGui::DragFloat("##Scale deviation", &scaleDeviation, 0.01f);
+				if (scaleDeviation < 0.0f)
+					scaleDeviation = 0.0f;
+				instancedEntity->spawnInfo.scaleDeviation = scaleDeviation;
+
+				ImGui::Text("Rotation deviation:");
+				float rotationDeviationX = instancedEntity->spawnInfo.rotationDeviation.x;
+				ImGui::Text("X:");
+				ImGui::SameLine();
+				ImGui::DragFloat("##Rotation deviation X", &rotationDeviationX, 0.01f);
+				if (rotationDeviationX < 0.01f)
+					rotationDeviationX = 0.01f;
+				if (rotationDeviationX > 1.0f)
+					rotationDeviationX = 1.0f;
+				instancedEntity->spawnInfo.rotationDeviation.x = rotationDeviationX;
+
+				float rotationDeviationY = instancedEntity->spawnInfo.rotationDeviation.y;
+				ImGui::Text("Y:");
+				ImGui::SameLine();
+				ImGui::DragFloat("##Rotation deviation Y", &rotationDeviationY, 0.01f);
+				if (rotationDeviationY < 0.01f)
+					rotationDeviationY = 0.01f;
+				if (rotationDeviationY > 1.0f)
+					rotationDeviationY = 1.0f;
+				instancedEntity->spawnInfo.rotationDeviation.y = rotationDeviationY;
+				
+				float rotationDeviationZ = instancedEntity->spawnInfo.rotationDeviation.z;
+				ImGui::Text("Z:");
+				ImGui::SameLine();
+				ImGui::DragFloat("##Rotation deviation z", &rotationDeviationZ, 0.01f);
+				if (rotationDeviationZ < 0.01f)
+					rotationDeviationZ = 0.01f;
+				if (rotationDeviationZ > 1.0f)
+					rotationDeviationZ = 1.0f;
+				instancedEntity->spawnInfo.rotationDeviation.z = rotationDeviationZ;
+				
+				if (ImGui::Button("Spawn/Re-Spawn"))
+				{
+					instancedEntity->clear();
+					instancedEntity->populate(instancedEntity->spawnInfo);
+				}
+			}
+
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
@@ -645,6 +764,37 @@ void FEEditor::displaySceneEntities()
 		}
 	}
 
+	static float favgTime = 0.0f;
+	static std::vector<float> avgTime;
+	static int counter = 0;
+
+	ImGui::Text((std::string("Time : ") + std::to_string(RENDERER.lastTestTime)).c_str());
+
+	if (avgTime.size() < 100)
+	{
+		avgTime.push_back(RENDERER.lastTestTime);
+	}
+	else if (avgTime.size() >= 100)
+	{
+		avgTime[counter++ % 100] = RENDERER.lastTestTime;
+	}
+
+	for (size_t i = 0; i < avgTime.size(); i++)
+	{
+		favgTime += avgTime[i];
+	}
+	favgTime /= avgTime.size();
+
+
+	if (counter > 1000000)
+		counter = 0;
+
+	ImGui::Text((std::string("avg Time : ") + std::to_string(favgTime)).c_str());
+
+	bool freezeCulling = RENDERER.freezeCulling;
+	ImGui::Checkbox("freezeCulling", &freezeCulling);
+	RENDERER.freezeCulling = freezeCulling;
+
 	static bool displaySelectedObjAABB = false;
 	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
 	// draw AABB
@@ -672,133 +822,6 @@ void FEEditor::displaySceneEntities()
 		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
 		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
 	}
-
-	bool was = false;
-	static bool displayLightFrustum = false;
-	ImGui::Checkbox("Display Light Frustum", &displayLightFrustum);
-	static glm::vec3 cameraPos = glm::vec3(0.0f);
-
-	static glm::vec3 nearTopLeft = glm::vec3(0.0f);
-	static glm::vec3 nearTopRight = glm::vec3(0.0f);
-	static glm::vec3 nearBottomLeft = glm::vec3(0.0f);
-	static glm::vec3 nearBottomRight = glm::vec3(0.0f);
-
-
-	if (!was && displayLightFrustum)
-	{
-		was = displayLightFrustum;
-		
-		float alphaDivTwo = ENGINE.getCamera()->getFov() / 2.0f;
-		//float cosAlpha = glm::cos(glm::radians(alphaDivTwo));
-		//float hypotenuse = ENGINE.getCamera()->getNearPlane() / cosAlpha;
-
-		//float sinAlpha = glm::sin(glm::radians(alphaDivTwo));
-		//float nearPlaneXLength = sinAlpha * hypotenuse * 2.0f;
-		//float nearPlaneYLength = nearPlaneXLength / ENGINE.getCamera()->getAspectRatio();
-
-
-
-
-		//float nearPlaneXLength = ENGINE.getCamera()->getNearPlane() * glm::tan(ENGINE.getCamera()->getAspectRatio() / 2.0f) * 2.0f;
-		//float nearPlaneYLength = ENGINE.getCamera()->getNearPlane() * glm::tan(glm::radians(alphaDivTwo)) * 2.0f;
-
-
-
-		float nearPlaneXLength = ENGINE.getCamera()->getNearPlane() * glm::tan(ENGINE.getCamera()->getAspectRatio() / 2.0f) * 2.0f;
-		float nearPlaneYLength = nearPlaneXLength / ENGINE.getCamera()->getAspectRatio();
-
-		cameraPos = ENGINE.getCamera()->getPosition();
-
-		//glm::vec3 forward = ENGINE.getCamera()->getForward();
-		//glm::vec3 right = ENGINE.getCamera()->getRight();
-		//glm::vec3 up = ENGINE.getCamera()->getUp();
-
-		nearTopLeft = cameraPos;
-		nearTopLeft += -ENGINE.getCamera()->getRight() * (nearPlaneXLength / 2.0f);
-		nearTopLeft += ENGINE.getCamera()->getUp() * (nearPlaneYLength / 2.0f);
-		nearTopLeft += ENGINE.getCamera()->getForward() * ENGINE.getCamera()->getNearPlane();
-
-		nearTopRight = cameraPos;
-		nearTopRight += ENGINE.getCamera()->getRight() * (nearPlaneXLength / 2.0f);
-		nearTopRight += ENGINE.getCamera()->getUp() * (nearPlaneYLength / 2.0f);
-		nearTopRight += ENGINE.getCamera()->getForward() * ENGINE.getCamera()->getNearPlane();
-
-		nearBottomLeft = cameraPos;
-		nearBottomLeft += -ENGINE.getCamera()->getRight() * (nearPlaneXLength / 2.0f);
-		nearBottomLeft += -ENGINE.getCamera()->getUp() * (nearPlaneYLength / 2.0f);
-		nearBottomLeft += ENGINE.getCamera()->getForward() * ENGINE.getCamera()->getNearPlane();
-
-		nearBottomRight = cameraPos;
-		nearBottomRight += ENGINE.getCamera()->getRight() * (nearPlaneXLength / 2.0f);
-		nearBottomRight += -ENGINE.getCamera()->getUp() * (nearPlaneYLength / 2.0f);
-		nearBottomRight += ENGINE.getCamera()->getForward() * ENGINE.getCamera()->getNearPlane();
-
-		/*float firstCascadeY1 = ENGINE.getCamera()->getNearPlane() * tan(glm::radians(ENGINE.getCamera()->getFov() / 2.0f));
-		float firstCascadeX1 = ENGINE.getCamera()->getNearPlane() * tan((ENGINE.getCamera()->getAspectRatio()) / 2.0f);
-
-		nearBottomRight = glm::vec4(firstCascadeX1, -firstCascadeY1, -ENGINE.getCamera()->getNearPlane(), 1.0f);
-		nearTopRight = glm::vec4(firstCascadeX1, firstCascadeY1, -ENGINE.getCamera()->getNearPlane(), 1.0f);
-		nearTopLeft = glm::vec4(-firstCascadeX1, firstCascadeY1, -ENGINE.getCamera()->getNearPlane(), 1.0f);
-		nearBottomLeft = glm::vec4(-firstCascadeX1, -firstCascadeY1, -ENGINE.getCamera()->getNearPlane(), 1.0f);
-
-		nearBottomRight = glm::inverse(ENGINE.getCamera()->getViewMatrix()) * glm::vec4(nearBottomRight, 1.0f);
-		nearTopRight = glm::inverse(ENGINE.getCamera()->getViewMatrix()) * glm::vec4(nearTopRight, 1.0f);
-		nearTopLeft = glm::inverse(ENGINE.getCamera()->getViewMatrix()) * glm::vec4(nearTopLeft, 1.0f);
-		nearBottomLeft = glm::inverse(ENGINE.getCamera()->getViewMatrix()) * glm::vec4(nearBottomLeft, 1.0f);*/
-	}
-
-	color = glm::vec3(0.1f, 0.6f, 0.1f);
-	width = 0.5f;
-
-	// camera to near plane
-	RENDERER.drawLine(cameraPos, nearTopLeft, color, width);
-	RENDERER.drawLine(cameraPos, nearTopRight, color, width);
-	RENDERER.drawLine(cameraPos, nearBottomLeft, color, width);
-	RENDERER.drawLine(cameraPos, nearBottomRight, color, width);
-
-	// near plane
-	RENDERER.drawLine(nearTopLeft, nearTopRight, color, width);
-	RENDERER.drawLine(nearTopRight, nearBottomRight, color, width);
-	RENDERER.drawLine(nearBottomRight, nearBottomLeft, color, width);
-	RENDERER.drawLine(nearBottomLeft, nearTopLeft, color, width);
-
-
-	glm::vec3 cameraToTopLeft = glm::normalize(nearTopLeft - cameraPos);
-	glm::vec3 cameraToTopRight = glm::normalize(nearTopRight - cameraPos);
-	glm::vec3 cameraToBottomLeft = glm::normalize(nearBottomLeft - cameraPos);
-	glm::vec3 cameraToBottomRight = glm::normalize(nearBottomRight - cameraPos);
-	float shadowCoverage = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight("sun"))->getShadowCoverage();
-	for (size_t i = 0; i < 4; i++)
-	{
-		float distance = shadowCoverage * (0.0447f * float(pow(2.1867f, (i + 1))));
-		
-		glm::vec3 test = cameraPos + cameraToTopLeft * distance;
-		RENDERER.drawLine(cameraPos, test, color, width);
-		test = cameraPos + cameraToTopRight * distance;
-		RENDERER.drawLine(cameraPos, test, color, width);
-		test = cameraPos + cameraToBottomLeft * distance;
-		RENDERER.drawLine(cameraPos, test, color, width);
-		test = cameraPos + cameraToBottomRight * distance;
-		RENDERER.drawLine(cameraPos, test, color, width);
-
-		RENDERER.drawLine(cameraPos + cameraToTopLeft * distance, cameraPos + cameraToTopRight * distance, color, width);
-		RENDERER.drawLine(cameraPos + cameraToTopRight * distance, cameraPos + cameraToBottomRight * distance, color, width);
-		RENDERER.drawLine(cameraPos + cameraToBottomRight * distance, cameraPos + cameraToBottomLeft * distance, color, width);
-		RENDERER.drawLine(cameraPos + cameraToBottomLeft * distance, cameraPos + cameraToTopLeft * distance, color, width);
-	}
-	//// camera to 50.0f plane
-	//glm::vec3 cameraToTopLeft = glm::normalize(nearTopLeft - cameraPos);
-	//glm::vec3 cameraToTopRight = glm::normalize(nearTopRight - cameraPos);
-	//glm::vec3 cameraToBottomLeft = glm::normalize(nearBottomLeft - cameraPos);
-	//glm::vec3 cameraToBottomRight = glm::normalize(nearBottomRight - cameraPos);
-
-	//RENDERER.drawLine(cameraPos, cameraPos + cameraToTopLeft * 50.0f, color, width);
-	//RENDERER.drawLine(cameraPos, cameraPos + cameraToTopRight * 50.0f, color, width);
-	//RENDERER.drawLine(cameraPos, cameraPos + cameraToBottomLeft * 50.0f, color, width);
-	//RENDERER.drawLine(cameraPos, cameraPos + cameraToBottomRight * 50.0f, color, width);
-
-
-
 
 	ImGui::End();
 

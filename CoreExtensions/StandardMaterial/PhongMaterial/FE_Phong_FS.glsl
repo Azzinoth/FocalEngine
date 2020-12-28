@@ -1,5 +1,3 @@
-#version 450 core
-
 #define MAX_LIGHTS 10
 in VS_OUT
 {

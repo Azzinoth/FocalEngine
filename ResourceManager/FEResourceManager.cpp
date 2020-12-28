@@ -358,8 +358,25 @@ FETexture* FEResourceManager::rawDataToFETexture(char* textureData, int width, i
 	return newTexture;
 }
 
+FETexture* FEResourceManager::LoadFETextureAsync(const char* fileName, std::string Name, FETexture* existingTexture )
+{
+	FETexture* newTexture = createTexture(Name);
+	FE_GL_ERROR(glDeleteTextures(1, &newTexture->textureID));
+	newTexture->textureID = noTexture->textureID;
+	newTexture->width = noTexture->width;
+	newTexture->height = noTexture->height;
+	newTexture->internalFormat = noTexture->internalFormat;
+	newTexture->fileName = noTexture->fileName;
+
+	JOB_MANAGER.loadTextureAsync(fileName, newTexture);
+
+	return newTexture;
+}
+
 FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name, FETexture* existingTexture)
 {
+	auto start = std::chrono::system_clock::now();
+
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
@@ -429,6 +446,11 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	newTexture->internalFormat = internalFormat;
 	newTexture->fileName = fileName;
 
+	auto end = std::chrono::system_clock::now();
+	totalTimeDisk += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
+
+	start = std::chrono::system_clock::now();
+
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
 
@@ -450,12 +472,20 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height));
 
+	end = std::chrono::system_clock::now();
+	TimeOpenGL += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
+	start = std::chrono::system_clock::now();
+
 	if (newTexture->mipEnabled)
 	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
+
+	end = std::chrono::system_clock::now();
+	TimeOpenGLmip += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
+	start = std::chrono::system_clock::now();
 
 	int mipW = newTexture->width / 2;
 	int mipH = newTexture->height / 2;
@@ -486,8 +516,135 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	if (assetID != nullptr)
 		newTexture->ID = assetID;
 
-	delete[]assetID;
+	end = std::chrono::system_clock::now();
+	TimeOpenGLmipload += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
+
+	delete[] assetID;
 	delete[] fileData;
+	delete[] textureName;
+
+	totalTimeDisk;
+	TimeOpenGL;
+	TimeOpenGLmip;
+	TimeOpenGLmipload;
+
+	return newTexture;
+}
+
+FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FETexture* existingTexture)
+{
+	int currentShift = 0;
+	// version of FETexture file type
+	float version = *(float*)(&fileData[currentShift]);
+	currentShift += 4;
+	if (version != FE_TEXTURE_VERSION)
+	{
+		LOG.logError(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"));
+		if (standardTextures.size() > 0)
+		{
+			return getTexture("noTexture");
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+
+	int assetIDSize = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	char* assetID = new char[assetIDSize];
+	strcpy_s(assetID, assetIDSize, (char*)(&fileData[currentShift]));
+	currentShift += assetIDSize;
+
+	int width = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int height = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+	int internalFormat = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	int nameSize = 0;
+	nameSize = *(int*)(&fileData[currentShift]);
+	currentShift += 4;
+
+	char* textureName = new char[nameSize];
+	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
+	currentShift += nameSize;
+
+	FETexture* newTexture = nullptr;
+	if (existingTexture != nullptr)
+	{
+		newTexture = existingTexture;
+		setTextureName(newTexture, textureName);
+	}
+	else
+	{
+		newTexture = createTexture(textureName);
+	}
+
+	newTexture->width = width;
+	newTexture->height = height;
+	newTexture->internalFormat = internalFormat;
+
+	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (newTexture->magFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}
+
+	// Height map should not be loaded by this function
+	if (newTexture->internalFormat == GL_R16)
+		return nullptr;
+
+	int maxDimention = std::max(newTexture->width, newTexture->height);
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, mipCount, newTexture->internalFormat, newTexture->width, newTexture->height));
+
+	if (newTexture->mipEnabled)
+	{
+		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+
+	int mipW = newTexture->width / 2;
+	int mipH = newTexture->height / 2;
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		int size = *(int*)(&fileData[currentShift]);
+		currentShift += 4;
+
+		if (i == 0)
+		{
+			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
+		}
+		else
+		{
+			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, i, 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
+
+			mipW = mipW / 2;
+			mipH = mipH / 2;
+
+			if (mipW <= 0 || mipH <= 0)
+				break;
+		}
+
+		currentShift += size;
+	}
+
+	// overwrite assetID with assetID from file.
+	if (assetID != nullptr)
+		newTexture->ID = assetID;
+
+	delete[] assetID;
 	delete[] textureName;
 
 	return newTexture;
@@ -1120,6 +1277,11 @@ void FEResourceManager::loadStandardMaterial()
 	createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
 										 loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 	makeShaderStandard(getShader("FEPBRInstancedShader"));
+
+	newMaterial = createMaterial("FEPBRBaseMaterial");
+	newMaterial->shader = getShader("FEPBRShader");
+	newMaterial->setAlbedoMap(noTexture);
+	makeMaterialStandard(newMaterial);
 	// ****************************** PBR SHADER END ******************************
 
 	createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
@@ -1210,12 +1372,7 @@ void FEResourceManager::clear()
 	}
 	gameModels.clear();
 
-	auto terrainIt = terrains.begin();
-	while (terrainIt != terrains.end())
-	{
-		delete terrainIt->second;
-		terrainIt++;
-	}
+	// memory is deleting in SCENE.
 	terrains.clear();
 }
 
@@ -1271,19 +1428,6 @@ void FEResourceManager::saveFEMesh(FEMesh* Mesh, const char* fileName)
 	
 	if (materialCount > 1)
 	{
-		/*for (size_t i = 0; i < Mesh->materialInstances.size(); i++)
-		{
-			int nameSize = Mesh->materialInstances[i].name.size();
-			file.write((char*)&nameSize, sizeof(int));
-			file.write((char*)Mesh->materialInstances[i].name.c_str(), sizeof(char) * nameSize);
-
-			int beginIndex = Mesh->materialInstances[i].firstFace;
-			file.write((char*)&beginIndex, sizeof(int));
-
-			int endIndex = Mesh->materialInstances[i].lastFace;
-			file.write((char*)&endIndex, sizeof(int));
-		}*/
-
 		count = Mesh->getMaterialsIndicesCount();
 		float* matIndices = new float[count];
 		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getMaterialsIndicesBufferID(), 0, sizeof(float) * count, matIndices));
