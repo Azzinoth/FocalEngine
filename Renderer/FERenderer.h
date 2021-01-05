@@ -90,6 +90,7 @@ namespace FocalEngine
 		float lastTestTime = 0.0f;
 
 		bool freezeCulling = false;
+		void drawAABB(FEAABB AABB, glm::vec3 color = glm::vec3(0.1f, 0.6f, 0.1f), float lineWidth = 0.2f);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
@@ -110,7 +111,7 @@ namespace FocalEngine
 		// Instanced lines
 		FEShader* instancedLineShader = nullptr;
 		std::vector<FELine> linesBuffer;
-		int maxLines = 10000;
+		int maxLines = 100000;
 		int lineCounter = 0;
 		GLuint instancedLineVAO = 0;
 		GLenum instancedLineBuffer = 0;

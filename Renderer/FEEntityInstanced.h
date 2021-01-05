@@ -7,6 +7,24 @@
 
 namespace FocalEngine
 {
+	enum FEChangesType
+	{
+		CHANGE_NONE = 0,
+		CHANGE_DELETED = 1,
+		CHANGE_MODIFIED = 2,
+		CHANGE_ADDED = 3
+	};
+
+	struct FEInstanceModification
+	{
+		FEChangesType type = CHANGE_NONE;
+		int index = -1;
+		glm::mat4 modification;
+
+		FEInstanceModification();
+		FEInstanceModification(FEChangesType type, int index, glm::mat4 modification) : type(type), index(index), modification(modification) {};
+	};
+
 	struct FESpawnInfo
 	{
 		int seed = 0;
@@ -25,19 +43,17 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 		friend FETerrain;
+		friend FEScene;
 	public:
 		FEEntityInstanced(FEGameModel* gameModel, std::string Name);
 		~FEEntityInstanced();
 
-		bool populate(FESpawnInfo spawInfo);
+		bool populate(FESpawnInfo spawnInfo);
 		float cullInstances(glm::vec3 cameraPosition, float** frustum, bool freezeCulling = false);
 		void render();
 		void renderOnlyBillbords(glm::vec3 cameraPosition);
 
 		FEAABB getAABB() final;
-
-		void addInstance(glm::mat4 instanceMatrix);
-		void addInstances(glm::mat4* instanceMatrix, size_t count);
 		void clear();
 
 		int getInstanceCount();
@@ -52,15 +68,36 @@ namespace FocalEngine
 
 		int cullingType = FE_CULLING_LODS;
 		FETerrain* getSnappedToTerrain();
-
 		FESpawnInfo spawnInfo;
+
+		void updateSelectModeAABBData();
+
+		// used only in editor select mode
+		std::vector<FEAABB> instancedAABB;
+		bool isSelectMode();
+		void setSelectMode(bool newValue);
+
+		void deleteInstance(size_t instanceIndex);
+		glm::mat4 getTransformedInstancedMatrix(size_t instanceIndex);
+		void modifyInstance(size_t instanceIndex, glm::mat4 newMatrix);
+		void addInstance(glm::mat4 instanceMatrix);
+
+		bool tryToSnapInstance(size_t instanceIndex);
+
+		int getSpawnModificationCount();
+		std::vector<FEInstanceModification> getSpawnModifications();
 	private:
 		std::vector<glm::mat4> instancedMatrices;
 		std::vector<glm::mat4> transformedInstancedMatrices;
 		std::vector<float> instancedAABBSizes;
-
+		
+		bool selectionMode = false;
+	
 		std::vector<std::vector<glm::mat4>> instancedMatricesLOD;
 		std::vector<glm::mat4> instancedMatricesBillboard;
+
+		void addInstanceInternal(glm::mat4 instanceMatrix);
+		void addInstances(glm::mat4* instanceMatrix, size_t count);
 
 		void updateBuffers();
 		void updateMatrices();
@@ -73,6 +110,8 @@ namespace FocalEngine
 
 		FETerrain* terrainToSnap = nullptr;
 		float(FETerrain::* getTerrainY)(glm::vec2);
+
+		std::vector<FEInstanceModification> modifications;
 	};
 }
 

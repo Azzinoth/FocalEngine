@@ -845,7 +845,10 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 void FERenderer::drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color, float width)
 {
 	if (lineCounter >= maxLines)
+	{
+		LOG.logError("Tring to draw more than maxLines");
 		return;
+	}
 
 	linesBuffer[lineCounter].begin = beginPoint;
 	linesBuffer[lineCounter].end = endPoint;
@@ -1119,4 +1122,25 @@ void FERenderer::checkForLoadedResources()
 			break;*/
 		}
 	}
+}
+
+void FERenderer::drawAABB(FEAABB AABB, glm::vec3 color, float lineWidth)
+{
+	// bottom plane
+	drawLine(glm::vec3(AABB.getMin()), glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMin()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMin()), glm::vec3(AABB.getMin()[0], AABB.getMin()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMin()[2]), glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMax()[2]), glm::vec3(AABB.getMin()[0], AABB.getMin()[1], AABB.getMax()[2]), color, lineWidth);
+
+	// upper plane
+	drawLine(glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMin()[2]), glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMin()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMin()[2]), glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMin()[2]), glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMax()[2]), glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
+
+	// conect two planes
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMin()[2]), glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMin()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMin()[0], AABB.getMin()[1], AABB.getMax()[2]), glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMax()[2]), glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
+	drawLine(glm::vec3(AABB.getMin()[0], AABB.getMin()[1], AABB.getMin()[2]), glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMin()[2]), color, lineWidth);
 }

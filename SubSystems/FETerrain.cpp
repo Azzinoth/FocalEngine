@@ -516,7 +516,7 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 			brushOutputShader->getParameter("brushMode")->updateData(3.0f);
 		}
 		
-		brushOutputShader->getParameter("brushIntensity")->updateData(brushIntensity);
+		brushOutputShader->getParameter("brushIntensity")->updateData(brushIntensity / 10.0f);
 
 		brushOutputFB->bind();
 		brushOutputShader->start();

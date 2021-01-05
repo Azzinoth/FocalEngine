@@ -16,6 +16,7 @@ namespace FocalEngine
 		friend FERenderer;
 	public:
 		FETransformComponent();
+		FETransformComponent(glm::mat4 matrix);
 		~FETransformComponent();
 
 		glm::vec3 getPosition();
@@ -34,6 +35,7 @@ namespace FocalEngine
 		void changeZScaleBy(float delta);
 
 		glm::mat4 getTransformMatrix();
+		void forceSetTransformMatrix(glm::mat4 newValue);
 		void update();
 
 		bool isDirty();

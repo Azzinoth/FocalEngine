@@ -59,6 +59,7 @@ void FEEditor::mouseButtonCallback(int button, int action, int mods)
 {
 	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
 	{
+		SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
 		SELECTED.checkForSelectionisNeeded = true;
 		EDITOR.leftMousePressed = true;
 	}
@@ -96,6 +97,13 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
 	{
+		if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+		{
+			FEEntityInstanced* selectedEntityInstanced = reinterpret_cast<FEEntityInstanced*>(SELECTED.getBareObject());
+			selectedEntityInstanced->deleteInstance(SELECTED.getAdditionalInformation());
+			SELECTED.clear();
+		}
+
 		if (SELECTED.getEntity() != nullptr)
 		{
 			SCENE.deleteEntity(SELECTED.getEntity()->getName());
@@ -707,6 +715,86 @@ void FEEditor::displaySceneEntities()
 					instancedEntity->clear();
 					instancedEntity->populate(instancedEntity->spawnInfo);
 				}
+
+				if (ImGui::Button("Add instance"))
+				{
+					glm::mat4 newInstanceMatrix = glm::identity<glm::mat4>();
+					newInstanceMatrix = glm::translate(newInstanceMatrix, ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+					instancedEntity->addInstance(newInstanceMatrix);
+
+					PROJECT_MANAGER.getCurrent()->modified = true;
+				}
+
+				if (instancedEntity->isSelectMode())
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.0f, 0.75f, 0.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.0f, 1.0f, 0.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.0f, 1.0f, 0.0f));
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.55f, 0.55f, 0.95f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
+				}
+
+				ImGui::Separator();
+				if (ImGui::ImageButton((void*)(intptr_t)mouseCursorIcon->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				{
+					SCENE.setSelectMode(instancedEntity, !instancedEntity->isSelectMode());
+					if (!instancedEntity->isSelectMode())
+					{
+						SELECTED.clear();
+						SELECTED.setEntity(instancedEntity);
+					}
+				}
+				showToolTip("Individual selection mode - Used to select individual instances.");
+
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+
+				if (SELECTED.getType() != SELECTED_ENTITY_INSTANCED_SUBOBJECT || SELECTED.getBareObject() != instancedEntity || !instancedEntity->isSelectMode() || instancedEntity->getSnappedToTerrain() == nullptr)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.55f, 0.55f, 0.55f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.75f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.75f));
+				}
+				else
+				{
+					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.55f, 0.55f, 0.95f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
+				}
+
+				ImGui::SameLine();
+				if (ImGui::ImageButton((void*)(intptr_t)arrowToGroundIcon->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				{
+					instancedEntity->tryToSnapInstance(SELECTED.getAdditionalInformation());
+				}
+				showToolTip("Selected instance will attempt to snap to the terrain.");
+
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+
+				std::string instancedSubObjectInfo = "index: ";
+				if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+				{
+					if (SELECTED.getBareObject() == instancedEntity && instancedEntity->isSelectMode())
+					{
+						ImGui::Text("Selected instance info:");
+						instancedSubObjectInfo = "index: " + std::to_string(SELECTED.getAdditionalInformation());
+						ImGui::Text(instancedSubObjectInfo.c_str());
+
+						FETransformComponent tempTransform = FETransformComponent(instancedEntity->getTransformedInstancedMatrix(SELECTED.getAdditionalInformation()));
+						ImGui::PushID(instancedSubObjectInfo.c_str());
+						showTransformConfiguration("selected instance", &tempTransform);
+						ImGui::PopID();
+
+						instancedEntity->modifyInstance(SELECTED.getAdditionalInformation(), tempTransform.getTransformMatrix());
+					}
+				}
 			}
 
 			ImGui::PopStyleColor();
@@ -722,8 +810,23 @@ void FEEditor::displaySceneEntities()
 
 		if (ImGui::IsMouseClicked(0) && entityUnderMouse != -1)
 		{
-			SELECTED.setEntity(SCENE.getEntity(entityList[entityUnderMouse]));
-			SELECTED.setDirtyFlag(false);
+			if (SELECTED.getEntity() != SCENE.getEntity(entityList[entityUnderMouse]))
+			{
+				if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+				{
+					FEEntityInstanced* etityInstanced = reinterpret_cast<FEEntityInstanced*>(SELECTED.getBareObject());
+					if (etityInstanced != SCENE.getEntity(entityList[entityUnderMouse]))
+					{
+						SELECTED.setEntity(SCENE.getEntity(entityList[entityUnderMouse]));
+						SELECTED.setDirtyFlag(false);
+					}
+				}
+				else
+				{
+					SELECTED.setEntity(SCENE.getEntity(entityList[entityUnderMouse]));
+					SELECTED.setDirtyFlag(false);
+				}
+			}
 		}
 	}
 	ImGui::Text("============================================");
@@ -797,30 +900,12 @@ void FEEditor::displaySceneEntities()
 
 	static bool displaySelectedObjAABB = false;
 	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
+
 	// draw AABB
 	if (SELECTED.isAnyObjectSelected() && displaySelectedObjAABB)
 	{
 		FEAABB selectedAABB = SELECTED.getEntity() != nullptr ? SELECTED.getEntity()->getAABB() : SELECTED.getTerrain()->getAABB();
-		color = glm::vec3(0.1f, 0.6f, 0.1f);
-		static float width = 0.2f;
-
-		// bottom plane
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), color, width);
-
-		// upper plane
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
-	
-		// conect two planes
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMin()[1], selectedAABB.getMax()[2]), glm::vec3(selectedAABB.getMax()[0], selectedAABB.getMax()[1], selectedAABB.getMax()[2]), color, width);
-		RENDERER.drawLine(glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMin()[1], selectedAABB.getMin()[2]), glm::vec3(selectedAABB.getMin()[0], selectedAABB.getMax()[1], selectedAABB.getMin()[2]), color, width);
+		RENDERER.drawAABB(selectedAABB);
 	}
 
 	ImGui::End();
@@ -886,6 +971,10 @@ void FEEditor::initializeResources()
 	RESOURCE_MANAGER.makeTextureStandard(levelBrushIcon);
 	smoothBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/smoothBrush.png", "smoothBrushIcon");
 	RESOURCE_MANAGER.makeTextureStandard(smoothBrushIcon);
+	mouseCursorIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/mouseCursorIcon.png", "mouseCursorIcon");
+	RESOURCE_MANAGER.makeTextureStandard(mouseCursorIcon);
+	arrowToGroundIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/arrowToGroundIcon.png", "arrowToGroundIcon");
+	RESOURCE_MANAGER.makeTextureStandard(arrowToGroundIcon);
 
 	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
 	ENGINE.setWindowCloseCallback(closeWindowCallBack);
@@ -899,9 +988,10 @@ void FEEditor::mouseMoveCallback(double xpos, double ypos)
 	EDITOR.setMouseX(xpos);
 	EDITOR.setMouseY(ypos);
 
-	SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
+	//SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
 	
-	if (SELECTED.getEntity() != nullptr || SELECTED.getTerrain() != nullptr)
+	//if (SELECTED.getEntity() != nullptr || SELECTED.getTerrain() != nullptr)
+	if (SELECTED.isAnyObjectSelected())
 	{
 		if (SELECTED.getTerrain() != nullptr)
 		{
@@ -949,19 +1039,7 @@ void FEEditor::render()
 		{
 			if (!GIZMO_MANAGER.wasSelected(index))
 			{
-				FEEntity* selectedEntity = SCENE.getEntity(SELECTED.entitiesUnderMouse[index]);
-				if (selectedEntity == nullptr)
-				{
-					FETerrain* selectedTerrain = SCENE.getTerrain(SELECTED.entitiesUnderMouse[index]);
-					if (selectedTerrain != nullptr)
-					{
-						SELECTED.setTerrain(selectedTerrain);
-					}
-				}
-				else
-				{
-					SELECTED.setEntity(SCENE.getEntity(SELECTED.entitiesUnderMouse[index]));
-				}
+				SELECTED.setSelectedByIndex(index);
 			}
 		}
 	}

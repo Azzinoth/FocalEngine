@@ -11,6 +11,25 @@ FETransformComponent::FETransformComponent()
 	update();
 }
 
+FETransformComponent::FETransformComponent(glm::mat4 matrix)
+{
+	position = glm::vec3(matrix[3][0], matrix[3][1], matrix[3][2]);
+	scale = glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
+
+	matrix[3][0] = 0.0f;
+	matrix[3][1] = 0.0f;
+	matrix[3][2] = 0.0f;
+
+	matrix[0] /= scale.x;
+	matrix[1] /= scale.y;
+	matrix[2] /= scale.z;
+
+	rotationQuaternion = glm::quat_cast(matrix);
+	rotationAngles = glm::eulerAngles(rotationQuaternion) * 180.0f / glm::pi<float>();
+
+	update();
+}
+
 FETransformComponent::~FETransformComponent()
 {
 }
@@ -156,4 +175,9 @@ bool FETransformComponent::isDirty()
 void FETransformComponent::setDirty(bool isDirty)
 {
 	dirtyFlag = isDirty;
+}
+
+void FETransformComponent::forceSetTransformMatrix(glm::mat4 newValue)
+{
+	transformMatrix = newValue;
 }

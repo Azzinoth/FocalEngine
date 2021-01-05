@@ -94,7 +94,7 @@ namespace FocalEngine
 		bool addTexture(FETexture* texture);
 		void removeTexture(FETexture* texture);
 		void removeTexture(int textureIndex);
-
+		void clearAllTexturesInfo();
 	private:
 		glm::vec3 diffuseColor;
 		glm::vec3 baseColor;

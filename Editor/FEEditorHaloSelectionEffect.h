@@ -17,7 +17,6 @@ private:
 	void initializeResources();
 
 	FEFramebuffer* haloObjectsFB = nullptr;
-	FEEntity* selectedEntity = nullptr;
 	FEMaterial* haloMaterial = nullptr;
 	FEPostProcess* postProcess = nullptr;
 };

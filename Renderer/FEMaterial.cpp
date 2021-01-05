@@ -244,7 +244,7 @@ void FEMaterial::setAlbedoMap(FETexture* texture, int subMaterial)
 	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
 		return;
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 		textureBindings[albedoBindingIndex + subMaterial * 6] = textureIndex;
 }
 
@@ -272,7 +272,7 @@ void FEMaterial::setNormalMap(FETexture* texture, int subMaterial)
 	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
 		return;
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 		textureBindings[normalBindingIndex + subMaterial * 6] = textureIndex;
 }
 
@@ -303,7 +303,7 @@ int FEMaterial::getAOMapChannel(int subMaterial)
 void FEMaterial::setAOMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 	{
 		textureBindings[AOBindingIndex + subMaterial * 6] = textureIndex;
 		textureChannels[AOBindingIndex + subMaterial * 6] = channel;
@@ -336,7 +336,7 @@ int FEMaterial::getRoughtnessMapChannel(int subMaterial)
 void FEMaterial::setRoughtnessMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 	{
 		textureBindings[roughtnessBindingIndex + subMaterial * 6] = textureIndex;
 		textureChannels[roughtnessBindingIndex + subMaterial * 6] = channel;
@@ -369,7 +369,7 @@ int FEMaterial::getMetalnessMapChannel(int subMaterial)
 void FEMaterial::setMetalnessMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 	{
 		textureBindings[metalnessBindingIndex + subMaterial * 6] = textureIndex;
 		textureChannels[metalnessBindingIndex + subMaterial * 6] = channel;
@@ -402,7 +402,7 @@ int FEMaterial::getDisplacementMapChannel(int subMaterial)
 void FEMaterial::setDisplacementMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1)
+	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
 	{
 		textureBindings[displacementBindingIndex + subMaterial * 6] = textureIndex;
 		textureChannels[displacementBindingIndex + subMaterial * 6] = channel;
@@ -473,4 +473,14 @@ void FEMaterial::removeTexture(int textureIndex)
 	}
 
 	textures[textureIndex] = nullptr;
+}
+
+void FEMaterial::clearAllTexturesInfo()
+{
+	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+	{
+		textures[i] = nullptr;
+		textureBindings[i] = -1;
+		textureChannels[i] = -1;
+	}
 }

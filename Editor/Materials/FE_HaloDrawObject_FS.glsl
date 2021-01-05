@@ -2,6 +2,7 @@ in vec3 fragPosition;
 in vec2 UV;
 in flat float materialIndex;
 
+uniform vec3 baseColor;
 @MaterialTextures@
 @CameraPosition@
 
@@ -28,5 +29,6 @@ void main(void)
 		discard;
 	}
 
-	gl_FragColor = vec4(1.0f, 0.25f, 0.0f, 1.0f);
+	//gl_FragColor = vec4(1.0f, 0.25f, 0.0f, 1.0f);
+	gl_FragColor = vec4(baseColor, 1.0);
 }

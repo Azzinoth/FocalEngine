@@ -52,6 +52,8 @@ private:
 	FETexture* sculptBrushIcon = nullptr;
 	FETexture* levelBrushIcon = nullptr;
 	FETexture* smoothBrushIcon = nullptr;
+	FETexture* mouseCursorIcon = nullptr;
+	FETexture* arrowToGroundIcon = nullptr;
 
 	static void onCameraUpdate(FEBasicCamera* camera);
 	static void mouseButtonCallback(int button, int action, int mods);

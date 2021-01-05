@@ -4,7 +4,6 @@ in flat float materialIndex;
 
 uniform vec3 baseColor;
 @MaterialTextures@
-//@Texture@ objectTexture;
 @CameraPosition@
 
 vec4 getAlbedo()
@@ -24,7 +23,6 @@ vec4 getAlbedo()
 
 void main(void)
 {
-	//vec4 textureColor = texture(objectTexture, UV);
 	vec4 textureColor = getAlbedo();
 	if (textureColor.a < 0.2)
 	{

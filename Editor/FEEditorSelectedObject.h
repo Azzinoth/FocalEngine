@@ -5,6 +5,24 @@ using namespace FocalEngine;
 
 class FEEditor;
 
+enum FEEditorSelectedObjectType
+{
+	SELECTED_NULL = 0,
+	SELECTED_ENTITY = 1,
+	SELECTED_TERRAIN = 2,
+	SELECTED_ENTITY_INSTANCED = 3,
+	SELECTED_ENTITY_INSTANCED_SUBOBJECT = 4
+};
+
+struct selectedObject
+{
+	FEEditorSelectedObjectType type = SELECTED_NULL;
+	void* objPointer = nullptr;
+	int additionalInformation = -1;
+
+	selectedObject(FEEditorSelectedObjectType Type = SELECTED_NULL, void* ObjPointer = nullptr) : type(Type), objPointer(ObjPointer) {};
+};
+
 class FEEditorSelectedObject
 {
 	friend FEEditor;
@@ -22,6 +40,7 @@ public:
 	void setDirtyFlag(bool newValue);
 
 	void setEntity(FEEntity* selected);
+	void setEntity(FEEntityInstanced* selected);
 	FEEntity* getEntity();
 	std::string getEntityName();
 
@@ -33,7 +52,7 @@ public:
 
 	glm::dvec3 mouseRay(double mouseX, double mouseY);
 	void determineEntityUnderMouse(double mouseX, double mouseY);
-	std::vector<std::string> entitiesUnderMouse;
+	std::vector<selectedObject> objectsUnderMouse;
 
 	bool checkForSelectionisNeeded = false;
 	int getIndexOfObjectUnderMouse(double mouseX, double mouseY);
@@ -41,9 +60,13 @@ public:
 	void onCameraUpdate();
 
 	int debugGetLastColorIndex();
+	FEEditorSelectedObjectType getType();
+	//void setEntityInstancedSubObject(FEEntityInstanced* selected, int subObjectIndex);
+	void* getBareObject();
+	int getAdditionalInformation();
+	void setSelectedByIndex(size_t index);
 private:
-	void* obj = nullptr;
-	int type = 0;
+	selectedObject container;
 	bool dirtyFlag = false;
 
 	void(*onUpdateFunc)() = nullptr;

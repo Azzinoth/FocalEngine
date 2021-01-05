@@ -262,29 +262,20 @@ FEEntityInstanced* FEScene::getEntityInstanced(std::string name)
 	return reinterpret_cast<FEEntityInstanced*>(entityMap[name]);
 }
 
-//void FEScene::deleteEntityInstanced(std::string name)
-//{
-//	if (entityInstancedMap.find(name) == entityInstancedMap.end())
-//		return;
-//
-//	FEEntityInstanced* entityInstancedToDelete = entityInstancedMap[name];
-//	delete entityInstancedToDelete;
-//	entityInstancedMap.erase(name);
-//}
-//
-//std::vector<std::string> FEScene::getEntityInstancedList()
-//{
-//	FE_MAP_TO_STR_VECTOR(entityInstancedMap)
-//}
-//
-//bool FEScene::setEntityInstancedName(FEEntityInstanced* EntityInstanced, std::string EntityInstancedName)
-//{
-//	if (EntityInstancedName.size() == 0 || entityInstancedMap.find(EntityInstancedName) != entityInstancedMap.end())
-//		return false;
-//
-//	entityInstancedMap.erase(EntityInstanced->getName());
-//	entityInstancedMap[EntityInstancedName] = EntityInstanced;
-//
-//	EntityInstanced->setName(EntityInstancedName);
-//	return true;
-//}
+void FEScene::setSelectMode(FEEntityInstanced* entityInstanced, bool newValue)
+{
+	auto it = entityMap.begin();
+	while (it != entityMap.end())
+	{
+		if (it->second->getType() != FE_ENTITY_INSTANCED)
+		{
+			it++;
+			continue;
+		}
+
+		reinterpret_cast<FEEntityInstanced*>(it->second)->setSelectMode(false);
+		it++;
+	}
+
+	entityInstanced->setSelectMode(newValue);
+}

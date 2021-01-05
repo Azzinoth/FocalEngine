@@ -559,109 +559,109 @@ void FEEditor::displayTerrainContentBrowser()
 		FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
 		if (ImGui::TreeNode(currentTerrain->getName().c_str()))
 		{
-			testButton->render();
-			if (testButton->getWasClicked())
-			{
-				int count_mult = 40;
-				FEEntityInstanced* testInstanced;
+			//testButton->render();
+			//if (testButton->getWasClicked())
+			//{
+			//	int count_mult = 40;
+			//	FEEntityInstanced* testInstanced;
 
-				// ************** grass_simple_01 **************
-				FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_01");
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "firstInstanced");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	// ************** grass_simple_01 **************
+			//	FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_01");
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "firstInstanced");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				FESpawnInfo spawnInfo;
-				spawnInfo.objectCount = 1500 * count_mult;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = 8774;
-				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
+			//	FESpawnInfo spawnInfo;
+			//	spawnInfo.objectCount = 1500 * count_mult;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = 8774;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
 
-				// ************** grass_simple_02 **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_02");
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "secondInstanced");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	// ************** grass_simple_02 **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_02");
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "secondInstanced");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 300 * count_mult;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = 234234;
-				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
+			//	spawnInfo.objectCount = 300 * count_mult;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = 234234;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
 
-				// ************** perennials **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("perennials");
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "second_Instanced");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	// ************** perennials **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("perennials");
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "second_Instanced");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 30 * count_mult;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = 1300;
-				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
+			//	spawnInfo.objectCount = 30 * count_mult;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = 1300;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
-				
-				// ************** SM_forest_heather_01 **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("SM_forest_heather_01");
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "thirdInstanced");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
+			//	
+			//	// ************** SM_forest_heather_01 **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("SM_forest_heather_01");
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "thirdInstanced");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 300 * count_mult;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = 11500;
-				spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
+			//	spawnInfo.objectCount = 300 * count_mult;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = 11500;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
-				
-				// ************** SM_Small_Rock_05 **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("SM_Small_Rock_05");
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
+			//	
+			//	// ************** SM_Small_Rock_05 **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("SM_Small_Rock_05");
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 25 * count_mult;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = -11500;
-				spawnInfo.rotationDeviation = glm::vec3(0.1f, 1.0f, 0.1f);
+			//	spawnInfo.objectCount = 25 * count_mult;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = -11500;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.1f, 1.0f, 0.1f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
 
-				// ************** Fir_05_LOD0 **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("Fir_05_LOD0");
-				currentGameModel->material->setRoughtnessMapIntensity(1.5);
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced1");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	// ************** Fir_05_LOD0 **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("Fir_05_LOD0");
+			//	currentGameModel->material->setRoughtnessMapIntensity(1.5);
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced1");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 600;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = -1500;
-				spawnInfo.rotationDeviation = glm::vec3(0.005f, 1.0f, 0.005f);
+			//	spawnInfo.objectCount = 600;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = -1500;
+			//	spawnInfo.rotationDeviation = glm::vec3(0.005f, 1.0f, 0.005f);
 
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
 
-				// ************** amurcork **************
-				currentGameModel = RESOURCE_MANAGER.getGameModel("amurcork");
-				currentGameModel->material->setRoughtnessMapIntensity(1.5);
-				testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced2");
-				testInstanced->cullingType = FE_CULLING_LODS;
+			//	// ************** amurcork **************
+			//	currentGameModel = RESOURCE_MANAGER.getGameModel("amurcork");
+			//	currentGameModel->material->setRoughtnessMapIntensity(1.5);
+			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced2");
+			//	testInstanced->cullingType = FE_CULLING_LODS;
 
-				spawnInfo.objectCount = 100;
-				spawnInfo.radius = 200.0f;
-				spawnInfo.seed = -6791500;
+			//	spawnInfo.objectCount = 100;
+			//	spawnInfo.radius = 200.0f;
+			//	spawnInfo.seed = -6791500;
 
-				testInstanced->populate(spawnInfo);
-				testInstanced->clear();
-				SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-				testInstanced->populate(spawnInfo);
-			}
+			//	testInstanced->populate(spawnInfo);
+			//	testInstanced->clear();
+			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
+			//	testInstanced->populate(spawnInfo);
+			//}
 
-			ImGui::Text((std::string("was spawned : ") + std::to_string(testCount)).c_str());
+			//ImGui::Text((std::string("was spawned : ") + std::to_string(testCount)).c_str());
 
 			bool isActive = currentTerrain->isWireframeMode();
 			ImGui::Checkbox("WireframeMode", &isActive);

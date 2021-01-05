@@ -37,39 +37,39 @@ void FEEditorSelectedObject::setOnUpdateFunc(void(*func)())
 
 FEEntity* FEEditorSelectedObject::getEntity()
 {
-	if (obj == nullptr || (type != FE_ENTITY && type != FE_ENTITY_INSTANCED))
+	if (container.objPointer == nullptr || (container.type != SELECTED_ENTITY && container.type != SELECTED_ENTITY_INSTANCED))
 		return nullptr;
 
-	return reinterpret_cast<FEEntity*>(obj);
+	return reinterpret_cast<FEEntity*>(container.objPointer);
 }
 
 std::string FEEditorSelectedObject::getEntityName()
 {
-	if (obj == nullptr || (type != FE_ENTITY && type != FE_ENTITY_INSTANCED))
+	if (container.objPointer == nullptr || (container.type != SELECTED_ENTITY && container.type != SELECTED_ENTITY_INSTANCED))
 		return "";
 
-	return reinterpret_cast<FEEntity*>(obj)->getName();
+	return reinterpret_cast<FEEntity*>(container.objPointer)->getName();
 }
 
 FETerrain* FEEditorSelectedObject::getTerrain()
 {
-	if (obj == nullptr || type != FE_TERRAIN)
+	if (container.objPointer == nullptr || container.type != SELECTED_TERRAIN)
 		return nullptr;
 
-	return reinterpret_cast<FETerrain*>(obj);
+	return reinterpret_cast<FETerrain*>(container.objPointer);
 }
 
 std::string FEEditorSelectedObject::getTerrainName()
 {
-	if (obj == nullptr || type != FE_TERRAIN)
+	if (container.objPointer == nullptr || container.type != SELECTED_TERRAIN)
 		return "";
 
-	return reinterpret_cast<FETerrain*>(obj)->getName();
+	return reinterpret_cast<FETerrain*>(container.objPointer)->getName();
 }
 
 bool FEEditorSelectedObject::isAnyObjectSelected()
 {
-	return obj != nullptr;
+	return container.objPointer != nullptr;
 }
 
 bool FEEditorSelectedObject::getDirtyFlag()
@@ -87,10 +87,10 @@ void FEEditorSelectedObject::setEntity(FEEntity* selected)
 	if (selected == nullptr)
 		return;
 
-	type = selected->getType();
-	if (obj != selected)
+	container.type = SELECTED_ENTITY;
+	if (container.objPointer != selected)
 		dirtyFlag = true;
-	obj = selected;
+	container.objPointer = selected;
 	if (onUpdateFunc != nullptr)
 		onUpdateFunc();
 }
@@ -100,18 +100,21 @@ void FEEditorSelectedObject::setTerrain(FETerrain* selected)
 	if (selected == nullptr)
 		return;
 
-	type = selected->getType();
-	if (obj != selected)
+	container.type = SELECTED_TERRAIN;
+	if (container.objPointer != selected)
 		dirtyFlag = true;
-	obj = selected;
+	container.objPointer = selected;
 	if (onUpdateFunc != nullptr)
 		onUpdateFunc();
 }
 
 void FEEditorSelectedObject::clear()
 {
-	type = FE_NULL;
-	obj = nullptr;
+	if (container.type == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+		reinterpret_cast<FEEntityInstanced*>(container.objPointer)->setSelectMode(false);
+
+	container.type = SELECTED_NULL;
+	container.objPointer = nullptr;
 	dirtyFlag = true;
 	if (onUpdateFunc != nullptr)
 		onUpdateFunc();
@@ -135,7 +138,7 @@ glm::dvec3 FEEditorSelectedObject::mouseRay(double mouseX, double mouseY)
 
 void FEEditorSelectedObject::determineEntityUnderMouse(double mouseX, double mouseY)
 {
-	SELECTED.entitiesUnderMouse.clear();
+	SELECTED.objectsUnderMouse.clear();
 
 	glm::vec3 mouseRayVector = mouseRay(mouseX, mouseY);
 	std::vector<std::string> entityList = SCENE.getEntityList();
@@ -145,7 +148,29 @@ void FEEditorSelectedObject::determineEntityUnderMouse(double mouseX, double mou
 		FEAABB box = SCENE.getEntity(entityList[i])->getAABB();
 		if (box.rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 		{
-			SELECTED.entitiesUnderMouse.push_back(entityList[i]);
+			if (SCENE.getEntity(entityList[i])->getType() == FE_ENTITY_INSTANCED)
+			{
+				FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(SCENE.getEntity(entityList[i]));
+				if (instancedEntity->isSelectMode())
+				{
+					for (size_t j = 0; j < instancedEntity->instancedAABB.size(); j++)
+					{
+						if (instancedEntity->instancedAABB[j].rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
+						{
+							SELECTED.objectsUnderMouse.push_back(selectedObject(SELECTED_ENTITY_INSTANCED_SUBOBJECT, reinterpret_cast<void*>(instancedEntity)));
+							SELECTED.objectsUnderMouse.back().additionalInformation = j;
+						}
+					}
+				}
+				else
+				{
+					SELECTED.objectsUnderMouse.push_back(selectedObject(SELECTED_ENTITY_INSTANCED, reinterpret_cast<void*>(instancedEntity)));
+				}
+			}
+			else
+			{
+				SELECTED.objectsUnderMouse.push_back(selectedObject(SELECTED_ENTITY, reinterpret_cast<void*>(SCENE.getEntity(entityList[i]))));
+			}
 		}
 	}
 
@@ -156,7 +181,7 @@ void FEEditorSelectedObject::determineEntityUnderMouse(double mouseX, double mou
 		FEAABB box = SCENE.getTerrain(terrainList[i])->getAABB();
 		if (box.rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 		{
-			SELECTED.entitiesUnderMouse.push_back(terrainList[i]);
+			SELECTED.objectsUnderMouse.push_back(selectedObject(SELECTED_TERRAIN, reinterpret_cast<void*>(SCENE.getTerrain(terrainList[i]))));
 		}
 	}
 }
@@ -172,22 +197,93 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 	FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	for (size_t i = 0; i < SELECTED.entitiesUnderMouse.size(); i++)
+	for (size_t i = 0; i < SELECTED.objectsUnderMouse.size(); i++)
 	{
-		potentiallySelectedEntity = SCENE.getEntity(SELECTED.entitiesUnderMouse[i]);
-		// sometimes we can delete entity before entitiesUnderMouse update
-		if (potentiallySelectedEntity == nullptr)
+		int r = (i + 1) & 255;
+		int g = ((i + 1) >> 8) & 255;
+		int b = ((i + 1) >> 16) & 255;
+
+		if (SELECTED.objectsUnderMouse[i].type == SELECTED_ENTITY)
 		{
-			// but it could be terrain
-			FETerrain* potentiallySelectedTerrain = SCENE.getTerrain(SELECTED.entitiesUnderMouse[i]);
+			potentiallySelectedEntity = reinterpret_cast<FEEntity*>(SELECTED.objectsUnderMouse[i].objPointer);
+			if (!potentiallySelectedEntity->isVisible())
+				continue;
+
+			FEMaterial* regularMaterial = potentiallySelectedEntity->gameModel->material;
+			potentiallySelectedEntity->gameModel->material = pixelAccurateSelectionMaterial;
+
+			pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+
+			RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera());
+			
+			potentiallySelectedEntity->gameModel->material = regularMaterial;
+			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
+			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
+		}
+		else if (SELECTED.objectsUnderMouse[i].type == SELECTED_ENTITY_INSTANCED)
+		{
+			FEEntityInstanced* potentiallySelectedEntityInstanced = reinterpret_cast<FEEntityInstanced*>(SELECTED.objectsUnderMouse[i].objPointer);
+			if (!potentiallySelectedEntityInstanced->isVisible())
+				continue;
+
+			FEMaterial* regularMaterial = potentiallySelectedEntityInstanced->gameModel->material;
+			potentiallySelectedEntityInstanced->gameModel->material = pixelAccurateSelectionMaterial;
+
+			pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+
+			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateInstancedSelection");
+			FEMaterial* regularBillboardMaterial = potentiallySelectedEntityInstanced->gameModel->getBillboardMaterial();
+			potentiallySelectedEntityInstanced->gameModel->setBillboardMaterial(pixelAccurateSelectionMaterial);
+
+			RENDERER.renderEntityInstanced(potentiallySelectedEntityInstanced, ENGINE.getCamera(), nullptr);
+
+			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateSelection");
+			potentiallySelectedEntityInstanced->gameModel->setBillboardMaterial(regularBillboardMaterial);
+
+			potentiallySelectedEntityInstanced->gameModel->material = regularMaterial;
+			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
+			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
+		}
+		else if (SELECTED.objectsUnderMouse[i].type == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+		{
+			FEEntityInstanced* potentiallySelectedEntityInstanced = reinterpret_cast<FEEntityInstanced*>(SELECTED.objectsUnderMouse[i].objPointer);
+			if (!potentiallySelectedEntityInstanced->isVisible())
+				continue;
+
+			static FEEntity* dummyEntity = new FEEntity(potentiallySelectedEntityInstanced->gameModel, "dummyEntity");
+			dummyEntity->gameModel = potentiallySelectedEntityInstanced->gameModel;
+			dummyEntity->transform.forceSetTransformMatrix(potentiallySelectedEntityInstanced->getTransformedInstancedMatrix(SELECTED.objectsUnderMouse[i].additionalInformation));
+
+			//dummyEntity->transform.setPosition(glm::vec3(mat[3][0], mat[3][1], mat[3][2]));
+			//dummyEntity->transform.setScale(glm::vec3(glm::length(mat[0])));
+
+			FEMaterial* regularMaterial = potentiallySelectedEntityInstanced->gameModel->material;
+			dummyEntity->gameModel->material = pixelAccurateSelectionMaterial;
+
+			pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+
+			RENDERER.renderEntity(dummyEntity, ENGINE.getCamera());
+
+			potentiallySelectedEntityInstanced->gameModel->material = regularMaterial;
+			//pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
+			//pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
+		}
+		else if (SELECTED.objectsUnderMouse[i].type == SELECTED_TERRAIN)
+		{
+			FETerrain* potentiallySelectedTerrain = reinterpret_cast<FETerrain*>(SELECTED.objectsUnderMouse[i].objPointer);
 			if (potentiallySelectedTerrain != nullptr)
 			{
 				if (!potentiallySelectedTerrain->isVisible())
 					continue;
-
-				int r = (i + 1) & 255;
-				int g = ((i + 1) >> 8) & 255;
-				int b = ((i + 1) >> 16) & 255;
 
 				potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("FESMTerrainShader");
 				potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
@@ -195,48 +291,14 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 				potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
 				potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("FETerrainShader");
 			}
-			continue;
 		}
-
-		if (!potentiallySelectedEntity->isVisible())
-			continue;
-
-		FEMaterial* regularMaterial = potentiallySelectedEntity->gameModel->material;
-		potentiallySelectedEntity->gameModel->material = pixelAccurateSelectionMaterial;
-
-		int r = (i + 1) & 255;
-		int g = ((i + 1) >> 8) & 255;
-		int b = ((i + 1) >> 16) & 255;
-		pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
-		pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-		pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
-
-		if (potentiallySelectedEntity->getType() == FE_ENTITY_INSTANCED)
-		{
-			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateInstancedSelection");
-			FEMaterial* regularBillboardMaterial = potentiallySelectedEntity->gameModel->getBillboardMaterial();
-			potentiallySelectedEntity->gameModel->setBillboardMaterial(pixelAccurateSelectionMaterial);
-
-			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(potentiallySelectedEntity), ENGINE.getCamera(), nullptr);
-
-			pixelAccurateSelectionMaterial->shader = RESOURCE_MANAGER.getShader("FEPixelAccurateSelection");
-			potentiallySelectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
-		}
-		else
-		{
-			RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera());
-		}
-
-		potentiallySelectedEntity->gameModel->material = regularMaterial;
-		pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
-		pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
 	}
 
 	FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
 	pixelAccurateSelectionFB->unBind();
 	FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
 
-	if (SELECTED.entitiesUnderMouse.size() > 0)
+	if (SELECTED.objectsUnderMouse.size() > 0)
 	{
 		colorIndex = 0;
 		colorIndex |= int(colorUnderMouse[2]);
@@ -247,7 +309,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 		colorIndex -= 1;
 
-		if (SELECTED.entitiesUnderMouse.size() > size_t(colorIndex))
+		if (SELECTED.objectsUnderMouse.size() > size_t(colorIndex))
 			return colorIndex;
 
 		SELECTED.clear();
@@ -263,49 +325,67 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 void FEEditorSelectedObject::onCameraUpdate()
 {
-	HALO_SELECTION_EFFECT.selectedEntity = SELECTED.getEntity();
-	if (HALO_SELECTION_EFFECT.selectedEntity != nullptr)
-	{
-		HALO_SELECTION_EFFECT.haloObjectsFB->bind();
-		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
+	HALO_SELECTION_EFFECT.haloObjectsFB->bind();
+	HALO_SELECTION_EFFECT.haloMaterial->clearAllTexturesInfo();
+	HALO_SELECTION_EFFECT.haloMaterial->setBaseColor(glm::vec3(1.0f, 0.25f, 0.0f));
+	FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
-		FEMaterial* regularMaterial = HALO_SELECTION_EFFECT.selectedEntity->gameModel->material;
-		HALO_SELECTION_EFFECT.selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+	if (getType() == SELECTED_ENTITY)
+	{
+		FEEntity* selectedEntity = SELECTED.getEntity();
+
+		FEMaterial* regularMaterial = selectedEntity->gameModel->material;
+		selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
 		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
 		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-		if (HALO_SELECTION_EFFECT.selectedEntity->getType() == FE_ENTITY_INSTANCED)
-		{
-			HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawInstancedObjectShader");
-			FEMaterial* regularBillboardMaterial = HALO_SELECTION_EFFECT.selectedEntity->gameModel->getBillboardMaterial();
-			HALO_SELECTION_EFFECT.selectedEntity->gameModel->setBillboardMaterial(HALO_SELECTION_EFFECT.haloMaterial);
+		RENDERER.renderEntity(selectedEntity, ENGINE.getCamera());
 
-			RENDERER.renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(HALO_SELECTION_EFFECT.selectedEntity), ENGINE.getCamera(), nullptr/*ENGINE.getCamera()->getFrustumPlanes()*/);
-
-			HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawObjectShader");
-			HALO_SELECTION_EFFECT.selectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
-		}
-		else
-		{
-			RENDERER.renderEntity(HALO_SELECTION_EFFECT.selectedEntity, ENGINE.getCamera());
-		}
-
-		HALO_SELECTION_EFFECT.selectedEntity->gameModel->material = regularMaterial;
-		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(nullptr);
-		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(nullptr, 1);
-
-		HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
-		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));  
-		HALO_SELECTION_EFFECT.postProcess->active = true;
+		selectedEntity->gameModel->material = regularMaterial;
 	}
-	else if (SELECTED.getTerrain() != nullptr)
+	else if (getType() == SELECTED_ENTITY_INSTANCED)
+	{
+		FEEntityInstanced* selectedEntity = reinterpret_cast<FEEntityInstanced*>(SELECTED.getEntity());
+
+		FEMaterial* regularMaterial = selectedEntity->gameModel->material;
+		selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+
+		HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawInstancedObjectShader");
+		FEMaterial* regularBillboardMaterial = selectedEntity->gameModel->getBillboardMaterial();
+		selectedEntity->gameModel->setBillboardMaterial(HALO_SELECTION_EFFECT.haloMaterial);
+
+		RENDERER.renderEntityInstanced(selectedEntity, ENGINE.getCamera(), nullptr);
+
+		HALO_SELECTION_EFFECT.haloMaterial->shader = RESOURCE_MANAGER.getShader("HaloDrawObjectShader");
+		selectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
+
+		selectedEntity->gameModel->material = regularMaterial;
+	}
+	else if (getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+	{
+		FEEntityInstanced* selectedEntity = reinterpret_cast<FEEntityInstanced*>(container.objPointer);
+
+		static FEEntity* dummyEntity = new FEEntity(selectedEntity->gameModel, "dummyEntity");
+		dummyEntity->gameModel = selectedEntity->gameModel;
+		dummyEntity->transform.forceSetTransformMatrix(selectedEntity->getTransformedInstancedMatrix(container.additionalInformation));
+
+		FEMaterial* regularMaterial = selectedEntity->gameModel->material;
+		dummyEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+
+		HALO_SELECTION_EFFECT.haloMaterial->setBaseColor(glm::vec3(0.61f, 0.86f, 1.0f));
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+
+		RENDERER.renderEntity(dummyEntity, ENGINE.getCamera());
+
+		selectedEntity->gameModel->material = regularMaterial;
+	}
+	else if (getType() == SELECTED_TERRAIN)
 	{
 		FETerrain* selectedTerrain = SELECTED.getTerrain();
-
-		HALO_SELECTION_EFFECT.haloObjectsFB->bind();
-		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
 		selectedTerrain->shader = FEResourceManager::getInstance().getShader("FESMTerrainShader");
 		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f, 0.25f, 0.0f));
@@ -315,26 +395,52 @@ void FEEditorSelectedObject::onCameraUpdate()
 		selectedTerrain->setLODlevel(regularLODLevel);
 		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
 		selectedTerrain->shader = FEResourceManager::getInstance().getShader("FETerrainShader");
-
-		HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
-		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
-		HALO_SELECTION_EFFECT.postProcess->active = true;
 	}
-	else
-	{
-		HALO_SELECTION_EFFECT.haloObjectsFB->bind();
-		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
-		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
-		HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
-		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
-		HALO_SELECTION_EFFECT.postProcess->active = false;
-
-		return;
-	}
+	HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
+	FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
+	HALO_SELECTION_EFFECT.postProcess->active = true;
 }
 
 int FEEditorSelectedObject::debugGetLastColorIndex()
 {
 	return colorIndex;
+}
+
+FEEditorSelectedObjectType FEEditorSelectedObject::getType()
+{
+	return container.type;
+}
+
+void FEEditorSelectedObject::setSelectedByIndex(size_t index)
+{
+	if (index < 0 || index >= objectsUnderMouse.size())
+		return;
+
+	container = objectsUnderMouse[index];
+	if (onUpdateFunc != nullptr)
+		onUpdateFunc();
+}
+
+void* FEEditorSelectedObject::getBareObject()
+{
+	return container.objPointer;
+}
+
+int FEEditorSelectedObject::getAdditionalInformation()
+{
+	return container.additionalInformation;
+}
+
+void FEEditorSelectedObject::setEntity(FEEntityInstanced* selected)
+{
+	if (selected == nullptr)
+		return;
+
+	container.type = SELECTED_ENTITY_INSTANCED;
+	if (container.objPointer != selected)
+		dirtyFlag = true;
+	container.objPointer = selected;
+	if (onUpdateFunc != nullptr)
+		onUpdateFunc();
 }

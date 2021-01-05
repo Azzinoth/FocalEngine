@@ -426,6 +426,36 @@ void FEProject::saveScene()
 		if (entity->getType() == FE_ENTITY_INSTANCED)
 		{
 			FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entity);
+			entityData[entity->getName()]["modificationsToSpawn"] = instancedEntity->getSpawnModificationCount() == 0 ? false : true;
+			if (instancedEntity->getSpawnModificationCount())
+			{
+				std::ofstream infoFile;
+				Json::Value entityFileRoot;
+				infoFile.open(projectFolder + entity->getAssetID() + ".txt");
+
+				Json::Value modificationsData;
+				auto modificationList = instancedEntity->getSpawnModifications();
+				for (size_t j = 0; j < modificationList.size(); j++)
+				{
+					modificationsData[j]["type"] = int(modificationList[j].type);
+					modificationsData[j]["index"] = modificationList[j].index;
+					if (modificationList[j].type != CHANGE_DELETED)
+					{
+						for (size_t k = 0; k < 4; k++)
+						{
+							for (size_t p = 0; p < 4; p++)
+							{
+								modificationsData[j]["modification"][k][p] = modificationList[j].modification[k][p];
+							}
+						}
+					}
+				}
+				entityFileRoot["modifications"] = modificationsData;
+
+				infoFile << entityFileRoot;
+				infoFile.close();
+			}
+
 			entityData[entity->getName()]["spawnInfo"]["seed"] = instancedEntity->spawnInfo.seed;
 			entityData[entity->getName()]["spawnInfo"]["objectCount"] = instancedEntity->spawnInfo.objectCount;
 			entityData[entity->getName()]["spawnInfo"]["radius"] = instancedEntity->spawnInfo.radius;
@@ -776,6 +806,57 @@ void FEProject::loadScene()
 				}
 
 				instancedEntity->populate(instancedEntity->spawnInfo);
+
+				if (root["entities"][entityList[i]]["modificationsToSpawn"].asBool())
+				{
+					std::ifstream infoFile;
+					infoFile.open(projectFolder + instancedEntity->getAssetID() + ".txt");
+
+					std::string infoFileData((std::istreambuf_iterator<char>(infoFile)), std::istreambuf_iterator<char>());
+
+					Json::Value entityFileRoot;
+					JSONCPP_STRING err;
+					Json::CharReaderBuilder builder;
+
+					const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+					if (!reader->parse(infoFileData.c_str(), infoFileData.c_str() + infoFileData.size(), &entityFileRoot, &err))
+						return;
+					
+					size_t count = entityFileRoot["modifications"].size();
+					for (size_t j = 0; j < count; j++)
+					{
+						if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_DELETED)
+						{
+							instancedEntity->deleteInstance(entityFileRoot["modifications"][j]["index"].asInt());
+						}
+						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_MODIFIED)
+						{
+							glm::mat4 modifedMatrix;
+							for (size_t k = 0; k < 4; k++)
+							{
+								for (size_t p = 0; p < 4; p++)
+								{
+									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
+								}
+							}
+
+							instancedEntity->modifyInstance(entityFileRoot["modifications"][j]["index"].asInt(), modifedMatrix);
+						}
+						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_ADDED)
+						{
+							glm::mat4 modifedMatrix;
+							for (size_t k = 0; k < 4; k++)
+							{
+								for (size_t p = 0; p < 4; p++)
+								{
+									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
+								}
+							}
+
+							instancedEntity->addInstance(modifedMatrix);
+						}
+					}
+				}
 			}
 			else
 			{

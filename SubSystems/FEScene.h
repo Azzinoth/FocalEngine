@@ -24,6 +24,7 @@ namespace FocalEngine
 		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceAssetID = "");
 		bool addEntityInstanced(FEEntityInstanced* newEntityInstanced);
 		FEEntityInstanced* getEntityInstanced(std::string name);
+		void setSelectMode(FEEntityInstanced* entityInstanced, bool newValue);
 
 		void addLight(FELightType Type, std::string Name);
 		FELight* getLight(std::string name);

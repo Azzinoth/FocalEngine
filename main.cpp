@@ -15,7 +15,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//window = glfwGetCurrentContext();
 
-	
+
+
+	/*FETransformComponent test = FETransformComponent();
+	test.setPosition(glm::vec3(10.0f, 20.0f, 30.0f));
+	test.setScale(glm::vec3(1.0f, 2.0f, 3.0f));
+	test.setRotation(glm::vec3(45.0f, 24.0f, 67.0f));
+	glm::mat4 testMat = test.getTransformMatrix();
+
+	glm::vec3 extractedPosition = glm::vec3(testMat[3][0], testMat[3][1], testMat[3][2]);
+	float extractedScaleX = glm::length(testMat[0]);
+	float extractedScaleY = glm::length(testMat[1]);
+	float extractedScaleZ = glm::length(testMat[2]);
+
+	testMat[3][0] = 0.0f;
+	testMat[3][1] = 0.0f;
+	testMat[3][2] = 0.0f;
+
+	testMat[0] /= extractedScaleX;
+	testMat[1] /= extractedScaleY;
+	testMat[2] /= extractedScaleZ;
+
+	auto q = glm::quat_cast(testMat);
+	glm::vec3 angles = glm::eulerAngles(q) * 180.0f / glm::pi<float>();*/
+
 
 	const int frameCountTillMeasure = 20;
 	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };

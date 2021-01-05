@@ -89,6 +89,9 @@ namespace FEGizmoManager
 		void mouseMoveRotateGizmos();
 
 		static void onSelectedObjectUpdate();
+
+		FETransformComponent getTransformComponentOfSelectedObject();
+		void applyChangesToSelectedObject(FETransformComponent changes);
 	};
 }
 

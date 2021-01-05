@@ -42,6 +42,11 @@ int FESpawnInfo::getRotaionDeviation(glm::vec3 axis)
 	return 0;
 }
 
+FEInstanceModification::FEInstanceModification()
+{
+
+}
+
 FEEntityInstanced::FEEntityInstanced(FEGameModel* gameModel, std::string Name) : FEEntity(gameModel, Name)
 {
 	type = FE_ENTITY_INSTANCED;
@@ -330,9 +335,11 @@ void FEEntityInstanced::clear()
 
 	instancedMatricesLOD.resize(gameModel->getMaxLODCount());
 	transform.setScale(glm::vec3(1.0f));
+
+	modifications.clear();
 }
 
-void FEEntityInstanced::addInstance(glm::mat4 instanceMatrix)
+void FEEntityInstanced::addInstanceInternal(glm::mat4 instanceMatrix)
 {
 	instancedAABBSizes.push_back(-FEAABB(gameModel->getMesh()->getAABB(), instanceMatrix).size);
 	instancedMatrices.push_back(instanceMatrix);
@@ -951,13 +958,13 @@ void FEEntityInstanced::updateMatrices()
 	}
 }
 
-bool FEEntityInstanced::populate(FESpawnInfo spawInfo)
+bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 {
-	if (spawInfo.radius <= 0.0f || spawInfo.objectCount < 1 || spawInfo.objectCount > 1000000 || gameModel == nullptr)
+	if (spawnInfo.radius <= 0.0f || spawnInfo.objectCount < 1 || spawnInfo.objectCount > 1000000 || gameModel == nullptr)
 		return false;
 
-	spawnInfo = spawInfo;
-	srand(spawInfo.seed);
+	this->spawnInfo = spawnInfo;
+	srand(spawnInfo.seed);
 
 	glm::vec3 min = gameModel->getMesh()->getAABB().getMin();
 	glm::vec3 max = gameModel->getMesh()->getAABB().getMax();
@@ -966,15 +973,15 @@ bool FEEntityInstanced::populate(FESpawnInfo spawInfo)
 	ySize *= gameModel->getScaleFactor();
 
 	std::vector<glm::mat4> newMats;
-	newMats.resize(spawInfo.objectCount);
+	newMats.resize(spawnInfo.objectCount);
 
 	for (size_t i = 0; i < newMats.size(); i++)
 	{
 		glm::mat4 newMat = glm::mat4(1.0);
 		// spawner transformation would be taken in account later so consider center in 0
-		float x = spawInfo.getPositionDeviation();
-		float z = spawInfo.getPositionDeviation();
-		float y = spawInfo.getPositionDeviation();
+		float x = spawnInfo.getPositionDeviation();
+		float z = spawnInfo.getPositionDeviation();
+		float y = spawnInfo.getPositionDeviation();
 
 		if (terrainToSnap != nullptr)
 		{
@@ -983,8 +990,8 @@ bool FEEntityInstanced::populate(FESpawnInfo spawInfo)
 			int countOfTries = 0;
 			while (y == -FLT_MAX)
 			{
-				x = spawInfo.getPositionDeviation();
-				z = spawInfo.getPositionDeviation();
+				x = spawnInfo.getPositionDeviation();
+				z = spawnInfo.getPositionDeviation();
 				y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
 				countOfTries++;
 				if (countOfTries > 100)
@@ -993,17 +1000,17 @@ bool FEEntityInstanced::populate(FESpawnInfo spawInfo)
 
 			if (countOfTries > 100)
 			{
-				y = transform.position.y + spawInfo.getPositionDeviation();
+				y = transform.position.y + spawnInfo.getPositionDeviation();
 			}
 		}
 
 		newMat = glm::translate(newMat, glm::vec3(x, y, z));
 
-		newMat = glm::rotate(newMat, spawInfo.getRotaionDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-		newMat = glm::rotate(newMat, spawInfo.getRotaionDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-		newMat = glm::rotate(newMat, spawInfo.getRotaionDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
-		float finalScale = gameModel->getScaleFactor() + gameModel->getScaleFactor() * spawInfo.getScaleDeviation();
+		float finalScale = gameModel->getScaleFactor() + gameModel->getScaleFactor() * spawnInfo.getScaleDeviation();
 		if (finalScale < 0.0f)
 			finalScale = 0.01f;
 		newMat = glm::scale(newMat, glm::vec3(finalScale));
@@ -1024,4 +1031,163 @@ bool FEEntityInstanced::populate(FESpawnInfo spawInfo)
 FETerrain* FEEntityInstanced::getSnappedToTerrain()
 {
 	return terrainToSnap;
+}
+
+void FEEntityInstanced::updateSelectModeAABBData()
+{
+	instancedAABB.clear();
+	instancedAABB.resize(transformedInstancedMatrices.size());
+
+	for (size_t i = 0; i < transformedInstancedMatrices.size(); i++)
+	{
+		instancedAABB[i] = FEAABB(gameModel->getMesh()->getAABB(), transformedInstancedMatrices[i]);
+	}
+}
+
+bool FEEntityInstanced::isSelectMode()
+{
+	return selectionMode;
+}
+
+void FEEntityInstanced::setSelectMode(bool newValue)
+{
+	if (newValue)
+	{
+		if (instancedAABB.size() == 0)
+			updateSelectModeAABBData();
+	}
+	
+	selectionMode = newValue;
+}
+
+void FEEntityInstanced::deleteInstance(size_t instanceIndex)
+{
+	if (instanceIndex < 0 || instanceIndex >= instancedMatrices.size())
+		return;
+
+	modifications.push_back(FEInstanceModification(CHANGE_DELETED, instanceIndex, glm::mat4()));
+
+	instancedAABBSizes.erase(instancedAABBSizes.begin() + instanceIndex);
+	instancedMatrices.erase(instancedMatrices.begin() + instanceIndex);
+	transformedInstancedMatrices.erase(transformedInstancedMatrices.begin() + instanceIndex);
+
+	for (size_t i = instanceIndex; i < instancedXYZCount; i++)
+	{
+		instancedX[i] = instancedX[i + 1];
+		instancedY[i] = instancedY[i + 1];
+		instancedZ[i] = instancedZ[i + 1];
+	}
+
+	instancedXYZCount--;
+	instanceCount--;
+
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		instancedMatricesLOD[i].resize(instanceCount);
+	}
+
+	if (instancedAABB.size() == 0)
+	{
+		updateSelectModeAABBData();
+	}
+	else
+	{
+		instancedAABB.erase(instancedAABB.begin() + instanceIndex);
+	}
+	
+	//std::vector<glm::mat4> instancedMatricesCopy = instancedMatrices;
+	//instancedMatricesCopy.erase(instancedMatricesCopy.begin() + instanceIndex);
+	//clear(true);
+	//addInstances(instancedMatricesCopy.data(), instancedMatricesCopy.size());
+
+	//if (terrainToSnap != nullptr)
+	//{
+	//	// terrain.y could be not 0.0f but here we should indicate 0.0f as Y.
+	//	transform.setPosition(glm::vec3(transform.position.x, 0.0f, transform.position.z));
+	//}
+
+	//testEnableSelectMode();
+}
+
+glm::mat4 FEEntityInstanced::getTransformedInstancedMatrix(size_t instanceIndex)
+{
+	if (instanceIndex < 0 || instanceIndex >= transformedInstancedMatrices.size())
+		return glm::identity<glm::mat4>();
+
+	return transformedInstancedMatrices[instanceIndex];
+}
+
+void FEEntityInstanced::modifyInstance(size_t instanceIndex, glm::mat4 newMatrix)
+{
+	if (instanceIndex < 0 || instanceIndex >= transformedInstancedMatrices.size())
+		return;
+
+	if (glm::all(glm::epsilonEqual(transformedInstancedMatrices[instanceIndex][0], newMatrix[0], 0.001f)) &&
+		glm::all(glm::epsilonEqual(transformedInstancedMatrices[instanceIndex][1], newMatrix[1], 0.001f)) &&
+		glm::all(glm::epsilonEqual(transformedInstancedMatrices[instanceIndex][2], newMatrix[2], 0.001f)) &&
+		glm::all(glm::epsilonEqual(transformedInstancedMatrices[instanceIndex][3], newMatrix[3], 0.001f)))
+		return;
+
+	if (modifications.size() > 0 && modifications.back().index == instanceIndex && modifications.back().type == CHANGE_MODIFIED)
+	{
+		modifications.back().modification = newMatrix;
+	}
+	else
+	{
+		modifications.push_back(FEInstanceModification(CHANGE_MODIFIED, instanceIndex, newMatrix));
+	}
+	
+	transformedInstancedMatrices[instanceIndex] = newMatrix;
+	instancedMatrices[instanceIndex] = glm::inverse(transform.getTransformMatrix()) * newMatrix;
+
+	if (instancedAABB.size() > instanceIndex)
+		instancedAABB[instanceIndex] = FEAABB(gameModel->getMesh()->getAABB(), newMatrix);
+	instancedAABBSizes[instanceIndex] = -FEAABB(gameModel->getMesh()->getAABB(), newMatrix).size;
+}
+
+int FEEntityInstanced::getSpawnModificationCount()
+{
+	return modifications.size();
+}
+
+std::vector<FEInstanceModification> FEEntityInstanced::getSpawnModifications()
+{
+	return modifications;
+}
+
+void FEEntityInstanced::addInstance(glm::mat4 instanceMatrix)
+{
+	addInstanceInternal(glm::inverse(transform.transformMatrix) * instanceMatrix);
+
+	if (instancedAABB.size() == 0)
+	{
+		updateSelectModeAABBData();
+	}
+	else
+	{
+		instancedAABB.push_back(FEAABB(gameModel->getMesh()->getAABB(), transformedInstancedMatrices.back()));
+	}
+
+	modifications.push_back(FEInstanceModification(CHANGE_ADDED, instancedMatrices.size(), instanceMatrix));
+}
+
+bool FEEntityInstanced::tryToSnapInstance(size_t instanceIndex)
+{
+	if (instanceIndex < 0 || instanceIndex >= transformedInstancedMatrices.size() || terrainToSnap == nullptr)
+		return false;
+
+	if (!isSelectMode())
+		return false;
+
+	float y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transformedInstancedMatrices[instanceIndex][3][0], transformedInstancedMatrices[instanceIndex][3][2]));
+	if (y == -FLT_MAX)
+		return false;
+
+	if (abs(transformedInstancedMatrices[instanceIndex][3][1] - y) < 0.01f)
+		return true;
+
+	glm::mat4 copy = transformedInstancedMatrices[instanceIndex];
+	copy[3][1] = y;
+	modifyInstance(instanceIndex, copy);
+	return true;
 }
