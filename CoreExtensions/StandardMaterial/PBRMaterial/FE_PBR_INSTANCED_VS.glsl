@@ -13,8 +13,8 @@
 out VS_OUT
 {
 	vec2 UV;
-	vec3 fragPosition;
-	vec3 worldVertexPosition;
+	vec3 worldPosition;
+	vec4 viewPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
 	float materialIndex;
@@ -34,10 +34,11 @@ void main(void)
 	vec3 B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);
 
-	vec4 finalPosition = FEInstanceData * vec4(FEPosition, 1.0);
-	vs_out.fragPosition = finalPosition.xyz;
-	vs_out.worldVertexPosition = finalPosition.xyz;
-	gl_Position = FEProjectionMatrix * FEViewMatrix * finalPosition;
+	vec4 worldPosition = FEInstanceData * vec4(FEPosition, 1.0);
+	vs_out.worldPosition = worldPosition.xyz;
+	vec4 viewPosition = FEViewMatrix * worldPosition;
+	vs_out.viewPosition = viewPosition;
+	gl_Position = FEProjectionMatrix * viewPosition;
 
 	vs_out.materialIndex = FEMatIndex;
 }

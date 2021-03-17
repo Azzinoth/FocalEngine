@@ -3,20 +3,14 @@ uniform float scaleFactor;
 uniform vec2 tileMult;
 
 @MaterialTextures@
-
-//Texture@ albedoMap;
-//Texture@ normalMap;
 uniform float FENormalMapPresent;
 uniform float FENormalMapIntensity;
-//Texture@ AOMap;
 uniform float FEAOMapPresent;
 uniform float FEAOIntensity;
 uniform float FEAOMapIntensity;
-//Texture@ roughtnessMap;
 uniform float FERoughtnessMapPresent;
 uniform float FERoughtness;
 uniform float FERoughtnessMapIntensity;
-//Texture@ metalnessMap;
 uniform float FEMetalness;
 uniform float FEMetalnessMapPresent;
 uniform float FEMetalnessMapIntensity;
@@ -25,11 +19,16 @@ uniform float FEMetalnessMapIntensity;
 in GS_OUT
 {
 	vec2 UV;
-	vec3 fragPosition;
-	vec3 worldVertexPosition;
+	vec3 worldPosition;
+	vec4 viewPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
 } FS_IN;
+
+@ViewMatrix@
+@ProjectionMatrix@
+
+layout (location = 0) out vec4 outColor;
 
 @CameraPosition@
 uniform float FEGamma;
@@ -112,11 +111,11 @@ vec3 getNormal()
 
 float getAO()
 {
-	float result = 0;
+	float result = 1;
 
 	if (textureBindings[2] != -1)
 		result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
-	
+
 	return result;
 }
 
@@ -270,30 +269,30 @@ void main(void)
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
-		gl_FragColor = vec4(vec3(dot(getNormal(), normalize(FECameraPosition - FS_IN.worldVertexPosition))), 1.0);
+		outColor = vec4(vec3(dot(getNormal(), normalize(FECameraPosition - FS_IN.worldPosition))), 1.0);
 		return;
 	}
 	// checking normals
 	if (debugFlag == 2)
 	{
-		gl_FragColor = vec4(getNormal(), 1.0);
+		outColor = vec4(getNormal(), 1.0);
 		return;
 	}
 	// checking UV
 	if (debugFlag == 3)
 	{
-		gl_FragColor = vec4(FS_IN.UV.x, FS_IN.UV.y, 0.0, 1.0);
+		outColor = vec4(FS_IN.UV.x, FS_IN.UV.y, 0.0, 1.0);
 		return;
 	}
 	// debug csm
 	else if (debugFlag == 4)
 	{
-		float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
+		float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
 
 		// CSM0
 		if (distanceToCam <= directionalLight.CSMSizes[0])
 		{
-			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+			outColor = vec4(0.0, 1.0, 0.0, 1.0);
 			return;
 		}
 		
@@ -302,7 +301,7 @@ void main(void)
 		{
 			if (distanceToCam <= directionalLight.CSMSizes[1])
 			{
-				gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+				outColor = vec4(0.0, 0.0, 1.0, 1.0);
 				return;
 			}
 		}
@@ -312,7 +311,7 @@ void main(void)
 		{
 			if (distanceToCam <= directionalLight.CSMSizes[2])
 			{
-				gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+				outColor = vec4(1.0, 1.0, 0.0, 1.0);
 				return;
 			}
 		}
@@ -322,7 +321,7 @@ void main(void)
 		{
 			if (distanceToCam <= directionalLight.CSMSizes[3])
 			{
-				gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+				outColor = vec4(1.0, 0.0, 0.0, 1.0);
 				return;
 			}
 		}
@@ -335,7 +334,7 @@ void main(void)
 	}
 		
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
-	vec3 viewDirection = normalize(FECameraPosition - FS_IN.fragPosition);
+	vec3 viewDirection = normalize(FECameraPosition - FS_IN.worldPosition);
 	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
 
 	vec3 normal = getNormal();
@@ -344,11 +343,11 @@ void main(void)
 	float textureAO = getAO();
 	if (textureAO != 0)
 	{
-		gl_FragColor = vec4(mix(ao_base, ambientColor * textureAO * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
+		outColor = vec4(mix(ao_base, ambientColor * textureAO * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
 	}
 	else
 	{
-		gl_FragColor = vec4(ao_base, 1.0f);
+		outColor = vec4(ao_base, 1.0f);
 	}
 
 	for (int i = 0; i < MAX_LIGHTS; i++)
@@ -358,26 +357,26 @@ void main(void)
 
 		if (FElight[i].typeAndAngles.x == 1)
 		{
-			gl_FragColor += vec4(pointLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+			outColor += vec4(pointLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
 		}
 		else if (FElight[i].typeAndAngles.x == 2)
 		{
-			gl_FragColor += vec4(spotLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+			outColor += vec4(spotLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
 		}
 	}
 
-	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
-	gl_FragColor += vec4(texture(projectedMap, FS_IN.UV / tileMult));
+	outColor += vec4(directionalLightColor(normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
+	outColor += vec4(texture(projectedMap, FS_IN.UV / tileMult));
 
 	// test fog
 	if (fogDensity > 0.0f && fogGradient > 0.0f)
 	{
-		float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
+		float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
 
 		float visibility = exp(-pow((distanceToCam * fogDensity), fogGradient));
 		visibility = clamp(visibility, 0.0, 1.0);
 
-		gl_FragColor = mix(vec4(0.55f, 0.73f, 0.87f, 1.0), gl_FragColor, visibility);
+		outColor = mix(vec4(0.55f, 0.73f, 0.87f, 1.0), outColor, visibility);
 	}
 }
 
@@ -406,7 +405,7 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
 	float shadow = 0.0;
 
-	//vec4 vertex = vec4(FS_IN.worldVertexPosition, 1.0);
+	//vec4 vertex = vec4(FS_IN.worldPosition, 1.0);
 	//vertex.xyz += lightDir * 0.01;
 	//vec3 normal_bias = normalize(normal) * (1.0 - max(0.0, dot(lightDir, -normalize(normal)))) * 0.8;
 	//normal_bias -= lightDir * dot(lightDir, normal_bias);
@@ -585,10 +584,10 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		return Lo;
 
 	float shadow = 0.0;
-	float distanceToCam = length(FECameraPosition - FS_IN.fragPosition);
+	float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
 
 	// first cascade
-	vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(FS_IN.worldVertexPosition, 1.0);
+	vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(FS_IN.worldPosition, 1.0);
 	vec3 projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 	if (distanceToCam <= directionalLight.CSMSizes[0])
@@ -600,7 +599,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// second cascade
 	if (directionalLight.activeCascades > 1)
 	{
-		vertexInLightSpace = directionalLight.CSM1 * vec4(FS_IN.worldVertexPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM1 * vec4(FS_IN.worldPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[1])
@@ -613,7 +612,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// third cascade
 	if (directionalLight.activeCascades > 2)
 	{
-		vertexInLightSpace = directionalLight.CSM2 * vec4(FS_IN.worldVertexPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM2 * vec4(FS_IN.worldPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[2])
@@ -626,7 +625,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// fourth(last) cascade
 	if (directionalLight.activeCascades > 3)
 	{
-		vertexInLightSpace = directionalLight.CSM3 * vec4(FS_IN.worldVertexPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM3 * vec4(FS_IN.worldPosition, 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[3])

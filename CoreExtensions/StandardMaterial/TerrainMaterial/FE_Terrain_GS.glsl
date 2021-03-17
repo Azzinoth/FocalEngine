@@ -2,7 +2,9 @@ layout (triangles) in;
 layout (triangle_strip, max_vertices = 3) out;
 
 @WorldMatrix@
+@ViewMatrix@
 @PVMMatrix@
+@ProjectionMatrix@
 
 in vec2 TES_UV[];
 in vec3 TES_normal[];
@@ -10,8 +12,8 @@ in vec3 TES_normal[];
 out GS_OUT
 {
 	vec2 UV;
-	vec3 fragPosition;
-	vec3 worldVertexPosition;
+	vec3 worldPosition;
+	vec4 viewPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
 } gs_out;
@@ -41,24 +43,24 @@ void main(void)
 	vec3 tangent = t2 * q1 - t1 * q2;
 
 	gl_Position = FEPVMMatrix * gl_in[0].gl_Position;
-	gs_out.fragPosition = vec3(FEWorldMatrix * vec4(gl_in[0].gl_Position.xyz, 1.0));
-	gs_out.worldVertexPosition = vec3(FEWorldMatrix * vec4(gl_in[0].gl_Position.xyz, 1.0));
+	gs_out.viewPosition = FEViewMatrix * FEWorldMatrix * gl_in[0].gl_Position;
+	gs_out.worldPosition = vec3(FEWorldMatrix * vec4(gl_in[0].gl_Position.xyz, 1.0));
 	gs_out.UV = TES_UV[0];
 	gs_out.TBN = getTBN(tangent, TES_normal[0]);
 	gs_out.vertexNormal = normalize(vec3(FEWorldMatrix * vec4(TES_normal[0], 0.0)));
 	EmitVertex();
 
 	gl_Position = FEPVMMatrix * gl_in[1].gl_Position;
-	gs_out.fragPosition = vec3(FEWorldMatrix * vec4(gl_in[1].gl_Position.xyz, 1.0));
-	gs_out.worldVertexPosition = vec3(FEWorldMatrix * vec4(gl_in[1].gl_Position.xyz, 1.0));
+	gs_out.viewPosition = FEViewMatrix * FEWorldMatrix * gl_in[1].gl_Position;
+	gs_out.worldPosition = vec3(FEWorldMatrix * vec4(gl_in[1].gl_Position.xyz, 1.0));
 	gs_out.UV = TES_UV[1];
 	gs_out.TBN = getTBN(tangent, TES_normal[1]);
 	gs_out.vertexNormal = normalize(vec3(FEWorldMatrix * vec4(TES_normal[1], 0.0)));
 	EmitVertex();
 
 	gl_Position = FEPVMMatrix * gl_in[2].gl_Position;
-	gs_out.fragPosition = vec3(FEWorldMatrix * vec4(gl_in[2].gl_Position.xyz, 1.0));
-	gs_out.worldVertexPosition = vec3(FEWorldMatrix * vec4(gl_in[2].gl_Position.xyz, 1.0));
+	gs_out.viewPosition = FEViewMatrix * FEWorldMatrix * gl_in[2].gl_Position;
+	gs_out.worldPosition = vec3(FEWorldMatrix * vec4(gl_in[2].gl_Position.xyz, 1.0));
 	gs_out.UV = TES_UV[2];
 	gs_out.TBN = getTBN(tangent, TES_normal[2]);
 	gs_out.vertexNormal = normalize(vec3(FEWorldMatrix * vec4(TES_normal[2], 0.0)));

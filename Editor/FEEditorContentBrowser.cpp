@@ -810,6 +810,8 @@ void FEEditor::displayTerrainContentBrowser()
 			ImGui::TreePop();
 		}
 	}
+
+	selectMaterialWindow.render();
 }
 
 //void FEEditor::displayPostProcessContentBrowser()

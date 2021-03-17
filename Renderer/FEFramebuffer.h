@@ -16,17 +16,18 @@ namespace FocalEngine
 	class FEFramebuffer
 	{
 		friend FEResourceManager;
+		friend FERenderer;
 	public:
 		~FEFramebuffer();
 
 		void bind();
 		void unBind();
 
-		FETexture* getColorAttachment();
+		FETexture* getColorAttachment(size_t index = 0);
 		FETexture* getDepthAttachment();
 		FETexture* getStencilAttachment();
 
-		void setColorAttachment(FETexture* newTexture);
+		void setColorAttachment(FETexture* newTexture, size_t index = 0);
 		void setDepthAttachment(FETexture* newTexture);
 		void setStencilAttachment(FETexture* newTexture);
 
@@ -40,8 +41,8 @@ namespace FocalEngine
 
 		int width = 0;
 		int height = 0;
-
-		FETexture* colorAttachment = nullptr; // std::make_unique( std::unique_ptr<FETexture*>
+		
+		std::vector<FETexture*> colorAttachments;
 		FETexture* depthAttachment = nullptr;
 		FETexture* stencilAttachment = nullptr;
 

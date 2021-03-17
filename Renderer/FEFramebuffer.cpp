@@ -50,7 +50,11 @@ FEFramebuffer::FEFramebuffer(/*int attachments, int Width, int Height, bool HDR*
 FEFramebuffer::~FEFramebuffer()
 {
 	FE_GL_ERROR(glDeleteFramebuffers(1, &fbo));
-	delete colorAttachment;
+	for (size_t i = 0; i < colorAttachments.size(); i++)
+	{
+		delete colorAttachments[i];
+	}
+	
 	delete depthAttachment;
 	depthAttachment = nullptr;
 	delete stencilAttachment;
@@ -68,9 +72,12 @@ void FEFramebuffer::unBind()
 	binded = false;
 }
 
-FETexture* FEFramebuffer::getColorAttachment()
+FETexture* FEFramebuffer::getColorAttachment(size_t index)
 {
-	return colorAttachment;
+	if (index >= colorAttachments.size())
+		return nullptr;
+
+	return colorAttachments[index];
 }
 
 FETexture* FEFramebuffer::getDepthAttachment()
@@ -88,12 +95,12 @@ void FEFramebuffer::attachTexture(GLenum attachment, GLenum textarget, FETexture
 	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, textarget, texture->getTextureID(), 0));
 }
 
-void FEFramebuffer::setColorAttachment(FETexture* newTexture)
+void FEFramebuffer::setColorAttachment(FETexture* newTexture, size_t index)
 {
 	bool wasBind = binded;
 	if (!wasBind) bind();
-	colorAttachment = newTexture;
-	attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorAttachment);
+	colorAttachments[index] = newTexture;
+	attachTexture(GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, newTexture);
 	if (!wasBind) unBind();
 }
 
@@ -101,7 +108,7 @@ void FEFramebuffer::setDepthAttachment(FETexture* newTexture)
 {
 	bool wasBind = binded;
 	if (!wasBind) bind();
-	depthAttachment = newTexture;
+		depthAttachment = newTexture;
 	attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthAttachment);
 	if (!wasBind) unBind();
 }
@@ -110,7 +117,7 @@ void FEFramebuffer::setStencilAttachment(FETexture* newTexture)
 {
 	bool wasBind = binded;
 	if (!wasBind) bind();
-	stencilAttachment = newTexture;
+		stencilAttachment = newTexture;
 	attachTexture(GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilAttachment);
 	if (!wasBind) unBind();
 }

@@ -143,5 +143,7 @@ namespace FocalEngine
 		void initTerrainEditTools(FETerrain* terrain);
 
 		std::string freeAssetName(FEAssetType assetType);
+
+		GLint maxColorAttachments = 1;
 	};
 }

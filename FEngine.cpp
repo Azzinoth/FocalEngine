@@ -96,7 +96,7 @@ void FEngine::setImguiStyle()
 	style->IndentSpacing = 22;
 	style->FramePadding.x = 6;
 	style->FramePadding.y = 4;
-	style->Alpha = 0.8f;
+	style->Alpha = 1.0f; // 0.8
 	style->FrameRounding = 3.0f;
 
 	colors[ImGuiCol_Text] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
@@ -180,7 +180,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 
 	// turn off v-sync
-	//glfwSwapInterval(0);
+	glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window);
 	int finalWidth, finalHeight;

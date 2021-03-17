@@ -973,6 +973,7 @@ void FEResourceManager::loadStandardMeshes()
 
 FEResourceManager::FEResourceManager()
 {
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
 	noTexture = LoadFETexture("48271F005A73241F5D7E7134.texture", "noTexture");
 	makeTextureStandard(noTexture);
 
@@ -1270,12 +1271,22 @@ void FEResourceManager::loadStandardMaterial()
 	makeShaderStandard(getShader("FEPhongShader"));
 
 	// ****************************** PBR SHADER ******************************
+#ifdef USE_DEFERRED_RENDERER
+	createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+								loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+#else
 	createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
 								loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+#endif // USE_DEFERRED_RENDERER
 	makeShaderStandard(getShader("FEPBRShader"));
 
+#ifdef USE_DEFERRED_RENDERER
+	createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
+										 loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+#else
 	createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
 										 loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+#endif // USE_DEFERRED_RENDERER
 	makeShaderStandard(getShader("FEPBRInstancedShader"));
 
 	newMaterial = createMaterial("FEPBRBaseMaterial");
@@ -1284,11 +1295,20 @@ void FEResourceManager::loadStandardMaterial()
 	makeMaterialStandard(newMaterial);
 	// ****************************** PBR SHADER END ******************************
 
+#ifdef USE_DEFERRED_RENDERER
 	createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
-									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS.glsl").c_str(),
-									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(), 
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_DEFERRED.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
 									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
 									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
+#else
+	createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
+									loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
+#endif // USE_DEFERRED_RENDERER
+	
 	makeShaderStandard(getShader("FETerrainShader"));
 
 	createShader("FESMTerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str(),
@@ -1937,7 +1957,12 @@ FETexture* FEResourceManager::createTexture(GLint InternalFormat, GLenum Format,
 FEFramebuffer* FEResourceManager::createFramebuffer(int attachments, int Width, int Height, bool HDR)
 {
 	FEFramebuffer* newFramebuffer = new FEFramebuffer();
-
+	newFramebuffer->colorAttachments.resize(maxColorAttachments);
+	for (size_t i = 0; i < size_t(maxColorAttachments); i++)
+	{
+		newFramebuffer->colorAttachments[i] = nullptr;
+	}
+	
 	newFramebuffer->width = Width;
 	newFramebuffer->height = Height;
 
@@ -1946,10 +1971,10 @@ FEFramebuffer* FEResourceManager::createFramebuffer(int attachments, int Width, 
 
 	if (attachments & FE_COLOR_ATTACHMENT)
 	{
-		HDR ? newFramebuffer->colorAttachment = createTexture(GL_RGBA16F, GL_RGBA, Width, Height) : newFramebuffer->colorAttachment = new FETexture(Width, Height, freeAssetName(FE_TEXTURE));
+		HDR ? newFramebuffer->colorAttachments[0] = createTexture(GL_RGBA16F, GL_RGBA, Width, Height) : newFramebuffer->colorAttachments[0] = new FETexture(Width, Height, freeAssetName(FE_TEXTURE));
 		// Allocate the mipmaps
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		newFramebuffer->attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newFramebuffer->colorAttachment);
+		newFramebuffer->attachTexture(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newFramebuffer->colorAttachments[0]);
 	}
 
 	if (attachments & FE_DEPTH_ATTACHMENT)

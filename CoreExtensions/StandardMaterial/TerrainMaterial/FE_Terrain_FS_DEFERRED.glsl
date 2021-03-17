@@ -1,35 +1,44 @@
+uniform float hightScale;
+uniform float scaleFactor;
+uniform vec2 tileMult;
+
+@MaterialTextures@
+uniform float FENormalMapPresent;
+uniform float FENormalMapIntensity;
+uniform float FEAOMapPresent;
+uniform float FEAOIntensity;
+uniform float FEAOMapIntensity;
+uniform float FERoughtnessMapPresent;
+uniform float FERoughtness;
+uniform float FERoughtnessMapIntensity;
+uniform float FEMetalness;
+uniform float FEMetalnessMapPresent;
+uniform float FEMetalnessMapIntensity;
+
 #define MAX_LIGHTS 10
-in VS_OUT
+in GS_OUT
 {
 	vec2 UV;
 	vec3 worldPosition;
 	vec4 viewPosition;
 	mat3 TBN;
 	vec3 vertexNormal;
-	flat float materialIndex;
 } FS_IN;
 
 @ViewMatrix@
 @ProjectionMatrix@
 
 layout (location = 0) out vec4 outColor;
-
-@MaterialTextures@
-uniform float FENormalMapIntensity;
-uniform float FEAOIntensity;
-uniform float FEAOMapIntensity;
-uniform float FERoughtness;
-uniform float FERoughtnessMapIntensity;
-uniform float FEMetalness;
-uniform float FEMetalnessMapIntensity;
+layout (location = 1) out vec3 gPosition;
+layout (location = 2) out float SSAOResult;
 
 @CameraPosition@
 uniform float FEGamma;
 uniform int debugFlag;
+uniform float shadowBlurFactor;
 
 uniform float fogDensity;
 uniform float fogGradient;
-uniform float shadowBlurFactor;
 
 struct FELight
 {
@@ -44,6 +53,12 @@ struct FELight
 @RECEVESHADOWS@
 // adds cascade shadow maps, 4 cascades.
 @CSM@
+
+@Texture@ heightMap;
+@Texture@ projectedMap;
+@Texture@ lastFrameSceneDepth;
+@Texture@ lastFramePositionsGBuffer;
+@Texture@ lastFrameSSAO;
 
 layout (set = 0, binding = 0, std140) uniform lightInfo
 {
@@ -76,15 +91,7 @@ layout (set = 0, binding = 1, std140) uniform directionalLightInfo
 vec4 getAlbedo()
 {
 	vec4 result = vec4(0);
-	if (FS_IN.materialIndex == 0.0)
-	{
-		result = texture(textures[textureBindings[0]], FS_IN.UV);
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		result = texture(textures[textureBindings[6]], FS_IN.UV);
-	}
-
+	result = texture(textures[textureBindings[0]], FS_IN.UV);
 	return result;
 }
 
@@ -93,15 +100,7 @@ vec3 getNormal()
 	vec3 result = vec3(0);
 	if (textureBindings[1] != -1)
 	{
-		if (FS_IN.materialIndex == 0.0)
-		{
-			result = texture(textures[textureBindings[1]], FS_IN.UV).rgb;
-		}
-		else if (FS_IN.materialIndex == 1.0)
-		{
-			result = texture(textures[textureBindings[7]], FS_IN.UV).rgb;
-		}
-
+		result = texture(textures[textureBindings[1]], FS_IN.UV).rgb;
 		result = normalize(result * 2.0 - 1.0);
 		result = normalize(FS_IN.TBN * result);
 		result = mix(FS_IN.vertexNormal, result, FENormalMapIntensity);
@@ -119,34 +118,28 @@ float getAO()
 {
 	float result = 1;
 
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[2] != -1)
-			result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[8] != -1)
-			result = texture(textures[textureBindings[8]], FS_IN.UV)[textureChannels[8]];
-	}
+	if (textureBindings[2] != -1)
+		result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
 
-	return result;
+	vec4 fragmentInScreenSpace = FEProjectionMatrix * FS_IN.viewPosition;
+	fragmentInScreenSpace.xyz /= fragmentInScreenSpace.w;
+	fragmentInScreenSpace.xyz  = fragmentInScreenSpace.xyz * 0.5 + 0.5;
+	float SSAOIntensity = texture(lastFrameSSAO, vec2(fragmentInScreenSpace.x, fragmentInScreenSpace.y)).r;
+
+	//return result;
+
+	//if (result != 0)
+		return result * SSAOIntensity;
+
+	//return SSAOIntensity;
 }
 
 float getRoughtness()
 {
 	float result = FERoughtness;
 
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[3] != -1)
-			result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[9] != -1)
-			result = texture(textures[textureBindings[9]], FS_IN.UV)[textureChannels[9]] * FERoughtnessMapIntensity;
-	}
+	if (textureBindings[3] != -1)
+		result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
 
 	return result;
 }
@@ -155,16 +148,8 @@ float getMetalness()
 {
 	float result = FEMetalness;
 
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[4] != -1)
-			result = texture(textures[textureBindings[4]], FS_IN.UV)[textureChannels[4]] * FEMetalnessMapIntensity;
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[10] != -1)
-			result = texture(textures[textureBindings[10]], FS_IN.UV)[textureChannels[10]] * FEMetalnessMapIntensity;
-	}
+	if (textureBindings[4] != -1)
+		result = texture(textures[textureBindings[4]], FS_IN.UV)[textureChannels[4]] * FEMetalnessMapIntensity;
 
 	return result;
 }
@@ -173,17 +158,9 @@ float getDisplacement()
 {
 	float result = 0;
 
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[5] != -1)
-			result = texture(textures[textureBindings[5]], FS_IN.UV)[textureChannels[5]];
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[11] != -1)
-			result = texture(textures[textureBindings[11]], FS_IN.UV)[textureChannels[11]];
-	}
-
+	if (textureBindings[5] != -1)
+		result = texture(textures[textureBindings[5]], FS_IN.UV)[textureChannels[5]];
+	
 	return result;
 }
 
@@ -302,8 +279,60 @@ vec2 filterTaps[NUM_BLUR_TAPS] = vec2[](
 	vec2(-0.620106, -0.328104), vec2(0.789239, -0.419965),
 	vec2(-0.545396, 0.538133), vec2(-0.178564, -0.596057));
 
+#define SSAO_SAMPLES_COUNT 8
+vec3 SSAOOffsets[16] = vec3[](vec3(-0.613392, 0.617481, 0.791925), vec3(0.170019, -0.040254, -0.668203),
+												vec3(-0.299417, 0.791925, -0.271096), vec3(0.645680, 0.493210, 0.027070),
+												vec3(-0.651784, 0.717887, 0.421003), vec3(0.421003, 0.027070, -0.817194),
+												vec3(-0.817194, -0.271096, -0.705374), vec3(-0.705374, -0.668203, 0.651784),
+												vec3(-0.772454, -0.090976, 0.751784), vec3(0.504440, 0.372295, -0.368203),
+												vec3(0.155736, 0.065157, -0.190976), vec3(0.391522, 0.849605, -0.205374),
+												vec3(-0.620106, -0.328104, 0.6223403), vec3(0.789239, -0.419965, -0.070254),
+												vec3(-0.545396, 0.538133, 0.2945617), vec3(-0.178564, -0.596057, -0.493210));
+
 void main(void)
 {
+	//vec4 testView = inverse(FEViewMatrix) * FS_IN.viewPosition;
+	//gPosition = FS_IN.viewPosition.z;
+	//gPosition = (FEViewMatrix * vec4(FS_IN.worldPosition, 1.0)).z;
+	gPosition = FS_IN.worldPosition;
+
+	float totalOcclusion = 0.0;
+	float bias = 0.025;
+	//float radius = 2.0;
+
+	vec4 viewPosition = FEViewMatrix * vec4(FS_IN.worldPosition, 1.0);
+	
+	vec4 offset = FEProjectionMatrix * viewPosition;
+	offset.xyz /= offset.w;
+	offset.xyz = offset.xyz * 0.5 + 0.5;
+	float currentSampleZ = (FEViewMatrix * vec4(texture(lastFramePositionsGBuffer, vec2(offset.x, offset.y)).rgb, 1.0)).z;
+	
+	float rotFactor = fract(sin(dot(viewPosition.xy * 19.19, vec2(49.5791, 97.413))) * 49831.189237);
+	for (int i = 0; i < SSAO_SAMPLES_COUNT; i++)
+	{
+		vec4 sampleViewPosition = FEViewMatrix * vec4(FS_IN.worldPosition + SSAOOffsets[i] * rotFactor, 1.0);
+		//offset = FEProjectionMatrix * sampleViewPosition;
+		offset = FEProjectionMatrix * vec4(viewPosition.xyz + SSAOOffsets[i] * rotFactor, viewPosition.w);
+		offset.xyz /= offset.w;
+		offset.xyz = offset.xyz * 0.5 + 0.5;
+	
+		float surroundSampleZ = (FEViewMatrix * vec4(texture(lastFramePositionsGBuffer, vec2(offset.x, offset.y)).rgb, 1.0)).z;
+	
+		//surroundSampleZ += bias;
+		//float difference = currentSampleZ - surroundSampleZ;
+		//totalOcclusion += (difference + abs(difference)) / 2.0;
+	
+		totalOcclusion += (currentSampleZ > surroundSampleZ + bias ? 1.0 : 0.0);
+		//totalOcclusion += surroundSampleZ;
+	
+		//float rangeCheck = smoothstep(0.0, 1.0, radius / abs(currentSampleZ - surroundSampleZ));
+		//totalOcclusion += (currentSampleZ > surroundSampleZ + bias ? 1.0 : 0.0) * rangeCheck;
+	}
+	SSAOResult = totalOcclusion / SSAO_SAMPLES_COUNT;
+
+
+
+
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
@@ -370,13 +399,13 @@ void main(void)
 	{
 		discard;
 	}
-	
+		
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
 	vec3 viewDirection = normalize(FECameraPosition - FS_IN.worldPosition);
 	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
 
 	vec3 normal = getNormal();
-
+	
 	vec3 ao_base = ambientColor * FEAOIntensity * (directionalLight.intensity / 16.0);
 	float textureAO = getAO();
 	if (textureAO != 0)
@@ -404,6 +433,7 @@ void main(void)
 	}
 
 	outColor += vec4(directionalLightColor(normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
+	outColor += vec4(texture(projectedMap, FS_IN.UV / tileMult));
 
 	// test fog
 	if (fogDensity > 0.0f && fogGradient > 0.0f)
@@ -441,6 +471,14 @@ float getBias(vec3 normal, vec3 lightDir)
 float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
 	float shadow = 0.0;
+
+	//vec4 vertex = vec4(FS_IN.worldPosition, 1.0);
+	//vertex.xyz += lightDir * 0.01;
+	//vec3 normal_bias = normalize(normal) * (1.0 - max(0.0, dot(lightDir, -normalize(normal)))) * 0.8;
+	//normal_bias -= lightDir * dot(lightDir, normal_bias);
+	//vertex.xyz += normal_bias;
+
+	//fragPosLightSpace = directionalLight.CSM0 * vertex;
 	
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
@@ -448,7 +486,7 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM0, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -456,12 +494,12 @@ float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
-	//float str = clamp(currentDepth - texture(CSM0, projCoords.xy).r, 0.0, 1.0) * 200.0;
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM0, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
 		shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+		//shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
 	}
 	shadow = shadow/NUM_BLUR_TAPS;
 
@@ -507,7 +545,7 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM2, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -515,7 +553,7 @@ float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM2, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
@@ -536,7 +574,7 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 	float currentDepth = projCoords.z;
 	float bias = getBias(normal, lightDir);
 	vec2 texelSize = 1.0 / textureSize(CSM3, 0);
-
+	
 	mat2 disk_rotation;
 	{
 		float r = quick_hash(gl_FragCoord.xy) * 2.0 * PI;
@@ -544,7 +582,7 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 		float cr = cos(r);
 		disk_rotation = mat2(vec2(cr, -sr), vec2(sr, cr));
 	}
-	
+
 	for(int i = 0; i < NUM_BLUR_TAPS; i++)
 	{
 		float pcfDepth = texture(CSM3, projCoords.xy + disk_rotation * filterTaps[i] * shadowBlurFactor * texelSize).r;
@@ -569,8 +607,8 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
     vec3 N = normal;
     vec3 V = viewDir;
 	// calculate reflectance at normal incidence; if dia-electric (like plastic) use F0 
-    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)    
-    vec3 F0 = vec3(0.04); 
+    // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
+    vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
 
     // reflectance equation
@@ -579,9 +617,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// calculate per-light radiance
     vec3 L = lightDirection;
     vec3 H = normalize(V + L);
-    //float distance = length(lightDirection);
-    //float attenuation = 1.0 / (distance * distance);
-    vec3 radiance = directionalLight.color.xyz;// * attenuation;
+    vec3 radiance = directionalLight.color.xyz;
 
     // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness);   

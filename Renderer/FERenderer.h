@@ -91,6 +91,20 @@ namespace FocalEngine
 
 		bool freezeCulling = false;
 		void drawAABB(FEAABB AABB, glm::vec3 color = glm::vec3(0.1f, 0.6f, 0.1f), float lineWidth = 0.2f);
+
+#ifdef USE_DEFERRED_RENDERER
+		FETexture* testTexture = nullptr;
+		FETexture* testTextureDepth = nullptr;
+
+		FETexture* testTexture2 = nullptr;
+
+		//FETexture* positionsGBuffer0 = nullptr;
+		//FETexture* positionsGBuffer1 = nullptr;
+
+		FETexture* positionsGBufferLastFrame = nullptr;
+		FETexture* SSAOLastFrame = nullptr;
+#endif // USE_DEFERRED_RENDERER
+		
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);

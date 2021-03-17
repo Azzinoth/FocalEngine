@@ -108,3 +108,5 @@ static double FENextPowerOfTwo(double currentNumber)
 
 //#define FE_OLD_LOAD
 //#define FE_OLD_SAVE
+
+//#define USE_DEFERRED_RENDERER

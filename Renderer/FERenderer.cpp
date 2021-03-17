@@ -65,6 +65,17 @@ FERenderer::FERenderer()
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 {
 	sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
+
+#ifdef USE_DEFERRED_RENDERER
+	testTextureDepth = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getDepthAttachment());
+
+	testTexture = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+	sceneToTextureFB->setColorAttachment(testTexture, 1);
+	positionsGBufferLastFrame = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+
+	SSAOLastFrame = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+	sceneToTextureFB->colorAttachments[2] = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+#endif // USE_DEFERRED_RENDERER
 }
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
@@ -526,7 +537,28 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	}
 
 	// ********* RENDER SCENE *********
+#ifdef USE_DEFERRED_RENDERER
+	std::swap(sceneToTextureFB->colorAttachments[1], positionsGBufferLastFrame);
+	sceneToTextureFB->setColorAttachment(sceneToTextureFB->colorAttachments[1], 1);
+
+	std::swap(sceneToTextureFB->colorAttachments[2], SSAOLastFrame);
+	sceneToTextureFB->setColorAttachment(sceneToTextureFB->colorAttachments[2], 2);
+
+	std::swap(sceneToTextureFB->depthAttachment, testTextureDepth);
+	sceneToTextureFB->setDepthAttachment(sceneToTextureFB->depthAttachment);
 	sceneToTextureFB->bind();
+
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
+
+	//sceneToTextureFB->getDepthAttachment()->bind(FE_CSM_UNIT + 6);
+	testTextureDepth->bind(FE_CSM_UNIT + 4);
+	positionsGBufferLastFrame->bind(FE_CSM_UNIT + 5);
+	SSAOLastFrame->bind(FE_CSM_UNIT + 6);
+
+#else
+	sceneToTextureFB->bind();
+#endif // USE_DEFERRED_RENDERER
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// ********* RENDER SKY *********
@@ -564,6 +596,12 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
 	FE_GL_ERROR(glCullFace(GL_BACK));*/
 	// ********* RENDER INSTANCED LINE END *********
+	
+#ifdef USE_DEFERRED_RENDERER
+	testTextureDepth->bind(22);
+	positionsGBufferLastFrame->bind(23);
+	SSAOLastFrame->bind(24);
+#endif // USE_DEFERRED_RENDERER
 
 	auto itTerrain = scene.terrainMap.begin();
 	while (itTerrain != scene.terrainMap.end())
@@ -576,6 +614,12 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	}
 
 	FE_GL_ERROR(glDisable(GL_CULL_FACE));
+
+#ifdef USE_DEFERRED_RENDERER
+	testTextureDepth->bind(FE_CSM_UNIT + 4);
+	positionsGBufferLastFrame->bind(FE_CSM_UNIT + 5);
+	SSAOLastFrame->bind(FE_CSM_UNIT + 6);
+#endif // USE_DEFERRED_RENDERER
 
 	auto it = scene.entityMap.begin();
 	while (it != scene.entityMap.end())
