@@ -15,6 +15,7 @@ private:
 	SINGLETON_PRIVATE_PART(FEEditorHaloSelectionEffect)
 
 	void initializeResources();
+	void reInitializeResources();
 
 	FEFramebuffer* haloObjectsFB = nullptr;
 	FEMaterial* haloMaterial = nullptr;

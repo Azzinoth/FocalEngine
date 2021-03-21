@@ -59,6 +59,7 @@ private:
 	static void mouseButtonCallback(int button, int action, int mods);
 	static void mouseMoveCallback(double xpos, double ypos);
 	static void keyButtonCallback(int key, int scancode, int action, int mods);
+	static void windowsResizeCallback(int newW, int newH);
 
 	void displaySceneEntities();
 	void displayContentBrowser();

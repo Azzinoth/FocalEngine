@@ -20,6 +20,12 @@ FEPostProcess::FEPostProcess(std::string Name)
 
 FEPostProcess::~FEPostProcess()
 {
+	for (size_t i = 0; i < texturesToDelete.size(); i++)
+	{
+		delete texturesToDelete[i];
+	}
+
+	delete intermediateFramebuffer;
 }
 
 void FocalEngine::FEPostProcess::renderResult()
@@ -58,4 +64,34 @@ std::string FEPostProcess::getName()
 void FEPostProcess::setName(std::string newName)
 {
 	name = newName;
+}
+
+bool FEPostProcess::replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture)
+{
+	if (stageIndex >= stages.size())
+	{
+		return false;
+		LOG.logError("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!");
+	}
+
+	// Delete old texture from the delete list of FEPostProcess.
+	if (stages[stageIndex]->outTexture != nullptr)
+	{
+		for (size_t i = 0; i < texturesToDelete.size(); i++)
+		{
+			if (texturesToDelete[i]->getAssetID() == stages[stageIndex]->outTexture->getAssetID())
+			{
+				if (deleteOldTexture)
+					delete stages[stageIndex]->outTexture;
+
+				texturesToDelete.erase(texturesToDelete.begin() + i);
+				break;
+			}
+		}
+	}
+	
+	stages[stageIndex]->outTexture = newTexture;
+	texturesToDelete.push_back(newTexture);
+
+	return true;
 }

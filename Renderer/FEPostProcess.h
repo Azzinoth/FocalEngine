@@ -43,6 +43,7 @@ namespace FocalEngine
 		void setName(std::string newName);
 
 		bool active = true;
+		bool replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture = true);
 	private:
 		FEPostProcess(std::string Name);
 
@@ -55,6 +56,7 @@ namespace FocalEngine
 		FETexture* finalTexture = nullptr;
 
 		FEFramebuffer* intermediateFramebuffer = nullptr;
+		std::vector<FETexture*> texturesToDelete;
 	public:
 		std::vector<FEPostProcessStage*> stages;
 	};

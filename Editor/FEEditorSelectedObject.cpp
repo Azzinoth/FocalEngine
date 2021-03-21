@@ -30,6 +30,16 @@ void FEEditorSelectedObject::initializeResources()
 	pixelAccurateSelectionMaterial->addParameter(colorParam);
 }
 
+void FEEditorSelectedObject::reInitializeResources()
+{
+	HALO_SELECTION_EFFECT.reInitializeResources();
+
+	delete pixelAccurateSelectionFB;
+	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	delete pixelAccurateSelectionFB->getColorAttachment();
+	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
+}
+
 void FEEditorSelectedObject::setOnUpdateFunc(void(*func)())
 {
 	onUpdateFunc = func;

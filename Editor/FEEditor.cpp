@@ -922,6 +922,7 @@ void FEEditor::initializeResources()
 	ENGINE.setKeyCallback(keyButtonCallback);
 	ENGINE.setMouseButtonCallback(mouseButtonCallback);
 	ENGINE.setMouseMoveCallback(mouseMoveCallback);
+	ENGINE.setWindowResizeCallback(windowsResizeCallback);
 
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
@@ -1083,4 +1084,9 @@ void FEEditor::closeWindowCallBack()
 		ENGINE.terminate();
 		return;
 	}
+}
+
+void FEEditor::windowsResizeCallback(int newW, int newH)
+{
+	SELECTED.reInitializeResources();
 }

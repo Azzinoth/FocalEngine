@@ -190,6 +190,8 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing
 			int finalH = postProcessEffects.back()->screenHeight;
 			postProcessEffects.back()->stages[i]->outTexture = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getColorAttachment(), finalW, finalH);
 		}
+
+		postProcessEffects.back()->texturesToDelete.push_back(postProcessEffects.back()->stages[i]->outTexture);
 	}
 }
 
@@ -691,6 +693,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				}
 			}
 
+			FETexture* ordinaryColorAttachment = effect.intermediateFramebuffer->getColorAttachment();
 			effect.intermediateFramebuffer->setColorAttachment(effect.stages[j]->outTexture);
 			if (effect.stages[j]->outTexture->width != sceneToTextureFB->getWidth())
 			{
@@ -710,6 +713,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			FE_GL_ERROR(glBindVertexArray(0));
 
 			effect.intermediateFramebuffer->unBind();
+			// this was added because of postProcesses and how they "manage" colorAttachment of FB
+			effect.intermediateFramebuffer->setColorAttachment(ordinaryColorAttachment);
 
 			for (size_t k = 0; k < effect.stages[j]->inTextureSource.size(); k++)
 			{

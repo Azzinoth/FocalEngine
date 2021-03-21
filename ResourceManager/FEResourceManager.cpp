@@ -97,7 +97,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, bool usingAlp
 
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
 	newTexture->internalFormat = internalFormat;
 
 	if (newTexture->mipEnabled)
@@ -164,7 +164,7 @@ FETexture* FEResourceManager::LoadPNGTextureWithTransparencyMask(const char* mai
 
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data()));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
 	newTexture->internalFormat = internalFormat;
 
 	if (newTexture->mipEnabled)
@@ -336,7 +336,7 @@ FETexture* FEResourceManager::rawDataToFETexture(char* textureData, int width, i
 
 	FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData);
 	
 	if (newTexture->mipEnabled)
 	{
@@ -1756,7 +1756,7 @@ FETerrain* FEResourceManager::createTerrain(bool createHeightMap, std::string na
 		FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
 		//FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
-		FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data()));
+		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data());
 		//FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -1872,7 +1872,7 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
 	// lodepng returns data with different bytes order that openGL expects.
 	FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data()));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data());
 	FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 	
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -2018,6 +2018,10 @@ FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenH
 	newPostProcess->screenQuad = getMesh("plane");
 	newPostProcess->screenQuadShader = getShader("FEScreenQuadShader");
 	newPostProcess->intermediateFramebuffer = createFramebuffer(FocalEngine::FE_COLOR_ATTACHMENT, ScreenWidth, ScreenHeight);
+
+	// currently postProcess is not using intermediateFramebuffer colorAttachment directly.
+	delete newPostProcess->intermediateFramebuffer->colorAttachments[0];
+	newPostProcess->intermediateFramebuffer->colorAttachments[0] = nullptr;
 
 	return newPostProcess;
 }

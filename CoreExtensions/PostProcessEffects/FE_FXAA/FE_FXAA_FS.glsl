@@ -14,7 +14,7 @@ void main(void)
 {
 	vec2 texCoordOffset = FXAATextuxelSize;
 	
-	vec3 luma = vec3(0.299, 0.587, 0.114);	
+	vec3 luma = vec3(0.299, 0.587, 0.114);
 	float lumaTL = dot(luma, texture2D(inputTexture, textureCoords.xy + (vec2(-1.0, -1.0) * texCoordOffset)).xyz);
 	float lumaTR = dot(luma, texture2D(inputTexture, textureCoords.xy + (vec2(1.0, -1.0) * texCoordOffset)).xyz);
 	float lumaBL = dot(luma, texture2D(inputTexture, textureCoords.xy + (vec2(-1.0, 1.0) * texCoordOffset)).xyz);
@@ -29,7 +29,7 @@ void main(void)
 	float inverseDirAdjustment = 1.0/(min(abs(dir.x), abs(dir.y)) + dirReduce);
 	
 	dir = min(vec2(FXAASpanMax, FXAASpanMax), 
-		max(vec2(-FXAASpanMax, -FXAASpanMax), dir * inverseDirAdjustment)) * texCoordOffset;
+		  max(vec2(-FXAASpanMax, -FXAASpanMax), dir * inverseDirAdjustment)) * texCoordOffset;
 
 	vec3 result1 = (1.0/2.0) * (
 		texture2D(inputTexture, textureCoords.xy + (dir * vec2(1.0/3.0 - 0.5))).xyz +

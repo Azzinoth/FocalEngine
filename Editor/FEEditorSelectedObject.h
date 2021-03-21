@@ -32,6 +32,7 @@ public:
 	SINGLETON_PRIVATE_PART(FEEditorSelectedObject)
 
 	void initializeResources();
+	void reInitializeResources();
 	void setOnUpdateFunc(void(*func)());
 
 	bool isAnyObjectSelected();

@@ -53,11 +53,13 @@ FEFramebuffer::~FEFramebuffer()
 	for (size_t i = 0; i < colorAttachments.size(); i++)
 	{
 		delete colorAttachments[i];
+		colorAttachments[i] = nullptr;
 	}
 	
 	delete depthAttachment;
 	depthAttachment = nullptr;
 	delete stencilAttachment;
+	stencilAttachment = nullptr;
 }
 
 void FEFramebuffer::bind()
@@ -97,6 +99,12 @@ void FEFramebuffer::attachTexture(GLenum attachment, GLenum textarget, FETexture
 
 void FEFramebuffer::setColorAttachment(FETexture* newTexture, size_t index)
 {
+	// this check was added because of postProcesses and how they "manage" colorAttachment of FB
+	if (newTexture == nullptr)
+	{
+		colorAttachments[index] = nullptr;
+		return;
+	}
 	bool wasBind = binded;
 	if (!wasBind) bind();
 	colorAttachments[index] = newTexture;

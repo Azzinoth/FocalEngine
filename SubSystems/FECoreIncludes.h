@@ -110,3 +110,5 @@ static double FENextPowerOfTwo(double currentNumber)
 //#define FE_OLD_SAVE
 
 //#define USE_DEFERRED_RENDERER
+
+//#define FE_GPUMEM_ALLOCATION_LOGING

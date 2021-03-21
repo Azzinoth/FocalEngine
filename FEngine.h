@@ -24,6 +24,7 @@ namespace FocalEngine
 		FEBasicCamera* getCamera();
 
 		void setWindowCaption(const char* text);
+		void setWindowResizeCallback(void(*func)(int, int));
 		void setWindowCloseCallback(void(*func)());
 		void setKeyCallback(void(*func)(int, int, int, int));
 		void setMouseButtonCallback(void(*func)(int, int, int));
@@ -54,12 +55,14 @@ namespace FocalEngine
 		std::string windowTitle;
 
 		float cpuTime, gpuTime;
-
 		double mouseX, mouseY;
 
 		GLFWwindow* window;
 		static void windowCloseCallback(GLFWwindow* window);
-		void(*windowCloseCallbackImpl)();
+		void(*clientWindowCloseCallbackImpl)() = nullptr;
+
+		static void windowResizeCallback(GLFWwindow* window, int width, int height);
+		void(*clientWindowResizeCallbackImpl)(int, int) = nullptr;
 
 		static void mouseButtonCallback(int button, int action, int mods);
 		void(*clientMouseButtonCallbackImpl)(int, int, int) = nullptr;

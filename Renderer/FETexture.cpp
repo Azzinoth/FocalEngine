@@ -14,7 +14,7 @@ FETexture::FETexture(int Width, int Height, std::string Name) : FEAsset(FE_TEXTU
 	height = Height;
 	FE_GL_ERROR(glGenTextures(1, &textureID));
 	bind(0);
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	unBind();
@@ -31,7 +31,7 @@ FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height,
 
 	FE_GL_ERROR(glGenTextures(1, &textureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, textureID));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, NULL));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	// to-do: it is needed for screen space effects but could interfere with other purposes
@@ -86,4 +86,12 @@ int FETexture::getWidth()
 int FETexture::getHeight()
 {
 	return height;
+}
+
+void FETexture::GPUAllocateTeture(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
+{
+	FE_GL_ERROR(glTexImage2D(target, level, internalformat, width, height, border, format, type, data));
+#ifdef FE_GPUMEM_ALLOCATION_LOGING
+	FELOG::getInstance().logError("Texture createion with width: " + std::to_string(width) + " height: " + std::to_string(height));
+#endif
 }

@@ -173,6 +173,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glewInit();
 
 	glfwSetWindowCloseCallback(window, windowCloseCallback);
+	glfwSetWindowSizeCallback(window, windowResizeCallback);
 	glfwSetMouseButtonCallback(window, &FEInput::mouseButtonCallback);
 	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
@@ -235,8 +236,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 
 	FocalEngine::FEShader* BloomCompositionShader =
-		RESOURCE_MANAGER.createShader("FEBloomThreshold", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
-														  RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str());
+		RESOURCE_MANAGER.createShader("FEBloomComposition", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
+														    RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str());
 	bloomEffect->addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, BloomCompositionShader));
 
 	RENDERER.addPostProcess(bloomEffect);
@@ -266,8 +267,8 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER.addPostProcess(FEFXAAEffect);
 
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
-	RENDERER.postProcessEffects.back()->stages[0]->outTexture = RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, windowW, windowH);
+	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, windowW, windowH));
+
 	// ************************************ FXAA END ************************************
 
 	// ************************************ DOF ************************************
@@ -301,8 +302,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	chromaticAberrationEffect->stages.back()->shader->getParameter("intensity")->updateData(1.0f);
 	RENDERER.addPostProcess(chromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	delete RENDERER.postProcessEffects.back()->stages[0]->outTexture;
-	RENDERER.postProcessEffects.back()->stages[0]->outTexture = RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, windowW, windowH);
+	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, windowW, windowH));
 	
 	RENDERER.shadowMapMaterial = RESOURCE_MANAGER.createMaterial("shadowMapMaterial");
 	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str(),
@@ -341,9 +341,14 @@ void FEngine::setWindowCaption(const char* text)
 	glfwSetWindowTitle(window, text);
 }
 
+void FEngine::setWindowResizeCallback(void(*func)(int, int))
+{
+	clientWindowResizeCallbackImpl = func;
+}
+
 void FEngine::setWindowCloseCallback(void(*func)())
 {
-	windowCloseCallbackImpl = func;
+	clientWindowCloseCallbackImpl = func;
 }
 
 void FEngine::setKeyCallback(void(*func)(int, int, int, int))
@@ -365,13 +370,116 @@ void FEngine::windowCloseCallback(GLFWwindow* window)
 {
 	glfwSetWindowShouldClose(window, false);
 	FEngine& engineObj = getInstance();
-	if (engineObj.windowCloseCallbackImpl != nullptr)
+	if (engineObj.clientWindowCloseCallbackImpl != nullptr)
 	{
-		engineObj.windowCloseCallbackImpl();
+		engineObj.clientWindowCloseCallbackImpl();
 	}
 	else
 	{
 		glfwSetWindowShouldClose(window, true);
+	}
+}
+
+void FEngine::windowResizeCallback(GLFWwindow* window, int width, int height)
+{
+	int finalWidth, finalHeight;
+	glfwGetWindowSize(window, &finalWidth, &finalHeight);
+
+	if (finalWidth == 0 || finalHeight == 0)
+		return;
+	
+	FEngine& engineObj = getInstance();
+	engineObj.windowW = finalWidth;
+	engineObj.windowH = finalHeight;
+	engineObj.currentCamera->setAspectRatio(float(engineObj.windowW) / float(engineObj.windowH));
+
+	FERenderer& renderer = RENDERER;
+
+	delete RENDERER.sceneToTextureFB;
+	RENDERER.sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engineObj.windowW, engineObj.windowH);
+
+#ifdef USE_DEFERRED_RENDERER
+	testTextureDepth = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getDepthAttachment());
+
+	testTexture = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+	sceneToTextureFB->setColorAttachment(testTexture, 1);
+	positionsGBufferLastFrame = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+
+	SSAOLastFrame = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+	sceneToTextureFB->colorAttachments[2] = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+#endif // USE_DEFERRED_RENDERER
+
+	//delete RENDERER.postProcessEffects[2]->stages[0]->outTexture;
+
+	for (size_t i = 0; i < RENDERER.postProcessEffects.size(); i++)
+	{
+		delete RENDERER.postProcessEffects[i];
+	}
+	RENDERER.postProcessEffects.clear();
+
+	// ************************************ Bloom ************************************
+	FEPostProcess* bloomEffect = ENGINE.createPostProcess("bloom", int(engineObj.windowW / 4.0f), int(engineObj.windowH / 4.0f));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_SCENE_HDR_COLOR, RESOURCE_MANAGER.getShader("FEBloomThreshold")));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEBloomBlur")));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEBloomBlur")));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEBloomBlur")));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEBloomBlur")));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	bloomEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	bloomEffect->addStage(new FEPostProcessStage(std::vector<int> { FEPP_PREVIOUS_STAGE_RESULT0, FEPP_SCENE_HDR_COLOR}, RESOURCE_MANAGER.getShader("FEBloomComposition")));
+
+	RENDERER.addPostProcess(bloomEffect);
+	// ************************************ Bloom END ************************************
+
+	// ************************************ gammaHDR ************************************
+	FEPostProcess* gammaHDR = ENGINE.createPostProcess("GammaAndHDR", engineObj.windowW, engineObj.windowH);
+	gammaHDR->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEGammaAndHDRShader")));
+	RENDERER.addPostProcess(gammaHDR);
+	// ************************************ gammaHDR END ************************************
+
+	// ************************************ FXAA ************************************
+	FEPostProcess* FEFXAAEffect = ENGINE.createPostProcess("FE_FXAA", engineObj.windowW, engineObj.windowH);
+	FEFXAAEffect->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.getShader("FEFXAAShader")));
+	FEFXAAEffect->stages.back()->shader->getParameter("FXAATextuxelSize")->updateData(glm::vec2(1.0f / engineObj.windowW, 1.0f / engineObj.windowH));
+	RENDERER.addPostProcess(FEFXAAEffect);
+
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, engineObj.windowW, engineObj.windowH));
+	// ************************************ FXAA END ************************************
+
+	// ************************************ DOF ************************************
+	FocalEngine::FEPostProcess* DOFEffect = ENGINE.createPostProcess("DOF");
+
+	DOFEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, RESOURCE_MANAGER.getShader("DOF")));
+	DOFEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0, FocalEngine::FEPP_SCENE_DEPTH}, RESOURCE_MANAGER.getShader("DOF")));
+	DOFEffect->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	RENDERER.addPostProcess(DOFEffect);
+	// ************************************ DOF END ************************************
+
+	FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
+	chromaticAberrationEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.getShader("chromaticAberrationShader")));
+	RENDERER.addPostProcess(chromaticAberrationEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, engineObj.windowW, engineObj.windowH));
+
+	ImGui::GetIO().DisplaySize = ImVec2(float(engineObj.windowW), float(engineObj.windowH));
+
+	if (engineObj.clientWindowResizeCallbackImpl != nullptr)
+	{
+		engineObj.clientWindowResizeCallbackImpl(engineObj.windowW, engineObj.windowH);
 	}
 }
 

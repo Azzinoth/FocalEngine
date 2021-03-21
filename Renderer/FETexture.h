@@ -21,6 +21,7 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEPostProcess;
 	public:
+		static void GPUAllocateTeture(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data);
 		FETexture(std::string Name);
 		FETexture(int Width, int Height, std::string Name);
 		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name);
