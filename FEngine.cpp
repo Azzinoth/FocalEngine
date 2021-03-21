@@ -143,7 +143,7 @@ void FEngine::setImguiStyle()
 	colors[ImGuiCol_PlotHistogram] = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
 	colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
 	colors[ImGuiCol_TextSelectedBg] = ImVec4(0.26f, 0.59f, 0.98f, 0.35f);
-	colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
+	//colors[ImGuiCol_ModalWindowDarkening] = ImVec4(0.20f, 0.20f, 0.20f, 0.35f);
 	colors[ImGuiCol_DragDropTarget] = ImVec4(0.26f, 0.59f, 0.98f, 0.95f);
 	colors[ImGuiCol_NavHighlight] = colors[ImGuiCol_HeaderHovered];
 	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(0.70f, 0.70f, 0.70f, 0.70f);
@@ -408,8 +408,6 @@ void FEngine::windowResizeCallback(GLFWwindow* window, int width, int height)
 	SSAOLastFrame = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
 	sceneToTextureFB->colorAttachments[2] = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
 #endif // USE_DEFERRED_RENDERER
-
-	//delete RENDERER.postProcessEffects[2]->stages[0]->outTexture;
 
 	for (size_t i = 0; i < RENDERER.postProcessEffects.size(); i++)
 	{
