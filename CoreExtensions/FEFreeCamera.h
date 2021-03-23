@@ -26,10 +26,22 @@ namespace FocalEngine
 		void move(float deltaTime = 0.0f);
 
 		void reset() override;
+
+		void setRenderTargetCenterX(int newRenderTargetCenterX);
+		void setRenderTargetCenterY(int newRenderTargetCenterY);
+
+		void setRenderTargetShiftX(int newRenderTargetShiftX);
+		void setRenderTargetShiftY(int newRenderTargetShiftY);
 	private:
 		int lastMouseX = 0;
 		int lastMouseY = 0;
 		float speed = 10.0f;
+
+		int renderTargetCenterX = 0;
+		int renderTargetCenterY = 0;
+
+		int renderTargetShiftX = 0;
+		int renderTargetShiftY = 0;
 
 		bool leftKeyPressed = false;
 		bool upKeyPressed = false;

@@ -965,8 +965,8 @@ void FEProject::loadScene()
 
 void FEProject::createDummyScreenshot()
 {
-	size_t width = ENGINE.getWindowWidth();
-	size_t height = ENGINE.getWindowHeight();
+	size_t width = ENGINE.getRenderTargetWidth();
+	size_t height = ENGINE.getRenderTargetHeight();
 
 	char* pixels = new char[4 * width * height];
 	for (size_t j = 0; j < height; j++)

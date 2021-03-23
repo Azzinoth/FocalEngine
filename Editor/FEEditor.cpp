@@ -1,8 +1,17 @@
 #include "../Editor/FEEditor.h"
-#include "nmmintrin.h"
 
 FEEditor* FEEditor::_instance = nullptr;
-FEEditor::FEEditor() {}
+ImGuiWindow* FEEditor::sceneWindow = nullptr;
+bool FEEditor::sceneWindowHovered = false;
+FEEditor::FEEditor()
+{
+	ENGINE.setRenderTargetMode(FE_CUSTOM_MODE);
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigWindowsMoveFromTitleBarOnly = true;
+
+	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+}
+
 FEEditor::~FEEditor() {}
 
 double FEEditor::getLastMouseX()
@@ -57,7 +66,17 @@ void FEEditor::setObjectNameInClipboard(std::string newValue)
 
 void FEEditor::mouseButtonCallback(int button, int action, int mods)
 {
-	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
+	if (FEEditor::sceneWindow == nullptr || !FEEditor::sceneWindow->Active)
+		sceneWindowHovered = false;
+
+	if (ImGui::GetIO().WantCaptureMouse && !sceneWindowHovered)
+	{
+		EDITOR.isCameraInputActive = false;
+		ENGINE.getCamera()->setIsInputActive(false);
+		return;
+	}
+
+	if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
 	{
 		SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
 		SELECTED.checkForSelectionisNeeded = true;
@@ -66,14 +85,10 @@ void FEEditor::mouseButtonCallback(int button, int action, int mods)
 	else if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
 	{
 		EDITOR.leftMousePressed = false;
-	}
-
-	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
-	{
 		GIZMO_MANAGER.deactivateAllGizmo();
 	}
 
-	if ((!ImGui::GetIO().WantCaptureMouse) && button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS)
+	if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS)
 	{
 		EDITOR.isCameraInputActive = true;
 		ENGINE.getCamera()->setIsInputActive(true);
@@ -89,10 +104,17 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
-		if (PROJECT_MANAGER.getCurrent() == nullptr)
-			ENGINE.terminate();
-		shouldTerminate = true;
-		projectWasModifiedPopUpWindow.show(PROJECT_MANAGER.getCurrent());
+		if (FEEditor::getInstance().isInGameMode())
+		{
+			FEEditor::getInstance().setGameMode(false);
+		}
+		else
+		{
+			if (PROJECT_MANAGER.getCurrent() == nullptr)
+				ENGINE.terminate();
+			shouldTerminate = true;
+			projectWasModifiedPopUpWindow.show(PROJECT_MANAGER.getCurrent());
+		}
 	}
 
 	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
@@ -480,12 +502,12 @@ void FEEditor::displaySceneEntities()
 	std::vector<std::string> entityList = SCENE.getEntityList();
 	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 
-	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
+	//ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
 	//#fix this non-sence with proper Imgui docking system 
 	float windowW = ENGINE.getWindowWidth() / 3.7f;
 	if (windowW > 600)
 		windowW = 600;
-	ImGui::SetNextWindowSize(ImVec2(windowW, float(ENGINE.getWindowHeight())));
+	//ImGui::SetNextWindowSize(ImVec2(windowW, float(ENGINE.getWindowHeight())));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 	
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
@@ -533,6 +555,11 @@ void FEEditor::displaySceneEntities()
 
 			return;
 		}
+	}
+
+	if (ImGui::Button("Enter game mode", ImVec2(220, 0)))
+	{
+		FEEditor::getInstance().setGameMode(true);
 	}
 
 	ImGui::PopStyleColor();
@@ -922,7 +949,8 @@ void FEEditor::initializeResources()
 	ENGINE.setKeyCallback(keyButtonCallback);
 	ENGINE.setMouseButtonCallback(mouseButtonCallback);
 	ENGINE.setMouseMoveCallback(mouseMoveCallback);
-	ENGINE.setWindowResizeCallback(windowsResizeCallback);
+	//ENGINE.setWindowResizeCallback(windowResizeCallback);
+	ENGINE.setRenderTargetResizeCallback(renderTargetResizeCallback);
 
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
@@ -989,9 +1017,6 @@ void FEEditor::mouseMoveCallback(double xpos, double ypos)
 	EDITOR.setMouseX(xpos);
 	EDITOR.setMouseY(ypos);
 
-	//SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
-	
-	//if (SELECTED.getEntity() != nullptr || SELECTED.getTerrain() != nullptr)
 	if (SELECTED.isAnyObjectSelected())
 	{
 		if (SELECTED.getTerrain() != nullptr)
@@ -1014,21 +1039,42 @@ void FEEditor::render()
 {
 	if (PROJECT_MANAGER.getCurrent())
 	{
-		/*glm::dvec3 currentTerrainPoint;
-		FEEntity* test = SCENE.getEntity("tree");
-		if (test != nullptr)
-		{
-			FETerrain* terrain = SCENE.getTerrain("test");
-			if (terrain != nullptr)
-			{
-				float range = 256.0f;
-				glm::dvec3 currentRay = mouseRay();
+		if (gameMode)
+			return;
+		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-				currentTerrainPoint = terrain->getPointOnTerrain(ENGINE.getCamera()->getPosition(), currentRay, 0, range);
-				if (currentTerrainPoint.x != FLT_MAX)
-					test->transform.setPosition(glm::vec3(currentTerrainPoint.x, currentTerrainPoint.y, currentTerrainPoint.z));
-			}
-		}*/
+		ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoScrollbar);
+		
+		sceneWindow = ImGui::GetCurrentWindow();
+		sceneWindowHovered = ImGui::IsWindowHovered();
+
+		ENGINE.setRenderTargetWidth((int)sceneWindow->ContentRegionRect.GetWidth());
+		ENGINE.setRenderTargetHeight((int)sceneWindow->ContentRegionRect.GetHeight());
+
+		ENGINE.setRenderTargetXShift((int)sceneWindow->ContentRegionRect.GetTL().x);
+		ENGINE.setRenderTargetYShift((int)sceneWindow->ContentRegionRect.GetTL().y);
+
+		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+
+		ImGuiStyle& style = ImGui::GetStyle();
+		style.WindowBorderSize = 0.0f;
+		style.WindowPadding = ImVec2(0.0f, 0.0f);
+
+		if (RENDERER.finalScene != nullptr)
+		{
+			ImGui::Image((void*)(intptr_t)RENDERER.finalScene->getTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+		}
+		else if (RENDERER.sceneToTextureFB->getColorAttachment() != nullptr)
+		{
+			ImGui::Image((void*)(intptr_t)RENDERER.sceneToTextureFB->getColorAttachment()->getTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+		}
+		// Something went terribly wrong!
+		else
+		{
+
+		}
+
+		ImGui::End();
 
 		displaySceneEntities();
 		displayContentBrowser();
@@ -1086,7 +1132,33 @@ void FEEditor::closeWindowCallBack()
 	}
 }
 
-void FEEditor::windowsResizeCallback(int newW, int newH)
+//void FEEditor::windowResizeCallback(int newW, int newH)
+//{
+//	SELECTED.reInitializeResources();
+//}
+
+void FEEditor::renderTargetResizeCallback(int newW, int newH)
 {
+	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
 	SELECTED.reInitializeResources();
+}
+
+bool FEEditor::isInGameMode()
+{
+	return gameMode;
+}
+
+void FEEditor::setGameMode(bool gameMode)
+{
+	this->gameMode = gameMode;
+	if (this->gameMode)
+	{
+		ENGINE.setRenderTargetMode(FE_GLFW_MODE);
+		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+	}
+	else
+	{
+		ENGINE.setRenderTargetMode(FE_CUSTOM_MODE);
+		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+	}
 }

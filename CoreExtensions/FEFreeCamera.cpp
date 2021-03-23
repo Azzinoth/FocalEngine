@@ -85,19 +85,13 @@ void FEFreeCamera::setCursorToCenter()
 {
 	if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
 	{
-		int width, height;
-		glfwGetWindowSize(window, &width, &height);
-
-		int xpos, ypos;
-		glfwGetWindowPos(window, &xpos, &ypos);
-
-		lastMouseX = xpos + (width / 2);
-		lastMouseY = ypos + (height / 2);
+		lastMouseX = renderTargetCenterX;
+		lastMouseY = renderTargetCenterY;
 
 		SetCursorPos(lastMouseX, lastMouseY);
 
-		lastMouseX = lastMouseX - xpos;
-		lastMouseY = lastMouseY - ypos;
+		lastMouseX = lastMouseX - renderTargetShiftX;
+		lastMouseY = lastMouseY - renderTargetShiftY;
 	}
 }
 
@@ -105,31 +99,23 @@ void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
 {
 	if (!isInputActive)
 		return;
-	// additional request for new mouse position to overcome some glitches.
-	glfwGetCursorPos(window, &xpos, &ypos);
+
 	int mouseX = int(xpos);
 	int mouseY = int(ypos);
 
 	if (lastMouseX == 0) lastMouseX = mouseX;
 	if (lastMouseY == 0) lastMouseY = mouseY;
 
-	if (lastMouseX < mouseX && abs(lastMouseX - mouseX) > correctionToSensitivity)
-	{
-		currentMouseXAngle += (mouseX - lastMouseX) * 0.15f;
-		setCursorToCenter();
-	}
-	else if (abs(lastMouseX - mouseX) > correctionToSensitivity)
+	int test = renderTargetCenterX;
+	int test2 = renderTargetCenterX - renderTargetShiftX;
+
+	if (lastMouseX < mouseX || abs(lastMouseX - mouseX) > correctionToSensitivity)
 	{
 		currentMouseXAngle += (mouseX - lastMouseX) * 0.15f;
 		setCursorToCenter();
 	}
 
-	if (lastMouseY < mouseY && abs(lastMouseY - mouseY) > correctionToSensitivity)
-	{
-		currentMouseYAngle += (mouseY - lastMouseY) * 0.15f;
-		setCursorToCenter();
-	}
-	else if (abs(lastMouseY - mouseY) > correctionToSensitivity)
+	if (lastMouseY < mouseY || abs(lastMouseY - mouseY) > correctionToSensitivity)
 	{
 		currentMouseYAngle += (mouseY - lastMouseY) * 0.15f;
 		setCursorToCenter();
@@ -205,4 +191,24 @@ float FEFreeCamera::getSpeed()
 void FEFreeCamera::setSpeed(float newSpeed)
 {
 	speed = newSpeed;
+}
+
+void FEFreeCamera::setRenderTargetCenterX(int newRenderTargetCenterX)
+{
+	renderTargetCenterX = newRenderTargetCenterX;
+}
+
+void FEFreeCamera::setRenderTargetCenterY(int newRenderTargetCenterY)
+{
+	renderTargetCenterY = newRenderTargetCenterY;
+}
+
+void FEFreeCamera::setRenderTargetShiftX(int newRenderTargetShiftX)
+{
+	renderTargetShiftX = newRenderTargetShiftX;
+}
+
+void FEFreeCamera::setRenderTargetShiftY(int newRenderTargetShiftY)
+{
+	renderTargetShiftY = newRenderTargetShiftY;
 }

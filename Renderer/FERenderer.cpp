@@ -650,6 +650,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// ********* POST_PROCESS EFFECTS *********
+	finalScene = sceneToTextureFB->getColorAttachment();
 	FETexture* prevStageTex = sceneToTextureFB->getColorAttachment();
 
 	for (size_t i = 0; i < postProcessEffects.size(); i++)
@@ -733,6 +734,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		if (effect.active)
 		{
 			effect.renderResult();
+			finalScene = effect.stages.back()->outTexture;
 			break;
 		}
 	}

@@ -9,9 +9,9 @@ void FEEditorSelectedObject::initializeResources()
 {
 	HALO_SELECTION_EFFECT.initializeResources();
 
-	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 	delete pixelAccurateSelectionFB->getColorAttachment();
-	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
+	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight()));
 
 	pixelAccurateSelectionMaterial = RESOURCE_MANAGER.createMaterial("pixelAccurateSelectionMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(pixelAccurateSelectionMaterial);
@@ -35,9 +35,9 @@ void FEEditorSelectedObject::reInitializeResources()
 	HALO_SELECTION_EFFECT.reInitializeResources();
 
 	delete pixelAccurateSelectionFB;
-	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 	delete pixelAccurateSelectionFB->getColorAttachment();
-	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
+	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight()));
 }
 
 void FEEditorSelectedObject::setOnUpdateFunc(void(*func)())
@@ -133,8 +133,8 @@ void FEEditorSelectedObject::clear()
 glm::dvec3 FEEditorSelectedObject::mouseRay(double mouseX, double mouseY)
 {
 	glm::dvec2 normalizedMouseCoords;
-	normalizedMouseCoords.x = (2.0f * mouseX) / ENGINE.getWindowWidth() - 1;
-	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / ENGINE.getWindowHeight();
+	normalizedMouseCoords.x = (2.0f * mouseX) / ENGINE.getRenderTargetWidth() - 1;
+	normalizedMouseCoords.y = 1.0f - (2.0f * (mouseY)) / ENGINE.getRenderTargetHeight();
 
 	glm::dvec4 clipCoords = glm::dvec4(normalizedMouseCoords.x, normalizedMouseCoords.y, -1.0, 1.0);
 	glm::dvec4 eyeCoords = glm::inverse(ENGINE.getCamera()->getProjectionMatrix()) * clipCoords;
@@ -304,7 +304,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 		}
 	}
 
-	FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getWindowHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
+	FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getRenderTargetHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
 	pixelAccurateSelectionFB->unBind();
 	FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
 

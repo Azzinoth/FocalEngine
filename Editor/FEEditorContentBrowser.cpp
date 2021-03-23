@@ -10,8 +10,8 @@ void FEEditor::displayContentBrowser()
 		windowW = 600;
 	float windowH = mainWindowH;
 
-	ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
+	//ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
+	//ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
 	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
 	if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 	{

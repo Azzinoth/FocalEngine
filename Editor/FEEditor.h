@@ -46,6 +46,8 @@ private:
 	double lastMouseX, lastMouseY;
 	double mouseX, mouseY;
 	std::string objectNameInClipboard = "";
+	static ImGuiWindow* sceneWindow;
+	static bool sceneWindowHovered;
 
 	bool isCameraInputActive = false;
 
@@ -59,7 +61,8 @@ private:
 	static void mouseButtonCallback(int button, int action, int mods);
 	static void mouseMoveCallback(double xpos, double ypos);
 	static void keyButtonCallback(int key, int scancode, int action, int mods);
-	static void windowsResizeCallback(int newW, int newH);
+	//static void windowResizeCallback(int newW, int newH);
+	static void renderTargetResizeCallback(int newW, int newH);
 
 	void displaySceneEntities();
 	void displayContentBrowser();
@@ -93,6 +96,10 @@ private:
 
 	bool isOpenContextMenuInContentBrowser = false;
 	int activeTabContentBrowser = 0;
+
+	bool gameMode = false;
+	bool isInGameMode();
+	void setGameMode(bool gameMode);
 };
 
 #define EDITOR FEEditor::getInstance()

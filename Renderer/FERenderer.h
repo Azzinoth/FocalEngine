@@ -26,6 +26,7 @@ namespace FocalEngine
 
 		//#fix postProcess
 		FEFramebuffer* sceneToTextureFB = nullptr;
+		FETexture* finalScene = nullptr;
 		std::vector<FEPostProcess*> postProcessEffects;
 
 		// in current version only shadows from one directional light is supported.

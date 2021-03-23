@@ -5,6 +5,12 @@
 
 namespace FocalEngine
 {
+	enum FERenderTargetMode
+	{
+		FE_GLFW_MODE = 0,
+		FE_CUSTOM_MODE = 1,
+	};
+
 	class FEngine
 	{
 	public:
@@ -24,6 +30,7 @@ namespace FocalEngine
 		FEBasicCamera* getCamera();
 
 		void setWindowCaption(const char* text);
+		void setRenderTargetResizeCallback(void(*func)(int, int));
 		void setWindowResizeCallback(void(*func)(int, int));
 		void setWindowCloseCallback(void(*func)());
 		void setKeyCallback(void(*func)(int, int, int, int));
@@ -47,6 +54,21 @@ namespace FocalEngine
 		//GLFWwindow* window;
 
 		//GLFWwindow* test_offscreen_context = nullptr;
+
+		inline FERenderTargetMode getRenderTargetMode();
+		void setRenderTargetMode(FERenderTargetMode newMode);
+
+		inline int getRenderTargetWidth();
+		void setRenderTargetWidth(int newRenderTargetWidth);
+		inline int getRenderTargetHeight();
+		void setRenderTargetHeight(int newRenderTargetHeight);
+
+		inline int getRenderTargetXShift();
+		void setRenderTargetXShift(int newRenderTargetXShift);
+		inline int getRenderTargetYShift();
+		void setRenderTargetYShift(int newRenderTargetYShift);
+
+		void renderTargetCenterForCamera(FEFreeCamera* camera);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -57,9 +79,18 @@ namespace FocalEngine
 		float cpuTime, gpuTime;
 		double mouseX, mouseY;
 
+		static FERenderTargetMode renderTargetMode;
+		int renderTargetW;
+		int renderTargetH;
+		static int renderTargetXShift;
+		static int renderTargetYShift;
+		static void renderTargetResize();
+
 		GLFWwindow* window;
 		static void windowCloseCallback(GLFWwindow* window);
 		void(*clientWindowCloseCallbackImpl)() = nullptr;
+
+		void(*clientRenderTargetResizeCallbackImpl)(int, int) = nullptr;
 
 		static void windowResizeCallback(GLFWwindow* window, int width, int height);
 		void(*clientWindowResizeCallbackImpl)(int, int) = nullptr;

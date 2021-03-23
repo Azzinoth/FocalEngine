@@ -7,7 +7,7 @@ FEEditorHaloSelectionEffect::~FEEditorHaloSelectionEffect() {}
 
 void FEEditorHaloSelectionEffect::initializeResources()
 {
-	haloObjectsFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	haloObjectsFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 
 	haloMaterial = RESOURCE_MANAGER.createMaterial("haloMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(haloMaterial);
@@ -20,7 +20,7 @@ void FEEditorHaloSelectionEffect::initializeResources()
 		RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_FS.glsl").c_str());
 	RESOURCE_MANAGER.makeShaderStandard(HaloDrawInstancedObjectShader);
 
-	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	FEShader* blurShader = RESOURCE_MANAGER.getShader("FEBloomBlur");
 	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, blurShader));
@@ -28,25 +28,25 @@ void FEEditorHaloSelectionEffect::initializeResources()
 	// because input texture at first stage is full resolution, we should blur harder to get simular blur on both sides.
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f * 4.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
-	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	FEShader* haloFinalShader = RESOURCE_MANAGER.createShader("HaloFinalShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
 																				 RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloSelectionEffect_FS.glsl").c_str());
@@ -57,7 +57,7 @@ void FEEditorHaloSelectionEffect::initializeResources()
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[3]->outTexture);
 	postProcess->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->inTexture[0]);
-	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
+	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 
 	RENDERER.addPostProcess(postProcess, true);
 }
@@ -65,8 +65,8 @@ void FEEditorHaloSelectionEffect::initializeResources()
 void FEEditorHaloSelectionEffect::reInitializeResources()
 {
 	delete haloObjectsFB;
-	haloObjectsFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getWindowWidth(), ENGINE.getWindowHeight());
-	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4);
+	haloObjectsFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
+	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
 	FEShader* blurShader = RESOURCE_MANAGER.getShader("FEBloomBlur");
 	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, blurShader));
@@ -74,25 +74,25 @@ void FEEditorHaloSelectionEffect::reInitializeResources()
 	// because input texture at first stage is full resolution, we should blur harder to get simular blur on both sides.
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f * 4.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(haloObjectsFB->getColorAttachment());
-	postProcess->replaceOutTexture(0, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4));
+	postProcess->replaceOutTexture(0, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4));
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.5f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->replaceOutTexture(1, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4));
+	postProcess->replaceOutTexture(1, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4));
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->replaceOutTexture(2, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4));
+	postProcess->replaceOutTexture(2, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4));
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_PREVIOUS_STAGE_RESULT0, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
-	postProcess->replaceOutTexture(3, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth() / 4, ENGINE.getWindowHeight() / 4));
+	postProcess->replaceOutTexture(3, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4));
 
 	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, RESOURCE_MANAGER.getShader("HaloFinalShader")));
 	postProcess->stages.back()->inTexture.push_back(RENDERER.postProcessEffects[RENDERER.postProcessEffects.size() - 1]->stages.back()->outTexture);
@@ -100,7 +100,7 @@ void FEEditorHaloSelectionEffect::reInitializeResources()
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[3]->outTexture);
 	postProcess->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->inTexture[0]);
-	postProcess->replaceOutTexture(4, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getWindowWidth(), ENGINE.getWindowHeight()));
+	postProcess->replaceOutTexture(4, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight()));
 
 	RENDERER.addPostProcess(postProcess, true);
 }
