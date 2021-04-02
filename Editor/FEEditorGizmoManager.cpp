@@ -15,7 +15,7 @@ void GizmoManager::initializeResources()
 	// transformationXGizmo
 	FEMaterial* currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationXGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationXGizmoGM"), "transformationXGizmoEntity");
@@ -27,7 +27,7 @@ void GizmoManager::initializeResources()
 	// transformationYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationYGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationYGizmoGM"), "transformationYGizmoEntity");
@@ -39,7 +39,7 @@ void GizmoManager::initializeResources()
 	// transformationZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationZGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationZGizmoGM"), "transformationZGizmoEntity");
@@ -51,10 +51,10 @@ void GizmoManager::initializeResources()
 	// plane gizmos
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXYGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
-	transformationXYGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationXYGizmoGM"), "transformationXYGizmoEntity");
+	transformationXYGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationXYGizmoGM"), "transformationXYGizmoEntity");
 	RESOURCE_MANAGER.makeGameModelStandard(transformationXYGizmoEntity->gameModel);
 	transformationXYGizmoEntity->setCastShadows(false);
 	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
@@ -62,10 +62,10 @@ void GizmoManager::initializeResources()
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
-	transformationYZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationYZGizmoGM"), "transformationYZGizmoEntity");
+	transformationYZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationYZGizmoGM"), "transformationYZGizmoEntity");
 	RESOURCE_MANAGER.makeGameModelStandard(transformationYZGizmoEntity->gameModel);
 	transformationYZGizmoEntity->setCastShadows(false);
 	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
@@ -73,10 +73,10 @@ void GizmoManager::initializeResources()
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
-	transformationXZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("cube"), currentMaterial, "TransformationXZGizmoGM"), "transformationXZGizmoEntity");
+	transformationXZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationXZGizmoGM"), "transformationXZGizmoEntity");
 	RESOURCE_MANAGER.makeGameModelStandard(transformationXZGizmoEntity->gameModel);
 	transformationXZGizmoEntity->setCastShadows(false);
 	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
@@ -89,7 +89,7 @@ void GizmoManager::initializeResources()
 	// scaleXGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleXGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleXGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleXGizmoGM"), "scaleXGizmoEntity");
@@ -101,7 +101,7 @@ void GizmoManager::initializeResources()
 	// scaleYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleYGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleYGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleYGizmoGM"), "scaleYGizmoEntity");
@@ -113,7 +113,7 @@ void GizmoManager::initializeResources()
 	// scaleZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleZGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleZGizmoGM"), "scaleZGizmoEntity");
@@ -129,7 +129,7 @@ void GizmoManager::initializeResources()
 	// rotateXGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateXGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateXGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateXGizmoGM"), "rotateXGizmoEntity");
@@ -141,7 +141,7 @@ void GizmoManager::initializeResources()
 	// rotateYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateYGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateYGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateYGizmoGM"), "rotateYGizmoEntity");
@@ -153,7 +153,7 @@ void GizmoManager::initializeResources()
 	// rotateZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-	currentMaterial->shader = RESOURCE_MANAGER.getShader("FESolidColorShader");
+	currentMaterial->shader = RESOURCE_MANAGER.getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateZGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateZGizmoGM"), "rotateZGizmoEntity");
@@ -219,7 +219,7 @@ void GizmoManager::updateGizmoState(int newState)
 	gizmosState = newState;
 	hideAllGizmo();
 
-	if (!SELECTED.isAnyObjectSelected())
+	if (SELECTED.getSelected() == nullptr || SELECTED.getSelected()->getType() == FE_CAMERA)
 		return;
 
 	switch (newState)
@@ -278,29 +278,18 @@ void GizmoManager::deactivateAllGizmo()
 
 void GizmoManager::render()
 {
-	if (!SELECTED.isAnyObjectSelected())
+	if (SELECTED.getSelected() == nullptr || SELECTED.getSelected()->getType() == FE_CAMERA)
+	{
+		hideAllGizmo();
 		return;
+	}	
 
-	glm::mat4 selectedObjTransform;
-	if (SELECTED.getType() == SELECTED_ENTITY || SELECTED.getType() == SELECTED_ENTITY_INSTANCED)
-	{
-		selectedObjTransform = SELECTED.getEntity()->transform.getTransformMatrix();
-	}
-	else if (SELECTED.getType() == SELECTED_TERRAIN)
-	{
-		selectedObjTransform = SELECTED.getTerrain()->transform.getTransformMatrix();
-	}
-	else if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
-	{
-
-		selectedObjTransform = reinterpret_cast<FEEntityInstanced*>(SELECTED.getBareObject())->getTransformedInstancedMatrix(SELECTED.getAdditionalInformation());
-	}
-
-	glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(selectedObjTransform * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+	FETransformComponent objTransform = getTransformComponentOfSelectedObject();
+	glm::vec3 objectSpaceOriginInWorldSpace = glm::vec3(objTransform.getTransformMatrix() * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	glm::vec3 toObject = objectSpaceOriginInWorldSpace - ENGINE.getCamera()->getPosition();
 	toObject = glm::normalize(toObject);
 
-	if (SELECTED.getEntity() != nullptr && SELECTED.getEntity()->getType() == FE_ENTITY_INSTANCED)
+	if (SELECTED.getEntity() != nullptr && SELECTED.getEntity()->getType() == FE_ENTITY_INSTANCED && SELECTED.instancedSubObjectIndexSelected == -1)
 	{
 		FEAABB AABB = SELECTED.getEntity()->getAABB();
 		glm::vec3 center = AABB.getMin() + ((AABB.getMax() - AABB.getMin()) / 2.0f);
@@ -383,7 +372,7 @@ void GizmoManager::render()
 		GIZMO_MANAGER.rotateYGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 		GIZMO_MANAGER.rotateZGizmoEntity->transform.setPosition((ENGINE.getCamera()->getPosition() + toObject * 0.15f));
 
-		if (SELECTED.isAnyObjectSelected())
+		if (SELECTED.SELECTED.getSelected() != nullptr)
 		{
 			GIZMO_MANAGER.rotateXGizmoEntity->setVisibility(true);
 			GIZMO_MANAGER.rotateYGizmoEntity->setVisibility(true);
@@ -423,9 +412,12 @@ bool GizmoManager::wasSelected(int index)
 {
 	deactivateAllGizmo();
 
+	if (SELECTED.objectsUnderMouse[index]->getType() == FE_CAMERA)
+		return true;
+
 	FEEntity* selectedEntity = nullptr;
-	if (SELECTED.objectsUnderMouse[index].type == SELECTED_ENTITY)
-		selectedEntity = reinterpret_cast<FEEntity*>(SELECTED.objectsUnderMouse[index].objPointer);
+	if (SELECTED.objectsUnderMouse[index]->getType() == FE_ENTITY)
+		selectedEntity = SCENE.getEntity(SELECTED.objectsUnderMouse[index]->getObjectID());
 
 	int entityNameHash = selectedEntity == nullptr ? -1 : selectedEntity->getNameHash();
 	if (gizmosState == TRANSFORM_GIZMOS && entityNameHash == transformationXGizmoEntity->getNameHash())
@@ -792,7 +784,7 @@ void GizmoManager::mouseMove(double lastMouseX, double lastMouseY, double mouseX
 
 void GizmoManager::onSelectedObjectUpdate()
 {
-	if (!SELECTED.isAnyObjectSelected())
+	if (SELECTED.getSelected() == nullptr)
 	{
 		GIZMO_MANAGER.hideAllGizmo();
 	}
@@ -833,17 +825,31 @@ void GizmoManager::onSelectedObjectUpdate()
 
 FETransformComponent GizmoManager::getTransformComponentOfSelectedObject()
 {
-	if (SELECTED.getType() == SELECTED_ENTITY || SELECTED.getType() == SELECTED_ENTITY_INSTANCED)
+	if (SELECTED.getSelected() == nullptr)
+		FETransformComponent();
+
+	if (SELECTED.getSelected()->getType() == FE_ENTITY)
 	{
 		return SELECTED.getEntity()->transform;
 	}
-	else if (SELECTED.getType() == SELECTED_TERRAIN)
+	else if (SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED)
+	{
+		if (SELECTED.instancedSubObjectIndexSelected != -1)
+		{
+			return reinterpret_cast<FEEntityInstanced*>(SELECTED.getEntity())->getTransformedInstancedMatrix(SELECTED.instancedSubObjectIndexSelected);
+		}
+		else
+		{
+			return SELECTED.getEntity()->transform;
+		}
+	}
+	else if (SELECTED.getSelected()->getType() == FE_TERRAIN)
 	{
 		return SELECTED.getTerrain()->transform;
 	}
-	else if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+	else if (SELECTED.getSelected()->getType() == FE_DIRECTIONAL_LIGHT || SELECTED.getSelected()->getType() == FE_SPOT_LIGHT || SELECTED.getSelected()->getType() == FE_POINT_LIGHT)
 	{
-		return reinterpret_cast<FEEntityInstanced*>(SELECTED.getBareObject())->getTransformedInstancedMatrix(SELECTED.getAdditionalInformation());
+		return SELECTED.getLight()->transform;
 	}
 
 	return FETransformComponent();
@@ -851,16 +857,30 @@ FETransformComponent GizmoManager::getTransformComponentOfSelectedObject()
 
 void GizmoManager::applyChangesToSelectedObject(FETransformComponent changes)
 {
-	if (SELECTED.getType() == SELECTED_ENTITY || SELECTED.getType() == SELECTED_ENTITY_INSTANCED)
+	if (SELECTED.getSelected() == nullptr)
+		FETransformComponent();
+
+	if (SELECTED.getSelected()->getType() == FE_ENTITY)
 	{
 		SELECTED.getEntity()->transform = changes;
 	}
-	else if (SELECTED.getType() == SELECTED_TERRAIN)
+	else if (SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED)
+	{
+		if (SELECTED.instancedSubObjectIndexSelected != -1)
+		{
+			reinterpret_cast<FEEntityInstanced*>(SELECTED.getEntity())->modifyInstance(SELECTED.instancedSubObjectIndexSelected, changes.getTransformMatrix());
+		}
+		else
+		{
+			SELECTED.getEntity()->transform = changes;
+		}
+	}
+	else if (SELECTED.getSelected()->getType() == FE_TERRAIN)
 	{
 		SELECTED.getTerrain()->transform = changes;
 	}
-	else if (SELECTED.getType() == SELECTED_ENTITY_INSTANCED_SUBOBJECT)
+	else if (SELECTED.getSelected()->getType() == FE_DIRECTIONAL_LIGHT || SELECTED.getSelected()->getType() == FE_SPOT_LIGHT || SELECTED.getSelected()->getType() == FE_POINT_LIGHT)
 	{
-		reinterpret_cast<FEEntityInstanced*>(SELECTED.getBareObject())->modifyInstance(SELECTED.getAdditionalInformation(), changes.getTransformMatrix());
+		SELECTED.getLight()->transform = changes;
 	}
 }

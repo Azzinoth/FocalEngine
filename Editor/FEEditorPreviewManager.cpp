@@ -41,10 +41,9 @@ void FEEditorPreviewManager::updateAll()
 	}
 }
 
-void FEEditorPreviewManager::createMeshPreview(std::string meshName)
+void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 {
-	FEMesh* previewMesh = RESOURCE_MANAGER.getMesh(meshName);
-
+	FEMesh* previewMesh = RESOURCE_MANAGER.getMesh(meshID);
 	if (previewMesh == nullptr)
 		return;
 
@@ -102,29 +101,29 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshName)
 	previewFB->unBind();
 
 	// if we are updating preview we should delete old texture.
-	if (meshPreviewTextures.find(meshName) != meshPreviewTextures.end())
-		delete meshPreviewTextures[meshName];
+	if (meshPreviewTextures.find(meshID) != meshPreviewTextures.end())
+		delete meshPreviewTextures[meshID];
 
-	meshPreviewTextures[meshName] = previewFB->getColorAttachment();
+	meshPreviewTextures[meshID] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
 }
 
-FETexture* FEEditorPreviewManager::getMeshPreview(std::string meshName)
+FETexture* FEEditorPreviewManager::getMeshPreview(std::string meshID)
 {
 	// if we somehow could not find preview, we will create it.
-	if (meshPreviewTextures.find(meshName) == meshPreviewTextures.end())
-		createMeshPreview(meshName);
+	if (meshPreviewTextures.find(meshID) == meshPreviewTextures.end())
+		createMeshPreview(meshID);
 
 	// if still we don't have it
-	if (meshPreviewTextures.find(meshName) == meshPreviewTextures.end())
+	if (meshPreviewTextures.find(meshID) == meshPreviewTextures.end())
 		return RESOURCE_MANAGER.noTexture;
 
-	return meshPreviewTextures[meshName];
+	return meshPreviewTextures[meshID];
 }
 
-void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
+void FEEditorPreviewManager::createMaterialPreview(std::string materialID)
 {
-	FEMaterial* previewMaterial = RESOURCE_MANAGER.getMaterial(materialName);
+	FEMaterial* previewMaterial = RESOURCE_MANAGER.getMaterial(materialID);
 	if (previewMaterial == nullptr)
 		return;
 
@@ -144,7 +143,7 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
 	float regularLightIntensity = currentDirectionalLight->getIntensity();
 	currentDirectionalLight->setIntensity(10.0f);
 
-	previewGameModel->mesh = RESOURCE_MANAGER.getMesh("sphere");
+	previewGameModel->mesh = RESOURCE_MANAGER.getMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
 	previewGameModel->material = previewMaterial;
 	previewEntity->setReceivingShadows(false);
 
@@ -189,10 +188,10 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
 	previewFB->unBind();
 
 	// if we are updating preview we should delete old texture.
-	if (materialPreviewTextures.find(materialName) != materialPreviewTextures.end())
-		delete materialPreviewTextures[materialName];
+	if (materialPreviewTextures.find(materialID) != materialPreviewTextures.end())
+		delete materialPreviewTextures[materialID];
 
-	materialPreviewTextures[materialName] = previewFB->getColorAttachment();
+	materialPreviewTextures[materialID] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
 
 	// looking for all gameModels that uses this material to also update them
@@ -205,24 +204,37 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialName)
 	}
 }
 
-FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialName)
+FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialID)
 {
-	// if matrial's dirty flag is set we need to update preview
-	if (RESOURCE_MANAGER.getMaterial(materialName)->getDirtyFlag())
+	// if material's dirty flag is set we need to update preview
+	if (RESOURCE_MANAGER.getMaterial(materialID)->getDirtyFlag())
 	{
-		createMaterialPreview(materialName);
-		RESOURCE_MANAGER.getMaterial(materialName)->setDirtyFlag(false);
+		createMaterialPreview(materialID);
+		// if some game model uses this material we should also update it's preview
+		std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+
+		for (size_t i = 0; i < gameModelList.size(); i++)
+		{
+
+			FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+
+			if (currentGameModel->material == RESOURCE_MANAGER.getMaterial(materialID))
+				createGameModelPreview(currentGameModel->getObjectID());
+		}
+
+
+		RESOURCE_MANAGER.getMaterial(materialID)->setDirtyFlag(false);
 	}	
 
 	// if we somehow could not find preview, we will create it.
-	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
-		createMaterialPreview(materialName);
+	if (materialPreviewTextures.find(materialID) == materialPreviewTextures.end())
+		createMaterialPreview(materialID);
 
 	// if still we don't have it
-	if (materialPreviewTextures.find(materialName) == materialPreviewTextures.end())
+	if (materialPreviewTextures.find(materialID) == materialPreviewTextures.end())
 		return RESOURCE_MANAGER.noTexture;
 
-	return materialPreviewTextures[materialName];
+	return materialPreviewTextures[materialID];
 }
 
 void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
@@ -409,17 +421,17 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 	previewFB->setColorAttachment(tempTexture);
 }
 
-FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelName)
+FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelID)
 {
 	// if we somehow could not find preview, we will create it.
-	if (gameModelPreviewTextures.find(gameModelName) == gameModelPreviewTextures.end())
-		createMeshPreview(gameModelName);
+	if (gameModelPreviewTextures.find(gameModelID) == gameModelPreviewTextures.end())
+		createMeshPreview(gameModelID);
 
 	// if still we don't have it
-	if (gameModelPreviewTextures.find(gameModelName) == gameModelPreviewTextures.end())
+	if (gameModelPreviewTextures.find(gameModelID) == gameModelPreviewTextures.end())
 		return RESOURCE_MANAGER.noTexture;
 
-	return gameModelPreviewTextures[gameModelName];
+	return gameModelPreviewTextures[gameModelID];
 }
 
 void FEEditorPreviewManager::clear()

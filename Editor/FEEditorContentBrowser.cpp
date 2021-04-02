@@ -1,28 +1,12 @@
 #include "../Editor/FEEditor.h"
 
+static int itemIconSide = 128;
 void FEEditor::displayContentBrowser()
 {
-	float mainWindowW = float(ENGINE.getWindowWidth());
-	float mainWindowH = float(ENGINE.getWindowHeight());
-	//#fix this non-sence with proper Imgui docking system 
-	float windowW = mainWindowW / 3.7f;
-	if (windowW > 600)
-		windowW = 600;
-	float windowH = mainWindowH;
-
-	//ImGui::SetNextWindowPos(ImVec2(mainWindowW - windowW, 0.0f));
-	//ImGui::SetNextWindowSize(ImVec2(windowW, windowH));
 	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
 	if (ImGui::BeginTabBar("##Content Browser", ImGuiTabBarFlags_None))
 	{
 		ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
-
-		if (SELECTED.getDirtyFlag() && SELECTED.getTerrain() != nullptr)
-		{
-			auto& ImGuiContext = *ImGui::GetCurrentContext();
-			ImGuiContext.CurrentTabBar->SelectedTabId = ImGuiContext.CurrentTabBar->Tabs[5].ID;
-			SELECTED.setDirtyFlag(false);
-		}
 
 		if (ImGui::BeginTabItem("Meshes"))
 		{
@@ -59,13 +43,6 @@ void FEEditor::displayContentBrowser()
 			ImGui::EndTabItem();
 		}
 
-		if (ImGui::BeginTabItem("Terrain"))
-		{
-			activeTabContentBrowser = 5;
-			displayTerrainContentBrowser();
-			ImGui::EndTabItem();
-		}
-
 		/*if (ImGui::BeginTabItem("PostProcess"))
 		{
 			activeTabContentBrowser = 6;
@@ -92,6 +69,7 @@ void FEEditor::displayContentBrowser()
 		ImGui::OpenPopup("##context_menu");
 
 	isOpenContextMenuInContentBrowser = false;
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	if (ImGui::BeginPopup("##context_menu"))
 	{
 		isOpenContextMenuInContentBrowser = true;
@@ -132,7 +110,7 @@ void FEEditor::displayContentBrowser()
 
 				if (ImGui::MenuItem("Rename"))
 				{
-					renameMeshWindow.show(RESOURCE_MANAGER.getMesh(RESOURCE_MANAGER.getMeshList()[meshUnderMouse]));
+					renamePopUp::getInstance().show(RESOURCE_MANAGER.getMesh(RESOURCE_MANAGER.getMeshList()[meshUnderMouse]));
 				}
 			}
 
@@ -180,18 +158,18 @@ void FEEditor::displayContentBrowser()
 
 				if (ImGui::MenuItem("Rename"))
 				{
-					renameTextureWindow.show(RESOURCE_MANAGER.getTexture(RESOURCE_MANAGER.getTextureList()[textureUnderMouse]));
+					renamePopUp::getInstance().show(RESOURCE_MANAGER.getTexture(RESOURCE_MANAGER.getTextureList()[textureUnderMouse]));
 				}
 			}
 			break;
 		}
 		case 2:
 		{
-			if (shaderNameUnderMouse != "")
+			if (shaderIDUnderMouse != "")
 			{
 				if (ImGui::MenuItem("Edit..."))
 				{
-					shadersEditorWindow.show(RESOURCE_MANAGER.getShader(shaderNameUnderMouse));
+					shadersEditorWindow.show(RESOURCE_MANAGER.getShader(shaderIDUnderMouse));
 				}
 			}
 			break;
@@ -206,12 +184,11 @@ void FEEditor::displayContentBrowser()
 					if (newMat)
 					{
 						PROJECT_MANAGER.getCurrent()->modified = true;
-						newMat->shader = RESOURCE_MANAGER.getShader("FEPBRShader");
+						newMat->shader = RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 
 						newMat->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 						newMat->setNormalMap(RESOURCE_MANAGER.noTexture);
 					}
-
 				}
 				break;
 			}
@@ -230,7 +207,7 @@ void FEEditor::displayContentBrowser()
 
 				if (ImGui::MenuItem("Rename"))
 				{
-					renameMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
+					renamePopUp::getInstance().show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
 				}
 			}
 			break;
@@ -260,24 +237,9 @@ void FEEditor::displayContentBrowser()
 
 				if (ImGui::MenuItem("Rename"))
 				{
-					renameGameModelWindow.show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
+					renamePopUp::getInstance().show(RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getGameModelList()[gameModelUnderMouse]));
 				}
 			}
-			break;
-		}
-		case 5:
-		{
-			if (ImGui::MenuItem("Create new terrain"))
-			{
-				FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain();
-				SCENE.addTerrain(newTerrain);
-				newTerrain->heightMap->setDirtyFlag(true);
-				PROJECT_MANAGER.getCurrent()->modified = true;
-			}
-			break;
-		}
-		case 6:
-		{
 			break;
 		}
 		default:
@@ -285,19 +247,17 @@ void FEEditor::displayContentBrowser()
 		}
 		ImGui::EndPopup();
 	}
+
+	ImGui::PopStyleVar();
 	ImGui::End();
 
 	loadTextureWindow.render();
-	renameMeshWindow.render();
-	renameTextureWindow.render();
-	renameFailedWindow.render();
+	renameFailedPopUp::getInstance().render();
 	deleteTextureWindow.render();
 	deleteMeshWindow.render();
-	renameGameModelWindow.render();
 	deleteGameModelWindow.render();
 	editGameModelWindow.render();
 	editMaterialWindow.render();
-	renameMaterialWindow.render();
 	deleteMaterialWindow.render();
 	messagePopUpObj.render();
 	shadersEditorWindow.render();
@@ -311,8 +271,9 @@ void FEEditor::displayMeshesContentBrowser()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (itemIconSide + 32);
 	if (!isOpenContextMenuInContentBrowser) meshUnderMouse = -1;
-	ImGui::Columns(3, "mycolumns3", false);
+	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
 		FETexture* meshPreviewTexture = PREVIEW_MANAGER.getMeshPreview(meshList[i]);
@@ -332,7 +293,7 @@ void FEEditor::displayMeshesContentBrowser()
 			if (!isOpenContextMenuInContentBrowser) meshUnderMouse = i;
 		}
 
-		ImGui::Text(meshList[i].c_str());
+		ImGui::Text(RESOURCE_MANAGER.getMesh(meshList[i])->getName().c_str());
 		ImGui::NextColumn();
 	}
 	ImGui::Columns(1);
@@ -350,21 +311,22 @@ void FEEditor::displayTexturesContentBrowser()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (itemIconSide + 32);
 	if (!isOpenContextMenuInContentBrowser) textureUnderMouse = -1;
-	ImGui::Columns(3, "mycolumns3", false);
+	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
 	for (size_t i = 0; i < textureList.size(); i++)
 	{
-		if (ImGui::ImageButton((void*)(intptr_t)RESOURCE_MANAGER.getTexture(textureList[i])->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		if (ImGui::ImageButton((void*)(intptr_t)RESOURCE_MANAGER.getTexture(textureList[i])->getTextureID(), ImVec2((float)itemIconSide, (float)itemIconSide), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
 			//
 		}
-
+		
 		if (ImGui::IsItemHovered())
 		{
 			if (!isOpenContextMenuInContentBrowser) textureUnderMouse = i;
 		}
 
-		ImGui::Text(textureList[i].c_str());
+		ImGui::Text(RESOURCE_MANAGER.getTexture(textureList[i])->getName().c_str());
 		ImGui::NextColumn();
 	}
 	ImGui::Columns(1);
@@ -404,8 +366,9 @@ void FEEditor::displayShadersContentBrowser()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
-	if (!isOpenContextMenuInContentBrowser) shaderNameUnderMouse = "";
-	ImGui::Columns(3, "mycolumns3", false);
+	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (64 + 32);
+	if (!isOpenContextMenuInContentBrowser) shaderIDUnderMouse = "";
+	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
 	for (size_t i = 0; i < shaderList.size(); i++)
 	{
 		ImGui::PushID(i);
@@ -417,10 +380,10 @@ void FEEditor::displayShadersContentBrowser()
 
 		if (ImGui::IsItemHovered())
 		{
-			if (!isOpenContextMenuInContentBrowser) shaderNameUnderMouse = shaderList[i];
+			if (!isOpenContextMenuInContentBrowser) shaderIDUnderMouse = shaderList[i];
 		}
 
-		ImGui::Text(shaderList[i].c_str());
+		ImGui::Text(RESOURCE_MANAGER.getShader(shaderList[i])->getName().c_str());
 		ImGui::NextColumn();
 
 		ImGui::PopID();
@@ -440,8 +403,9 @@ void FEEditor::displayMaterialContentBrowser()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (itemIconSide + 32);
 	if (!isOpenContextMenuInContentBrowser) materialUnderMouse = -1;
-	ImGui::Columns(3, "mycolumns3", false);
+	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
 	for (size_t i = 0; i < materialList.size(); i++)
 	{
 		FETexture* materialPreviewTexture = PREVIEW_MANAGER.getMaterialPreview(materialList[i]);
@@ -466,7 +430,7 @@ void FEEditor::displayMaterialContentBrowser()
 				editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(RESOURCE_MANAGER.getMaterialList()[materialUnderMouse]));
 		}
 
-		ImGui::Text(materialList[i].c_str());
+		ImGui::Text(RESOURCE_MANAGER.getMaterial(materialList[i])->getName().c_str());
 		ImGui::NextColumn();
 	}
 	ImGui::Columns(1);
@@ -484,8 +448,9 @@ void FEEditor::displayGameModelContentBrowser()
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (itemIconSide + 32);
 	if (!isOpenContextMenuInContentBrowser) gameModelUnderMouse = -1;
-	ImGui::Columns(3, "mycolumns3", false);
+	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
 		FETexture* gameModelPreviewTexture = PREVIEW_MANAGER.getGameModelPreview(gameModelList[i]);
@@ -504,7 +469,7 @@ void FEEditor::displayGameModelContentBrowser()
 			if (!isOpenContextMenuInContentBrowser) gameModelUnderMouse = i;
 		}
 
-		ImGui::Text(gameModelList[i].c_str());
+		ImGui::Text(RESOURCE_MANAGER.getGameModel(gameModelList[i])->getName().c_str());
 		ImGui::NextColumn();
 	}
 	ImGui::Columns(1);
@@ -512,306 +477,6 @@ void FEEditor::displayGameModelContentBrowser()
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
-}
-
-void FEEditor::displayTerrainContentBrowser()
-{
-	static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");
-	static ImGuiButton* loadHeightMapButton = new ImGuiButton("Load HeightMap");
-	static ImGuiButton* testButton = new ImGuiButton("testButton");
-
-	static ImGuiImageButton* sculptBrushButton = new ImGuiImageButton(nullptr);
-	static ImGuiImageButton* levelBrushButton = new ImGuiImageButton(nullptr);
-	static ImGuiImageButton* smoothBrushButton = new ImGuiImageButton(nullptr);
-	static bool firstCall = true;
-	if (firstCall)
-	{
-		sculptBrushButton->setTexture(sculptBrushIcon);
-		sculptBrushButton->setSize(ImVec2(24, 24));
-
-		levelBrushButton->setTexture(levelBrushIcon);
-		levelBrushButton->setSize(ImVec2(24, 24));
-
-		smoothBrushButton->setTexture(smoothBrushIcon);
-		smoothBrushButton->setSize(ImVec2(24, 24));
-
-		loadHeightMapButton->setSize(ImVec2(160, 0));
-		changeMaterialButton->setSize(ImVec2(180, 0));
-
-		firstCall = false;
-	}
-
-	std::vector<std::string> terrainList = SCENE.getTerrainList();
-	if (SELECTED.getDirtyFlag() && SELECTED.getTerrain() != nullptr)
-	{
-		for (size_t i = 0; i < terrainList.size(); i++)
-		{
-			ImGui::GetStateStorage()->SetInt(ImGui::GetID(terrainList[i].c_str()), 0);
-		}
-		SELECTED.setDirtyFlag(false);
-		ImGui::GetStateStorage()->SetInt(ImGui::GetID(SELECTED.getTerrainName().c_str()), 1);
-	}
-
-	static int testCount = 0;
-
-	for (size_t i = 0; i < terrainList.size(); i++)
-	{
-		FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
-		if (ImGui::TreeNode(currentTerrain->getName().c_str()))
-		{
-			//testButton->render();
-			//if (testButton->getWasClicked())
-			//{
-			//	int count_mult = 40;
-			//	FEEntityInstanced* testInstanced;
-
-			//	// ************** grass_simple_01 **************
-			//	FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_01");
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "firstInstanced");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	FESpawnInfo spawnInfo;
-			//	spawnInfo.objectCount = 1500 * count_mult;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = 8774;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-
-			//	// ************** grass_simple_02 **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("grass_simple_02");
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "secondInstanced");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 300 * count_mult;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = 234234;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-
-			//	// ************** perennials **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("perennials");
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "second_Instanced");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 30 * count_mult;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = 1300;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-			//	
-			//	// ************** SM_forest_heather_01 **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("SM_forest_heather_01");
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "thirdInstanced");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 300 * count_mult;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = 11500;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.01f, 1.0f, 0.01f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-			//	
-			//	// ************** SM_Small_Rock_05 **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("SM_Small_Rock_05");
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 25 * count_mult;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = -11500;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.1f, 1.0f, 0.1f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-
-			//	// ************** Fir_05_LOD0 **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("Fir_05_LOD0");
-			//	currentGameModel->material->setRoughtnessMapIntensity(1.5);
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced1");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 600;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = -1500;
-			//	spawnInfo.rotationDeviation = glm::vec3(0.005f, 1.0f, 0.005f);
-
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-
-			//	// ************** amurcork **************
-			//	currentGameModel = RESOURCE_MANAGER.getGameModel("amurcork");
-			//	currentGameModel->material->setRoughtnessMapIntensity(1.5);
-			//	testInstanced = SCENE.addEntityInstanced(currentGameModel, "fourthInstanced2");
-			//	testInstanced->cullingType = FE_CULLING_LODS;
-
-			//	spawnInfo.objectCount = 100;
-			//	spawnInfo.radius = 200.0f;
-			//	spawnInfo.seed = -6791500;
-
-			//	testInstanced->populate(spawnInfo);
-			//	testInstanced->clear();
-			//	SCENE.getTerrain(SCENE.getTerrainList()[0])->snapInstancedEntity(testInstanced);
-			//	testInstanced->populate(spawnInfo);
-			//}
-
-			//ImGui::Text((std::string("was spawned : ") + std::to_string(testCount)).c_str());
-
-			bool isActive = currentTerrain->isWireframeMode();
-			ImGui::Checkbox("WireframeMode", &isActive);
-			currentTerrain->setWireframeMode(isActive);
-
-			loadHeightMapButton->render();
-			if (loadHeightMapButton->getWasClicked())
-			{
-				std::string filePath = "";
-				FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
-
-				if (filePath != "")
-				{
-					FETexture* loadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(filePath.c_str(), currentTerrain);
-					if (loadedTexture == RESOURCE_MANAGER.noTexture)
-					{
-						LOG.logError(std::string("can't load height map: ") + filePath);
-					}
-					else
-					{
-						loadedTexture->setDirtyFlag(true);
-						PROJECT_MANAGER.getCurrent()->modified = true;
-						//RESOURCE_MANAGER.saveFETexture(loadedTexture, (PROJECT_MANAGER.getCurrent()->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str());
-					}
-				}
-			}
-
-			int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
-			ImGui::SliderInt("debugFlag", &iData, 0, 10);
-			currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
-
-			float highScale = currentTerrain->getHightScale();
-			ImGui::DragFloat("highScale", &highScale);
-			currentTerrain->setHightScale(highScale);
-
-			float displacementScale = currentTerrain->getDisplacementScale();
-			ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
-			currentTerrain->setDisplacementScale(displacementScale);
-
-			float LODlevel = currentTerrain->getLODlevel();
-			ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
-			currentTerrain->setLODlevel(LODlevel);
-			showToolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
-
-			glm::vec2 tileMult = currentTerrain->getTileMult();
-			ImGui::DragFloat2("tile multiplicator", &tileMult[0], 0.1f, 1.0f, 100.0f);
-			currentTerrain->setTileMult(tileMult);
-
-			float chunkPerSide = currentTerrain->getChunkPerSide();
-			ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
-			currentTerrain->setChunkPerSide(chunkPerSide);
-
-			changeMaterialButton->render();
-			if (changeMaterialButton->getWasClicked())
-			{
-				selectMaterialWindow.show(&currentTerrain->layer0);
-			}
-
-			showTransformConfiguration(terrainList[i], &currentTerrain->transform);
-
-			// ********************* REAL WORLD COMPARISON SCALE *********************
-			FEAABB realAABB = currentTerrain->getAABB();
-			glm::vec3 min = realAABB.getMin();
-			glm::vec3 max = realAABB.getMax();
-
-			float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-			float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-			float zSize = sqrt((max.z - min.z) * (max.z - min.z));
-
-			std::string sizeInM = "Approximate terrain size: ";
-			sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
-			sizeInM += " m";
-			ImGui::Text(sizeInM.c_str());
-			// ********************* REAL WORLD COMPARISON SCALE END *********************
-
-			ImGui::Separator();
-
-			float currentBrushSize = currentTerrain->getBrushSize();
-			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
-			currentTerrain->setBrushSize(currentBrushSize);
-
-			float currentBrushIntensity = currentTerrain->getBrushIntensity();
-			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
-			currentTerrain->setBrushIntensity(currentBrushIntensity);
-
-			currentTerrain->isBrushSculptMode() ? setSelectedStyle(sculptBrushButton) : setDefaultStyle(sculptBrushButton);
-			sculptBrushButton->render();
-			showToolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
-
-			if (sculptBrushButton->getWasClicked())
-			{
-				currentTerrain->setBrushSculptMode(!currentTerrain->isBrushSculptMode());
-				if (currentTerrain->isBrushSculptMode())
-				{
-					currentTerrain->setBrushLevelMode(false);
-					currentTerrain->setBrushSmoothMode(false);
-				}
-			}
-
-			currentTerrain->isBrushLevelMode() ? setSelectedStyle(levelBrushButton) : setDefaultStyle(levelBrushButton);
-			ImGui::SameLine();
-			levelBrushButton->render();
-			showToolTip("Level Brush.");
-
-			if (levelBrushButton->getWasClicked())
-			{
-				currentTerrain->setBrushLevelMode(!currentTerrain->isBrushLevelMode());
-				if (currentTerrain->isBrushLevelMode())
-				{
-					currentTerrain->setBrushSculptMode(false);
-					currentTerrain->setBrushSmoothMode(false);
-				}
-			}
-
-			currentTerrain->isBrushSmoothMode() ? setSelectedStyle(smoothBrushButton) : setDefaultStyle(smoothBrushButton);
-			ImGui::SameLine();
-			smoothBrushButton->render();
-			showToolTip("Smooth Brush.");
-
-			if (smoothBrushButton->getWasClicked())
-			{
-				currentTerrain->setBrushSmoothMode(!currentTerrain->isBrushSmoothMode());
-				if (currentTerrain->isBrushSmoothMode())
-				{
-					currentTerrain->setBrushSculptMode(false);
-					currentTerrain->setBrushLevelMode(false);
-				}
-			}
-
-			if (currentTerrain->isBrushSculptMode() || currentTerrain->isBrushLevelMode() || currentTerrain->isBrushSmoothMode())
-			{
-				// to hide gizmos
-				if (SELECTED.getTerrain() != nullptr)
-					SELECTED.setTerrain(SELECTED.getTerrain());
-
-				currentTerrain->setBrushActive(EDITOR.leftMousePressed);
-				currentTerrain->setBrushInversed(EDITOR.shiftPressed);
-			}
-			else
-			{
-				// to show gizmos
-				if (SELECTED.getTerrain() != nullptr)
-					SELECTED.setTerrain(SELECTED.getTerrain());
-			}
-
-			ImGui::TreePop();
-		}
-	}
-
-	selectMaterialWindow.render();
 }
 
 //void FEEditor::displayPostProcessContentBrowser()

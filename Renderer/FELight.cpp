@@ -1,9 +1,8 @@
 #include "FELight.h"
 using namespace FocalEngine;
 
-FELight::FELight(FELightType Type)
+FELight::FELight(FEObjectType lightType) : FEObject(lightType, "")
 {
-	type = Type;
 }
 
 FELight::~FELight()
@@ -58,21 +57,6 @@ bool FELight::isCastShadows()
 void FELight::setCastShadows(bool isCastShadows)
 {
 	castShadows = isCastShadows;
-}
-
-FELightType FELight::getType()
-{
-	return type;
-}
-
-std::string FELight::getName()
-{
-	return name;
-}
-
-void FELight::setName(std::string newName)
-{
-	name = newName;
 }
 
 FECascadeData::FECascadeData()

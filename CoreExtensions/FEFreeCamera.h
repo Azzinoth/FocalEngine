@@ -7,7 +7,7 @@ namespace FocalEngine
 	class FEFreeCamera : public FEBasicCamera
 	{
 	public:
-		FEFreeCamera(GLFWwindow* Window);
+		FEFreeCamera(GLFWwindow* Window, std::string name);
 		~FEFreeCamera();
 
 		float currentMouseXAngle = 0;

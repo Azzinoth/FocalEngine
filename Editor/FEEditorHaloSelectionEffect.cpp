@@ -12,17 +12,18 @@ void FEEditorHaloSelectionEffect::initializeResources()
 	haloMaterial = RESOURCE_MANAGER.createMaterial("haloMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(haloMaterial);
 
-	haloMaterial->shader = RESOURCE_MANAGER.createShader("HaloDrawObjectShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_VS.glsl").c_str(),
-		RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_FS.glsl").c_str());
-	RESOURCE_MANAGER.makeShaderStandard(haloMaterial->shader);
+	HaloDrawObjectShader = RESOURCE_MANAGER.createShader("HaloDrawObjectShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_VS.glsl").c_str(),
+																				 RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_FS.glsl").c_str());
+	RESOURCE_MANAGER.makeShaderStandard(HaloDrawObjectShader);
+	haloMaterial->shader = HaloDrawObjectShader;
 
-	FEShader* HaloDrawInstancedObjectShader = RESOURCE_MANAGER.createShader("HaloDrawInstancedObjectShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_INSTANCED_VS.glsl").c_str(),
-		RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_FS.glsl").c_str());
+	HaloDrawInstancedObjectShader = RESOURCE_MANAGER.createShader("HaloDrawInstancedObjectShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_INSTANCED_VS.glsl").c_str(),
+																								   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloDrawObject_FS.glsl").c_str());
 	RESOURCE_MANAGER.makeShaderStandard(HaloDrawInstancedObjectShader);
 
 	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
-	FEShader* blurShader = RESOURCE_MANAGER.getShader("FEBloomBlur");
+	FEShader* blurShader = RESOURCE_MANAGER.getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
 	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	// because input texture at first stage is full resolution, we should blur harder to get simular blur on both sides.
@@ -48,10 +49,10 @@ void FEEditorHaloSelectionEffect::initializeResources()
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
 	postProcess->stages.back()->outTexture = RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
-	FEShader* haloFinalShader = RESOURCE_MANAGER.createShader("HaloFinalShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
-																				 RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloSelectionEffect_FS.glsl").c_str());
-	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, haloFinalShader));
-	RESOURCE_MANAGER.makeShaderStandard(haloFinalShader);
+	HaloFinalShader = RESOURCE_MANAGER.createShader("HaloFinalShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
+																	   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_HaloSelectionEffect_FS.glsl").c_str());
+	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, HaloFinalShader));
+	RESOURCE_MANAGER.makeShaderStandard(HaloFinalShader);
 	postProcess->stages.back()->inTexture.push_back(RENDERER.postProcessEffects[RENDERER.postProcessEffects.size() - 1]->stages.back()->outTexture);
 	postProcess->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[3]->outTexture);
@@ -68,7 +69,7 @@ void FEEditorHaloSelectionEffect::reInitializeResources()
 	haloObjectsFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 	postProcess = ENGINE.createPostProcess("selectionHaloEffect", ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4);
 
-	FEShader* blurShader = RESOURCE_MANAGER.getShader("FEBloomBlur");
+	FEShader* blurShader = RESOURCE_MANAGER.getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
 	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, blurShader));
 	postProcess->stages.back()->stageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	// because input texture at first stage is full resolution, we should blur harder to get simular blur on both sides.
@@ -94,7 +95,7 @@ void FEEditorHaloSelectionEffect::reInitializeResources()
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[0]->outTexture);
 	postProcess->replaceOutTexture(3, RESOURCE_MANAGER.createSameFormatTexture(RENDERER.sceneToTextureFB->getColorAttachment(), ENGINE.getRenderTargetWidth() / 4, ENGINE.getRenderTargetHeight() / 4));
 
-	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, RESOURCE_MANAGER.getShader("HaloFinalShader")));
+	postProcess->addStage(new FEPostProcessStage(FEPP_OWN_TEXTURE, HaloFinalShader));
 	postProcess->stages.back()->inTexture.push_back(RENDERER.postProcessEffects[RENDERER.postProcessEffects.size() - 1]->stages.back()->outTexture);
 	postProcess->stages.back()->inTextureSource.push_back(FEPP_OWN_TEXTURE);
 	postProcess->stages.back()->inTexture.push_back(postProcess->stages[3]->outTexture);

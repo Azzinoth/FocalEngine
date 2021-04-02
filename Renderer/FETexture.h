@@ -1,7 +1,6 @@
 #pragma once
 
-#include "..\SubSystems\FECoreIncludes.h"
-#include "FEAsset.h"
+#include "..\SubSystems\FELog.h"
 
 namespace FocalEngine
 {
@@ -15,7 +14,7 @@ namespace FocalEngine
 	class FERenderer;
 	class FEPostProcess;
 
-	class FETexture : public FEAsset
+	class FETexture : public FEObject
 	{
 		friend FEResourceManager;
 		friend FERenderer;
@@ -51,6 +50,4 @@ namespace FocalEngine
 		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;
 		bool mipEnabled = true;
 	};
-
-	#define LOG FELOG::getInstance()
 }

@@ -20,6 +20,10 @@ private:
 	FEFramebuffer* haloObjectsFB = nullptr;
 	FEMaterial* haloMaterial = nullptr;
 	FEPostProcess* postProcess = nullptr;
+
+	FEShader* HaloDrawInstancedObjectShader = nullptr;
+	FEShader* HaloDrawObjectShader = nullptr;
+	FEShader* HaloFinalShader = nullptr;
 };
 
 #define HALO_SELECTION_EFFECT FEEditorHaloSelectionEffect::getInstance()

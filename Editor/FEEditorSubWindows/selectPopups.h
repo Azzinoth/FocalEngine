@@ -2,14 +2,211 @@
 
 #include "../Editor/FEEditorSubWindows/renamePopups.h"
 
+template <class FEOBJECT>
+struct contenetBrowserItem
+{
+	FEObject* FEObjectPart;
+	void* pointerToObject;
+
+	contenetBrowserItem(FEOBJECT* FEObject)
+	{
+		FEObjectPart = FEObject;
+		pointerToObject = FEObject;
+	}
+};
+
+class selectMeshPopUp : public ImGuiModalPopup
+{
+	FEMesh** objToWorkWith;
+	int IndexUnderMouse = -1;
+	int IndexSelected = -1;
+	std::string selectedItemID = "";
+	std::vector<contenetBrowserItem<FEMesh>> itemsList;
+	std::vector<contenetBrowserItem<FEMesh>> filteredItemsList;
+	char filter[512];
+
+	ImGuiButton* selectButton = nullptr;
+	ImGuiButton* cancelButton = nullptr;
+	ImGuiImageButton* iconButton = nullptr;
+public:
+	selectMeshPopUp()
+	{
+		popupCaption = "Select mesh";
+		iconButton = new ImGuiImageButton(nullptr);
+		iconButton->setSize(ImVec2(128, 128));
+		iconButton->setUV0(ImVec2(0.0f, 1.0f));
+		iconButton->setUV1(ImVec2(1.0f, 0.0f));
+		iconButton->setFramePadding(8);
+
+		selectButton = new ImGuiButton("Select");
+		selectButton->setSize(ImVec2(140, 24));
+		selectButton->setPosition(ImVec2(500, 35));
+		cancelButton = new ImGuiButton("Cancel");
+		cancelButton->setSize(ImVec2(140, 24));
+		cancelButton->setPosition(ImVec2(660, 35));
+	}
+
+	~selectMeshPopUp()
+	{
+		if (selectButton != nullptr)
+			delete selectButton;
+
+		if (cancelButton != nullptr)
+			delete cancelButton;
+
+		if (iconButton != nullptr)
+			delete iconButton;
+	}
+
+	void show(FEMesh** mesh)
+	{
+		shouldOpen = true;
+		objToWorkWith = mesh;
+
+		std::vector<std::string> tempList = RESOURCE_MANAGER.getMeshList();
+		itemsList.clear();
+
+		for (size_t i = 0; i < tempList.size(); i++)
+		{
+			itemsList.push_back(contenetBrowserItem<FEMesh>(RESOURCE_MANAGER.getMesh(tempList[i])));
+		}
+
+		std::vector<std::string> standardMeshList = RESOURCE_MANAGER.getStandardMeshList();
+		for (size_t i = 0; i < standardMeshList.size(); i++)
+		{
+			if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(RESOURCE_MANAGER.getMesh(standardMeshList[i])))
+				continue;
+
+			itemsList.push_back(contenetBrowserItem<FEMesh>(RESOURCE_MANAGER.getMesh(standardMeshList[i])));
+		}
+
+		filteredItemsList = itemsList;
+		strcpy_s(filter, "");
+
+		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
+		{
+			for (size_t i = 0; i < itemsList.size(); i++)
+			{
+				if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
+				{
+					IndexSelected = i;
+					selectedItemID = itemsList[i].FEObjectPart->getObjectID();
+					break;
+				}
+			}
+		}
+	}
+
+	void close() override
+	{
+		ImGuiModalPopup::close();
+		IndexUnderMouse = -1;
+		IndexSelected = -1;
+		selectedItemID = "";
+	}
+
+	void render() override
+	{
+		ImGuiModalPopup::render();
+
+		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
+		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::SetCursorPosY(40);
+			ImGui::Text("Filter: ");
+			ImGui::SameLine();
+
+			ImGui::SetCursorPosY(35);
+			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
+			{
+				if (strlen(filter) == 0)
+				{
+					filteredItemsList = itemsList;
+				}
+				else
+				{
+					filteredItemsList.clear();
+					for (size_t i = 0; i < itemsList.size(); i++)
+					{
+						if (itemsList[i].FEObjectPart->getName().find(filter) != -1)
+						{
+							filteredItemsList.push_back(itemsList[i]);
+						}
+					}
+				}
+			}
+			ImGui::Separator();
+
+			ImGui::SetCursorPosX(0);
+			ImGui::SetCursorPosY(80);
+			ImGui::Columns(5, "selectMeshPopupColumns", false);
+			for (size_t i = 0; i < filteredItemsList.size(); i++)
+			{
+				ImGui::PushID(filteredItemsList[i].FEObjectPart->getName().c_str());
+
+				if (ImGui::IsMouseDoubleClicked(0))
+				{
+					if (IndexUnderMouse != -1)
+					{
+						*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
+
+						PROJECT_MANAGER.getCurrent()->modified = true;
+						close();
+					}
+				}
+
+				iconButton->setTexture(PREVIEW_MANAGER.getMeshPreview(filteredItemsList[i].FEObjectPart->getObjectID()));
+				selectedItemID == filteredItemsList[i].FEObjectPart->getObjectID() ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+
+				iconButton->render();
+				if (iconButton->getWasClicked())
+				{
+					IndexSelected = i;
+					selectedItemID = filteredItemsList[i].FEObjectPart->getObjectID();
+				}
+
+				if (iconButton->isHovered())
+					IndexUnderMouse = i;
+
+				ImGui::Text(filteredItemsList[i].FEObjectPart->getName().c_str());
+				ImGui::PopID();
+				ImGui::NextColumn();
+			}
+			ImGui::Columns(1);
+
+			selectButton->render();
+			if (selectButton->getWasClicked())
+			{
+				if (IndexSelected != -1)
+				{
+					*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
+
+					PROJECT_MANAGER.getCurrent()->modified = true;
+					close();
+				}
+			}
+
+			cancelButton->render();
+			if (cancelButton->getWasClicked())
+			{
+				close();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+};
+static selectMeshPopUp selectMeshWindow;
+
+
 class selectTexturePopUp : public ImGuiModalPopup
 {
 	FETexture** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
-	std::string selectedItemName = "";
-	std::vector<std::string> list;
-	std::vector<std::string> filteredList;
+	std::string selectedItemID = "";
+	std::vector<contenetBrowserItem<FETexture>> itemsList;
+	std::vector<contenetBrowserItem<FETexture>> filteredItemsList;
 	char filter[512];
 
 	ImGuiButton* selectButton = nullptr;
@@ -54,19 +251,27 @@ public:
 		ptrOnClose = ptr;
 		shouldOpen = true;
 		objToWorkWith = texture;
-		list = RESOURCE_MANAGER.getTextureList();
-		list.insert(list.begin(), "noTexture");
-		filteredList = list;
+
+		std::vector<std::string> tempList = RESOURCE_MANAGER.getTextureList();
+		itemsList.clear();
+		itemsList.insert(itemsList.begin(), RESOURCE_MANAGER.noTexture);
+
+		for (size_t i = 0; i < tempList.size(); i++)
+		{
+			itemsList.push_back(contenetBrowserItem<FETexture>(RESOURCE_MANAGER.getTexture(tempList[i])));
+		}
+
+		filteredItemsList = itemsList;
 		strcpy_s(filter, "");
 
 		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
 		{
-			for (size_t i = 0; i < list.size(); i++)
+			for (size_t i = 0; i < itemsList.size(); i++)
 			{
-				if (list[i] == (*objToWorkWith)->getName())
+				if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
 				{
 					IndexSelected = i;
-					selectedItemName = list[i];
+					selectedItemID = itemsList[i].FEObjectPart->getObjectID();
 					break;
 				}
 			}
@@ -75,7 +280,7 @@ public:
 		if ((*objToWorkWith) == nullptr)
 		{
 			IndexSelected = 0;
-			selectedItemName = "noTexture";
+			selectedItemID = RESOURCE_MANAGER.noTexture->getObjectID();
 		}
 	}
 
@@ -84,24 +289,26 @@ public:
 		shouldOpen = true;
 		objToWorkWith = texture;
 
-		list.clear();
+		itemsList.clear();
+		itemsList.insert(itemsList.begin(), RESOURCE_MANAGER.noTexture);
+
 		for (size_t i = 0; i < customList.size(); i++)
 		{
 			if (customList[i] != nullptr)
-				list.push_back(customList[i]->getName());
+				itemsList.push_back(customList[i]);
 		}
-		list.insert(list.begin(), "noTexture");
-		filteredList = list;
+
+		filteredItemsList = itemsList;
 		strcpy_s(filter, "");
 
 		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
 		{
-			for (size_t i = 0; i < list.size(); i++)
+			for (size_t i = 0; i < itemsList.size(); i++)
 			{
-				if (list[i] == (*objToWorkWith)->getName())
+				if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
 				{
 					IndexSelected = i;
-					selectedItemName = list[i];
+					selectedItemID = itemsList[i].FEObjectPart->getObjectID();
 					break;
 				}
 			}
@@ -110,7 +317,7 @@ public:
 		if ((*objToWorkWith) == nullptr)
 		{
 			IndexSelected = 0;
-			selectedItemName = "noTexture";
+			selectedItemID = RESOURCE_MANAGER.noTexture->getObjectID();
 		}
 	}
 
@@ -119,7 +326,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
-		selectedItemName = "";
+		selectedItemID = "";
 	}
 
 	void onSelectAction()
@@ -148,16 +355,16 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredList = list;
+					filteredItemsList = itemsList;
 				}
 				else
 				{
-					filteredList.clear();
-					for (size_t i = 0; i < list.size(); i++)
+					filteredItemsList.clear();
+					for (size_t i = 0; i < itemsList.size(); i++)
 					{
-						if (list[i].find(filter) != -1)
+						if (itemsList[i].FEObjectPart->getName().find(filter) != -1)
 						{
-							filteredList.push_back(list[i]);
+							filteredItemsList.push_back(itemsList[i]);
 						}
 					}
 				}
@@ -167,20 +374,20 @@ public:
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectTexturePopupColumns", false);
-			for (size_t i = 0; i < filteredList.size(); i++)
+			for (size_t i = 0; i < filteredItemsList.size(); i++)
 			{
-				ImGui::PushID(filteredList[i].c_str());
+				ImGui::PushID(filteredItemsList[i].FEObjectPart->getName().c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (IndexUnderMouse != -1)
 					{
-						if (filteredList[IndexUnderMouse] == "noTexture")
+						if (filteredItemsList[IndexUnderMouse].FEObjectPart->getName() == "noTexture")
 						{
 							*objToWorkWith = nullptr;
 						}
 						else
 						{
-							*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexUnderMouse]);
+							*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 						}
 
 						PROJECT_MANAGER.getCurrent()->modified = true;
@@ -189,21 +396,22 @@ public:
 					}
 				}
 
-				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				filteredList[i] == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(filteredList[i]));
+				selectedItemID == filteredItemsList[i].FEObjectPart->getObjectID() ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				filteredItemsList[i].FEObjectPart->getName() == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(filteredItemsList[i].FEObjectPart->getObjectID()));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
-					selectedItemName = filteredList[i];
+					selectedItemID = filteredItemsList[i].FEObjectPart->getObjectID();
 				}
 
 				if (iconButton->isHovered())
 					IndexUnderMouse = i;
 
-				ImGui::Text(filteredList[i].c_str());
+				ImGui::Text(filteredItemsList[i].FEObjectPart->getName().c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
+
 			}
 			ImGui::Columns(1);
 
@@ -212,13 +420,13 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					if (filteredList[IndexSelected] == "noTexture")
+					if (filteredItemsList[IndexSelected].FEObjectPart->getName() == "noTexture")
 					{
 						*objToWorkWith = nullptr;
 					}
 					else
 					{
-						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredList[IndexSelected]);
+						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
 					}
 
 					PROJECT_MANAGER.getCurrent()->modified = true;
@@ -239,186 +447,14 @@ public:
 };
 static selectTexturePopUp selectTextureWindow;
 
-class selectMeshPopUp : public ImGuiModalPopup
-{
-	FEMesh** objToWorkWith;
-	int IndexUnderMouse = -1;
-	int IndexSelected = -1;
-	std::string selectedItemName = "";
-	std::vector<std::string> list;
-	std::vector<std::string> filteredList;
-	char filter[512];
-
-	ImGuiButton* selectButton = nullptr;
-	ImGuiButton* cancelButton = nullptr;
-	ImGuiImageButton* iconButton = nullptr;
-public:
-	selectMeshPopUp()
-	{
-		popupCaption = "Select mesh";
-		iconButton = new ImGuiImageButton(nullptr);
-		iconButton->setSize(ImVec2(128, 128));
-		iconButton->setUV0(ImVec2(0.0f, 1.0f));
-		iconButton->setUV1(ImVec2(1.0f, 0.0f));
-		iconButton->setFramePadding(8);
-
-		selectButton = new ImGuiButton("Select");
-		selectButton->setSize(ImVec2(140, 24));
-		selectButton->setPosition(ImVec2(500, 35));
-		cancelButton = new ImGuiButton("Cancel");
-		cancelButton->setSize(ImVec2(140, 24));
-		cancelButton->setPosition(ImVec2(660, 35));
-	}
-
-	~selectMeshPopUp()
-	{
-		if (selectButton != nullptr)
-			delete selectButton;
-
-		if (cancelButton != nullptr)
-			delete cancelButton;
-
-		if (iconButton != nullptr)
-			delete iconButton;
-	}
-
-	void show(FEMesh** mesh)
-	{
-		shouldOpen = true;
-		objToWorkWith = mesh;
-		list = RESOURCE_MANAGER.getMeshList();
-		std::vector<std::string> standardMeshList = RESOURCE_MANAGER.getStandardMeshList();
-		for (size_t i = 0; i < standardMeshList.size(); i++)
-		{
-			if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(RESOURCE_MANAGER.getMesh( standardMeshList[i])))
-				continue;
-			
-			list.insert(list.begin(), standardMeshList[i]);
-		}
-
-		filteredList = list;
-		strcpy_s(filter, "");
-
-		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
-		{
-			for (size_t i = 0; i < list.size(); i++)
-			{
-				if (list[i] == (*objToWorkWith)->getName())
-				{
-					IndexSelected = i;
-					selectedItemName = list[i];
-					break;
-				}
-			}
-		}
-	}
-
-	void close() override
-	{
-		ImGuiModalPopup::close();
-		IndexUnderMouse = -1;
-		IndexSelected = -1;
-		selectedItemName = "";
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::SetCursorPosY(40);
-			ImGui::Text("Filter: ");
-			ImGui::SameLine();
-
-			ImGui::SetCursorPosY(35);
-			if (ImGui::InputText("", filter, IM_ARRAYSIZE(filter)))
-			{
-				if (strlen(filter) == 0)
-				{
-					filteredList = list;
-				}
-				else
-				{
-					filteredList.clear();
-					for (size_t i = 0; i < list.size(); i++)
-					{
-						if (list[i].find(filter) != -1)
-						{
-							filteredList.push_back(list[i]);
-						}
-					}
-				}
-			}
-			ImGui::Separator();
-
-			ImGui::SetCursorPosX(0);
-			ImGui::SetCursorPosY(80);
-			ImGui::Columns(5, "selectMeshPopupColumns", false);
-			for (size_t i = 0; i < filteredList.size(); i++)
-			{
-				ImGui::PushID(filteredList[i].c_str());
-
-				if (ImGui::IsMouseDoubleClicked(0))
-				{
-					if (IndexUnderMouse != -1)
-					{
-						*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexUnderMouse]);
-						PROJECT_MANAGER.getCurrent()->modified = true;
-						close();
-					}
-				}
-
-				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(PREVIEW_MANAGER.getMeshPreview(filteredList[i]));
-				iconButton->render();
-				if (iconButton->getWasClicked())
-				{
-					IndexSelected = i;
-					selectedItemName = filteredList[i];
-				}
-
-				if (iconButton->isHovered())
-					IndexUnderMouse = i;
-
-				ImGui::Text(filteredList[i].c_str());
-				ImGui::PopID();
-				ImGui::NextColumn();
-			}
-			ImGui::Columns(1);
-
-			selectButton->render();
-			if (selectButton->getWasClicked())
-			{
-				if (IndexSelected != -1)
-				{
-					*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredList[IndexSelected]);
-					PROJECT_MANAGER.getCurrent()->modified = true;
-					close();
-				}
-			}
-
-			cancelButton->render();
-			if (cancelButton->getWasClicked())
-			{
-				close();
-			}
-
-			ImGui::EndPopup();
-		}
-	}
-};
-static selectMeshPopUp selectMeshWindow;
-
 class selectMaterialPopUp : public ImGuiModalPopup
 {
 	FEMaterial** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
-	std::string selectedItemName = "";
-	std::vector<std::string> list;
-	std::vector<std::string> filteredList;
+	std::string selectedItemID = "";
+	std::vector<contenetBrowserItem<FEMaterial>> itemsList;
+	std::vector<contenetBrowserItem<FEMaterial>> filteredItemsList;
 	char filter[512];
 
 	ImGuiButton* selectButton = nullptr;
@@ -465,33 +501,40 @@ public:
 	{
 		shouldOpen = true;
 		objToWorkWith = material;
-		list = RESOURCE_MANAGER.getMaterialList();
-		list.insert(list.begin(), "SolidColorMaterial");
+
+		itemsList.clear();
+		itemsList.insert(itemsList.begin(), RESOURCE_MANAGER.getMaterial("18251A5E0F08013Z3939317U"));
+
+		std::vector<std::string> tempList = RESOURCE_MANAGER.getMaterialList();
+		for (size_t i = 0; i < tempList.size(); i++)
+		{
+			itemsList.push_back(contenetBrowserItem<FEMaterial>(RESOURCE_MANAGER.getMaterial(tempList[i])));
+		}
 
 		if (allowedShader != nullptr)
 		{
-			for (size_t i = 0; i < list.size(); i++)
+			for (size_t i = 0; i < itemsList.size(); i++)
 			{
-				if (RESOURCE_MANAGER.getMaterial(list[i])->shader->getAssetID() != allowedShader->getAssetID())
+				if (RESOURCE_MANAGER.getMaterial(itemsList[i].FEObjectPart->getObjectID())->shader->getObjectID() != allowedShader->getObjectID())
 				{
-					list.erase(list.begin() + i);
+					itemsList.erase(itemsList.begin() + i);
 					i--;
 				}
 			}
 			allowedShader = nullptr;
 		}
 
-		filteredList = list;
+		filteredItemsList = itemsList;
 		strcpy_s(filter, "");
 
 		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
 		{
-			for (size_t i = 0; i < list.size(); i++)
+			for (size_t i = 0; i < itemsList.size(); i++)
 			{
-				if (list[i] == (*objToWorkWith)->getName())
+				if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
 				{
 					IndexSelected = i;
-					selectedItemName = list[i];
+					selectedItemID = itemsList[i].FEObjectPart->getObjectID();
 					break;
 				}
 			}
@@ -503,7 +546,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
-		selectedItemName = "";
+		selectedItemID = "";
 	}
 
 	void render() override
@@ -522,16 +565,16 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredList = list;
+					filteredItemsList = itemsList;
 				}
 				else
 				{
-					filteredList.clear();
-					for (size_t i = 0; i < list.size(); i++)
+					filteredItemsList.clear();
+					for (size_t i = 0; i < itemsList.size(); i++)
 					{
-						if (list[i].find(filter) != -1)
+						if (itemsList[i].FEObjectPart->getName().find(filter) != -1)
 						{
-							filteredList.push_back(list[i]);
+							filteredItemsList.push_back(itemsList[i]);
 						}
 					}
 				}
@@ -541,26 +584,26 @@ public:
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectMeshPopupColumns", false);
-			for (size_t i = 0; i < filteredList.size(); i++)
+			for (size_t i = 0; i < filteredItemsList.size(); i++)
 			{
-				ImGui::PushID(filteredList[i].c_str());
+				ImGui::PushID(filteredItemsList[i].FEObjectPart->getName().c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (IndexUnderMouse != -1)
 					{
-						*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 						PROJECT_MANAGER.getCurrent()->modified = true;
 						close();
 					}
 				}
 
-				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(PREVIEW_MANAGER.getMaterialPreview(filteredList[i]));
+				selectedItemID == filteredItemsList[i].FEObjectPart->getObjectID() ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(PREVIEW_MANAGER.getMaterialPreview(filteredItemsList[i].FEObjectPart->getObjectID()));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
-					selectedItemName = filteredList[i];
+					selectedItemID = filteredItemsList[i].FEObjectPart->getObjectID();
 				}
 
 				if (iconButton->isHovered())
@@ -568,7 +611,7 @@ public:
 					IndexUnderMouse = i;
 				}
 
-				ImGui::Text(filteredList[i].c_str());
+				ImGui::Text(filteredItemsList[i].FEObjectPart->getName().c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
 			}
@@ -579,7 +622,7 @@ public:
 			{
 				if (IndexSelected != -1)
 				{
-					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredList[IndexSelected]);
+					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
 					PROJECT_MANAGER.getCurrent()->modified = true;
 					close();
 				}
@@ -602,9 +645,9 @@ class selectGameModelPopUp : public ImGuiModalPopup
 	FEGameModel** objToWorkWith;
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
-	std::string selectedItemName = "";
-	std::vector<std::string> list;
-	std::vector<std::string> filteredList;
+	std::string selectedItemID = "";
+	std::vector<contenetBrowserItem<FEGameModel>> itemsList;
+	std::vector<contenetBrowserItem<FEGameModel>> filteredItemsList;
 	char filter[512];
 	bool newEntityFlag = false;
 	bool isInstanced = false;
@@ -659,27 +702,24 @@ public:
 			popupCaption = "Select game model";
 		}
 
-		list = RESOURCE_MANAGER.getGameModelList();
-		std::vector<std::string> standardGameModelList = RESOURCE_MANAGER.getStandardGameModelList();
-		for (size_t i = 0; i < standardGameModelList.size(); i++)
+		std::vector<std::string> tempList = RESOURCE_MANAGER.getGameModelList();
+		itemsList.clear();
+		for (size_t i = 0; i < tempList.size(); i++)
 		{
-			if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(RESOURCE_MANAGER.getGameModel(standardGameModelList[i])))
-				continue;
-
-			list.insert(list.begin(), standardGameModelList[i]);
+			itemsList.push_back(contenetBrowserItem<FEGameModel>(RESOURCE_MANAGER.getGameModel(tempList[i])));
 		}
 
-		filteredList = list;
+		filteredItemsList = itemsList;
 		strcpy_s(filter, "");
 
 		if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
 		{
-			for (size_t i = 0; i < list.size(); i++)
+			for (size_t i = 0; i < itemsList.size(); i++)
 			{
-				if (list[i] == (*objToWorkWith)->getName())
+				if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
 				{
 					IndexSelected = i;
-					selectedItemName = list[i];
+					selectedItemID = itemsList[i].FEObjectPart->getObjectID();
 					break;
 				}
 			}
@@ -691,7 +731,7 @@ public:
 		ImGuiModalPopup::close();
 		IndexUnderMouse = -1;
 		IndexSelected = -1;
-		selectedItemName = "";
+		selectedItemID = "";
 	}
 
 	void render() override
@@ -710,16 +750,16 @@ public:
 			{
 				if (strlen(filter) == 0)
 				{
-					filteredList = list;
+					filteredItemsList = itemsList;
 				}
 				else
 				{
-					filteredList.clear();
-					for (size_t i = 0; i < list.size(); i++)
+					filteredItemsList.clear();
+					for (size_t i = 0; i < itemsList.size(); i++)
 					{
-						if (list[i].find(filter) != -1)
+						if (itemsList[i].FEObjectPart->getName().find(filter) != -1)
 						{
-							filteredList.push_back(list[i]);
+							filteredItemsList.push_back(itemsList[i]);
 						}
 					}
 				}
@@ -729,9 +769,9 @@ public:
 			ImGui::SetCursorPosX(0);
 			ImGui::SetCursorPosY(80);
 			ImGui::Columns(5, "selectGameModelPopupColumns", false);
-			for (size_t i = 0; i < filteredList.size(); i++)
+			for (size_t i = 0; i < filteredItemsList.size(); i++)
 			{
-				ImGui::PushID(filteredList[i].c_str());
+				ImGui::PushID(filteredItemsList[i].FEObjectPart->getName().c_str());
 				if (ImGui::IsMouseDoubleClicked(0))
 				{
 					if (IndexUnderMouse != -1 && !wasSelectedAlready)
@@ -740,18 +780,18 @@ public:
 						{
 							if (isInstanced)
 							{
-								FEEntityInstanced* newEntity = FEScene::getInstance().addEntityInstanced(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
+								FEEntityInstanced* newEntity = FEScene::getInstance().addEntityInstanced(RESOURCE_MANAGER.getGameModel(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID()));
 								newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-								SELECTED.setEntity(newEntity);
+								SELECTED.setSelected(newEntity);
 
 								wasSelectedAlready = true;
 								PROJECT_MANAGER.getCurrent()->modified = true;
 							}
 							else
 							{
-								FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]));
+								FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID()));
 								newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-								SELECTED.setEntity(newEntity);
+								SELECTED.setSelected(newEntity);
 
 								wasSelectedAlready = true;
 								PROJECT_MANAGER.getCurrent()->modified = true;
@@ -759,20 +799,20 @@ public:
 						}
 						else
 						{
-							*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]);
+							*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 						}
 
 						close();
 					}
 				}
 
-				selectedItemName == filteredList[i] ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-				iconButton->setTexture(PREVIEW_MANAGER.getGameModelPreview(filteredList[i]));
+				selectedItemID == filteredItemsList[i].FEObjectPart->getObjectID() ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
+				iconButton->setTexture(PREVIEW_MANAGER.getGameModelPreview(filteredItemsList[i].FEObjectPart->getObjectID()));
 				iconButton->render();
 				if (iconButton->getWasClicked())
 				{
 					IndexSelected = i;
-					selectedItemName = filteredList[i];
+					selectedItemID = filteredItemsList[i].FEObjectPart->getObjectID();
 				}
 
 				if (iconButton->isHovered())
@@ -780,7 +820,7 @@ public:
 					IndexUnderMouse = i;
 				}
 
-				ImGui::Text(filteredList[i].c_str());
+				ImGui::Text(filteredItemsList[i].FEObjectPart->getName().c_str());
 				ImGui::PopID();
 				ImGui::NextColumn();
 			}
@@ -793,11 +833,11 @@ public:
 				{
 					if (newEntityFlag)
 					{
-						FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredList[IndexSelected]));
+						FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(filteredItemsList[IndexSelected].FEObjectPart->getObjectID()));
 					}
 					else
 					{
-						*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredList[IndexUnderMouse]);
+						*objToWorkWith = RESOURCE_MANAGER.getGameModel(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 					}
 					close();
 				}

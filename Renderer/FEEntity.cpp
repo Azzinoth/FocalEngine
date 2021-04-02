@@ -1,11 +1,11 @@
 #include "FEEntity.h"
 using namespace FocalEngine;
 
-FEEntity::FEEntity() : FEAsset(FE_ENTITY, "")
+FEEntity::FEEntity() : FEObject(FE_ENTITY, "")
 {
 }
 
-FEEntity::FEEntity(FEGameModel* gameModel, std::string Name) : FEAsset(FE_ENTITY, Name)
+FEEntity::FEEntity(FEGameModel* gameModel, std::string Name) : FEObject(FE_ENTITY, Name)
 {
 	this->gameModel = gameModel;
 	setName(Name);

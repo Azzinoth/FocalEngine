@@ -49,7 +49,7 @@ FEInstanceModification::FEInstanceModification()
 
 FEEntityInstanced::FEEntityInstanced(FEGameModel* gameModel, std::string Name) : FEEntity(gameModel, Name)
 {
-	type = FE_ENTITY_INSTANCED;
+	setType(FE_ENTITY_INSTANCED);
 
 	instancedX = (float*)_aligned_malloc(sizeof(float) * 32, 32);
 	instancedY = (float*)_aligned_malloc(sizeof(float) * 32, 32);
@@ -1025,6 +1025,8 @@ bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 		transform.setPosition(glm::vec3(transform.position.x, 0.0f, transform.position.z));
 	}
 
+	srand(unsigned int(time(NULL)));
+
 	return true;
 }
 
@@ -1052,10 +1054,7 @@ bool FEEntityInstanced::isSelectMode()
 void FEEntityInstanced::setSelectMode(bool newValue)
 {
 	if (newValue)
-	{
-		if (instancedAABB.size() == 0)
-			updateSelectModeAABBData();
-	}
+		updateSelectModeAABBData();
 	
 	selectionMode = newValue;
 }

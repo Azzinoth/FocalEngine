@@ -298,7 +298,7 @@ FEShaderParam::~FEShaderParam()
 
 FEShader::FEShader(std::string name, const char* vertexText, const char* fragmentText,
 				   const char* tessControlText, const char* tessEvalText,
-				   const char* geometryText, const char* computeText, bool testCompilation, int glslVersion) : FEAsset(FE_SHADER, name)
+				   const char* geometryText, const char* computeText, bool testCompilation, int glslVersion) : FEObject(FE_SHADER, name)
 {
 	this->glslVersion = glslVersion;
 	testCompilationMode = testCompilation;
@@ -454,7 +454,7 @@ void FEShader::copyCode(const FEShader& shader)
 #endif
 }
 
-FEShader::FEShader(const FEShader& shader) : FEAsset(FE_SHADER, shader.name)
+FEShader::FEShader(const FEShader& shader) : FEObject(FE_SHADER, shader.name)
 {
 	copyCode(shader);
 }

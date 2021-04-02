@@ -27,7 +27,7 @@ namespace FocalEngine
 	class FEResourceManager;
 	class FERenderer;
 
-	class FEPostProcess
+	class FEPostProcess : public FEObject
 	{
 		friend FEResourceManager;
 		friend FERenderer;
@@ -39,15 +39,10 @@ namespace FocalEngine
 		FETexture* getInTexture();
 		void addStage(FEPostProcessStage* newStage);
 
-		std::string getName();
-		void setName(std::string newName);
-
 		bool active = true;
 		bool replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture = true);
 	private:
 		FEPostProcess(std::string Name);
-
-		std::string name;
 
 		int screenWidth, screenHeight;
 		FEMesh* screenQuad;

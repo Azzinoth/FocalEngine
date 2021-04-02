@@ -375,8 +375,7 @@ public:
 			ImGui::Text("Mesh component:");
 			ImGui::SetCursorPosX(size.x / 4 - 128 / 2);
 			ImGui::SetCursorPosY(currentY + 210.0f);
-			ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMeshPreview(tempModel->mesh->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-
+			ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMeshPreview(tempModel->mesh->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			changeLODMeshButton[0]->render();
 			if (changeLODMeshButton[0]->getWasClicked())
 			{
@@ -390,7 +389,7 @@ public:
 			ImGui::Text("Material component:");
 			ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 128 / 2);
 			ImGui::SetCursorPosY(currentY + 210.0f);
-			ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->material->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->material->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			changeMaterialButton->render();
 			if (changeMaterialButton->getWasClicked())
 			{
@@ -436,8 +435,8 @@ public:
 					addBillboard->render();
 					if (addBillboard->getWasClicked())
 					{
-						updatedLODMeshs[i] = RESOURCE_MANAGER.getMesh("plane");
-						updatedBillboardMaterial = RESOURCE_MANAGER.getMaterial("FEPBRBaseMaterial");
+						updatedLODMeshs[i] = RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+						updatedBillboardMaterial = RESOURCE_MANAGER.getMaterial("61649B9E0F08013Q3939316C"/*"FEPBRBaseMaterial"*/);
 						tempModel->setIsLODBillboard(i, true);
 					}
 
@@ -456,7 +455,7 @@ public:
 					ImGui::SetCursorPosX(currentXPosition - 128 / 2);
 					ImGui::SetCursorPosY(currentY + 210.0f);
 
-					ImGui::Image((void*)(intptr_t)(tempModel->getLODMesh(i) == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMeshPreview(tempModel->getLODMesh(i)->getName())->getTextureID()),
+					ImGui::Image((void*)(intptr_t)(tempModel->getLODMesh(i) == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMeshPreview(tempModel->getLODMesh(i)->getObjectID())->getTextureID()),
 						ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 					changeLODMeshButton[i]->setCaption(std::string("Change LOD") + std::to_string(i) + " Mesh");
@@ -498,7 +497,7 @@ public:
 						ImGui::Text("Material component:");
 						ImGui::SetCursorPosX(size.x / 2 - size.x / 4 - 128 / 2);
 						ImGui::SetCursorPosY(currentY + 200 + 210.0f);
-						ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->getMaterial()->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->getMaterial()->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 						changeMaterialButton->setPosition(ImVec2(size.x / 2 - size.x / 4 - changeMaterialButton->getSize().x / 2, 30.0f + 340.0f + 200.0f));
 						changeMaterialButton->render();
@@ -514,12 +513,12 @@ public:
 						ImGui::Text("Billboard Material component:");
 						ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 128 / 2);
 						ImGui::SetCursorPosY(currentY + 200 + 210.0f);
-						ImGui::Image((void*)(intptr_t)(tempModel->getBillboardMaterial() == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMaterialPreview(tempModel->getBillboardMaterial()->getName())->getTextureID()), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						ImGui::Image((void*)(intptr_t)(tempModel->getBillboardMaterial() == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMaterialPreview(tempModel->getBillboardMaterial()->getObjectID())->getTextureID()), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 						changeBillboardMaterialButton->render();
 						if (changeBillboardMaterialButton->getWasClicked())
 						{
 							updatedBillboardMaterial = tempModel->getBillboardMaterial();
-							selectMaterialWindow.setAllowedShader(RESOURCE_MANAGER.getShader("FEPBRShader"));
+							selectMaterialWindow.setAllowedShader(RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
 							selectMaterialWindow.show(&updatedBillboardMaterial);
 						}
 					}
@@ -531,7 +530,7 @@ public:
 						ImGui::Text("Material component:");
 						ImGui::SetCursorPosX(size.x / 2 - 128 / 2);
 						ImGui::SetCursorPosY(currentY + 200 + 210.0f);
-						ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->getMaterial()->getName())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->getMaterial()->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 						changeMaterialButton->setPosition(ImVec2(size.x / 2 - changeMaterialButton->getSize().x / 2, 30.0f + 340.0f + 200.0f));
 						changeMaterialButton->render();
@@ -609,7 +608,7 @@ public:
 			objToWorkWith->setBillboardMaterial(tempModel->getBillboardMaterial());
 			objToWorkWith->setScaleFactor(tempModel->getScaleFactor());
 			objToWorkWith->setBillboardZeroRotaion(tempModel->getBillboardZeroRotaion());
-			PREVIEW_MANAGER.createGameModelPreview(objToWorkWith->getName());
+			PREVIEW_MANAGER.createGameModelPreview(objToWorkWith->getObjectID());
 
 			FEImGuiWindow::close();
 			return;
@@ -670,7 +669,7 @@ public:
 	{
 		if (material != nullptr)
 		{
-			tempContainer = RESOURCE_MANAGER.getTexture("noTexture");
+			tempContainer = RESOURCE_MANAGER.noTexture;
 			objToWorkWith = material;
 
 			std::string tempCaption = "Edit material:";
@@ -750,7 +749,7 @@ public:
 			}
 
 			tempContainer = RESOURCE_MANAGER.noTexture;
-			PREVIEW_MANAGER.createMaterialPreview(objToWorkWith->getName());
+			PREVIEW_MANAGER.createMaterialPreview(objToWorkWith->getObjectID());
 			PROJECT_MANAGER.getCurrent()->modified = true;
 		}
 
@@ -806,7 +805,7 @@ public:
 				textureCount++;
 				ImGui::PushID(objToWorkWith->textures[i]->getName().c_str());
 
-				objToWorkWith->textures[i]->getName() == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(objToWorkWith->textures[i]->getName()));
+				objToWorkWith->textures[i]->getName() == "noTexture" ? iconButton->setTexture(RESOURCE_MANAGER.noTexture) : iconButton->setTexture(RESOURCE_MANAGER.getTexture(objToWorkWith->textures[i]->getObjectID()));
 				iconButton->render();
 
 				if (iconButton->isHovered())

@@ -1,6 +1,5 @@
 #pragma once
 
-//#include "../FEEditorInternalResources.h"
 #include "../FEProject.h"
 
 class deleteTexturePopup : public ImGuiModalPopup
@@ -28,12 +27,11 @@ public:
 			}
 		}
 
-		std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+		std::vector<std::string> terrainList = SCENE.getTerrainList();
 		for (size_t i = 0; i < terrainList.size(); i++)
 		{
-			FETerrain* currentTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
-
-			if (currentTerrain->heightMap != nullptr && currentTerrain->heightMap->getName() == texture->getName())
+			FETerrain* currentTerrain = SCENE.getTerrain(terrainList[i]);
+			if (currentTerrain->heightMap != nullptr && currentTerrain->heightMap->getObjectID() == texture->getObjectID())
 			{
 				continue;
 				result.push_back(nullptr);
@@ -63,10 +61,12 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
+				ImGui::PopStyleVar();
 				ImGuiModalPopup::close();
 				return;
 			}
@@ -75,7 +75,7 @@ public:
 			if (materialsThatUseTexture.size() > 0)
 				ImGui::Text(("It is used in " + std::to_string(materialsThatUseTexture.size()) + " materials !").c_str());
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::vector<std::string> gameModelListToUpdate;
@@ -91,14 +91,14 @@ public:
 						for (size_t j = 0; j < materialsThatUseTexture.size(); j++)
 						{
 							if (currentGameModel->material == materialsThatUseTexture[j])
-								gameModelListToUpdate.push_back(currentGameModel->getName());
+								gameModelListToUpdate.push_back(currentGameModel->getObjectID());
 						}
 					}
 				}
 
 				objToWorkWith->setDirtyFlag(true);
 				PROJECT_MANAGER.getCurrent()->modified = true;
-				PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + objToWorkWith->getAssetID() + ".texture");
+				PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + objToWorkWith->getObjectID() + ".texture");
 				RESOURCE_MANAGER.deleteFETexture(objToWorkWith);
 
 				// re-create game model preview
@@ -111,13 +111,18 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
 			}
 
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::PopStyleVar();
 		}
 	}
 };
@@ -159,10 +164,12 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
+				ImGui::PopStyleVar();
 				ImGuiModalPopup::close();
 				return;
 			}
@@ -175,7 +182,7 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " game models !").c_str());
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -186,14 +193,13 @@ public:
 				for (size_t i = 0; i < gameModelList.size(); i++)
 				{
 					FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
-
 					if (currentGameModel->mesh == objToWorkWith)
-						gameModelListToUpdate.push_back(currentGameModel->getName());
+						gameModelListToUpdate.push_back(currentGameModel->getObjectID());
 				}
 
 				objToWorkWith->setDirtyFlag(true);
 				PROJECT_MANAGER.getCurrent()->modified = true;
-				PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + objToWorkWith->getAssetID() + ".model");
+				PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + objToWorkWith->getObjectID() + ".model");
 				RESOURCE_MANAGER.deleteFEMesh(objToWorkWith);
 
 				// re-create game model preview
@@ -209,13 +215,18 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
 			}
 
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::PopStyleVar();
 		}
 	}
 };
@@ -257,10 +268,12 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
+				ImGui::PopStyleVar();
 				ImGuiModalPopup::close();
 				return;
 			}
@@ -273,7 +286,7 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -287,13 +300,18 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
 			}
 
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::PopStyleVar();
 		}
 	}
 };
@@ -335,10 +353,12 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
+				ImGui::PopStyleVar();
 				ImGuiModalPopup::close();
 				return;
 			}
@@ -351,7 +371,7 @@ public:
 			if (result > 0)
 				ImGui::Text(("It is used in " + std::to_string(result) + " game models !").c_str());
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120 / 2.0f);
 			if (ImGui::Button("Delete", ImVec2(120, 0)))
 			{
 				std::string name = objToWorkWith->getName();
@@ -362,9 +382,8 @@ public:
 				for (size_t i = 0; i < gameModelList.size(); i++)
 				{
 					FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
-
 					if (currentGameModel->material == objToWorkWith)
-						gameModelListToUpdate.push_back(currentGameModel->getName());
+						gameModelListToUpdate.push_back(currentGameModel->getObjectID());
 				}
 
 				objToWorkWith->setDirtyFlag(true);
@@ -384,13 +403,18 @@ public:
 
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGuiModalPopup::close();
 			}
 
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::PopStyleVar();
 		}
 	}
 };

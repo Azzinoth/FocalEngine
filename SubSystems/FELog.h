@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FECoreIncludes.h"
+#include "..\SubSystems\FEObject.h"
 
 namespace FocalEngine
 {
@@ -14,4 +14,6 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FELOG)
 	};
+
+	#define LOG FELOG::getInstance()
 }

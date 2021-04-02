@@ -1,7 +1,7 @@
 #include "FETerrain.h"
 using namespace FocalEngine;
 
-FETerrain::FETerrain(std::string Name) : FEAsset(FE_TERRAIN, Name)
+FETerrain::FETerrain(std::string Name) : FEObject(FE_TERRAIN, Name)
 {
 	name = Name;
 	nameHash = std::hash<std::string>{}(name);

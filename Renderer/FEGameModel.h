@@ -22,7 +22,7 @@ namespace FocalEngine
 		FEMaterial* material = nullptr;
 	};
 
-	class FEGameModel : public FEAsset
+	class FEGameModel : public FEObject
 	{
 		friend FERenderer;
 		friend FEEntityInstanced;

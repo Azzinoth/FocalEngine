@@ -1,7 +1,7 @@
 #include "FEFreeCamera.h"
 using namespace FocalEngine;
 
-FEFreeCamera::FEFreeCamera(GLFWwindow* Window)
+FEFreeCamera::FEFreeCamera(GLFWwindow* Window, std::string name) : FEBasicCamera (name)
 {
 	window = Window;
 }

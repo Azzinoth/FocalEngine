@@ -10,7 +10,7 @@ namespace FocalEngine
 	class FERenderer;
 	class FEResourceManager;
 
-	class FEMaterial : public FEAsset
+	class FEMaterial : public FEObject
 	{
 		friend FERenderer;
 		friend FEResourceManager;

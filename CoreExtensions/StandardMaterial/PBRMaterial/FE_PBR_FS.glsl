@@ -393,11 +393,11 @@ void main(void)
 		if (FElight[i].color.x == 0 && FElight[i].color.y == 0 && FElight[i].color.z == 0)
 			continue;
 
-		if (FElight[i].typeAndAngles.x == 1)
+		if (FElight[i].typeAndAngles.x == 10)
 		{
 			outColor += vec4(pointLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
 		}
-		else if (FElight[i].typeAndAngles.x == 2)
+		else if (FElight[i].typeAndAngles.x == 11)
 		{
 			outColor += vec4(spotLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
 		}

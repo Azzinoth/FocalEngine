@@ -1,7 +1,7 @@
 #include "FEBasicCamera.h"
 using namespace FocalEngine;
 
-FEBasicCamera::FEBasicCamera()
+FEBasicCamera::FEBasicCamera(std::string name) : FEObject(FE_CAMERA, name)
 {
 	yaw = 0.0f;
 	updateAll();

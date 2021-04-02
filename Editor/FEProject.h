@@ -20,7 +20,8 @@ public:
 	std::string getProjectFolder();
 	void saveScene();
 	void loadScene();
-
+	void loadSceneVer0();
+	
 	FETexture* sceneScreenshot;
 	bool modified = false;
 	void createDummyScreenshot();
@@ -37,6 +38,7 @@ private:
 };
 
 #define PROJECTS_FOLDER "C:/Users/Kindr/Desktop/FocalEngine/FEProjects"
+#define PROJECTS_FILE_VER 0.01f
 
 class FEProjectManager
 {

@@ -6,62 +6,23 @@ class renameFailedPopUp : public ImGuiModalPopup
 {
 	ImGuiButton* okButton = nullptr;
 public:
-	renameFailedPopUp()
-	{
-		popupCaption = "Invalid name";
-		okButton = new ImGuiButton("OK");
-		okButton->setDefaultColor(ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-		okButton->setHoveredColor(ImVec4(0.95f, 0.90f, 0.0f, 1.0f));
-		okButton->setPosition(ImVec2(0, 0));
-	}
-
-	~renameFailedPopUp()
-	{
-		if (okButton != nullptr)
-			delete okButton;
-	}
-
-	void show()
-	{
-		shouldOpen = true;
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("Entered name is occupied!");
-
-			okButton->setPosition(ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - 120.0f / 2.0f, 60));
-			okButton->render();
-			if (okButton->getWasClicked())
-			{
-				ImGuiModalPopup::close();
-			}
-
-			ImGui::EndPopup();
-		}
-	}
+	SINGLETON_PUBLIC_PART(renameFailedPopUp)
+	void render() override;
+private:
+	SINGLETON_PRIVATE_PART(renameFailedPopUp)
 };
-static renameFailedPopUp renameFailedWindow;
 
-class renameTexturePopUp : public ImGuiModalPopup
+class renamePopUp : public ImGuiModalPopup
 {
-	FETexture* objToWorkWith;
+	FEObject* objToWorkWith;
 	char newName[512];
 public:
-	renameTexturePopUp()
-	{
-		popupCaption = "Rename Texture";
-		objToWorkWith = nullptr;
-	}
+	SINGLETON_PUBLIC_PART(renamePopUp)
 
-	void show(FETexture* TextureToWorkWith)
+	void show(FEObject* ObjToWorkWith)
 	{
 		shouldOpen = true;
-		objToWorkWith = TextureToWorkWith;
+		objToWorkWith = ObjToWorkWith;
 		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
 	}
 
@@ -69,28 +30,32 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			if (objToWorkWith == nullptr)
 			{
+				ImGui::PopStyleVar();
 				ImGui::EndPopup();
 				return;
 			}
 
-			ImGui::Text("New texture name :");
+			ImGui::Text("New object name :");
 			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
-			ImGui::Separator();
 
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f);
 			if (ImGui::Button("Apply", ImVec2(120, 0)))
 			{
 				std::string oldName = objToWorkWith->getName();
 				// if new name is acceptable
-				if (RESOURCE_MANAGER.setTextureName(objToWorkWith, newName))
+				if (strlen(newName) > 0)
 				{
 					objToWorkWith->setDirtyFlag(true);
 					PROJECT_MANAGER.getCurrent()->modified = true;
 
+					objToWorkWith->setName(newName);
+
 					ImGuiModalPopup::close();
 					strcpy_s(newName, "");
 				}
@@ -98,288 +63,26 @@ public:
 				{
 					objToWorkWith = nullptr;
 					ImGuiModalPopup::close();
-					renameFailedWindow.show();
+					renameFailedPopUp::getInstance().show();
 				}
 			}
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				objToWorkWith = nullptr;
 				ImGuiModalPopup::close();
 			}
+
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
 		}
-	}
-};
-static renameTexturePopUp renameTextureWindow;
-
-class renameMeshPopUp : public ImGuiModalPopup
-{
-	FEMesh* objToWorkWith;
-	char newName[512];
-public:
-	renameMeshPopUp()
-	{
-		popupCaption = "Rename Mesh";
-		objToWorkWith = nullptr;
-	}
-
-	void show(FEMesh* MeshToWorkWith)
-	{
-		shouldOpen = true;
-		objToWorkWith = MeshToWorkWith;
-		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+		else
 		{
-			if (objToWorkWith == nullptr)
-			{
-				ImGui::EndPopup();
-				return;
-			}
-
-			ImGui::Text("New mesh name :");
-			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
-			ImGui::Separator();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Apply", ImVec2(120, 0)))
-			{
-				std::string oldName = objToWorkWith->getName();
-				// if new name is acceptable
-				if (RESOURCE_MANAGER.setMeshName(objToWorkWith, newName))
-				{
-					objToWorkWith->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->modified = true;
-
-					FETexture* tempTexture = PREVIEW_MANAGER.meshPreviewTextures[oldName];
-					PREVIEW_MANAGER.meshPreviewTextures.erase(oldName);
-					PREVIEW_MANAGER.meshPreviewTextures[newName] = tempTexture;
-
-					ImGuiModalPopup::close();
-					strcpy_s(newName, "");
-				}
-				else
-				{
-					objToWorkWith = nullptr;
-					ImGuiModalPopup::close();
-					renameFailedWindow.show();
-				}
-			}
-			ImGui::SetItemDefaultFocus();
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				objToWorkWith = nullptr;
-				ImGuiModalPopup::close();
-			}
-			ImGui::EndPopup();
+			ImGui::PopStyleVar();
 		}
 	}
+private:
+	SINGLETON_PRIVATE_PART(renamePopUp)
 };
-static renameMeshPopUp renameMeshWindow;
-
-class renameMaterialPopUp : public ImGuiModalPopup
-{
-	FEMaterial* objToWorkWith;
-	char newName[512];
-public:
-	renameMaterialPopUp()
-	{
-		popupCaption = "Rename material";
-		objToWorkWith = nullptr;
-	}
-
-	void show(FEMaterial* ObjToWorkWith)
-	{
-		shouldOpen = true;
-		objToWorkWith = ObjToWorkWith;
-		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			if (objToWorkWith == nullptr)
-			{
-				ImGui::EndPopup();
-				return;
-			}
-
-			ImGui::Text("New material name :");
-			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
-			ImGui::Separator();
-
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
-			if (ImGui::Button("Apply", ImVec2(120, 0)))
-			{
-				std::string oldName = objToWorkWith->getName();
-				// if new name is acceptable
-				if (RESOURCE_MANAGER.setMaterialName(objToWorkWith, newName))
-				{
-					PROJECT_MANAGER.getCurrent()->modified = true;
-					ImGuiModalPopup::close();
-					strcpy_s(newName, "");
-				}
-				else
-				{
-					objToWorkWith = nullptr;
-					ImGuiModalPopup::close();
-					renameFailedWindow.show();
-				}
-			}
-
-			ImGui::SetItemDefaultFocus();
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120 / 2.0f);
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				objToWorkWith = nullptr;
-				ImGuiModalPopup::close();
-			}
-			ImGui::EndPopup();
-		}
-	}
-};
-static renameMaterialPopUp renameMaterialWindow;
-
-class renameGameModelPopUp : public ImGuiModalPopup
-{
-	FEGameModel* objToWorkWith;
-	char newName[512];
-public:
-	renameGameModelPopUp()
-	{
-		popupCaption = "Rename game model";
-		objToWorkWith = nullptr;
-	}
-
-	void show(FEGameModel* ObjToWorkWith)
-	{
-		shouldOpen = true;
-		objToWorkWith = ObjToWorkWith;
-		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			if (objToWorkWith == nullptr)
-			{
-				ImGui::EndPopup();
-				return;
-			}
-
-			ImGui::Text("New game model name :");
-			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
-			ImGui::Separator();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Apply", ImVec2(120, 0)))
-			{
-				std::string oldName = objToWorkWith->getName();
-				// if new name is acceptable
-				if (RESOURCE_MANAGER.setGameModelName(objToWorkWith, newName))
-				{
-					PROJECT_MANAGER.getCurrent()->modified = true;
-					ImGuiModalPopup::close();
-					strcpy_s(newName, "");
-				}
-				else
-				{
-					objToWorkWith = nullptr;
-					ImGuiModalPopup::close();
-					renameFailedWindow.show();
-				}
-			}
-			ImGui::SetItemDefaultFocus();
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				objToWorkWith = nullptr;
-				ImGuiModalPopup::close();
-			}
-			ImGui::EndPopup();
-		}
-	}
-};
-static renameGameModelPopUp renameGameModelWindow;
-
-class renameEntityPopUp : public ImGuiModalPopup
-{
-	FEEntity* objToWorkWith;
-	char newName[512];
-public:
-	renameEntityPopUp()
-	{
-		popupCaption = "Rename entity";
-		objToWorkWith = nullptr;
-	}
-
-	void show(FEEntity* ObjToWorkWith)
-	{
-		shouldOpen = true;
-		objToWorkWith = ObjToWorkWith;
-		strcpy_s(newName, objToWorkWith->getName().size() + 1, objToWorkWith->getName().c_str());
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			if (objToWorkWith == nullptr)
-			{
-				ImGui::EndPopup();
-				return;
-			}
-
-			FEScene& scene = FEScene::getInstance();
-			ImGui::Text("New entity name :");
-			ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
-			ImGui::Separator();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Apply", ImVec2(120, 0)))
-			{
-				std::string oldName = objToWorkWith->getName();
-				// if new name is acceptable
-				if (scene.setEntityName(objToWorkWith, newName))
-				{
-					PROJECT_MANAGER.getCurrent()->modified = true;
-					ImGuiModalPopup::close();
-					strcpy_s(newName, "");
-				}
-				else
-				{
-					objToWorkWith = nullptr;
-					ImGuiModalPopup::close();
-					renameFailedWindow.show();
-				}
-			}
-			ImGui::SetItemDefaultFocus();
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 2.0f + ImGui::GetWindowContentRegionWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
-			{
-				objToWorkWith = nullptr;
-				ImGuiModalPopup::close();
-			}
-			ImGui::EndPopup();
-		}
-	}
-};
-static renameEntityPopUp renameEntityWindow;

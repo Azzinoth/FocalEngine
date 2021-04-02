@@ -1,13 +1,14 @@
 #pragma once
 
-#ifndef FEASSET_H
-#define FEASSET_H
+#ifndef FEOBJECT_H
+#define FEOBJECT_H
 
-#include "..\SubSystems\FELog.h"
+#include "FECoreIncludes.h"
+#include <random>
 
 namespace FocalEngine
 {
-	enum FEAssetType
+	enum FEObjectType
 	{
 		FE_NULL = 0,
 		FE_SHADER = 1,
@@ -17,10 +18,39 @@ namespace FocalEngine
 		FE_GAMEMODEL = 5,
 		FE_ENTITY = 6,
 		FE_TERRAIN = 7,
-		FE_ENTITY_INSTANCED = 8
+		FE_ENTITY_INSTANCED = 8,
+		FE_DIRECTIONAL_LIGHT = 9,
+		FE_POINT_LIGHT = 10,
+		FE_SPOT_LIGHT = 11,
+		FE_CAMERA = 12,
+		FE_FRAME_BUFFER = 13,
+		FE_POST_PROCESS = 14
 	};
 
-	static std::string FEAssetTypeToString(FEAssetType type)
+	class FEObject;
+	class FEngine;
+	class FERenderer;
+	class FEResourceManager;
+	class FEScene;
+
+	class FEObjectManager
+	{
+		friend FEObject;
+		friend FEngine;
+		friend FERenderer;
+		friend FEResourceManager;
+		friend FEScene;
+	public:
+		SINGLETON_PUBLIC_PART(FEObjectManager)
+		FEObject* getFEObject(std::string ID);
+	private:
+		SINGLETON_PRIVATE_PART(FEObjectManager)
+		std::unordered_map<std::string, FEObject*> allObjects;
+		std::vector<std::unordered_map<std::string, FEObject*>> objectsByType;
+		//std::unordered_map<std::string, std::string> testCheck;
+	};
+
+	static std::string FEObjectTypeToString(FEObjectType type)
 	{
 		switch (type)
 		{
@@ -77,24 +107,26 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	class FEResourceManager;
-
 	// This function can produce ID's that are identical but it is extremely rare
 	// to be 100% sure I could implement system to prevent it but for the sake of simplicity I choose not to do that, at least for now.
 	static std::string getUniqueId()
 	{
+		static std::random_device randomDevice;
+		static std::mt19937 mt(randomDevice());
+		static std::uniform_int_distribution<int> distribution(0, 128);
+
 		static bool firstInitialization = true;
 		if (firstInitialization)
 		{
 			srand(unsigned int(time(NULL)));
 			firstInitialization = false;
-		}	
+		}
 
 		std::string ID = "";
-		ID += char(rand() % 128);
+		ID += char(distribution(mt));
 		for (size_t j = 0; j < 11; j++)
 		{
-			ID.insert(rand() % ID.size(), 1, char(rand() % 128));
+			ID.insert(rand() % ID.size(), 1, char(distribution(mt)));
 		}
 
 		return ID;
@@ -110,8 +142,9 @@ namespace FocalEngine
 	class FEEntityInstanced;
 	class FEScene;
 
-	class FEAsset
+	class FEObject
 	{
+		friend FEngine;
 		friend FEShader;
 		friend FEMesh;
 		friend FETexture;
@@ -123,26 +156,28 @@ namespace FocalEngine
 		friend FEResourceManager;
 		friend FEScene;
 	public:
-		FEAsset(FEAssetType assetType, std::string assetName);
-		~FEAsset();
+		FEObject(FEObjectType objectType, std::string objectName);
+		~FEObject();
 
-		std::string getAssetID() const;
-		FEAssetType getType() const;
+		std::string getObjectID() const;
+		FEObjectType getType() const;
 
 		bool getDirtyFlag();
 		void setDirtyFlag(bool newDirtyFlag);
 
 		std::string getName();
+		void setName(std::string newName);
 		int getNameHash();
 	private:
 		std::string ID = "";
-		FEAssetType type = FE_NULL;
+		FEObjectType type = FE_NULL;
 		bool dirtyFlag = false;
 
-		void setName(std::string newName);
 		std::string name;
 		int nameHash = 0;
+		void setID(std::string newID);
+		void setType(FEObjectType newType);
 	};
 }
 
-#endif FEASSET_H
+#endif FEOBJECT_H

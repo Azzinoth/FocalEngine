@@ -1,7 +1,8 @@
 #include "FEMaterial.h"
+#include <algorithm>
 using namespace FocalEngine;
 
-FEMaterial::FEMaterial(std::string Name) : FEAsset(FE_MATERIAL, Name)
+FEMaterial::FEMaterial(std::string Name) : FEObject(FE_MATERIAL, Name)
 {
 	name = Name;
 

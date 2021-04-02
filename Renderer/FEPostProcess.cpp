@@ -13,9 +13,8 @@ FEPostProcessStage::FEPostProcessStage(std::vector<int>&& InTextureSource, FESha
 	shader = Shader;
 }
 
-FEPostProcess::FEPostProcess(std::string Name)
+FEPostProcess::FEPostProcess(std::string Name) : FEObject(FE_POST_PROCESS, Name)
 {
-	name = Name;
 }
 
 FEPostProcess::~FEPostProcess()
@@ -56,16 +55,6 @@ void FEPostProcess::addStage(FEPostProcessStage* newStage)
 	stages.push_back(newStage);
 }
 
-std::string FEPostProcess::getName()
-{
-	return name;
-}
-
-void FEPostProcess::setName(std::string newName)
-{
-	name = newName;
-}
-
 bool FEPostProcess::replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture)
 {
 	if (stageIndex >= stages.size())
@@ -79,7 +68,7 @@ bool FEPostProcess::replaceOutTexture(size_t stageIndex, FETexture* newTexture, 
 	{
 		for (size_t i = 0; i < texturesToDelete.size(); i++)
 		{
-			if (texturesToDelete[i]->getAssetID() == stages[stageIndex]->outTexture->getAssetID())
+			if (texturesToDelete[i]->getObjectID() == stages[stageIndex]->outTexture->getObjectID())
 			{
 				if (deleteOldTexture)
 					delete stages[stageIndex]->outTexture;

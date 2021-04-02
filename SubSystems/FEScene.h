@@ -14,39 +14,36 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
-		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "", std::string forceAssetID = "");
+		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
 		bool addEntity(FEEntity* newEntity);
-		FEEntity* getEntity(std::string name);
+		FEEntity* getEntity(std::string ID);
 		std::vector<std::string> getEntityList();
-		void deleteEntity(std::string name);
-		bool setEntityName(FEEntity* Entity, std::string EntityName);
+		void deleteEntity(std::string ID);
 
-		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceAssetID = "");
+		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
 		bool addEntityInstanced(FEEntityInstanced* newEntityInstanced);
-		FEEntityInstanced* getEntityInstanced(std::string name);
+		FEEntityInstanced* getEntityInstanced(std::string ID);
 		void setSelectMode(FEEntityInstanced* entityInstanced, bool newValue);
 
-		void addLight(FELightType Type, std::string Name);
-		FELight* getLight(std::string name);
+		FELight* addLight(FEObjectType lightType, std::string Name, std::string forceObjectID = "");
+		FELight* getLight(std::string ID);
 		std::vector<std::string> getLightsList();
+		void deleteLight(std::string ID);
 
 		bool addTerrain(FETerrain* newTerrain);
 		std::vector<std::string> getTerrainList();
-		FETerrain* getTerrain(std::string name);
-		void deleteTerrain(std::string name);
-		bool setTerrainName(FETerrain* Terrain, std::string TerrainName);
+		FETerrain* getTerrain(std::string ID);
+		void deleteTerrain(std::string ID);
 
 		void prepareForGameModelDeletion(FEGameModel* gameModel);
 
 		void clear();
 
-		FEOctree* testTree;
+		//FEOctree* testTree;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
 		std::unordered_map<std::string, FEEntity*> entityMap;
-		//std::unordered_map<std::string, FEEntityInstanced*> entityInstancedMap;
-		std::unordered_map<std::string, FELight*> lightsMap;
 		std::unordered_map<std::string, FETerrain*> terrainMap;
 	};
 }

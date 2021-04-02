@@ -6,11 +6,11 @@ namespace FocalEngine
 {
 	class FERenderer;
 
-	class FEBasicCamera
+	class FEBasicCamera : public FEObject
 	{
 		friend FERenderer;
 	public:
-		FEBasicCamera();
+		FEBasicCamera(std::string name);
 		~FEBasicCamera();
 
 		float getFov();

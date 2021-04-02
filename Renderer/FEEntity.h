@@ -12,7 +12,7 @@ namespace FocalEngine
 {
 	class FEOctree;
 
-	class FEEntity : public FEAsset
+	class FEEntity : public FEObject
 	{
 		friend FERenderer;
 		friend FEOctree;

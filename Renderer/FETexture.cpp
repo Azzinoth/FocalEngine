@@ -1,13 +1,13 @@
 #include "FETexture.h"
 using namespace FocalEngine;
 
-FETexture::FETexture(std::string Name) : FEAsset(FE_TEXTURE, Name)
+FETexture::FETexture(std::string Name) : FEObject(FE_TEXTURE, Name)
 {
 	name = Name;
 	FE_GL_ERROR(glGenTextures(1, &textureID));
 }
 
-FETexture::FETexture(int Width, int Height, std::string Name) : FEAsset(FE_TEXTURE, Name)
+FETexture::FETexture(int Width, int Height, std::string Name) : FEObject(FE_TEXTURE, Name)
 {
 	name = Name;
 	width = Width;
@@ -20,7 +20,7 @@ FETexture::FETexture(int Width, int Height, std::string Name) : FEAsset(FE_TEXTU
 	unBind();
 }
 
-FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name) : FEAsset(FE_TEXTURE, Name)
+FETexture::FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name) : FEObject(FE_TEXTURE, Name)
 {
 	width = Width;
 	height = Height;

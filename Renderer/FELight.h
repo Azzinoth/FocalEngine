@@ -5,13 +5,6 @@
 
 namespace FocalEngine
 {
-	enum FELightType
-	{
-		FE_DIRECTIONAL_LIGHT = 0,
-		FE_POINT_LIGHT       = 1,
-		FE_SPOT_LIGHT        = 2,
-	};
-
 	struct FELightShaderInfo
 	{
 		glm::vec3 typeAndAngles = glm::vec3(-1.0f);
@@ -40,12 +33,12 @@ namespace FocalEngine
 	class FEScene;
 	class FERenderer;
 
-	class FELight
+	class FELight : public FEObject
 	{
 		friend FEScene;
 		friend FERenderer;
 	public:
-		FELight(FELightType Type);
+		FELight(FEObjectType lightType);
 		~FELight();
 
 		glm::vec3 getColor();
@@ -70,15 +63,7 @@ namespace FocalEngine
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
-
-		FELightType getType();
-
-		std::string getName();
-		void setName(std::string newName);
 	protected:
-		FELightType type;
-		std::string name;
-
 		glm::vec3 color = glm::vec3(1.0f);
 		float intensity = 1.0f;
 

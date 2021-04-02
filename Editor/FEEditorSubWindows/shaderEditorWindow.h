@@ -1,6 +1,7 @@
 #pragma once
 
 #include "editPopups.h"
+#pragma warning (disable: 4724)
 
 class shaderDebugWindow : public FEImGuiWindow
 {
@@ -194,10 +195,10 @@ class shaderEditorWindow : public FEImGuiWindow
 			}
 		}
 
-		std::vector<std::string> terrainList = RESOURCE_MANAGER.getTerrainList();
+		std::vector<std::string> terrainList = SCENE.getTerrainList();
 		for (size_t i = 0; i < terrainList.size(); i++)
 		{
-			FETerrain* tempTerrain = RESOURCE_MANAGER.getTerrain(terrainList[i]);
+			FETerrain* tempTerrain = SCENE.getTerrain(terrainList[i]);
 			if (tempTerrain->shader->getNameHash() == oldShader->getNameHash())
 			{
 				tempTerrain->shader = newShader;
@@ -324,7 +325,7 @@ public:
 					reCompiledShader->addParameter(*shaderToEdit->getParameter(oldParameters[i]));
 				}
 
-				RESOURCE_MANAGER.replaceShader(shaderToEdit->getName(), reCompiledShader);
+				RESOURCE_MANAGER.replaceShader(shaderToEdit->getObjectID(), reCompiledShader);
 
 				if (shaderToEdit->isDebugRequest())
 				{

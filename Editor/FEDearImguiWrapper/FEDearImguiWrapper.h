@@ -306,15 +306,22 @@ public:
 	{
 		ImGuiModalPopup::render();
 
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
 			ImGui::Text(message.c_str());
-			ImVec2 textSize = ImGui::CalcTextSize(message.c_str());
-			ImGui::SetCursorPosX(textSize.x / 2.0f - 120 / 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - 120.0f / 2.0f);
 			if (ImGui::Button("Ok", ImVec2(120, 0)))
+			{
 				ImGuiModalPopup::close();
+			}
 
+			ImGui::PopStyleVar();
 			ImGui::EndPopup();
+		}
+		else
+		{
+			ImGui::PopStyleVar();
 		}
 	}
 };

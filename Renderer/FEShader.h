@@ -92,7 +92,7 @@ namespace FocalEngine
 	class FEPostProcess;
 	class FEngine;
 
-	class FEShader : public FEAsset
+	class FEShader : public FEObject
 	{
 		friend FEMaterial;
 		friend FERenderer;

@@ -1,7 +1,7 @@
 #include "FEMesh.h"
 using namespace FocalEngine;
 
-FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name) : FEAsset(FE_MESH, Name)
+FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name) : FEObject(FE_MESH, Name)
 {
 	setName(Name);
 	vaoID = VaoID;

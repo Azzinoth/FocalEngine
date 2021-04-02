@@ -1,7 +1,7 @@
 #include "FEFramebuffer.h"
 using namespace FocalEngine;
 
-FEFramebuffer::FEFramebuffer(/*int attachments, int Width, int Height, bool HDR*/)
+FEFramebuffer::FEFramebuffer(/*int attachments, int Width, int Height, bool HDR*/) : FEObject(FE_FRAME_BUFFER, "unnamedFrameBuffer")
 {
 	//width = Width;
 	//height = Height;

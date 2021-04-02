@@ -1,7 +1,7 @@
 #pragma once
 
 #include "..\SubSystems\FEGeometricTools.h"
-#include "FEAsset.h"
+#include "..\SubSystems\FEObject.h"
 
 namespace FocalEngine
 {
@@ -10,7 +10,7 @@ namespace FocalEngine
 	class FERenderer;
 	class FEResourceManager;
 
-	class FEMesh : public FEAsset
+	class FEMesh : public FEObject
 	{	
 		friend FEEntity;
 		friend FEEntityInstanced;

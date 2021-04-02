@@ -57,6 +57,15 @@ private:
 	FETexture* mouseCursorIcon = nullptr;
 	FETexture* arrowToGroundIcon = nullptr;
 
+	void drawCorrectSceneBrowserIcon(FEObject* sceneObject);
+	FETexture* entitySceneBrowserIcon = nullptr;
+	FETexture* instancedEntitySceneBrowserIcon = nullptr;
+	FETexture* directionalLightSceneBrowserIcon = nullptr;
+	FETexture* spotLightSceneBrowserIcon = nullptr;
+	FETexture* pointLightSceneBrowserIcon = nullptr;
+	FETexture* terrainSceneBrowserIcon = nullptr;
+	FETexture* cameraSceneBrowserIcon = nullptr;
+
 	static void onCameraUpdate(FEBasicCamera* camera);
 	static void mouseButtonCallback(int button, int action, int mods);
 	static void mouseMoveCallback(double xpos, double ypos);
@@ -64,7 +73,8 @@ private:
 	//static void windowResizeCallback(int newW, int newH);
 	static void renderTargetResizeCallback(int newW, int newH);
 
-	void displaySceneEntities();
+	void displaySceneBrowser();
+	void displayInspector();
 	void displayContentBrowser();
 
 	void displayShadersContentBrowser();
@@ -73,7 +83,7 @@ private:
 	void displayGameModelContentBrowser();
 	void displayTexturesContentBrowser();
 	//void displayPostProcessContentBrowser();
-	void displayTerrainContentBrowser();
+	//void displayTerrainContentBrowser();
 	void displayEffectsContentBrowser();
 
 	static void closeWindowCallBack();
@@ -81,7 +91,8 @@ private:
 	void showPosition(std::string objectName, glm::vec3& position);
 	void showRotation(std::string objectName, glm::vec3& rotation);
 	void showScale(std::string objectName, glm::vec3& scale);
-	void showTransformConfiguration(std::string objectName, FETransformComponent* transform);
+	void showTransformConfiguration(FEObject* object, FETransformComponent* transform);
+	void showTransformConfiguration(std::string name, FETransformComponent* transform);
 
 	void displayMaterialPrameter(FEShaderParam* param);
 	void displayLightProperties(FELight* light);
@@ -89,12 +100,13 @@ private:
 
 	int textureUnderMouse = -1;
 	int meshUnderMouse = -1;
-	std::string shaderNameUnderMouse = "";
+	std::string shaderIDUnderMouse = "";
 	int materialUnderMouse = -1;
 	int gameModelUnderMouse = -1;
 	int entityUnderMouse = -1;
 
 	bool isOpenContextMenuInContentBrowser = false;
+	bool isOpenContextMenuInSceneEntities = false;
 	int activeTabContentBrowser = 0;
 
 	bool gameMode = false;

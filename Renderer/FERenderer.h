@@ -22,7 +22,7 @@ namespace FocalEngine
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
 
 		std::vector<std::string> getPostProcessList();
-		FEPostProcess* getPostProcessEffect(std::string name);
+		FEPostProcess* getPostProcessEffect(std::string ID);
 
 		//#fix postProcess
 		FEFramebuffer* sceneToTextureFB = nullptr;

@@ -45,15 +45,15 @@ private:
 	std::unordered_map<std::string, FETexture*> materialPreviewTextures;
 	std::unordered_map<std::string, FETexture*> gameModelPreviewTextures;
 
-	void createMeshPreview(std::string meshName);
-	FETexture* getMeshPreview(std::string meshName);
+	void createMeshPreview(std::string meshID);
+	FETexture* getMeshPreview(std::string meshID);
 
-	void createMaterialPreview(std::string materialName);
-	FETexture* getMaterialPreview(std::string materialName);
+	void createMaterialPreview(std::string materialID);
+	FETexture* getMaterialPreview(std::string materialID);
 
 	void createGameModelPreview(std::string gameModelName);
 	void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture);
-	FETexture* getGameModelPreview(std::string gameModelName);
+	FETexture* getGameModelPreview(std::string gameModelID);
 
 	void clear();
 };
