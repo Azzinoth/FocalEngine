@@ -347,6 +347,7 @@ void FEImGuiWindow::render()
 		}
 
 		wasClosedLastFrame = false;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		ImGui::Begin(caption, nullptr/*&visible*/, flags);
 	}
 
@@ -361,7 +362,10 @@ void FEImGuiWindow::render()
 void FEImGuiWindow::onRenderEnd()
 {
 	if (visible)
+	{
+		ImGui::PopStyleVar();
 		ImGui::End();
+	}
 }
 
 bool FEImGuiWindow::isVisible()
@@ -374,6 +378,7 @@ void FEImGuiWindow::close()
 	if (visible)
 	{
 		visible = false;
+		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 }

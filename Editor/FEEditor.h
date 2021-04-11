@@ -74,17 +74,15 @@ private:
 	static void renderTargetResizeCallback(int newW, int newH);
 
 	void displaySceneBrowser();
+	bool sceneBrowserVisible = true;
 	void displayInspector();
+	bool inspectorVisible = true;
 	void displayContentBrowser();
+	bool effectsWindowVisible = true;
+	void displayEffectsWindow();
 
-	void displayShadersContentBrowser();
-	void displayMeshesContentBrowser();
-	void displayMaterialContentBrowser();
-	void displayGameModelContentBrowser();
-	void displayTexturesContentBrowser();
-	//void displayPostProcessContentBrowser();
-	//void displayTerrainContentBrowser();
-	void displayEffectsContentBrowser();
+	bool contentBrowserVisible = true;
+	void displayContentBrowserItems();
 
 	static void closeWindowCallBack();
 
@@ -97,6 +95,11 @@ private:
 	void displayMaterialPrameter(FEShaderParam* param);
 	void displayLightProperties(FELight* light);
 	void displayLightsProperties();
+
+	int contentBrowserItemUnderMouse = -1;
+	std::vector<FEObject*> allResourcesContentBrowser;
+	std::vector<FEObject*> filteredResourcesContentBrowser;
+	char filterForResourcesContentBrowser[512];
 
 	int textureUnderMouse = -1;
 	int meshUnderMouse = -1;

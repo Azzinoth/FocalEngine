@@ -10,6 +10,8 @@ FEEditor::FEEditor()
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
 
 	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+
+	strcpy_s(filterForResourcesContentBrowser, "");
 }
 
 FEEditor::~FEEditor() {}
@@ -626,6 +628,9 @@ void FEEditor::drawCorrectSceneBrowserIcon(FEObject* sceneObject)
 
 void FEEditor::displaySceneBrowser()
 {
+	if (!sceneBrowserVisible)
+		return;
+
 	static int sceneObjectHoveredIndex = -1;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
@@ -1065,10 +1070,30 @@ void FEEditor::render()
 				ImGui::EndMenu();
 			}
 
-			/*if (ImGui::BeginMenu("Edit"))
+			if (ImGui::BeginMenu("Window"))
 			{
+				if (ImGui::MenuItem("Scene Entities", NULL, sceneBrowserVisible))
+				{
+					sceneBrowserVisible = !sceneBrowserVisible;
+				}
+
+				if (ImGui::MenuItem("Inspector", NULL, inspectorVisible))
+				{
+					inspectorVisible = !inspectorVisible;
+				}
+
+				if (ImGui::MenuItem("Content Browser", NULL, contentBrowserVisible))
+				{
+					contentBrowserVisible = !contentBrowserVisible;
+				}
+
+				if (ImGui::MenuItem("Effects", NULL, effectsWindowVisible))
+				{
+					effectsWindowVisible = !effectsWindowVisible;
+				}
+
 				ImGui::EndMenu();
-			}*/
+			}
 
 			ImGui::EndMainMenuBar();
 		}
@@ -1111,6 +1136,7 @@ void FEEditor::render()
 		displaySceneBrowser();
 		displayContentBrowser();
 		displayInspector();
+		displayEffectsWindow();
 		gyzmosSettingsWindowObject.show();
 		gyzmosSettingsWindowObject.render();
 
@@ -1198,6 +1224,9 @@ void FEEditor::setGameMode(bool gameMode)
 
 void FEEditor::displayInspector()
 {
+	if (!inspectorVisible)
+		return;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_None);
 	
@@ -1618,6 +1647,346 @@ void FEEditor::displayInspector()
 		float cameraSpeed = reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->getSpeed();
 		ImGui::DragFloat("Camera speed in m/s", &cameraSpeed, 0.01f, 0.01f, 100.0f);
 		reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->setSpeed(cameraSpeed);
+	}
+
+	ImGui::PopStyleVar();
+	ImGui::End();
+}
+
+void FEEditor::displayEffectsWindow()
+{
+	if (!effectsWindowVisible)
+		return;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+	ImGui::Begin("Effects settings", nullptr, ImGuiWindowFlags_None);
+
+	int GUIID = 0;
+	static float buttonWidth = 80.0f;
+	static float fieldWidth = 250.0f;
+
+	static ImGuiButton* resetButton = new ImGuiButton("Reset");
+	static bool firstCall = true;
+	if (firstCall)
+	{
+		resetButton->setSize(ImVec2(buttonWidth, 28.0f));
+		firstCall = false;
+	}
+
+	if (ImGui::CollapsingHeader("Gamma Correction & Exposure", 0))
+	{
+		ImGui::Text("Gamma Correction:");
+		float FEGamma = ENGINE.getCamera()->getGamma();
+		ImGui::SetNextItemWidth(fieldWidth);
+		ImGui::DragFloat("##Gamma Correction", &FEGamma, 0.01f, 0.001f, 10.0f);
+		ENGINE.getCamera()->setGamma(FEGamma);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			ENGINE.getCamera()->setGamma(2.2f);
+		}
+		ImGui::PopID();
+
+		ImGui::Text("Exposure:");
+		float FEExposure = ENGINE.getCamera()->getExposure();
+		ImGui::SetNextItemWidth(fieldWidth);
+		ImGui::DragFloat("##Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
+		ENGINE.getCamera()->setExposure(FEExposure);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			ENGINE.getCamera()->setExposure(1.0f);
+		}
+		ImGui::PopID();
+	}
+
+	if (ImGui::CollapsingHeader("Anti-Aliasing(FXAA)", 0))
+	{
+		static const char* options[5] = { "none", "1x", "2x", "4x", "8x" };
+		static std::string selectedOption = "1x";
+		//FEPostProcess* PPEffect = RENDERER.getPostProcessEffect("FE_FXAA");
+
+		static bool firstLook = true;
+		if (firstLook)
+		{
+			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			if (FXAASpanMax == 0.0f)
+			{
+				selectedOption = options[0];
+			}
+			else if (FXAASpanMax > 0.1f && FXAASpanMax < 1.1f)
+			{
+				selectedOption = options[1];
+			}
+			else if (FXAASpanMax > 1.1f && FXAASpanMax < 2.1f)
+			{
+				selectedOption = options[2];
+			}
+			else if (FXAASpanMax > 2.1f && FXAASpanMax < 4.1f)
+			{
+				selectedOption = options[3];
+			}
+			else if (FXAASpanMax > 4.1f && FXAASpanMax < 8.1f)
+			{
+				selectedOption = options[4];
+			}
+			else
+			{
+				selectedOption = options[5];
+			}
+
+			firstLook = false;
+		}
+
+		static bool debugSettings = false;
+		if (ImGui::Checkbox("debug view", &debugSettings))
+		{
+			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			if (FXAASpanMax == 0.0f)
+			{
+				selectedOption = options[0];
+			}
+			else if (FXAASpanMax > 0.1f && FXAASpanMax < 1.1f)
+			{
+				selectedOption = options[1];
+			}
+			else if (FXAASpanMax > 1.1f && FXAASpanMax < 2.1f)
+			{
+				selectedOption = options[2];
+			}
+			else if (FXAASpanMax > 2.1f && FXAASpanMax < 4.1f)
+			{
+				selectedOption = options[3];
+			}
+			else if (FXAASpanMax > 4.1f && FXAASpanMax < 8.1f)
+			{
+				selectedOption = options[4];
+			}
+			else
+			{
+				selectedOption = options[5];
+			}
+		}
+
+		if (!debugSettings)
+		{
+			ImGui::Text("Anti Aliasing Strength:");
+			if (ImGui::BeginCombo("##Anti Aliasing Strength", selectedOption.c_str(), ImGuiWindowFlags_None))
+			{
+				for (size_t i = 0; i < 5; i++)
+				{
+					bool is_selected = (selectedOption == options[i]);
+					if (ImGui::Selectable(options[i], is_selected))
+					{
+						RENDERER.setFXAASpanMax(float(pow(2.0, (i - 1))));
+						if (i == 0)
+							RENDERER.setFXAASpanMax(0.0f);
+						selectedOption = options[i];
+					}
+
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else
+		{
+			ImGui::Text("FXAASpanMax:");
+			ImGui::SetNextItemWidth(fieldWidth);
+			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			ImGui::DragFloat("##FXAASpanMax", &FXAASpanMax, 0.0f, 0.001f, 32.0f);
+			RENDERER.setFXAASpanMax(FXAASpanMax);
+
+			ImGui::PushID(GUIID++);
+			ImGui::SameLine();
+			resetButton->render();
+			if (resetButton->getWasClicked())
+			{
+				RENDERER.setFXAASpanMax(8.0f);
+			}
+			ImGui::PopID();
+
+			ImGui::Text("FXAAReduceMin:");
+			ImGui::SetNextItemWidth(fieldWidth);
+			float FXAAReduceMin = RENDERER.getFXAAReduceMin();
+			ImGui::DragFloat("##FXAAReduceMin", &FXAAReduceMin, 0.01f, 0.001f, 100.0f);
+			RENDERER.setFXAAReduceMin(FXAAReduceMin);
+
+			ImGui::PushID(GUIID++);
+			ImGui::SameLine();
+			resetButton->render();
+			if (resetButton->getWasClicked())
+			{
+				RENDERER.setFXAAReduceMin(0.008f);
+			}
+			ImGui::PopID();
+
+			ImGui::Text("FXAAReduceMul:");
+			ImGui::SetNextItemWidth(fieldWidth);
+			float FXAAReduceMul = RENDERER.getFXAAReduceMul();
+			ImGui::DragFloat("##FXAAReduceMul", &FXAAReduceMul, 0.01f, 0.001f, 100.0f);
+			RENDERER.setFXAAReduceMul(FXAAReduceMul);
+
+			ImGui::PushID(GUIID++);
+			ImGui::SameLine();
+			resetButton->render();
+			if (resetButton->getWasClicked())
+			{
+				RENDERER.setFXAAReduceMul(0.400f);
+			}
+			ImGui::PopID();
+		}
+	}
+
+	if (ImGui::CollapsingHeader("Bloom", 0))
+	{
+		ImGui::Text("Threshold:");
+		float Threshold = RENDERER.getBloomThreshold();
+		ImGui::SetNextItemWidth(fieldWidth);
+		ImGui::DragFloat("##Threshold", &Threshold, 0.01f, 0.001f, 30.0f);
+		RENDERER.setBloomThreshold(Threshold);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			RENDERER.setBloomThreshold(1.5f);
+		}
+		ImGui::PopID();
+
+		ImGui::Text("Size:");
+		float Size = RENDERER.getBloomSize();
+		ImGui::SetNextItemWidth(fieldWidth);
+		ImGui::DragFloat("##BloomSize", &Size, 0.01f, 0.001f, 100.0f);
+		RENDERER.setBloomSize(Size);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			RENDERER.setBloomSize(5.0f);
+		}
+		ImGui::PopID();
+	}
+
+	if (ImGui::CollapsingHeader("Depth of Field", 0))
+	{
+		ImGui::Text("Near distance:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float depthThreshold = RENDERER.getDOFNearDistance();
+		ImGui::DragFloat("##depthThreshold", &depthThreshold, 0.0f, 0.001f, 100.0f);
+		RENDERER.setDOFNearDistance(depthThreshold);
+
+		ImGui::Text("Far distance:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float depthThresholdFar = RENDERER.getDOFFarDistance();
+		ImGui::DragFloat("##depthThresholdFar", &depthThresholdFar, 0.0f, 0.001f, 100.0f);
+		RENDERER.setDOFFarDistance(depthThresholdFar);
+
+		ImGui::Text("Strength:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float Strength = RENDERER.getDOFStrength();
+		ImGui::DragFloat("##Strength", &Strength, 0.0f, 0.001f, 10.0f);
+		RENDERER.setDOFStrength(Strength);
+
+		ImGui::Text("Distance dependent strength:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float intMult = RENDERER.getDOFDistanceDependentStrength();
+		ImGui::DragFloat("##Distance dependent strength", &intMult, 0.0f, 0.001f, 100.0f);
+		RENDERER.setDOFDistanceDependentStrength(intMult);
+	}
+
+	if (ImGui::CollapsingHeader("Distance fog", 0))
+	{
+		bool enabledFog = RENDERER.isDistanceFogEnabled();
+		if (ImGui::Checkbox("Enable fog", &enabledFog))
+		{
+			RENDERER.setDistanceFogEnabled(enabledFog);
+		}
+
+		if (enabledFog)
+		{
+			ImGui::Text("Density:");
+			ImGui::SetNextItemWidth(fieldWidth);
+			float fogDensity = RENDERER.getDistanceFogDensity();
+			ImGui::DragFloat("##fogDensity", &fogDensity, 0.001f, 0.0f, 5.0f);
+			RENDERER.setDistanceFogDensity(fogDensity);
+
+			ImGui::PushID(GUIID++);
+			ImGui::SameLine();
+			resetButton->render();
+			if (resetButton->getWasClicked())
+			{
+				RENDERER.setDistanceFogDensity(0.007f);
+			}
+			ImGui::PopID();
+
+			ImGui::Text("Gradient:");
+			ImGui::SetNextItemWidth(fieldWidth);
+			float fogGradient = RENDERER.getDistanceFogGradient();
+			ImGui::DragFloat("##fogGradient", &fogGradient, 0.001f, 0.0f, 5.0f);
+			RENDERER.setDistanceFogGradient(fogGradient);
+
+			ImGui::PushID(GUIID++);
+			ImGui::SameLine();
+			resetButton->render();
+			if (resetButton->getWasClicked())
+			{
+				RENDERER.setDistanceFogGradient(2.5f);
+			}
+			ImGui::PopID();
+		}
+	}
+
+	if (ImGui::CollapsingHeader("Chromatic Aberration", 0))
+	{
+		ImGui::Text("Shift strength:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float intensity = RENDERER.getChromaticAberrationIntensity();
+		ImGui::DragFloat("##intensity", &intensity, 0.01f, 0.0f, 30.0f);
+		RENDERER.setChromaticAberrationIntensity(intensity);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			RENDERER.setChromaticAberrationIntensity(1.0f);
+		}
+		ImGui::PopID();
+	}
+
+	if (ImGui::CollapsingHeader("Sky", 0))
+	{
+		bool enabledSky = RENDERER.isSkyEnabled();
+		if (ImGui::Checkbox("enable sky", &enabledSky))
+		{
+			RENDERER.setSkyEnabld(enabledSky);
+		}
+
+		ImGui::Text("Sphere size:");
+		ImGui::SetNextItemWidth(fieldWidth);
+		float size = RENDERER.getDistanceToSky();
+		ImGui::DragFloat("##Sphere size", &size, 0.01f, 0.0f, 200.0f);
+		RENDERER.setDistanceToSky(size);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		resetButton->render();
+		if (resetButton->getWasClicked())
+		{
+			RENDERER.setDistanceToSky(50.0f);
+		}
+		ImGui::PopID();
 	}
 
 	ImGui::PopStyleVar();

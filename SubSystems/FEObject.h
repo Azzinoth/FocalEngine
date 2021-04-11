@@ -100,6 +100,36 @@ namespace FocalEngine
 				return "FE_ENTITY_INSTANCED";
 				break;
 			}
+			case FocalEngine::FE_DIRECTIONAL_LIGHT:
+			{
+				return "FE_DIRECTIONAL_LIGHT";
+				break;
+			}
+			case FocalEngine::FE_POINT_LIGHT:
+			{
+				return "FE_POINT_LIGHT";
+				break;
+			}
+			case FocalEngine::FE_SPOT_LIGHT:
+			{
+				return "FE_SPOT_LIGHT";
+				break;
+			}
+			case FocalEngine::FE_CAMERA:
+			{
+				return "FE_CAMERA";
+				break;
+			}
+			case FocalEngine::FE_FRAME_BUFFER:
+			{
+				return "FE_FRAME_BUFFER";
+				break;
+			}
+			case FocalEngine::FE_POST_PROCESS:
+			{
+				return "FE_POST_PROCESS";
+				break;
+			}
 			default:
 				break;
 		}
