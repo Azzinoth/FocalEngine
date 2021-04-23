@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../FEngine.h"
+#include "../Editor/FEEditorDragAndDropManager.h"
 #include "FEDearImguiWrapper/FEDearImguiWrapper.h"
 #include "../Editor/FEEditorGizmoManager.h"
 #include "../Editor/FEEditorPreviewManager.h"

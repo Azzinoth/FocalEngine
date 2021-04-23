@@ -34,6 +34,54 @@ class editGameModelPopup : public FEImGuiWindow
 
 	std::vector<ImColor> LODColors;
 
+	// ************** Drag&Drop **************
+	struct meshTargetCallbackInfo
+	{
+		int LODLevel;
+		editGameModelPopup* window;
+	};
+	std::vector<meshTargetCallbackInfo> LODsMeshCallbackInfo;
+	std::vector<DragAndDropTarget*> LODsMeshTarget;
+
+	struct materialTargetCallbackInfo
+	{
+		bool billboardMaterial;
+		editGameModelPopup* window;
+	};
+	materialTargetCallbackInfo materialCallbackInfo;
+	materialTargetCallbackInfo billboardMaterialCallbackInfo;
+	DragAndDropTarget* materialTarget;
+	DragAndDropTarget* billboardMaterialTarget;
+
+	static bool dragAndDropLODMeshCallback(FEObject* object, void** callbackInfo)
+	{
+		meshTargetCallbackInfo* info = reinterpret_cast<meshTargetCallbackInfo*>(callbackInfo);
+		info->window->updatedLODMeshs[info->LODLevel] = RESOURCE_MANAGER.getMesh(object->getObjectID());
+		info->window->tempModel->setLODMesh(info->LODLevel, RESOURCE_MANAGER.getMesh(object->getObjectID()));
+		PREVIEW_MANAGER.createGameModelPreview(info->window->tempModel, &info->window->tempPreview);
+		return true;
+	}
+
+	static bool dragAndDropMaterialCallback(FEObject* object, void** callbackInfo)
+	{
+		materialTargetCallbackInfo* info = reinterpret_cast<materialTargetCallbackInfo*>(callbackInfo);
+		
+		if (info->billboardMaterial)
+		{
+			info->window->updatedBillboardMaterial = RESOURCE_MANAGER.getMaterial(object->getObjectID());
+			info->window->tempModel->setBillboardMaterial(RESOURCE_MANAGER.getMaterial(object->getObjectID()));
+		}
+		else
+		{
+			info->window->updatedMaterial = RESOURCE_MANAGER.getMaterial(object->getObjectID());
+			info->window->tempModel->setMaterial(RESOURCE_MANAGER.getMaterial(object->getObjectID()));
+			PREVIEW_MANAGER.createGameModelPreview(info->window->tempModel, &info->window->tempPreview);
+		}
+
+		return true;
+	}
+	// ************** Drag&Drop END **************
+
 	bool isLastSetupLOD(size_t LODindex)
 	{
 		if (LODindex >= tempModel->getMaxLODCount())
@@ -187,6 +235,29 @@ public:
 					LODGroups->addRange((objToWorkWith->getLODMaxDrawDistance(i)) / objToWorkWith->getCullDistance(), std::string("LOD") + std::to_string(i), "", LODColors[i]);
 				}
 			}
+			// ************** LOD Groups END **************
+
+			// ************** Drag&Drop **************
+			LODsMeshCallbackInfo.resize(objToWorkWith->getMaxLODCount());
+			LODsMeshTarget.resize(objToWorkWith->getMaxLODCount());
+			for (size_t i = 0; i < objToWorkWith->getMaxLODCount(); i++)
+			{
+				LODsMeshCallbackInfo[i].LODLevel = i;
+				LODsMeshCallbackInfo[i].window = this;
+				LODsMeshTarget[i] = DRAG_AND_DROP_MANAGER.addTarget(FE_MESH, dragAndDropLODMeshCallback, reinterpret_cast<void**>(&LODsMeshCallbackInfo[i]), "Drop to assing LOD" + std::to_string(i) + " mesh");
+			}
+
+			materialCallbackInfo;
+			materialCallbackInfo.billboardMaterial = false;
+			materialCallbackInfo.window = this;
+
+			billboardMaterialCallbackInfo;
+			billboardMaterialCallbackInfo.billboardMaterial = true;
+			billboardMaterialCallbackInfo.window = this;
+
+			materialTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, dragAndDropMaterialCallback, reinterpret_cast<void**>(&materialCallbackInfo), "Drop to assing material");
+			billboardMaterialTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, dragAndDropMaterialCallback, reinterpret_cast<void**>(&billboardMaterialCallbackInfo), "Drop to assing billboard material");
+			// ************** Drag&Drop END **************
 		}
 	}
 
@@ -376,6 +447,8 @@ public:
 			ImGui::SetCursorPosX(size.x / 4 - 128 / 2);
 			ImGui::SetCursorPosY(currentY + 210.0f);
 			ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMeshPreview(tempModel->mesh->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			LODsMeshTarget[0]->stickToItem();
+
 			changeLODMeshButton[0]->render();
 			if (changeLODMeshButton[0]->getWasClicked())
 			{
@@ -396,6 +469,7 @@ public:
 				updatedMaterial = tempModel->getMaterial();
 				selectMaterialWindow.show(&updatedMaterial);
 			}
+			materialTarget->stickToItem();
 		}
 		else if (currentMode == HAS_LOD_MODE)
 		{
@@ -457,6 +531,7 @@ public:
 
 					ImGui::Image((void*)(intptr_t)(tempModel->getLODMesh(i) == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMeshPreview(tempModel->getLODMesh(i)->getObjectID())->getTextureID()),
 						ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+					LODsMeshTarget[i]->stickToItem();
 
 					changeLODMeshButton[i]->setCaption(std::string("Change LOD") + std::to_string(i) + " Mesh");
 					if (tempModel->isLODBillboard(i))
@@ -498,6 +573,7 @@ public:
 						ImGui::SetCursorPosX(size.x / 2 - size.x / 4 - 128 / 2);
 						ImGui::SetCursorPosY(currentY + 200 + 210.0f);
 						ImGui::Image((void*)(intptr_t)PREVIEW_MANAGER.getMaterialPreview(tempModel->getMaterial()->getObjectID())->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						materialTarget->stickToItem();
 
 						changeMaterialButton->setPosition(ImVec2(size.x / 2 - size.x / 4 - changeMaterialButton->getSize().x / 2, 30.0f + 340.0f + 200.0f));
 						changeMaterialButton->render();
@@ -514,6 +590,8 @@ public:
 						ImGui::SetCursorPosX(size.x / 2 + size.x / 4 - 128 / 2);
 						ImGui::SetCursorPosY(currentY + 200 + 210.0f);
 						ImGui::Image((void*)(intptr_t)(tempModel->getBillboardMaterial() == nullptr ? RESOURCE_MANAGER.noTexture->getTextureID() : PREVIEW_MANAGER.getMaterialPreview(tempModel->getBillboardMaterial()->getObjectID())->getTextureID()), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+						billboardMaterialTarget->stickToItem();
+
 						changeBillboardMaterialButton->render();
 						if (changeBillboardMaterialButton->getWasClicked())
 						{
@@ -644,6 +722,89 @@ class editMaterialPopup : public FEImGuiWindow
 	int textureFromListUnderMouse = -1;
 	FETexture* tempContainer = nullptr;
 	int textureDestination = -1;
+
+	// ************** Drag&Drop **************
+	struct materialBindingCallbackInfo
+	{
+		void** material;
+		int textureBinding;
+	};
+	std::vector<materialBindingCallbackInfo> materialBindingInfo;
+	std::vector<DragAndDropTarget*> materialBindingtargets;
+	DragAndDropTarget* texturesListTarget;
+
+	static bool dragAndDropCallback(FEObject* object, void** oldTexture)
+	{
+		FETexture* newTexture = RESOURCE_MANAGER.getTexture(object->getObjectID());
+		*oldTexture = reinterpret_cast<void*>(newTexture);
+
+		return true;
+	}
+
+	static bool dragAndDropTexturesListCallback(FEObject* object, void** material)
+	{
+		reinterpret_cast<FEMaterial*>(*material)->addTexture(RESOURCE_MANAGER.getTexture(object->getObjectID()));
+		return true;
+	}
+
+	static bool dragAndDropMaterialBindingsCallback(FEObject* object, void** callbackInfoPointer)
+	{
+		materialBindingCallbackInfo* info = reinterpret_cast<materialBindingCallbackInfo*>(callbackInfoPointer);
+		FEMaterial* material = reinterpret_cast<FEMaterial*>(*info->material);
+
+
+		if(!material->isTextureInList(RESOURCE_MANAGER.getTexture(object->getObjectID())))
+			material->addTexture(RESOURCE_MANAGER.getTexture(object->getObjectID()));
+
+		int subMaterial = info->textureBinding > 5;
+		if (subMaterial)
+			info->textureBinding -= 6;
+
+		switch (info->textureBinding)
+		{
+			case 0:
+			{
+				material->setAlbedoMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
+				break;
+			}
+
+			case 1:
+			{
+				material->setNormalMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
+				break;
+			}
+
+			case 2:
+			{
+				material->setAOMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+				break;
+			}
+
+			case 3:
+			{
+				material->setRoughtnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+				break;
+			}
+
+			case 4:
+			{
+				material->setMetalnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+				break;
+			}
+
+			case 5:
+			{
+				material->setDisplacementMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+				break;
+			}
+
+			default:
+				break;
+		}
+		
+		return true;
+	}
+	// ************** Drag&Drop END **************
 public:
 	editMaterialPopup()
 	{
@@ -684,13 +845,29 @@ public:
 			iconButton->setUV0(ImVec2(0.0f, 0.0f));
 			iconButton->setUV1(ImVec2(1.0f, 1.0f));
 			iconButton->setFramePadding(8);
+
+			// ************** Drag&Drop **************
+			texturesListTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_TEXTURE, dragAndDropTexturesListCallback, reinterpret_cast<void**>(&objToWorkWith), "Drop to add texture");
+			if (materialBindingtargets.size() == 0)
+			{
+				materialBindingInfo.resize(12);
+				for (size_t i = 0; i < 12; i++)
+				{
+					materialBindingInfo[i].material = reinterpret_cast<void**>(&objToWorkWith);
+					materialBindingInfo[i].textureBinding = i;
+
+					materialBindingCallbackInfo* test = &materialBindingInfo[i];
+					materialBindingtargets.push_back(DRAG_AND_DROP_MANAGER.addTarget(FE_TEXTURE, dragAndDropMaterialBindingsCallback, reinterpret_cast<void**>(&materialBindingInfo[i]), "Drop to assign texture"));
+				}
+			}
+			// ************** Drag&Drop END **************
 		}
 	}
 
 	void render() override
 	{
 		FEImGuiWindow::render();
-
+		
 		if (!isVisible())
 			return;
 
@@ -715,36 +892,36 @@ public:
 
 				switch (textureDestination)
 				{
-				case 0:
-				{
-					objToWorkWith->setAlbedoMap(tempContainer, subMaterial);
-					break;
-				}
-				case 1:
-				{
-					objToWorkWith->setNormalMap(tempContainer, subMaterial);
-					break;
-				}
-				case 2:
-				{
-					objToWorkWith->setAOMap(tempContainer, 0, subMaterial);
-					break;
-				}
-				case 3:
-				{
-					objToWorkWith->setRoughtnessMap(tempContainer, 0, subMaterial);
-					break;
-				}
-				case 4:
-				{
-					objToWorkWith->setMetalnessMap(tempContainer, 0, subMaterial);
-					break;
-				}
-				case 5:
-				{
-					objToWorkWith->setDisplacementMap(tempContainer, 0, subMaterial);
-					break;
-				}
+					case 0:
+					{
+						objToWorkWith->setAlbedoMap(tempContainer, subMaterial);
+						break;
+					}
+					case 1:
+					{
+						objToWorkWith->setNormalMap(tempContainer, subMaterial);
+						break;
+					}
+					case 2:
+					{
+						objToWorkWith->setAOMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 3:
+					{
+						objToWorkWith->setRoughtnessMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 4:
+					{
+						objToWorkWith->setMetalnessMap(tempContainer, 0, subMaterial);
+						break;
+					}
+					case 5:
+					{
+						objToWorkWith->setDisplacementMap(tempContainer, 0, subMaterial);
+						break;
+					}
 				}
 			}
 
@@ -772,6 +949,8 @@ public:
 
 			if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(1))
 				ImGui::OpenPopup("##materialPropertiesContext_menu");
+
+			texturesListTarget->stickToCurrentWindow();
 
 			if (ImGui::BeginPopup("##materialPropertiesContext_menu"))
 			{
@@ -809,7 +988,12 @@ public:
 				iconButton->render();
 
 				if (iconButton->isHovered())
+				{
 					textureFromListUnderMouse = i;
+				}
+
+				if (iconButton->isHovered() && ImGui::IsMouseClicked(0) && !DRAG_AND_DROP_MANAGER.objectIsDraged())
+					DRAG_AND_DROP_MANAGER.setObject(objToWorkWith->textures[i], objToWorkWith->textures[i], ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 				ImGui::Text(objToWorkWith->textures[i]->getName().c_str());
 				ImGui::PopID();
@@ -841,6 +1025,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[0]->stickToItem();
+
 			if (objToWorkWith->getAlbedoMap() != nullptr)
 			{
 				ImGui::SetNextItemWidth(85);
@@ -865,6 +1052,9 @@ public:
 				textureDestination = 1;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[1]->stickToItem();
 
 			if (objToWorkWith->getNormalMap() != nullptr)
 			{
@@ -891,6 +1081,9 @@ public:
 				textureDestination = 2;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[2]->stickToItem();
 
 			if (objToWorkWith->getAOMap() != nullptr)
 			{
@@ -928,6 +1121,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[3]->stickToItem();
+
 			if (objToWorkWith->getRoughtnessMap() != nullptr)
 			{
 				ImGui::SetCursorPosX(10);
@@ -964,6 +1160,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[4]->stickToItem();
+
 			if (objToWorkWith->getMetalnessMap() != nullptr)
 			{
 				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
@@ -999,6 +1198,9 @@ public:
 				textureDestination = 5;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[5]->stickToItem();
 
 			if (objToWorkWith->getDisplacementMap() != nullptr)
 			{
@@ -1039,6 +1241,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[6]->stickToItem();
+
 			if (objToWorkWith->getAlbedoMap(1) != nullptr)
 			{
 				ImGui::SetNextItemWidth(85);
@@ -1063,6 +1268,9 @@ public:
 				textureDestination = 7;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[7]->stickToItem();
 
 			if (objToWorkWith->getNormalMap(1) != nullptr)
 			{
@@ -1089,6 +1297,9 @@ public:
 				textureDestination = 8;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[8]->stickToItem();
 
 			if (objToWorkWith->getAOMap(1) != nullptr)
 			{
@@ -1126,6 +1337,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[9]->stickToItem();
+
 			if (objToWorkWith->getRoughtnessMap(1) != nullptr)
 			{
 				ImGui::SetCursorPosX(10);
@@ -1162,6 +1376,9 @@ public:
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
 
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[10]->stickToItem();
+
 			if (objToWorkWith->getMetalnessMap(1) != nullptr)
 			{
 				ImGui::SetCursorPosX(10 + ImGui::GetWindowContentRegionWidth() / 3.0f);
@@ -1197,6 +1414,9 @@ public:
 				textureDestination = 11;
 				selectTextureWindow.showWithCustomList(&tempContainer, objToWorkWith->textures);
 			}
+
+			if (materialBindingtargets.size() > 0)
+				materialBindingtargets[11]->stickToItem();
 
 			if (objToWorkWith->getDisplacementMap(1) != nullptr)
 			{

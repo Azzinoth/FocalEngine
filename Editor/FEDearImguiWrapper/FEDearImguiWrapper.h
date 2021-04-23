@@ -154,6 +154,7 @@ protected:
 	int flags = ImGuiWindowFlags_None;
 	bool wasClosedLastFrame = false;
 	FEImGuiWindow();
+	ImGuiWindow* window = nullptr;
 public:
 	virtual ~FEImGuiWindow();
 	virtual void show();
@@ -161,6 +162,7 @@ public:
 	virtual void render();
 	virtual void onRenderEnd();
 	bool isVisible();
+	bool isMouseHovered();
 };
 
 class FERangeConfigurator;

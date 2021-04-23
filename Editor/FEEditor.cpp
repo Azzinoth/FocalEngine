@@ -2,7 +2,22 @@
 
 FEEditor* FEEditor::_instance = nullptr;
 ImGuiWindow* FEEditor::sceneWindow = nullptr;
-bool FEEditor::sceneWindowHovered = false;
+
+bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
+{
+	if (object->getType() == FE_GAMEMODEL)
+	{
+		FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(object->getObjectID()));
+		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+		SELECTED.setSelected(newEntity);
+		PROJECT_MANAGER.getCurrent()->modified = true;
+
+		return true;
+	}
+
+	return false;
+}
+
 FEEditor::FEEditor()
 {
 	ENGINE.setRenderTargetMode(FE_CUSTOM_MODE);
@@ -68,13 +83,26 @@ void FEEditor::setObjectNameInClipboard(std::string newValue)
 
 void FEEditor::mouseButtonCallback(int button, int action, int mods)
 {
+	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr && FEEditor::sceneWindow != nullptr)
+	{
+		EDITOR.sceneWindowHovered = ImGui::GetCurrentContext()->HoveredWindow->Name == EDITOR.sceneWindow->Name;
+	}
+	else
+	{
+		EDITOR.sceneWindowHovered = false;
+	}
+	
 	if (FEEditor::sceneWindow == nullptr || !FEEditor::sceneWindow->Active)
-		sceneWindowHovered = false;
+		EDITOR.sceneWindowHovered = false;
 
-	if (ImGui::GetIO().WantCaptureMouse && !sceneWindowHovered)
+	if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
+		DRAG_AND_DROP_MANAGER.dropAction();
+
+	if (ImGui::GetIO().WantCaptureMouse && !EDITOR.sceneWindowHovered)
 	{
 		EDITOR.isCameraInputActive = false;
 		ENGINE.getCamera()->setIsInputActive(false);
+
 		return;
 	}
 
@@ -926,9 +954,9 @@ void FEEditor::initializeResources()
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	PROJECT_MANAGER.initializeResources();
-
-	// **************************** Meshes Content Browser ****************************
 	PREVIEW_MANAGER.initializeResources();
+	DRAG_AND_DROP_MANAGER.initializeResources();
+	sceneWindowTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, sceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
 
 	// **************************** Gizmos ****************************
 	GIZMO_MANAGER.initializeResources();
@@ -993,6 +1021,12 @@ void FEEditor::initializeResources()
 
 	cameraSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/cameraSceneBrowserIcon.png", "cameraSceneBrowserIcon");
 	RESOURCE_MANAGER.makeTextureStandard(cameraSceneBrowserIcon);
+
+	folderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/folderIcon.png", "folderIcon");
+	RESOURCE_MANAGER.makeTextureStandard(folderIcon);
+
+	shaderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/shaderIcon.png", "shaderIcon");
+	RESOURCE_MANAGER.makeTextureStandard(shaderIcon);
 	
 	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
 	ENGINE.setWindowCloseCallback(closeWindowCallBack);
@@ -1005,6 +1039,8 @@ void FEEditor::mouseMoveCallback(double xpos, double ypos)
 
 	EDITOR.setMouseX(xpos);
 	EDITOR.setMouseY(ypos);
+
+	DRAG_AND_DROP_MANAGER.mouseMove();
 
 	if (SELECTED.getSelected() != nullptr)
 	{
@@ -1100,11 +1136,13 @@ void FEEditor::render()
 		ImGui::PopStyleVar();
 		//ImGui::PopStyleVar();
 
+		DRAG_AND_DROP_MANAGER.render();
+
 		ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoScrollbar);
 		
 		sceneWindow = ImGui::GetCurrentWindow();
-		sceneWindowHovered = ImGui::IsWindowHovered();
-
+		sceneWindowTarget->stickToCurrentWindow();
+		
 		ENGINE.setRenderTargetWidth((int)sceneWindow->ContentRegionRect.GetWidth());
 		ENGINE.setRenderTargetHeight((int)sceneWindow->ContentRegionRect.GetHeight());
 
@@ -1222,8 +1260,31 @@ void FEEditor::setGameMode(bool gameMode)
 	}
 }
 
+bool entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer)
+{
+	FEEntity* entity = SELECTED.getEntity();
+	if (entity == nullptr)
+		return false;
+
+	entity->gameModel = (RESOURCE_MANAGER.getGameModel(object->getObjectID()));
+	return true;
+}
+
+bool terrainChangeMaterialTargetCallBack(FEObject* object, void** terrainPointer)
+{
+	FETerrain* terrain = SELECTED.getTerrain();
+	if (terrain == nullptr)
+		return false;
+
+	terrain->layer0 = (RESOURCE_MANAGER.getMaterial(object->getObjectID()));
+	return true;
+}
+
 void FEEditor::displayInspector()
 {
+	static DragAndDropTarget* entityChangeGameModelTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, entityChangeGameModelTargetCallBack, nullptr, "Drop to assign game model");
+	static DragAndDropTarget* terrainChangeMaterialTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, terrainChangeMaterialTargetCallBack, nullptr, "Drop to assign material");
+
 	if (!inspectorVisible)
 		return;
 
@@ -1245,19 +1306,19 @@ void FEEditor::displayInspector()
 		{
 			showTransformConfiguration(entity, &entity->transform);
 
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
-			std::string text = "Game model name : ";
-			text += entity->gameModel->getName();
-			ImGui::Text(text.c_str());
-			ImGui::SameLine();
-
-			if (ImGui::Button("Change Game model"))
+			ImGui::Separator();
+			ImGui::Text("Game model : ");
+			FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
+			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
 				selectGameModelWindow.show(&entity->gameModel);
 			}
+			entityChangeGameModelTarget->stickToItem();
+			ImGui::Separator();
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
@@ -1297,19 +1358,19 @@ void FEEditor::displayInspector()
 			{
 				showTransformConfiguration(entity, &entity->transform);
 
-				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
-				std::string text = "Game model name : ";
-				text += entity->gameModel->getName();
-				ImGui::Text(text.c_str());
-				ImGui::SameLine();
-
-				if (ImGui::Button("Change Game model"))
+				ImGui::Separator();
+				ImGui::Text("Game model : ");
+				FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
+				if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
 					selectGameModelWindow.show(&entity->gameModel);
 				}
+				entityChangeGameModelTarget->stickToItem();
+				ImGui::Separator();
 
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
@@ -1465,7 +1526,6 @@ void FEEditor::displayInspector()
 	}
 	else if (SELECTED.getTerrain() != nullptr)
 	{
-		static ImGuiButton* changeMaterialButton = new ImGuiButton("Change Material");
 		static ImGuiButton* loadHeightMapButton = new ImGuiButton("Load HeightMap");
 		static ImGuiButton* testButton = new ImGuiButton("testButton");
 
@@ -1485,7 +1545,6 @@ void FEEditor::displayInspector()
 			smoothBrushButton->setSize(ImVec2(24, 24));
 
 			loadHeightMapButton->setSize(ImVec2(160, 0));
-			changeMaterialButton->setSize(ImVec2(180, 0));
 
 			firstCall = false;
 		}
@@ -1543,11 +1602,15 @@ void FEEditor::displayInspector()
 		ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
 		currentTerrain->setChunkPerSide(chunkPerSide);
 
-		changeMaterialButton->render();
-		if (changeMaterialButton->getWasClicked())
+		ImGui::Separator();
+		ImGui::Text("Material : ");
+		FETexture* previewTexture = PREVIEW_MANAGER.getMaterialPreview(currentTerrain->layer0->getObjectID());
+		if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
 			selectMaterialWindow.show(&currentTerrain->layer0);
 		}
+		terrainChangeMaterialTarget->stickToItem();
+		ImGui::Separator();
 
 		showTransformConfiguration(currentTerrain, &currentTerrain->transform);
 

@@ -17,6 +17,7 @@ const COMDLG_FILTERSPEC textureLoadFilter[] =
 };
 #endif
 
+class DragAndDropTarget;
 class FEEditor
 {
 public:
@@ -47,7 +48,7 @@ private:
 	double mouseX, mouseY;
 	std::string objectNameInClipboard = "";
 	static ImGuiWindow* sceneWindow;
-	static bool sceneWindowHovered;
+	bool sceneWindowHovered;
 
 	bool isCameraInputActive = false;
 
@@ -65,6 +66,10 @@ private:
 	FETexture* pointLightSceneBrowserIcon = nullptr;
 	FETexture* terrainSceneBrowserIcon = nullptr;
 	FETexture* cameraSceneBrowserIcon = nullptr;
+	FETexture* folderIcon = nullptr;
+	FETexture* shaderIcon = nullptr;
+
+	DragAndDropTarget* sceneWindowTarget = nullptr;
 
 	static void onCameraUpdate(FEBasicCamera* camera);
 	static void mouseButtonCallback(int button, int action, int mods);

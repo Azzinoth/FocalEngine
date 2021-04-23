@@ -120,7 +120,8 @@ void ImGuiButton::renderBegin()
 	
 	ImGui::Button(caption, size);
 
-	if (ImGui::IsItemHovered())
+	// flag important for drag and drop functionality
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 		hovered = true;
 
 	if (ImGui::IsMouseClicked(0) && hovered)
@@ -285,7 +286,8 @@ void ImGuiImageButton::renderBegin()
 
 	ImGui::ImageButton((void*)(intptr_t)texture->getTextureID(), size, uv0, uv1, framePadding, backgroundColor, tintColor);
 
-	if (ImGui::IsItemHovered())
+	// flag important for drag and drop functionality
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 		hovered = true;
 
 	if (ImGui::IsMouseClicked(0) && hovered)
@@ -328,6 +330,18 @@ void FEImGuiWindow::show()
 	wasClosedLastFrame = true;
 }
 
+bool FEImGuiWindow::isMouseHovered()
+{
+	if (window == nullptr)
+		return false;
+
+	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr &&
+		ImGui::GetCurrentContext()->HoveredWindow == window)
+		return true;
+
+	return false;
+}
+
 void FEImGuiWindow::render()
 {
 	if (visible)
@@ -348,7 +362,8 @@ void FEImGuiWindow::render()
 
 		wasClosedLastFrame = false;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-		ImGui::Begin(caption, nullptr/*&visible*/, flags);
+		ImGui::Begin(caption, nullptr, flags);
+		window = ImGui::GetCurrentWindow();
 	}
 
 	/*if (!visible && lastFrameVisible != visible)

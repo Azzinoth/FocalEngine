@@ -92,6 +92,7 @@ namespace FocalEngine
 		int getDisplacementMapChannel(int subMaterial = 0);
 
 		bool addTexture(FETexture* texture);
+		bool isTextureInList(FETexture* texture);
 		void removeTexture(FETexture* texture);
 		void removeTexture(int textureIndex);
 		void clearAllTexturesInfo();
@@ -115,6 +116,8 @@ namespace FocalEngine
 		float roughtnessMapIntensity = 1.0f;
 		float ambientOcclusionMapIntensity = 1.0f;
 		float ambientOcclusionIntensity = 1.0f;
+
+		FETexture* getSpecifiedMap(int bindingIndex, int subMaterial = 0);
 	};
 }
 

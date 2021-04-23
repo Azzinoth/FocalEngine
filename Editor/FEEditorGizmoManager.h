@@ -19,7 +19,6 @@ namespace FEGizmoManager
 		friend selectedObject;
 	public:
 		SINGLETON_PUBLIC_PART(GizmoManager)
-		SINGLETON_PRIVATE_PART(GizmoManager)
 
 		float gizmosScale = 0.00175f;
 		int gizmosState = TRANSFORM_GIZMOS;
@@ -76,6 +75,8 @@ namespace FEGizmoManager
 		void mouseMove(double lastMouseX, double lastMouseY, double mouseX, double mouseY);
 
 	private:
+		SINGLETON_PRIVATE_PART(GizmoManager)
+
 		double lastMouseX = 0, lastMouseY = 0, mouseX = 0, mouseY = 0;
 
 		glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal);

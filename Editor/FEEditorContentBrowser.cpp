@@ -8,7 +8,7 @@ void FEEditor::displayContentBrowser()
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Content Browser", nullptr, ImGuiWindowFlags_None);
-	
+
 	displayContentBrowserItems();
 
 	bool open_context_menu = false;
@@ -237,11 +237,11 @@ void FEEditor::displayContentBrowserItems()
 		}
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-
 	int iconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (itemIconSide + 32);
+	// Possibly window is minimized anyway ImGui::Columns can't take 0 as columns count!
+	if (iconsPerWindowWidth == 0)
+		return;
+
 	if (!isOpenContextMenuInContentBrowser) contentBrowserItemUnderMouse = -1;
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 	ImGui::Columns(iconsPerWindowWidth, "mycolumns3", false);
@@ -249,11 +249,31 @@ void FEEditor::displayContentBrowserItems()
 	for (size_t i = 0; i < filteredResourcesContentBrowser.size(); i++)
 	{
 		ImGui::PushID(std::hash<std::string>{}(filteredResourcesContentBrowser[i]->getObjectID()));
+		
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+		ImVec2 uv0 = ImVec2(0.0f, 1.0f);
+		ImVec2 uv1 = ImVec2(1.0f, 0.0f);
 		FETexture* previewTexture = nullptr;
+
 		if (filteredResourcesContentBrowser[i]->getType() == FE_SHADER)
 		{
-			previewTexture = RESOURCE_MANAGER.noTexture;
+			uv0 = ImVec2(0.0f, 0.0f);
+			uv1 = ImVec2(1.0f, 1.0f);
+
+			//previewTexture = RESOURCE_MANAGER.noTexture;
+			previewTexture = shaderIcon;
+			//previewTexture = folderIcon;
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 		}
 		else if (filteredResourcesContentBrowser[i]->getType() == FE_MESH)
 		{
@@ -272,25 +292,70 @@ void FEEditor::displayContentBrowserItems()
 			previewTexture = PREVIEW_MANAGER.getGameModelPreview(filteredResourcesContentBrowser[i]->getObjectID());
 		}
 
-		if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+		/*if (previewTexture == folderIcon)
 		{
-			if (filteredResourcesContentBrowser[i]->getType() == FE_MESH)
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+
+			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
-				std::string meshInfo = "Vertex count: ";
-				meshInfo += std::to_string(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getVertexCount());
-				meshInfo += "\n";
-				meshInfo += "Sub material socket: ";
-				meshInfo += RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getMaterialCount() == 2 ? "Yes" : "No";
-				messagePopUpObj.show("Mesh info", meshInfo.c_str());
-			}
-			else if (filteredResourcesContentBrowser[i]->getType() == FE_GAMEMODEL)
-			{
-				if (!isOpenContextMenuInContentBrowser && !editGameModelWindow.isVisible())
+				if (filteredResourcesContentBrowser[i]->getType() == FE_MESH)
 				{
-					editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[i]->getObjectID()));
+					std::string meshInfo = "Vertex count: ";
+					meshInfo += std::to_string(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getVertexCount());
+					meshInfo += "\n";
+					meshInfo += "Sub material socket: ";
+					meshInfo += RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getMaterialCount() == 2 ? "Yes" : "No";
+					messagePopUpObj.show("Mesh info", meshInfo.c_str());
+				}
+				else if (filteredResourcesContentBrowser[i]->getType() == FE_GAMEMODEL)
+				{
+					if (!isOpenContextMenuInContentBrowser && !editGameModelWindow.isVisible())
+					{
+						editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[i]->getObjectID()));
+					}
 				}
 			}
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 		}
+		else
+		{*/
+			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), uv0, uv1, 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			{
+				if (filteredResourcesContentBrowser[i]->getType() == FE_MESH)
+				{
+					std::string meshInfo = "Vertex count: ";
+					meshInfo += std::to_string(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getVertexCount());
+					meshInfo += "\n";
+					meshInfo += "Sub material socket: ";
+					meshInfo += RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[i]->getObjectID())->getMaterialCount() == 2 ? "Yes" : "No";
+					messagePopUpObj.show("Mesh info", meshInfo.c_str());
+				}
+				else if (filteredResourcesContentBrowser[i]->getType() == FE_MATERIAL)
+				{
+					editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[i]->getObjectID()));
+				}
+				else if (filteredResourcesContentBrowser[i]->getType() == FE_GAMEMODEL)
+				{
+					if (!isOpenContextMenuInContentBrowser && !editGameModelWindow.isVisible())
+					{
+						editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[i]->getObjectID()));
+					}
+				}
+			}
+		//}
 
 		if (ImGui::IsItemHovered())
 		{
@@ -303,8 +368,15 @@ void FEEditor::displayContentBrowserItems()
 				ImGui::EndTooltip();
 
 				contentBrowserItemUnderMouse = i;
+
+				if (ImGui::IsMouseClicked(0) /*&& !ImGui::IsMouseDoubleClicked(0)*/)
+					DRAG_AND_DROP_MANAGER.setObject(filteredResourcesContentBrowser[i], previewTexture, uv0, uv1);
 			}
 		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
 
 		ImGui::PopID();
 		ImGui::Text(filteredResourcesContentBrowser[i]->getName().c_str());
@@ -312,8 +384,4 @@ void FEEditor::displayContentBrowserItems()
 	}
 
 	ImGui::Columns(1);
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
 }
