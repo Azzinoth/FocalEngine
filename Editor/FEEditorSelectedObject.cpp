@@ -17,12 +17,23 @@ void FEEditorSelectedObject::initializeResources()
 	RESOURCE_MANAGER.makeMaterialStandard(pixelAccurateSelectionMaterial);
 
 	FEPixelAccurateSelection = RESOURCE_MANAGER.createShader("FEPixelAccurateSelection", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_VS.glsl").c_str(),
-																						 RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_FS.glsl").c_str());
+																						 RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_FS.glsl").c_str(),
+																						 nullptr,
+																						 nullptr,
+																						 nullptr,
+																						 nullptr,
+																						 "4279660C7D3D27360358354E"/*"FEPixelAccurateSelection"*/);
 	RESOURCE_MANAGER.makeShaderStandard(FEPixelAccurateSelection);
 	pixelAccurateSelectionMaterial->shader = FEPixelAccurateSelection;
 
 	FEPixelAccurateInstancedSelection = RESOURCE_MANAGER.createShader("FEPixelAccurateInstancedSelection", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_INSTANCED_VS.glsl").c_str(),
-																										   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_FS.glsl").c_str());
+																										   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_PixelAccurateSelection_FS.glsl").c_str(),
+																									       nullptr,
+																										   nullptr,
+																										   nullptr,
+																										   nullptr,
+																										   "0E213D3542135C15471F0D6B"/*"FEPixelAccurateInstancedSelection"*/);
+
 	RESOURCE_MANAGER.makeShaderStandard(FEPixelAccurateInstancedSelection);
 
 	FEShaderParam colorParam(glm::vec3(0.0f, 0.0f, 0.0f), "baseColor");

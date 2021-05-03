@@ -18,6 +18,12 @@ FETexture* FEResourceManager::createTexture(std::string Name, std::string forceO
 
 bool FEResourceManager::makeTextureStandard(FETexture* texture)
 {
+	if (texture == nullptr)
+	{
+		LOG.add("texture is nullptr in function FEResourceManager::makeTextureStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
 	if (standardTextures.find(texture->getObjectID()) == standardTextures.end())
 	{
 		if (textures.find(texture->getObjectID()) != textures.end())
@@ -44,6 +50,12 @@ FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, in
 
 bool FEResourceManager::makeMeshStandard(FEMesh* mesh)
 {
+	if (mesh == nullptr)
+	{
+		LOG.add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
 	if (standardMeshes.find(mesh->getObjectID()) == standardMeshes.end())
 	{
 		if (meshes.find(mesh->getObjectID()) != meshes.end())
@@ -65,8 +77,15 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, bool usingAlp
 	lodepng::decode(rawData, uWidth, uHeight, fileName);
 	if (rawData.size() == 0)
 	{
-		//Log...
-		assert(rawData.size());
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadPNGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (standardTextures.size() > 0)
+		{
+			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
@@ -118,8 +137,15 @@ FETexture* FEResourceManager::LoadPNGTextureWithTransparencyMask(const char* mai
 	lodepng::decode(rawData, uWidth, uHeight, mainfileName);
 	if (rawData.size() == 0)
 	{
-		//Log...
-		assert(rawData.size());
+		LOG.add(std::string("can't load file: ") + mainfileName + " in function FEResourceManager::LoadPNGTextureWithTransparencyMask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (standardTextures.size() > 0)
+		{
+			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
@@ -129,8 +155,15 @@ FETexture* FEResourceManager::LoadPNGTextureWithTransparencyMask(const char* mai
 	lodepng::decode(maskRawData, uWidth, uHeight, maskFileName);
 	if (maskRawData.size() == 0)
 	{
-		//Log...
-		assert(maskRawData.size());
+		LOG.add(std::string("can't load file: ") + maskFileName + " in function FEResourceManager::LoadPNGTextureWithTransparencyMask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (standardTextures.size() > 0)
+		{
+			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		}
+		else
+		{
+			return nullptr;
+		}
 	}
 
 	for (size_t i = 4; i < uWidth * uHeight * 4; i+=4)
@@ -360,7 +393,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return this->noTexture;
 	}
 	
@@ -375,7 +408,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	currentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
 		if (standardTextures.size() > 0)
 		{
 			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -526,7 +559,7 @@ FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FE
 	currentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.logError(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"));
+		LOG.add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), FE_LOG_ERROR, FE_LOG_LOADING);
 		if (standardTextures.size() > 0)
 		{
 			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -653,7 +686,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
 		terrain->heightMap = this->noTexture;
 		return this->noTexture;
 	}
@@ -669,7 +702,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 	currentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
 		if (standardTextures.size() > 0)
 		{
 			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -1028,7 +1061,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 	std::streamsize fileSize = file.tellg();
 	if (fileSize < 0)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.", FE_LOG_ERROR, FE_LOG_LOADING);
 		if (standardMeshes.size() > 0)
 		{
 			return getMesh("84251E6E0D0801363579317R"/*"cube"*/);
@@ -1046,7 +1079,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* fileName, std::string Name)
 	float version = *(float*)buffer;
 	if (version != FE_MESH_VERSION)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
 		if (standardMeshes.size() > 0)
 		{
 			return getMesh("84251E6E0D0801363579317R"/*"cube"*/);
@@ -1248,6 +1281,12 @@ FEMesh* FEResourceManager::getMesh(std::string ID)
 
 bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
 {
+	if (material == nullptr)
+	{
+		LOG.add("material is nullptr in function FEResourceManager::makeMaterialStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
 	if (standardMaterials.find(material->getObjectID()) == standardMaterials.end())
 	{
 		if (materials.find(material->getObjectID()) != materials.end())
@@ -1631,6 +1670,12 @@ void FEResourceManager::deleteGameModel(FEGameModel* gameModel)
 
 bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
 {
+	if (gameModel == nullptr)
+	{
+		LOG.add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
 	if (standardGameModels.find(gameModel->getObjectID()) == standardGameModels.end())
 	{
 		if (gameModels.find(gameModel->getObjectID()) != gameModels.end())
@@ -1645,12 +1690,14 @@ bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
 
 FEShader* FEResourceManager::createShader(std::string shaderName, const char* vertexText, const char* fragmentText,
 										  const char* tessControlText, const char* tessEvalText,
-										  const char* geometryText, const char* computeText)
+										  const char* geometryText, const char* computeText, std::string forceObjectID)
 {
 	if (shaderName.size() == 0)
 		shaderName = "unnamedShader";
 
 	FEShader* newShader = new FEShader(shaderName, vertexText, fragmentText, tessControlText, tessEvalText, geometryText, computeText);
+	if (forceObjectID != "")
+		newShader->setID(forceObjectID);
 	shaders[newShader->getObjectID()] = newShader;
 	return newShader;
 }
@@ -1658,7 +1705,10 @@ FEShader* FEResourceManager::createShader(std::string shaderName, const char* ve
 bool FEResourceManager::makeShaderStandard(FEShader* shader)
 {
 	if (shader == nullptr)
+	{
+		LOG.add("shader is nullptr in function FEResourceManager::makeShaderStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
+	}
 
 	if (standardShaders.find(shader->getObjectID()) == standardShaders.end())
 	{
@@ -1699,16 +1749,15 @@ std::vector<std::string> FEResourceManager::getStandardShadersList()
 	FE_MAP_TO_STR_VECTOR(standardShaders)
 }
 
-void FEResourceManager::deleteShader(std::string shaderID)
+void FEResourceManager::deleteShader(FEShader* shader)
 {
-	FEShader* shaderToDelete = getShader(shaderID);
-	if (shaderToDelete == nullptr)
+	if (shader == nullptr)
 		return;
 
 	auto it = materials.begin();
 	while (it != materials.end())
 	{
-		if (it->second->shader->getNameHash() == shaderToDelete->getNameHash())
+		if (it->second->shader->getNameHash() == shader->getNameHash())
 			it->second->shader = getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 		
 		it++;
@@ -1717,15 +1766,15 @@ void FEResourceManager::deleteShader(std::string shaderID)
 	it = standardMaterials.begin();
 	while (it != standardMaterials.end())
 	{
-		if (it->second->shader->getNameHash() == shaderToDelete->getNameHash())
+		if (it->second->shader->getNameHash() == shader->getNameHash())
 			it->second->shader = getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 
 		it++;
 	}
 
-	shaders.erase(shaderID);
-	standardShaders.erase(shaderID);
-	delete shaderToDelete;
+	shaders.erase(shader->getObjectID());
+	standardShaders.erase(shader->getObjectID());
+	delete shader;
 }
 
 bool FEResourceManager::replaceShader(std::string oldShaderID, FEShader* newShader)
@@ -1807,7 +1856,7 @@ void FEResourceManager::initTerrainEditTools(FETerrain* terrain)
 {
 	if (terrain == nullptr)
 	{
-		LOG.logError("called FEResourceManager::initTerrainEditTools with nullptr terrain");
+		LOG.add("called FEResourceManager::initTerrainEditTools with nullptr terrain", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return;
 	}
 
@@ -1846,7 +1895,7 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* 
 	if (rawData.size() == 0)
 	{
 		delete newTexture;
-		LOG.logError(std::string("can't read file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
+		LOG.add(std::string("can't read file: ") + fileName + " in function FEResourceManager::LoadHeightmap.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return this->noTexture;
 	}
 
@@ -1857,7 +1906,7 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* 
 	else
 	{
 		delete newTexture;
-		LOG.logError(std::string("texture has dementions not power of two! file: ") + fileName + " in function FEResourceManager::LoadHeightmap.");
+		LOG.add(std::string("texture has dementions not power of two! file: ") + fileName + " in function FEResourceManager::LoadHeightmap.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return this->noTexture;
 	}
 
@@ -1935,7 +1984,7 @@ std::string FEResourceManager::loadGLSL(const char* fileName)
 	}
 	else
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.", FE_LOG_ERROR, FE_LOG_LOADING);
 	}
 
 	return shaderData;
@@ -2133,7 +2182,7 @@ FETexture* FEResourceManager::createSameFormatTexture(FETexture* exampleTexture,
 {
 	if (exampleTexture == nullptr)
 	{
-		LOG.logError("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture");
+		LOG.add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return nullptr;
 	}
 

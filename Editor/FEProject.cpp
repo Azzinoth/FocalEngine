@@ -54,6 +54,7 @@ void FEProjectManager::closeCurrentProject()
 
 	loadProjectList();
 	SELECTED.clear();
+	VIRTUAL_FILE_SYSTEM.setCurrentPath("/");
 }
 
 void FEProjectManager::openProject(int projectIndex)
@@ -245,7 +246,6 @@ void FEProjectManager::displayProjectSelection()
 				ImGui::CloseCurrentPopup();
 			}
 
-			//ImGui::PopStyleVar();
 			ImGui::EndPopup();
 		}
 	}
@@ -281,6 +281,7 @@ FEProject::~FEProject()
 	SCENE.clear();
 	RESOURCE_MANAGER.clear();
 	ENGINE.resetCamera();
+	VIRTUAL_FILE_SYSTEM.clear();
 }
 
 std::string FEProject::getName()
@@ -628,6 +629,9 @@ void FEProject::saveScene()
 		FILESYSTEM.deleteFile(filesToDelete[i].c_str());
 	}
 
+	// VFS
+	VIRTUAL_FILE_SYSTEM.saveState(projectFolder + "VFS.txt");
+
 	modified = false;
 }
 
@@ -672,6 +676,8 @@ void FEProject::loadScene()
 		sceneFile.close();
 		if (projectVersion == 0.0)
 		{
+			LOG.add("Can't find version in scene file of project from " + projectFolder, FE_LOG_WARNING, FE_LOG_LOADING);
+			LOG.add("Trying to load project with old version of loader.", FE_LOG_WARNING, FE_LOG_LOADING);
 			loadSceneVer0();
 		}
 		return;
@@ -991,6 +997,57 @@ void FEProject::loadScene()
 	ENGINE.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
 
 	sceneFile.close();
+
+	// VFS
+	if (FILESYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
+	{
+		VIRTUAL_FILE_SYSTEM.loadState(projectFolder + "VFS.txt");
+	}
+	else
+	{
+		LOG.add("Can't find VIRTUAL_FILE_SYSTEM file in project folder. Creating basic VIRTUAL_FILE_SYSTEM layout.", FE_LOG_WARNING, FE_LOG_LOADING);
+		VIRTUAL_FILE_SYSTEM.createDirectory("Shaders", "/");
+
+		std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
+		for (size_t i = 0; i < shaderList.size(); i++)
+		{
+			if (FEObjectManager::getInstance().getFEObject(shaderList[i]) == nullptr)
+				continue;
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(shaderList[i]), "/Shaders");
+		}
+
+		std::vector<std::string> standardShaderList = RESOURCE_MANAGER.getStandardShadersList();
+		for (size_t i = 0; i < standardShaderList.size(); i++)
+		{
+			if (FEObjectManager::getInstance().getFEObject(standardShaderList[i]) == nullptr)
+				continue;
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(standardShaderList[i]), "/Shaders");
+		}
+
+		std::vector<std::string> meshList_ = RESOURCE_MANAGER.getMeshList();
+		for (size_t i = 0; i < meshList_.size(); i++)
+		{
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(meshList_[i]), "/");
+		}
+
+		std::vector<std::string> textureList = RESOURCE_MANAGER.getTextureList();
+		for (size_t i = 0; i < textureList.size(); i++)
+		{
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(textureList[i]), "/");
+		}
+
+		std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
+		for (size_t i = 0; i < materialList.size(); i++)
+		{
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(materialList[i]), "/");
+		}
+
+		std::vector<std::string> gameModelList_ = RESOURCE_MANAGER.getGameModelList();
+		for (size_t i = 0; i < gameModelList_.size(); i++)
+		{
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(gameModelList_[i]), "/");
+		}
+	}
 }
 
 void FEProject::createDummyScreenshot()

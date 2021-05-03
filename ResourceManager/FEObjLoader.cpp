@@ -115,7 +115,7 @@ void FEObjLoader::readFile(const char* fileName)
 
 	if (fileName == nullptr)
 	{
-		LOG.logError(std::string("No file name in function FEObjLoader::readFile."));
+		LOG.add(std::string("No file name in function FEObjLoader::readFile."), FE_LOG_ERROR, FE_LOG_LOADING);
 		return;
 	}
 
@@ -124,7 +124,7 @@ void FEObjLoader::readFile(const char* fileName)
 
 	if ((file.rdstate() & std::ifstream::failbit) != 0)
 	{
-		LOG.logError(std::string("can't load file: ") + fileName + " in function FEObjLoader::readFile.");
+		LOG.add(std::string("can't load file: ") + fileName + " in function FEObjLoader::readFile.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return;
 	}
 

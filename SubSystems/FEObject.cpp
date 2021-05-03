@@ -146,3 +146,25 @@ void FEObject::setType(FEObjectType newType)
 	type = newType;
 	FEObjectManager::getInstance().objectsByType[type][ID] = this;
 }
+
+void FEObject::setIDOfUnTyped(std::string newID)
+{
+	if (type != FE_NULL)
+		return;
+
+	if (FEObjectManager::getInstance().allObjects.find(ID) == FEObjectManager::getInstance().allObjects.end())
+	{
+		assert(0);
+	}
+
+	if (FEObjectManager::getInstance().objectsByType[type].find(ID) == FEObjectManager::getInstance().objectsByType[type].end())
+	{
+		assert(0);
+	}
+
+	FEObjectManager::getInstance().objectsByType[type].erase(ID);
+	FEObjectManager::getInstance().allObjects.erase(ID);
+	ID = newID;
+	FEObjectManager::getInstance().allObjects[newID] = this;
+	FEObjectManager::getInstance().objectsByType[type][newID] = this;
+}

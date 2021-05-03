@@ -17,6 +17,7 @@ private:
 public:
 	DragAndDropTarget();
 	DragAndDropTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData = nullptr, std::string toolTipText = "");
+	DragAndDropTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts);
 
 	~DragAndDropTarget();
 
@@ -40,6 +41,7 @@ public:
 
 	void initializeResources();
 	DragAndDropTarget* addTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData = nullptr, std::string toolTipText = "");
+	DragAndDropTarget* addTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts);
 	DragAndDropTarget* addTarget(DragAndDropTarget* newTarget);
 
 	void render();
@@ -48,7 +50,6 @@ public:
 
 	void setObject(FEObject* obj, FETexture* texture = nullptr, ImVec2 uv0 = ImVec2(0.0f, 1.0f), ImVec2 uv1 = ImVec2(0.0f, 1.0f));
 	bool objectIsDraged();
-	//FEObject* getObject();
 
 	FETexture* getToolTipTexture();
 private:
@@ -69,6 +70,5 @@ private:
 	std::string getToolTipText();
 	bool objectCanBeDroped();
 };
-
 
 #define DRAG_AND_DROP_MANAGER DragAndDropManager::getInstance()

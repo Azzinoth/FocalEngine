@@ -1027,6 +1027,9 @@ void FEEditor::initializeResources()
 
 	shaderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/shaderIcon.png", "shaderIcon");
 	RESOURCE_MANAGER.makeTextureStandard(shaderIcon);
+
+	VFSBackIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/VFSBackIcon.png", "VFSBackIcon");
+	RESOURCE_MANAGER.makeTextureStandard(VFSBackIcon);
 	
 	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
 	ENGINE.setWindowCloseCallback(closeWindowCallBack);
@@ -1062,6 +1065,8 @@ void FEEditor::onCameraUpdate(FEBasicCamera* camera)
 
 void FEEditor::render()
 {
+	DRAG_AND_DROP_MANAGER.render();
+
 	if (PROJECT_MANAGER.getCurrent())
 	{
 		if (gameMode)
@@ -1128,6 +1133,11 @@ void FEEditor::render()
 					effectsWindowVisible = !effectsWindowVisible;
 				}
 
+				if (ImGui::MenuItem("Log", NULL, logWindowVisible))
+				{
+					logWindowVisible = !logWindowVisible;
+				}
+
 				ImGui::EndMenu();
 			}
 
@@ -1135,8 +1145,6 @@ void FEEditor::render()
 		}
 		ImGui::PopStyleVar();
 		//ImGui::PopStyleVar();
-
-		DRAG_AND_DROP_MANAGER.render();
 
 		ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoScrollbar);
 		
@@ -1175,6 +1183,7 @@ void FEEditor::render()
 		displayContentBrowser();
 		displayInspector();
 		displayEffectsWindow();
+		displayLogWindow();
 		gyzmosSettingsWindowObject.show();
 		gyzmosSettingsWindowObject.render();
 
@@ -1190,21 +1199,6 @@ void FEEditor::render()
 	else
 	{
 		PROJECT_MANAGER.displayProjectSelection();
-	}
-
-	if (LOG.log.size() > 0)
-	{
-		char text[20000];
-		std::string text1;
-		for (size_t i = 0; i < LOG.log.size(); i++)
-		{
-			text1 += LOG.log[i];
-			text1 += "\n";
-		}
-
-		strcpy_s(text, text1.size() + 1, text1.data());
-		//strcpy_s(text, LOG.log[0].size() + 1, LOG.log[0].data());
-		ImGui::InputTextMultiline("LOG", text, IM_ARRAYSIZE(text), ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 16), 0);
 	}
 }
 
@@ -1566,7 +1560,7 @@ void FEEditor::displayInspector()
 				FETexture* loadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(filePath.c_str(), currentTerrain);
 				if (loadedTexture == RESOURCE_MANAGER.noTexture)
 				{
-					LOG.logError(std::string("can't load height map: ") + filePath);
+					LOG.add(std::string("can't load height map: ") + filePath, FE_LOG_ERROR, FE_LOG_LOADING);
 				}
 				else
 				{
@@ -2051,6 +2045,114 @@ void FEEditor::displayEffectsWindow()
 		}
 		ImGui::PopID();
 	}
+
+	ImGui::PopStyleVar();
+	ImGui::End();
+}
+
+void FEEditor::displayLogWindow()
+{
+	if (!logWindowVisible)
+		return;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+	ImGui::Begin("Log", nullptr, ImGuiWindowFlags_None);
+
+	static int selectedChannel = FE_LOG_GENERAL;
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
+	ImGui::Text("Channel:");
+	ImGui::SameLine();
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
+	if (ImGui::BeginCombo("##Channel", selectedChannel == -1 ? "ALL" : LOG.channelTypeToString(LOG_CHANNEL(selectedChannel)).c_str(), ImGuiWindowFlags_None))
+	{
+		for (int i = -1; i < LOG.channelCount; i++)
+		{
+			ImGui::PushID(i);
+
+			if (i == -1)
+			{
+				bool is_selected = (selectedChannel == -1);
+
+				if (ImGui::Selectable("ALL", is_selected))
+				{
+					selectedChannel = -1;
+				}
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			else
+			{
+				bool is_selected = (selectedChannel == LOG_CHANNEL(i));
+				if (ImGui::Selectable(LOG.channelTypeToString(LOG_CHANNEL(i)).c_str(), is_selected))
+				{
+					selectedChannel = LOG_CHANNEL(i);
+				}
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			
+			ImGui::PopID();
+		}
+		ImGui::EndCombo();
+	}
+
+	std::string logMessages;
+	std::vector<LogItem> logItems;
+
+	if (selectedChannel == -1)
+	{
+		std::vector<LogItem> tempItems;
+		for (int i = 0; i < LOG.channelCount; i++)
+		{
+			tempItems = LOG.getLogItems(LOG_CHANNEL(i));
+			for (size_t j = 0; j < tempItems.size(); j++)
+			{
+				logItems.push_back(tempItems[j]);
+			}
+		}
+	}
+	else
+	{
+		logItems = LOG.getLogItems(LOG_CHANNEL(selectedChannel));
+	}
+
+	std::sort(logItems.begin(), logItems.end(),
+	[](const LogItem& a, const LogItem& b) -> bool
+	{
+		return a.timeStamp < b.timeStamp;
+	});
+
+	for (size_t i = 0; i < logItems.size(); i++)
+	{
+		logMessages += logItems[i].text;
+
+		if (logItems[i].count < 1000)
+		{
+			logMessages += " | COUNT: " + std::to_string(logItems[i].count);
+		}
+		else
+		{
+			logMessages += " | COUNT: 1000+(Suppressed)";
+		}
+
+		logMessages += " | SEVERITY: " + LOG.severityLevelToString(logItems[i].severity);
+
+		if (selectedChannel == -1)
+		{
+			logMessages += " | CHANNEL: " + LOG.channelTypeToString(logItems[i].channel);
+		}
+
+		if (i < logItems.size() - 1)
+			logMessages += "\n";
+	}
+
+	static TextEditor logEditor;
+	logEditor.SetReadOnly(true);
+	logEditor.SetShowWhitespaces(false);
+	logEditor.SetText(logMessages);
+	logEditor.Render("Log messages");
 
 	ImGui::PopStyleVar();
 	ImGui::End();

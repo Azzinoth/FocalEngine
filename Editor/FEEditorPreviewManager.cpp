@@ -13,7 +13,12 @@ void FEEditorPreviewManager::initializeResources()
 	meshPreviewMaterial = RESOURCE_MANAGER.createMaterial("meshPreviewMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(meshPreviewMaterial);
 	meshPreviewMaterial->shader = RESOURCE_MANAGER.createShader("FEMeshPreviewShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_MeshPreview_VS.glsl").c_str(),
-																					   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_MeshPreview_FS.glsl").c_str());
+																					   RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_MeshPreview_FS.glsl").c_str(),
+																					   nullptr,
+																					   nullptr,
+																					   nullptr,
+																					   nullptr,
+																					   "607A53601357077F03770357"/*"FEMeshPreviewShader"*/);
 
 	RESOURCE_MANAGER.makeShaderStandard(meshPreviewMaterial->shader);
 }

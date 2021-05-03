@@ -992,7 +992,7 @@ public:
 					textureFromListUnderMouse = i;
 				}
 
-				if (iconButton->isHovered() && ImGui::IsMouseClicked(0) && !DRAG_AND_DROP_MANAGER.objectIsDraged())
+				if (iconButton->isHovered() && ImGui::IsMouseDragging(0) && !DRAG_AND_DROP_MANAGER.objectIsDraged())
 					DRAG_AND_DROP_MANAGER.setObject(objToWorkWith->textures[i], objToWorkWith->textures[i], ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 
 				ImGui::Text(objToWorkWith->textures[i]->getName().c_str());

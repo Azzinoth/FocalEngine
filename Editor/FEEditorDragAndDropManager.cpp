@@ -20,6 +20,12 @@ DragAndDropTarget* DragAndDropManager::addTarget(FEObjectType acceptedType, bool
 	return targets.back();
 }
 
+DragAndDropTarget* DragAndDropManager::addTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts)
+{
+	targets.push_back(new DragAndDropTarget(acceptedTypes, callback, userData, toolTipTexts));
+	return targets.back();
+}
+
 DragAndDropTarget* DragAndDropManager::addTarget(DragAndDropTarget* newTarget)
 {
 	targets.push_back(newTarget);
@@ -140,6 +146,9 @@ void DragAndDropManager::render()
 
 	drawToolTip();
 
+	for (size_t i = 0; i < targets.size(); i++)
+		targets[i]->active = false;
+
 	ImGui::PopStyleVar();
 }
 
@@ -162,17 +171,15 @@ void DragAndDropManager::dropAction()
 
 bool DragAndDropManager::objectCanBeDroped()
 {
-	bool result = false;
 	for (size_t i = 0; i < targets.size(); i++)
 	{
 		if (targets[i]->active && targets[i]->accept(object))
 		{
-			result = true;
-			break;
+			return true;
 		}
 	}
 
-	return result;
+	return false;
 }
 
 void DragAndDropManager::mouseMove()
@@ -199,11 +206,6 @@ void DragAndDropManager::setObject(FEObject* obj, FETexture* texture, ImVec2 uv0
 	this->uv1 = uv1;
 }
 
-//FEObject* DragAndDropManager::getObject()
-//{
-//	return object;
-//}
-
 FETexture* DragAndDropManager::getToolTipTexture()
 {
 	return previewTexture;
@@ -225,6 +227,14 @@ DragAndDropTarget::DragAndDropTarget(FEObjectType acceptedType, bool (*callback)
 	this->callback = callback;
 	this->userData = userData;
 	toolTipTexts.push_back(toolTipText);
+}
+
+DragAndDropTarget::DragAndDropTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts)
+{
+	this->acceptedTypes = acceptedTypes;
+	this->callback = callback;
+	this->userData = userData;
+	this->toolTipTexts = toolTipTexts;
 }
 
 DragAndDropTarget::~DragAndDropTarget()
@@ -272,14 +282,12 @@ void DragAndDropTarget::setNewUserData(void** newUserData)
 
 void DragAndDropTarget::stickToItem()
 {
-	setActive(false);
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 		setActive(true);
 }
 
 void DragAndDropTarget::stickToCurrentWindow()
 {
-	setActive(false);
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
 		setActive(true);
 }

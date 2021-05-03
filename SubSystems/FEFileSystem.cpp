@@ -4,39 +4,46 @@ FEFileSystem* FEFileSystem::_instance = nullptr;
 FEFileSystem::FEFileSystem() {}
 FEFileSystem::~FEFileSystem() {}
 
-bool FEFileSystem::checkFolder(const char* dirPath)
+bool FEFileSystem::checkFile(const char* path)
 {
-	DWORD dwAttrib = GetFileAttributesA(dirPath);
+	DWORD dwAttrib = GetFileAttributesA(path);
+	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+}
+
+bool FEFileSystem::checkFolder(const char* path)
+{
+	DWORD dwAttrib = GetFileAttributesA(path);
 	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
 		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-bool FEFileSystem::createFolder(const char* dirPath)
+bool FEFileSystem::createFolder(const char* path)
 {
-	return (_mkdir(dirPath) != 0);
+	return (_mkdir(path) != 0);
 }
 
-bool FEFileSystem::deleteFolder(const char* dirPath)
+bool FEFileSystem::deleteFolder(const char* path)
 {
-	return (_rmdir(dirPath) == 0);
+	return (_rmdir(path) == 0);
 }
 
-bool FEFileSystem::changeFileName(const char* filePath, const char* newName)
+bool FEFileSystem::changeFileName(const char* path, const char* newPath)
 {
-	int result = rename(filePath, newName);
+	int result = rename(path, newPath);
 	return result == 0 ? true : false;
 }
 
-bool FEFileSystem::deleteFile(const char* filePath)
+bool FEFileSystem::deleteFile(const char* path)
 {
-	int result = remove(filePath);
+	int result = remove(path);
 	return result == 0 ? true : false;
 }
 
-std::vector<std::string> FEFileSystem::getFolderList(const char* dirPath)
+std::vector<std::string> FEFileSystem::getFolderList(const char* path)
 {
 	std::vector<std::string> result;
-	std::string pattern(dirPath);
+	std::string pattern(path);
 	pattern.append("\\*");
 	WIN32_FIND_DATAA data;
 	HANDLE hFind;
@@ -67,7 +74,7 @@ std::string FEFileSystem::PWSTRtoString(PWSTR wString)
 	return result;
 }
 
-void FEFileSystem::openDialog(std::string& filePath, const COMDLG_FILTERSPEC* filter, int filterCount)
+void FEFileSystem::openDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
 {
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
@@ -95,7 +102,7 @@ void FEFileSystem::openDialog(std::string& filePath, const COMDLG_FILTERSPEC* fi
 					// Display the file name to the user.
 					if (SUCCEEDED(hr))
 					{
-						filePath = PWSTRtoString(pszFilePath);
+						path = PWSTRtoString(pszFilePath);
 						CoTaskMemFree(pszFilePath);
 					}
 					pItem->Release();

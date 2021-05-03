@@ -185,7 +185,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 
 	// turn off v-sync
-	glfwSwapInterval(0);
+	//glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window, "mainCamera");
 	int finalWidth, finalHeight;
@@ -352,12 +352,16 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER.shadowMapMaterial = RESOURCE_MANAGER.createMaterial("shadowMapMaterial");
 	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str(),
 																							RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
+	RENDERER.shadowMapMaterial->shader->setID("7C41565B2E2B05321A182D89"/*"FEShadowMapShader"*/);
+	
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterial->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterial);
 
 	RENDERER.shadowMapMaterialInstanced = RESOURCE_MANAGER.createMaterial("shadowMapMaterialInstanced");
 	RENDERER.shadowMapMaterialInstanced->shader = RESOURCE_MANAGER.createShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str(),
 																											  RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
+	RENDERER.shadowMapMaterialInstanced->shader->setID("5634765B2E2A05321A182D1A"/*"FEShadowMapShaderInstanced"*/);
+	
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterialInstanced->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterialInstanced);
 

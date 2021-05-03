@@ -887,7 +887,6 @@ float FEEntityInstanced::cullInstances(glm::vec3 cameraPosition, float** frustum
 	}
 #endif // FE_SIMD_ENABLED
 
-
 	// Billboard set up
 	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
 	{
@@ -945,7 +944,7 @@ void FEEntityInstanced::updateMatrices()
 {
 	if (instancedMatrices.size() != transformedInstancedMatrices.size())
 	{
-		LOG.logError("instancedMatrices size and transformedInstancedMatrices size is not equal!");
+		LOG.add("instancedMatrices size and transformedInstancedMatrices size is not equal!", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return;
 	}
 

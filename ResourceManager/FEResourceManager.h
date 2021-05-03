@@ -23,13 +23,13 @@ namespace FocalEngine
 
 		FEShader* createShader(std::string shaderName, const char* vertexText, const char* fragmentText,
 							   const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-							   const char* geometryText = nullptr, const char* computeText = nullptr);
+							   const char* geometryText = nullptr, const char* computeText = nullptr, std::string forceObjectID = "");
 
 		bool makeShaderStandard(FEShader* shader);
 		FEShader* getShader(std::string shaderID);
 		std::vector<std::string> getShadersList();
 		std::vector<std::string> getStandardShadersList();
-		void deleteShader(std::string shaderID);
+		void deleteShader(FEShader* shader);
 		bool replaceShader(std::string oldShaderID, FEShader* newShader);
 		std::string loadGLSL(const char* fileName);
 

@@ -60,7 +60,7 @@ bool FEPostProcess::replaceOutTexture(size_t stageIndex, FETexture* newTexture, 
 	if (stageIndex >= stages.size())
 	{
 		return false;
-		LOG.logError("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!");
+		LOG.add("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!", FE_LOG_ERROR, FE_LOG_RENDERING);
 	}
 
 	// Delete old texture from the delete list of FEPostProcess.

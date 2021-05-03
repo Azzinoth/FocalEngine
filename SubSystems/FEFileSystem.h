@@ -14,15 +14,16 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEFileSystem)
 
-		bool checkFolder(const char* dirPath);
-		bool createFolder(const char* dirPath);
-		bool deleteFolder(const char* dirPath);
-		std::vector<std::string> getFolderList(const char* dirPath);
-		bool changeFileName(const char* filePath, const char* newName);
-		bool deleteFile(const char* filePath);
+		bool checkFile(const char* path);
+		bool checkFolder(const char* path);
+		bool createFolder(const char* path);
+		bool deleteFolder(const char* path);
+		std::vector<std::string> getFolderList(const char* path);
+		bool changeFileName(const char* path, const char* newPath);
+		bool deleteFile(const char* path);
 
 #ifdef FE_WIN_32
-		void openDialog(std::string& filePath, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
+		void openDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
 #endif
 
 	private:

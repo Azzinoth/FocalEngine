@@ -66,8 +66,6 @@ private:
 	FETexture* pointLightSceneBrowserIcon = nullptr;
 	FETexture* terrainSceneBrowserIcon = nullptr;
 	FETexture* cameraSceneBrowserIcon = nullptr;
-	FETexture* folderIcon = nullptr;
-	FETexture* shaderIcon = nullptr;
 
 	DragAndDropTarget* sceneWindowTarget = nullptr;
 
@@ -82,12 +80,10 @@ private:
 	bool sceneBrowserVisible = true;
 	void displayInspector();
 	bool inspectorVisible = true;
-	void displayContentBrowser();
 	bool effectsWindowVisible = true;
 	void displayEffectsWindow();
-
-	bool contentBrowserVisible = true;
-	void displayContentBrowserItems();
+	bool logWindowVisible = true;
+	void displayLogWindow();
 
 	static void closeWindowCallBack();
 
@@ -101,10 +97,63 @@ private:
 	void displayLightProperties(FELight* light);
 	void displayLightsProperties();
 
+	// ************** Content Browser **************
+
+	FETexture* folderIcon = nullptr;
+	FETexture* shaderIcon = nullptr;
+	FETexture* VFSBackIcon = nullptr;
+
+	void displayContentBrowser();
+	bool contentBrowserVisible = true;
+	void displayContentBrowserItems();
+
 	int contentBrowserItemUnderMouse = -1;
+	int contentBrowserRenameIndex = -1;
+	char contentBrowserRename[1024];
+	bool lastFrameRenameEditWasVisiable = false;
+
 	std::vector<FEObject*> allResourcesContentBrowser;
 	std::vector<FEObject*> filteredResourcesContentBrowser;
 	char filterForResourcesContentBrowser[512];
+
+	bool isOpenContextMenuInContentBrowser = false;
+	bool isOpenContextMenuInSceneEntities = false;
+	int activeTabContentBrowser = 0;
+
+	// ************** Drag&Drop **************
+	struct directoryDragAndDropCallbackInfo
+	{
+		std::string directoryPath;
+	};
+	std::vector <directoryDragAndDropCallbackInfo> directoryDragAndDropInfo;
+	std::vector<DragAndDropTarget*> contentBrowserDirectoriesTargets;
+	DragAndDropTarget* VFSBackButtonTarget = nullptr;
+	directoryDragAndDropCallbackInfo VFSBackButtoninfo;
+
+	static bool directoryDragAndDropCallback(FEObject* object, void** directory)
+	{
+		directoryDragAndDropCallbackInfo* info = reinterpret_cast<directoryDragAndDropCallbackInfo*>(directory);
+		if (object->getType() == FE_NULL)
+		{
+			std::string oldPath = VIRTUAL_FILE_SYSTEM.getCurrentPath();
+			if (oldPath.back() != '/')
+				oldPath += "/";
+
+			VIRTUAL_FILE_SYSTEM.moveDirectory(oldPath + object->getName(), info->directoryPath);
+		}
+		else
+		{
+			VIRTUAL_FILE_SYSTEM.moveFile(object, VIRTUAL_FILE_SYSTEM.getCurrentPath(), info->directoryPath);
+		}
+
+		return true;
+	}
+	
+	void updateDirectoryDragAndDropTargets();
+
+	// ************** Drag&Drop END **************
+	
+	// ************** Content Browser END **************
 
 	int textureUnderMouse = -1;
 	int meshUnderMouse = -1;
@@ -112,10 +161,6 @@ private:
 	int materialUnderMouse = -1;
 	int gameModelUnderMouse = -1;
 	int entityUnderMouse = -1;
-
-	bool isOpenContextMenuInContentBrowser = false;
-	bool isOpenContextMenuInSceneEntities = false;
-	int activeTabContentBrowser = 0;
 
 	bool gameMode = false;
 	bool isInGameMode();

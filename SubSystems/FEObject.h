@@ -198,6 +198,8 @@ namespace FocalEngine
 		std::string getName();
 		void setName(std::string newName);
 		int getNameHash();
+
+		void setIDOfUnTyped(std::string newID);
 	private:
 		std::string ID = "";
 		FEObjectType type = FE_NULL;

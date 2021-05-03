@@ -6,6 +6,7 @@
 #include "../Editor/FEEditorGizmoManager.h"
 #include "../Editor/FEEditorPreviewManager.h"
 #include "FEEditorInternalResources.h"
+#include "../Editor/FEEditorVirtualFileSystem.h"
 
 using namespace FocalEngine;
 
