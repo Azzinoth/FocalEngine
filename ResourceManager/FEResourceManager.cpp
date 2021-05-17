@@ -1014,12 +1014,12 @@ void FEResourceManager::loadStandardMeshes()
 
 FEResourceManager::FEResourceManager()
 {
-	// checking if we need to change default resource folder because we are in cmake generated project
-	DWORD dwAttrib = GetFileAttributesA(defaultResourcesFolder.c_str());
-	if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)))
-	{
-		defaultResourcesFolder = "..//Resources//";
-	}
+	//// checking if we need to change default resource folder because we are in cmake generated project
+	//DWORD dwAttrib = GetFileAttributesA(defaultResourcesFolder.c_str());
+	//if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)))
+	//{
+	//	defaultResourcesFolder = "..//Resources//";
+	//}
 
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
 	noTexture = LoadFETexture((defaultResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
