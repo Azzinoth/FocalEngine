@@ -1,4 +1,4 @@
-#include "Editor\FEEditorSubWindows\renamePopups.h"
+#include "renamePopups.h"
 
 renameFailedPopUp* renameFailedPopUp::_instance = nullptr;
 

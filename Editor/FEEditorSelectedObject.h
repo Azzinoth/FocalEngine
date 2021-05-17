@@ -50,7 +50,7 @@ public:
 	FEShader* FEPixelAccurateInstancedSelection = nullptr; 
 	FEShader* FEPixelAccurateSelection = nullptr;
 private:
-	FEObject* container;
+	FEObject* container = nullptr;
 	
 	bool dirtyFlag = false;
 
@@ -65,7 +65,7 @@ public:
 private:
 #endif
 	FEEntity* potentiallySelectedEntity = nullptr;
-	FEMaterial* pixelAccurateSelectionMaterial;
+	FEMaterial* pixelAccurateSelectionMaterial = nullptr;
 };
 
 #define SELECTED FEEditorSelectedObject::getInstance()

@@ -6,7 +6,6 @@
 *.dll
 *.exe
 *.ilk
-*.lib
 *.opensdf
 *.idb
 *.suo

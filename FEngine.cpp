@@ -185,7 +185,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 
 	// turn off v-sync
-	//glfwSwapInterval(0);
+	glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window, "mainCamera");
 	int finalWidth, finalHeight;
@@ -370,7 +370,12 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	io.Fonts->AddFontFromFileTTF("Cousine-Regular.ttf", 20);
+
+	size_t pathLen = strlen((RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str()) + 1;
+	char* imguiIniFile = new char[pathLen];
+	strcpy_s(imguiIniFile, pathLen, (RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str());
+	io.IniFilename = imguiIniFile;
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	unsigned char* tex_pixels = NULL;

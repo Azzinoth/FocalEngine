@@ -608,6 +608,7 @@ float FEEntityInstanced::cullInstances(glm::vec3 cameraPosition, float** frustum
 				if (final_distance_0.m256_f32[0] > AABBSize && final_distance_1.m256_f32[0] > AABBSize &&
 					final_distance_2.m256_f32[0] > AABBSize && final_distance_3.m256_f32[0] > AABBSize &&
 					final_distance_4.m256_f32[0] > AABBSize /*&& final_distance_5.m256_f32[0] > AABBSize*/)
+					// That check was commented because of how frustum culling would cull trees that are behind viewer while sun is near the horizon.
 				{
 					if (final_distance_5.m256_f32[0] > LOD2MAXDistance)
 					{

@@ -9,7 +9,7 @@ GizmoManager::~GizmoManager() {}
 void GizmoManager::initializeResources()
 {
 	SELECTED.setOnUpdateFunc(onSelectedObjectUpdate);
-	FEMesh* TransformationGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("45191B6F172E3B531978692E.model", "transformationGizmoMesh");
+	FEMesh* TransformationGizmoMesh = RESOURCE_MANAGER.LoadFEMesh((RESOURCE_MANAGER.getDefaultResourcesFolder() + "45191B6F172E3B531978692E.model").c_str(), "transformationGizmoMesh");
 	RESOURCE_MANAGER.makeMeshStandard(TransformationGizmoMesh);
 
 	// transformationXGizmo
@@ -83,7 +83,7 @@ void GizmoManager::initializeResources()
 	transformationXZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 
 	// scale gizmos
-	FEMesh* scaleGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("637C784B2E5E5C6548190E1B.model", "scaleGizmoMesh");
+	FEMesh* scaleGizmoMesh = RESOURCE_MANAGER.LoadFEMesh((RESOURCE_MANAGER.getDefaultResourcesFolder() + "637C784B2E5E5C6548190E1B.model").c_str(), "scaleGizmoMesh");
 	RESOURCE_MANAGER.makeMeshStandard(scaleGizmoMesh);
 
 	// scaleXGizmo
@@ -123,7 +123,7 @@ void GizmoManager::initializeResources()
 	scaleZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
 
 	// rotate gizmos
-	FEMesh* rotateGizmoMesh = RESOURCE_MANAGER.LoadFEMesh("19622421516E5B317E1B5360.model", "rotateGizmoMesh");
+	FEMesh* rotateGizmoMesh = RESOURCE_MANAGER.LoadFEMesh((RESOURCE_MANAGER.getDefaultResourcesFolder() + "19622421516E5B317E1B5360.model").c_str(), "rotateGizmoMesh");
 	RESOURCE_MANAGER.makeMeshStandard(rotateGizmoMesh);
 
 	// rotateXGizmo
@@ -162,11 +162,11 @@ void GizmoManager::initializeResources()
 	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateZGizmoEntity->transform.setRotation(rotateZStandardRotation);
 
-	transformationGizmoIcon = RESOURCE_MANAGER.LoadFETexture("456A31026A1C3152181A6064.texture", "transformationGizmoIcon");
+	transformationGizmoIcon = RESOURCE_MANAGER.LoadFETexture((RESOURCE_MANAGER.getDefaultResourcesFolder() + "456A31026A1C3152181A6064.texture").c_str(), "transformationGizmoIcon");
 	RESOURCE_MANAGER.makeTextureStandard(transformationGizmoIcon);
-	scaleGizmoIcon = RESOURCE_MANAGER.LoadFETexture("3F2118296C1E4533506A472E.texture", "scaleGizmoIcon");
+	scaleGizmoIcon = RESOURCE_MANAGER.LoadFETexture((RESOURCE_MANAGER.getDefaultResourcesFolder() + "3F2118296C1E4533506A472E.texture").c_str(), "scaleGizmoIcon");
 	RESOURCE_MANAGER.makeTextureStandard(scaleGizmoIcon);
-	rotateGizmoIcon = RESOURCE_MANAGER.LoadFETexture("7F6057403249580D73311B54.texture", "rotateGizmoIcon");
+	rotateGizmoIcon = RESOURCE_MANAGER.LoadFETexture((RESOURCE_MANAGER.getDefaultResourcesFolder() + "7F6057403249580D73311B54.texture").c_str(), "rotateGizmoIcon");
 	RESOURCE_MANAGER.makeTextureStandard(rotateGizmoIcon);
 }
 

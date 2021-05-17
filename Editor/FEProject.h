@@ -40,6 +40,7 @@ private:
 };
 
 #define PROJECTS_FOLDER "C:/Users/Kindr/Desktop/FocalEngine/FEProjects"
+//#define PROJECTS_FOLDER "C:/Users/Anastasiia/Desktop/FocalEngine/FEProjects"
 #define PROJECTS_FILE_VER 0.01f
 
 class FEProjectManager

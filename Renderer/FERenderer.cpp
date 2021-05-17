@@ -329,6 +329,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 	float originalCullingDistance = entityInstanced->gameModel->cullDistance;
 
+	// while drawing shadow map renderer will use a lot of LOD0 trees!!!
 	if (shadowMap)
 	{
 		frustum[5][0] = currentCamera->getFrustumPlanes()[5][0];

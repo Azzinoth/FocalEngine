@@ -1007,15 +1007,22 @@ void FEResourceManager::loadStandardMeshes()
 	meshes.erase(standardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->getObjectID());
 	standardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->setID("1Y251E6E6T78013635793156"/*"plane"*/);
 
-	standardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh("7F251E3E0D08013E3579315F.model", "sphere");
+	standardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((defaultResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
 	meshes.erase(standardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->getObjectID());
 	standardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->setID("7F251E3E0D08013E3579315F"/*"sphere"*/);
 }
 
 FEResourceManager::FEResourceManager()
 {
+	// checking if we need to change default resource folder because we are in cmake generated project
+	DWORD dwAttrib = GetFileAttributesA(defaultResourcesFolder.c_str());
+	if (!(dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY)))
+	{
+		defaultResourcesFolder = "..//Resources//";
+	}
+
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
-	noTexture = LoadFETexture("48271F005A73241F5D7E7134.texture", "noTexture");
+	noTexture = LoadFETexture((defaultResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
 	makeTextureStandard(noTexture);
 
 	loadStandardMaterial();
@@ -2204,7 +2211,7 @@ void FEResourceManager::reSaveStandardMeshes()
 	for (size_t i = 0; i < standardMeshes.size(); i++)
 	{
 		FEMesh* currentMesh = getMesh(standardMeshes[i]);
-		saveFEMesh(currentMesh, (std::string("C://Users//Azzinoth//Desktop//FocalEngine//FocalEnginePrivate//") + currentMesh->getObjectID() + std::string(".model")).c_str());
+		saveFEMesh(currentMesh, (defaultResourcesFolder + currentMesh->getObjectID() + std::string(".model")).c_str());
 	}
 }
 
@@ -2213,7 +2220,7 @@ void FEResourceManager::reSaveStandardTextures()
 	auto it = standardTextures.begin();
 	while (it != standardTextures.end())
 	{
-		saveFETexture(it->second, (std::string("C://Users//Azzinoth//Desktop//FocalEngine//FocalEnginePrivate//") + it->second->getObjectID() + std::string(".texture")).c_str());
+		saveFETexture(it->second, (defaultResourcesFolder + it->second->getObjectID() + std::string(".texture")).c_str());
 		it++;
 	}
 }
@@ -2233,4 +2240,9 @@ void FEResourceManager::deleteMaterial(FEMaterial* Material)
 
 	materials.erase(Material->getObjectID());
 	delete Material;
+}
+
+std::string FEResourceManager::getDefaultResourcesFolder()
+{
+	return defaultResourcesFolder;
 }

@@ -101,6 +101,8 @@ namespace FocalEngine
 		float TimeOpenGL = 0.0f;
 		float TimeOpenGLmip = 0.0f;
 		float TimeOpenGLmipload = 0.0f;
+
+		std::string getDefaultResourcesFolder();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -133,5 +135,7 @@ namespace FocalEngine
 		std::string freeObjectName(FEObjectType objectType);
 
 		GLint maxColorAttachments = 1;
+
+		std::string defaultResourcesFolder = "Resources//";
 	};
 }
