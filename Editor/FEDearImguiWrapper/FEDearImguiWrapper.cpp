@@ -734,3 +734,38 @@ void FERangeConfigurator::clear()
 {
 	ranges.clear();
 }
+
+messagePopUp* messagePopUp::_instance = nullptr;
+
+messagePopUp::messagePopUp() {};
+
+void messagePopUp::show(std::string newWindowCaption, std::string messageToShow)
+{
+	shouldOpen = true;
+	message = messageToShow;
+	popupCaption = newWindowCaption;
+}
+
+void messagePopUp::render()
+{
+	ImGuiModalPopup::render();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
+		ImGui::Text(message.c_str());
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - 120.0f / 2.0f);
+		if (ImGui::Button("Ok", ImVec2(120, 0)))
+		{
+			ImGuiModalPopup::close();
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::EndPopup();
+	}
+	else
+	{
+		ImGui::PopStyleVar();
+	}
+}

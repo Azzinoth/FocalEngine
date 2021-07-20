@@ -23,6 +23,7 @@ void GizmoManager::initializeResources()
 	transformationXGizmoEntity->setCastShadows(false);
 	transformationXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	transformationXGizmoEntity->setIsPostprocessApplied(false);
 
 	// transformationYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYGizmoMaterial");
@@ -35,6 +36,7 @@ void GizmoManager::initializeResources()
 	transformationYGizmoEntity->setCastShadows(false);
 	transformationYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
+	transformationYGizmoEntity->setIsPostprocessApplied(false);
 
 	// transformationZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationZGizmoMaterial");
@@ -47,6 +49,7 @@ void GizmoManager::initializeResources()
 	transformationZGizmoEntity->setCastShadows(false);
 	transformationZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
+	transformationZGizmoEntity->setIsPostprocessApplied(false);
 
 	// plane gizmos
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXYGizmoMaterial");
@@ -59,6 +62,7 @@ void GizmoManager::initializeResources()
 	transformationXYGizmoEntity->setCastShadows(false);
 	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
 	transformationXYGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	transformationXYGizmoEntity->setIsPostprocessApplied(false);
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationYZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
@@ -70,6 +74,7 @@ void GizmoManager::initializeResources()
 	transformationYZGizmoEntity->setCastShadows(false);
 	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
 	transformationYZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+	transformationYZGizmoEntity->setIsPostprocessApplied(false);
 
 	currentMaterial = RESOURCE_MANAGER.createMaterial("transformationXZGizmoMaterial");
 	currentMaterial->setAlbedoMap(RESOURCE_MANAGER.noTexture);
@@ -81,6 +86,7 @@ void GizmoManager::initializeResources()
 	transformationXZGizmoEntity->setCastShadows(false);
 	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
 	transformationXZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+	transformationXZGizmoEntity->setIsPostprocessApplied(false);
 
 	// scale gizmos
 	FEMesh* scaleGizmoMesh = RESOURCE_MANAGER.LoadFEMesh((RESOURCE_MANAGER.getDefaultResourcesFolder() + "637C784B2E5E5C6548190E1B.model").c_str(), "scaleGizmoMesh");
@@ -97,6 +103,7 @@ void GizmoManager::initializeResources()
 	scaleXGizmoEntity->setCastShadows(false);
 	scaleXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	scaleXGizmoEntity->setIsPostprocessApplied(false);
 
 	// scaleYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleYGizmoMaterial");
@@ -109,6 +116,7 @@ void GizmoManager::initializeResources()
 	scaleYGizmoEntity->setCastShadows(false);
 	scaleYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
+	scaleYGizmoEntity->setIsPostprocessApplied(false);
 
 	// scaleZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("scaleZGizmoMaterial");
@@ -121,6 +129,7 @@ void GizmoManager::initializeResources()
 	scaleZGizmoEntity->setCastShadows(false);
 	scaleZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
+	scaleZGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotate gizmos
 	FEMesh* rotateGizmoMesh = RESOURCE_MANAGER.LoadFEMesh((RESOURCE_MANAGER.getDefaultResourcesFolder() + "19622421516E5B317E1B5360.model").c_str(), "rotateGizmoMesh");
@@ -137,6 +146,7 @@ void GizmoManager::initializeResources()
 	rotateXGizmoEntity->setCastShadows(false);
 	rotateXGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateXGizmoEntity->transform.setRotation(rotateXStandardRotation);
+	rotateXGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotateYGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateYGizmoMaterial");
@@ -149,6 +159,7 @@ void GizmoManager::initializeResources()
 	rotateYGizmoEntity->setCastShadows(false);
 	rotateYGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateYGizmoEntity->transform.setRotation(rotateYStandardRotation);
+	rotateYGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotateZGizmo
 	currentMaterial = RESOURCE_MANAGER.createMaterial("rotateZGizmoMaterial");
@@ -161,6 +172,7 @@ void GizmoManager::initializeResources()
 	rotateZGizmoEntity->setCastShadows(false);
 	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateZGizmoEntity->transform.setRotation(rotateZStandardRotation);
+	rotateZGizmoEntity->setIsPostprocessApplied(false);
 
 	transformationGizmoIcon = RESOURCE_MANAGER.LoadFETexture((RESOURCE_MANAGER.getDefaultResourcesFolder() + "456A31026A1C3152181A6064.texture").c_str(), "transformationGizmoIcon");
 	RESOURCE_MANAGER.makeTextureStandard(transformationGizmoIcon);

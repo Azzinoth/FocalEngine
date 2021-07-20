@@ -145,3 +145,13 @@ void FEEntity::setReceivingShadows(bool isReceivingShadows)
 {
 	receiveShadows = isReceivingShadows;
 }
+
+bool FEEntity::isPostprocessApplied()
+{
+	return applyPostprocess;
+}
+
+void FEEntity::setIsPostprocessApplied(bool isPostprocessApplied)
+{
+	applyPostprocess = isPostprocessApplied;
+}

@@ -63,8 +63,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//ImGui::Image((void*)(intptr_t)RENDERER.CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			//ImGui::Image((void*)(intptr_t)RENDERER.CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 #ifdef USE_DEFERRED_RENDERER
-			ImGui::Image((void*)(intptr_t)RENDERER.positionsGBufferLastFrame->getTextureID(), ImVec2(256 * 4, 256 * 4), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			ImGui::Image((void*)(intptr_t)RENDERER.SSAOLastFrame->getTextureID(), ImVec2(256 * 4, 256 * 4), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			//ImGui::Image((void*)(intptr_t)RENDERER.positionsGBufferLastFrame->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			//ImGui::Image((void*)(intptr_t)RENDERER.SSAOLastFrame->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+
+			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->positions->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->normals->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->albedo->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->materialProperties->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 #endif
 			std::string totalTimeDisk = "totalTimeDisk: " + std::to_string(RESOURCE_MANAGER.totalTimeDisk);
 			ImGui::Text(totalTimeDisk.c_str());

@@ -67,14 +67,7 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 	sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
 
 #ifdef USE_DEFERRED_RENDERER
-	testTextureDepth = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getDepthAttachment());
-
-	testTexture = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
-	sceneToTextureFB->setColorAttachment(testTexture, 1);
-	positionsGBufferLastFrame = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
-
-	SSAOLastFrame = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
-	sceneToTextureFB->colorAttachments[2] = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, sceneToTextureFB->getColorAttachment()->getWidth(), sceneToTextureFB->getColorAttachment()->getHeight());
+	GBuffer = new FEGBuffer(sceneToTextureFB);
 #endif // USE_DEFERRED_RENDERER
 }
 
@@ -166,6 +159,40 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	//	float time = 1;
 	//	time += 1;
 	//}
+}
+
+void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, bool isReceivingShadows)
+{
+	static int FEViewMatrix_hash = std::hash<std::string>{}("FEViewMatrix");
+	static int FEProjectionMatrix_hash = std::hash<std::string>{}("FEProjectionMatrix");
+	static int FECameraPosition_hash = std::hash<std::string>{}("FECameraPosition");
+	static int FEGamma_hash = std::hash<std::string>{}("FEGamma");
+	static int FEExposure_hash = std::hash<std::string>{}("FEExposure");
+	static int FEReceiveShadows_hash = std::hash<std::string>{}("FEReceiveShadows");
+
+	auto iterator = shader->parameters.begin();
+	while (iterator != shader->parameters.end())
+	{
+		if (iterator->second.nameHash == FEViewMatrix_hash)
+			iterator->second.updateData(currentCamera->getViewMatrix());
+
+		if (iterator->second.nameHash == FEProjectionMatrix_hash)
+			iterator->second.updateData(currentCamera->getProjectionMatrix());
+
+		if (iterator->second.nameHash == FECameraPosition_hash)
+			iterator->second.updateData(currentCamera->getPosition());
+
+		if (iterator->second.nameHash == FEGamma_hash)
+			iterator->second.updateData(currentCamera->getGamma());
+
+		if (iterator->second.nameHash == FEExposure_hash)
+			iterator->second.updateData(currentCamera->getExposure());
+
+		if (iterator->second.nameHash == FEReceiveShadows_hash)
+			iterator->second.updateData(isReceivingShadows);
+
+		iterator++;
+	}
 }
 
 void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing)
@@ -341,7 +368,17 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 	FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
 	if (originalShader->getName() == "FEPBRShader")
-		entityInstanced->gameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+	{
+		//FEShader* originalShader = entity->gameModel->material->shader;
+		if (shaderToForce)
+		{
+			entityInstanced->gameModel->getMaterial()->shader = shaderToForce;
+		}
+		else
+		{
+			entityInstanced->gameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+		}
+	}
 	
 	entityInstanced->gameModel->getMaterial()->bind();
 	loadStandardParams(entityInstanced->gameModel->getMaterial()->shader, currentCamera, entityInstanced->gameModel->material, &entityInstanced->transform, entityInstanced->isReceivingShadows());
@@ -369,7 +406,16 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 		FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
 		if (originalShader->getName() == "FEPBRShader")
-			entityInstanced->gameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+		{
+			if (shaderToForce)
+			{
+				entityInstanced->gameModel->getBillboardMaterial()->shader = shaderToForce;
+			}
+			else
+			{
+				entityInstanced->gameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+			}
+		}
 
 		entityInstanced->gameModel->getBillboardMaterial()->bind();
 		loadStandardParams(entityInstanced->gameModel->getBillboardMaterial()->shader, currentCamera, entityInstanced->gameModel->getBillboardMaterial(), &entityInstanced->transform, entityInstanced->isReceivingShadows());
@@ -546,32 +592,141 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 	// ********* RENDER SCENE *********
 #ifdef USE_DEFERRED_RENDERER
-	std::swap(sceneToTextureFB->colorAttachments[1], positionsGBufferLastFrame);
-	sceneToTextureFB->setColorAttachment(sceneToTextureFB->colorAttachments[1], 1);
 
-	std::swap(sceneToTextureFB->colorAttachments[2], SSAOLastFrame);
-	sceneToTextureFB->setColorAttachment(sceneToTextureFB->colorAttachments[2], 2);
+	GBuffer->GFrameBuffer->bind();
 
-	std::swap(sceneToTextureFB->depthAttachment, testTextureDepth);
-	sceneToTextureFB->setDepthAttachment(sceneToTextureFB->depthAttachment);
+	unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
+	glDrawBuffers(6, attachments);
+
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	auto entityIterator = scene.entityMap.begin();
+	while (entityIterator != scene.entityMap.end())
+	{
+		auto entity = entityIterator->second;
+
+		if (entity->isVisible() && entity->isPostprocessApplied())
+		{
+			if (entity->getType() == FE_ENTITY)
+			{
+				forceShader(FEResourceManager::getInstance().getShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+				renderEntity(entity, currentCamera);
+			}
+			else if (entity->getType() == FE_ENTITY_INSTANCED)
+			{
+				forceShader(FEResourceManager::getInstance().getShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
+			}
+		}
+
+		entityIterator++;
+	}
+
+	auto itTerrain = scene.terrainMap.begin();
+	while (itTerrain != scene.terrainMap.end())
+	{
+		auto terrain = itTerrain->second;
+		if (terrain->isVisible())
+			renderTerrain(terrain, currentCamera);
+
+		itTerrain++;
+	}
+
+	GBuffer->GFrameBuffer->unBind();
+
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer->GFrameBuffer->fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneToTextureFB->fbo); // write to default framebuffer
+	glBlitFramebuffer(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
+					  0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
+					  GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+
 	sceneToTextureFB->bind();
 
-	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, attachments);
+	unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments_);
 
-	//sceneToTextureFB->getDepthAttachment()->bind(FE_CSM_UNIT + 6);
-	testTextureDepth->bind(FE_CSM_UNIT + 4);
-	positionsGBufferLastFrame->bind(FE_CSM_UNIT + 5);
-	SSAOLastFrame->bind(FE_CSM_UNIT + 6);
-
+	forceShader(nullptr);
 #else
 	sceneToTextureFB->bind();
-#endif // USE_DEFERRED_RENDERER
+
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// ********* RENDER SKY *********
 	if (isSkyEnabled())
 		renderEntity(skyDome, currentCamera);
+#endif // USE_DEFERRED_RENDERER
+	
+
+
+#ifdef USE_DEFERRED_RENDERER
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_ALWAYS);
+
+	FEShader* screenQuadShader = FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	screenQuadShader->start();
+	loadStandardParams(screenQuadShader, currentCamera, true);
+	screenQuadShader->loadDataToGPU();
+	GBuffer->albedo->bind(0);
+	GBuffer->normals->bind(1);
+	GBuffer->materialProperties->bind(2);
+	GBuffer->positions->bind(3);
+	GBuffer->shaderProperties->bind(4);
+
+	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	GBuffer->albedo->unBind();
+	GBuffer->normals->unBind();
+	GBuffer->materialProperties->unBind();
+	GBuffer->positions->unBind();
+	GBuffer->shaderProperties->unBind();
+
+	screenQuadShader->stop();
+
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
+	
+#else
+	glDepthMask(GL_TRUE);
+
+	auto itTerrain = scene.terrainMap.begin();
+	while (itTerrain != scene.terrainMap.end())
+	{
+		auto terrain = itTerrain->second;
+		if (terrain->isVisible())
+			renderTerrain(terrain, currentCamera);
+
+		itTerrain++;
+	}
+
+	FE_GL_ERROR(glDisable(GL_CULL_FACE));
+
+	auto entityIterator = scene.entityMap.begin();
+	while (entityIterator != scene.entityMap.end())
+	{
+		auto entity = entityIterator->second;
+
+		if (entity->isVisible())
+		{
+			if (entity->getType() == FE_ENTITY)
+			{
+				renderEntity(entity, currentCamera);
+			}
+			else if (entity->getType() == FE_ENTITY_INSTANCED)
+			{
+				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
+			}
+		}
+
+		entityIterator++;
+	}
+
+#endif // USE_DEFERRED_RENDERER
 
 	// ********* RENDER INSTANCED LINE *********
 	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
@@ -604,50 +759,11 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
 	FE_GL_ERROR(glCullFace(GL_BACK));*/
 	// ********* RENDER INSTANCED LINE END *********
-	
-#ifdef USE_DEFERRED_RENDERER
-	testTextureDepth->bind(22);
-	positionsGBufferLastFrame->bind(23);
-	SSAOLastFrame->bind(24);
-#endif // USE_DEFERRED_RENDERER
 
-	auto itTerrain = scene.terrainMap.begin();
-	while (itTerrain != scene.terrainMap.end())
-	{
-		auto terrain = itTerrain->second;
-		if (terrain->isVisible())
-			renderTerrain(terrain, currentCamera);
-		
-		itTerrain++;
-	}
+	// ********* RENDER SKY *********
+	if (isSkyEnabled())
+		renderEntity(skyDome, currentCamera);
 
-	FE_GL_ERROR(glDisable(GL_CULL_FACE));
-
-#ifdef USE_DEFERRED_RENDERER
-	testTextureDepth->bind(FE_CSM_UNIT + 4);
-	positionsGBufferLastFrame->bind(FE_CSM_UNIT + 5);
-	SSAOLastFrame->bind(FE_CSM_UNIT + 6);
-#endif // USE_DEFERRED_RENDERER
-
-	auto it = scene.entityMap.begin();
-	while (it != scene.entityMap.end())
-	{
-		auto entity = it->second;
-		
-		if (entity->isVisible())
-		{
-			if (entity->getType() == FE_ENTITY)
-			{
-				renderEntity(entity, currentCamera);
-			}
-			else if (entity->getType() == FE_ENTITY_INSTANCED)
-			{
-				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
-			}
-		}
-
-		it++;
-	}
 	sceneToTextureFB->unBind();
 	// ********* RENDER SCENE END *********
 
@@ -656,6 +772,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// ********* POST_PROCESS EFFECTS *********
+	// Because we render post process effects with screen quad
+	// we will turn off write to depth buffer in order to get clear DB to be able to render additional objects
+	glDepthMask(GL_FALSE);
 	finalScene = sceneToTextureFB->getColorAttachment();
 	FETexture* prevStageTex = sceneToTextureFB->getColorAttachment();
 
@@ -744,7 +863,43 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			break;
 		}
 	}
+
+	glDepthMask(GL_TRUE);
 	// ********* SCREEN SPACE EFFECTS END *********
+
+	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI *********
+	FETexture* originalColorAttachment = sceneToTextureFB->getColorAttachment();
+	sceneToTextureFB->setColorAttachment(finalScene);
+
+	sceneToTextureFB->bind();
+
+	entityIterator = scene.entityMap.begin();
+	while (entityIterator != scene.entityMap.end())
+	{
+		auto entity = entityIterator->second;
+
+		if (entity->isVisible() && !entity->isPostprocessApplied())
+		{
+			if (entity->getType() == FE_ENTITY)
+			{
+				renderEntity(entity, currentCamera);
+			}
+			else if (entity->getType() == FE_ENTITY_INSTANCED)
+			{
+			}
+		}
+
+		entityIterator++;
+	}
+
+
+	
+	sceneToTextureFB->unBind();
+
+	//testEntity->setVisibility(false);
+
+	sceneToTextureFB->setColorAttachment(originalColorAttachment);
+	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
 	itTerrain = scene.terrainMap.begin();
@@ -801,18 +956,46 @@ void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bo
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
+	FEShader* originalShader = entity->gameModel->material->shader;
+	if (shaderToForce)
+	{
+		if (originalShader->getName() == "FEPBRShader")
+			entity->gameModel->material->shader = shaderToForce;
+	}
+
 	entity->gameModel->material->bind();
 	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity->gameModel->material, &entity->transform, entity->isReceivingShadows());
 	entity->gameModel->material->shader->loadDataToGPU();
 	entity->render();
 	entity->gameModel->material->unBind();
+
+	if (shaderToForce)
+	{
+		if (originalShader->getName() == "FEPBRShader")
+			entity->gameModel->material->shader = originalShader;
+	}
+}
+
+void FERenderer::renderEntityForward(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks)
+{
+	if (reloadUniformBlocks)
+		loadUniformBlocks();
+
+	FEShader* originalShader = entity->gameModel->material->shader;
+	entity->gameModel->material->shader = FEResourceManager::getInstance().getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+
+	entity->gameModel->material->bind();
+	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity->gameModel->material, &entity->transform, entity->isReceivingShadows());
+	entity->gameModel->material->shader->loadDataToGPU();
+	entity->render();
+	entity->gameModel->material->unBind();
+	entity->gameModel->material->shader = originalShader;
 }
 
 void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 {
 	if (terrain->isWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
 
 	if (terrain->shader->getName() == "FESMTerrainShader")
 	{
@@ -885,7 +1068,9 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 			terrain->shader->loadMatrix(PVMHash, *(glm::mat4*)terrain->shader->getParameter("FEPVMMatrix")->data);
 			if (terrain->shader->getParameter("FEWorldMatrix") != nullptr)
 				terrain->shader->loadMatrix(WMHash, *(glm::mat4*)terrain->shader->getParameter("FEWorldMatrix")->data);
-			terrain->shader->loadVector(HShiftHash, *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
+
+			if (terrain->shader->getParameter("hightMapShift") != nullptr)
+				terrain->shader->loadVector(HShiftHash, *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
 			terrain->render();
 		}
 	}
@@ -989,8 +1174,12 @@ void FERenderer::updateFogInShaders()
 		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
 		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
 
+#ifdef USE_DEFERRED_RENDERER
+
+#else
 		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
 		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
+#endif // USE_DEFERRED_RENDERER
 	}
 	else
 	{
@@ -999,9 +1188,12 @@ void FERenderer::updateFogInShaders()
 
 		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
 		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
+#ifdef USE_DEFERRED_RENDERER
 
+#else
 		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
 		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
+#endif // USE_DEFERRED_RENDERER
 	}
 }
 
@@ -1201,3 +1393,43 @@ void FERenderer::drawAABB(FEAABB AABB, glm::vec3 color, float lineWidth)
 	drawLine(glm::vec3(AABB.getMax()[0], AABB.getMin()[1], AABB.getMax()[2]), glm::vec3(AABB.getMax()[0], AABB.getMax()[1], AABB.getMax()[2]), color, lineWidth);
 	drawLine(glm::vec3(AABB.getMin()[0], AABB.getMin()[1], AABB.getMin()[2]), glm::vec3(AABB.getMin()[0], AABB.getMax()[1], AABB.getMin()[2]), color, lineWidth);
 }
+
+void FERenderer::forceShader(FEShader* shader)
+{
+	shaderToForce = shader;
+}
+
+#ifdef USE_DEFERRED_RENDERER
+
+void FEGBuffer::initializeResources(FEFramebuffer* mainFrameBuffer)
+{
+	GFrameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+
+	positions = FEResourceManager::getInstance().createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer->setColorAttachment(positions, 1);
+
+	normals = FEResourceManager::getInstance().createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer->setColorAttachment(normals, 2);
+
+	albedo = FEResourceManager::getInstance().createTexture(GL_RGB, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer->setColorAttachment(albedo, 3);
+
+	materialProperties = FEResourceManager::getInstance().createTexture(GL_RGBA16F, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer->setColorAttachment(materialProperties, 4);
+
+	shaderProperties = FEResourceManager::getInstance().createTexture(GL_RGBA, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer->setColorAttachment(shaderProperties, 5);
+}
+
+FEGBuffer::FEGBuffer(FEFramebuffer* mainFrameBuffer)
+{
+	initializeResources(mainFrameBuffer);
+}
+
+void FEGBuffer::renderTargetResize(FEFramebuffer* mainFrameBuffer)
+{
+	delete GFrameBuffer;
+	initializeResources(mainFrameBuffer);
+}
+
+#endif // USE_DEFERRED_RENDERER

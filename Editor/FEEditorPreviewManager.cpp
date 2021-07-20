@@ -56,7 +56,8 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 	previewGameModel->material = meshPreviewMaterial;
 
 	previewFB->bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	// We use this values even with deffered renderer because final image will not be gamma corrected, so values over 1.0f would not work.
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// saving currently used variables
@@ -104,6 +105,8 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 	ENGINE.getCamera()->setYaw(regularCameraYaw);
 
 	previewFB->unBind();
+
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// if we are updating preview we should delete old texture.
 	if (meshPreviewTextures.find(meshID) != meshPreviewTextures.end())
@@ -153,7 +156,8 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialID)
 	previewEntity->setReceivingShadows(false);
 
 	previewFB->bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	// We use this values even with deffered renderer because final image will not be gamma corrected, so values over 1.0f would not work.
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// saving currently used variables
@@ -178,7 +182,11 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialID)
 	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering material to texture
+#ifdef USE_DEFERRED_RENDERER
+	RENDERER.renderEntityForward(previewEntity, ENGINE.getCamera(), true);
+#else
 	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
+#endif // USE_DEFERRED_RENDERER
 
 	ENGINE.getCamera()->setPosition(regularCameraPosition);
 	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
@@ -191,6 +199,8 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialID)
 	currentDirectionalLight->setIntensity(regularLightIntensity);
 
 	previewFB->unBind();
+
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// if we are updating preview we should delete old texture.
 	if (materialPreviewTextures.find(materialID) != materialPreviewTextures.end())
@@ -273,7 +283,8 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 	previewEntity->setReceivingShadows(false);
 
 	previewFB->bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	// We use this values even with deffered renderer because final image will not be gamma corrected, so values over 1.0f would not work.
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// saving currently used variables
@@ -311,8 +322,11 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering game model to texture
+#ifdef USE_DEFERRED_RENDERER
+	RENDERER.renderEntityForward(previewEntity, ENGINE.getCamera(), true);
+#else
 	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
-
+#endif // USE_DEFERRED_RENDERER
 	// reversing all of our transformating.
 	previewEntity->transform = regularMeshTransform;
 
@@ -329,6 +343,8 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 	RENDERER.setDistanceFogEnabled(regularFog);
 
 	previewFB->unBind();
+
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// if we are updating preview we should delete old texture.
 	if (gameModelPreviewTextures.find(gameModelName) != gameModelPreviewTextures.end())
@@ -368,7 +384,8 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 	FETexture* tempTexture = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(*resultingTexture);
 	previewFB->bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	// We use this values even with deffered renderer because final image will not be gamma corrected, so values over 1.0f would not work.
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// saving currently used variables
@@ -406,7 +423,11 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 	ENGINE.getCamera()->setYaw(0.0f);
 
 	// rendering game model to texture
+#ifdef USE_DEFERRED_RENDERER
+	RENDERER.renderEntityForward(previewEntity, ENGINE.getCamera(), true);
+#else
 	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
+#endif // USE_DEFERRED_RENDERER
 
 	// reversing all of our transformating.
 	previewEntity->transform = regularMeshTransform;
@@ -422,7 +443,7 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 	currentDirectionalLight->setIntensity(regularLightIntensity);
 
 	previewFB->unBind();
-
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 	previewFB->setColorAttachment(tempTexture);
 }
 

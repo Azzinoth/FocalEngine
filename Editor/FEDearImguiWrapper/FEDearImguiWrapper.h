@@ -291,40 +291,11 @@ static justTextWindow justTextWindowObj;
 
 class messagePopUp : public ImGuiModalPopup
 {
+	SINGLETON_PRIVATE_PART(messagePopUp)
 	std::string message;
 public:
-	messagePopUp()
-	{
-	}
+	SINGLETON_PUBLIC_PART(messagePopUp)
 
-	void show(std::string newWindowCaption, std::string messageToShow)
-	{
-		shouldOpen = true;
-		message = messageToShow;
-		popupCaption = newWindowCaption;
-	}
-
-	void render() override
-	{
-		ImGuiModalPopup::render();
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-		if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text(message.c_str());
-			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Ok", ImVec2(120, 0)))
-			{
-				ImGuiModalPopup::close();
-			}
-
-			ImGui::PopStyleVar();
-			ImGui::EndPopup();
-		}
-		else
-		{
-			ImGui::PopStyleVar();
-		}
-	}
+	void show(std::string newWindowCaption, std::string messageToShow);
+	void render() override;
 };
-static messagePopUp messagePopUpObj;

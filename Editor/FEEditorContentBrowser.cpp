@@ -55,7 +55,7 @@ void FEEditor::displayContentBrowser()
 						// checking material count in this mesh
 						if (loadedMesh != nullptr && loadedMesh->getMaterialCount() > 2)
 						{
-							messagePopUpObj.show("Error!", "Mesh that you was trying to load has more than 2 materials, currently it is not supported!");
+							messagePopUp::getInstance().show("Error!", "Mesh that you was trying to load has more than 2 materials, currently it is not supported!");
 							RESOURCE_MANAGER.deleteFEMesh(loadedMesh);
 						}
 						else
@@ -72,7 +72,7 @@ void FEEditor::displayContentBrowser()
 					FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
 					if (filePath != "")
 					{
-						loadTextureWindow.show(filePath);
+						loadTexturePopUp::getInstance().show(filePath);
 						PROJECT_MANAGER.getCurrent()->modified = true;
 					}
 				}
@@ -128,7 +128,7 @@ void FEEditor::displayContentBrowser()
 			{
 				if (ImGui::MenuItem("Edit"))
 				{
-					editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					editMaterialPopup::getInstance().show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 			}
 
@@ -136,7 +136,7 @@ void FEEditor::displayContentBrowser()
 			{
 				if (ImGui::MenuItem("Edit"))
 				{
-					editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					editGameModelPopup::getInstance().show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 			}
 
@@ -144,7 +144,7 @@ void FEEditor::displayContentBrowser()
 			{
 				if (ImGui::MenuItem("Edit"))
 				{
-					shadersEditorWindow.show(RESOURCE_MANAGER.getShader(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					shaderEditorWindow::getInstance().show(RESOURCE_MANAGER.getShader(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 			}
 
@@ -152,23 +152,23 @@ void FEEditor::displayContentBrowser()
 			{
 				if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_NULL)
 				{
-					deleteDirectoryWindow.show(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName());
+					deleteDirectoryPopup::getInstance().show(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName());
 				}
 				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MESH)
 				{
-					deleteMeshWindow.show(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					deleteMeshPopup::getInstance().show(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_TEXTURE)
 				{
-					deleteTextureWindow.show(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					deleteTexturePopup::getInstance().show(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MATERIAL)
 				{
-					deleteMaterialWindow.show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					deleteMaterialPopup::getInstance().show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_GAMEMODEL)
 				{
-					deleteGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					deleteGameModelPopup::getInstance().show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 				}
 			}
 		}
@@ -180,17 +180,17 @@ void FEEditor::displayContentBrowser()
 	ImGui::PopStyleVar();
 	ImGui::End();
 
-	loadTextureWindow.render();
+	loadTexturePopUp::getInstance().render();
 	renameFailedPopUp::getInstance().render();
-	deleteTextureWindow.render();
-	deleteMeshWindow.render();
-	deleteGameModelWindow.render();
-	editGameModelWindow.render();
-	editMaterialWindow.render();
-	deleteMaterialWindow.render();
-	messagePopUpObj.render();
-	shadersEditorWindow.render();
-	deleteDirectoryWindow.render();
+	deleteTexturePopup::getInstance().render();
+	deleteMeshPopup::getInstance().render();
+	deleteGameModelPopup::getInstance().render();
+	editGameModelPopup::getInstance().render();
+	editMaterialPopup::getInstance().render();
+	deleteMaterialPopup::getInstance().render();
+	messagePopUp::getInstance().render();
+	shaderEditorWindow::getInstance().render();
+	deleteDirectoryPopup::getInstance().render();
 }
 
 void FEEditor::displayContentBrowserItems()
@@ -422,17 +422,17 @@ void FEEditor::displayContentBrowserItems()
 			meshInfo += "\n";
 			meshInfo += "Sub material socket: ";
 			meshInfo += RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID())->getMaterialCount() == 2 ? "Yes" : "No";
-			messagePopUpObj.show("Mesh info", meshInfo.c_str());
+			messagePopUp::getInstance().show("Mesh info", meshInfo.c_str());
 		}
 		else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MATERIAL)
 		{
-			editMaterialWindow.show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+			editMaterialPopup::getInstance().show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 		}
 		else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_GAMEMODEL)
 		{
-			if (!isOpenContextMenuInContentBrowser && !editGameModelWindow.isVisible())
+			if (!isOpenContextMenuInContentBrowser && !editGameModelPopup::getInstance().isVisible())
 			{
-				editGameModelWindow.show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+				editGameModelPopup::getInstance().show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 			}
 		}
 	}

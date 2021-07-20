@@ -989,11 +989,6 @@ void FEShader::loadFloatArray(int& uniformNameHash, GLfloat* array, size_t array
 
 void FEShader::loadDataToGPU()
 {
-	if (parameters.size() > 10)
-	{
-		int y = 0;
-		y++;
-	}
 	auto iterator = parameters.begin();
 	while (iterator != parameters.end())
 	{

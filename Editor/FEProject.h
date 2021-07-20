@@ -39,7 +39,7 @@ private:
 	std::vector<std::string> filesToDelete;
 };
 
-#define PROJECTS_FOLDER "C:/Users/Kindr/Desktop/FocalEngine/FEProjects"
+#define PROJECTS_FOLDER "C:/Users/kandr/Downloads/FocalEngineProjects-master"
 //#define PROJECTS_FOLDER "C:/Users/Anastasiia/Desktop/FocalEngine/FEProjects"
 #define PROJECTS_FILE_VER 0.01f
 

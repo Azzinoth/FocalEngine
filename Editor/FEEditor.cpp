@@ -143,7 +143,7 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 			if (PROJECT_MANAGER.getCurrent() == nullptr)
 				ENGINE.terminate();
 			shouldTerminate = true;
-			projectWasModifiedPopUpWindow.show(PROJECT_MANAGER.getCurrent());
+			projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
 		}
 	}
 
@@ -532,7 +532,11 @@ void FEEditor::displayLightProperties(FELight* light)
 		ImGui::DragFloat("##Shadows blur factor", &shadowsBlurFactor, 0.001f, 0.0f, 10.0f);
 		shaderPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
 		shaderInstancedPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
+#ifdef USE_DEFERRED_RENDERER
+		
+#else
 		shaderTerrain->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
+#endif // USE_DEFERRED_RENDERER
 	
 		bool staticShadowBias = directionalLight->isStaticShadowBias();
 		ImGui::Checkbox("Static shadow bias :", &staticShadowBias);
@@ -664,7 +668,7 @@ void FEEditor::displaySceneBrowser()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 
-	selectGameModelWindow.render();
+	selectGameModelPopUp::getInstance().render();
 
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
@@ -748,12 +752,12 @@ void FEEditor::displaySceneBrowser()
 			{
 				if (ImGui::MenuItem("Entity"))
 				{
-					selectGameModelWindow.show(nullptr, true);
+					selectGameModelPopUp::getInstance().show(nullptr, true);
 				}
 
 				if (ImGui::MenuItem("Instanced entity"))
 				{
-					selectGameModelWindow.show(nullptr, true, true);
+					selectGameModelPopUp::getInstance().show(nullptr, true, true);
 				}
 
 				if (ImGui::MenuItem("Terrain"))
@@ -936,11 +940,11 @@ void FEEditor::displaySceneBrowser()
 	ImGui::PopStyleVar();
 	ImGui::End();
 
-	selectMeshWindow.render();
-	selectMaterialWindow.render();
-	selectGameModelWindow.render();
+	selectMeshPopUp::getInstance().render();
+	selectMaterialPopUp::getInstance().render();
+	selectGameModelPopUp::getInstance().render();
 	renamePopUp::getInstance().render();
-	projectWasModifiedPopUpWindow.render();
+	projectWasModifiedPopUp::getInstance().render();
 }
 
 void FEEditor::initializeResources()
@@ -1089,7 +1093,7 @@ void FEEditor::render()
 				{
 					if (PROJECT_MANAGER.getCurrent()->modified)
 					{
-						projectWasModifiedPopUpWindow.show(PROJECT_MANAGER.getCurrent());
+						projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
 					}
 					else
 					{
@@ -1213,7 +1217,7 @@ void FEEditor::closeWindowCallBack()
 	if (PROJECT_MANAGER.getCurrent()->modified)
 	{
 		shouldTerminate = true;
-		projectWasModifiedPopUpWindow.show(PROJECT_MANAGER.getCurrent());
+		projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
 	}
 	else
 	{
@@ -1309,7 +1313,7 @@ void FEEditor::displayInspector()
 			FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
 			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
-				selectGameModelWindow.show(&entity->gameModel);
+				selectGameModelPopUp::getInstance().show(&entity->gameModel);
 			}
 			entityChangeGameModelTarget->stickToItem();
 			ImGui::Separator();
@@ -1361,7 +1365,7 @@ void FEEditor::displayInspector()
 				FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
 				if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
-					selectGameModelWindow.show(&entity->gameModel);
+					selectGameModelPopUp::getInstance().show(&entity->gameModel);
 				}
 				entityChangeGameModelTarget->stickToItem();
 				ImGui::Separator();
@@ -1571,9 +1575,15 @@ void FEEditor::displayInspector()
 			}
 		}
 
+#ifdef USE_DEFERRED_RENDERER
+		int iData = *(int*)RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->data;
+		ImGui::SliderInt("debugFlag", &iData, 0, 10);
+		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->updateData(iData);
+#else
 		int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
 		ImGui::SliderInt("debugFlag", &iData, 0, 10);
 		currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
+#endif // USE_DEFERRED_RENDERER
 
 		float highScale = currentTerrain->getHightScale();
 		ImGui::DragFloat("highScale", &highScale);
@@ -1595,13 +1605,13 @@ void FEEditor::displayInspector()
 		float chunkPerSide = currentTerrain->getChunkPerSide();
 		ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
 		currentTerrain->setChunkPerSide(chunkPerSide);
-
+		
 		ImGui::Separator();
 		ImGui::Text("Material : ");
 		FETexture* previewTexture = PREVIEW_MANAGER.getMaterialPreview(currentTerrain->layer0->getObjectID());
 		if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 		{
-			selectMaterialWindow.show(&currentTerrain->layer0);
+			selectMaterialPopUp::getInstance().show(&currentTerrain->layer0);
 		}
 		terrainChangeMaterialTarget->stickToItem();
 		ImGui::Separator();
@@ -1693,7 +1703,7 @@ void FEEditor::displayInspector()
 				SELECTED.setSelected(SELECTED.getTerrain());
 		}
 
-		selectMaterialWindow.render();
+		selectMaterialPopUp::getInstance().render();
 	}
 	else if (SELECTED.getLight() != nullptr)
 	{

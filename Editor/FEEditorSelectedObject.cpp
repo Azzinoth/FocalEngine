@@ -185,7 +185,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 		int g = ((i + 1) >> 8) & 255;
 		int b = ((i + 1) >> 16) & 255;
 #endif
-
+		
 		if (SELECTED.objectsUnderMouse[i]->getType() == FE_ENTITY)
 		{
 			potentiallySelectedEntity = SCENE.getEntity(SELECTED.objectsUnderMouse[i]->getObjectID());
@@ -199,9 +199,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
 			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
 			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
-
 			RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera());
-			
 			potentiallySelectedEntity->gameModel->material = regularMaterial;
 			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
 			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
@@ -286,7 +284,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 	FE_GL_ERROR(glReadPixels(GLint(mouseX), GLint(ENGINE.getRenderTargetHeight() - mouseY), 1, 1, GL_RGB, GL_UNSIGNED_BYTE, colorUnderMouse));
 	pixelAccurateSelectionFB->unBind();
-	FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
+	FE_GL_ERROR(glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w));
 
 #ifndef EDITOR_SELECTION_DEBUG_MODE
 	if (SELECTED.objectsUnderMouse.size() > 0)
@@ -364,7 +362,7 @@ void FEEditorSelectedObject::onCameraUpdate()
 	if (container == nullptr)
 	{
 		HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
-		FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
+		FE_GL_ERROR(glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w));
 		HALO_SELECTION_EFFECT.postProcess->active = true;
 		return;
 	}
@@ -438,7 +436,7 @@ void FEEditorSelectedObject::onCameraUpdate()
 	}
 
 	HALO_SELECTION_EFFECT.haloObjectsFB->unBind();
-	FE_GL_ERROR(glClearColor(0.55f, 0.73f, 0.87f, 1.0f));
+	FE_GL_ERROR(glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w));
 	HALO_SELECTION_EFFECT.postProcess->active = true;
 }
 

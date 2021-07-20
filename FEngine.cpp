@@ -182,7 +182,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
 
-	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// turn off v-sync
 	glfwSwapInterval(0);
@@ -647,14 +647,7 @@ void FEngine::renderTargetResize()
 	RENDERER.sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH);
 
 #ifdef USE_DEFERRED_RENDERER
-	RENDERER.testTextureDepth = FEResourceManager::getInstance().createSameFormatTexture(RENDERER.sceneToTextureFB->getDepthAttachment());
-
-	RENDERER.testTexture = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, RENDERER.sceneToTextureFB->getColorAttachment()->getWidth(), RENDERER.sceneToTextureFB->getColorAttachment()->getHeight());
-	RENDERER.sceneToTextureFB->setColorAttachment(RENDERER.testTexture, 1);
-	RENDERER.positionsGBufferLastFrame = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, RENDERER.sceneToTextureFB->getColorAttachment()->getWidth(), RENDERER.sceneToTextureFB->getColorAttachment()->getHeight());
-
-	RENDERER.SSAOLastFrame = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, RENDERER.sceneToTextureFB->getColorAttachment()->getWidth(), RENDERER.sceneToTextureFB->getColorAttachment()->getHeight());
-	RENDERER.sceneToTextureFB->colorAttachments[2] = FEResourceManager::getInstance().createTexture(GL_RED, GL_RED, RENDERER.sceneToTextureFB->getColorAttachment()->getWidth(), RENDERER.sceneToTextureFB->getColorAttachment()->getHeight());
+	RENDERER.GBuffer->renderTargetResize(RENDERER.sceneToTextureFB);
 #endif // USE_DEFERRED_RENDERER
 
 	for (size_t i = 0; i < RENDERER.postProcessEffects.size(); i++)

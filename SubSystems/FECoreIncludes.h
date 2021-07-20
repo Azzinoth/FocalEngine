@@ -109,6 +109,12 @@ static double FENextPowerOfTwo(double currentNumber)
 //#define FE_OLD_LOAD
 //#define FE_OLD_SAVE
 
+//#define FE_GPUMEM_ALLOCATION_LOGING
+
 #define USE_DEFERRED_RENDERER
 
-//#define FE_GPUMEM_ALLOCATION_LOGING
+#ifdef USE_DEFERRED_RENDERER
+	#define FE_CLEAR_COLOR glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f)
+#else
+	#define FE_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
+#endif // USE_DEFERRED_RENDERER

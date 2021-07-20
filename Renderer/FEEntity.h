@@ -37,10 +37,14 @@ namespace FocalEngine
 
 		bool isReceivingShadows();
 		void setReceivingShadows(bool isReceivingShadows);
+
+		bool isPostprocessApplied();
+		void setIsPostprocessApplied(bool isPostprocessApplied);
 	protected:
 		bool visible = true;
 		bool castShadows = true;
 		bool receiveShadows = true;
+		bool applyPostprocess = true;
 
 		FEAABB entityAABB;
 	};

@@ -36,7 +36,8 @@ namespace FocalEngine
 		FE_VECTOR2_UNIFORM      = 2,
 		FE_VECTOR3_UNIFORM      = 3,
 		FE_VECTOR4_UNIFORM      = 4,
-		FE_MAT4_UNIFORM         = 5
+		FE_MAT4_UNIFORM         = 5,
+		FE_NULL_UNIFORM			= 6
 	};
 
 	enum FEVertexAttributes

@@ -1330,8 +1330,26 @@ void FEResourceManager::loadStandardMaterial()
 
 	// ****************************** PBR SHADER ******************************
 #ifdef USE_DEFERRED_RENDERER
-	FEShader* FEPBRShader = createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+	FEShader* FEPBRShader = createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str(),
 														loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+
+	FEShader* FEPBRShaderForward = createShader("FEPBRShaderForward", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+																	  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+
+	shaders.erase(FEPBRShaderForward->getObjectID());
+	FEPBRShaderForward->setID("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+	shaders[FEPBRShaderForward->getObjectID()] = FEPBRShaderForward;
+
+	makeShaderStandard(getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/));
+
+	FEShader* FEPBRGBufferShader = createShader("FEPBRGBufferShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+															          loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+
+	shaders.erase(FEPBRGBufferShader->getObjectID());
+	FEPBRGBufferShader->setID("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/);
+	shaders[FEPBRGBufferShader->getObjectID()] = FEPBRGBufferShader;
+
+	makeShaderStandard(getShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
 #else
 	FEShader* FEPBRShader = createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
 														loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
@@ -1345,6 +1363,15 @@ void FEResourceManager::loadStandardMaterial()
 #ifdef USE_DEFERRED_RENDERER
 	FEShader* FEPBRInstancedShader = createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
 																		  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+
+	FEShader* FEPBRInstancedGBufferShader = createShader("FEPBRInstancedGBufferShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
+																						loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+
+	shaders.erase(FEPBRInstancedGBufferShader->getObjectID());
+	FEPBRInstancedGBufferShader->setID("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/);
+	shaders[FEPBRInstancedGBufferShader->getObjectID()] = FEPBRInstancedGBufferShader;
+
+	makeShaderStandard(getShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/)); 
 #else
 	FEShader* FEPBRInstancedShader = createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
 																		  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
@@ -1365,7 +1392,7 @@ void FEResourceManager::loadStandardMaterial()
 
 #ifdef USE_DEFERRED_RENDERER
 	FEShader* FETerrainShader = createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
-																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_DEFERRED.glsl").c_str(),
+																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_GBUFFER.glsl").c_str(),
 																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
 																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
 																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
@@ -1433,9 +1460,14 @@ void FEResourceManager::loadStandardMaterial()
 	getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(2.5f);
 	getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("shadowBlurFactor")->updateData(1.0f);
 
+#ifdef USE_DEFERRED_RENDERER
+	
+#else
 	getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(0.007f);
 	getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(2.5f);
 	getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("shadowBlurFactor")->updateData(1.0f);
+#endif // USE_DEFERRED_RENDERER
+	
 }
 
 void FEResourceManager::loadStandardGameModels()

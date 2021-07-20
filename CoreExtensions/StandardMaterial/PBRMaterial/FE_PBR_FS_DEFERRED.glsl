@@ -13,8 +13,6 @@ in VS_OUT
 @ProjectionMatrix@
 
 layout (location = 0) out vec4 outColor;
-layout (location = 1) out vec3 gPosition;
-layout (location = 2) out float SSAOResult;
 
 @MaterialTextures@
 uniform float FENormalMapIntensity;
@@ -47,9 +45,10 @@ struct FELight
 // adds cascade shadow maps, 4 cascades.
 @CSM@
 
-@Texture@ lastFrameSceneDepth;
-@Texture@ lastFramePositionsGBuffer;
-@Texture@ lastFrameSSAO;
+// terrain part
+@Texture@ heightMap;
+@Texture@ projectedMap;
+uniform vec2 tileMult;
 
 layout (set = 0, binding = 0, std140) uniform lightInfo
 {
@@ -79,128 +78,39 @@ layout (set = 0, binding = 1, std140) uniform directionalLightInfo
 	FEDirectionalLight directionalLight;
 };
 
+vec3 getWorldPosition()
+{
+	return texture(textures[3], FS_IN.UV).rgb;
+}
+
 vec4 getAlbedo()
 {
-	vec4 result = vec4(0);
-	if (FS_IN.materialIndex == 0.0)
-	{
-		result = texture(textures[textureBindings[0]], FS_IN.UV);
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		result = texture(textures[textureBindings[6]], FS_IN.UV);
-	}
-
-	return result;
+	return texture(textures[0], FS_IN.UV);
 }
 
 vec3 getNormal()
 {
-	vec3 result = vec3(0);
-	if (textureBindings[1] != -1)
-	{
-		if (FS_IN.materialIndex == 0.0)
-		{
-			result = texture(textures[textureBindings[1]], FS_IN.UV).rgb;
-		}
-		else if (FS_IN.materialIndex == 1.0)
-		{
-			result = texture(textures[textureBindings[7]], FS_IN.UV).rgb;
-		}
-
-		result = normalize(result * 2.0 - 1.0);
-		result = normalize(FS_IN.TBN * result);
-		result = mix(FS_IN.vertexNormal, result, FENormalMapIntensity);
-	}
-	else
-	{
-		//result = FS_IN.vertexNormal;
-		result = normalize(FS_IN.TBN * FS_IN.vertexNormal);
-	}
-
-	return result;
+	return texture(textures[1], FS_IN.UV).rgb;
 }
 
 float getAO()
 {
-	float result = 1;
-
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[2] != -1)
-			result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[8] != -1)
-			result = texture(textures[textureBindings[8]], FS_IN.UV)[textureChannels[8]];
-	}
-	
-	vec4 fragmentInScreenSpace = FEProjectionMatrix * FS_IN.viewPosition;
-	fragmentInScreenSpace.xyz /= fragmentInScreenSpace.w;
-	fragmentInScreenSpace.xyz  = fragmentInScreenSpace.xyz * 0.5 + 0.5;
-	float SSAOIntensity = texture(lastFrameSSAO, vec2(fragmentInScreenSpace.x, fragmentInScreenSpace.y)).r;
-
-	//return result;
-
-	//if (result != 0)
-		return result * SSAOIntensity;
-
-	//return SSAOIntensity;
+	return texture(textures[2], FS_IN.UV).r;
 }
 
 float getRoughtness()
 {
-	float result = FERoughtness;
-
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[3] != -1)
-			result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[9] != -1)
-			result = texture(textures[textureBindings[9]], FS_IN.UV)[textureChannels[9]] * FERoughtnessMapIntensity;
-	}
-
-	return result;
+	return texture(textures[2], FS_IN.UV).g;
 }
 
 float getMetalness()
 {
-	float result = FEMetalness;
-
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[4] != -1)
-			result = texture(textures[textureBindings[4]], FS_IN.UV)[textureChannels[4]] * FEMetalnessMapIntensity;
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[10] != -1)
-			result = texture(textures[textureBindings[10]], FS_IN.UV)[textureChannels[10]] * FEMetalnessMapIntensity;
-	}
-
-	return result;
+	return texture(textures[2], FS_IN.UV).b;
 }
 
 float getDisplacement()
 {
-	float result = 0;
-
-	if (FS_IN.materialIndex == 0.0)
-	{
-		if (textureBindings[5] != -1)
-			result = texture(textures[textureBindings[5]], FS_IN.UV)[textureChannels[5]];
-	}
-	else if (FS_IN.materialIndex == 1.0)
-	{
-		if (textureBindings[11] != -1)
-			result = texture(textures[textureBindings[11]], FS_IN.UV)[textureChannels[11]];
-	}
-
-	return result;
+	return texture(textures[2], FS_IN.UV).a;
 }
 
 const float PI = 3.14159265359;
@@ -330,50 +240,10 @@ vec3 SSAOOffsets[16] = vec3[](vec3(-0.613392, 0.617481, 0.791925), vec3(0.170019
 
 void main(void)
 {
-	//vec4 testView = inverse(FEViewMatrix) * FS_IN.viewPosition;
-	//gPosition = FS_IN.viewPosition.z;
-	//gPosition = (FEViewMatrix * vec4(FS_IN.worldPosition, 1.0)).z;
-	gPosition = FS_IN.worldPosition;
-
-	float totalOcclusion = 0.0;
-	float bias = 0.025;
-	//float radius = 2.0;
-
-	vec4 viewPosition = FEViewMatrix * vec4(FS_IN.worldPosition, 1.0);
-	
-	vec4 offset = FEProjectionMatrix * viewPosition;
-	offset.xyz /= offset.w;
-	offset.xyz = offset.xyz * 0.5 + 0.5;
-	float currentSampleZ = (FEViewMatrix * vec4(texture(lastFramePositionsGBuffer, vec2(offset.x, offset.y)).rgb, 1.0)).z;
-	
-	float rotFactor = fract(sin(dot(viewPosition.xy * 19.19, vec2(49.5791, 97.413))) * 49831.189237);
-	for (int i = 0; i < SSAO_SAMPLES_COUNT; i++)
-	{
-		vec4 sampleViewPosition = FEViewMatrix * vec4(FS_IN.worldPosition + SSAOOffsets[i] * rotFactor, 1.0);
-		//offset = FEProjectionMatrix * sampleViewPosition;
-		offset = FEProjectionMatrix * vec4(viewPosition.xyz + SSAOOffsets[i] * rotFactor, viewPosition.w);
-		offset.xyz /= offset.w;
-		offset.xyz = offset.xyz * 0.5 + 0.5;
-	
-		float surroundSampleZ = (FEViewMatrix * vec4(texture(lastFramePositionsGBuffer, vec2(offset.x, offset.y)).rgb, 1.0)).z;
-	
-		//surroundSampleZ += bias;
-		//float difference = currentSampleZ - surroundSampleZ;
-		//totalOcclusion += (difference + abs(difference)) / 2.0;
-	
-		totalOcclusion += (currentSampleZ > surroundSampleZ + bias ? 1.0 : 0.0);
-		//totalOcclusion += surroundSampleZ;
-	
-		//float rangeCheck = smoothstep(0.0, 1.0, radius / abs(currentSampleZ - surroundSampleZ));
-		//totalOcclusion += (currentSampleZ > surroundSampleZ + bias ? 1.0 : 0.0) * rangeCheck;
-	}
-	SSAOResult = totalOcclusion / SSAO_SAMPLES_COUNT;
-
-
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
-		outColor = vec4(vec3(dot(getNormal(), normalize(FECameraPosition - FS_IN.worldPosition))), 1.0);
+		outColor = vec4(vec3(dot(getNormal(), normalize(FECameraPosition - getWorldPosition()))), 1.0);
 		return;
 	}
 	// checking normals
@@ -391,7 +261,7 @@ void main(void)
 	// debug csm
 	else if (debugFlag == 4)
 	{
-		float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
+		float distanceToCam = length(FECameraPosition - getWorldPosition());
 
 		// CSM0
 		if (distanceToCam <= directionalLight.CSMSizes[0])
@@ -438,21 +308,12 @@ void main(void)
 	}
 	
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
-	vec3 viewDirection = normalize(FECameraPosition - FS_IN.worldPosition);
+	vec3 viewDirection = normalize(FECameraPosition - getWorldPosition());
 	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
 
 	vec3 normal = getNormal();
-
-	vec3 ao_base = ambientColor * FEAOIntensity * (directionalLight.intensity / 16.0);
-	float textureAO = getAO();
-	if (textureAO != 0)
-	{
-		outColor = vec4(mix(ao_base, ambientColor * textureAO * (directionalLight.intensity / 8.0), FEAOMapIntensity), 1.0f);
-	}
-	else
-	{
-		outColor = vec4(ao_base, 1.0f);
-	}
+	
+	outColor = vec4(ambientColor * getAO(), 1.0f);
 
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
@@ -461,20 +322,23 @@ void main(void)
 
 		if (FElight[i].typeAndAngles.x == 1)
 		{
-			outColor += vec4(pointLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
+			outColor += vec4(pointLightColor(FElight[i], normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
 		}
 		else if (FElight[i].typeAndAngles.x == 2)
 		{
-			outColor += vec4(spotLightColor(FElight[i], normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
+			outColor += vec4(spotLightColor(FElight[i], normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
 		}
 	}
 
-	outColor += vec4(directionalLightColor(normal, FS_IN.worldPosition, viewDirection, baseColor), 1.0f);
+	outColor += vec4(directionalLightColor(normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
+	// shaderID tell us that it is terrain
+	if (texture(textures[4], FS_IN.UV).r == 1)
+		outColor += vec4(texture(textures[4], FS_IN.UV).g, texture(textures[4], FS_IN.UV).b, texture(textures[4], FS_IN.UV).a , 1.0);
 
 	// test fog
 	if (fogDensity > 0.0f && fogGradient > 0.0f)
 	{
-		float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
+		float distanceToCam = length(FECameraPosition - getWorldPosition());
 
 		float visibility = exp(-pow((distanceToCam * fogDensity), fogGradient));
 		visibility = clamp(visibility, 0.0, 1.0);
@@ -681,10 +545,10 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 		return Lo;
 
 	float shadow = 0.0;
-	float distanceToCam = length(FECameraPosition - FS_IN.worldPosition);
+	float distanceToCam = length(FECameraPosition - getWorldPosition());
 
 	// first cascade
-	vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(FS_IN.worldPosition, 1.0);
+	vec4 vertexInLightSpace = directionalLight.CSM0 * vec4(getWorldPosition(), 1.0);
 	vec3 projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
     projCoords = projCoords * 0.5 + 0.5;
 	if (distanceToCam <= directionalLight.CSMSizes[0])
@@ -696,7 +560,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// second cascade
 	if (directionalLight.activeCascades > 1)
 	{
-		vertexInLightSpace = directionalLight.CSM1 * vec4(FS_IN.worldPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM1 * vec4(getWorldPosition(), 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[1])
@@ -709,7 +573,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// third cascade
 	if (directionalLight.activeCascades > 2)
 	{
-		vertexInLightSpace = directionalLight.CSM2 * vec4(FS_IN.worldPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM2 * vec4(getWorldPosition(), 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[2])
@@ -722,7 +586,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 	// fourth(last) cascade
 	if (directionalLight.activeCascades > 3)
 	{
-		vertexInLightSpace = directionalLight.CSM3 * vec4(FS_IN.worldPosition, 1.0);
+		vertexInLightSpace = directionalLight.CSM3 * vec4(getWorldPosition(), 1.0);
 		projCoords = vertexInLightSpace.xyz / vertexInLightSpace.w;
 		projCoords = projCoords * 0.5 + 0.5;
 		if (distanceToCam <= directionalLight.CSMSizes[3])

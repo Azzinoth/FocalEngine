@@ -8,7 +8,30 @@
 namespace FocalEngine
 {
 	class FEngine;
+#ifdef USE_DEFERRED_RENDERER
+	class FERenderer;
 
+	class FEGBuffer
+	{
+		friend FERenderer;
+
+		void initializeResources(FEFramebuffer* mainFrameBuffer);
+	public:
+		FEGBuffer(FEFramebuffer* mainFrameBuffer);
+		
+		FEFramebuffer* GFrameBuffer = nullptr;
+
+		FETexture* positions = nullptr;
+		FETexture* normals = nullptr;
+		FETexture* albedo = nullptr;
+		FETexture* materialProperties = nullptr;
+		FETexture* shaderProperties = nullptr;
+
+		void renderTargetResize(FEFramebuffer* mainFrameBuffer);
+	};
+	
+#endif // USE_DEFERRED_RENDERER
+	
 	class FERenderer
 	{
 		friend FEngine;
@@ -17,6 +40,7 @@ namespace FocalEngine
 
 		void render(FEBasicCamera* currentCamera);
 		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
+		void renderEntityForward(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
 		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap = false, bool reloadUniformBlocks = false);
 		void renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera);
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
@@ -94,21 +118,13 @@ namespace FocalEngine
 		void drawAABB(FEAABB AABB, glm::vec3 color = glm::vec3(0.1f, 0.6f, 0.1f), float lineWidth = 0.2f);
 
 #ifdef USE_DEFERRED_RENDERER
-		FETexture* testTexture = nullptr;
-		FETexture* testTextureDepth = nullptr;
-
-		FETexture* testTexture2 = nullptr;
-
-		//FETexture* positionsGBuffer0 = nullptr;
-		//FETexture* positionsGBuffer1 = nullptr;
-
-		FETexture* positionsGBufferLastFrame = nullptr;
-		FETexture* SSAOLastFrame = nullptr;
+		FEGBuffer* GBuffer = nullptr;
 #endif // USE_DEFERRED_RENDERER
 		
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
+		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, bool isReceivingShadows);
 		void loadUniformBlocks();
 
 		void standardFBInit(int WindowWidth, int WindowHeight);
@@ -143,6 +159,9 @@ namespace FocalEngine
 		bool distanceFogEnabled = false;
 		void updateFogInShaders();
 		void checkForLoadedResources();
+
+		FEShader* shaderToForce = nullptr;
+		void forceShader(FEShader* shader);
 	};
 }
 
