@@ -303,10 +303,15 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 	this->glslVersion = glslVersion;
 	testCompilationMode = testCompilation;
 	setName(name);
-	vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
-	size_t textLenght = strlen(vertexText);
-	vertexShaderText = new char[textLenght + 1];
-	strcpy_s(vertexShaderText, textLenght + 1, vertexText);
+	size_t textLenght = 0;
+
+	if (vertexText != nullptr)
+	{
+		vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
+		textLenght = strlen(vertexText);
+		vertexShaderText = new char[textLenght + 1];
+		strcpy_s(vertexShaderText, textLenght + 1, vertexText);
+	}
 
 	if (tessControlText != nullptr)
 	{
@@ -332,10 +337,13 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 		strcpy_s(geometryShaderText, textLenght + 1, geometryText);
 	}
 
-	fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
-	textLenght = strlen(fragmentText);
-	fragmentShaderText = new char[textLenght + 1];
-	strcpy_s(fragmentShaderText, textLenght + 1, fragmentText);
+	if (fragmentText != nullptr)
+	{
+		fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
+		textLenght = strlen(fragmentText);
+		fragmentShaderText = new char[textLenght + 1];
+		strcpy_s(fragmentShaderText, textLenght + 1, fragmentText);
+	}
 
 	if (computeText != nullptr)
 	{
@@ -350,16 +358,17 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 		return;
 
 	FE_GL_ERROR(programID = glCreateProgram());
-	FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
+
+	if (vertexText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
 	if (tessControlText != nullptr)
 		FE_GL_ERROR(glAttachShader(programID, tessControlShaderID));
 	if (tessEvalText != nullptr)
 		FE_GL_ERROR(glAttachShader(programID, tessEvalShaderID));
 	if (geometryText != nullptr)
 		FE_GL_ERROR(glAttachShader(programID, geometryShaderID));
-
-	FE_GL_ERROR(glAttachShader(programID, fragmentShaderID));
-
+	if (fragmentText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, fragmentShaderID));
 	if (computeText != nullptr)
 		FE_GL_ERROR(glAttachShader(programID, computeShaderID));
 
@@ -368,16 +377,16 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 	FE_GL_ERROR(glLinkProgram(programID));
 	FE_GL_ERROR(glValidateProgram(programID)); // too slow ?
 
-	FE_GL_ERROR(glDeleteShader(vertexShaderID));
+	if (vertexText != nullptr)
+		FE_GL_ERROR(glDeleteShader(vertexShaderID));
 	if (tessControlText != nullptr)
 		FE_GL_ERROR(glDeleteShader(tessControlShaderID));
 	if (tessEvalText != nullptr)
 		FE_GL_ERROR(glDeleteShader(tessEvalShaderID));
 	if (geometryText != nullptr)
 		FE_GL_ERROR(glDeleteShader(geometryShaderID));
-
-	FE_GL_ERROR(glDeleteShader(fragmentShaderID));
-
+	if (fragmentText != nullptr)
+		FE_GL_ERROR(glDeleteShader(fragmentShaderID));
 	if (computeText != nullptr)
 		FE_GL_ERROR(glDeleteShader(computeShaderID));
 
@@ -1150,4 +1159,12 @@ std::vector<std::string> FEShader::getDebugVariables()
 #endif
 
 	return std::vector<std::string>();
+}
+
+void FEShader::dispatch(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z)
+{
+	if (getComputeShaderText() == nullptr)
+		return;
+
+	FE_GL_ERROR(glDispatchCompute(num_groups_x, num_groups_y, num_groups_z));
 }

@@ -102,10 +102,10 @@ float getDisplacement()
 void main(void)
 {
 	vec4 textureColor = getAlbedo();
-	if (textureColor.a < 0.2)
-	{
-		discard;
-	}
+	//if (textureColor.a < 0.2)
+	//{
+	//	discard;
+	//}
 	
 	gPosition = FS_IN.worldPosition;
 	gNormal = getNormal();

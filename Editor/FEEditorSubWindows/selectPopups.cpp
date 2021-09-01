@@ -38,7 +38,7 @@ void selectMaterialPopUp::render()
 	ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
 	ImVec2 POSITION = ImGui::GetWindowPos();
 
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::SetCursorPosX(10);
@@ -145,7 +145,7 @@ void selectMaterialPopUp::show(FEMaterial** material)
 
 	if (allowedShader != nullptr)
 	{
-		for (size_t i = 0; i < itemsList.size(); i++)
+		for (int i = 0; i < int(itemsList.size()); i++)
 		{
 			if (RESOURCE_MANAGER.getMaterial(itemsList[i].FEObjectPart->getObjectID())->shader->getObjectID() != allowedShader->getObjectID())
 			{
@@ -264,7 +264,7 @@ void selectMeshPopUp::render()
 	ImGuiModalPopup::render();
 
 	ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::SetCursorPosX(10);
@@ -482,7 +482,7 @@ void selectTexturePopUp::render()
 	ImGuiModalPopup::render();
 
 	ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::SetCursorPosX(10);
@@ -669,7 +669,7 @@ void selectGameModelPopUp::render()
 	ImGuiModalPopup::render();
 
 	ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::SetCursorPosX(10);

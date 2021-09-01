@@ -1003,6 +1003,32 @@ void FEProject::loadScene()
 	if (FILESYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
 	{
 		VIRTUAL_FILE_SYSTEM.loadState(projectFolder + "VFS.txt");
+
+		VIRTUAL_FILE_SYSTEM.setDirectoryReadOnly(false, "/Shaders");
+
+		auto files = VIRTUAL_FILE_SYSTEM.getDirectoryContent("/Shaders");
+		for (size_t i = 0; i < files.size(); i++)
+		{
+			VIRTUAL_FILE_SYSTEM.deleteFile(files[i], "/Shaders");
+		}
+		
+		std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
+		for (size_t i = 0; i < shaderList.size(); i++)
+		{
+			if (FEObjectManager::getInstance().getFEObject(shaderList[i]) == nullptr)
+				continue;
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(shaderList[i]), "/Shaders");
+		}
+
+		std::vector<std::string> standardShaderList = RESOURCE_MANAGER.getStandardShadersList();
+		for (size_t i = 0; i < standardShaderList.size(); i++)
+		{
+			if (FEObjectManager::getInstance().getFEObject(standardShaderList[i]) == nullptr)
+				continue;
+			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(standardShaderList[i]), "/Shaders");
+		}
+
+		VIRTUAL_FILE_SYSTEM.setDirectoryReadOnly(true, "/Shaders");
 	}
 	else
 	{
@@ -1056,7 +1082,7 @@ void FEProject::createDummyScreenshot()
 	size_t width = ENGINE.getRenderTargetWidth();
 	size_t height = ENGINE.getRenderTargetHeight();
 
-	char* pixels = new char[4 * width * height];
+	unsigned char* pixels = new unsigned char[4 * width * height];
 	for (size_t j = 0; j < height; j++)
 	{
 		for (size_t i = 0; i < 4 * width; i += 4)

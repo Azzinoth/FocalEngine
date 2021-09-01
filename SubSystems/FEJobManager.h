@@ -26,11 +26,11 @@ namespace FocalEngine
 		bool clearJobs();
 	};
 
-	class FERenderer;
+	class FEResourceManager;
 
 	class FEJobManager
 	{
-		friend FERenderer;
+		friend FEResourceManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEJobManager)
 

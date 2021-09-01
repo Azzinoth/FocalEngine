@@ -24,6 +24,10 @@ FELight* FEScene::addLight(FEObjectType lightType, std::string Name, std::string
 		newLight->cascadeData[2].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
 		newLight->cascadeData[3].frameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
 
+		// to clear cascades framebuffer
+		newLight->setCastShadows(false);
+		newLight->setCastShadows(true);
+
 		return newLight;
 	}
 	else if (lightType == FE_SPOT_LIGHT)
@@ -291,6 +295,30 @@ FEEntityInstanced* FEScene::getEntityInstanced(std::string ID)
 		return nullptr;
 
 	return reinterpret_cast<FEEntityInstanced*>(entityMap[ID]);
+}
+
+std::vector<FEEntityInstanced*> FEScene::getEntityInstancedByName(std::string Name)
+{
+	std::vector<FEEntityInstanced*> result;
+
+	auto it = entityMap.begin();
+	while (it != entityMap.end())
+	{
+		if (it->second->getType() != FE_ENTITY_INSTANCED)
+		{
+			it++;
+			continue;
+		}
+
+		if (it->second->getName() == Name)
+		{
+			result.push_back(reinterpret_cast<FEEntityInstanced*>(it->second));
+		}
+
+		it++;
+	}
+
+	return result;
 }
 
 void FEScene::setSelectMode(FEEntityInstanced* entityInstanced, bool newValue)

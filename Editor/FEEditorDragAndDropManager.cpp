@@ -37,37 +37,6 @@ void DragAndDropManager::drawToolTip()
 	ImGui::Begin("dragAndDrop info", NULL, ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar);
 
 	std::string actionText = getToolTipText();
-	
-	/*if (object->getType() == FE_SHADER)
-	{
-		uv0 = ImVec2(0.0f, 0.0f);
-		uv1 = ImVec2(1.0f, 1.0f);
-
-		previewTexture = shaderIcon;
-	}
-	else if (object->getType() == FE_MESH)
-	{
-		previewTexture = PREVIEW_MANAGER.getMeshPreview(object->getObjectID());
-	}
-	else if (object->getType() == FE_TEXTURE)
-	{
-		previewTexture = RESOURCE_MANAGER.getTexture(object->getObjectID());
-	}
-	else if (object->getType() == FE_MATERIAL)
-	{
-		previewTexture = PREVIEW_MANAGER.getMaterialPreview(object->getObjectID());
-	}
-	else if (object->getType() == FE_GAMEMODEL)
-	{
-		if (ImGui::GetCurrentContext()->HoveredWindow != nullptr &&
-			ImGui::GetCurrentContext()->HoveredWindow->Name == EDITOR.sceneWindow->Name)
-		{
-			drawDragAndDropHasAction = true;
-			actionText = "Add to scene";
-		}
-
-		previewTexture = PREVIEW_MANAGER.getGameModelPreview(object->getObjectID());
-	}*/
 
 	ImGui::Text(actionText.c_str());
 	ImGui::TextUnformatted(("Name: " + object->getName() + "\nType: " + FEObjectTypeToString(object->getType())).c_str());

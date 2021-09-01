@@ -73,6 +73,8 @@ public:
 	void close();
 };
 
+#define USE_NODES
+
 class editMaterialPopup : public FEImGuiWindow
 {
 	SINGLETON_PRIVATE_PART(editMaterialPopup)
@@ -88,6 +90,28 @@ class editMaterialPopup : public FEImGuiWindow
 	FETexture* tempContainer = nullptr;
 	int textureDestination = -1;
 
+#ifdef USE_NODES
+	// ************** Node area **************
+	static FEEditorNodeArea* materialNodeArea;
+
+	static ImVec2 windowPosition;
+	static ImVec2 nodeGridRelativePosition;
+	static ImVec2 mousePositionWhenContextMenuWasOpened;
+	// ************** Node area END **************
+	
+	// ************** Drag&Drop **************
+	struct nodeAreaTargetCallbackInfo
+	{
+		FETexture* texture;
+	};
+	nodeAreaTargetCallbackInfo dragAndDropCallbackInfo;
+	DragAndDropTarget* nodeAreaTarget;
+
+	FEEditorTextureCreatingNode* textureNode = nullptr;
+
+	static bool dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo);
+	// ************** Drag&Drop END **************
+#else
 	// ************** Drag&Drop **************
 	struct materialBindingCallbackInfo
 	{
@@ -102,6 +126,7 @@ class editMaterialPopup : public FEImGuiWindow
 	static bool dragAndDropTexturesListCallback(FEObject* object, void** material);
 	static bool dragAndDropMaterialBindingsCallback(FEObject* object, void** callbackInfoPointer);
 	// ************** Drag&Drop END **************
+#endif // USE_NODES
 public:
 	SINGLETON_PUBLIC_PART(editMaterialPopup)
 

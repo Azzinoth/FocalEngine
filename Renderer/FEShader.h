@@ -31,23 +31,23 @@ namespace FocalEngine
 {
 	enum FEShaderParamType
 	{
-		FE_INT_SCALAR_UNIFORM   = 0,
+		FE_INT_SCALAR_UNIFORM = 0,
 		FE_FLOAT_SCALAR_UNIFORM = 1,
-		FE_VECTOR2_UNIFORM      = 2,
-		FE_VECTOR3_UNIFORM      = 3,
-		FE_VECTOR4_UNIFORM      = 4,
-		FE_MAT4_UNIFORM         = 5,
-		FE_NULL_UNIFORM			= 6
+		FE_VECTOR2_UNIFORM = 2,
+		FE_VECTOR3_UNIFORM = 3,
+		FE_VECTOR4_UNIFORM = 4,
+		FE_MAT4_UNIFORM = 5,
+		FE_NULL_UNIFORM = 6
 	};
 
 	enum FEVertexAttributes
 	{
 		FE_POSITION = 1 << 0,
-		FE_COLOR    = 1 << 1,
-		FE_NORMAL   = 1 << 2,
+		FE_COLOR = 1 << 1,
+		FE_NORMAL = 1 << 2,
 		FE_TANGENTS = 1 << 3,
-		FE_UV       = 1 << 4,
-		FE_INDEX    = 1 << 5,
+		FE_UV = 1 << 4,
+		FE_INDEX = 1 << 5,
 		FE_MATINDEX = 1 << 6,
 		FE_INSTANCEDATA = 1 << 7
 	};
@@ -140,6 +140,8 @@ namespace FocalEngine
 		bool isDebugRequest();
 		std::vector<std::vector<float>>* getDebugData();
 		std::vector<std::string> getDebugVariables();
+
+		void dispatch(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
 	private:
 		void copyCode(const FEShader& shader);
 

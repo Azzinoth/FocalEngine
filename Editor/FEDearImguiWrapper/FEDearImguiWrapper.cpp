@@ -361,6 +361,7 @@ void FEImGuiWindow::render()
 		}
 
 		wasClosedLastFrame = false;
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 		ImGui::Begin(caption, nullptr, flags);
 		window = ImGui::GetCurrentWindow();
@@ -379,6 +380,7 @@ void FEImGuiWindow::onRenderEnd()
 	if (visible)
 	{
 		ImGui::PopStyleVar();
+		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 }
@@ -393,6 +395,7 @@ void FEImGuiWindow::close()
 	if (visible)
 	{
 		visible = false;
+		ImGui::PopStyleVar();
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}

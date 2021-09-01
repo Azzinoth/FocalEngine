@@ -52,6 +52,7 @@ void FEEditor::displayContentBrowser()
 					if (filePath != "")
 					{
 						FEMesh* loadedMesh = RESOURCE_MANAGER.LoadOBJMesh(filePath.c_str());
+						VIRTUAL_FILE_SYSTEM.createFile(loadedMesh, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 						// checking material count in this mesh
 						if (loadedMesh != nullptr && loadedMesh->getMaterialCount() > 2)
 						{
@@ -66,31 +67,42 @@ void FEEditor::displayContentBrowser()
 					}
 				}
 
-				if (ImGui::MenuItem("Load texture..."))
+				if (ImGui::BeginMenu("Texture"))
 				{
-					std::string filePath = "";
-					FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
-					if (filePath != "")
+					if (ImGui::MenuItem("Load..."))
 					{
-						loadTexturePopUp::getInstance().show(filePath);
-						PROJECT_MANAGER.getCurrent()->modified = true;
+						std::string filePath = "";
+						FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
+						if (filePath != "")
+						{
+							loadTexturePopUp::getInstance().show(filePath);
+							PROJECT_MANAGER.getCurrent()->modified = true;
+						}
 					}
-				}
 
-				if (ImGui::MenuItem("Load texture and combine with opacity mask..."))
-				{
-					std::string filePath = "";
-					FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
-
-					std::string maskFilePath = "";
-					FILESYSTEM.openDialog(maskFilePath, textureLoadFilter, 1);
-
-					if (filePath != "" && maskFilePath != "")
+					if (ImGui::MenuItem("Load and combine with opacity mask..."))
 					{
-						FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTextureWithTransparencyMask(filePath.c_str(), maskFilePath.c_str(), "");
-						newTexture->setDirtyFlag(true);
-						PROJECT_MANAGER.getCurrent()->modified = true;
+						std::string filePath = "";
+						FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
+
+						std::string maskFilePath = "";
+						FILESYSTEM.openDialog(maskFilePath, textureLoadFilter, 1);
+
+						if (filePath != "" && maskFilePath != "")
+						{
+							FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTextureWithTransparencyMask(filePath.c_str(), maskFilePath.c_str(), "");
+							newTexture->setDirtyFlag(true);
+							PROJECT_MANAGER.getCurrent()->modified = true;
+							VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
+						}
 					}
+
+					if (ImGui::MenuItem("Combine channels..."))
+					{
+						CombineChannelsToTexturePopUp::getInstance().show("");
+					}
+
+					ImGui::EndMenu();
 				}
 
 				if (ImGui::MenuItem("Create new material"))
@@ -103,13 +115,16 @@ void FEEditor::displayContentBrowser()
 
 						newMat->setAlbedoMap(RESOURCE_MANAGER.noTexture);
 						newMat->setNormalMap(RESOURCE_MANAGER.noTexture);
+
+						VIRTUAL_FILE_SYSTEM.createFile(newMat, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 					}
 				}
 
 				if (ImGui::MenuItem("Create new game model"))
 				{
-					RESOURCE_MANAGER.createGameModel();
+					FEGameModel* newGameModel = RESOURCE_MANAGER.createGameModel();
 					PROJECT_MANAGER.getCurrent()->modified = true;
+					VIRTUAL_FILE_SYSTEM.createFile(newGameModel, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 				}
 
 				ImGui::EndMenu();
@@ -117,11 +132,25 @@ void FEEditor::displayContentBrowser()
 		}
 		else
 		{
-			if (ImGui::MenuItem("Rename"))
+			std::string fullPath = VIRTUAL_FILE_SYSTEM.getCurrentPath();
+			if (fullPath.back() != '/')
+				fullPath += '/';
+			fullPath += filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName();
+
+			bool readOnlyItem = VIRTUAL_FILE_SYSTEM.isReadOnly(filteredResourcesContentBrowser[contentBrowserItemUnderMouse], fullPath);
+
+			if (readOnlyItem)
+				ImGui::MenuItem("Read Only");
+			
+			if (!readOnlyItem)
 			{
-				contentBrowserRenameIndex = contentBrowserItemUnderMouse;
-				strcpy_s(contentBrowserRename, filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName().size() + 1, filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName().c_str());
-				lastFrameRenameEditWasVisiable = false;
+				if (ImGui::MenuItem("Rename"))
+				{
+					contentBrowserRenameIndex = contentBrowserItemUnderMouse;
+
+					strcpy_s(contentBrowserRename, filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName().size() + 1, filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName().c_str());
+					lastFrameRenameEditWasVisiable = false;
+				}
 			}
 
 			if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MATERIAL)
@@ -148,27 +177,50 @@ void FEEditor::displayContentBrowser()
 				}
 			}
 
-			if (ImGui::MenuItem("Delete"))
+			if (!readOnlyItem)
 			{
-				if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_NULL)
+				if (ImGui::MenuItem("Delete"))
 				{
-					deleteDirectoryPopup::getInstance().show(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName());
+					if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_NULL)
+					{
+						deleteDirectoryPopup::getInstance().show(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getName());
+					}
+					else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MESH)
+					{
+						deleteMeshPopup::getInstance().show(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					}
+					else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_TEXTURE)
+					{
+						deleteTexturePopup::getInstance().show(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					}
+					else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MATERIAL)
+					{
+						deleteMaterialPopup::getInstance().show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					}
+					else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_GAMEMODEL)
+					{
+						deleteGameModelPopup::getInstance().show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					}
 				}
-				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MESH)
+			}
+
+			if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_TEXTURE)
+			{
+				if (ImGui::BeginMenu("Convert"))
 				{
-					deleteMeshPopup::getInstance().show(RESOURCE_MANAGER.getMesh(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
-				}
-				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_TEXTURE)
-				{
-					deleteTexturePopup::getInstance().show(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
-				}
-				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_MATERIAL)
-				{
-					deleteMaterialPopup::getInstance().show(RESOURCE_MANAGER.getMaterial(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
-				}
-				else if (filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getType() == FE_GAMEMODEL)
-				{
-					deleteGameModelPopup::getInstance().show(RESOURCE_MANAGER.getGameModel(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+					if (ImGui::MenuItem("Texture channels to individual textures"))
+					{
+						std::vector<FETexture*> newTextures = RESOURCE_MANAGER.channelsToFETextures(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
+						newTextures[0]->setDirtyFlag(true);
+						PROJECT_MANAGER.getCurrent()->modified = true;
+
+						VIRTUAL_FILE_SYSTEM.createFile(newTextures[0], VIRTUAL_FILE_SYSTEM.getCurrentPath());
+						VIRTUAL_FILE_SYSTEM.createFile(newTextures[1], VIRTUAL_FILE_SYSTEM.getCurrentPath());
+						VIRTUAL_FILE_SYSTEM.createFile(newTextures[2], VIRTUAL_FILE_SYSTEM.getCurrentPath());
+						VIRTUAL_FILE_SYSTEM.createFile(newTextures[3], VIRTUAL_FILE_SYSTEM.getCurrentPath());
+					}
+
+					ImGui::EndMenu();
 				}
 			}
 		}
@@ -191,6 +243,7 @@ void FEEditor::displayContentBrowser()
 	messagePopUp::getInstance().render();
 	shaderEditorWindow::getInstance().render();
 	deleteDirectoryPopup::getInstance().render();
+	CombineChannelsToTexturePopUp::getInstance().render();
 }
 
 void FEEditor::displayContentBrowserItems()

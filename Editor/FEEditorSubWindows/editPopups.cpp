@@ -663,6 +663,9 @@ editMaterialPopup::editMaterialPopup()
 	cancelButton->setDefaultColor(ImVec4(0.7f, 0.5f, 0.5f, 1.0f));
 	cancelButton->setHoveredColor(ImVec4(0.95f, 0.5f, 0.0f, 1.0f));
 	cancelButton->setActiveColor(ImVec4(0.1f, 1.0f, 0.1f, 1.0f));
+#ifdef USE_NODES
+	nodeAreaTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_TEXTURE, dragAndDropnodeAreaTargetCallback, reinterpret_cast<void**>(&dragAndDropCallbackInfo), "Drop to add texture");
+#endif // USE_NODES
 }
 
 editMaterialPopup::~editMaterialPopup()
@@ -674,6 +677,12 @@ editMaterialPopup::~editMaterialPopup()
 		delete iconButton;
 }
 
+#ifdef USE_NODES
+FEEditorNodeArea* editMaterialPopup::materialNodeArea = nullptr;
+ImVec2 editMaterialPopup::nodeGridRelativePosition = ImVec2(5, 30);
+ImVec2 editMaterialPopup::windowPosition = ImVec2(0, 0);
+ImVec2 editMaterialPopup::mousePositionWhenContextMenuWasOpened = ImVec2(0, 0);
+#endif // USE_NODES
 void editMaterialPopup::show(FEMaterial* material)
 {
 	if (material != nullptr)
@@ -684,7 +693,11 @@ void editMaterialPopup::show(FEMaterial* material)
 		std::string tempCaption = "Edit material:";
 		tempCaption += " " + objToWorkWith->getName();
 		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+#ifdef USE_NODES
+		size = ImVec2(1500.0f, 1000.0f);
+#else
 		size = ImVec2(1500.0f, 700.0f);
+#endif // USE_NODES
 		position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
 		FEImGuiWindow::show();
 
@@ -694,6 +707,91 @@ void editMaterialPopup::show(FEMaterial* material)
 		iconButton->setUV1(ImVec2(1.0f, 1.0f));
 		iconButton->setFramePadding(8);
 
+#ifdef USE_NODES
+		materialNodeArea = NODE_SYSTEM.createNodeArea();
+
+		FEEditorMaterialNode* newNode = new FEEditorMaterialNode(material);
+
+		ImVec2 positionOnCanvas;
+		positionOnCanvas.x = nodeGridRelativePosition.x + size.x - size.x / 6 - newNode->getSize().x / 2.0f;
+		positionOnCanvas.y = nodeGridRelativePosition.y + size.y / 2 - newNode->getSize().y / 2.0f;
+		newNode->setPosition(positionOnCanvas);
+
+		materialNodeArea->addNode(newNode);
+
+		// Add all textures of material as a texture nodes
+		// Place them in shifted grid.
+		int visualIndex = 0;
+		for (size_t i = 0; i < material->textures.size(); i++)
+		{
+			if (material->textures[i] == nullptr)
+				continue;
+
+			FEEditorTextureSourceNode* newTextureNode = new FEEditorTextureSourceNode(material->textures[i]);
+
+			positionOnCanvas.x = nodeGridRelativePosition.x + size.x / 2 - newTextureNode->getSize().x / 2.0f - (visualIndex % 2 == 0 ? (newTextureNode->getSize().x + 24.0f) : 0.0f);
+			positionOnCanvas.y = nodeGridRelativePosition.y + visualIndex / 2.0f * (newTextureNode->getSize().y + 24.0f);
+			newTextureNode->setPosition(positionOnCanvas);
+
+			materialNodeArea->addNode(newTextureNode);
+			visualIndex++;
+
+			// We should recreate proper connections.
+			if (material->getAlbedoMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, 5, newNode, 0);
+			}
+			else if (material->getAlbedoMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, 5, newNode, 6);
+			}
+
+			if (material->getNormalMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, 5, newNode, 1);
+			}
+			else if (material->getNormalMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, 5, newNode, 7);
+			}
+
+			if (material->getAOMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getAOMapChannel(), newNode, 2);
+			}
+			else if (material->getAOMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getAOMapChannel(), newNode, 8);
+			}
+
+			if (material->getRoughtnessMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getRoughtnessMapChannel(), newNode, 3);
+			}
+			else if (material->getRoughtnessMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getRoughtnessMapChannel(), newNode, 9);
+			}
+
+			if (material->getMetalnessMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getMetalnessMapChannel(), newNode, 4);
+			}
+			else if (material->getMetalnessMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getMetalnessMapChannel(), newNode, 10);
+			}
+
+			if (material->getDisplacementMap() == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getDisplacementMapChannel(), newNode, 5);
+			}
+			else if (material->getDisplacementMap(1) == material->textures[i])
+			{
+				materialNodeArea->tryToConnect(newTextureNode, objToWorkWith->getDisplacementMapChannel(), newNode, 11);
+			}
+		}
+#else
 		// ************** Drag&Drop **************
 		texturesListTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_TEXTURE, dragAndDropTexturesListCallback, reinterpret_cast<void**>(&objToWorkWith), "Drop to add texture");
 		if (materialBindingtargets.size() == 0)
@@ -709,6 +807,7 @@ void editMaterialPopup::show(FEMaterial* material)
 			}
 		}
 		// ************** Drag&Drop END **************
+#endif // USE_NODES
 	}
 }
 
@@ -725,6 +824,17 @@ void editMaterialPopup::render()
 		return;
 	}
 
+#ifdef USE_NODES
+	materialNodeArea->setAreaPosition(ImVec2(0, 0));
+	materialNodeArea->setAreaSize(ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 50));
+	materialNodeArea->update();
+	nodeAreaTarget->stickToItem();
+
+	windowPosition = ImGui::GetWindowPos();
+
+	if (ImGui::GetIO().MouseReleased[1])
+		mousePositionWhenContextMenuWasOpened = ImGui::GetMousePos();
+#else
 	// lame callback
 	if (tempContainer != RESOURCE_MANAGER.noTexture)
 	{
@@ -1371,10 +1481,10 @@ void editMaterialPopup::render()
 			objToWorkWith->setMetalnessMapIntensity(metalness);
 		}
 
-
 		ImGui::PopStyleColor();
 		ImGui::EndChild();
 	}
+#endif // USE_NODES
 
 	cancelButton->render();
 	if (cancelButton->getWasClicked())
@@ -1384,7 +1494,6 @@ void editMaterialPopup::render()
 	}
 
 	FEImGuiWindow::onRenderEnd();
-
 	selectTexturePopUp::getInstance().render();
 }
 
@@ -1393,6 +1502,20 @@ void editMaterialPopup::close()
 	FEImGuiWindow::close();
 }
 
+#ifdef USE_NODES
+bool editMaterialPopup::dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo)
+{
+	FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(RESOURCE_MANAGER.getTexture(object->getObjectID()));
+
+	ImVec2 positionOnCanvas;
+	positionOnCanvas.x = ImGui::GetMousePos().x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
+	positionOnCanvas.y = ImGui::GetMousePos().y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+
+	newNode->setPosition(positionOnCanvas);
+	materialNodeArea->addNode(newNode);
+	return true;
+}
+#else
 bool editMaterialPopup::dragAndDropCallback(FEObject* object, void** oldTexture)
 {
 	FETexture* newTexture = RESOURCE_MANAGER.getTexture(object->getObjectID());
@@ -1422,45 +1545,46 @@ bool editMaterialPopup::dragAndDropMaterialBindingsCallback(FEObject* object, vo
 
 	switch (info->textureBinding)
 	{
-		case 0:
-		{
-			material->setAlbedoMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
-			break;
-		}
+	case 0:
+	{
+		material->setAlbedoMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
+		break;
+	}
 
-		case 1:
-		{
-			material->setNormalMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
-			break;
-		}
+	case 1:
+	{
+		material->setNormalMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), subMaterial);
+		break;
+	}
 
-		case 2:
-		{
-			material->setAOMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
-			break;
-		}
+	case 2:
+	{
+		material->setAOMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+		break;
+	}
 
-		case 3:
-		{
-			material->setRoughtnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
-			break;
-		}
+	case 3:
+	{
+		material->setRoughtnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+		break;
+	}
 
-		case 4:
-		{
-			material->setMetalnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
-			break;
-		}
+	case 4:
+	{
+		material->setMetalnessMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+		break;
+	}
 
-		case 5:
-		{
-			material->setDisplacementMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
-			break;
-		}
+	case 5:
+	{
+		material->setDisplacementMap(RESOURCE_MANAGER.getTexture(object->getObjectID()), 0, subMaterial);
+		break;
+	}
 
-		default:
-			break;
+	default:
+		break;
 	}
 
 	return true;
 }
+#endif // USE_NODES

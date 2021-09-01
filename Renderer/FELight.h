@@ -112,6 +112,8 @@ namespace FocalEngine
 
 		float getCSMXYDepth();
 		void setCSMXYDepth(float newCSMXYDepth);
+
+		void setCastShadows(bool isCastShadows);
 	protected:
 		glm::vec3 direction = glm::vec3(0.0f, 0.0f, -1.0f);
 		glm::vec3 defaultDirection = glm::vec3(0.0f, 0.0f, -1.0f);

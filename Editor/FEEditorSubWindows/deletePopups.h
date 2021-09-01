@@ -1,6 +1,9 @@
 #pragma once
 
 #include "../FEProject.h"
+#include "../NodeSystem/FEEditorNodeSystem.h"
+#include "../NodeSystem/StandardNodes/FEEditorStandardNodes.h"
+
 class deleteDirectoryPopup;
 
 class deleteTexturePopup : public ImGuiModalPopup

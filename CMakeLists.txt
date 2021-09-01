@@ -111,6 +111,15 @@ file(GLOB FE_GammaAndHDRCorrection_SRC
 	"CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection/FE_Gamma_and_HDR_Correction_VS.glsl"
 )
 
+file(GLOB FE_SSAO_SRC
+	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_FS.glsl"
+	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_VS.glsl"
+)
+
+file(GLOB FE_FrustumCulling_CS_SRC
+	"CoreExtensions/ComputeShaders/FE_FrustumCulling_CS.glsl"
+)
+
 file(GLOB CoreExtensions_SRC
 	"CoreExtensions/FEFreeCamera.cpp"
 	"CoreExtensions/FEFreeCamera.h"
@@ -145,14 +154,20 @@ file(GLOB FEDearImguiWrapper_SRC
 )
 
 file(GLOB FEEditorSubWindows_SRC
+	"Editor/FEEditorSubWindows/deletePopups.cpp"
 	"Editor/FEEditorSubWindows/deletePopups.h"
+	"Editor/FEEditorSubWindows/editPopups.cpp"
 	"Editor/FEEditorSubWindows/editPopups.h"
 	"Editor/FEEditorSubWindows/gyzmosSettingsWindow.h"
+	"Editor/FEEditorSubWindows/loadTexturePopup.cpp"
 	"Editor/FEEditorSubWindows/loadTexturePopup.h"
+	"Editor/FEEditorSubWindows/projectWasModifiedPopUp.cpp"
 	"Editor/FEEditorSubWindows/projectWasModifiedPopUp.h"
 	"Editor/FEEditorSubWindows/renamePopups.cpp"
 	"Editor/FEEditorSubWindows/renamePopups.h"
+	"Editor/FEEditorSubWindows/selectPopups.cpp"
 	"Editor/FEEditorSubWindows/selectPopups.h"
+	"Editor/FEEditorSubWindows/shaderEditorWindow.cpp"
 	"Editor/FEEditorSubWindows/shaderEditorWindow.h"
 )
 
@@ -166,6 +181,29 @@ file(GLOB Editor_Materials_SRC
 	"Editor/Materials/FE_PixelAccurateSelection_FS.glsl"
 	"Editor/Materials/FE_PixelAccurateSelection_INSTANCED_VS.glsl"
 	"Editor/Materials/FE_PixelAccurateSelection_VS.glsl"
+)
+
+file(GLOB FEEditorNodeSystem_SRC
+	"Editor/NodeSystem/FEEditorNodeSystem.cpp"
+	"Editor/NodeSystem/FEEditorNodeSystem.h"
+	"Editor/NodeSystem/FEEditorNodeArea.cpp"
+	"Editor/NodeSystem/FEEditorNodeArea.h"
+	"Editor/NodeSystem/FEEditorNode.cpp"
+	"Editor/NodeSystem/FEEditorNode.h"
+	"Editor/NodeSystem/FEEditorNodeSocket.cpp"
+	"Editor/NodeSystem/FEEditorNodeSocket.h"
+)
+
+file(GLOB FEEditorNodeSystem_StandardNodes_SRC
+	"Editor/NodeSystem/StandardNodes/FEEditorStandardNodes.h"
+	"Editor/NodeSystem/StandardNodes/FEEditorMaterialNode.cpp"
+	"Editor/NodeSystem/StandardNodes/FEEditorMaterialNode.h"
+	"Editor/NodeSystem/StandardNodes/FEEditorFloatSourceNode.cpp"
+	"Editor/NodeSystem/StandardNodes/FEEditorFloatSourceNode.h"
+	"Editor/NodeSystem/StandardNodes/FEEditorTextureSourceNode.cpp"
+	"Editor/NodeSystem/StandardNodes/FEEditorTextureSourceNode.h"
+	"Editor/NodeSystem/StandardNodes/FEEditorTextureCreatingNode.cpp"
+	"Editor/NodeSystem/StandardNodes/FEEditorTextureCreatingNode.h"
 )
 
 # *************** RENDERER ***************
@@ -290,12 +328,16 @@ add_executable(FocalEngineEditor WIN32
 								 ${FE_DOF_SRC}
 								 ${FE_FXAA_SRC}
 								 ${FE_GammaAndHDRCorrection_SRC}
+								 ${FE_SSAO_SRC}
+								 ${FE_FrustumCulling_CS_SRC}
 								 ${CoreExtensions_SRC}
 								 # *************** EDITOR ***************
 								 ${Editor_SRC}
 								 ${FEDearImguiWrapper_SRC}
 								 ${FEEditorSubWindows_SRC}
 								 ${Editor_Materials_SRC}
+								 ${FEEditorNodeSystem_SRC}
+								 ${FEEditorNodeSystem_StandardNodes_SRC}
 								 # *************** RENDERER ***************
 								 ${Renderer_SRC}
 								 # *************** RESOURCE MANAGER ***************
@@ -330,12 +372,16 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_ChromaticAberrat
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_DOF" FILES ${FE_DOF_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_FXAA" FILES ${FE_FXAA_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection" FILES ${FE_GammaAndHDRCorrection_SRC})
+source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
+source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${FE_FrustumCulling_CS_SRC})
 source_group("Source Files/CoreExtensions" FILES ${CoreExtensions_SRC})
 # *************** EDITOR ***************
 source_group("Source Files/Editor" FILES ${Editor_SRC})
 source_group("Source Files/Editor/FEDearImguiWrapper" FILES ${FEDearImguiWrapper_SRC})
 source_group("Source Files/Editor/FEEditorSubWindows" FILES ${FEEditorSubWindows_SRC})
 source_group("Source Files/Editor/Materials" FILES ${Editor_Materials_SRC})
+source_group("Source Files/Editor/NodeSystem" FILES ${FEEditorNodeSystem_SRC})
+source_group("Source Files/Editor/NodeSystem/StandardNodes" FILES ${FEEditorNodeSystem_StandardNodes_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************

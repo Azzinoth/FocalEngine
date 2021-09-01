@@ -119,6 +119,7 @@ namespace FocalEngine
 
 #ifdef USE_DEFERRED_RENDERER
 		FEGBuffer* GBuffer = nullptr;
+		FEFramebuffer* SSAOFB = nullptr;
 #endif // USE_DEFERRED_RENDERER
 		
 	private:
@@ -158,10 +159,21 @@ namespace FocalEngine
 		float distanceFogGradient = 2.5f;
 		bool distanceFogEnabled = false;
 		void updateFogInShaders();
-		void checkForLoadedResources();
 
 		FEShader* shaderToForce = nullptr;
 		void forceShader(FEShader* shader);
+
+#ifdef USE_GPU_CULLING
+		// *********** GPU Culling ***********
+		FEShader* FE_FrustumCullingShader = nullptr;
+
+		GLuint frustumInfoBuffer = 0;
+		GLuint cullingLODCountersBuffer = 0;
+
+		void updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition);
+		void GPUCulling(FEEntityInstanced* entity);
+		// *********** GPU Culling END ***********
+#endif // USE_GPU_CULLING
 	};
 }
 

@@ -60,6 +60,30 @@ FERenderer::FERenderer()
 	skyDome = FEResourceManager::getInstance().createEntity(FEResourceManager::getInstance().getGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
 	skyDome->visible = false;
 	skyDome->transform.setScale(glm::vec3(50.0f));
+
+#ifdef USE_GPU_CULLING
+
+	FE_FrustumCullingShader = FEResourceManager::getInstance().createShader("FE_FrustumCullingShader", nullptr, nullptr,
+																									   nullptr, nullptr,
+																									   nullptr, FEResourceManager::getInstance().loadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
+
+	FE_GL_ERROR(glGenBuffers(1, &frustumInfoBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &cullingLODCountersBuffer));
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cullingLODCountersBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * 40, nullptr, GL_DYNAMIC_DRAW));
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, frustumInfoBuffer));
+
+	std::vector<float> frustumData;
+	for (size_t i = 0; i < 32; i++)
+	{
+		frustumData.push_back(0.0);
+	}
+
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), frustumData.data(), GL_DYNAMIC_DRAW));
+
+#endif // USE_GPU_CULLING
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -68,6 +92,7 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 
 #ifdef USE_DEFERRED_RENDERER
 	GBuffer = new FEGBuffer(sceneToTextureFB);
+	SSAOFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
 #endif // USE_DEFERRED_RENDERER
 }
 
@@ -310,14 +335,18 @@ void FERenderer::loadUniformBlocks()
 				// adding 4 because vec3 in shader buffer will occupy 16 bytes not 12.
 				size_t sizeOfFELightShaderInfo = sizeof(FELightShaderInfo) + 4;
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
+
+				//FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeOfFELightShaderInfo * info.size(), &info));
 				for (size_t j = 0; j < info.size(); j++)
 				{
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 0, 16, &info[j].typeAndAngles));
+					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo, sizeOfFELightShaderInfo, &info[j]));
+					/*FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 0, 16, &info[j].typeAndAngles));
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 16, 16, &info[j].position));
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 32, 16, &info[j].color));
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 48, 16, &info[j].direction));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 64, 64, &info[j].lightSpace));
+					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 64, 64, &info[j].lightSpace));*/
 				}
+
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
 			else if (iteratorBlock->first == directionalLightInfo_hash)
@@ -328,7 +357,8 @@ void FERenderer::loadUniformBlocks()
 
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
 				
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &directionalLightInfo.position));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 384, &directionalLightInfo));
+				/*FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &directionalLightInfo.position));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, &directionalLightInfo.color));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 32, 16, &directionalLightInfo.direction));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 48, 64, &directionalLightInfo.CSM0));
@@ -339,7 +369,7 @@ void FERenderer::loadUniformBlocks()
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 368, 4, &directionalLightInfo.activeCascades));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 372, 4, &directionalLightInfo.biasFixed));
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 376, 4, &directionalLightInfo.biasVariableIntensity));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 380, 4, &directionalLightInfo.intensity));
+				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 380, 4, &directionalLightInfo.intensity));*/
 
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
@@ -354,9 +384,9 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-	float originalCullingDistance = entityInstanced->gameModel->cullDistance;
-
-	// while drawing shadow map renderer will use a lot of LOD0 trees!!!
+#ifdef USE_GPU_CULLING
+	GPUCulling(entityInstanced);
+#else
 	if (shadowMap)
 	{
 		frustum[5][0] = currentCamera->getFrustumPlanes()[5][0];
@@ -364,12 +394,13 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 		frustum[5][2] = currentCamera->getFrustumPlanes()[5][2];
 		frustum[5][3] = currentCamera->getFrustumPlanes()[5][3];
 	}
+
 	testTime += entityInstanced->cullInstances(currentCamera->position, frustum, freezeCulling);
+#endif // USE_GPU_CULLING
 
 	FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
 	if (originalShader->getName() == "FEPBRShader")
 	{
-		//FEShader* originalShader = entity->gameModel->material->shader;
 		if (shaderToForce)
 		{
 			entityInstanced->gameModel->getMaterial()->shader = shaderToForce;
@@ -436,7 +467,6 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 void FERenderer::render(FEBasicCamera* currentCamera)
 {
-	checkForLoadedResources();
 	currentCamera->updateFrustumPlanes();
 
 	lastTestTime = testTime;
@@ -462,7 +492,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	}
 
 	loadUniformBlocks();
-	
+
 	// ********* GENERATE SHADOW MAPS *********
 	auto itLight = FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].begin();
 	while (itLight != FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].end())
@@ -481,7 +511,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				currentCamera->viewMatrix = light->cascadeData[i].viewMat;
 
 				FE_GL_ERROR(glViewport(0, 0, light->cascadeData[i].frameBuffer->getWidth(), light->cascadeData[i].frameBuffer->getHeight()));
-
+#ifdef USE_GPU_CULLING
+				updateGPUCullingFrustum(light->cascadeData[i].frustum, currentCamera->getPosition());
+#endif //USE_GPU_CULLING
 				light->cascadeData[i].frameBuffer->bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
 
@@ -578,7 +610,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 		itLight++;
 	}
-
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
@@ -599,6 +630,10 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	glDrawBuffers(6, attachments);
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+#ifdef USE_GPU_CULLING
+	updateGPUCullingFrustum(currentCamera->frustum, currentCamera->getPosition());
+#endif //USE_GPU_CULLING
 
 	auto entityIterator = scene.entityMap.begin();
 	while (entityIterator != scene.entityMap.end())
@@ -633,20 +668,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	}
 
 	GBuffer->GFrameBuffer->unBind();
-
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer->GFrameBuffer->fbo);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneToTextureFB->fbo); // write to default framebuffer
-	glBlitFramebuffer(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
-					  0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
-					  GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-	sceneToTextureFB->bind();
-
-	unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, attachments_);
-
 	forceShader(nullptr);
 #else
 	sceneToTextureFB->bind();
@@ -661,6 +682,84 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 
 #ifdef USE_DEFERRED_RENDERER
+	
+	// ************************************ SSAO ************************************
+#ifdef USE_SSAO
+	SSAOFB->bind();
+	FEShader* SSAOShader = FEResourceManager::getInstance().getShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+	SSAOShader->start();
+	loadStandardParams(SSAOShader, currentCamera, true);
+	SSAOShader->loadDataToGPU();
+#endif // USE_SSAO
+	GBuffer->albedo->bind(0);
+	GBuffer->normals->bind(1);
+	GBuffer->materialProperties->bind(2);
+	GBuffer->positions->bind(3);
+	GBuffer->shaderProperties->bind(4);
+#ifdef USE_SSAO
+	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	SSAOShader->stop();
+
+	// First blur stage
+	FEShader* BlurShader = FEResourceManager::getInstance().getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
+	BlurShader->start();
+	BlurShader->getParameter("FEBlurDirection")->updateData(glm::vec2(0.0f, 1.0f));
+	BlurShader->getParameter("BloomSize")->updateData(1.5f);
+
+	BlurShader->loadDataToGPU();
+
+	SSAOFB->getColorAttachment()->bind(0);
+	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	// Second blur stage
+	BlurShader->getParameter("FEBlurDirection")->updateData(glm::vec2(1.0f, 0.0f));
+	BlurShader->getParameter("BloomSize")->updateData(1.5f);
+
+	BlurShader->loadDataToGPU();
+
+	SSAOFB->getColorAttachment()->bind(0);
+	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	BlurShader->stop();
+
+	SSAOFB->getColorAttachment()->unBind();
+	SSAOFB->unBind();
+
+	GBuffer->albedo->bind(0);
+	GBuffer->normals->bind(1);
+	GBuffer->materialProperties->bind(2);
+	GBuffer->positions->bind(3);
+	GBuffer->shaderProperties->bind(4);
+	SSAOFB->getColorAttachment()->bind(5);
+#endif // USE_SSAO
+	// ************************************ SSAO END ************************************
+
+	// ************************************ COPYING DEPTH BUFFER ************************************
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer->GFrameBuffer->fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, sceneToTextureFB->fbo); // write to default framebuffer
+	glBlitFramebuffer(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
+		0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight(),
+		GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+	// ************************************ COPYING DEPTH BUFFER END ************************************
+
+	sceneToTextureFB->bind();
+
+	unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments_);
+
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
 
@@ -668,11 +767,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	screenQuadShader->start();
 	loadStandardParams(screenQuadShader, currentCamera, true);
 	screenQuadShader->loadDataToGPU();
-	GBuffer->albedo->bind(0);
-	GBuffer->normals->bind(1);
-	GBuffer->materialProperties->bind(2);
-	GBuffer->positions->bind(3);
-	GBuffer->shaderProperties->bind(4);
 
 	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -938,7 +1032,7 @@ std::vector<std::string> FERenderer::getPostProcessList()
 
 void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 {
-	char* pixels = new char[4 * width * height];
+	unsigned char* pixels = new unsigned char[4 * width * height];
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID()));
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
@@ -1209,44 +1303,60 @@ void FERenderer::setChromaticAberrationIntensity(float newValue)
 
 float FERenderer::getDOFNearDistance()
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("depthThreshold")->data;
 }
 
 void FERenderer::setDOFNearDistance(float newValue)
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return;
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("depthThreshold")->updateData(newValue);
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[1]->shader->getParameter("depthThreshold")->updateData(newValue);
 }
 
 float FERenderer::getDOFFarDistance()
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("depthThresholdFar")->data;
 }
 
 void FERenderer::setDOFFarDistance(float newValue)
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return;
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("depthThresholdFar")->updateData(newValue);
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[1]->shader->getParameter("depthThresholdFar")->updateData(newValue);
 }
 
 float FERenderer::getDOFStrength()
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("blurSize")->data;
 }
 
 void FERenderer::setDOFStrength(float newValue)
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return;
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("blurSize")->updateData(newValue);
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[1]->shader->getParameter("blurSize")->updateData(newValue);
 }
 
 float FERenderer::getDOFDistanceDependentStrength()
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("intMult")->data;
 }
 
 void FERenderer::setDOFDistanceDependentStrength(float newValue)
 {
+	if (getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
+		return;
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[0]->shader->getParameter("intMult")->updateData(newValue);
 	getPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->stages[1]->shader->getParameter("intMult")->updateData(newValue);
 }
@@ -1302,77 +1412,6 @@ void FERenderer::setFXAAReduceMul(float newValue)
 	getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAAReduceMul")->updateData(newValue);
 }
 
-static int totalJobs = 0;
-
-void FERenderer::checkForLoadedResources()
-{
-	FEResourceManager& RESOURCE_MANAGER = FEResourceManager::getInstance();
-	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
-	{
-		size_t count = JOB_MANAGER.textureLoadJobs[i]->getReadyJobCount();
-		if (count == 0)
-			continue;
-
-		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
-		{
-			totalJobs += count;
-			for (size_t j = 0; j < count; j++)
-			{
-				std::pair<char**, void*> jobInfo = JOB_MANAGER.textureLoadJobs[i]->getJobByIndex(j);
-				//FETexture* testTexture = reinterpret_cast<FETexture*>(jobInfo.second);
-				RESOURCE_MANAGER.LoadFETexture(*jobInfo.first, "", reinterpret_cast<FETexture*>(jobInfo.second));
-			}
-
-			JOB_MANAGER.textureLoadJobs[i]->clearJobs();
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
-		}
-
-		// a bit waste of time, after each batch of textures loads just set dirtyFlag to recreate all materials preview
-		std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
-		for (size_t i = 0; i < materialList.size(); i++)
-		{
-			RESOURCE_MANAGER.getMaterial(materialList[i])->setDirtyFlag(true);
-		}
-	}
-
-	int jobsToHandle = JOB_MANAGER.textureListToLoad.size();
-	int freeThreadCount = JOB_MANAGER.getFreeTextureThreadCount();
-	if (freeThreadCount == 0 || jobsToHandle == 0)
-		return;
-
-	size_t jobsPerThread = jobsToHandle / freeThreadCount;
-
-	if (JOB_MANAGER.textureListToLoad.size() == 0)
-		return;
-
-	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
-	{
-		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
-		{
-			size_t lastElement = jobsPerThread < JOB_MANAGER.textureListToLoad.size() ? jobsPerThread : JOB_MANAGER.textureListToLoad.size();
-			if (jobsPerThread == 0)
-				lastElement = JOB_MANAGER.textureListToLoad.size();
-			for (size_t j = 0; j < lastElement; j++)
-			{
-				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
-			}
-
-			std::vector<std::pair<std::string, void*>>& list = JOB_MANAGER.textureListToLoad;
-			JOB_MANAGER.textureListToLoad.erase(JOB_MANAGER.textureListToLoad.begin(), JOB_MANAGER.textureListToLoad.begin() + lastElement);
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
-
-			/*for (size_t j = 0; j < JOB_MANAGER.textureListToLoad.size(); j++)
-			{
-				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
-			}
-			JOB_MANAGER.textureListToLoad.clear();
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
-
-			break;*/
-		}
-	}
-}
-
 void FERenderer::drawAABB(FEAABB AABB, glm::vec3 color, float lineWidth)
 {
 	// bottom plane
@@ -1399,6 +1438,71 @@ void FERenderer::forceShader(FEShader* shader)
 	shaderToForce = shader;
 }
 
+#ifdef USE_GPU_CULLING
+
+void FERenderer::updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition)
+{
+	float* frustumBufferData = (float*)glMapNamedBufferRange(frustumInfoBuffer, 0, sizeof(float) * (32),
+		GL_MAP_WRITE_BIT |
+		GL_MAP_INVALIDATE_BUFFER_BIT |
+		GL_MAP_UNSYNCHRONIZED_BIT);
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		frustumBufferData[i * 4] = frustum[i][0];
+		frustumBufferData[i * 4 + 1] = frustum[i][1];
+		frustumBufferData[i * 4 + 2] = frustum[i][2];
+		frustumBufferData[i * 4 + 3] = frustum[i][3];
+	}
+
+	frustumBufferData[24] = cameraPosition[0];
+	frustumBufferData[25] = cameraPosition[1];
+	frustumBufferData[26] = cameraPosition[2];
+
+	FE_GL_ERROR(glUnmapNamedBuffer(frustumInfoBuffer));
+}
+
+void FERenderer::GPUCulling(FEEntityInstanced* entity)
+{
+	if (freezeCulling)
+		return;
+
+	if (entity->getDirtyFlag())
+		entity->initializeGPUCulling();
+
+	//FE_GL_ERROR(glUseProgram(cullingComputeProgram));
+	FE_FrustumCullingShader->start();
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, entity->sourceDataBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, entity->positionsBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, frustumInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, entity->LODBuffers[0]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, entity->AABBSizesBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cullingLODCountersBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, entity->LODInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, entity->LODBuffers[1]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, entity->LODBuffers[2]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, entity->LODBuffers[3]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, entity->indirectDrawInfoBuffer));
+
+	FE_FrustumCullingShader->dispatch(GLuint(ceil(entity->instanceCount / 64.0f)), 1, 1);
+	//FE_GL_ERROR(glDispatchCompute(GLuint(ceil(entity->instanceCount / 64.0f)), 1, 1));
+	FE_GL_ERROR(glMemoryBarrier(/*GL_SHADER_STORAGE_BARRIER_BIT*/GL_ALL_BARRIER_BITS));
+
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, 0));
+	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, 0));
+}
+#endif // USE_GPU_CULLING
+
 #ifdef USE_DEFERRED_RENDERER
 
 void FEGBuffer::initializeResources(FEFramebuffer* mainFrameBuffer)
@@ -1408,7 +1512,7 @@ void FEGBuffer::initializeResources(FEFramebuffer* mainFrameBuffer)
 	positions = FEResourceManager::getInstance().createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(positions, 1);
 
-	normals = FEResourceManager::getInstance().createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	normals = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(normals, 2);
 
 	albedo = FEResourceManager::getInstance().createTexture(GL_RGB, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());

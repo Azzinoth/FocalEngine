@@ -32,7 +32,11 @@ bool FEngine::isWindowOpened()
 
 void FEngine::beginFrame(bool internalCall)
 {
-	if (!internalCall) TIME.beginTimeStamp();
+	if (!internalCall)
+	{
+		TIME.beginTimeStamp();
+		RESOURCE_MANAGER.updateAsyncLoadedResources();
+	}
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -160,8 +164,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	windowTitle = WindowTitle;
 
 	glfwInit();
-	/*if (!glfwInit())
-		return -1;*/
 
 	window = glfwCreateWindow(windowW, windowH, windowTitle.c_str(), NULL, NULL);
 	if (!window)
@@ -334,6 +336,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER.addPostProcess(DOFEffect);
 	// ************************************ DOF END ************************************
 
+	// ************************************ chromaticAberrationEffect ************************************
 	FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
 	chromaticAberrationEffect->setID("506D804162647749060C3E68"/*"chromaticAberration"*/);
 
@@ -348,7 +351,21 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RENDERER.addPostProcess(chromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, getRenderTargetWidth(), getRenderTargetHeight()));
-	
+	// ************************************ chromaticAberrationEffect END ************************************
+
+	// ************************************ SSAO ************************************
+#ifdef USE_DEFERRED_RENDERER
+	FEShader* FESSAOShader = RESOURCE_MANAGER.createShader("FESSAOShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str(),
+																		   RESOURCE_MANAGER.loadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str());
+
+	RESOURCE_MANAGER.shaders.erase(FESSAOShader->getObjectID());
+	FESSAOShader->setID("1037115B676E383E36345079"/*"FESSAOShader"*/);
+	RESOURCE_MANAGER.shaders[FESSAOShader->getObjectID()] = FESSAOShader;
+
+	RESOURCE_MANAGER.makeShaderStandard(FESSAOShader);
+#endif // USE_DEFERRED_RENDERER
+	// ************************************ SSAO END ************************************
+
 	RENDERER.shadowMapMaterial = RESOURCE_MANAGER.createMaterial("shadowMapMaterial");
 	RENDERER.shadowMapMaterial->shader = RESOURCE_MANAGER.createShader("FEShadowMapShader", RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str(),
 																							RESOURCE_MANAGER.loadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
@@ -712,12 +729,20 @@ void FEngine::renderTargetResize()
 	RENDERER.addPostProcess(DOFEffect);
 	// ************************************ DOF END ************************************
 
+	// ************************************ chromaticAberrationEffect ************************************
 	FEPostProcess* chromaticAberrationEffect = ENGINE.createPostProcess("chromaticAberration");
 	chromaticAberrationEffect->setID("506D804162647749060C3E68"/*"chromaticAberration"*/);
 	chromaticAberrationEffect->addStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FEPP_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.getShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
 	RENDERER.addPostProcess(chromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	RENDERER.postProcessEffects.back()->replaceOutTexture(0, RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, engineObj.renderTargetW, engineObj.renderTargetH));
+	// ************************************ chromaticAberrationEffect END ************************************
+
+	// ************************************ SSAO ************************************
+#ifdef USE_DEFERRED_RENDERER
+	RENDERER.SSAOFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH, false);
+#endif // USE_DEFERRED_RENDERER
+	// ************************************ SSAO END ************************************
 
 	if (engineObj.clientRenderTargetResizeCallbackImpl != nullptr)
 	{

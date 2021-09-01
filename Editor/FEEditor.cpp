@@ -489,6 +489,20 @@ void FEEditor::displayLightProperties(FELight* light)
 		ImGui::Separator();
 		ImGui::Text("-------------Shadow settings--------------");
 
+		ImGui::Text("Cast shadows:");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(200);
+		bool castShadows = directionalLight->isCastShadows();
+		ImGui::Checkbox("##Cast shadows", &castShadows);
+		directionalLight->setCastShadows(castShadows);
+		showToolTip("Will this light cast shadows.");
+
+		if (!directionalLight->isCastShadows())
+		{
+			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+		}
+		
 		ImGui::Text("Number of cascades :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
@@ -559,6 +573,13 @@ void FEEditor::displayLightProperties(FELight* light)
 			float shadowBiasIntensity = directionalLight->getShadowBiasVariableIntensity();
 			ImGui::DragFloat("##shadowBiasIntensity", &shadowBiasIntensity, 0.01f, 0.01f, 10.0f);
 			directionalLight->setShadowBiasVariableIntensity(shadowBiasIntensity);
+		}
+
+		if (!directionalLight->isCastShadows())
+		{
+			//ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
+			ImGui::PopItemFlag();
+			ImGui::PopStyleVar();
 		}
 	}
 	else if (light->getType() == FE_POINT_LIGHT)

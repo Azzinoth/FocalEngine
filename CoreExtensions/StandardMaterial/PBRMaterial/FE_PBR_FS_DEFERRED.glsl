@@ -93,24 +93,29 @@ vec3 getNormal()
 	return texture(textures[1], FS_IN.UV).rgb;
 }
 
+vec4 materialProperties;
 float getAO()
 {
-	return texture(textures[2], FS_IN.UV).r;
+	//return texture(textures[2], FS_IN.UV).r;
+	return materialProperties.r;
 }
 
 float getRoughtness()
 {
-	return texture(textures[2], FS_IN.UV).g;
+	//return texture(textures[2], FS_IN.UV).g;
+	return materialProperties.g;
 }
 
 float getMetalness()
 {
-	return texture(textures[2], FS_IN.UV).b;
+	//return texture(textures[2], FS_IN.UV).b;
+	return materialProperties.b;
 }
 
 float getDisplacement()
 {
-	return texture(textures[2], FS_IN.UV).a;
+	//return texture(textures[2], FS_IN.UV).a;
+	return materialProperties.a;
 }
 
 const float PI = 3.14159265359;
@@ -164,25 +169,25 @@ float shadowCalculationCSM1(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 float shadowCalculationCSM2(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 
-//#define NUM_BLUR_TAPS 16
-//
-//vec2 filterTaps[NUM_BLUR_TAPS] = vec2[](
-//	vec2(-0.94201624, -0.39906216),
-//	vec2(0.94558609, -0.76890725),
-//	vec2(-0.094184101, -0.92938870),
-//	vec2(0.34495938, 0.29387760),
-//	vec2(-0.91588581, 0.45771432),
-//	vec2(-0.81544232, -0.87912464),
-//	vec2(-0.38277543, 0.27676845),
-//	vec2(0.97484398, 0.75648379),
-//	vec2(0.44323325, -0.97511554),
-//	vec2(0.53742981, -0.47373420),
-//	vec2(-0.26496911, -0.41893023),
-//	vec2(0.79197514, 0.19090188),
-//	vec2(-0.24188840, 0.99706507),
-//	vec2(-0.81409955, 0.91437590),
-//	vec2(0.19984126, 0.78641367),
-//	vec2(0.14383161, -0.14100790));
+#define NUM_BLUR_TAPS 16
+
+vec2 filterTaps[NUM_BLUR_TAPS] = vec2[](
+	vec2(-0.94201624, -0.39906216),
+	vec2(0.94558609, -0.76890725),
+	vec2(-0.094184101, -0.92938870),
+	vec2(0.34495938, 0.29387760),
+	vec2(-0.91588581, 0.45771432),
+	vec2(-0.81544232, -0.87912464),
+	vec2(-0.38277543, 0.27676845),
+	vec2(0.97484398, 0.75648379),
+	vec2(0.44323325, -0.97511554),
+	vec2(0.53742981, -0.47373420),
+	vec2(-0.26496911, -0.41893023),
+	vec2(0.79197514, 0.19090188),
+	vec2(-0.24188840, 0.99706507),
+	vec2(-0.81409955, 0.91437590),
+	vec2(0.19984126, 0.78641367),
+	vec2(0.14383161, -0.14100790));
 
 //#define NUM_BLUR_TAPS 12
 //
@@ -193,53 +198,45 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir);
 //										  vec2( 0.507431,  0.064425), vec2( 0.89642,   0.412458),
 //										  vec2(-0.32194,  -0.932615), vec2(-0.791559, -0.597705));
 
-#define NUM_BLUR_TAPS 64
-vec2 filterTaps[NUM_BLUR_TAPS] = vec2[](
-	vec2(-0.613392, 0.617481), vec2(0.170019, -0.040254),
-	vec2(-0.299417, 0.791925), vec2(0.645680, 0.493210),
-	vec2(-0.651784, 0.717887), vec2(0.421003, 0.027070),
-	vec2(-0.817194, -0.271096), vec2(-0.705374, -0.668203),
-	vec2(0.977050, -0.108615), vec2(0.063326, 0.142369),
-	vec2(0.203528, 0.214331), vec2(-0.667531, 0.326090),
-	vec2(-0.098422, -0.295755), vec2(-0.885922, 0.215369),
-	vec2(0.566637, 0.605213), vec2(0.039766, -0.396100),
-	vec2(0.751946, 0.453352), vec2(0.078707, -0.715323),
-	vec2(-0.075838, -0.529344), vec2(0.724479, -0.580798),
-	vec2(0.222999, -0.215125), vec2(-0.467574, -0.405438),
-	vec2(-0.248268, -0.814753), vec2(0.354411, -0.887570),
-	vec2(0.175817, 0.382366), vec2(0.487472, -0.063082),
-	vec2(-0.084078, 0.898312), vec2(0.488876, -0.783441),
-	vec2(0.470016, 0.217933), vec2(-0.696890, -0.549791),
-	vec2(-0.149693, 0.605762), vec2(0.034211, 0.979980),
-	vec2(0.503098, -0.308878), vec2(-0.016205, -0.872921),
-	vec2(0.385784, -0.393902), vec2(-0.146886, -0.859249),
-	vec2(0.643361, 0.164098), vec2(0.634388, -0.049471),
-	vec2(-0.688894, 0.007843), vec2(0.464034, -0.188818),
-	vec2(-0.440840, 0.137486), vec2(0.364483, 0.511704),
-	vec2(0.034028, 0.325968), vec2(0.099094, -0.308023),
-	vec2(0.693960, -0.366253), vec2(0.678884, -0.204688),
-	vec2(0.001801, 0.780328), vec2(0.145177, -0.898984),
-	vec2(0.062655, -0.611866), vec2(0.315226, -0.604297),
-	vec2(-0.780145, 0.486251), vec2(-0.371868, 0.882138),
-	vec2(0.200476, 0.494430), vec2(-0.494552, -0.711051),
-	vec2(0.612476, 0.705252), vec2(-0.578845, -0.768792),
-	vec2(-0.772454, -0.090976), vec2(0.504440, 0.372295),
-	vec2(0.155736, 0.065157), vec2(0.391522, 0.849605),
-	vec2(-0.620106, -0.328104), vec2(0.789239, -0.419965),
-	vec2(-0.545396, 0.538133), vec2(-0.178564, -0.596057));
-
-#define SSAO_SAMPLES_COUNT 8
-vec3 SSAOOffsets[16] = vec3[](vec3(-0.613392, 0.617481, 0.791925), vec3(0.170019, -0.040254, -0.668203),
-												vec3(-0.299417, 0.791925, -0.271096), vec3(0.645680, 0.493210, 0.027070),
-												vec3(-0.651784, 0.717887, 0.421003), vec3(0.421003, 0.027070, -0.817194),
-												vec3(-0.817194, -0.271096, -0.705374), vec3(-0.705374, -0.668203, 0.651784),
-												vec3(-0.772454, -0.090976, 0.751784), vec3(0.504440, 0.372295, -0.368203),
-												vec3(0.155736, 0.065157, -0.190976), vec3(0.391522, 0.849605, -0.205374),
-												vec3(-0.620106, -0.328104, 0.6223403), vec3(0.789239, -0.419965, -0.070254),
-												vec3(-0.545396, 0.538133, 0.2945617), vec3(-0.178564, -0.596057, -0.493210));
+//#define NUM_BLUR_TAPS 64
+//vec2 filterTaps[NUM_BLUR_TAPS] = vec2[](
+//	vec2(-0.613392, 0.617481), vec2(0.170019, -0.040254),
+//	vec2(-0.299417, 0.791925), vec2(0.645680, 0.493210),
+//	vec2(-0.651784, 0.717887), vec2(0.421003, 0.027070),
+//	vec2(-0.817194, -0.271096), vec2(-0.705374, -0.668203),
+//	vec2(0.977050, -0.108615), vec2(0.063326, 0.142369),
+//	vec2(0.203528, 0.214331), vec2(-0.667531, 0.326090),
+//	vec2(-0.098422, -0.295755), vec2(-0.885922, 0.215369),
+//	vec2(0.566637, 0.605213), vec2(0.039766, -0.396100),
+//	vec2(0.751946, 0.453352), vec2(0.078707, -0.715323),
+//	vec2(-0.075838, -0.529344), vec2(0.724479, -0.580798),
+//	vec2(0.222999, -0.215125), vec2(-0.467574, -0.405438),
+//	vec2(-0.248268, -0.814753), vec2(0.354411, -0.887570),
+//	vec2(0.175817, 0.382366), vec2(0.487472, -0.063082),
+//	vec2(-0.084078, 0.898312), vec2(0.488876, -0.783441),
+//	vec2(0.470016, 0.217933), vec2(-0.696890, -0.549791),
+//	vec2(-0.149693, 0.605762), vec2(0.034211, 0.979980),
+//	vec2(0.503098, -0.308878), vec2(-0.016205, -0.872921),
+//	vec2(0.385784, -0.393902), vec2(-0.146886, -0.859249),
+//	vec2(0.643361, 0.164098), vec2(0.634388, -0.049471),
+//	vec2(-0.688894, 0.007843), vec2(0.464034, -0.188818),
+//	vec2(-0.440840, 0.137486), vec2(0.364483, 0.511704),
+//	vec2(0.034028, 0.325968), vec2(0.099094, -0.308023),
+//	vec2(0.693960, -0.366253), vec2(0.678884, -0.204688),
+//	vec2(0.001801, 0.780328), vec2(0.145177, -0.898984),
+//	vec2(0.062655, -0.611866), vec2(0.315226, -0.604297),
+//	vec2(-0.780145, 0.486251), vec2(-0.371868, 0.882138),
+//	vec2(0.200476, 0.494430), vec2(-0.494552, -0.711051),
+//	vec2(0.612476, 0.705252), vec2(-0.578845, -0.768792),
+//	vec2(-0.772454, -0.090976), vec2(0.504440, 0.372295),
+//	vec2(0.155736, 0.065157), vec2(0.391522, 0.849605),
+//	vec2(-0.620106, -0.328104), vec2(0.789239, -0.419965),
+//	vec2(-0.545396, 0.538133), vec2(-0.178564, -0.596057));
 
 void main(void)
 {
+	materialProperties = texture(textures[2], FS_IN.UV);
+	
 	// checking viewDirection
 	if (debugFlag == 1)
 	{
@@ -302,17 +299,21 @@ void main(void)
 	}
 
 	vec4 textureColor = getAlbedo();
-	if (textureColor.a < 0.2)
-	{
-		discard;
-	}
+	//if (textureColor.a < 0.2)
+	//{
+	//	discard;
+	//}
 	
 	vec3 baseColor = pow(textureColor.rgb, vec3(FEGamma));
 	vec3 viewDirection = normalize(FECameraPosition - getWorldPosition());
-	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.009f;
+	vec3 ambientColor = baseColor * 0.09f + vec3(0.55f, 0.73f, 0.87f) * 0.0045f;
 
 	vec3 normal = getNormal();
 	
+// #ifdef USE_SSAO
+	//float SSAOResult = texture(textures[5], FS_IN.UV).r;
+	//outColor = vec4(ambientColor * getAO() * SSAOResult, 1.0f);
+//#elseif
 	outColor = vec4(ambientColor * getAO(), 1.0f);
 
 	for (int i = 0; i < MAX_LIGHTS; i++)
@@ -370,6 +371,7 @@ float getBias(vec3 normal, vec3 lightDir)
 
 float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
+
 	float shadow = 0.0;
 	
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -543,6 +545,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 	if (FEReceiveShadows == 0)
 		return Lo;
+		
 
 	float shadow = 0.0;
 	float distanceToCam = length(FECameraPosition - getWorldPosition());

@@ -57,6 +57,40 @@ FEEntityInstanced::FEEntityInstanced(FEGameModel* gameModel, std::string Name) :
 	instancedXYZCount = 32;
 
 	LODCounts = new int[gameModel->getMaxLODCount()];
+#ifdef USE_GPU_CULLING
+	testLODCount = new int[gameModel->getMaxLODCount()];
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		testLODCount[i] = 0;
+	}
+
+	LODBuffers = new GLenum[gameModel->getMaxLODCount()];
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		FE_GL_ERROR(glGenBuffers(1, &LODBuffers[i]));
+	}
+
+	FE_GL_ERROR(glGenBuffers(1, &sourceDataBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &positionsBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &AABBSizesBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &LODInfoBuffer));
+
+	indirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		indirectDrawsInfo[i].count = gameModel->getLODMesh(i) == nullptr ? 0 :gameModel->getLODMesh(i)->getVertexCount();
+		indirectDrawsInfo[i].baseInstance = 0;
+		indirectDrawsInfo[i].baseVertex = 0;
+		indirectDrawsInfo[i].firstIndex = 0;
+		indirectDrawsInfo[i].primCount = 0;
+	}
+
+	FE_GL_ERROR(glGenBuffers(1, &indirectDrawInfoBuffer));
+	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawInfoBuffer));
+	FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, indirectDrawsInfo, GL_MAP_READ_BIT));
+	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
+	
+#endif // USE_GPU_CULLING
 	instancedMatricesLOD.resize(gameModel->getMaxLODCount());
 	transform.setScale(glm::vec3(1.0f));
 }
@@ -68,6 +102,9 @@ FEEntityInstanced::~FEEntityInstanced()
 	_aligned_free(instancedZ);
 
 	delete[] LODCounts;
+#ifdef USE_GPU_CULLING
+	delete[] indirectDrawsInfo;
+#endif // USE_GPU_CULLING
 }
 
 void FEEntityInstanced::render()
@@ -77,14 +114,17 @@ void FEEntityInstanced::render()
 
 	if (lastFrameGameModel != gameModel || gameModel->dirtyFlag)
 	{
-		dirtyFlag = true;
+		setDirtyFlag(true);
 		lastFrameGameModel = gameModel;
 	}
 
-	if (dirtyFlag)
+	if (getDirtyFlag())
 	{
 		updateBuffers();
-		dirtyFlag = false;
+		setDirtyFlag(false);
+#ifdef USE_GPU_CULLING
+		initializeGPUCulling();
+#endif // USE_GPU_CULLING
 		gameModel->dirtyFlag = false;
 	}
 
@@ -97,11 +137,23 @@ void FEEntityInstanced::render()
 	{
 		if (gameModel->isLODBillboard(i))
 			break;
-
+#ifdef USE_GPU_CULLING
+		if (gameModel->getLODMesh(i) != nullptr)
+		{
+			if (LODBuffers[i] != 0)
+			{
+				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, LODBuffers[i]));
+			}
+			else
+			{
+				break;
+			}
+#else
 		if (LODCounts[i] > 0 && gameModel->getLODMesh(i) != nullptr)
 		{
 			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedBuffer));
 			FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, LODCounts[i] * sizeof(glm::mat4), instancedMatricesLOD[i].data()));
+#endif // USE_GPU_CULLING
 
 			FE_GL_ERROR(glBindVertexArray(gameModel->getLODMesh(i)->getVaoID()));
 
@@ -121,7 +173,13 @@ void FEEntityInstanced::render()
 			FE_GL_ERROR(glEnableVertexAttribArray(9));
 			FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
+#ifdef USE_GPU_CULLING
+			FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawInfoBuffer));
+			FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(i * sizeof(FEDrawElementsIndirectCommand))));
+#else
 			FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, gameModel->getLODMesh(i)->getVertexCount(), GL_UNSIGNED_INT, 0, LODCounts[i]));
+#endif // USE_GPU_CULLING
+			
 			FE_GL_ERROR(glBindVertexArray(0));
 			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 		}
@@ -156,11 +214,24 @@ void FEEntityInstanced::renderOnlyBillbords(glm::vec3 cameraPosition)
 {
 	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
 	{
+#ifdef USE_GPU_CULLING
+		if (gameModel->isLODBillboard(i) && gameModel->getLODMesh(i) != nullptr /*&& testLODCount[i] > 0*/)
+		{
+			if (LODBuffers[i] != 0)
+			{
+				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, LODBuffers[i]));
+			}
+			else
+			{
+				break;
+			}
+#else
 		if (gameModel->isLODBillboard(i) && gameModel->getLODMesh(i) != nullptr && LODCounts[i] > 0)
 		{
 			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedBuffer));
 			FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, LODCounts[i] * sizeof(glm::mat4), instancedMatricesBillboard.data()));
-
+#endif // USE_GPU_CULLING
+			
 			FE_GL_ERROR(glBindVertexArray(gameModel->getLODMesh(i)->getVaoID()));
 
 			if ((gameModel->getLODMesh(i)->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -179,7 +250,12 @@ void FEEntityInstanced::renderOnlyBillbords(glm::vec3 cameraPosition)
 			FE_GL_ERROR(glEnableVertexAttribArray(9));
 			FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
+#ifdef USE_GPU_CULLING
+			FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawInfoBuffer));
+			FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(i * sizeof(FEDrawElementsIndirectCommand))));
+#else
 			FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, gameModel->getLODMesh(i)->getVertexCount(), GL_UNSIGNED_INT, 0, LODCounts[i]));
+#endif // USE_GPU_CULLING
 
 			FE_GL_ERROR(glBindVertexArray(0));
 			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
@@ -307,6 +383,10 @@ void FEEntityInstanced::updateBuffers()
 
 	transform.dirtyFlag = true;
 	getAABB();
+
+//#ifdef USE_GPU_CULLING
+//	initializeGPUCulling();
+//#endif // USE_GPU_CULLING
 }
 
 void FEEntityInstanced::clear()
@@ -380,7 +460,11 @@ void FEEntityInstanced::addInstanceInternal(glm::mat4 instanceMatrix)
 		instancedMatricesLOD[i].resize(instanceCount);
 	}
 
-	dirtyFlag = true;
+//#ifdef USE_GPU_CULLING
+//	initializeGPUCulling();
+//#endif // USE_GPU_CULLING
+
+	setDirtyFlag(true);
 }
 
 void FEEntityInstanced::addInstances(glm::mat4* instanceMatrix, size_t count)
@@ -437,7 +521,11 @@ void FEEntityInstanced::addInstances(glm::mat4* instanceMatrix, size_t count)
 		instancedMatricesLOD[i].resize(instanceCount);
 	}
 
-	dirtyFlag = true;
+//#ifdef USE_GPU_CULLING
+//	initializeGPUCulling();
+//#endif // USE_GPU_CULLING
+
+	setDirtyFlag(true);
 }
 
 FEAABB FEEntityInstanced::getAABB()
@@ -912,9 +1000,8 @@ float FEEntityInstanced::cullInstances(glm::vec3 cameraPosition, float** frustum
 				instancedMatricesBillboard[j] = glm::translate(instancedMatricesBillboard[j], glm::vec3(instancedMatricesLOD[i][j][3]));
 				instancedMatricesBillboard[j] = glm::rotate(instancedMatricesBillboard[j], angle, glm::vec3(0, 1, 0));
 
-
 				float extractedScale = glm::length(instancedMatricesLOD[i][j][0]);
-				instancedMatricesBillboard[j] = glm::scale(instancedMatricesBillboard[j], glm::vec3(extractedScale/*gameModel->getScaleFactor()*/));
+				instancedMatricesBillboard[j] = glm::scale(instancedMatricesBillboard[j], glm::vec3(extractedScale));
 
 				//instancedMatricesBillboard[j] = glm::mat4(1.0);
 				//// position
@@ -956,6 +1043,10 @@ void FEEntityInstanced::updateMatrices()
 		instancedY[i] = transformedInstancedMatrices[i][3][1];
 		instancedZ[i] = transformedInstancedMatrices[i][3][2];
 	}
+
+#ifdef USE_GPU_CULLING
+	initializeGPUCulling();
+#endif // USE_GPU_CULLING
 }
 
 bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
@@ -1027,6 +1118,7 @@ bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 
 	srand(unsigned int(time(NULL)));
 
+	setDirtyFlag(true);
 	return true;
 }
 
@@ -1044,6 +1136,8 @@ void FEEntityInstanced::updateSelectModeAABBData()
 	{
 		instancedAABB[i] = FEAABB(gameModel->getMesh()->getAABB(), transformedInstancedMatrices[i]);
 	}
+
+	setDirtyFlag(true);
 }
 
 bool FEEntityInstanced::isSelectMode()
@@ -1106,6 +1200,8 @@ void FEEntityInstanced::deleteInstance(size_t instanceIndex)
 	//}
 
 	//testEnableSelectMode();
+
+	setDirtyFlag(true);
 }
 
 glm::mat4 FEEntityInstanced::getTransformedInstancedMatrix(size_t instanceIndex)
@@ -1142,6 +1238,8 @@ void FEEntityInstanced::modifyInstance(size_t instanceIndex, glm::mat4 newMatrix
 	if (instancedAABB.size() > instanceIndex)
 		instancedAABB[instanceIndex] = FEAABB(gameModel->getMesh()->getAABB(), newMatrix);
 	instancedAABBSizes[instanceIndex] = -FEAABB(gameModel->getMesh()->getAABB(), newMatrix).size;
+
+	setDirtyFlag(true);
 }
 
 int FEEntityInstanced::getSpawnModificationCount()
@@ -1168,6 +1266,7 @@ void FEEntityInstanced::addInstance(glm::mat4 instanceMatrix)
 	}
 
 	modifications.push_back(FEInstanceModification(CHANGE_ADDED, instancedMatrices.size(), instanceMatrix));
+	setDirtyFlag(true);
 }
 
 bool FEEntityInstanced::tryToSnapInstance(size_t instanceIndex)
@@ -1188,5 +1287,116 @@ bool FEEntityInstanced::tryToSnapInstance(size_t instanceIndex)
 	glm::mat4 copy = transformedInstancedMatrices[instanceIndex];
 	copy[3][1] = y;
 	modifyInstance(instanceIndex, copy);
+	setDirtyFlag(true);
 	return true;
 }
+
+#ifdef USE_GPU_CULLING
+void FEEntityInstanced::initializeGPUCulling()
+{
+	if (sourceDataBuffer != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &sourceDataBuffer));
+		FE_GL_ERROR(glGenBuffers(1, &sourceDataBuffer));
+	}
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sourceDataBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), transformedInstancedMatrices.data(), GL_DYNAMIC_DRAW));
+
+	if (positionsBuffer != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &positionsBuffer));
+		FE_GL_ERROR(glGenBuffers(1, &positionsBuffer));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, positionsBuffer));
+
+	std::vector <glm::vec3> allPositions;
+	for (size_t i = 0; i < instanceCount; i++)
+	{
+		allPositions.push_back(glm::vec3(instancedX[i], instancedY[i], instancedZ[i]));
+	}
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(float) * 3, allPositions.data(), GL_DYNAMIC_DRAW));
+
+	if (LODBuffers[0] != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &LODBuffers[0]));
+		FE_GL_ERROR(glGenBuffers(1, &LODBuffers[0]));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, LODBuffers[0]));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+	if (LODBuffers[1] != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &LODBuffers[1]));
+		FE_GL_ERROR(glGenBuffers(1, &LODBuffers[1]));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, LODBuffers[1]));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+	if (LODBuffers[2] != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &LODBuffers[2]));
+		FE_GL_ERROR(glGenBuffers(1, &LODBuffers[2]));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, LODBuffers[2]));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+	if (LODBuffers[3] != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &LODBuffers[3]));
+		FE_GL_ERROR(glGenBuffers(1, &LODBuffers[3]));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, LODBuffers[3]));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+
+	if (AABBSizesBuffer != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &AABBSizesBuffer));
+		FE_GL_ERROR(glGenBuffers(1, &AABBSizesBuffer));
+	}
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, AABBSizesBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(float), instancedAABBSizes.data(), GL_DYNAMIC_DRAW));
+
+	std::vector<float> LODInfoData;
+	LODInfoData.push_back(gameModel->getCullDistance());
+	LODInfoData.push_back(gameModel->getLODMaxDrawDistance(0));
+	LODInfoData.push_back(gameModel->getLODMaxDrawDistance(1));
+	LODInfoData.push_back(gameModel->getLODMaxDrawDistance(2));
+
+	// does it have billboard ?
+	unsigned int billboardIndex = 5;
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		if (gameModel->isLODBillboard(i) && gameModel->getLODMesh(i) != nullptr)
+		{
+			billboardIndex = i;
+		}
+	}
+
+	LODInfoData.push_back(float(billboardIndex));
+	// this should not be here, instead normal of plane should align with vector to camera
+	LODInfoData.push_back(1.5708f * 3.0f + gameModel->getBillboardZeroRotaion() * ANGLE_TORADIANS_COF);
+	LODInfoData.push_back(float(instanceCount));
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, LODInfoBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, 7 * sizeof(float), LODInfoData.data(), GL_DYNAMIC_DRAW));
+
+	if (indirectDrawsInfo == nullptr)
+		indirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
+	for (size_t i = 0; i < gameModel->getMaxLODCount(); i++)
+	{
+		indirectDrawsInfo[i].count = gameModel->getLODMesh(i) == nullptr ? 0 : gameModel->getLODMesh(i)->getVertexCount();
+		indirectDrawsInfo[i].baseInstance = 0;
+		indirectDrawsInfo[i].baseVertex = 0;
+		indirectDrawsInfo[i].firstIndex = 0;
+		indirectDrawsInfo[i].primCount = 0;
+	}
+
+	if (indirectDrawInfoBuffer != 0)
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &indirectDrawInfoBuffer));
+		FE_GL_ERROR(glGenBuffers(1, &indirectDrawInfoBuffer));
+	}
+
+	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawInfoBuffer));
+	FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, indirectDrawsInfo, GL_MAP_READ_BIT));
+	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
+}
+#endif // USE_GPU_CULLING

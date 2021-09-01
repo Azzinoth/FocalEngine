@@ -41,7 +41,8 @@ namespace FocalEngine
 		FETexture* LoadFETextureAsync(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr, std::string forceObjectID = "");
 		FETexture* LoadPNGHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
 		FETexture* LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
-		FETexture* rawDataToFETexture(char* textureData, int width, int height, bool isAlphaUsed = false);
+		FETexture* rawDataToFETexture(unsigned char* textureData, int width, int height, bool isAlphaUsed = false, GLint internalformat = -1, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
+		std::vector<FETexture*> channelsToFETextures(FETexture* sourceTexture);
 		
 		void saveFETexture(FETexture* texture, const char* fileName);
 		void deleteFETexture(FETexture* texture);
@@ -51,6 +52,7 @@ namespace FocalEngine
 		FETexture* noTexture;
 		FETexture* createTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool unManaged = true, std::string Name = "");
 		FETexture* createSameFormatTexture(FETexture* exampleTexture, int differentW = 0, int differentH = 0, bool unManaged = true, std::string Name = "");
+		void updateAsyncLoadedResources();
 
 		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name = "");
 		FEMesh* rawDataToMesh(float* positions, int posSize,

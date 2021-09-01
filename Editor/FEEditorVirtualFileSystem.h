@@ -10,6 +10,9 @@ struct FEVFSFile
 	FEVFSFile(FEObject* data, FEVFSDirectory* inDirectory);
 	FEVFSDirectory* inDirectory;
 	FEObject* data;
+	bool readOnly = false;
+	bool isReadOnly();
+	void setReadOnly(bool newValue);
 };
 
 class FEVirtualFileSystem;
@@ -32,6 +35,10 @@ class FEVFSDirectory : public FEObject
 	bool hasSubDirectory(std::string subDirectory);
 	FEVFSDirectory* getSubDirectory(std::string subDirectory);
 	void clear();
+
+	bool readOnly = false;
+	bool isReadOnly();
+	void setReadOnly(bool newValue);
 };
 
 class FEVirtualFileSystem
@@ -43,6 +50,7 @@ public:
 	bool createFile(FEObject* data, std::string path);
 	bool moveFile(FEObject* data, std::string oldPath, std::string newPath);
 	bool deleteFile(FEObject* data, std::string path);
+	void setFileReadOnly(bool newValue, FEObject* data, std::string path);
 
 	bool createDirectory(std::string name, std::string path);
 	std::string createDirectory(std::string path);
@@ -52,6 +60,7 @@ public:
 	int subDirectoriesCount(std::string path);
 	std::vector<FEObject*> getDirectoryContent(std::string path);
 	std::string getDirectoryParent(std::string path);
+	void setDirectoryReadOnly(bool newValue, std::string path);
 
 	void clear();
 	bool acceptableName(std::string name);
@@ -63,6 +72,8 @@ public:
 
 	void saveState(std::string fileName);
 	void loadState(std::string fileName);
+
+	bool isReadOnly(FEObject* data, std::string path);
 private:
 	SINGLETON_PRIVATE_PART(FEVirtualFileSystem)
 	FEVFSDirectory* root;

@@ -605,6 +605,20 @@ void FEDirectionalLight::setCSMXYDepth(float newCSMXYDepth)
 	CSMXYDepth = newCSMXYDepth;
 }
 
+void FEDirectionalLight::setCastShadows(bool isCastShadows)
+{
+	FELight::setCastShadows(isCastShadows);
+	if (!isCastShadows)
+	{
+		for (size_t i = 0; i < size_t(activeCascades); i++)
+		{
+			cascadeData[i].frameBuffer->bind();
+			FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
+			cascadeData[i].frameBuffer->unBind();
+		}
+	}
+}
+
 FESpotLight::FESpotLight() : FELight(FE_SPOT_LIGHT)
 {
 }

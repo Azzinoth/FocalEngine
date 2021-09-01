@@ -39,6 +39,15 @@ namespace FocalEngine
 		int getRotaionDeviation(glm::vec3 axis);
 	};
 
+	struct FEDrawElementsIndirectCommand
+	{
+		unsigned int count;
+		unsigned int primCount;
+		unsigned int firstIndex;
+		unsigned int baseVertex;
+		unsigned int baseInstance;
+	};
+
 	class FEEntityInstanced : public FEEntity
 	{
 		friend FERenderer;
@@ -86,11 +95,11 @@ namespace FocalEngine
 
 		int getSpawnModificationCount();
 		std::vector<FEInstanceModification> getSpawnModifications();
-	private:
+
 		std::vector<glm::mat4> instancedMatrices;
 		std::vector<glm::mat4> transformedInstancedMatrices;
 		std::vector<float> instancedAABBSizes;
-		
+	private:
 		bool selectionMode = false;
 	
 		std::vector<std::vector<glm::mat4>> instancedMatricesLOD;
@@ -101,10 +110,23 @@ namespace FocalEngine
 
 		void updateBuffers();
 		void updateMatrices();
-
+#ifdef USE_GPU_CULLING
 		GLenum instancedBuffer = 0;
-		
-		bool dirtyFlag = false;
+		GLenum* LODBuffers = nullptr;
+		int* testLODCount = nullptr;
+
+		GLuint sourceDataBuffer = 0;
+		GLuint positionsBuffer = 0;
+		GLuint AABBSizesBuffer = 0;
+		GLuint LODInfoBuffer = 0;
+
+		void initializeGPUCulling();
+
+		FEDrawElementsIndirectCommand* indirectDrawsInfo;
+		GLuint indirectDrawInfoBuffer = 0;
+#else
+		GLenum instancedBuffer = 0;
+#endif // USE_GPU_CULLING
 		FEAABB allInstancesAABB;
 		FEGameModel* lastFrameGameModel = nullptr;
 
