@@ -2,7 +2,6 @@
 
 #include "../Renderer/FEPostProcess.h"
 #include "../SubSystems/FETerrain.h"
-#include "../CoreExtensions/StandardMaterial/TerrainMaterial/FETerrainShader.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../SubSystems/FEJobManager.h"

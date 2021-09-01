@@ -32,8 +32,11 @@ file(GLOB InstancedLineMaterial_SRC
 
 file(GLOB PBRMaterial_SRC
 	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_FS.glsl"
+	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_FS_DEFERRED.glsl"
+	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_FS_GBUFFER.glsl"
 	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_INSTANCED_VS.glsl"
 	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_VS.glsl"
+	"CoreExtensions/StandardMaterial/PBRMaterial/FE_PBR_VS_GBUFFER.glsl"
 )
 
 file(GLOB PhongMaterial_SRC
@@ -59,6 +62,8 @@ file(GLOB SolidColorMaterial_SRC
 
 file(GLOB TerrainMaterial_SRC
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS.glsl"
+	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS_DEFERRED.glsl"
+	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS_GBUFFER.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_GS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_TCS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_TES.glsl"
