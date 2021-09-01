@@ -11,7 +11,7 @@ bool FEFileSystem::checkFile(const char* path)
 		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-bool FEFileSystem::checkFolder(const char* path)
+bool FEFileSystem::isFolder(const char* path)
 {
 	DWORD dwAttrib = GetFileAttributesA(path);
 	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
@@ -51,7 +51,7 @@ std::vector<std::string> FEFileSystem::getFolderList(const char* path)
 	{
 		do
 		{
-			if (std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
+			if (isFolder((path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
 				result.push_back(data.cFileName);
 		} while (FindNextFileA(hFind, &data) != 0);
 		FindClose(hFind);
@@ -109,6 +109,50 @@ void FEFileSystem::openDialog(std::string& path, const COMDLG_FILTERSPEC* filter
 				}
 			}
 			pFileOpen->Release();
+		}
+		CoUninitialize();
+	}
+}
+
+void FEFileSystem::openFolderDialog(std::string& path)
+{
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
+	{
+		IFileDialog* pFolderOpen;
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFolderOpen));
+
+		if (SUCCEEDED(hr))
+		{
+			DWORD dwOptions;
+			if (SUCCEEDED(pFolderOpen->GetOptions(&dwOptions)))
+				pFolderOpen->SetOptions(dwOptions | FOS_PICKFOLDERS);
+
+			hr = pFolderOpen->SetFileTypes(0, nullptr);
+			// Show the Open dialog box.
+			hr = pFolderOpen->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* pItem;
+				hr = pFolderOpen->GetResult(&pItem);
+				if (SUCCEEDED(hr))
+				{
+					PWSTR pszFolderPath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFolderPath);
+
+					// Display the file name to the user.
+					if (SUCCEEDED(hr))
+					{
+						path = PWSTRtoString(pszFolderPath);
+						CoTaskMemFree(pszFolderPath);
+					}
+					pItem->Release();
+				}
+			}
+			pFolderOpen->Release();
 		}
 		CoUninitialize();
 	}

@@ -79,8 +79,6 @@ class editMaterialPopup : public FEImGuiWindow
 {
 	SINGLETON_PRIVATE_PART(editMaterialPopup)
 
-	FEMaterial* objToWorkWith;
-
 	ImGuiButton* cancelButton;
 	ImGuiImageButton* iconButton = nullptr;
 	int textureCount = 0;
@@ -91,12 +89,18 @@ class editMaterialPopup : public FEImGuiWindow
 	int textureDestination = -1;
 
 #ifdef USE_NODES
+	static FEMaterial* objToWorkWith;
+
 	// ************** Node area **************
 	static FEEditorNodeArea* materialNodeArea;
 
 	static ImVec2 windowPosition;
 	static ImVec2 nodeGridRelativePosition;
 	static ImVec2 mousePositionWhenContextMenuWasOpened;
+
+	static FETexture* textureForNewNode;
+	static void nodeSystemMainContextMenu();
+	static void textureNodeCreationCallback(void* texture);
 	// ************** Node area END **************
 	
 	// ************** Drag&Drop **************
@@ -112,6 +116,8 @@ class editMaterialPopup : public FEImGuiWindow
 	static bool dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo);
 	// ************** Drag&Drop END **************
 #else
+	FEMaterial* objToWorkWith;
+
 	// ************** Drag&Drop **************
 	struct materialBindingCallbackInfo
 	{

@@ -678,10 +678,12 @@ editMaterialPopup::~editMaterialPopup()
 }
 
 #ifdef USE_NODES
+FEMaterial* editMaterialPopup::objToWorkWith = nullptr;
 FEEditorNodeArea* editMaterialPopup::materialNodeArea = nullptr;
 ImVec2 editMaterialPopup::nodeGridRelativePosition = ImVec2(5, 30);
 ImVec2 editMaterialPopup::windowPosition = ImVec2(0, 0);
 ImVec2 editMaterialPopup::mousePositionWhenContextMenuWasOpened = ImVec2(0, 0);
+FETexture* editMaterialPopup::textureForNewNode = nullptr;
 #endif // USE_NODES
 void editMaterialPopup::show(FEMaterial* material)
 {
@@ -709,6 +711,7 @@ void editMaterialPopup::show(FEMaterial* material)
 
 #ifdef USE_NODES
 		materialNodeArea = NODE_SYSTEM.createNodeArea();
+		materialNodeArea->setMainContextMenuFunc(nodeSystemMainContextMenu);
 
 		FEEditorMaterialNode* newNode = new FEEditorMaterialNode(material);
 
@@ -1586,5 +1589,55 @@ bool editMaterialPopup::dragAndDropMaterialBindingsCallback(FEObject* object, vo
 	}
 
 	return true;
+}
+#endif // USE_NODES
+
+
+#ifdef USE_NODES
+void editMaterialPopup::nodeSystemMainContextMenu()
+{
+	if (ImGui::BeginMenu("Add"))
+	{
+		if (ImGui::MenuItem("Texture node"))
+		{
+			textureForNewNode = RESOURCE_MANAGER.noTexture;
+			selectTexturePopUp::getInstance().show(&textureForNewNode, textureNodeCreationCallback, reinterpret_cast<void*>(&textureForNewNode));
+		}
+
+		if (ImGui::MenuItem("Float node"))
+		{
+			FEEditorFloatSourceNode* newNode = new FEEditorFloatSourceNode();
+
+			ImVec2 positionOnCanvas;
+			positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
+			positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+
+			newNode->setPosition(positionOnCanvas);
+			materialNodeArea->addNode(newNode);
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void editMaterialPopup::textureNodeCreationCallback(void* texture)
+{
+	if (texture != nullptr && texture != RESOURCE_MANAGER.noTexture)
+	{
+		if (!objToWorkWith->isTextureInList(*reinterpret_cast<FETexture**>(texture)))
+		{
+			if (objToWorkWith->addTexture(*reinterpret_cast<FETexture**>(texture)))
+			{
+				FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(*reinterpret_cast<FETexture**>(texture));
+
+				ImVec2 positionOnCanvas;
+				positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
+				positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+
+				newNode->setPosition(positionOnCanvas);
+				materialNodeArea->addNode(newNode);
+			}
+		}
+	}
 }
 #endif // USE_NODES

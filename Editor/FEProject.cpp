@@ -27,14 +27,15 @@ std::vector<FEProject*> FEProjectManager::getList()
 
 void FEProjectManager::loadProjectList()
 {
-	if (!FILESYSTEM.checkFolder(PROJECTS_FOLDER))
-		FILESYSTEM.createFolder(PROJECTS_FOLDER);
+	if (!FILESYSTEM.isFolder(PROJECTS_FOLDER))
+		customProjectFolder = "";
 
 	std::vector<std::string> projectNameList = FILESYSTEM.getFolderList(PROJECTS_FOLDER);
 
 	for (size_t i = 0; i < projectNameList.size(); i++)
 	{
-		list.push_back(new FEProject(projectNameList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i].c_str() + "/"));
+		if (containProject(std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i]))
+			list.push_back(new FEProject(projectNameList[i].c_str(), std::string(PROJECTS_FOLDER) + std::string("/") + projectNameList[i].c_str() + "/"));
 	}
 }
 
@@ -161,9 +162,9 @@ void FEProjectManager::displayProjectSelection()
 	ImGui::SetNextWindowSize(ImVec2(mainWindowW, 170.0f));
 	ImGui::Begin("##create project", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.75f, 0.70f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.0f, 162.0f / 255.0f, 232.0f / 255.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(23.0f / 255.0f, 186.0f / 255.0f, 255.0f / 255.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.0f, 125.0f / 255.0f, 179.0f / 255.0f, 1.0f));
 
 		if (ImGui::Button("Create New Project", ImVec2(200.0f, 64.0f)))
 			ImGui::OpenPopup("New Project");
@@ -199,6 +200,32 @@ void FEProjectManager::displayProjectSelection()
 			PROJECT_MANAGER.setCurrent(nullptr);
 
 			loadProjectList();
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.0f, 242.0f / 255.0f, 79.0f / 255.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(34.0f / 255.0f, 255.0f / 255.0f, 106.0f / 255.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.0f, 202.0f / 255.0f, 66.0f / 255.0f, 1.0f));
+
+		ImGui::SameLine();
+		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() - 280.0f - 32.0f ,ImGui::GetCursorPos().y));
+		if (ImGui::Button("Choose projects directory", ImVec2(280.0f, 64.0f)))
+		{
+			std::string path = "";
+			FILESYSTEM.openFolderDialog(path);
+
+			if (path != "")
+			{
+				customProjectFolder = path;
+				for (size_t i = 0; i < list.size(); i++)
+				{
+					delete list[i];
+				}
+				list.clear();
+				loadProjectList();
+			}
 		}
 
 		ImGui::PopStyleColor();
@@ -254,6 +281,17 @@ void FEProjectManager::displayProjectSelection()
 	ImGui::PopStyleVar();
 	ImGui::End();
 	ImGui::PopStyleVar();
+}
+
+bool FEProjectManager::containProject(std::string path)
+{
+	if (!FILESYSTEM.isFolder(path.c_str()))
+		return false;
+
+	if (!FILESYSTEM.checkFile((path + "/scene.txt").c_str()))
+		return false;
+
+	return true;
 }
 
 FEProject::FEProject(std::string Name, std::string ProjectFolder)

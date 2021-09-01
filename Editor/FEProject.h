@@ -40,7 +40,7 @@ private:
 };
 
 //#define PROJECTS_FOLDER "../FocalEngineProjects"
-#define PROJECTS_FOLDER "C:/Users/Kindr/Downloads/FocalEngineProjects-master"
+//#define PROJECTS_FOLDER "C:/Users/Kindr/Downloads/FocalEngineProjects-master"
 //#define PROJECTS_FOLDER "C:/Users/Anastasiia/Desktop/FocalEngine/FEProjects"
 #define PROJECTS_FILE_VER 0.01f
 
@@ -49,6 +49,7 @@ class FEProjectManager
 	std::vector<FEProject*> list;
 	int indexChosen = -1;
 	FEProject* current = nullptr;
+	std::string customProjectFolder = "../FocalEngineProjects-master";
 public:
 	SINGLETON_PUBLIC_PART(FEProjectManager)
 	SINGLETON_PRIVATE_PART(FEProjectManager)
@@ -65,6 +66,9 @@ public:
 	void closeCurrentProject();
 
 	void displayProjectSelection();
+
+	bool containProject(std::string path);
 };
 
+#define PROJECTS_FOLDER PROJECT_MANAGER.customProjectFolder.c_str()
 #define PROJECT_MANAGER FEProjectManager::getInstance()
