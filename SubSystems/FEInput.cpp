@@ -27,3 +27,8 @@ void FEInput::keyButtonCallback(GLFWwindow* window, int key, int scancode, int a
 {
 	getInstance().keyButtonCallbackImpl(key, scancode, action, mods);
 }
+
+void FEInput::dropCallback(GLFWwindow* window, int count, const char** paths)
+{
+	getInstance().dropCallbackImpl(count, paths);
+}

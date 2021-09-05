@@ -23,15 +23,21 @@ public:
 	void saveScene();
 	void loadScene();
 	void loadSceneVer0();
-	
+
 	FETexture* sceneScreenshot;
-	bool modified = false;
 	void createDummyScreenshot();
 
 	void addFileToDeleteList(std::string fileName);
+
+	bool isModified();
+	void setModified(bool newValue);
+
+	void addUnSavedObject(FEObject* object);
 private:
 	std::string name;
 	std::string projectFolder;
+	bool modified = false;
+	std::vector<FEObject*> unSavedObjects;
 
 	void writeTransformToJSON(Json::Value& root, FETransformComponent* transform);
 	void readTransformToJSON(Json::Value& root, FETransformComponent* transform);
@@ -68,6 +74,7 @@ public:
 	void displayProjectSelection();
 
 	bool containProject(std::string path);
+	void setProjectsFolder(std::string folderPath);
 };
 
 #define PROJECTS_FOLDER PROJECT_MANAGER.customProjectFolder.c_str()

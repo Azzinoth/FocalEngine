@@ -17,6 +17,7 @@ FEngine::FEngine()
 	FEInput::getInstance().mouseButtonCallbackImpl = &FEngine::mouseButtonCallback;
 	FEInput::getInstance().mouseMoveCallbackImpl = &FEngine::mouseMoveCallback;
 	FEInput::getInstance().keyButtonCallbackImpl = &FEngine::keyButtonCallback;
+	FEInput::getInstance().dropCallbackImpl = &FEngine::dropCallback;
 }
 
 FEngine::~FEngine()
@@ -183,6 +184,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glfwSetMouseButtonCallback(window, &FEInput::mouseButtonCallback);
 	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
 	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
+	glfwSetDropCallback(window, &FEInput::dropCallback);
 
 	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
@@ -805,4 +807,16 @@ void FEngine::renderTargetCenterForCamera(FEFreeCamera* camera)
 
 	camera->setRenderTargetShiftX(shiftX);
 	camera->setRenderTargetShiftY(shiftY);
+}
+
+void FEngine::dropCallback(int count, const char** paths)
+{
+	FEngine& engineObj = getInstance();
+	if (engineObj.clientDropCallbackImpl != nullptr)
+		engineObj.clientDropCallbackImpl(count, paths);
+}
+
+void FEngine::setDropCallback(void(*func)(int, const char**))
+{
+	clientDropCallbackImpl = func;
 }

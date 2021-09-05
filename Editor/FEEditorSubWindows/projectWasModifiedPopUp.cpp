@@ -8,10 +8,11 @@ projectWasModifiedPopUp::projectWasModifiedPopUp()
 	objToWorkWith = nullptr;
 }
 
-void projectWasModifiedPopUp::show(FEProject* project)
+void projectWasModifiedPopUp::show(FEProject* project, bool fullyCloseApplication)
 {
 	shouldOpen = true;
 	objToWorkWith = project;
+	shouldTerminate = fullyCloseApplication;
 }
 
 void projectWasModifiedPopUp::render()

@@ -4,7 +4,8 @@ using namespace FocalEngine;
 FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData)
 {
 	FEEditorNode::FEEditorNode();
-	
+	type = "FEEditorFloatSourceNode";
+
 	data = initialData;
 
 	setSize(ImVec2(220, 78));

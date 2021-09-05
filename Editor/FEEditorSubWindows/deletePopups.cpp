@@ -121,7 +121,7 @@ void deleteTexturePopup::deleteTexture(FETexture* texture)
 	}
 
 	texture->setDirtyFlag(true);
-	PROJECT_MANAGER.getCurrent()->modified = true;
+	PROJECT_MANAGER.getCurrent()->setModified(true);
 	PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + texture->getObjectID() + ".texture");
 	RESOURCE_MANAGER.deleteFETexture(texture);
 
@@ -224,7 +224,7 @@ void deleteMeshPopup::deleteMesh(FEMesh* mesh)
 	}
 
 	mesh->setDirtyFlag(true);
-	PROJECT_MANAGER.getCurrent()->modified = true;
+	PROJECT_MANAGER.getCurrent()->setModified(true);
 	PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + mesh->getObjectID() + ".model");
 	RESOURCE_MANAGER.deleteFEMesh(mesh);
 
@@ -321,7 +321,7 @@ void deleteGameModelPopup::deleteGameModel(FEGameModel* gameModel)
 	std::string name = gameModel->getName();
 	FEScene::getInstance().prepareForGameModelDeletion(gameModel);
 	RESOURCE_MANAGER.deleteGameModel(gameModel);
-	PROJECT_MANAGER.getCurrent()->modified = true;
+	PROJECT_MANAGER.getCurrent()->setModified(true);
 }
 
 deleteMaterialPopup* deleteMaterialPopup::_instance = nullptr;
@@ -418,7 +418,7 @@ void deleteMaterialPopup::deleteMaterial(FEMaterial* material)
 	}
 
 	material->setDirtyFlag(true);
-	PROJECT_MANAGER.getCurrent()->modified = true;
+	PROJECT_MANAGER.getCurrent()->setModified(true);
 	RESOURCE_MANAGER.deleteMaterial(material);
 
 	// re-create game model preview
@@ -512,7 +512,7 @@ void deleteDirectoryPopup::render()
 		{
 			recursiveDeletion(pathToDirectory);
 			//VIRTUAL_FILE_SYSTEM.deleteDirectory(pathToDirectory);
-			PROJECT_MANAGER.getCurrent()->modified = true;
+			PROJECT_MANAGER.getCurrent()->setModified(true);
 
 			// I should do it in a way as windows FS is doing it.
 			// You can't delete non empty folder

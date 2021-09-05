@@ -36,6 +36,7 @@ namespace FocalEngine
 		void setKeyCallback(void(*func)(int, int, int, int));
 		void setMouseButtonCallback(void(*func)(int, int, int));
 		void setMouseMoveCallback(void(*func)(double, double));
+		void setDropCallback(void(*func)(int, const char**));
 
 		int getWindowWidth();
 		int getWindowHeight();
@@ -103,6 +104,9 @@ namespace FocalEngine
 
 		static void keyButtonCallback(int key, int scancode, int action, int mods);
 		void(*clientKeyButtonCallbackImpl)(int, int, int, int) = nullptr;
+
+		static void dropCallback(int count, const char** paths);
+		void(*clientDropCallbackImpl)(int, const char**) = nullptr;
 
 		FEBasicCamera* currentCamera = nullptr;
 		void setImguiStyle();

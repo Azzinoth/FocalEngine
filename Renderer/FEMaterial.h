@@ -96,11 +96,19 @@ namespace FocalEngine
 		void removeTexture(FETexture* texture);
 		void removeTexture(int textureIndex);
 		void clearAllTexturesInfo();
+		int getUsedTexturesCount();
+
+		bool isCompackPacking();
+		void setCompackPacking(bool newValue);
+
+		bool isCompackPackingPossible();
 	private:
 		glm::vec3 diffuseColor;
 		glm::vec3 baseColor;
 
 		int placeTextureInList(FETexture* texture);
+		void setTextureBinding(int index, int textureIndex, int subMaterial, int channel = -2);
+		void clearTextureBinding(int index, int subMaterial, int channel = -2);
 
 		const int albedoBindingIndex = 0;
 		const int normalBindingIndex = 1;
@@ -116,6 +124,7 @@ namespace FocalEngine
 		float roughtnessMapIntensity = 1.0f;
 		float ambientOcclusionMapIntensity = 1.0f;
 		float ambientOcclusionIntensity = 1.0f;
+		bool compackPacking = false;
 
 		FETexture* getSpecifiedMap(int bindingIndex, int subMaterial = 0);
 	};

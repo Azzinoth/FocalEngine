@@ -50,7 +50,7 @@ vec3 getNormal()
 	}
 	else
 	{
-		result = normalize(FS_IN.TBN * FS_IN.vertexNormal);
+		result = normalize(FS_IN.vertexNormal);
 	}
 
 	return result;

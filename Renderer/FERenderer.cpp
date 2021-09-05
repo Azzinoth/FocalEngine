@@ -116,6 +116,8 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 	static int FETextureBindingsUniformLocations_hash = std::hash<std::string>{}("textureBindings[0]");
 	static int FETextureChannelsBindingsUniformLocations_hash = std::hash<std::string>{}("textureChannels[0]");
+
+	static int FEcompactMaterialPacking_hash = std::hash<std::string>{}("compactMaterialPacking");
 	
 	if (shader->materialTexturesList)
 	{
@@ -125,6 +127,12 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 	//auto start = std::chrono::system_clock::now();
 	auto iterator = shader->parameters.begin();
+	if (shader->parameters.size() > 9)
+	{
+		int y = 0;
+		y++;
+	}
+
 	while (iterator != shader->parameters.end())
 	{
 		if (iterator->second.nameHash == FEWorldMatrix_hash)
@@ -171,6 +179,9 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 		if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
 			iterator->second.updateData(material->getMetalnessMapIntensity());
+
+		if (iterator->second.nameHash == FEcompactMaterialPacking_hash)
+			iterator->second.updateData(material->isCompackPacking());
 		
 		iterator++;
 	}

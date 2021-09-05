@@ -6,6 +6,12 @@
 
 class FEEditorNodeSystem;
 
+enum FE_EDITOR_NODE_EVENT
+{
+	FE_EDITOR_NODE_REMOVED = 0,
+	FE_EDITOR_NODE_DESTROYED = 1
+};
+
 class FEEditorNodeArea
 {
 	friend FEEditorNodeSystem;
@@ -48,6 +54,9 @@ class FEEditorNodeArea
 	void render();
 	void renderGrid(ImVec2 currentPosition);
 	void clear();
+
+	std::vector<void(*)(FEEditorNode*, FE_EDITOR_NODE_EVENT)> nodeEventsCallbacks;
+	void propagateNodeEventsCallbcks(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventToPropagate);
 public:
 	void update();
 	
@@ -65,6 +74,7 @@ public:
 	void setMainContextMenuFunc(void(*func)());
 
 	void propagateUpdateToConnectedNodes(FEEditorNode* callerNode);
-	//bool tryToConnect(FEEditorNodeSocket* outSocket, FEEditorNodeSocket* inSocket);
+
 	bool tryToConnect(FEEditorNode* outNode, size_t outNodeSocketIndex, FEEditorNode* inNode, size_t inNodeSocketIndex);
+	void setNodeEventCallback(void(*func)(FEEditorNode*, FE_EDITOR_NODE_EVENT));
 };

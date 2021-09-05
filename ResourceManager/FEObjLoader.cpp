@@ -187,7 +187,23 @@ void FEObjLoader::calculateTangents()
 		glm::vec2 t2 = { fTexC[fInd[i + 2] * 2], fTexC[fInd[i + 2] * 2 + 1] };
 
 		glm::vec3 tangent = calculateTangent(v0, v1, v2, { t0, t1, t2 });
-		tangent = glm::normalize(tangent);
+		// To eliminate NaN values after normalization.
+		// I encounter this problem if triangle has same texture coordinates.
+		if (tangent.x != 0 || tangent.y != 0 || tangent.z != 0)
+		{
+			tangent = glm::normalize(tangent);
+		}
+		else
+		{
+			glm::vec3 normal = { fNorC[fInd[i] * 3], fNorC[fInd[i] * 3 + 1], fNorC[fInd[i] * 3 + 2] };
+			glm::vec3 tangentOne = glm::cross(normal, glm::vec3(0.0f, 0.0f, 1.0f));
+			glm::vec3 tangentTwo = glm::cross(normal, glm::vec3(0.0f, 1.0f, 0.0f));
+			// Choosing candidate with bigger length/magnitude.
+			// Length/magnitude of cross product depend on sine of angle between vectors
+			// and sine of 90 degrees is 1.0(max value), so basically we are choosing cross product in which vectors was closer to perpendicular(assuming both vectors are unit vectors).
+			tangent = glm::length(tangentOne) > glm::length(tangentTwo) ? tangentOne : tangentTwo;
+			tangent = glm::normalize(tangent);
+		}	
 
 		fTanC[fInd[i] * 3] = tangent.x;
 		fTanC[fInd[i] * 3 + 1] = tangent.y;

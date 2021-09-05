@@ -68,9 +68,8 @@ bool FEResourceManager::makeMeshStandard(FEMesh* mesh)
 	return false;
 }
 
-FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, bool usingAlpha, std::string Name)
+FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, std::string Name)
 {
-	FETexture* newTexture = createTexture(Name);
 	std::vector<unsigned char> rawData;
 	unsigned uWidth, uHeight;
 
@@ -87,6 +86,18 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, bool usingAlp
 			return nullptr;
 		}
 	}
+
+	bool usingAlpha = false;
+	for (size_t i = 3; i < rawData.size(); i+=4)
+	{
+		if (rawData[i] != 255)
+		{
+			usingAlpha = true;
+			break;
+		}
+	}
+
+	FETexture* newTexture = createTexture(Name);
 	newTexture->width = uWidth;
 	newTexture->height = uHeight;
 
@@ -2443,7 +2454,18 @@ void FEResourceManager::updateAsyncLoadedResources()
 			{
 				std::pair<char**, void*> jobInfo = JOB_MANAGER.textureLoadJobs[i]->getJobByIndex(j);
 				//FETexture* testTexture = reinterpret_cast<FETexture*>(jobInfo.second);
-				LoadFETexture(*jobInfo.first, "", reinterpret_cast<FETexture*>(jobInfo.second));
+				FETexture* newlyCreatedTexture = LoadFETexture(*jobInfo.first, "", reinterpret_cast<FETexture*>(jobInfo.second));
+
+				// If some material uses this texture we should set dirty flag.
+				// Game model will updated as a consequences.
+				std::vector<std::string> materialList = getMaterialList();
+
+				for (size_t i = 0; i < materialList.size(); i++)
+				{
+					FEMaterial* currentMaterial = getMaterial(materialList[i]);
+					if (currentMaterial->isTextureInList(newlyCreatedTexture))
+						currentMaterial->setDirtyFlag(true);
+				}
 			}
 
 			JOB_MANAGER.textureLoadJobs[i]->clearJobs();

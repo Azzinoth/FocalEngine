@@ -32,7 +32,7 @@ namespace FocalEngine
 		bool replaceShader(std::string oldShaderID, FEShader* newShader);
 		std::string loadGLSL(const char* fileName);
 
-		FETexture* LoadPNGTexture(const char* fileName, bool usingAlpha, std::string Name = "");
+		FETexture* LoadPNGTexture(const char* fileName, std::string Name = "");
 		FETexture* LoadPNGTextureWithTransparencyMask(const char* mainfileName, const char* maskFileName, std::string Name);
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const char* fileName, std::string Name = "");

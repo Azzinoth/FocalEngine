@@ -240,23 +240,23 @@ FETexture* FEMaterial::getAlbedoMap(int subMaterial)
 
 void FEMaterial::setAlbedoMap(FETexture* texture, int subMaterial)
 {
-	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
-		return;
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
-		textureBindings[albedoBindingIndex + subMaterial * 6] = textureIndex;
+	if (textureIndex == -1 && texture == nullptr)
+	{
+		clearTextureBinding(albedoBindingIndex, subMaterial);
+	}
+	else
+	{
+		setTextureBinding(albedoBindingIndex, textureIndex, subMaterial);
+	}
 }
 
 void FEMaterial::setAlbedoMap(int textureIndex, int subMaterial)
 {
-	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
-		return;
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[albedoBindingIndex + subMaterial * 6] = textureIndex;
+	setTextureBinding(albedoBindingIndex, textureIndex, subMaterial);
 }
 
 FETexture* FEMaterial::getNormalMap(int subMaterial)
@@ -266,23 +266,23 @@ FETexture* FEMaterial::getNormalMap(int subMaterial)
 
 void FEMaterial::setNormalMap(FETexture* texture, int subMaterial)
 {
-	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
-		return;
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
-		textureBindings[normalBindingIndex + subMaterial * 6] = textureIndex;
+	if (textureIndex == -1 && texture == nullptr)
+	{
+		clearTextureBinding(normalBindingIndex, subMaterial);
+	}
+	else
+	{
+		setTextureBinding(normalBindingIndex, textureIndex, subMaterial);
+	}
 }
 
 void FEMaterial::setNormalMap(int textureIndex, int subMaterial)
 {
-	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
-		return;
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[normalBindingIndex + subMaterial * 6] = textureIndex;
+	setTextureBinding(normalBindingIndex, textureIndex, subMaterial);
 }
 
 FETexture* FEMaterial::getAOMap(int subMaterial)
@@ -298,22 +298,22 @@ int FEMaterial::getAOMapChannel(int subMaterial)
 void FEMaterial::setAOMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
+	if (textureIndex == -1 && texture == nullptr)
 	{
-		textureBindings[AOBindingIndex + subMaterial * 6] = textureIndex;
-		textureChannels[AOBindingIndex + subMaterial * 6] = channel;
+		clearTextureBinding(AOBindingIndex, subMaterial, channel);
+	}
+	else
+	{
+		setTextureBinding(AOBindingIndex, textureIndex, subMaterial, channel);
 	}
 }
 
 void FEMaterial::setAOMap(int textureIndex, int channel, int subMaterial)
 {
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[AOBindingIndex + subMaterial * 6] = textureIndex;
-	textureChannels[AOBindingIndex + subMaterial * 6] = channel;
+	setTextureBinding(AOBindingIndex, textureIndex, subMaterial, channel);
 }
 
 FETexture* FEMaterial::getRoughtnessMap(int subMaterial)
@@ -329,22 +329,22 @@ int FEMaterial::getRoughtnessMapChannel(int subMaterial)
 void FEMaterial::setRoughtnessMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
+	if (textureIndex == -1 && texture == nullptr)
 	{
-		textureBindings[roughtnessBindingIndex + subMaterial * 6] = textureIndex;
-		textureChannels[roughtnessBindingIndex + subMaterial * 6] = channel;
+		clearTextureBinding(roughtnessBindingIndex, subMaterial, channel);
+	}
+	else
+	{
+		setTextureBinding(roughtnessBindingIndex, textureIndex, subMaterial, channel);
 	}
 }
 
 void FEMaterial::setRoughtnessMap(int textureIndex, int channel, int subMaterial)
 {
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[roughtnessBindingIndex + subMaterial * 6] = textureIndex;
-	textureChannels[roughtnessBindingIndex + subMaterial * 6] = channel;
+	setTextureBinding(roughtnessBindingIndex, textureIndex, subMaterial, channel);
 }
 
 FETexture* FEMaterial::getMetalnessMap(int subMaterial)
@@ -360,22 +360,22 @@ int FEMaterial::getMetalnessMapChannel(int subMaterial)
 void FEMaterial::setMetalnessMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
+	if (textureIndex == -1 && texture == nullptr)
 	{
-		textureBindings[metalnessBindingIndex + subMaterial * 6] = textureIndex;
-		textureChannels[metalnessBindingIndex + subMaterial * 6] = channel;
+		clearTextureBinding(metalnessBindingIndex, subMaterial, channel);
+	}
+	else
+	{
+		setTextureBinding(metalnessBindingIndex, textureIndex, subMaterial, channel);
 	}
 }
 
 void FEMaterial::setMetalnessMap(int textureIndex, int channel, int subMaterial)
 {
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[metalnessBindingIndex + subMaterial * 6] = textureIndex;
-	textureChannels[metalnessBindingIndex + subMaterial * 6] = channel;
+	setTextureBinding(metalnessBindingIndex, textureIndex, subMaterial, channel);
 }
 
 FETexture* FEMaterial::getDisplacementMap(int subMaterial)
@@ -391,22 +391,22 @@ int FEMaterial::getDisplacementMapChannel(int subMaterial)
 void FEMaterial::setDisplacementMap(FETexture* texture, int channel, int subMaterial)
 {
 	int textureIndex = placeTextureInList(texture);
-	if (textureIndex != -1 || (textureIndex == -1 && texture == nullptr))
+	if (textureIndex == -1 && texture == nullptr)
 	{
-		textureBindings[displacementBindingIndex + subMaterial * 6] = textureIndex;
-		textureChannels[displacementBindingIndex + subMaterial * 6] = channel;
+		clearTextureBinding(displacementBindingIndex, subMaterial, channel);
+	}
+	else
+	{
+		setTextureBinding(displacementBindingIndex, textureIndex, subMaterial, channel);
 	}
 }
 
 void FEMaterial::setDisplacementMap(int textureIndex, int channel, int subMaterial)
 {
-	if (textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
-		return;
 	if (textures[textureIndex] == nullptr)
 		return;
 
-	textureBindings[displacementBindingIndex + subMaterial * 6] = textureIndex;
-	textureChannels[displacementBindingIndex + subMaterial * 6] = channel;
+	setTextureBinding(displacementBindingIndex, textureIndex, subMaterial, channel);
 }
 
 FETexture* FEMaterial::getSpecifiedMap(int bindingIndex, int subMaterial)
@@ -508,6 +508,97 @@ bool FEMaterial::isTextureInList(FETexture* texture)
 			result = true;
 			return result;
 		}
+	}
+
+	return result;
+}
+
+bool FEMaterial::isCompackPacking()
+{
+	if (!isCompackPackingPossible())
+		compackPacking = false;
+
+	return compackPacking;
+}
+
+void FEMaterial::setCompackPacking(bool newValue)
+{
+	if (newValue && !isCompackPackingPossible())
+		return;
+
+	compackPacking = newValue;
+}
+
+bool FEMaterial::isCompackPackingPossible()
+{
+	// All material properties should be available from one texture.
+	if (getAOMap() != nullptr && getAOMap() == getRoughtnessMap() && getAOMap() == getMetalnessMap() && getAOMap() == getDisplacementMap())
+		return true;
+
+	return false;
+}
+
+void FEMaterial::setTextureBinding(int index, int textureIndex, int subMaterial, int channel)
+{
+	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
+	{
+		LOG.add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	if (textureIndex < 0 || textureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
+	{
+		LOG.add("FEMaterial::setTextureBinding with out of bound \"textureIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	int finalIndex = index + subMaterial * 6;
+	if (finalIndex < 0 || finalIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
+	{
+		LOG.add("FEMaterial::setTextureBinding with out of bound \"finalIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	if (channel != -2)
+	{
+		textureChannels[finalIndex] = channel;
+	}
+
+	setDirtyFlag(true);
+	textureBindings[finalIndex] = textureIndex;
+}
+
+void FEMaterial::clearTextureBinding(int index, int subMaterial, int channel)
+{
+	if (subMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
+	{
+		LOG.add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	int finalIndex = index + subMaterial * 6;
+	if (finalIndex < 0 || finalIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
+	{
+		LOG.add("FEMaterial::clearTextureBinding with out of bound \"index\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	if (channel != -2)
+	{
+		textureChannels[finalIndex] = channel;
+	}
+
+	setDirtyFlag(true);
+	textureBindings[finalIndex] = -1;
+}
+
+int FEMaterial::getUsedTexturesCount()
+{
+	int result = 0;
+	for (size_t i = 0; i < textures.size(); i++)
+	{
+		if (textures[i] != nullptr)
+			result++;
 	}
 
 	return result;

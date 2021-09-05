@@ -85,7 +85,7 @@ void renamePopUp::render()
 			if (strlen(newName) > 0)
 			{
 				objToWorkWith->setDirtyFlag(true);
-				PROJECT_MANAGER.getCurrent()->modified = true;
+				PROJECT_MANAGER.getCurrent()->setModified(true);
 
 				objToWorkWith->setName(newName);
 

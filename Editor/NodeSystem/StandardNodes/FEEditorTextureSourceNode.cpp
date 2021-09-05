@@ -4,6 +4,7 @@ using namespace FocalEngine;
 FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture)
 {
 	FEEditorNode::FEEditorNode();
+	type = "FEEditorTextureSourceNode";
 	
 	this->texture = texture;
 	if (texture == nullptr)

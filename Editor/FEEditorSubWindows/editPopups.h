@@ -101,6 +101,7 @@ class editMaterialPopup : public FEImGuiWindow
 	static FETexture* textureForNewNode;
 	static void nodeSystemMainContextMenu();
 	static void textureNodeCreationCallback(void* texture);
+	static void textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventWithNode);
 	// ************** Node area END **************
 	
 	// ************** Drag&Drop **************

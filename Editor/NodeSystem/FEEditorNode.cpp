@@ -155,3 +155,8 @@ void FEEditorNode::mouseClick(int mouseButton)
 {
 
 }
+
+std::string FEEditorNode::getType()
+{
+	return type;
+}

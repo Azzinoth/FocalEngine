@@ -118,6 +118,24 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 
 FETexture* FEEditorPreviewManager::getMeshPreview(std::string meshID)
 {
+	// if mesh's dirty flag is set we need to update preview
+	if (RESOURCE_MANAGER.getMesh(meshID)->getDirtyFlag())
+	{
+		createMeshPreview(meshID);
+		// if some game model uses this mesh we should also update it's preview
+		std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
+
+		for (size_t i = 0; i < gameModelList.size(); i++)
+		{
+			FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
+
+			if (currentGameModel->mesh == RESOURCE_MANAGER.getMesh(meshID))
+				createGameModelPreview(currentGameModel->getObjectID());
+		}
+
+		RESOURCE_MANAGER.getMesh(meshID)->setDirtyFlag(false);
+	}
+
 	// if we somehow could not find preview, we will create it.
 	if (meshPreviewTextures.find(meshID) == meshPreviewTextures.end())
 		createMeshPreview(meshID);
@@ -230,13 +248,11 @@ FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialID)
 
 		for (size_t i = 0; i < gameModelList.size(); i++)
 		{
-
 			FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
 			if (currentGameModel->material == RESOURCE_MANAGER.getMaterial(materialID))
 				createGameModelPreview(currentGameModel->getObjectID());
 		}
-
 
 		RESOURCE_MANAGER.getMaterial(materialID)->setDirtyFlag(false);
 	}	
@@ -449,9 +465,24 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 
 FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelID)
 {
+	// if game model's dirty flag is set we need to update preview
+	if (RESOURCE_MANAGER.getGameModel(gameModelID)->getDirtyFlag())
+	{
+		createGameModelPreview(gameModelID);
+		RESOURCE_MANAGER.getGameModel(gameModelID)->setDirtyFlag(false);
+	}
+
+	// if game model's material dirty flag is set we need to update preview
+	if (RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial() != nullptr && RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->getDirtyFlag())
+	{
+		createMaterialPreview(RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->getObjectID());
+		RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->setDirtyFlag(false);
+		createGameModelPreview(gameModelID);
+	}
+
 	// if we somehow could not find preview, we will create it.
 	if (gameModelPreviewTextures.find(gameModelID) == gameModelPreviewTextures.end())
-		createMeshPreview(gameModelID);
+		createGameModelPreview(gameModelID);
 
 	// if still we don't have it
 	if (gameModelPreviewTextures.find(gameModelID) == gameModelPreviewTextures.end())

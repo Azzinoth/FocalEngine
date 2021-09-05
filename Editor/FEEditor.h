@@ -73,8 +73,8 @@ private:
 	static void mouseButtonCallback(int button, int action, int mods);
 	static void mouseMoveCallback(double xpos, double ypos);
 	static void keyButtonCallback(int key, int scancode, int action, int mods);
-	//static void windowResizeCallback(int newW, int newH);
 	static void renderTargetResizeCallback(int newW, int newH);
+	static void dropCallback(int count, const char** paths);
 
 	void displaySceneBrowser();
 	bool sceneBrowserVisible = true;

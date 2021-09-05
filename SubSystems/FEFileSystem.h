@@ -5,6 +5,8 @@
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
 	#include <shobjidl.h> // openDialog
+	#include <shlwapi.h> // PathFindExtensionA
+	#pragma comment(lib, "shlwapi.lib") // PathFindExtensionA
 #endif
 
 namespace FocalEngine
@@ -15,6 +17,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEFileSystem)
 
 		bool checkFile(const char* path);
+		std::string getFileExtension(const char* path);
 		bool isFolder(const char* path);
 		bool createFolder(const char* path);
 		bool deleteFolder(const char* path);
@@ -34,5 +37,5 @@ namespace FocalEngine
 #endif
 	};
 
-	#define FILESYSTEM FEFileSystem::getInstance()
+	#define FILE_SYSTEM FEFileSystem::getInstance()
 }

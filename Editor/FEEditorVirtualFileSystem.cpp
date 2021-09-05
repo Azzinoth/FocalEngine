@@ -153,14 +153,14 @@ void FEVFSDirectory::setReadOnly(bool newValue)
 }
 
 FEVirtualFileSystem* FEVirtualFileSystem::_instance = nullptr;
-FEVirtualFileSystem::FEVirtualFileSystem() 
+FEVirtualFileSystem::FEVirtualFileSystem()
 {
 	root = new FEVFSDirectory();
 	root->parent = root;
 	root->setName("/");
 }
 
-FEVirtualFileSystem::~FEVirtualFileSystem() 
+FEVirtualFileSystem::~FEVirtualFileSystem()
 {
 	clear();
 }
@@ -191,6 +191,18 @@ bool FEVirtualFileSystem::isPathCorrect(std::string path)
 	FEVFSDirectory* currentDirectory = root;
 	for (size_t i = 0; i < tokenizedPath.size(); i++)
 	{
+		// This is not directory and it is last token it could be file.
+		if (currentDirectory->getSubDirectory(tokenizedPath[i]) == nullptr && i == tokenizedPath.size() - 1)
+		{
+			for (size_t j = 0; j < currentDirectory->files.size(); j++)
+			{
+				if (currentDirectory->files[j].data->getName() == tokenizedPath[i])
+					return true;
+			}
+
+			return false;
+		}
+
 		currentDirectory = currentDirectory->getSubDirectory(tokenizedPath[i]);
 
 		if (currentDirectory == nullptr)
@@ -223,7 +235,20 @@ FEVFSDirectory* FEVirtualFileSystem::pathToDirectory(std::string path)
 	FEVFSDirectory* currentDirectory = root;
 	for (size_t i = 0; i < tokenizedPath.size(); i++)
 	{
+		// This is not directory and it is last token it could be file.
+		if (currentDirectory->getSubDirectory(tokenizedPath[i]) == nullptr && i == tokenizedPath.size() - 1)
+		{
+			for (size_t j = 0; j < currentDirectory->files.size(); j++)
+			{
+				// If that the case we return last valid directory.
+				if (currentDirectory->files[j].data->getName() == tokenizedPath[i])
+					return currentDirectory;
+			}
+		}
+
 		currentDirectory = currentDirectory->getSubDirectory(tokenizedPath[i]);
+		if (currentDirectory == nullptr)
+			return nullptr;
 	}
 
 	return currentDirectory;

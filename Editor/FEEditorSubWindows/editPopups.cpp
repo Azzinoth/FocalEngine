@@ -712,6 +712,7 @@ void editMaterialPopup::show(FEMaterial* material)
 #ifdef USE_NODES
 		materialNodeArea = NODE_SYSTEM.createNodeArea();
 		materialNodeArea->setMainContextMenuFunc(nodeSystemMainContextMenu);
+		materialNodeArea->setNodeEventCallback(textureNodeCallback);
 
 		FEEditorMaterialNode* newNode = new FEEditorMaterialNode(material);
 
@@ -1508,6 +1509,12 @@ void editMaterialPopup::close()
 #ifdef USE_NODES
 bool editMaterialPopup::dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo)
 {
+	if (objToWorkWith->isTextureInList(RESOURCE_MANAGER.getTexture(object->getObjectID())))
+		return false;
+
+	if (objToWorkWith->getUsedTexturesCount() == FE_MAX_TEXTURES_PER_MATERIAL)
+		return false;
+
 	FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(RESOURCE_MANAGER.getTexture(object->getObjectID()));
 
 	ImVec2 positionOnCanvas;
@@ -1617,6 +1624,21 @@ void editMaterialPopup::nodeSystemMainContextMenu()
 		}
 
 		ImGui::EndMenu();
+	}
+}
+
+void editMaterialPopup::textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventWithNode)
+{
+	if (node == nullptr)
+		return;
+
+	if (node->getType() != "FEEditorTextureSourceNode")
+		return;
+
+	FEEditorTextureSourceNode* currentNode = reinterpret_cast<FEEditorTextureSourceNode*>(node);
+	if (objToWorkWith->isTextureInList(currentNode->getTexture()))
+	{
+		objToWorkWith->removeTexture(currentNode->getTexture());
 	}
 }
 

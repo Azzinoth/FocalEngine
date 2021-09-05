@@ -28,6 +28,7 @@ protected:
 	ImVec2 position;
 	ImVec2 size;
 	std::string name;
+	std::string type = "FEEditorNode";
 	bool shouldBeDestroyed = false;
 
 	std::vector<FEEditorNodeSocket*> input;
@@ -61,6 +62,8 @@ public:
 
 	std::string getName();
 	void setName(std::string newValue);
+
+	std::string getType();
 
 	void addInputSocket(FEEditorNodeSocket* socket);
 	void addOutputSocket(FEEditorNodeSocket* socket);

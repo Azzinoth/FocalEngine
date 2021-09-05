@@ -5,6 +5,7 @@ using namespace FocalEngine;
 FEEditorTextureCreatingNode::FEEditorTextureCreatingNode()
 {
 	FEEditorNode::FEEditorNode();
+	type = "FEEditorTextureCreatingNode";
 
 	this->resultTexture = RESOURCE_MANAGER.noTexture;
 
@@ -310,16 +311,23 @@ bool FEEditorTextureCreatingNode::canConnect(FEEditorNodeSocket* ownSocket, FEEd
 		return true;
 
 	// But if we already created texture we will check that candidate node have texture with same resolution.
-	FEEditorTextureSourceNode* sourceNode = reinterpret_cast<FEEditorTextureSourceNode*>(candidateSocket->getParent());
-	if (sourceNode->getTexture()->getWidth() == resultTexture->getWidth() &&
-		sourceNode->getTexture()->getHeight() == resultTexture->getHeight())
+	if (candidateSocket->getType() != FE_NODE_SOCKET_FLOAT_CHANNEL_OUT)
 	{
-		return true;
+		FEEditorTextureSourceNode* sourceNode = reinterpret_cast<FEEditorTextureSourceNode*>(candidateSocket->getParent());
+		if (sourceNode->getTexture()->getWidth() == resultTexture->getWidth() &&
+			sourceNode->getTexture()->getHeight() == resultTexture->getHeight())
+		{
+			return true;
+		}
+		else
+		{
+			*msgToUser = incompatibleResolutionMsg;
+			return false;
+		}
 	}
 	else
 	{
-		*msgToUser = incompatibleResolutionMsg;
-		return false;
+		return true;
 	}
 
 	return false;

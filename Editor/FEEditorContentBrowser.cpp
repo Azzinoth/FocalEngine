@@ -48,7 +48,7 @@ void FEEditor::displayContentBrowser()
 				if (ImGui::MenuItem("Load mesh..."))
 				{
 					std::string filePath = "";
-					FILESYSTEM.openDialog(filePath, meshLoadFilter, 1);
+					FILE_SYSTEM.openDialog(filePath, meshLoadFilter, 1);
 					if (filePath != "")
 					{
 						FEMesh* loadedMesh = RESOURCE_MANAGER.LoadOBJMesh(filePath.c_str());
@@ -61,8 +61,8 @@ void FEEditor::displayContentBrowser()
 						}
 						else
 						{
-							PROJECT_MANAGER.getCurrent()->modified = true;
-							loadedMesh->setDirtyFlag(true);
+							PROJECT_MANAGER.getCurrent()->setModified(true);
+							PROJECT_MANAGER.getCurrent()->addUnSavedObject(loadedMesh);
 						}
 					}
 				}
@@ -72,27 +72,30 @@ void FEEditor::displayContentBrowser()
 					if (ImGui::MenuItem("Load..."))
 					{
 						std::string filePath = "";
-						FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
+						FILE_SYSTEM.openDialog(filePath, textureLoadFilter, 1);
 						if (filePath != "")
 						{
-							loadTexturePopUp::getInstance().show(filePath);
-							PROJECT_MANAGER.getCurrent()->modified = true;
+							FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(filePath.c_str());
+							PROJECT_MANAGER.getCurrent()->addUnSavedObject(newTexture);
+							VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
+							PROJECT_MANAGER.getCurrent()->setModified(true);
 						}
 					}
 
 					if (ImGui::MenuItem("Load and combine with opacity mask..."))
 					{
 						std::string filePath = "";
-						FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
+						FILE_SYSTEM.openDialog(filePath, textureLoadFilter, 1);
 
 						std::string maskFilePath = "";
-						FILESYSTEM.openDialog(maskFilePath, textureLoadFilter, 1);
+						FILE_SYSTEM.openDialog(maskFilePath, textureLoadFilter, 1);
 
 						if (filePath != "" && maskFilePath != "")
 						{
 							FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTextureWithTransparencyMask(filePath.c_str(), maskFilePath.c_str(), "");
-							newTexture->setDirtyFlag(true);
-							PROJECT_MANAGER.getCurrent()->modified = true;
+							PROJECT_MANAGER.getCurrent()->addUnSavedObject(newTexture);
+							//newTexture->setDirtyFlag(true);
+							PROJECT_MANAGER.getCurrent()->setModified(true);
 							VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 						}
 					}
@@ -110,11 +113,10 @@ void FEEditor::displayContentBrowser()
 					FEMaterial* newMat = RESOURCE_MANAGER.createMaterial("");
 					if (newMat)
 					{
-						PROJECT_MANAGER.getCurrent()->modified = true;
+						PROJECT_MANAGER.getCurrent()->setModified(true);
 						newMat->shader = RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 
 						newMat->setAlbedoMap(RESOURCE_MANAGER.noTexture);
-						newMat->setNormalMap(RESOURCE_MANAGER.noTexture);
 
 						VIRTUAL_FILE_SYSTEM.createFile(newMat, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 					}
@@ -123,7 +125,7 @@ void FEEditor::displayContentBrowser()
 				if (ImGui::MenuItem("Create new game model"))
 				{
 					FEGameModel* newGameModel = RESOURCE_MANAGER.createGameModel();
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					VIRTUAL_FILE_SYSTEM.createFile(newGameModel, VIRTUAL_FILE_SYSTEM.getCurrentPath());
 				}
 
@@ -212,7 +214,7 @@ void FEEditor::displayContentBrowser()
 					{
 						std::vector<FETexture*> newTextures = RESOURCE_MANAGER.channelsToFETextures(RESOURCE_MANAGER.getTexture(filteredResourcesContentBrowser[contentBrowserItemUnderMouse]->getObjectID()));
 						newTextures[0]->setDirtyFlag(true);
-						PROJECT_MANAGER.getCurrent()->modified = true;
+						PROJECT_MANAGER.getCurrent()->setModified(true);
 
 						VIRTUAL_FILE_SYSTEM.createFile(newTextures[0], VIRTUAL_FILE_SYSTEM.getCurrentPath());
 						VIRTUAL_FILE_SYSTEM.createFile(newTextures[1], VIRTUAL_FILE_SYSTEM.getCurrentPath());
@@ -232,7 +234,6 @@ void FEEditor::displayContentBrowser()
 	ImGui::PopStyleVar();
 	ImGui::End();
 
-	loadTexturePopUp::getInstance().render();
 	renameFailedPopUp::getInstance().render();
 	deleteTexturePopup::getInstance().render();
 	deleteMeshPopup::getInstance().render();
@@ -433,7 +434,7 @@ void FEEditor::displayContentBrowserItems()
 				else
 				{
 					filteredResourcesContentBrowser[contentBrowserRenameIndex]->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					filteredResourcesContentBrowser[contentBrowserRenameIndex]->setName(contentBrowserRename);
 				}
 				

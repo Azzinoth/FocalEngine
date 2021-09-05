@@ -78,7 +78,7 @@ void selectMaterialPopUp::render()
 				if (IndexUnderMouse != -1)
 				{
 					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					close();
 				}
 			}
@@ -109,7 +109,7 @@ void selectMaterialPopUp::render()
 			if (IndexSelected != -1)
 			{
 				*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
-				PROJECT_MANAGER.getCurrent()->modified = true;
+				PROJECT_MANAGER.getCurrent()->setModified(true);
 				close();
 			}
 		}
@@ -306,7 +306,7 @@ void selectMeshPopUp::render()
 				{
 					*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					close();
 				}
 			}
@@ -337,7 +337,7 @@ void selectMeshPopUp::render()
 			{
 				*objToWorkWith = RESOURCE_MANAGER.getMesh(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
 
-				PROJECT_MANAGER.getCurrent()->modified = true;
+				PROJECT_MANAGER.getCurrent()->setModified(true);
 				close();
 			}
 		}
@@ -530,7 +530,7 @@ void selectTexturePopUp::render()
 						*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 					}
 
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					onSelectAction();
 					close();
 				}
@@ -569,7 +569,7 @@ void selectTexturePopUp::render()
 					*objToWorkWith = RESOURCE_MANAGER.getTexture(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
 				}
 
-				PROJECT_MANAGER.getCurrent()->modified = true;
+				PROJECT_MANAGER.getCurrent()->setModified(true);
 				onSelectAction();
 				close();
 			}
@@ -717,7 +717,7 @@ void selectGameModelPopUp::render()
 							SELECTED.setSelected(newEntity);
 
 							wasSelectedAlready = true;
-							PROJECT_MANAGER.getCurrent()->modified = true;
+							PROJECT_MANAGER.getCurrent()->setModified(true);
 						}
 						else
 						{
@@ -726,7 +726,7 @@ void selectGameModelPopUp::render()
 							SELECTED.setSelected(newEntity);
 
 							wasSelectedAlready = true;
-							PROJECT_MANAGER.getCurrent()->modified = true;
+							PROJECT_MANAGER.getCurrent()->setModified(true);
 						}
 					}
 					else

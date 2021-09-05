@@ -10,7 +10,7 @@ bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
 		FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(object->getObjectID()));
 		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
 		SELECTED.setSelected(newEntity);
-		PROJECT_MANAGER.getCurrent()->modified = true;
+		PROJECT_MANAGER.getCurrent()->setModified(true);
 
 		return true;
 	}
@@ -142,8 +142,7 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 		{
 			if (PROJECT_MANAGER.getCurrent() == nullptr)
 				ENGINE.terminate();
-			shouldTerminate = true;
-			projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
+			projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), true);
 		}
 	}
 
@@ -156,7 +155,7 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 				FEEntityInstanced* selectedEntityInstanced = SCENE.getEntityInstanced(SELECTED.getSelected()->getObjectID());
 				selectedEntityInstanced->deleteInstance(SELECTED.instancedSubObjectIndexSelected);
 				SELECTED.clear();
-				PROJECT_MANAGER.getCurrent()->modified = true;
+				PROJECT_MANAGER.getCurrent()->setModified(true);
 			}
 		}
 
@@ -164,13 +163,13 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 		{
 			SCENE.deleteEntity(SELECTED.getEntity()->getObjectID());
 			SELECTED.clear();
-			PROJECT_MANAGER.getCurrent()->modified = true;
+			PROJECT_MANAGER.getCurrent()->setModified(true);
 		}
 		else if (SELECTED.getTerrain() != nullptr)
 		{
 			SCENE.deleteTerrain(SELECTED.getTerrain()->getObjectID());
 			SELECTED.clear();
-			PROJECT_MANAGER.getCurrent()->modified = true;
+			PROJECT_MANAGER.getCurrent()->setModified(true);
 		}
 	}
 
@@ -810,7 +809,7 @@ void FEEditor::displaySceneBrowser()
 					FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(true, newName);
 					SCENE.addTerrain(newTerrain);
 					newTerrain->heightMap->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 				}
 
 				if (ImGui::BeginMenu("Light"))
@@ -973,8 +972,8 @@ void FEEditor::initializeResources()
 	ENGINE.setKeyCallback(keyButtonCallback);
 	ENGINE.setMouseButtonCallback(mouseButtonCallback);
 	ENGINE.setMouseMoveCallback(mouseMoveCallback);
-	//ENGINE.setWindowResizeCallback(windowResizeCallback);
 	ENGINE.setRenderTargetResizeCallback(renderTargetResizeCallback);
+	ENGINE.setDropCallback(dropCallback);
 
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
@@ -1112,9 +1111,9 @@ void FEEditor::render()
 
 				if (ImGui::MenuItem("Close project"))
 				{
-					if (PROJECT_MANAGER.getCurrent()->modified)
+					if (PROJECT_MANAGER.getCurrent()->isModified())
 					{
-						projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
+						projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), false);
 					}
 					else
 					{
@@ -1235,10 +1234,9 @@ void FEEditor::closeWindowCallBack()
 		return;
 	}
 
-	if (PROJECT_MANAGER.getCurrent()->modified)
+	if (PROJECT_MANAGER.getCurrent()->isModified())
 	{
-		shouldTerminate = true;
-		projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent());
+		projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), true);
 	}
 	else
 	{
@@ -1248,15 +1246,58 @@ void FEEditor::closeWindowCallBack()
 	}
 }
 
-//void FEEditor::windowResizeCallback(int newW, int newH)
-//{
-//	SELECTED.reInitializeResources();
-//}
-
 void FEEditor::renderTargetResizeCallback(int newW, int newH)
 {
 	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
 	SELECTED.reInitializeResources();
+}
+
+void FEEditor::dropCallback(int count, const char** paths)
+{
+	for (size_t i = 0; i < size_t(count); i++)
+	{
+		if (FILE_SYSTEM.isFolder(paths[i]) && count == 1)
+		{
+			if (PROJECT_MANAGER.getCurrent() == nullptr)
+			{
+				PROJECT_MANAGER.setProjectsFolder(paths[i]);
+			}
+		}
+
+		if (PROJECT_MANAGER.getCurrent() != nullptr)
+		{
+			if (FILE_SYSTEM.getFileExtension(paths[i]) == ".png")
+			{
+				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(paths[i]);
+				if (newTexture != nullptr && newTexture != RESOURCE_MANAGER.noTexture)
+				{
+					PROJECT_MANAGER.getCurrent()->addUnSavedObject(newTexture);
+					VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
+					PROJECT_MANAGER.getCurrent()->setModified(true);
+				}
+			}
+
+			if (FILE_SYSTEM.getFileExtension(paths[i]) == ".obj")
+			{
+				FEMesh* loadedMesh = RESOURCE_MANAGER.LoadOBJMesh(paths[i]);
+				if (loadedMesh != nullptr)
+				{
+					VIRTUAL_FILE_SYSTEM.createFile(loadedMesh, VIRTUAL_FILE_SYSTEM.getCurrentPath());
+					// checking material count in this mesh
+					if (loadedMesh != nullptr && loadedMesh->getMaterialCount() > 2)
+					{
+						messagePopUp::getInstance().show("Error!", "Mesh that you was trying to load has more than 2 materials, currently it is not supported!");
+						RESOURCE_MANAGER.deleteFEMesh(loadedMesh);
+					}
+					else
+					{
+						PROJECT_MANAGER.getCurrent()->setModified(true);
+						PROJECT_MANAGER.getCurrent()->addUnSavedObject(loadedMesh);
+					}
+				}
+			}
+		}
+	}
 }
 
 bool FEEditor::isInGameMode()
@@ -1509,7 +1550,7 @@ void FEEditor::displayInspector()
 					newInstanceMatrix = glm::translate(newInstanceMatrix, ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
 					instancedEntity->addInstance(newInstanceMatrix);
 
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 				}
 
 				if (instancedEntity->isSelectMode())
@@ -1578,7 +1619,7 @@ void FEEditor::displayInspector()
 		if (loadHeightMapButton->getWasClicked())
 		{
 			std::string filePath = "";
-			FILESYSTEM.openDialog(filePath, textureLoadFilter, 1);
+			FILE_SYSTEM.openDialog(filePath, textureLoadFilter, 1);
 
 			if (filePath != "")
 			{
@@ -1590,7 +1631,7 @@ void FEEditor::displayInspector()
 				else
 				{
 					loadedTexture->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->modified = true;
+					PROJECT_MANAGER.getCurrent()->setModified(true);
 					//RESOURCE_MANAGER.saveFETexture(loadedTexture, (PROJECT_MANAGER.getCurrent()->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str());
 				}
 			}

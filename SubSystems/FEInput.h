@@ -17,6 +17,9 @@ namespace FocalEngine
 
 		static void keyButtonCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 		void(*keyButtonCallbackImpl)(int, int, int, int);
+
+		static void dropCallback(GLFWwindow* window, int count, const char** paths);
+		void(*dropCallbackImpl)(int, const char**);
 	private:
 		SINGLETON_PRIVATE_PART(FEInput)
 	};

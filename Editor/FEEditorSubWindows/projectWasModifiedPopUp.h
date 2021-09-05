@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/loadTexturePopup.h"
+#include "../Editor/FEEditorSubWindows/combineChannelsToTexturePopUp.h"
 
-static bool shouldTerminate = false;
 class projectWasModifiedPopUp : public ImGuiModalPopup
 {
 	FEProject* objToWorkWith;
+	bool shouldTerminate = false;
 public:
 	SINGLETON_PUBLIC_PART(projectWasModifiedPopUp)
 
-	void show(FEProject* project);
+	void show(FEProject* project, bool fullyCloseApplication);
 	void render() override;
 
 private:

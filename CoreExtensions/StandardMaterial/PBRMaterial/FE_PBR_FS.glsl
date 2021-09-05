@@ -108,8 +108,8 @@ vec3 getNormal()
 	}
 	else
 	{
-		//result = FS_IN.vertexNormal;
-		result = normalize(FS_IN.TBN * FS_IN.vertexNormal);
+		result = FS_IN.vertexNormal;
+		//result = normalize(FS_IN.TBN * FS_IN.vertexNormal);
 	}
 
 	return result;

@@ -27,10 +27,10 @@ std::vector<FEProject*> FEProjectManager::getList()
 
 void FEProjectManager::loadProjectList()
 {
-	if (!FILESYSTEM.isFolder(PROJECTS_FOLDER))
+	if (!FILE_SYSTEM.isFolder(PROJECTS_FOLDER))
 		customProjectFolder = "";
 
-	std::vector<std::string> projectNameList = FILESYSTEM.getFolderList(PROJECTS_FOLDER);
+	std::vector<std::string> projectNameList = FILE_SYSTEM.getFolderList(PROJECTS_FOLDER);
 
 	for (size_t i = 0; i < projectNameList.size(); i++)
 	{
@@ -182,15 +182,15 @@ void FEProjectManager::displayProjectSelection()
 			projectFolder.erase(projectFolder.begin() + projectFolder.size() - 1);
 
 			// geting list of all files and folders in project folder
-			auto fileList = FILESYSTEM.getFolderList(list[indexChosen]->getProjectFolder().c_str());
+			auto fileList = FILE_SYSTEM.getFolderList(list[indexChosen]->getProjectFolder().c_str());
 			// we would delete all files in project folder, my editor would not create folders there
 			// so we are deleting only files.
 			for (size_t i = 0; i < fileList.size(); i++)
 			{
-				FILESYSTEM.deleteFile((list[indexChosen]->getProjectFolder() + fileList[i]).c_str());
+				FILE_SYSTEM.deleteFile((list[indexChosen]->getProjectFolder() + fileList[i]).c_str());
 			}
 			// then we can try to delete project folder, but if user created some folders in it we will fail.
-			FILESYSTEM.deleteFolder(projectFolder.c_str());
+			FILE_SYSTEM.deleteFolder(projectFolder.c_str());
 
 			for (size_t i = 0; i < list.size(); i++)
 			{
@@ -214,18 +214,8 @@ void FEProjectManager::displayProjectSelection()
 		if (ImGui::Button("Choose projects directory", ImVec2(280.0f, 64.0f)))
 		{
 			std::string path = "";
-			FILESYSTEM.openFolderDialog(path);
-
-			if (path != "")
-			{
-				customProjectFolder = path;
-				for (size_t i = 0; i < list.size(); i++)
-				{
-					delete list[i];
-				}
-				list.clear();
-				loadProjectList();
-			}
+			FILE_SYSTEM.openFolderDialog(path);
+			setProjectsFolder(path);
 		}
 
 		ImGui::PopStyleColor();
@@ -257,7 +247,7 @@ void FEProjectManager::displayProjectSelection()
 
 				if (strlen(projectName) != 0 && !alreadyCreated)
 				{
-					FILESYSTEM.createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
+					FILE_SYSTEM.createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
 					list.push_back(new FEProject(projectName, std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/"));
 					list.back()->createDummyScreenshot();
 					SCENE.addLight(FE_DIRECTIONAL_LIGHT, "sun");
@@ -285,13 +275,27 @@ void FEProjectManager::displayProjectSelection()
 
 bool FEProjectManager::containProject(std::string path)
 {
-	if (!FILESYSTEM.isFolder(path.c_str()))
+	if (!FILE_SYSTEM.isFolder(path.c_str()))
 		return false;
 
-	if (!FILESYSTEM.checkFile((path + "/scene.txt").c_str()))
+	if (!FILE_SYSTEM.checkFile((path + "/scene.txt").c_str()))
 		return false;
 
 	return true;
+}
+
+void FEProjectManager::setProjectsFolder(std::string folderPath)
+{
+	if (folderPath != "")
+	{
+		customProjectFolder = folderPath;
+		for (size_t i = 0; i < list.size(); i++)
+		{
+			delete list[i];
+		}
+		list.clear();
+		loadProjectList();
+	}
 }
 
 FEProject::FEProject(std::string Name, std::string ProjectFolder)
@@ -359,6 +363,27 @@ void FEProject::saveScene()
 	sceneFile.open(projectFolder + "scene.txt");
 
 	root["version"] = 0.01f;
+	
+	// saving all unSaved objects
+	for (size_t i = 0; i < unSavedObjects.size(); i++)
+	{
+		switch (unSavedObjects[i]->getType())
+		{
+			case FE_MESH:
+			{
+				FEMesh* meshToSave = RESOURCE_MANAGER.getMesh(unSavedObjects[i]->getObjectID());
+				RESOURCE_MANAGER.saveFEMesh(meshToSave, (getProjectFolder() + meshToSave->getObjectID() + std::string(".model")).c_str());
+				break;
+			}
+
+			case FE_TEXTURE:
+			{
+				FETexture* textureToSave = RESOURCE_MANAGER.getTexture(unSavedObjects[i]->getObjectID());
+				RESOURCE_MANAGER.saveFETexture(textureToSave, (getProjectFolder() + textureToSave->getObjectID() + std::string(".texture")).c_str());
+				break;
+			}
+		}
+	}
 
 	// saving Meshes
 	std::vector<std::string> meshList = RESOURCE_MANAGER.getMeshList();
@@ -366,9 +391,6 @@ void FEProject::saveScene()
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
 		FEMesh* mesh = RESOURCE_MANAGER.getMesh(meshList[i]);
-
-		if (mesh->getDirtyFlag())
-			RESOURCE_MANAGER.saveFEMesh(mesh, (getProjectFolder() + mesh->getObjectID() + std::string(".model")).c_str());
 		meshData[mesh->getObjectID()]["ID"] = mesh->getObjectID();
 		meshData[mesh->getObjectID()]["name"] = mesh->getName();
 		meshData[mesh->getObjectID()]["fileName"] = mesh->getObjectID() + ".model";
@@ -383,9 +405,6 @@ void FEProject::saveScene()
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
 		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
-
-		if (texture->getDirtyFlag())
-			RESOURCE_MANAGER.saveFETexture(texture, (getProjectFolder() + texture->getObjectID() + std::string(".texture")).c_str());
 		texturesData[texture->getObjectID()]["ID"] = texture->getObjectID();
 		texturesData[texture->getObjectID()]["name"] = texture->getName();
 		texturesData[texture->getObjectID()]["fileName"] = texture->getObjectID() + ".texture";
@@ -665,7 +684,7 @@ void FEProject::saveScene()
 	
 	for (size_t i = 0; i < filesToDelete.size(); i++)
 	{
-		FILESYSTEM.deleteFile(filesToDelete[i].c_str());
+		FILE_SYSTEM.deleteFile(filesToDelete[i].c_str());
 	}
 
 	// VFS
@@ -1038,7 +1057,7 @@ void FEProject::loadScene()
 	sceneFile.close();
 
 	// VFS
-	if (FILESYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
+	if (FILE_SYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
 	{
 		VIRTUAL_FILE_SYSTEM.loadState(projectFolder + "VFS.txt");
 
@@ -1491,4 +1510,19 @@ void FEProject::loadSceneVer0()
 	ENGINE.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
 
 	sceneFile.close();
+}
+
+bool FEProject::isModified()
+{
+	return modified;
+}
+
+void FEProject::setModified(bool newValue)
+{
+	modified = newValue;
+}
+
+void FEProject::addUnSavedObject(FEObject* object)
+{
+	unSavedObjects.push_back(object);
 }

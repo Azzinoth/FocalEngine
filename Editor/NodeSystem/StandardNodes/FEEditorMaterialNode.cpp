@@ -4,10 +4,11 @@ using namespace FocalEngine;
 FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material)
 {
 	FEEditorNode::FEEditorNode();
-	
+	type = "FEEditorMaterialNode";
+
 	data = material;
 
-	setSize(ImVec2(380, 400));
+	setSize(ImVec2(380, 440));
 	setName(data->getName());
 
 	titleBackgroundColor = ImColor(200, 50, 200);
@@ -37,11 +38,17 @@ void FEEditorMaterialNode::draw()
 	float fieldWidth = 160.0f;
 	float fieldStep = 30.0f;
 
-	ImGui::SetNextItemWidth(fieldWidth);
+	bool compactFlag = data->isCompackPacking();
+	ImGui::Checkbox("##Compact flag", &compactFlag);
+	ImGui::SameLine();
+	ImGui::Text("Compact packing");
+	data->setCompackPacking(compactFlag);
 
 	FEShaderParam* debugFlag = data->getParameter("debugFlag");
 	if (debugFlag != nullptr)
 	{
+		currentPosition.y += fieldStep;
+		ImGui::SetCursorScreenPos(currentPosition);
 		ImGui::Text("Debug flag:");
 		int iData = *(int*)debugFlag->data;
 
@@ -133,10 +140,10 @@ void FEEditorMaterialNode::draw()
 	{
 		currentPosition.y += fieldStep;
 		ImGui::SetCursorScreenPos(currentPosition);
-		ImGui::Text("Metalness map intensity:");
+		ImGui::Text("Metalness map \nintensity:");
 		ImGui::SetNextItemWidth(fieldWidth);
 		float metalness = data->getMetalnessMapIntensity();
-		currentPosition.y += fieldStep;
+		currentPosition.y += fieldStep * 1.5f;
 		ImGui::SetCursorScreenPos(currentPosition);
 		ImGui::DragFloat("##Metalness map intensity", &metalness, 0.01f, 0.0f, 10.0f);
 		data->setMetalnessMapIntensity(metalness);
@@ -222,6 +229,24 @@ void FEEditorMaterialNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNo
 	{
 		data->setRoughtnessMap(texure, socketIndex, 1);
 	}
+
+	if (ownSocket->getName() == "Metalness")
+	{
+		data->setMetalnessMap(texure, socketIndex, 0);
+	}
+	else if (ownSocket->getName() == "Metalness_1")
+	{
+		data->setMetalnessMap(texure, socketIndex, 1);
+	}
+
+	if (ownSocket->getName() == "Displacement")
+	{
+		data->setDisplacementMap(texure, socketIndex, 0);
+	}
+	else if (ownSocket->getName() == "Displacement_1")
+	{
+		data->setDisplacementMap(texure, socketIndex, 1);
+	}
 }
 
 FEMaterial* FEEditorMaterialNode::getData()
@@ -233,6 +258,13 @@ bool FEEditorMaterialNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNod
 {
 	if (!FEEditorNode::canConnect(ownSocket, candidateSocket, nullptr))
 		return false;
+
+	// For now it is unsupported type.
+	if (candidateSocket->getType() == FE_NODE_SOCKET_FLOAT_CHANNEL_OUT)
+	{
+		*msgToUser = incompatibleTypesMsg;
+		return false;
+	}
 
 	if ((ownSocket->getName() == "albedo" || ownSocket->getName() == "albedo_1" || ownSocket->getName() == "normal" || ownSocket->getName() == "normal_1") && (candidateSocket->getType() != FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT))
 	{

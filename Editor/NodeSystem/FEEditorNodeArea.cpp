@@ -488,6 +488,8 @@ void FEEditorNodeArea::deleteNode(FEEditorNode* node)
 	{
 		if (nodes[i] == node)
 		{
+			propagateNodeEventsCallbcks(nodes[i], FE_EDITOR_NODE_REMOVED);
+
 			for (size_t j = 0; j < nodes[i]->input.size(); j++)
 			{
 				auto connections = getAllConnections(nodes[i]->input[j]);
@@ -525,9 +527,13 @@ void FEEditorNodeArea::clear()
 
 	for (int i = 0; i < int(nodes.size()); i++)
 	{
+		propagateNodeEventsCallbcks(nodes[i], FE_EDITOR_NODE_DESTROYED);
 		deleteNode(nodes[i]);
 		i--;
 	}
+
+	mainContextMenuFunc = nullptr;
+	nodeEventsCallbacks.clear();
 
 	clearing = false;
 }
@@ -561,25 +567,6 @@ ImVec2 FEEditorNodeArea::getAreaRenderOffset()
 	return renderOffset;
 }
 
-//bool FEEditorNodeArea::tryToConnect(FEEditorNodeSocket* outSocket, FEEditorNodeSocket* inSocket)
-//{
-//	char* msg = nullptr;
-//	bool result = inSocket->getParent()->canConnect(inSocket, outSocket, &msg);
-//	
-//	if (result)
-//	{
-//		outSocket->connections.push_back(inSocket);
-//		inSocket->connections.push_back(outSocket);
-//
-//		connections.push_back(new FEEditorNodeConnection(outSocket, inSocket));
-//
-//		outSocket->getParent()->socketEvent(outSocket, inSocket, FE_EDITOR_NODE_SOCKET_CONNECTED);
-//		inSocket->getParent()->socketEvent(inSocket, outSocket, FE_EDITOR_NODE_SOCKET_CONNECTED);
-//	}
-//
-//	return result;
-//}
-
 bool FEEditorNodeArea::tryToConnect(FEEditorNode* outNode, size_t outNodeSocketIndex, FEEditorNode* inNode, size_t inNodeSocketIndex)
 {
 	if (outNode->output.size() <= outNodeSocketIndex)
@@ -606,4 +593,19 @@ bool FEEditorNodeArea::tryToConnect(FEEditorNode* outNode, size_t outNodeSocketI
 	}
 
 	return result;
+}
+
+void FEEditorNodeArea::setNodeEventCallback(void(*func)(FEEditorNode*, FE_EDITOR_NODE_EVENT))
+{
+	if (func != nullptr)
+		nodeEventsCallbacks.push_back(func);
+}
+
+void FEEditorNodeArea::propagateNodeEventsCallbcks(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventToPropagate)
+{
+	for (size_t i = 0; i < nodeEventsCallbacks.size(); i++)
+	{
+		if (nodeEventsCallbacks[i] != nullptr)
+			nodeEventsCallbacks[i](node, eventToPropagate);
+	}
 }

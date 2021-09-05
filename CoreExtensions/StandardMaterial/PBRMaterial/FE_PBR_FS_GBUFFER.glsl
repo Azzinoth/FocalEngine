@@ -9,7 +9,6 @@ in VS_OUT
 	flat float materialIndex;
 } FS_IN;
 
-
 layout (location = 0) out vec4 outColor;
 layout (location = 1) out vec3 gPosition;
 layout (location = 2) out vec3 gNormal;
@@ -27,6 +26,8 @@ uniform float FEMetalness;
 uniform float FEMetalnessMapIntensity;
 
 uniform int debugFlag;
+uniform int compactMaterialPacking;
+vec4 materialProperties;
 
 vec4 getAlbedo()
 {
@@ -63,7 +64,7 @@ vec3 getNormal()
 	}
 	else
 	{
-		result = normalize(FS_IN.TBN * FS_IN.vertexNormal);
+		result = normalize(FS_IN.vertexNormal);
 	}
 
 	return result;
@@ -72,6 +73,15 @@ vec3 getNormal()
 float getAO()
 {
 	float result = 1;
+
+	if (compactMaterialPacking == 1)
+	{
+		result = materialProperties[textureChannels[2]];
+		result *= FEAOMapIntensity;
+		result = mix(FEAOIntensity, result, FEAOMapIntensity);
+
+		return result;
+	}
 
 	if (FS_IN.materialIndex == 0.0)
 	{
@@ -94,6 +104,12 @@ float getRoughtness()
 {
 	float result = FERoughtness;
 
+	if (compactMaterialPacking == 1)
+	{
+		result = materialProperties[textureChannels[3]] * FERoughtnessMapIntensity;
+		return result;
+	}
+
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[3] != -1)
@@ -111,6 +127,13 @@ float getRoughtness()
 float getMetalness()
 {
 	float result = FEMetalness;
+
+	if (compactMaterialPacking == 1)
+	{
+		result = materialProperties[textureChannels[4]] * FEMetalnessMapIntensity;
+		//result = 0.1;
+		return result;
+	}
 
 	if (FS_IN.materialIndex == 0.0)
 	{
@@ -130,6 +153,12 @@ float getDisplacement()
 {
 	float result = 0;
 
+	if (compactMaterialPacking == 1)
+	{
+		result = materialProperties[textureChannels[5]] * FEMetalnessMapIntensity;
+		return result;
+	}
+
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[5] != -1)
@@ -146,6 +175,18 @@ float getDisplacement()
 
 void main(void)
 {
+	if (compactMaterialPacking == 1)
+	{
+		if (FS_IN.materialIndex == 0.0)
+		{
+			materialProperties = texture(textures[textureBindings[2]], FS_IN.UV);
+		}
+		else if (FS_IN.materialIndex == 1.0)
+		{
+			materialProperties = texture(textures[textureBindings[8]], FS_IN.UV);
+		}
+	}
+
 	vec4 textureColor = getAlbedo();
 	if (textureColor.a < 0.2)
 	{

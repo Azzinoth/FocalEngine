@@ -158,4 +158,13 @@ void FEFileSystem::openFolderDialog(std::string& path)
 	}
 }
 
+std::string FEFileSystem::getFileExtension(const char* path)
+{
+	if (!checkFile(path))
+		return "";
+
+	LPSTR extension = PathFindExtensionA(path);
+	return std::string(extension);
+}
+
 #endif
