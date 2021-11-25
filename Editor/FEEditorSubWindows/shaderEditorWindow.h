@@ -37,12 +37,15 @@ class shaderEditorWindow : public FEImGuiWindow
 	TextEditor fragmentShaderEditor;
 	TextEditor computeShaderEditor;
 
+	bool vertexShaderUsed = false;
+	bool fragmentShaderUsed = false;
 	bool tessControlShaderUsed = false;
 	bool tessEvalShaderUsed = false;
 	bool geometryShaderUsed = false;
 	bool computeShaderUsed = false;
 
 	ImGuiButton* compileButton = nullptr;
+	ImGuiButton* closeButton = nullptr;
 	int activeTab = 0;
 
 	void replaceShader(FEShader* oldShader, FEShader* newShader);

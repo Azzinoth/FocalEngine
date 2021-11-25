@@ -42,10 +42,10 @@ namespace FocalEngine
 		~FELight();
 
 		glm::vec3 getColor();
-		void setColor(glm::vec3 newColor);
+		void setColor(glm::vec3 newValue);
 
 		float getIntensity();
-		void setIntensity(float newIntensity);
+		void setIntensity(float newValue);
 
 		FETransformComponent transform;
 
@@ -53,13 +53,16 @@ namespace FocalEngine
 		void setLightEnabled(bool isLightEnabled);
 
 		float getShadowBias();
-		void setShadowBias(float newShadowBias);
+		void setShadowBias(float newValue);
 
 		bool isStaticShadowBias();
 		void setIsStaticShadowBias(bool isStaticShadowBias);
 
 		float getShadowBiasVariableIntensity();
-		void setShadowBiasVariableIntensity(float newShadowBiasVariableIntensity);
+		void setShadowBiasVariableIntensity(float newValue);
+
+		float getShadowBlurFactor();
+		void setShadowBlurFactor(float newValue);
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);
@@ -73,6 +76,7 @@ namespace FocalEngine
 		float shadowBias = 0.001f;
 		float shadowBiasVariableIntensity = 1.0f;
 		bool castShadows = true;
+		float shadowBlurFactor = 1.0f;
 	};
 
 	struct FECascadeData

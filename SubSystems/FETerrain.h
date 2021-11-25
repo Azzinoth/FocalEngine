@@ -7,6 +7,36 @@
 
 namespace FocalEngine
 {
+#define FE_TERRAIN_MAX_LAYERS 8
+#define FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER 9
+#define FE_TERRAIN_LAYER_PER_TEXTURE 4
+#define FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION 1024
+#define FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION 512
+
+	class FETerrain;
+
+	class FETerrainLayer : public FEObject
+	{
+		friend FETerrain;
+		friend FEResourceManager;
+
+		FEMaterial* material = nullptr;
+		FETerrainLayer(std::string name);
+	public:
+		void setMaterial(FEMaterial* newValue);
+		FEMaterial* getMaterial();
+	};
+
+	enum FE_TERRAIN_BRUSH_MODE
+	{
+		FE_TERRAIN_BRUSH_NONE = 0,
+		FE_TERRAIN_BRUSH_SCULPT_DRAW = 1,
+		FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED = 2,
+		FE_TERRAIN_BRUSH_SCULPT_LEVEL = 3,
+		FE_TERRAIN_BRUSH_SCULPT_SMOOTH = 4,
+		FE_TERRAIN_BRUSH_LAYER_DRAW = 5
+	};
+
 	class FETerrain : public FEObject
 	{
 		friend FERenderer;
@@ -34,8 +64,7 @@ namespace FocalEngine
 		FEShader* shader = nullptr;
 
 		FETexture* heightMap = nullptr;
-
-		FEMaterial* layer0 = nullptr;
+		std::vector<FETexture*> layerMaps;
 		FETexture* projectedMap = nullptr;
 
 		bool isWireframeMode();
@@ -75,21 +104,20 @@ namespace FocalEngine
 		bool isBrushActive();
 		void setBrushActive(bool newBrushActive);
 
-		bool isBrushInversed();
-		void setBrushInversed(bool newBrushInversed);
+		FE_TERRAIN_BRUSH_MODE getBrushMode();
+		void setBrushMode(FE_TERRAIN_BRUSH_MODE newBrushMode);
 
-		bool isBrushSculptMode();
-		void setBrushSculptMode(bool newBrushSculptMode);
-
-		bool isBrushLevelMode();
-		void setBrushLevelMode(bool newBrushLevelMode);
-
-		bool isBrushSmoothMode();
-		void setBrushSmoothMode(bool newBrushSmoothMode);
+		size_t getBrushLayerIndex();
+		void setBrushLayerIndex(size_t newBrushLayerIndex);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 		void snapInstancedEntity(FEEntityInstanced* entityToSnap);
 		void unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap);
+
+		bool getNextEmptyLayerSlot(size_t& nextEmptyLayerIndex);
+		FETerrainLayer* getLayerInSlot(size_t layerIndex);
+
+		int layersUsed();
 	private:
 		bool wireframeMode = false;
 		bool visible = true;
@@ -120,11 +148,9 @@ namespace FocalEngine
 
 		// **************************** TERRAIN EDITOR TOOLS ****************************
 		bool brushActive = false;
-		bool brushInversed = false;
-		bool brushSculptMode = false;
-		bool brushLevelMode = false;
-		bool brushSmoothMode = false;
+		FE_TERRAIN_BRUSH_MODE brushMode = FE_TERRAIN_BRUSH_NONE;
 
+		size_t brushLayerIndex = 0;
 		float brushSize = 2.0f;
 		float brushIntensity = 0.01f;
 		FEFramebuffer* brushOutputFB = nullptr;
@@ -147,6 +173,15 @@ namespace FocalEngine
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 		std::vector<FEEntityInstanced*> snapedInstancedEntities;
+
+		std::vector<FETerrainLayer*> layers;
+		FETerrainLayer* activateVacantLayerSlot(FEMaterial* material);
+		void deleteLayerInSlot(size_t layerIndex);
+		
+		GLuint GPULayersDataBuffer = 0;
+		void loadLayersDataToGPU();
+		std::vector<float> GPULayersData;
+		std::vector<float> OldGPULayersData;
 	};
 }
 

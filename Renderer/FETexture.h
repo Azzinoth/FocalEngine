@@ -1,6 +1,6 @@
 #pragma once
 
-#include "..\SubSystems\FELog.h"
+#include "../SubSystems/FEObject.h"
 
 namespace FocalEngine
 {
@@ -13,14 +13,18 @@ namespace FocalEngine
 	class FEResourceManager;
 	class FERenderer;
 	class FEPostProcess;
+	class FEFramebuffer;
 
 	class FETexture : public FEObject
 	{
 		friend FEResourceManager;
 		friend FERenderer;
 		friend FEPostProcess;
+		friend FEFramebuffer;
 	public:
 		static void GPUAllocateTeture(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data);
+		static std::string textureInternalFormatToString(GLint internalFormat);
+
 		FETexture(std::string Name);
 		FETexture(int Width, int Height, std::string Name);
 		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name);
@@ -38,6 +42,7 @@ namespace FocalEngine
 		int getHeight();
 	private:
 		GLuint textureID = -1;
+		void getNewGLTextureID();
 		std::string fileName = "";
 		bool hdr = false;
 
@@ -49,5 +54,10 @@ namespace FocalEngine
 
 		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;
 		bool mipEnabled = true;
+		void addToOnDeleteCallBackList(std::string objectID);
+		void eraseFromOnDeleteCallBackList(std::string objectID);
+
+		static std::vector<GLuint> noDeletingList;
+		static void addToNoDeletingList(GLuint textureID);
 	};
 }

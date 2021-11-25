@@ -68,7 +68,6 @@ void FEngine::render(bool internalCall)
 {
 	RENDERER.engineMainCamera = ENGINE.currentCamera;
 	RENDERER.mouseRay = ENGINE.constructMouseRay();
-
 	ENGINE.currentCamera->move(cpuTime + gpuTime);
 	RENDERER.render(currentCamera);
 
@@ -173,9 +172,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 		//return -1;
 	}
 
-	//glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-	//test_offscreen_context = glfwCreateWindow(640, 480, "", NULL, window);
-
 	glfwMakeContextCurrent(window);
 	glewInit();
 
@@ -189,7 +185,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// turn off v-sync
-	glfwSwapInterval(0);
+	//glfwSwapInterval(0);
 
 	currentCamera = new FEFreeCamera(window, "mainCamera");
 	int finalWidth, finalHeight;
@@ -201,8 +197,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	currentCamera->setAspectRatio(float(getRenderTargetWidth()) / float(getRenderTargetHeight()));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
-	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	FE_GL_ERROR(glCullFace(GL_BACK));*/
 
 	// tessellation parameter
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
@@ -384,7 +378,6 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterialInstanced->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterialInstanced);
 
-
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -395,6 +388,7 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	strcpy_s(imguiIniFile, pathLen, (RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str());
 	io.IniFilename = imguiIniFile;
 	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 32);
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	unsigned char* tex_pixels = NULL;
@@ -615,31 +609,17 @@ void FEngine::setRenderTargetMode(FERenderTargetMode newMode)
 	}
 }
 
-void FEngine::setRenderTargetWidth(int newRenderTargetWidth)
+void FEngine::setRenderTargetSize(int width, int height)
 {
-	if (newRenderTargetWidth <= 0 || renderTargetMode == FE_GLFW_MODE)
+	if (width <= 0 || height <= 0 || renderTargetMode == FE_GLFW_MODE)
 		return;
 
 	bool needReInitialization = false;
-	if (renderTargetW != newRenderTargetWidth)
+	if (renderTargetW != width || renderTargetH != height)
 		needReInitialization = true;
 
-	renderTargetW = newRenderTargetWidth;
-
-	if (needReInitialization)
-		renderTargetResize();
-}
-
-void FEngine::setRenderTargetHeight(int newRenderTargetHeight)
-{
-	if (newRenderTargetHeight <= 0 || renderTargetMode == FE_GLFW_MODE)
-		return;
-
-	bool needReInitialization = false;
-	if (renderTargetH != newRenderTargetHeight)
-		needReInitialization = true;
-
-	renderTargetH = newRenderTargetHeight;
+	renderTargetW = width;
+	renderTargetH = height;
 
 	if (needReInitialization)
 		renderTargetResize();
@@ -671,6 +651,13 @@ void FEngine::renderTargetResize()
 
 	for (size_t i = 0; i < RENDERER.postProcessEffects.size(); i++)
 	{
+		// We should delete only internally created frame buffers.
+		// Other wise user created postProcess could create UB.
+		if (RENDERER.postProcessEffects[i]->getName() == "bloom" || 
+			RENDERER.postProcessEffects[i]->getName() == "GammaAndHDR" ||
+			RENDERER.postProcessEffects[i]->getName() == "FE_FXAA" || 
+			RENDERER.postProcessEffects[i]->getName() == "DOF" || 
+			RENDERER.postProcessEffects[i]->getName() == "chromaticAberration")
 		delete RENDERER.postProcessEffects[i];
 	}
 	RENDERER.postProcessEffects.clear();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/renamePopups.h"
+#include "../Editor/FEEditorSubWindows/resizeTexturePopup.h"
 
 template <class FEOBJECT>
 struct contenetBrowserItem
@@ -54,13 +54,14 @@ class selectTexturePopUp : public ImGuiModalPopup
 
 	void(*onSelect)(void*) = nullptr;
 	void* ptrOnClose = nullptr;
+	void onSelectAction();
 public:
 	SINGLETON_PUBLIC_PART(selectTexturePopUp)
 
 	void show(FETexture** texture, void(*func)(void*) = nullptr, void* ptr = nullptr);
 	void showWithCustomList(FETexture** texture, std::vector<FETexture*> customList);
 	void close() override;
-	void onSelectAction();
+	
 	void render() override;
 
 private:
@@ -81,12 +82,14 @@ class selectMaterialPopUp : public ImGuiModalPopup
 	ImGuiButton* cancelButton = nullptr;
 	ImGuiImageButton* iconButton = nullptr;
 
-	FEShader* allowedShader = nullptr;
+	void(*onSelect)(void*) = nullptr;
+	void* ptrOnClose = nullptr;
+	void onSelectAction();
 public:
 	SINGLETON_PUBLIC_PART(selectMaterialPopUp)
 
-	void setAllowedShader(FEShader* shader);
 	void show(FEMaterial** material);
+	void showWithCustomList(FEMaterial** material, std::vector<FEMaterial*> customList, void(*func)(void*) = nullptr, void* ptr = nullptr);
 
 	void close() override;
 	void render() override;

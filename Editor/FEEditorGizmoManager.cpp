@@ -221,7 +221,7 @@ void GizmoManager::updateGizmoState(int newState)
 {
 	if (SELECTED.getTerrain() != nullptr)
 	{
-		if (SELECTED.getTerrain()->isBrushSculptMode() || SELECTED.getTerrain()->isBrushLevelMode() || SELECTED.getTerrain()->isBrushSmoothMode())
+		if (SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
 			return;
 	}
 
@@ -804,7 +804,7 @@ void GizmoManager::onSelectedObjectUpdate()
 	{
 		if (SELECTED.getTerrain() != nullptr)
 		{
-			if (SELECTED.getTerrain()->isBrushSculptMode() || SELECTED.getTerrain()->isBrushLevelMode() || SELECTED.getTerrain()->isBrushSmoothMode())
+			if (SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
 			{
 				GIZMO_MANAGER.hideAllGizmo();
 				return;
@@ -895,4 +895,90 @@ void GizmoManager::applyChangesToSelectedObject(FETransformComponent changes)
 	{
 		SELECTED.getLight()->transform = changes;
 	}
+}
+
+void GizmoManager::reInitializeEntities()
+{
+	// transformationXGizmo
+	transformationXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXGizmoGM")[0], "transformationXGizmoEntity");
+	transformationXGizmoEntity->setCastShadows(false);
+	transformationXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	transformationXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	transformationXGizmoEntity->setIsPostprocessApplied(false);
+
+	// transformationYGizmo
+	transformationYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationYGizmoGM")[0], "transformationYGizmoEntity");
+	transformationYGizmoEntity->setCastShadows(false);
+	transformationYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	transformationYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
+	transformationYGizmoEntity->setIsPostprocessApplied(false);
+
+	// transformationZGizmo
+	transformationZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationZGizmoGM")[0], "transformationZGizmoEntity");
+	transformationZGizmoEntity->setCastShadows(false);
+	transformationZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	transformationZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
+	transformationZGizmoEntity->setIsPostprocessApplied(false);
+
+	// plane gizmos
+	transformationXYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXYGizmoGM")[0], "transformationXYGizmoEntity");
+	transformationXYGizmoEntity->setCastShadows(false);
+	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
+	transformationXYGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	transformationXYGizmoEntity->setIsPostprocessApplied(false);
+
+	
+	transformationYZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationYZGizmoGM")[0], "transformationYZGizmoEntity");
+	transformationYZGizmoEntity->setCastShadows(false);
+	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
+	transformationYZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+	transformationYZGizmoEntity->setIsPostprocessApplied(false);
+
+	transformationXZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXZGizmoGM")[0], "transformationXZGizmoEntity");
+	transformationXZGizmoEntity->setCastShadows(false);
+	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
+	transformationXZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
+	transformationXZGizmoEntity->setIsPostprocessApplied(false);
+
+	// scaleXGizmo
+	scaleXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleXGizmoGM")[0], "scaleXGizmoEntity");
+	scaleXGizmoEntity->setCastShadows(false);
+	scaleXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	scaleXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
+	scaleXGizmoEntity->setIsPostprocessApplied(false);
+
+	// scaleYGizmo
+	scaleYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleYGizmoGM")[0], "scaleYGizmoEntity");
+	scaleYGizmoEntity->setCastShadows(false);
+	scaleYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	scaleYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
+	scaleYGizmoEntity->setIsPostprocessApplied(false);
+
+	// scaleZGizmo
+	scaleZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleZGizmoGM")[0], "scaleZGizmoEntity");
+	scaleZGizmoEntity->setCastShadows(false);
+	scaleZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
+	scaleZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
+	scaleZGizmoEntity->setIsPostprocessApplied(false);
+
+	// rotateXGizmo
+	rotateXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateXGizmoGM")[0], "rotateXGizmoEntity");
+	rotateXGizmoEntity->setCastShadows(false);
+	rotateXGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
+	rotateXGizmoEntity->transform.setRotation(rotateXStandardRotation);
+	rotateXGizmoEntity->setIsPostprocessApplied(false);
+
+	// rotateYGizmo
+	rotateYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateYGizmoGM")[0], "rotateYGizmoEntity");
+	rotateYGizmoEntity->setCastShadows(false);
+	rotateYGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
+	rotateYGizmoEntity->transform.setRotation(rotateYStandardRotation);
+	rotateYGizmoEntity->setIsPostprocessApplied(false);
+
+	// rotateZGizmo
+	rotateZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateZGizmoGM")[0], "rotateZGizmoEntity");
+	rotateZGizmoEntity->setCastShadows(false);
+	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
+	rotateZGizmoEntity->transform.setRotation(rotateZStandardRotation);
+	rotateZGizmoEntity->setIsPostprocessApplied(false);
 }

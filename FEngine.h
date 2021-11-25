@@ -52,17 +52,13 @@ namespace FocalEngine
 		void resetCamera();
 
 		glm::dvec3 constructMouseRay();
-		//GLFWwindow* window;
-
-		//GLFWwindow* test_offscreen_context = nullptr;
 
 		inline FERenderTargetMode getRenderTargetMode();
 		void setRenderTargetMode(FERenderTargetMode newMode);
 
 		inline int getRenderTargetWidth();
-		void setRenderTargetWidth(int newRenderTargetWidth);
+		void setRenderTargetSize(int width, int height);
 		inline int getRenderTargetHeight();
-		void setRenderTargetHeight(int newRenderTargetHeight);
 
 		inline int getRenderTargetXShift();
 		void setRenderTargetXShift(int newRenderTargetXShift);

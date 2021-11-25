@@ -603,3 +603,23 @@ int FEMaterial::getUsedTexturesCount()
 
 	return result;
 }
+
+float FEMaterial::getDisplacementMapIntensity()
+{
+	return displacementMapIntensity;
+}
+
+void FEMaterial::setDisplacementMapIntensity(float newValue)
+{
+	displacementMapIntensity = newValue;
+}
+
+float FEMaterial::getTiling()
+{
+	return tiling;
+}
+
+void FEMaterial::setTiling(float newValue)
+{
+	tiling = newValue;
+}

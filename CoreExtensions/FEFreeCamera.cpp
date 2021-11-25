@@ -13,8 +13,8 @@ FEFreeCamera::~FEFreeCamera()
 
 void FEFreeCamera::move(float deltaTime)
 {
-	glm::vec4 forward = { 0.0f, 0.0f, -(speed * 2) * (deltaTime / 1000), 0.0f };
-	glm::vec4 right = { (speed * 2) * (deltaTime / 1000), 0.0f, 0.0f, 0.0f };
+	glm::vec4 forward = { 0.0f, 0.0f, -(movementSpeed * 2) * (deltaTime / 1000), 0.0f };
+	glm::vec4 right = { (movementSpeed * 2) * (deltaTime / 1000), 0.0f, 0.0f, 0.0f };
 
 	right = right * viewMatrix;
 	forward = forward * viewMatrix;
@@ -181,16 +181,6 @@ void FEFreeCamera::setPitch(float newPitch)
 {
 	FEBasicCamera::setPitch(newPitch);
 	currentMouseYAngle = newPitch;
-}
-
-float FEFreeCamera::getSpeed()
-{
-	return speed;
-}
-
-void FEFreeCamera::setSpeed(float newSpeed)
-{
-	speed = newSpeed;
 }
 
 void FEFreeCamera::setRenderTargetCenterX(int newRenderTargetCenterX)

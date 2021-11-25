@@ -1,9 +1,8 @@
 #include "FEEditorFloatSourceNode.h"
 using namespace FocalEngine;
 
-FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData)
+FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData) : FEEditorNode()
 {
-	FEEditorNode::FEEditorNode();
 	type = "FEEditorFloatSourceNode";
 
 	data = initialData;
@@ -27,9 +26,9 @@ void FEEditorFloatSourceNode::draw()
 		parentArea->propagateUpdateToConnectedNodes(this);
 	}
 	
-	if (openContextMenu)
+	if (contextMenu)
 	{
-		openContextMenu = false;
+		contextMenu = false;
 		ImGui::OpenPopup("##context_menu");
 	}
 	
@@ -65,11 +64,13 @@ bool FEEditorFloatSourceNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditor
 	return false;
 }
 
-void FEEditorFloatSourceNode::mouseClick(int mouseButton)
+bool FEEditorFloatSourceNode::openContextMenu()
 {
-	FEEditorNode::mouseClick(mouseButton);
+	contextMenu = true;
+	return true;
+}
 
-	openContextMenu = false;
-	if (mouseButton == 1)
-		openContextMenu = true;
+Json::Value FEEditorFloatSourceNode::getInfoForSaving()
+{
+	return "";
 }

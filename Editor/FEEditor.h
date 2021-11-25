@@ -57,6 +57,15 @@ private:
 	FETexture* smoothBrushIcon = nullptr;
 	FETexture* mouseCursorIcon = nullptr;
 	FETexture* arrowToGroundIcon = nullptr;
+	FETexture* drawBrushIcon = nullptr;
+
+	void setCorrectSceneBrowserColor(FEObject* sceneObject);
+	void popCorrectSceneBrowserColor(FEObject* sceneObject);
+	ImVec4 terrainColorSceneBrowser = ImVec4(67.0f / 255.0f, 155.0f / 255.0f, 60.0f / 255.0f, 1.0f);
+	ImVec4 entityColorSceneBrowser = ImVec4(141.0f / 255.0f, 141.0f / 255.0f, 233.0f / 255.0f, 1.0f);
+	ImVec4 instancedEntityColorSceneBrowser = ImVec4(80.0f / 255.0f, 72.0f / 255.0f, 255.0f / 255.0f, 1.0f);
+	ImVec4 cameraColorSceneBrowser = ImVec4(0.0f, 215.0f / 255.0f, 201.0f / 255.0f, 1.0f);
+	ImVec4 lightColorSceneBrowser = ImVec4(243.0f / 255.0f, 230.0f / 255.0f, 31.0f / 255.0f, 1.0f);
 
 	void drawCorrectSceneBrowserIcon(FEObject* sceneObject);
 	FETexture* entitySceneBrowserIcon = nullptr;
@@ -87,21 +96,46 @@ private:
 
 	static void closeWindowCallBack();
 
-	void showPosition(std::string objectName, glm::vec3& position);
-	void showRotation(std::string objectName, glm::vec3& rotation);
-	void showScale(std::string objectName, glm::vec3& scale);
 	void showTransformConfiguration(FEObject* object, FETransformComponent* transform);
 	void showTransformConfiguration(std::string name, FETransformComponent* transform);
 
-	void displayMaterialPrameter(FEShaderParam* param);
+	void displayMaterialParameter(FEShaderParam* param);
 	void displayLightProperties(FELight* light);
 	void displayLightsProperties();
 
+	// ************** Terrain Settings **************
+	ImGuiButton* exportHeightMapButton = nullptr;
+	ImGuiButton* importHeightMapButton = nullptr;
+	ImGuiImageButton* sculptBrushButton = nullptr;
+	ImGuiImageButton* levelBrushButton = nullptr;
+	ImGuiImageButton* smoothBrushButton = nullptr;
+
+	ImGuiImageButton* layerBrushButton = nullptr;
+
+	static bool entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer);
+	static bool terrainChangeMaterialTargetCallBack(FEObject* object, void** layerIndex);
+
+	DragAndDropTarget* entityChangeGameModelTarget = nullptr;
+	std::vector<int> terrainChangeMaterialIndecies;
+	std::vector<DragAndDropTarget*> terrainChangeLayerMaterialTargets;
+
+	int hoveredTerrainLayerItem = -1;
+	void displayTerrainSettings(FETerrain* terrain);
+
+	int terrainLayerRenameIndex = -1;
+	char terrainLayerRename[1024];
+	bool lastFrameTerrainLayerRenameEditWasVisiable = false;
+	// ************** Terrain Settings END **************
+	// 
 	// ************** Content Browser **************
 
 	FETexture* folderIcon = nullptr;
 	FETexture* shaderIcon = nullptr;
 	FETexture* VFSBackIcon = nullptr;
+
+	FETexture* meshContentBrowserIcon = nullptr;
+	FETexture* materialContentBrowserIcon = nullptr;
+	FETexture* gameModelContentBrowserIcon = nullptr;
 
 	void displayContentBrowser();
 	bool contentBrowserVisible = true;
@@ -165,6 +199,8 @@ private:
 	bool gameMode = false;
 	bool isInGameMode();
 	void setGameMode(bool gameMode);
+
+	void renderAllSubWindows();
 };
 
 #define EDITOR FEEditor::getInstance()

@@ -350,15 +350,7 @@ void FEImGuiWindow::render()
 		{
 			ImGui::SetNextWindowPos(position);
 		}
-
-		if ((flags & ImGuiWindowFlags_NoResize) == ImGuiWindowFlags_NoResize)
-		{
-			ImGui::SetNextWindowSize(size);
-		}
-		else if (wasClosedLastFrame)
-		{
-			ImGui::SetNextWindowSize(size);
-		}
+		ImGui::SetNextWindowSize(size);
 
 		wasClosedLastFrame = false;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2);
@@ -366,19 +358,14 @@ void FEImGuiWindow::render()
 		ImGui::Begin(caption, nullptr, flags);
 		window = ImGui::GetCurrentWindow();
 	}
-
-	/*if (!visible && lastFrameVisible != visible)
-	{
-		ImGui::End();
-	}
-
-	lastFrameVisible = visible;*/
 }
 
 void FEImGuiWindow::onRenderEnd()
 {
 	if (visible)
 	{
+		if (!window->Collapsed)
+			size = ImGui::GetWindowSize();
 		ImGui::PopStyleVar();
 		ImGui::PopStyleVar();
 		ImGui::End();
@@ -419,7 +406,6 @@ void WindowsManager::closeAllPopups()
 {
 	for (size_t i = 0; i < popUps.size(); i++)
 	{
-		//popUps[i]->visible = false;
 		popUps[i]->close();
 	}
 }
@@ -429,7 +415,6 @@ void WindowsManager::closeAllWindows()
 	for (size_t i = 0; i < windows.size(); i++)
 	{
 		windows[i]->visible = false;
-		//windows[i]->close();
 	}
 }
 
@@ -541,11 +526,6 @@ void FERangeConfigurator::recalculateRangeInfo()
 		ranges[i].rect.right = LONG(ranges[i].rect.left + size.x * ranges[i].rangeSpan);
 		ranges[i].rect.top = LONG(position.y);
 		ranges[i].rect.bottom = LONG(ranges[i].rect.top + size.y);
-
-		ranges[i].scrollRect.left = LONG(ranges[i].rect.right - SCROLLER_SIZE / 2.0f);
-		ranges[i].scrollRect.right = LONG(ranges[i].rect.right + SCROLLER_SIZE / 2.0f);
-		ranges[i].scrollRect.top = LONG(ranges[i].rect.top - SCROLLER_SIZE);
-		ranges[i].scrollRect.bottom = LONG(ranges[i].rect.top);
 	}
 }
 
@@ -561,8 +541,13 @@ bool FERangeConfigurator::addRange(float rangeSpan, std::string caption, std::st
 	newRange.toolTipText = toolTipText;
 	newRange.color = color;
 
-	ranges.push_back(newRange);
+	ranges.push_back(newRange);	
 	recalculateRangeInfo();
+
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		ranges[i].scroller.setPosition(ImVec2(float(ranges[i].rect.right), float(ranges[i].rect.top)));
+	}
 
 	return true;
 }
@@ -584,6 +569,11 @@ void FERangeConfigurator::normalizeRanges()
 		}
 
 		recalculateRangeInfo();
+
+		for (size_t i = 0; i < ranges.size(); i++)
+		{
+			ranges[i].scroller.setPosition(ImVec2(float(ranges[i].rect.right), float(ranges[i].rect.top)));
+		}
 	}
 }
 
@@ -606,37 +596,15 @@ void FERangeConfigurator::inputCalculations()
 
 		if (i == ranges.size() - 1)
 			break;
-
-		if (ImGui::GetIO().MouseClicked[0])
-		{
-			if (mouseXWindows >= ranges[i].scrollRect.left && mouseXWindows < ranges[i].scrollRect.right &&
-				mouseYWindows >= ranges[i].scrollRect.top && mouseYWindows < ranges[i].scrollRect.bottom)
-			{
-				ranges[i].scrollSelected = true;
-				break;
-			}
-			else
-			{
-				ranges[i].scrollSelected = false;
-			}
-		}
-	}
-
-	if (ImGui::GetIO().MouseReleased[0])
-	{
-		for (size_t i = 0; i < ranges.size(); i++)
-		{
-			ranges[i].scrollSelected = false;
-		}
 	}
 
 	ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_None;
 	for (size_t i = 0; i < ranges.size(); i++)
 	{
-		if (ranges[i].scrollSelected)
+		float needToAdd = ranges[i].scroller.getLastFrameDelta() / size.x;
+		if (needToAdd != 0.0f)
 		{
 			ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_NoMove;
-			float needToAdd = (mouseXWindows - lastMouseX) / size.x;
 			if (ranges[i + 1].rangeSpan - needToAdd < 0.001f || ranges[i].rangeSpan + needToAdd < 0.001f)
 				break;
 			
@@ -647,8 +615,6 @@ void FERangeConfigurator::inputCalculations()
 			break;
 		}
 	}
-
-	lastMouseX = mouseXWindows;
 }
 
 void FERangeConfigurator::render()
@@ -671,30 +637,30 @@ void FERangeConfigurator::render()
 		if (i == ranges.size() - 1)
 			break;
 
-		ImVec2 P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.left,
-						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.top);
-		ImVec2 P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.right,
-						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.top);
-		ImVec2 P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + ranges[i].scrollRect.left + (ranges[i].scrollRect.right - ranges[i].scrollRect.left) / 2.0f,
-						   ImGui::GetCurrentWindow()->Pos.y + ranges[i].scrollRect.bottom);
-
-		if (ranges[i].scrollSelected)
+		ranges[i].scroller.render();
+		if (ranges[i].scroller.isSelected())
 		{
-			ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, ImColor(115, 115, 255, 255));
 			ImGui::GetWindowDrawList()->AddRect(ImVec2(screenX + (ranges[i].rect.left - position.x), screenY), ImVec2(beginX + (ranges[i].rect.right - ranges[i].rect.left), screenY + size.y), ImColor(10, 10, 10, 255), 0.0f, 0, 3.0f);
-			
+
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 			ImGui::TextUnformatted(ranges[i].toolTipText.c_str());
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
-		else
-		{
-			ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, ImColor(10, 10, 10, 255));
-		}
 
 		beginX += ranges[i].rect.right - ranges[i].rect.left;
+	}
+
+	// Only one scroller should be selected at a time.
+	int selectedCount = 0;
+	for (size_t i = 0; i < ranges.size(); i++)
+	{
+		if (ranges[i].scroller.isSelected())
+			selectedCount++;
+		
+		if (selectedCount > 1)
+			ranges[i].scroller.setSelected(false);
 	}
 
 	if (ranges.size() == 0)
@@ -771,4 +737,194 @@ void messagePopUp::render()
 	{
 		ImGui::PopStyleVar();
 	}
+}
+
+FEArrowScroller::FEArrowScroller(bool Horizontal)
+{
+	horizontal = Horizontal;
+
+	selected = false;
+	mouseHover = false;
+
+	windowFlagWasAdded = false;
+	originalWindowFlags = 0;
+
+	lastFrameDelta = 0;
+	size = 20.0f;
+
+	color = ImColor(10, 10, 40, 255);
+	selectedColor = ImColor(115, 115, 255, 255);
+
+	availableRange = ImVec2(-FLT_MAX, FLT_MAX);
+}
+
+ImVec2 FEArrowScroller::getPosition()
+{
+	return position;
+}
+
+void FEArrowScroller::setPosition(ImVec2 newPosition)
+{
+	position = newPosition;
+
+	if (horizontal)
+	{
+		area.left = LONG(position.x - size / 2.0f);
+		area.right = LONG(position.x + size / 2.0f);
+		area.top = LONG(position.y - size);
+		area.bottom = LONG(position.y);
+	}
+	else
+	{
+		area.left = LONG(position.x - size);
+		area.right = LONG(position.x);
+		area.top = LONG(position.y - size / 2.0f);
+		area.bottom = LONG(position.y + size / 2.0f);
+	}
+}
+
+bool FEArrowScroller::isSelected()
+{
+	return selected;
+}
+
+void FEArrowScroller::setSelected(bool newValue)
+{
+	selected = newValue;
+}
+
+void FEArrowScroller::render()
+{
+	float mouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
+	float mouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
+
+	mouseHover = false;
+	if (mouseXWindows >= area.left && mouseXWindows < area.right &&
+		mouseYWindows >= area.top && mouseYWindows < area.bottom)
+	{
+		mouseHover = true;
+	}
+
+	if (!mouseHover && windowFlagWasAdded)
+	{
+		windowFlagWasAdded = false;
+		ImGui::GetCurrentWindow()->Flags = originalWindowFlags;
+	}
+
+	if (!(ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_NoMove) && mouseHover)
+	{
+		windowFlagWasAdded = true;
+		originalWindowFlags = ImGui::GetCurrentWindow()->Flags;
+		ImGui::GetCurrentWindow()->Flags |= ImGuiWindowFlags_NoMove;
+	}
+
+	if (ImGui::GetIO().MouseClicked[0])
+	{
+		mouseHover ? setSelected(true) : setSelected(false);
+	}
+
+	if (ImGui::GetIO().MouseReleased[0])
+		setSelected(false);
+
+	lastFrameDelta = 0;
+	if (isSelected())
+	{
+		lastFrameDelta = horizontal ? mouseXWindows - lastFrameMouseX : mouseYWindows - lastFrameMouseY;
+
+		if (horizontal)
+		{
+			if (getPosition().x + lastFrameDelta <= availableRange.y && getPosition().x + lastFrameDelta >= availableRange.x)
+			{
+				setPosition(ImVec2(getPosition().x + lastFrameDelta, getPosition().y));
+			}
+		}
+		else
+		{
+			if (getPosition().y + lastFrameDelta <= availableRange.y && getPosition().y + lastFrameDelta >= availableRange.x)
+			{
+				setPosition(ImVec2(getPosition().x, getPosition().y + lastFrameDelta));
+			}
+		}
+	}
+
+	lastFrameMouseX = mouseXWindows;
+	lastFrameMouseY = mouseYWindows;
+
+	ImVec2 P1;
+	ImVec2 P2;
+	ImVec2 P3;
+
+	if (horizontal)
+	{
+		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
+			ImGui::GetCurrentWindow()->Pos.y + area.top);
+		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.right,
+			ImGui::GetCurrentWindow()->Pos.y + area.top);
+		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left + (area.right - area.left) / 2.0f,
+			ImGui::GetCurrentWindow()->Pos.y + area.bottom);
+	}
+	else
+	{
+		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
+			ImGui::GetCurrentWindow()->Pos.y + area.top);
+		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
+			ImGui::GetCurrentWindow()->Pos.y + area.bottom);
+		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.right,
+			ImGui::GetCurrentWindow()->Pos.y + area.top + (area.right - area.left) / 2.0f);
+	}
+
+	if (isSelected())
+	{
+		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, selectedColor);
+	}
+	else
+	{
+		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, color);
+	}
+}
+
+float FEArrowScroller::getLastFrameDelta()
+{
+	return lastFrameDelta;
+}
+
+float FEArrowScroller::getSize()
+{
+	return size;
+}
+
+void FEArrowScroller::setSize(float newValue)
+{
+	if (newValue > 1.0f)
+		size = newValue;
+}
+
+ImColor FEArrowScroller::getColor()
+{
+	return color;
+}
+
+void FEArrowScroller::setColor(ImColor newValue)
+{
+	color = newValue;
+}
+
+ImColor FEArrowScroller::getSelectedColor()
+{
+	return selectedColor;
+}
+
+void FEArrowScroller::setSelectedColor(ImColor newValue)
+{
+	selectedColor = newValue;
+}
+
+void FEArrowScroller::setAvailableRange(ImVec2 newValue)
+{
+	availableRange = newValue;
+}
+
+void FEArrowScroller::liftRangeRestrictions()
+{
+	availableRange = ImVec2(-FLT_MAX, FLT_MAX);
 }

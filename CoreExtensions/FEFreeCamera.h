@@ -13,9 +13,6 @@ namespace FocalEngine
 		float currentMouseXAngle = 0;
 		float currentMouseYAngle = 0;
 		
-		float getSpeed();
-		void setSpeed(float newSpeed);
-
 		void setYaw(float newYaw);
 		void setPitch(float newPitch);
 
@@ -35,7 +32,6 @@ namespace FocalEngine
 	private:
 		int lastMouseX = 0;
 		int lastMouseY = 0;
-		float speed = 10.0f;
 
 		int renderTargetCenterX = 0;
 		int renderTargetCenterY = 0;

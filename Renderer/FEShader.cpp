@@ -320,7 +320,7 @@ FEShader::FEShader(std::string name, const char* vertexText, const char* fragmen
 		tessControlShaderText = new char[textLenght + 1];
 		strcpy_s(tessControlShaderText, textLenght + 1, tessControlText);
 	}
-
+	
 	if (tessEvalText != nullptr)
 	{
 		tessEvalShaderID = loadShader(tessEvalText, GL_TESS_EVALUATION_SHADER);
@@ -455,9 +455,7 @@ void FEShader::copyCode(const FEShader& shader)
 
 #ifdef FE_DEBUG_ENABLED
 	debugRequest = shader.debugRequest;
-	SSBO = shader.SSBO;
-	SSBOBinding = shader.SSBOBinding;
-	SSBOSize = shader.SSBOSize;
+	createSSBO();
 	debugVariables = shader.debugVariables;
 	debugData = shader.debugData;
 #endif
@@ -565,24 +563,31 @@ void FEShader::registerUniforms()
 	{
 		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 		{
-			std::string temp = "textures[";
-			std::string secondTemp = "textureBindings[";
-			std::string thirdTemp = "textureChannels[";
-			temp += std::to_string(i);
-			secondTemp += std::to_string(i);
-			thirdTemp += std::to_string(i);
-			temp += "]";
-			secondTemp += "]";
-			thirdTemp += "]";
+			std::string temp = "textures[" + std::to_string(i) + "]";
+			std::string secondTemp = "textureBindings[" + std::to_string(i) + "]";
+			std::string thirdTemp = "textureChannels[" + std::to_string(i) + "]";
 			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, temp.c_str()), i));
 			uniformLocations[std::hash<std::string>{}(secondTemp)] = glGetUniformLocation(programID, secondTemp.c_str());
 			uniformLocations[std::hash<std::string>{}(thirdTemp)] = glGetUniformLocation(programID, thirdTemp.c_str());
 		}
 
-		// 16 textures for material + 4 CSM textures. next available binding is 20.
+		// 16 textures for material + 4 CSM textures at the end. Next available binding is 20. Max is 27.
 		for (size_t i = 20; i < 20 + textureUniforms.size(); i++)
 		{
 			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 20].c_str()), i));
+		}
+	}
+	else if (terrainLayersTexturesList)
+	{
+		for (size_t i = 0; i < 24; i++)
+		{
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, std::string("textures[" + std::to_string(i) + "]").c_str()), i));
+		}
+
+		// 24 textures for terrain layers + 4 CSM textures at the end. next available binding is 24. Max is 27.
+		for (size_t i = 24; i < 24 + textureUniforms.size(); i++)
+		{
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 24].c_str()), i));
 		}
 	}
 	else
@@ -595,10 +600,10 @@ void FEShader::registerUniforms()
 
 	if (CSM)
 	{
-		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM0"), 16));
-		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM1"), 17));
-		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM2"), 18));
-		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM3"), 19));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM0"), FE_CSM_UNIT));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM1"), FE_CSM_UNIT + 1));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM2"), FE_CSM_UNIT + 2));
+		FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, "CSM3"), FE_CSM_UNIT + 3));
 	}
 	stop();
 }
@@ -652,6 +657,10 @@ void FEShader::cleanUp()
 #ifdef FE_DEBUG_ENABLED
 	if (debugRequest)
 		FE_GL_ERROR(glDeleteBuffers(1, &SSBO));
+
+	debugData.clear();
+	debugVariables.clear();
+	debugRequest = false;
 #endif
 	FE_GL_ERROR(glDeleteProgram(programID));
 }
@@ -696,6 +705,9 @@ void FEShader::stop()
 
 	if (debugData.size() <= size_t(thisFrameDebugBind))
 		debugData.push_back(std::vector<float>());
+
+	if (thisFrameDebugBind >= debugData.size())
+		thisFrameDebugBind = debugData.size() - 1;
 
 	if (debugData[thisFrameDebugBind].size() != debugSize + 1)
 		debugData[thisFrameDebugBind].resize(debugSize + 1);
@@ -852,6 +864,13 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	{
 		parsedShaderText.replace(index, strlen(FE_MATERIAL_TEXTURES_MACRO), "uniform int textureBindings[16];\nuniform int textureChannels[16];\nuniform sampler2D textures[16];\n");
 		materialTexturesList = true;
+	}
+
+	index = parsedShaderText.find(FE_TERRAIN_LAYERS_TEXTURES_MACRO);
+	if (index != std::string::npos)
+	{
+		parsedShaderText.replace(index, strlen(FE_TERRAIN_LAYERS_TEXTURES_MACRO), "uniform sampler2D textures[24];\n");
+		terrainLayersTexturesList = true;
 	}
 
 	// find out if there is any debug requests in shader text.
@@ -1132,6 +1151,8 @@ inline void FEShader::createSSBO()
 	SSBOBinding = -1;
 	GLenum prop = GL_BUFFER_BINDING;
 	FE_GL_ERROR(glGetProgramResourceiv(this->programID, GL_SHADER_STORAGE_BLOCK, glGetProgramResourceIndex(this->programID, GL_SHADER_STORAGE_BLOCK, "debugBuffer"), 1, &prop, sizeof(SSBOBinding), nullptr, &SSBOBinding));
+
+	thisFrameDebugBind = 0;
 }
 #endif
 
@@ -1167,4 +1188,106 @@ void FEShader::dispatch(GLuint num_groups_x, GLuint num_groups_y, GLuint num_gro
 		return;
 
 	FE_GL_ERROR(glDispatchCompute(num_groups_x, num_groups_y, num_groups_z));
+}
+
+void FEShader::reCompile(std::string name, const char* vertexText, const char* fragmentText,
+						 const char* tessControlText, const char* tessEvalText,
+						 const char* geometryText, const char* computeText, bool testCompilation, int glslVersion)
+{
+	cleanUp();
+
+	this->glslVersion = glslVersion;
+	testCompilationMode = testCompilation;
+	setName(name);
+	size_t textLenght = 0;
+
+	if (vertexText != nullptr)
+	{
+		vertexShaderID = loadShader(vertexText, GL_VERTEX_SHADER);
+		textLenght = strlen(vertexText);
+		vertexShaderText = new char[textLenght + 1];
+		strcpy_s(vertexShaderText, textLenght + 1, vertexText);
+	}
+
+	if (tessControlText != nullptr)
+	{
+		tessControlShaderID = loadShader(tessControlText, GL_TESS_CONTROL_SHADER);
+		size_t textLenght = strlen(tessControlText);
+		tessControlShaderText = new char[textLenght + 1];
+		strcpy_s(tessControlShaderText, textLenght + 1, tessControlText);
+	}
+
+	if (tessEvalText != nullptr)
+	{
+		tessEvalShaderID = loadShader(tessEvalText, GL_TESS_EVALUATION_SHADER);
+		size_t textLenght = strlen(tessEvalText);
+		tessEvalShaderText = new char[textLenght + 1];
+		strcpy_s(tessEvalShaderText, textLenght + 1, tessEvalText);
+	}
+
+	if (geometryText != nullptr)
+	{
+		geometryShaderID = loadShader(geometryText, GL_GEOMETRY_SHADER);
+		size_t textLenght = strlen(geometryText);
+		geometryShaderText = new char[textLenght + 1];
+		strcpy_s(geometryShaderText, textLenght + 1, geometryText);
+	}
+
+	if (fragmentText != nullptr)
+	{
+		fragmentShaderID = loadShader(fragmentText, GL_FRAGMENT_SHADER);
+		textLenght = strlen(fragmentText);
+		fragmentShaderText = new char[textLenght + 1];
+		strcpy_s(fragmentShaderText, textLenght + 1, fragmentText);
+	}
+
+	if (computeText != nullptr)
+	{
+		testCompilationMode = testCompilation;
+		computeShaderID = loadShader(computeText, GL_COMPUTE_SHADER);
+		size_t textLenght = strlen(computeText);
+		computeShaderText = new char[textLenght + 1];
+		strcpy_s(computeShaderText, textLenght + 1, computeText);
+	}
+
+	if (testCompilationMode && compilationErrors.size() != 0)
+		return;
+
+	FE_GL_ERROR(programID = glCreateProgram());
+
+	if (vertexText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, vertexShaderID));
+	if (tessControlText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, tessControlShaderID));
+	if (tessEvalText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, tessEvalShaderID));
+	if (geometryText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, geometryShaderID));
+	if (fragmentText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, fragmentShaderID));
+	if (computeText != nullptr)
+		FE_GL_ERROR(glAttachShader(programID, computeShaderID));
+
+	bindAttributes();
+
+	FE_GL_ERROR(glLinkProgram(programID));
+	FE_GL_ERROR(glValidateProgram(programID)); // too slow ?
+
+	if (vertexText != nullptr)
+		FE_GL_ERROR(glDeleteShader(vertexShaderID));
+	if (tessControlText != nullptr)
+		FE_GL_ERROR(glDeleteShader(tessControlShaderID));
+	if (tessEvalText != nullptr)
+		FE_GL_ERROR(glDeleteShader(tessEvalShaderID));
+	if (geometryText != nullptr)
+		FE_GL_ERROR(glDeleteShader(geometryShaderID));
+	if (fragmentText != nullptr)
+		FE_GL_ERROR(glDeleteShader(fragmentShaderID));
+	if (computeText != nullptr)
+		FE_GL_ERROR(glDeleteShader(computeShaderID));
+
+#ifdef FE_DEBUG_ENABLED
+	createSSBO();
+#endif
+	registerUniforms();
 }

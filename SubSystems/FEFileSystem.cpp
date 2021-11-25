@@ -60,6 +60,26 @@ std::vector<std::string> FEFileSystem::getFolderList(const char* path)
 	return result;
 }
 
+std::vector<std::string> FEFileSystem::getFileList(const char* path)
+{
+	std::vector<std::string> result;
+	std::string pattern(path);
+	pattern.append("\\*");
+	WIN32_FIND_DATAA data;
+	HANDLE hFind;
+	if ((hFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	{
+		do
+		{
+			if (!isFolder((path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
+				result.push_back(data.cFileName);
+		} while (FindNextFileA(hFind, &data) != 0);
+		FindClose(hFind);
+	}
+
+	return result;
+}
+
 #ifdef FE_WIN_32
 // open dialog staff
 std::string FEFileSystem::PWSTRtoString(PWSTR wString)
@@ -74,7 +94,7 @@ std::string FEFileSystem::PWSTRtoString(PWSTR wString)
 	return result;
 }
 
-void FEFileSystem::openDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
+void FEFileSystem::showFileOpenDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
 {
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
@@ -114,7 +134,47 @@ void FEFileSystem::openDialog(std::string& path, const COMDLG_FILTERSPEC* filter
 	}
 }
 
-void FEFileSystem::openFolderDialog(std::string& path)
+void FEFileSystem::showFileSaveDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
+{
+	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	if (SUCCEEDED(hr))
+	{
+		IFileSaveDialog* pFileSave;
+		// Create the FileSaveDialog object.
+		hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL, IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileSave));
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFileSave->SetFileTypes(filterCount, filter);
+			// Show the Save dialog box.
+			hr = pFileSave->Show(NULL);
+
+			// Get the file name from the dialog box.
+			if (SUCCEEDED(hr))
+			{
+				IShellItem* pItem;
+				hr = pFileSave->GetResult(&pItem);
+				if (SUCCEEDED(hr))
+				{
+					PWSTR pszFilePath;
+					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+					// Display the file name to the user.
+					if (SUCCEEDED(hr))
+					{
+						path = PWSTRtoString(pszFilePath);
+						CoTaskMemFree(pszFilePath);
+					}
+					pItem->Release();
+				}
+			}
+			pFileSave->Release();
+		}
+		CoUninitialize();
+	}
+}
+
+void FEFileSystem::showFolderOpenDialog(std::string& path)
 {
 	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
@@ -160,6 +220,7 @@ void FEFileSystem::openFolderDialog(std::string& path)
 
 std::string FEFileSystem::getFileExtension(const char* path)
 {
+	// Should I use _splitpath_s ?
 	if (!checkFile(path))
 		return "";
 
@@ -167,4 +228,27 @@ std::string FEFileSystem::getFileExtension(const char* path)
 	return std::string(extension);
 }
 
+std::string FEFileSystem::getApplicationPath()
+{
+	char buffer[MAX_PATH] = { 0 };
+	GetModuleFileNameA(NULL, buffer, MAX_PATH);
+	return buffer;
+}
+
 #endif
+
+char* FEFileSystem::getDirectoryPath(const char* fullPath)
+{
+	char* result = new char[1024];
+	_splitpath_s(fullPath, nullptr, 0, result, 1024, nullptr, 0, nullptr, 0);
+
+	return result;
+}
+
+char* FEFileSystem::getFileName(const char* fullPath)
+{
+	char* result = new char[1024];
+	_splitpath_s(fullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
+
+	return result;
+}

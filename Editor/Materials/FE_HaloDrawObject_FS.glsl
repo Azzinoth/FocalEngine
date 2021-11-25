@@ -6,6 +6,8 @@ uniform vec3 baseColor;
 @MaterialTextures@
 @CameraPosition@
 
+out vec4 out_Color;
+
 vec4 getAlbedo()
 {
 	vec4 result = vec4(0);
@@ -29,6 +31,5 @@ void main(void)
 		discard;
 	}
 
-	//gl_FragColor = vec4(1.0f, 0.25f, 0.0f, 1.0f);
-	gl_FragColor = vec4(baseColor, 1.0);
+	out_Color = vec4(baseColor, 1.0);
 }

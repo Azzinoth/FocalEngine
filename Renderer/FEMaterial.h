@@ -40,28 +40,31 @@ namespace FocalEngine
 
 		glm::vec3 getBaseColor();
 		// Only infuence color of object if shader with such uniform is applied.
-		void setBaseColor(glm::vec3 newBaseColor);
+		void setBaseColor(glm::vec3 newValue);
 
 		float getMetalness();
-		void setMetalness(float newMetalness);
+		void setMetalness(float newValue);
 
 		float getRoughtness();
-		void setRoughtness(float newRoughtness);
+		void setRoughtness(float newValue);
 
 		float getRoughtnessMapIntensity();
-		void setRoughtnessMapIntensity(float newRoughtnessMapIntensity);
+		void setRoughtnessMapIntensity(float newValue);
 
 		float getMetalnessMapIntensity();
-		void setMetalnessMapIntensity(float newMetalnessMapIntensity);
+		void setMetalnessMapIntensity(float newValue);
 
 		float getNormalMapIntensity();
-		void setNormalMapIntensity(float newNormalMapIntensity);
+		void setNormalMapIntensity(float newValue);
 
 		float getAmbientOcclusionIntensity();
-		void setAmbientOcclusionIntensity(float newAmbientOcclusionIntensity);
+		void setAmbientOcclusionIntensity(float newValue);
 
 		float getAmbientOcclusionMapIntensity();
-		void setAmbientOcclusionMapIntensity(float newAmbientOcclusionMapIntensity);
+		void setAmbientOcclusionMapIntensity(float newValue);
+
+		float getDisplacementMapIntensity();
+		void setDisplacementMapIntensity(float newValue);
 
 		void setAlbedoMap(FETexture* texture, int subMaterial = 0);
 		void setAlbedoMap(int textureIndex, int subMaterial = 0);
@@ -102,6 +105,9 @@ namespace FocalEngine
 		void setCompackPacking(bool newValue);
 
 		bool isCompackPackingPossible();
+
+		float getTiling();
+		void setTiling(float newValue);
 	private:
 		glm::vec3 diffuseColor;
 		glm::vec3 baseColor;
@@ -124,6 +130,8 @@ namespace FocalEngine
 		float roughtnessMapIntensity = 1.0f;
 		float ambientOcclusionMapIntensity = 1.0f;
 		float ambientOcclusionIntensity = 1.0f;
+		float displacementMapIntensity = 1.0f;
+		float tiling = 1.0f;
 		bool compackPacking = false;
 
 		FETexture* getSpecifiedMap(int bindingIndex, int subMaterial = 0);

@@ -10,6 +10,8 @@ uniform float FXAAReduceMul;
 uniform vec2 FXAATextuxelSize;
 @Texture@ inputTexture;
 
+out vec4 out_Color;
+
 void main(void)
 {
 	vec2 texCoordOffset = FXAATextuxelSize;
@@ -44,7 +46,7 @@ void main(void)
 	float lumaResult2 = dot(luma, result2);
 	
 	if(lumaResult2 < lumaMin || lumaResult2 > lumaMax)
-		gl_FragColor = vec4(result1, 1.0);
+		out_Color = vec4(result1, 1.0);
 	else
-		gl_FragColor = vec4(result2, 1.0);
+		out_Color = vec4(result2, 1.0);
 }

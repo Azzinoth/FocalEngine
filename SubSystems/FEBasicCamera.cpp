@@ -316,3 +316,13 @@ float** FEBasicCamera::getFrustumPlanes()
 {
 	return frustum;
 }
+
+float FEBasicCamera::getMovementSpeed()
+{
+	return movementSpeed;
+}
+
+void FEBasicCamera::setMovementSpeed(float newValue)
+{
+	movementSpeed = newValue;
+}

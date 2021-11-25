@@ -14,8 +14,11 @@ void textureLoadJob::loadTextureFunc()
 			std::fstream file;
 			file.open(texturesToLoad[i].first.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
 			std::streamsize fileSize = file.tellg();
-			if (fileSize < 0)
+			if (fileSize <= 0)
+			{
+				texturesData.push_back(std::make_pair(nullptr, texturesToLoad[i].second));
 				continue;
+			}
 
 			file.seekg(0, std::ios::beg);
 			char* fileData = new char[int(fileSize)];

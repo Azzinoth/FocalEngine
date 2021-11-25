@@ -3,14 +3,16 @@ in vec2 textureCoords;
 @Texture@ haloBluredTexture;
 @Texture@ haloMaskTexture;
 
+out vec4 out_Color;
+
 void main(void)
 {
 	if (texture(haloMaskTexture, textureCoords).a < 1)
 	{
-		gl_FragColor = texture(sceneTexture, textureCoords) + texture(haloBluredTexture, textureCoords);
+		out_Color = texture(sceneTexture, textureCoords) + texture(haloBluredTexture, textureCoords);
 	}
 	else
 	{
-		gl_FragColor = texture(sceneTexture, textureCoords);
+		out_Color = texture(sceneTexture, textureCoords);
 	}
 }

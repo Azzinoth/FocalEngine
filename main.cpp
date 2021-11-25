@@ -13,53 +13,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	float avarageCpuFrameDuration = 0.0f;
 	float avarageGpuFrameDuration = 0.0f;
 
-	int countOfFalse = 0;
-	// DELETE
-	int readedCounter = 0;
-	// DELETE
 	while (ENGINE.isWindowOpened())
 	{
 		ENGINE.beginFrame();
 		ENGINE.render();
 
-		// DELETE
-		//auto tempEntities = SCENE.getEntityInstancedByName("fourthInstanced1"); // firstInstanced entityInstanced_16 fourthInstanced1
-		//if (tempEntities.size() > 0)
-		//{
-		//	static bool firstTime = true;
-		//	if (firstTime)
-		//	{
-		//		tempEntities[0]->initializeGPUCulling();
-		//		firstTime = false;
-		//	}
-
-		//	RENDERER.GPUCulling(tempEntities[0], ENGINE.getCamera()->getFrustumPlanes(), ENGINE.getCamera()->getPosition());
-		//}
-
-
-		//auto instancedEntities = SCENE.getEntityList();
-		//for (size_t i = 0; i < instancedEntities.size(); i++)
-		//{
-		//	FEEntityInstanced* entity = SCENE.getEntityInstanced(instancedEntities[i]);
-		//	if (entity != nullptr /*&& entity->getName() == "fourthInstanced1"*/)
-		//	{
-		//		if (entity->sourceDataBuffer == 0)
-		//		{
-		//			entity->initializeGPUCulling();
-		//		}
-
-		//		RENDERER.GPUCulling(entity, ENGINE.getCamera()->getFrustumPlanes(), ENGINE.getCamera()->getPosition());
-		//	}
-		//}
-
-		// DELETE
-
 		if (RENDERER.CSM0 != nullptr)
 		{
-			//ImGui::Image((void*)(intptr_t)RENDERER.CSM0->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)RENDERER.CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)RENDERER.CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
-			//ImGui::Image((void*)(intptr_t)RENDERER.CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			/*ImGui::Image((void*)(intptr_t)RENDERER.CSM0->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.CSM1->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.CSM2->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.CSM3->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));*/
+
+			if (SELECTED.getTerrain() != nullptr)
+			{
+				if (SELECTED.getTerrain()->layerMaps[0] != nullptr && SELECTED.getTerrain()->layerMaps[1] != nullptr)
+				{
+					ImGui::Image((void*)(intptr_t)SELECTED.getTerrain()->layerMaps[0]->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+					ImGui::Image((void*)(intptr_t)SELECTED.getTerrain()->layerMaps[1]->getTextureID(), ImVec2(256, 256), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+				}
+			}
+			
 #ifdef USE_DEFERRED_RENDERER
 			//ImGui::Image((void*)(intptr_t)RENDERER.positionsGBufferLastFrame->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			//ImGui::Image((void*)(intptr_t)RENDERER.SSAOLastFrame->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
@@ -133,14 +107,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		caption += "  Frame time : ";
 		caption += frameMS;
 		caption += " ms";
-		// DELETE
-		//if (countOFInstances != nullptr)
-		//{
-			//caption += " " + std::to_string(readedCounter);
-			//caption += " countOFInstances";
-		//}
-		
-		// DELETE
 
 		ENGINE.setWindowCaption(caption.c_str());
 	}

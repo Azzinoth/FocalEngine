@@ -268,9 +268,9 @@ FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialID)
 	return materialPreviewTextures[materialID];
 }
 
-void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
+void FEEditorPreviewManager::createGameModelPreview(std::string gameModelID)
 {
-	FEGameModel* gameModel = RESOURCE_MANAGER.getGameModel(gameModelName);
+	FEGameModel* gameModel = RESOURCE_MANAGER.getGameModel(gameModelID);
 
 	if (gameModel == nullptr)
 		return;
@@ -363,10 +363,10 @@ void FEEditorPreviewManager::createGameModelPreview(std::string gameModelName)
 	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// if we are updating preview we should delete old texture.
-	if (gameModelPreviewTextures.find(gameModelName) != gameModelPreviewTextures.end())
-		delete gameModelPreviewTextures[gameModelName];
+	if (gameModelPreviewTextures.find(gameModelID) != gameModelPreviewTextures.end())
+		delete gameModelPreviewTextures[gameModelID];
 
-	gameModelPreviewTextures[gameModelName] = previewFB->getColorAttachment();
+	gameModelPreviewTextures[gameModelID] = previewFB->getColorAttachment();
 	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
 }
 
@@ -476,8 +476,10 @@ FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelID)
 	if (RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial() != nullptr && RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->getDirtyFlag())
 	{
 		createMaterialPreview(RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->getObjectID());
+		// This material could use muiltiple GM so we should update all GMs.
+		updateAllGameModelPreviews();
 		RESOURCE_MANAGER.getGameModel(gameModelID)->getMaterial()->setDirtyFlag(false);
-		createGameModelPreview(gameModelID);
+		//createGameModelPreview(gameModelID);
 	}
 
 	// if we somehow could not find preview, we will create it.
@@ -516,4 +518,14 @@ void FEEditorPreviewManager::clear()
 		iterator++;
 	}
 	gameModelPreviewTextures.clear();
+}
+
+void FEEditorPreviewManager::updateAllGameModelPreviews()
+{
+	// Geting list of all game models.
+	auto GMList = RESOURCE_MANAGER.getGameModelList();
+	for (size_t i = 0; i < GMList.size(); i++)
+	{
+		createGameModelPreview(GMList[i]);
+	}
 }

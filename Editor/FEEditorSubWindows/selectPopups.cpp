@@ -79,6 +79,7 @@ void selectMaterialPopUp::render()
 				{
 					*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexUnderMouse].FEObjectPart->getObjectID());
 					PROJECT_MANAGER.getCurrent()->setModified(true);
+					onSelectAction();
 					close();
 				}
 			}
@@ -110,6 +111,7 @@ void selectMaterialPopUp::render()
 			{
 				*objToWorkWith = RESOURCE_MANAGER.getMaterial(filteredItemsList[IndexSelected].FEObjectPart->getObjectID());
 				PROJECT_MANAGER.getCurrent()->setModified(true);
+				onSelectAction();
 				close();
 			}
 		}
@@ -122,11 +124,6 @@ void selectMaterialPopUp::render()
 
 		ImGui::EndPopup();
 	}
-}
-
-void selectMaterialPopUp::setAllowedShader(FEShader* shader)
-{
-	allowedShader = shader;
 }
 
 void selectMaterialPopUp::show(FEMaterial** material)
@@ -143,17 +140,36 @@ void selectMaterialPopUp::show(FEMaterial** material)
 		itemsList.push_back(contenetBrowserItem<FEMaterial>(RESOURCE_MANAGER.getMaterial(tempList[i])));
 	}
 
-	if (allowedShader != nullptr)
+	filteredItemsList = itemsList;
+	strcpy_s(filter, "");
+
+	if (objToWorkWith != nullptr && (*objToWorkWith) != nullptr)
 	{
-		for (int i = 0; i < int(itemsList.size()); i++)
+		for (size_t i = 0; i < itemsList.size(); i++)
 		{
-			if (RESOURCE_MANAGER.getMaterial(itemsList[i].FEObjectPart->getObjectID())->shader->getObjectID() != allowedShader->getObjectID())
+			if (itemsList[i].FEObjectPart->getObjectID() == (*objToWorkWith)->getObjectID())
 			{
-				itemsList.erase(itemsList.begin() + i);
-				i--;
+				IndexSelected = i;
+				selectedItemID = itemsList[i].FEObjectPart->getObjectID();
+				break;
 			}
 		}
-		allowedShader = nullptr;
+	}
+}
+
+void selectMaterialPopUp::showWithCustomList(FEMaterial** material, std::vector<FEMaterial*> customList, void(*func)(void*), void* ptr)
+{
+	onSelect = func;
+	ptrOnClose = ptr;
+	shouldOpen = true;
+	objToWorkWith = material;
+
+	itemsList.clear();
+
+	for (size_t i = 0; i < customList.size(); i++)
+	{
+		if (customList[i] != nullptr)
+			itemsList.push_back(customList[i]);
 	}
 
 	filteredItemsList = itemsList;
@@ -170,6 +186,16 @@ void selectMaterialPopUp::show(FEMaterial** material)
 				break;
 			}
 		}
+	}
+}
+
+void selectMaterialPopUp::onSelectAction()
+{
+	if (onSelect != nullptr && ptrOnClose != nullptr)
+	{
+		onSelect(ptrOnClose);
+		onSelect = nullptr;
+		ptrOnClose = nullptr;
 	}
 }
 
@@ -626,6 +652,7 @@ void selectGameModelPopUp::show(FEGameModel** gameModel, bool newEntityFlag, boo
 	if (newEntityFlag)
 	{
 		popupCaption = "Select game model to create new Entity";
+		selectedItemID = "";
 	}
 	else
 	{

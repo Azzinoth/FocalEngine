@@ -27,26 +27,26 @@ class FEEditorNodeSocket
 	friend FEEditorNodeArea;
 	friend FEEditorNode;
 
+	std::string ID;
 	std::string name;
 	FEEditorNode* parent = nullptr;
 	std::vector<FEEditorNodeSocket*> connections;
 	FEEditorNodeSocketType type;
 
-	bool hovered = false;
-	bool lookingForConnection = false;
-
+	ImColor* forceColor = nullptr;
 public:
 	FEEditorNodeSocket(FEEditorNode* parent, FEEditorNodeSocketType type, std::string name);
-
-	bool isLookingForConnection();
-	void setIsLookingForConnection(bool newValue);
 
 	FEEditorNode* getParent();
 	std::vector<FEEditorNodeSocket*> getConnections();
 
+	std::string getID();
 	std::string getName();
 
 	FEEditorNodeSocketType getType();
+
+	bool getForcedConnectionColor(ImColor& color);
+	void setForcedConnectionColor(ImColor* newValue);
 };
 
 class FEEditorNodeConnection

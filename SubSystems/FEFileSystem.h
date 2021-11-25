@@ -22,12 +22,19 @@ namespace FocalEngine
 		bool createFolder(const char* path);
 		bool deleteFolder(const char* path);
 		std::vector<std::string> getFolderList(const char* path);
+		std::vector<std::string> getFileList(const char* path);
 		bool changeFileName(const char* path, const char* newPath);
 		bool deleteFile(const char* path);
 
+		char* getDirectoryPath(const char* fullPath);
+		char* getFileName(const char* fullPath);
+
 #ifdef FE_WIN_32
-		void openDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
-		void openFolderDialog(std::string& path);
+		void showFileOpenDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
+		void showFolderOpenDialog(std::string& path);
+
+		void showFileSaveDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
+		std::string getApplicationPath();
 #endif
 
 	private:

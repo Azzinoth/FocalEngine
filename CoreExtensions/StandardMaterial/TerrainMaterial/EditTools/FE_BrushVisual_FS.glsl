@@ -1,7 +1,9 @@
 in vec2 textureCoords;
 uniform vec2 brushCenter;
 uniform float brushSize;
-	
+
+out vec4 out_Color;
+
 void main(void)
 {
 	float distanceToBrush = distance(brushCenter, textureCoords);
@@ -9,12 +11,10 @@ void main(void)
 	{
 		float persentage = (distanceToBrush / brushSize);
 		float displacement = 1.0 * (1 - persentage);
-		gl_FragColor = vec4(0.0) + displacement;
+		out_Color = vec4(0.0) + displacement;
 	}
 	else
 	{
-		gl_FragColor = vec4(0.0);
+		out_Color = vec4(0.0);
 	}
-
-	//gl_FragColor = vec4(1.0);
 }

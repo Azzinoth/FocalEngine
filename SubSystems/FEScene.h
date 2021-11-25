@@ -17,6 +17,7 @@ namespace FocalEngine
 		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
 		bool addEntity(FEEntity* newEntity);
 		FEEntity* getEntity(std::string ID);
+		std::vector<FEEntity*> getEntityByName(std::string Name);
 		std::vector<std::string> getEntityList();
 		void deleteEntity(std::string ID);
 

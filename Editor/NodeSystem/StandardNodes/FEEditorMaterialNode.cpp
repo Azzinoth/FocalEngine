@@ -1,14 +1,13 @@
 #include "FEEditorMaterialNode.h"
 using namespace FocalEngine;
 
-FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material)
+FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material) : FEEditorNode()
 {
-	FEEditorNode::FEEditorNode();
 	type = "FEEditorMaterialNode";
 
 	data = material;
 
-	setSize(ImVec2(380, 440));
+	setSize(ImVec2(380, 500));
 	setName(data->getName());
 
 	titleBackgroundColor = ImColor(200, 50, 200);
@@ -148,10 +147,20 @@ void FEEditorMaterialNode::draw()
 		ImGui::DragFloat("##Metalness map intensity", &metalness, 0.01f, 0.0f, 10.0f);
 		data->setMetalnessMapIntensity(metalness);
 	}
+
+	currentPosition.y += fieldStep;
+	ImGui::SetCursorScreenPos(currentPosition);
+	ImGui::Text("Tiling :");
+	ImGui::SetNextItemWidth(fieldWidth);
+	float tiling = data->getTiling();
+	currentPosition.y += fieldStep;
+	ImGui::SetCursorScreenPos(currentPosition);
+	ImGui::DragFloat("##Tiling", &tiling, 0.01f, 0.0f, 64.0f);
+	data->setTiling(tiling);
 	
-	if (openContextMenu)
+	if (contextMenu)
 	{
-		openContextMenu = false;
+		contextMenu = false;
 		ImGui::OpenPopup("##context_menu");
 	}
 	
@@ -290,11 +299,13 @@ bool FEEditorMaterialNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNod
 	return true;
 }
 
-void FEEditorMaterialNode::mouseClick(int mouseButton)
+bool FEEditorMaterialNode::openContextMenu()
 {
-	FEEditorNode::mouseClick(mouseButton);
+	contextMenu = true;
+	return true;
+}
 
-	openContextMenu = false;
-	if (mouseButton == 1)
-		openContextMenu = true;
+Json::Value FEEditorMaterialNode::getInfoForSaving()
+{
+	return "";
 }

@@ -1,14 +1,49 @@
 #include "FETerrain.h"
 using namespace FocalEngine;
 
+FETerrainLayer::FETerrainLayer(std::string name) : FEObject(FE_TERRAIN_LAYER, name) {}
+FEMaterial* FETerrainLayer::getMaterial()
+{
+	return material;
+}
+
+void FETerrainLayer::setMaterial(FEMaterial* newValue)
+{
+	if (newValue->isCompackPacking())
+		material = newValue;
+}
+
 FETerrain::FETerrain(std::string Name) : FEObject(FE_TERRAIN, Name)
 {
 	name = Name;
 	nameHash = std::hash<std::string>{}(name);
+
+	layers.resize(FE_TERRAIN_MAX_LAYERS);
+	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		layers[i] = nullptr;
+	}
+
+	layerMaps.resize(FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE);
+	layerMaps[0] = nullptr;
+	layerMaps[1] = nullptr;
+
+	FE_GL_ERROR(glGenBuffers(1, &GPULayersDataBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, GPULayersDataBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS, nullptr, GL_DYNAMIC_DRAW));
+	
+	GPULayersData.resize(FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS);
+	OldGPULayersData.resize(FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS);
 }
 
 FETerrain::~FETerrain()
 {
+	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		delete layers[i];
+	}
+
+	FE_GL_ERROR(glDeleteBuffers(1, &GPULayersDataBuffer));
 }
 
 void FETerrain::render()
@@ -36,7 +71,7 @@ FEAABB FETerrain::getAABB()
 		// -0.5f it is a little hack, because this -0.5f should be made during tessellation.
 		meshAABB.min = glm::vec3(-32.0f - 0.5f, AABB.getMin()[1], -32.0f - 0.5f);
 		meshAABB.max = glm::vec3(32.0f + 64.0f * (chunkPerSide - 1) - 0.5f, AABB.getMax()[1], 32.0f + 64.0f * (chunkPerSide - 1) - 0.5f);
-		meshAABB = FEAABB(glm::vec3(meshAABB.getMin()[0], meshAABB.getMin()[1] * hightScale, meshAABB.getMin()[2]), glm::vec3(meshAABB.getMax()[0], meshAABB.getMax()[1] * hightScale, meshAABB.getMax()[2]));
+		meshAABB = FEAABB(glm::vec3(meshAABB.getMin()[0], meshAABB.getMin()[1] * 2 * hightScale - hightScale, meshAABB.getMin()[2]), glm::vec3(meshAABB.getMax()[0], meshAABB.getMax()[1] * 2 * hightScale - hightScale, meshAABB.getMax()[2]));
 
 		// firstly we generate 8 points that represent AABCube.
 		// bottom 4 points
@@ -110,7 +145,7 @@ FEAABB FETerrain::getPureAABB()
 	FEAABB meshAABB = AABB;
 	meshAABB.min = glm::vec3(-32.0f, AABB.getMin()[1], -32.0f);
 	meshAABB.max = glm::vec3(32.0f + 64.0f * (chunkPerSide - 1), AABB.getMax()[1], 32.0f + 64.0f * (chunkPerSide - 1));
-	meshAABB = FEAABB(glm::vec3(meshAABB.getMin()[0], meshAABB.getMin()[1] * hightScale, meshAABB.getMin()[2]), glm::vec3(meshAABB.getMax()[0], meshAABB.getMax()[1] * hightScale, meshAABB.getMax()[2]));
+	meshAABB = FEAABB(glm::vec3(meshAABB.getMin()[0], meshAABB.getMin()[1] * 2 * hightScale - hightScale, meshAABB.getMin()[2]), glm::vec3(meshAABB.getMax()[0], meshAABB.getMax()[1] * 2 * hightScale - hightScale, meshAABB.getMax()[2]));
 	return meshAABB;
 }
 
@@ -151,6 +186,9 @@ float FETerrain::getHightScale()
 
 void FETerrain::setHightScale(float newHightScale)
 {
+	if (newHightScale <= 0)
+		return;
+
 	if (hightScale != newHightScale)
 		transform.dirtyFlag = true;
 	hightScale = newHightScale;
@@ -230,7 +268,8 @@ float FETerrain::getHeightAt(glm::vec2 XZWorldPosition)
 		localZ = float(int(localZ * this->heightMap->getHeight()));
 
 		int index = int(localZ * this->heightMap->getWidth() + localX);
-		return heightMapArray[index] * hightScale * transform.getScale()[1] + transform.getPosition()[1];
+		return (heightMapArray[index] * 2 * hightScale - hightScale) * transform.getScale()[1] + transform.getPosition()[1];
+		//return heightMapArray[index] * hightScale * transform.getScale()[1] + transform.getPosition()[1];
 	}
 
 	return -FLT_MAX;
@@ -370,44 +409,15 @@ void FETerrain::setBrushActive(bool newBrushActive)
 	brushActive = newBrushActive;
 }
 
-bool FETerrain::isBrushInversed()
+FE_TERRAIN_BRUSH_MODE FETerrain::getBrushMode()
 {
-	return brushInversed;
+	return brushMode;
 }
 
-bool FETerrain::isBrushSculptMode()
+void FETerrain::setBrushMode(FE_TERRAIN_BRUSH_MODE newBrushMode)
 {
-	return brushSculptMode;
-}
-
-void FETerrain::setBrushSculptMode(bool newBrushSculptMode)
-{
-	brushSculptMode = newBrushSculptMode;
-}
-
-bool FETerrain::isBrushLevelMode()
-{
-	return brushLevelMode;
-}
-
-void FETerrain::setBrushLevelMode(bool newBrushLevelMode)
-{
-	brushLevelMode = newBrushLevelMode;
-}
-
-bool FETerrain::isBrushSmoothMode()
-{
-	return brushSmoothMode;
-}
-
-void FETerrain::setBrushSmoothMode(bool newBrushSmoothMode)
-{
-	brushSmoothMode = newBrushSmoothMode;
-}
-
-void FETerrain::setBrushInversed(bool newBrushInversed)
-{
-	brushInversed = newBrushInversed;
+	size_t test = sizeof(FE_TERRAIN_BRUSH_MODE);
+	brushMode = newBrushMode;
 }
 
 float FETerrain::getBrushSize()
@@ -444,7 +454,10 @@ void FETerrain::setBrushIntensity(float newBrushIntensity)
 
 void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection)
 {
-	if (!brushSculptMode && !brushLevelMode && !brushSmoothMode)
+	if (brushVisualFB == nullptr)
+		return;
+
+	if (getBrushMode() == FE_TERRAIN_BRUSH_NONE)
 	{
 		if (brushVisualFBCleared)
 			return;
@@ -498,40 +511,60 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 		}
 
 		brushOutputShader->getParameter("brushSize")->updateData(brushSize / (getXSize() * 2.0f));
+		brushOutputShader->getParameter("brushMode")->updateData(float(getBrushMode()));
 
-		if (brushSculptMode && !brushInversed)
-		{
-			brushOutputShader->getParameter("brushMode")->updateData(0.0f);
-		}
-		else if (brushSculptMode && brushInversed)
-		{
-			brushOutputShader->getParameter("brushMode")->updateData(1.0f);
-		}
-		else if (brushLevelMode)
-		{
-			brushOutputShader->getParameter("brushMode")->updateData(2.0f);
-		}
-		else if (brushSmoothMode)
-		{
-			brushOutputShader->getParameter("brushMode")->updateData(3.0f);
-		}
-		
+		brushOutputFB->setColorAttachment(heightMap);
 		brushOutputShader->getParameter("brushIntensity")->updateData(brushIntensity / 10.0f);
 
 		brushOutputFB->bind();
 		brushOutputShader->start();
+		
+		if (brushMode == FE_TERRAIN_BRUSH_LAYER_DRAW)
+		{
+			layerMaps[1]->bind(0);
+			FE_GL_ERROR(glViewport(0, 0, layerMaps[0]->getWidth(), layerMaps[0]->getHeight()));
 
-		brushOutputShader->loadDataToGPU();
-		heightMap->bind(0);
-		FE_GL_ERROR(glViewport(0, 0, heightMap->getWidth(), heightMap->getHeight()));
+			brushOutputShader->getParameter("brushIntensity")->updateData(brushIntensity * 5.0f);
+			brushOutputShader->getParameter("layerIndex")->updateData(float(getBrushLayerIndex()));
+			brushOutputShader->getParameter("layerIndexShift")->updateData(4.0f);
+			brushOutputFB->setColorAttachment(layerMaps[1]);
+			brushOutputShader->loadDataToGPU();
 
-		FE_GL_ERROR(glBindVertexArray(planeMesh->getVaoID()));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, planeMesh->getVertexCount(), GL_UNSIGNED_INT, 0));
-		FE_GL_ERROR(glDisableVertexAttribArray(0));
-		FE_GL_ERROR(glBindVertexArray(0));
+			FE_GL_ERROR(glBindVertexArray(planeMesh->getVaoID()));
+			FE_GL_ERROR(glEnableVertexAttribArray(0));
+			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, planeMesh->getVertexCount(), GL_UNSIGNED_INT, 0));
 
-		heightMap->unBind();
+			// The order of layerMaps is reversed to let "normalize"(to add up to 1.0) all layers by adjusting ground layer(layer with index 0).
+			layerMaps[0]->bind(0);
+			layerMaps[1]->bind(1);
+
+			brushOutputShader->getParameter("layerIndexShift")->updateData(0.0f);
+			brushOutputFB->setColorAttachment(layerMaps[0]);
+			brushOutputShader->loadDataToGPU();
+
+			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, planeMesh->getVertexCount(), GL_UNSIGNED_INT, 0));
+			FE_GL_ERROR(glDisableVertexAttribArray(0));
+			FE_GL_ERROR(glBindVertexArray(0));
+
+			layerMaps[0]->unBind();
+			layerMaps[1]->unBind();
+		}
+		else
+		{
+			brushOutputShader->loadDataToGPU();
+			heightMap->bind(0);
+
+			FE_GL_ERROR(glViewport(0, 0, heightMap->getWidth(), heightMap->getHeight()));
+
+			FE_GL_ERROR(glBindVertexArray(planeMesh->getVaoID()));
+			FE_GL_ERROR(glEnableVertexAttribArray(0));
+			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, planeMesh->getVertexCount(), GL_UNSIGNED_INT, 0));
+			FE_GL_ERROR(glDisableVertexAttribArray(0));
+			FE_GL_ERROR(glBindVertexArray(0));
+
+			heightMap->unBind();
+		}
+
 		brushOutputShader->stop();
 		brushOutputFB->unBind();
 	}
@@ -596,4 +629,194 @@ void FETerrain::unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap)
 	}
 
 	entityToUnSnap->terrainToSnap = nullptr;
+}
+
+bool FETerrain::getNextEmptyLayerSlot(size_t& nextEmptyLayerIndex)
+{
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		if (layers[i] == nullptr)
+		{
+			nextEmptyLayerIndex = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+FETerrainLayer* FETerrain::activateVacantLayerSlot(FEMaterial* material)
+{
+	size_t layerIndex = 0;
+	if (!getNextEmptyLayerSlot(layerIndex))
+	{
+		LOG.add("FETerrain::activateLayerSlot was not able to acquire vacant layer index", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	if (material == nullptr)
+	{
+		LOG.add("FETerrain::activateLayerSlot material is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	if (!material->isCompackPacking())
+	{
+		LOG.add("FETerrain::activateLayerSlot material is not compactly packed", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	{
+		LOG.add("FETerrain::activateLayerSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	if (layers[layerIndex] != nullptr)
+	{
+		LOG.add("FETerrain::activateLayerSlot on indicated layer slot layer is already active", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	layers[layerIndex] = new FETerrainLayer(std::string("Layer_") + std::to_string(layerIndex));
+	layers[layerIndex]->material = material;
+
+	if (layerIndex == 0)
+		setWireframeMode(false);
+
+	return layers[layerIndex];
+}
+
+FETerrainLayer* FETerrain::getLayerInSlot(size_t layerIndex)
+{
+	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	{
+		LOG.add("FETerrain::getLayerInSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return nullptr;
+	}
+
+	return layers[layerIndex];
+}
+
+void FETerrain::deleteLayerInSlot(size_t layerIndex)
+{
+	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	{
+		LOG.add("FETerrain::deleteLayerInSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	if (layers[layerIndex] == nullptr)
+	{
+		LOG.add("FETerrain::deleteLayerInSlot on indicated layer slot layer is already inactive", FE_LOG_WARNING, FE_LOG_RENDERING);
+		return;
+	}
+
+	delete layers[layerIndex];
+	layers[layerIndex] = nullptr;
+
+	if (layerIndex == 0 && layers[layerIndex + 1] == nullptr)
+		setWireframeMode(true);
+
+	if (layerIndex + 1 >= FE_TERRAIN_MAX_LAYERS)
+		return;
+
+	size_t currentIndex = layerIndex + 1;
+	while (true)
+	{
+		if (currentIndex >= FE_TERRAIN_MAX_LAYERS || layers[currentIndex] == nullptr)
+			return;
+
+		layers[currentIndex - 1] = layers[currentIndex];
+		layers[currentIndex] = nullptr;
+
+		currentIndex++;
+	}
+}
+
+size_t FETerrain::getBrushLayerIndex()
+{
+	return brushLayerIndex;
+}
+
+void FETerrain::setBrushLayerIndex(size_t newBrushLayerIndex)
+{
+	if (newBrushLayerIndex >= FE_TERRAIN_MAX_LAYERS)
+		return;
+
+	brushLayerIndex = newBrushLayerIndex;
+}
+
+void FETerrain::loadLayersDataToGPU()
+{
+	bool GPUDataIsStale = false;
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		size_t index = i * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER;
+		if (layers[i] != nullptr && layers[i]->getMaterial()->isCompackPacking())
+		{
+			FEMaterial* currentMaterial = layers[i]->getMaterial();
+			// normalMapIntensity
+			GPULayersData[index] = currentMaterial->getNormalMapIntensity();
+			// AOIntensity
+			GPULayersData[index + 1] = currentMaterial->getAmbientOcclusionIntensity();
+			// AOMapIntensity
+			GPULayersData[index + 2] = currentMaterial->getAmbientOcclusionMapIntensity();
+			// roughtness
+			GPULayersData[index + 3] = currentMaterial->getRoughtness();
+			// roughtnessMapIntensity
+			GPULayersData[index + 4] = currentMaterial->getRoughtnessMapIntensity();
+			// metalness
+			GPULayersData[index + 5] = currentMaterial->getMetalness();
+			// metalnessMapIntensity
+			GPULayersData[index + 6] = currentMaterial->getMetalnessMapIntensity();
+			// displacementMapIntensity
+			GPULayersData[index + 7] = currentMaterial->getDisplacementMapIntensity();
+			// tiling
+			GPULayersData[index + 8] = currentMaterial->getTiling();
+		}
+		else
+		{
+			for (size_t j = 0; j < FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER; j++)
+			{
+				GPULayersData[index + j] = -1.0f;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		if (GPULayersData[i] != OldGPULayersData[i])
+		{
+			GPUDataIsStale = true;
+			OldGPULayersData = GPULayersData;
+			break;
+		}
+	}
+
+	if (GPUDataIsStale)
+	{
+		float* terrainLayersDataPtr = (float*)glMapNamedBufferRange(GPULayersDataBuffer, 0, sizeof(float) * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS,
+			GL_MAP_WRITE_BIT/* |
+			GL_MAP_INVALIDATE_BUFFER_BIT |
+			GL_MAP_UNSYNCHRONIZED_BIT*/);
+		for (size_t i = 0; i < FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS; i++)
+		{
+			terrainLayersDataPtr[i] = GPULayersData[i];
+		}
+		FE_GL_ERROR(glUnmapNamedBuffer(GPULayersDataBuffer));
+	}
+}
+
+int FETerrain::layersUsed()
+{
+	int layersUsed = 0;
+	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		if (getLayerInSlot(i) == nullptr)
+			break;
+		layersUsed++;
+	}
+
+	return layersUsed;
 }

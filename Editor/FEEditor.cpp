@@ -108,8 +108,18 @@ void FEEditor::mouseButtonCallback(int button, int action, int mods)
 
 	if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
 	{
-		SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
-		SELECTED.checkForSelectionisNeeded = true;
+		bool editingTerrain = false;
+		if (SELECTED.getTerrain() != nullptr)
+		{
+			editingTerrain = SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE;
+		}
+		
+		if (!editingTerrain)
+		{
+			SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
+			SELECTED.checkForSelectionisNeeded = true;
+		}
+		
 		EDITOR.leftMousePressed = true;
 	}
 	else if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
@@ -366,64 +376,7 @@ void FEEditor::showTransformConfiguration(std::string name, FETransformComponent
 	transform->changeZScaleBy(scale[2] - oldScale[2]);
 }
 
-void FEEditor::showPosition(std::string objectName, glm::vec3& position)
-{
-	ImGui::Text("Position : ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X pos : ") + objectName).c_str(), &position[0], 0.1f);
-	showToolTip("X position");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y pos : ") + objectName).c_str(), &position[1], 0.1f);
-	showToolTip("Y position");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z pos : ") + objectName).c_str(), &position[2], 0.1f);
-	showToolTip("Z position");
-}
-
-void FEEditor::showRotation(std::string objectName, glm::vec3& rotation)
-{
-	ImGui::Text("Rotation : ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X rot : ") + objectName).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
-	showToolTip("X rotation");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y rot : ") + objectName).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
-	showToolTip("Y rotation");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z rot : ") + objectName).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
-	showToolTip("Z rotation");
-}
-
-void FEEditor::showScale(std::string objectName, glm::vec3& scale)
-{
-	ImGui::Text("Scale : ");
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X scale : ") + objectName).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
-	showToolTip("X scale");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y scale : ") + objectName).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Y scale");
-
-	ImGui::SameLine();
-	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z scale : ") + objectName).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Z scale");
-}
-
-void FEEditor::displayMaterialPrameter(FEShaderParam* param)
+void FEEditor::displayMaterialParameter(FEShaderParam* param)
 {
 	switch (param->type)
 	{
@@ -497,10 +450,7 @@ void FEEditor::displayLightProperties(FELight* light)
 		showToolTip("Will this light cast shadows.");
 
 		if (!directionalLight->isCastShadows())
-		{
-			ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-		}
+			ImGui::BeginDisabled();
 		
 		ImGui::Text("Number of cascades :");
 		ImGui::SameLine();
@@ -534,22 +484,12 @@ void FEEditor::displayLightProperties(FELight* light)
 		directionalLight->setCSMXYDepth(CSMXYDepth);
 		showToolTip("If you have problems with shadow on edges of screen, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
 
-		static FEShader* shaderPBR = RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-		static FEShader* shaderInstancedPBR = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-		static FEShader* shaderTerrain = RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
-
 		ImGui::Text("Shadows blur factor:");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200.0f);
-		float shadowsBlurFactor = *(float*)shaderPBR->getParameter("shadowBlurFactor")->data;
+		float shadowsBlurFactor = directionalLight->getShadowBlurFactor();
 		ImGui::DragFloat("##Shadows blur factor", &shadowsBlurFactor, 0.001f, 0.0f, 10.0f);
-		shaderPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
-		shaderInstancedPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
-#ifdef USE_DEFERRED_RENDERER
-		
-#else
-		shaderTerrain->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
-#endif // USE_DEFERRED_RENDERER
+		directionalLight->setShadowBlurFactor(shadowsBlurFactor);
 	
 		bool staticShadowBias = directionalLight->isStaticShadowBias();
 		ImGui::Checkbox("Static shadow bias :", &staticShadowBias);
@@ -575,11 +515,7 @@ void FEEditor::displayLightProperties(FELight* light)
 		}
 
 		if (!directionalLight->isCastShadows())
-		{
-			//ImGui::PushItemFlag(ImGuiItemFlags_Disabled, false);
-			ImGui::PopItemFlag();
-			ImGui::PopStyleVar();
-		}
+			ImGui::EndDisabled();
 	}
 	else if (light->getType() == FE_POINT_LIGHT)
 	{
@@ -587,10 +523,10 @@ void FEEditor::displayLightProperties(FELight* light)
 	else if (light->getType() == FE_SPOT_LIGHT)
 	{
 		FESpotLight* spotLight = reinterpret_cast<FESpotLight*>(light);
-		glm::vec3 d = spotLight->getDirection();
-		ImGui::DragFloat("##x", &d[0], 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("##y", &d[1], 0.01f, 0.0f, 1.0f);
-		ImGui::DragFloat("##z", &d[2], 0.01f, 0.0f, 1.0f);
+		glm::vec3 direction = spotLight->getDirection();
+		ImGui::DragFloat("##x", &direction[0], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##y", &direction[1], 0.01f, 0.0f, 1.0f);
+		ImGui::DragFloat("##z", &direction[2], 0.01f, 0.0f, 1.0f);
 
 		float spotAngle = spotLight->getSpotAngle();
 		ImGui::SliderFloat((std::string("Inner angle##") + spotLight->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
@@ -688,8 +624,6 @@ void FEEditor::displaySceneBrowser()
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
 
-	selectGameModelPopUp::getInstance().render();
-
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
@@ -740,7 +674,10 @@ void FEEditor::displaySceneBrowser()
 			}
 		}
 
+		setCorrectSceneBrowserColor(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
 		ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, FEObjectManager::getInstance().getFEObject(sceneObjectsList[i])->getName().c_str(), i);
+		popCorrectSceneBrowserColor(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
+
 		if (ImGui::IsItemClicked())
 		{
 			SELECTED.setSelected(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
@@ -951,7 +888,9 @@ void FEEditor::displaySceneBrowser()
 	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
 
 	// draw AABB
-	if (SELECTED.getSelected() != nullptr && displaySelectedObjAABB)
+	if (SELECTED.getSelected() != nullptr &&
+		(SELECTED.getSelected()->getType() == FE_ENTITY || SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED || SELECTED.getSelected()->getType() == FE_TERRAIN) &&
+		displaySelectedObjAABB)
 	{
 		FEAABB selectedAABB = SELECTED.getEntity() != nullptr ? SELECTED.getEntity()->getAABB() : SELECTED.getTerrain()->getAABB();
 		RENDERER.drawAABB(selectedAABB);
@@ -959,12 +898,6 @@ void FEEditor::displaySceneBrowser()
 
 	ImGui::PopStyleVar();
 	ImGui::End();
-
-	selectMeshPopUp::getInstance().render();
-	selectMaterialPopUp::getInstance().render();
-	selectGameModelPopUp::getInstance().render();
-	renamePopUp::getInstance().render();
-	projectWasModifiedPopUp::getInstance().render();
 }
 
 void FEEditor::initializeResources()
@@ -974,14 +907,14 @@ void FEEditor::initializeResources()
 	ENGINE.setMouseMoveCallback(mouseMoveCallback);
 	ENGINE.setRenderTargetResizeCallback(renderTargetResizeCallback);
 	ENGINE.setDropCallback(dropCallback);
-
+	
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	PROJECT_MANAGER.initializeResources();
 	PREVIEW_MANAGER.initializeResources();
 	DRAG_AND_DROP_MANAGER.initializeResources();
 	sceneWindowTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, sceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
-
+	
 	// **************************** Gizmos ****************************
 	GIZMO_MANAGER.initializeResources();
 
@@ -1017,12 +950,6 @@ void FEEditor::initializeResources()
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity);
 
-	sculptBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/sculptBrush.png", "sculptBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(sculptBrushIcon);
-	levelBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/levelBrush.png", "levelBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(levelBrushIcon);
-	smoothBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/smoothBrush.png", "smoothBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(smoothBrushIcon);
 	mouseCursorIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/mouseCursorIcon.png", "mouseCursorIcon");
 	RESOURCE_MANAGER.makeTextureStandard(mouseCursorIcon);
 	arrowToGroundIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/arrowToGroundIcon.png", "arrowToGroundIcon");
@@ -1054,6 +981,45 @@ void FEEditor::initializeResources()
 
 	VFSBackIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/VFSBackIcon.png", "VFSBackIcon");
 	RESOURCE_MANAGER.makeTextureStandard(VFSBackIcon);
+
+	meshContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/meshContentBrowserIcon.png", "meshContentBrowserIcon");
+	RESOURCE_MANAGER.makeTextureStandard(meshContentBrowserIcon);
+
+	materialContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/materialContentBrowserIcon.png", "materialContentBrowserIcon");
+	RESOURCE_MANAGER.makeTextureStandard(materialContentBrowserIcon);
+
+	gameModelContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/gameModelContentBrowserIcon.png", "gameModelContentBrowserIcon");
+	RESOURCE_MANAGER.makeTextureStandard(gameModelContentBrowserIcon);
+
+	// ************** Terrain Settings **************
+	exportHeightMapButton = new ImGuiButton("Export HeightMap");
+	exportHeightMapButton->setSize(ImVec2(200, 0));
+
+	importHeightMapButton = new ImGuiButton("Import HeightMap");
+	importHeightMapButton->setSize(ImVec2(200, 0));
+
+	sculptBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/sculptBrush.png", "sculptBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(sculptBrushIcon);
+	sculptBrushButton = new ImGuiImageButton(sculptBrushIcon);
+	sculptBrushButton->setSize(ImVec2(24, 24));
+
+	levelBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/levelBrush.png", "levelBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(levelBrushIcon);
+	levelBrushButton = new ImGuiImageButton(levelBrushIcon);
+	levelBrushButton->setSize(ImVec2(24, 24));
+
+	smoothBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/smoothBrush.png", "smoothBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(smoothBrushIcon);
+	smoothBrushButton = new ImGuiImageButton(smoothBrushIcon);
+	smoothBrushButton->setSize(ImVec2(24, 24));
+
+	drawBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/paintbrush_.png", "drawBrushIcon");
+	RESOURCE_MANAGER.makeTextureStandard(drawBrushIcon);
+	layerBrushButton = new ImGuiImageButton(drawBrushIcon);
+	layerBrushButton->setSize(ImVec2(48, 48));
+
+	entityChangeGameModelTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, entityChangeGameModelTargetCallBack, nullptr, "Drop to assign game model");
+	// ************** Terrain Settings END **************
 	
 	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
 	ENGINE.setWindowCloseCallback(closeWindowCallBack);
@@ -1073,7 +1039,7 @@ void FEEditor::mouseMoveCallback(double xpos, double ypos)
 	{
 		if (SELECTED.getTerrain() != nullptr)
 		{
-			if (SELECTED.getTerrain()->isBrushSculptMode() || SELECTED.getTerrain()->isBrushLevelMode() || SELECTED.getTerrain()->isBrushSmoothMode())
+			if (SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
 				return;
 		}
 
@@ -1109,6 +1075,16 @@ void FEEditor::render()
 					ENGINE.takeScreenshot((PROJECT_MANAGER.getCurrent()->getProjectFolder() + "projectScreenShot.texture").c_str());
 				}
 
+				if (ImGui::MenuItem("Save project as..."))
+				{
+					std::string path = "";
+					FILE_SYSTEM.showFolderOpenDialog(path);
+					if (path != "")
+					{
+						PROJECT_MANAGER.getCurrent()->saveSceneTo(path + "\\");
+					}
+				}
+
 				if (ImGui::MenuItem("Close project"))
 				{
 					if (PROJECT_MANAGER.getCurrent()->isModified())
@@ -1118,6 +1094,7 @@ void FEEditor::render()
 					else
 					{
 						PROJECT_MANAGER.closeCurrentProject();
+						strcpy_s(filterForResourcesContentBrowser, "");
 
 						ImGui::PopStyleVar();
 						ImGui::EndMenu();
@@ -1175,8 +1152,7 @@ void FEEditor::render()
 		sceneWindow = ImGui::GetCurrentWindow();
 		sceneWindowTarget->stickToCurrentWindow();
 		
-		ENGINE.setRenderTargetWidth((int)sceneWindow->ContentRegionRect.GetWidth());
-		ENGINE.setRenderTargetHeight((int)sceneWindow->ContentRegionRect.GetHeight());
+		ENGINE.setRenderTargetSize((size_t)sceneWindow->ContentRegionRect.GetWidth(), (size_t)sceneWindow->ContentRegionRect.GetHeight());
 
 		ENGINE.setRenderTargetXShift((int)sceneWindow->ContentRegionRect.GetTL().x);
 		ENGINE.setRenderTargetYShift((int)sceneWindow->ContentRegionRect.GetTL().y);
@@ -1208,7 +1184,8 @@ void FEEditor::render()
 		displayInspector();
 		displayEffectsWindow();
 		displayLogWindow();
-		gyzmosSettingsWindowObject.show();
+		if (!gyzmosSettingsWindowObject.isVisible())
+			gyzmosSettingsWindowObject.show();
 		gyzmosSettingsWindowObject.render();
 
 		int index = SELECTED.getIndexOfObjectUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
@@ -1219,6 +1196,8 @@ void FEEditor::render()
 				SELECTED.setSelectedByIndex(index);
 			}
 		}
+
+		renderAllSubWindows();
 	}
 	else
 	{
@@ -1320,7 +1299,7 @@ void FEEditor::setGameMode(bool gameMode)
 	}
 }
 
-bool entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer)
+bool FEEditor::entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer)
 {
 	FEEntity* entity = SELECTED.getEntity();
 	if (entity == nullptr)
@@ -1330,21 +1309,25 @@ bool entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer)
 	return true;
 }
 
-bool terrainChangeMaterialTargetCallBack(FEObject* object, void** terrainPointer)
+bool FEEditor::terrainChangeMaterialTargetCallBack(FEObject* object, void** layerIndex)
 {
 	FETerrain* terrain = SELECTED.getTerrain();
 	if (terrain == nullptr)
 		return false;
 
-	terrain->layer0 = (RESOURCE_MANAGER.getMaterial(object->getObjectID()));
+	FEMaterial* materialToAssign = RESOURCE_MANAGER.getMaterial(object->getObjectID());
+	if (!materialToAssign->isCompackPacking())
+		return false;
+
+	int tempLayerIndex = *(int*)layerIndex;
+	if (tempLayerIndex >= 0 && tempLayerIndex < FE_TERRAIN_MAX_LAYERS)
+		terrain->getLayerInSlot(tempLayerIndex)->setMaterial(materialToAssign);
+
 	return true;
 }
 
 void FEEditor::displayInspector()
 {
-	static DragAndDropTarget* entityChangeGameModelTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, entityChangeGameModelTargetCallBack, nullptr, "Drop to assign game model");
-	static DragAndDropTarget* terrainChangeMaterialTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, terrainChangeMaterialTargetCallBack, nullptr, "Drop to assign material");
-
 	if (!inspectorVisible)
 		return;
 
@@ -1586,177 +1569,46 @@ void FEEditor::displayInspector()
 	}
 	else if (SELECTED.getTerrain() != nullptr)
 	{
-		static ImGuiButton* loadHeightMapButton = new ImGuiButton("Load HeightMap");
-		static ImGuiButton* testButton = new ImGuiButton("testButton");
-
-		static ImGuiImageButton* sculptBrushButton = new ImGuiImageButton(nullptr);
-		static ImGuiImageButton* levelBrushButton = new ImGuiImageButton(nullptr);
-		static ImGuiImageButton* smoothBrushButton = new ImGuiImageButton(nullptr);
-		static bool firstCall = true;
-		if (firstCall)
-		{
-			sculptBrushButton->setTexture(sculptBrushIcon);
-			sculptBrushButton->setSize(ImVec2(24, 24));
-
-			levelBrushButton->setTexture(levelBrushIcon);
-			levelBrushButton->setSize(ImVec2(24, 24));
-
-			smoothBrushButton->setTexture(smoothBrushIcon);
-			smoothBrushButton->setSize(ImVec2(24, 24));
-
-			loadHeightMapButton->setSize(ImVec2(160, 0));
-
-			firstCall = false;
-		}
-
 		FETerrain* currentTerrain = SELECTED.getTerrain();
+		displayTerrainSettings(currentTerrain);
 
-		bool isActive = currentTerrain->isWireframeMode();
-		ImGui::Checkbox("WireframeMode", &isActive);
-		currentTerrain->setWireframeMode(isActive);
-
-		loadHeightMapButton->render();
-		if (loadHeightMapButton->getWasClicked())
-		{
-			std::string filePath = "";
-			FILE_SYSTEM.openDialog(filePath, textureLoadFilter, 1);
-
-			if (filePath != "")
-			{
-				FETexture* loadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(filePath.c_str(), currentTerrain);
-				if (loadedTexture == RESOURCE_MANAGER.noTexture)
-				{
-					LOG.add(std::string("can't load height map: ") + filePath, FE_LOG_ERROR, FE_LOG_LOADING);
-				}
-				else
-				{
-					loadedTexture->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->setModified(true);
-					//RESOURCE_MANAGER.saveFETexture(loadedTexture, (PROJECT_MANAGER.getCurrent()->getProjectFolder() + loadedTexture->getName() + ".FETexture").c_str());
-				}
-			}
-		}
-
-#ifdef USE_DEFERRED_RENDERER
-		int iData = *(int*)RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->data;
-		ImGui::SliderInt("debugFlag", &iData, 0, 10);
-		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->updateData(iData);
-#else
-		int iData = *(int*)currentTerrain->shader->getParameter("debugFlag")->data;
-		ImGui::SliderInt("debugFlag", &iData, 0, 10);
-		currentTerrain->shader->getParameter("debugFlag")->updateData(iData);
-#endif // USE_DEFERRED_RENDERER
-
-		float highScale = currentTerrain->getHightScale();
-		ImGui::DragFloat("highScale", &highScale);
-		currentTerrain->setHightScale(highScale);
-
-		float displacementScale = currentTerrain->getDisplacementScale();
-		ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
-		currentTerrain->setDisplacementScale(displacementScale);
-
-		float LODlevel = currentTerrain->getLODlevel();
-		ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
-		currentTerrain->setLODlevel(LODlevel);
-		showToolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
-
-		glm::vec2 tileMult = currentTerrain->getTileMult();
-		ImGui::DragFloat2("tile multiplicator", &tileMult[0], 0.1f, 1.0f, 100.0f);
-		currentTerrain->setTileMult(tileMult);
-
-		float chunkPerSide = currentTerrain->getChunkPerSide();
-		ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
-		currentTerrain->setChunkPerSide(chunkPerSide);
-		
-		ImGui::Separator();
-		ImGui::Text("Material : ");
-		FETexture* previewTexture = PREVIEW_MANAGER.getMaterialPreview(currentTerrain->layer0->getObjectID());
-		if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
-		{
-			selectMaterialPopUp::getInstance().show(&currentTerrain->layer0);
-		}
-		terrainChangeMaterialTarget->stickToItem();
-		ImGui::Separator();
-
-		showTransformConfiguration(currentTerrain, &currentTerrain->transform);
-
-		// ********************* REAL WORLD COMPARISON SCALE *********************
-		FEAABB realAABB = currentTerrain->getAABB();
-		glm::vec3 min = realAABB.getMin();
-		glm::vec3 max = realAABB.getMax();
-
-		float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-		float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-		float zSize = sqrt((max.z - min.z) * (max.z - min.z));
-
-		std::string sizeInM = "Approximate terrain size: ";
-		sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
-		sizeInM += " m";
-		ImGui::Text(sizeInM.c_str());
-		// ********************* REAL WORLD COMPARISON SCALE END *********************
-
-		ImGui::Separator();
-
-		float currentBrushSize = currentTerrain->getBrushSize();
-		ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
-		currentTerrain->setBrushSize(currentBrushSize);
-
-		float currentBrushIntensity = currentTerrain->getBrushIntensity();
-		ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
-		currentTerrain->setBrushIntensity(currentBrushIntensity);
-
-		currentTerrain->isBrushSculptMode() ? setSelectedStyle(sculptBrushButton) : setDefaultStyle(sculptBrushButton);
-		sculptBrushButton->render();
-		showToolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
-
-		if (sculptBrushButton->getWasClicked())
-		{
-			currentTerrain->setBrushSculptMode(!currentTerrain->isBrushSculptMode());
-			if (currentTerrain->isBrushSculptMode())
-			{
-				currentTerrain->setBrushLevelMode(false);
-				currentTerrain->setBrushSmoothMode(false);
-			}
-		}
-
-		currentTerrain->isBrushLevelMode() ? setSelectedStyle(levelBrushButton) : setDefaultStyle(levelBrushButton);
-		ImGui::SameLine();
-		levelBrushButton->render();
-		showToolTip("Level Brush.");
-
-		if (levelBrushButton->getWasClicked())
-		{
-			currentTerrain->setBrushLevelMode(!currentTerrain->isBrushLevelMode());
-			if (currentTerrain->isBrushLevelMode())
-			{
-				currentTerrain->setBrushSculptMode(false);
-				currentTerrain->setBrushSmoothMode(false);
-			}
-		}
-
-		currentTerrain->isBrushSmoothMode() ? setSelectedStyle(smoothBrushButton) : setDefaultStyle(smoothBrushButton);
-		ImGui::SameLine();
-		smoothBrushButton->render();
-		showToolTip("Smooth Brush.");
-
-		if (smoothBrushButton->getWasClicked())
-		{
-			currentTerrain->setBrushSmoothMode(!currentTerrain->isBrushSmoothMode());
-			if (currentTerrain->isBrushSmoothMode())
-			{
-				currentTerrain->setBrushSculptMode(false);
-				currentTerrain->setBrushLevelMode(false);
-			}
-		}
-
-		if (currentTerrain->isBrushSculptMode() || currentTerrain->isBrushLevelMode() || currentTerrain->isBrushSmoothMode())
+		if (currentTerrain->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
 		{
 			// to hide gizmos
 			if (SELECTED.getTerrain() != nullptr)
 				SELECTED.setSelected(SELECTED.getTerrain());
 
 			currentTerrain->setBrushActive(EDITOR.leftMousePressed);
-			currentTerrain->setBrushInversed(EDITOR.shiftPressed);
+
+			if (EDITOR.shiftPressed)
+			{
+				if (currentTerrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW)
+					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED);
+			}
+			else
+			{
+				if (currentTerrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
+			}
+
+			/*if (EDITOR.leftMousePressed)
+			{
+				if (EDITOR.shiftPressed)
+				{
+					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED);
+				}
+				else
+				{
+					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
+				}
+			}
+			else
+			{
+				currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+			}*/
+
+			//currentTerrain->setBrushActive(EDITOR.leftMousePressed);
+			//currentTerrain->setBrushInversed(EDITOR.shiftPressed);
 		}
 		else
 		{
@@ -1764,8 +1616,6 @@ void FEEditor::displayInspector()
 			if (SELECTED.getTerrain() != nullptr)
 				SELECTED.setSelected(SELECTED.getTerrain());
 		}
-
-		selectMaterialPopUp::getInstance().render();
 	}
 	else if (SELECTED.getLight() != nullptr)
 	{
@@ -1773,9 +1623,57 @@ void FEEditor::displayInspector()
 	}
 	else if (SELECTED.getSelected()->getType() == FE_CAMERA)
 	{
-		float cameraSpeed = reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->getSpeed();
-		ImGui::DragFloat("Camera speed in m/s", &cameraSpeed, 0.01f, 0.01f, 100.0f);
-		reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera())->setSpeed(cameraSpeed);
+		FEFreeCamera* camera = reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera());
+		// ********* POSITION *********
+		glm::vec3 cameraPosition = camera->getPosition();
+		
+		ImGui::Text("Position : ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##X pos", &cameraPosition[0], 0.1f);
+		showToolTip("X position");
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##Y pos", &cameraPosition[1], 0.1f);
+		showToolTip("Y position");
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##Z pos", &cameraPosition[2], 0.1f);
+		showToolTip("Z position");
+
+		camera->setPosition(cameraPosition);
+
+		// ********* ROTATION *********
+		glm::vec3 cameraRotation = glm::vec3(camera->getYaw(), camera->getPitch(), camera->getRoll());
+
+		ImGui::Text("Rotation : ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##X rot", &cameraRotation[0], 0.1f);
+		showToolTip("X rotation");
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##Y rot", &cameraRotation[1], 0.1f);
+		showToolTip("Y rotation");
+
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(90);
+		ImGui::DragFloat("##Z rot", &cameraRotation[2], 0.1f);
+		showToolTip("Z rotation");
+
+		camera->setYaw(cameraRotation[0]);
+		camera->setPitch(cameraRotation[1]);
+		camera->setRoll(cameraRotation[2]);
+
+		float cameraSpeed = camera->getMovementSpeed();
+		ImGui::Text("Camera speed in m/s : ");
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(70);
+		ImGui::DragFloat("##Camera_speed", &cameraSpeed, 0.01f, 0.01f, 100.0f);
+		camera->setMovementSpeed(cameraSpeed);
 	}
 
 	ImGui::PopStyleVar();
@@ -2228,4 +2126,538 @@ void FEEditor::displayLogWindow()
 
 	ImGui::PopStyleVar();
 	ImGui::End();
+}
+
+static FEMaterial* tempMaterial = nullptr;
+static void createNewTerrainLayerWithMaterialCallBack(void* terrain)
+{
+	if (tempMaterial == nullptr)
+		return;
+	
+	FETerrain* terrainObj = reinterpret_cast<FETerrain*>(terrain);
+	RESOURCE_MANAGER.activateTerrainVacantLayerSlot(terrainObj, tempMaterial);
+
+	tempMaterial = nullptr;
+}
+
+static size_t tempLayerIndex = -1;
+static void changeMaterialInTerrainLayerCallBack(void* terrain)
+{
+	if (tempMaterial == nullptr || tempLayerIndex == -1)
+		return;
+
+	FETerrain* terrainObj = reinterpret_cast<FETerrain*>(terrain);
+	terrainObj->getLayerInSlot(tempLayerIndex)->setMaterial(tempMaterial);
+
+	tempMaterial = nullptr;
+	tempLayerIndex = -1;
+}
+
+void FEEditor::displayTerrainSettings(FETerrain* terrain)
+{
+	if (terrainChangeLayerMaterialTargets.size() != terrain->layersUsed())
+	{
+		for (size_t i = 0; i < terrainChangeLayerMaterialTargets.size(); i++)
+		{
+			delete terrainChangeLayerMaterialTargets[i];
+		}
+
+		terrainChangeLayerMaterialTargets.resize(terrain->layersUsed());
+		terrainChangeMaterialIndecies.resize(terrain->layersUsed());
+		for (size_t i = 0; i < size_t(terrain->layersUsed()); i++)
+		{
+			terrainChangeMaterialIndecies[i] = i;
+			terrainChangeLayerMaterialTargets[i] = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, terrainChangeMaterialTargetCallBack, (void**)&terrainChangeMaterialIndecies[i], "Drop to assing material to " + terrain->getLayerInSlot(i)->getName());
+		}
+	}
+
+	if (ImGui::BeginTabBar("##terrainSettings", ImGuiTabBarFlags_None))
+	{
+		if (ImGui::BeginTabItem("General"))
+		{
+			bool isActive = terrain->isWireframeMode();
+			ImGui::Checkbox("WireframeMode", &isActive);
+			terrain->setWireframeMode(isActive);
+
+#ifdef USE_DEFERRED_RENDERER
+			int iData = *(int*)RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->data;
+			ImGui::SliderInt("debugFlag", &iData, 0, 10);
+			RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->updateData(iData);
+#else
+			int iData = *(int*)terrain->shader->getParameter("debugFlag")->data;
+			ImGui::SliderInt("debugFlag", &iData, 0, 10);
+			terrain->shader->getParameter("debugFlag")->updateData(iData);
+#endif // USE_DEFERRED_RENDERER
+
+			float displacementScale = terrain->getDisplacementScale();
+			ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
+			terrain->setDisplacementScale(displacementScale);
+
+			float LODlevel = terrain->getLODlevel();
+			ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
+			terrain->setLODlevel(LODlevel);
+			showToolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
+
+			float chunkPerSide = terrain->getChunkPerSide();
+			ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
+			terrain->setChunkPerSide(chunkPerSide);
+
+			// ********************* REAL WORLD COMPARISON SCALE *********************
+			FEAABB realAABB = terrain->getAABB();
+			glm::vec3 min = realAABB.getMin();
+			glm::vec3 max = realAABB.getMax();
+
+			float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+			float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+			float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+			std::string sizeInM = "Approximate terrain size: ";
+			sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
+			sizeInM += " m";
+			ImGui::Text(sizeInM.c_str());
+			// ********************* REAL WORLD COMPARISON SCALE END *********************
+
+			showTransformConfiguration(terrain, &terrain->transform);
+
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Sculpt"))
+		{
+			exportHeightMapButton->render();
+			if (exportHeightMapButton->getWasClicked())
+			{
+				std::string filePath = "";
+				FILE_SYSTEM.showFileSaveDialog(filePath, textureLoadFilter, 1);
+
+				if (filePath != "")
+				{
+					filePath += ".png";
+					bool result = RESOURCE_MANAGER.exportFETextureToPNG(terrain->heightMap, filePath.c_str());
+				}
+			}
+
+			ImGui::SameLine();
+			importHeightMapButton->render();
+			if (importHeightMapButton->getWasClicked())
+			{
+				std::string filePath = "";
+				FILE_SYSTEM.showFileOpenDialog(filePath, textureLoadFilter, 1);
+
+				if (filePath != "")
+				{
+					FETexture* loadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(filePath.c_str(), terrain);
+					if (loadedTexture == RESOURCE_MANAGER.noTexture)
+					{
+						LOG.add(std::string("can't load height map: ") + filePath, FE_LOG_ERROR, FE_LOG_LOADING);
+					}
+					else
+					{
+						loadedTexture->setDirtyFlag(true);
+						PROJECT_MANAGER.getCurrent()->setModified(true);
+					}
+				}
+			}
+
+			float highScale = terrain->getHightScale();
+			ImGui::DragFloat("hight range in m", &highScale);
+			terrain->setHightScale(highScale);
+
+			float currentBrushSize = terrain->getBrushSize();
+			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
+			terrain->setBrushSize(currentBrushSize);
+
+			float currentBrushIntensity = terrain->getBrushIntensity();
+			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
+			terrain->setBrushIntensity(currentBrushIntensity);
+
+			setDefaultStyle(sculptBrushButton);
+			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW || 
+				terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+				setSelectedStyle(sculptBrushButton);
+			 
+			sculptBrushButton->render();
+			showToolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
+
+			if (sculptBrushButton->getWasClicked())
+			{
+				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW ||
+					terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+				}
+				else
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
+				}
+			}
+
+			setDefaultStyle(levelBrushButton);
+			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
+				setSelectedStyle(levelBrushButton);
+
+			ImGui::SameLine();
+			levelBrushButton->render();
+			showToolTip("Level Brush.");
+
+			if (levelBrushButton->getWasClicked())
+			{
+				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+				}
+				else
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_LEVEL);
+				}
+			}
+
+			setDefaultStyle(smoothBrushButton);
+			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
+				setSelectedStyle(smoothBrushButton);
+
+			ImGui::SameLine();
+			smoothBrushButton->render();
+			showToolTip("Smooth Brush.");
+
+			if (smoothBrushButton->getWasClicked())
+			{
+				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+				}
+				else
+				{
+					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_SMOOTH);
+				}
+			}
+
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Paint"))
+		{
+			glm::vec2 tileMult = terrain->getTileMult();
+			ImGui::DragFloat2("all layers tile factors", &tileMult[0], 0.1f, 1.0f, 100.0f);
+			terrain->setTileMult(tileMult);
+
+			float currentBrushSize = terrain->getBrushSize();
+			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
+			terrain->setBrushSize(currentBrushSize);
+
+			float currentBrushIntensity = terrain->getBrushIntensity();
+			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
+			terrain->setBrushIntensity(currentBrushIntensity);
+
+			setDefaultStyle(layerBrushButton);
+			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
+				setSelectedStyle(layerBrushButton);
+
+			layerBrushButton->render();
+			showToolTip("Layer draw brush. Left mouse to paint currently selected layer, hold shift to decrease layer influence.");
+			static int selectedLayer = -1;
+			if (selectedLayer != -1 && terrain->getLayerInSlot(selectedLayer) == nullptr)
+				selectedLayer = -1;
+
+			if (layerBrushButton->getWasClicked())
+			{
+				if (selectedLayer != -1)
+				{
+					if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
+					{
+						terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+					}
+					else
+					{
+						terrain->setBrushMode(FE_TERRAIN_BRUSH_LAYER_DRAW);
+					}
+				}
+				
+			}
+
+			ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
+			static bool contextMenuOpened = false;
+
+			ImGui::Text("Layers:");
+
+			ImGui::BeginChildFrame(ImGui::GetID("Layers ListBox Child"), ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f), ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+			bool isListBoxHovered = false;
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+				isListBoxHovered = true;
+
+			static bool openContextMenu = false;
+			if (ImGui::IsMouseClicked(1))
+			{
+				if (isListBoxHovered)
+				{
+					openContextMenu = true;
+				}
+			}
+
+			ImGui::BeginListBox("##Layers ListBox", ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f));
+
+			for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+			{
+				FETerrainLayer* layer = terrain->getLayerInSlot(i);
+				if (layer == nullptr)
+					break;
+
+				ImVec2 postionBeforeDraw = ImGui::GetCursorPos();
+
+				ImVec2 textSize = ImGui::CalcTextSize(layer->getName().c_str());
+				ImGui::SetCursorPos(postionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - textSize.x / 2.0f, 16));
+				
+				if (terrainLayerRenameIndex == i)
+				{
+					if (!lastFrameTerrainLayerRenameEditWasVisiable)
+					{
+						ImGui::SetKeyboardFocusHere(0);
+						ImGui::SetFocusID(ImGui::GetID("##newNameTerrainLayerEditor"), ImGui::GetCurrentWindow());
+						ImGui::SetItemDefaultFocus();
+						lastFrameTerrainLayerRenameEditWasVisiable = true;
+					}
+
+					ImGui::SetNextItemWidth(350.0f);
+					ImGui::SetCursorPos(ImVec2(postionBeforeDraw.x + 64.0f + (ImGui::GetWindowContentRegionWidth()- 64.0f) / 2.0f - 350.0f / 2.0f, postionBeforeDraw.y + 12));
+					if (ImGui::InputText("##newNameTerrainLayerEditor", terrainLayerRename, IM_ARRAYSIZE(terrainLayerRename), ImGuiInputTextFlags_EnterReturnsTrue) ||
+						ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered() || ImGui::GetFocusID() != ImGui::GetID("##newNameTerrainLayerEditor"))
+					{
+						PROJECT_MANAGER.getCurrent()->setModified(true);
+						layer->setName(terrainLayerRename);
+						
+						terrainLayerRenameIndex = -1;
+					}
+				}
+				else
+				{
+					ImGui::Text(layer->getName().c_str());
+				}
+				ImGui::SetCursorPos(postionBeforeDraw);
+
+				ImGui::PushID(i);
+				if (ImGui::Selectable("##item", selectedLayer == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
+				{
+					selectedLayer = i;
+					terrain->setBrushLayerIndex(selectedLayer);
+				}
+				terrainChangeLayerMaterialTargets[i]->stickToItem();
+				ImGui::PopID();
+
+				if (ImGui::IsItemHovered())
+					hoveredTerrainLayerItem = i;
+
+				ImGui::SetCursorPos(postionBeforeDraw);
+				ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
+				FETexture* previewTexture = PREVIEW_MANAGER.getMaterialPreview(layer->getMaterial()->getObjectID());
+				ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), imageTint);
+			}
+
+			ImGui::EndListBox();
+			ImGui::PopFont();
+
+			ImGui::EndChildFrame();
+			ImGui::EndTabItem();
+
+			if (openContextMenu)
+			{
+				openContextMenu = false;
+				ImGui::OpenPopup("##layers_listBox_context_menu");
+			}
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+			if (ImGui::BeginPopup("##layers_listBox_context_menu"))
+			{
+				contextMenuOpened = true;
+
+				if (terrain->getLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
+					ImGui::BeginDisabled();
+
+				if (ImGui::MenuItem("Add layer..."))
+				{
+					std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
+					std::vector<FEMaterial*> finalMaterialList;
+					for (size_t i = 0; i < tempMaterialList.size(); i++)
+					{
+						if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
+						{
+							finalMaterialList.push_back(RESOURCE_MANAGER.getMaterial(tempMaterialList[i]));
+						}
+					}
+
+					if (finalMaterialList.size() == 0)
+					{
+						messagePopUp::getInstance().show("No suitable material", "There are no materials with compack packing.");
+					}
+					else
+					{
+						tempMaterial = nullptr;
+						selectMaterialPopUp::getInstance().showWithCustomList(&tempMaterial, finalMaterialList, createNewTerrainLayerWithMaterialCallBack, terrain);
+					}
+				}
+
+				if (terrain->getLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
+					ImGui::EndDisabled();
+
+				if (hoveredTerrainLayerItem != -1)
+				{
+					FETerrainLayer* layer = terrain->getLayerInSlot(hoveredTerrainLayerItem);
+					if (layer != nullptr)
+					{
+						ImGui::Separator();
+						std::string layerName = layer->getName();
+						ImGui::Text((std::string("Actions with ") + layerName).c_str());
+						ImGui::Separator();
+
+						if (ImGui::MenuItem("Rename"))
+						{
+							terrainLayerRenameIndex = hoveredTerrainLayerItem;
+
+							strcpy_s(terrainLayerRename, layer->getName().size() + 1, layer->getName().c_str());
+							lastFrameTerrainLayerRenameEditWasVisiable = false;
+						}
+
+						if (ImGui::MenuItem("Fill"))
+						{
+							RESOURCE_MANAGER.fillTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+						}
+
+						if (ImGui::MenuItem("Clear"))
+						{
+							RESOURCE_MANAGER.clearTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+						}
+
+						if (ImGui::MenuItem("Delete"))
+						{
+							RESOURCE_MANAGER.deleteTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+						}
+
+						ImGui::Separator();
+
+						if (ImGui::MenuItem("Change material..."))
+						{
+							std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
+							std::vector<FEMaterial*> finalMaterialList;
+							for (size_t i = 0; i < tempMaterialList.size(); i++)
+							{
+								if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
+								{
+									finalMaterialList.push_back(RESOURCE_MANAGER.getMaterial(tempMaterialList[i]));
+								}
+							}
+
+							if (finalMaterialList.size() == 0)
+							{
+								messagePopUp::getInstance().show("No suitable material", "There are no materials with compack packing.");
+							}
+							else
+							{
+								tempMaterial = nullptr;
+								tempLayerIndex = hoveredTerrainLayerItem;
+								selectMaterialPopUp::getInstance().showWithCustomList(&tempMaterial, finalMaterialList, changeMaterialInTerrainLayerCallBack, terrain);
+							}
+						}
+
+						if (ImGui::MenuItem("Export mask..."))
+						{
+							std::string filePath = "";
+							FILE_SYSTEM.showFileSaveDialog(filePath, textureLoadFilter, 1);
+							if (filePath != "")
+							{
+								filePath += ".png";
+								RESOURCE_MANAGER.saveTerrainLayerMask(filePath.c_str(), terrain, hoveredTerrainLayerItem);
+							}
+						}
+
+						if (ImGui::MenuItem("Import mask..."))
+						{
+							std::string filePath = "";
+							FILE_SYSTEM.showFileOpenDialog(filePath, textureLoadFilter, 1);
+							if (filePath != "")
+							{
+								RESOURCE_MANAGER.loadTerrainLayerMask(filePath.c_str(), terrain, hoveredTerrainLayerItem);
+								PROJECT_MANAGER.getCurrent()->setModified(true);
+							}
+						}
+					}
+				}
+
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar();
+
+			if (!contextMenuOpened)
+				hoveredTerrainLayerItem = -1;
+
+			contextMenuOpened = false;
+		}
+		ImGui::EndTabBar();
+	}
+}
+
+void FEEditor::renderAllSubWindows()
+{
+	selectMeshPopUp::getInstance().render();
+	selectTexturePopUp::getInstance().render();
+	selectMaterialPopUp::getInstance().render();
+	selectGameModelPopUp::getInstance().render();
+
+	deleteTexturePopup::getInstance().render();
+	deleteMeshPopup::getInstance().render();
+	deleteGameModelPopup::getInstance().render();
+	deleteMaterialPopup::getInstance().render();
+	deleteDirectoryPopup::getInstance().render();
+
+	editGameModelPopup::getInstance().render();
+	editMaterialPopup::getInstance().render();
+	resizeTexturePopup::getInstance().render();
+
+	shaderEditorWindow::getInstance().render();
+	shaderDebugWindow::getInstance().render();
+	justTextWindowObj.render();
+
+	renamePopUp::getInstance().render();
+	renameFailedPopUp::getInstance().render();
+	messagePopUp::getInstance().render();
+
+	CombineChannelsToTexturePopUp::getInstance().render();
+	
+	projectWasModifiedPopUp::getInstance().render();
+}
+
+void FEEditor::setCorrectSceneBrowserColor(FEObject* sceneObject)
+{
+	if (sceneObject->getType() == FE_DIRECTIONAL_LIGHT ||
+		sceneObject->getType() == FE_SPOT_LIGHT ||
+		sceneObject->getType() == FE_POINT_LIGHT)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, lightColorSceneBrowser);
+	}
+	else if (sceneObject->getType() == FE_CAMERA)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, cameraColorSceneBrowser);
+	}
+	else if (sceneObject->getType() == FE_TERRAIN)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, terrainColorSceneBrowser);
+	}
+	else if (sceneObject->getType() == FE_ENTITY)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, entityColorSceneBrowser);
+	}
+	else if (sceneObject->getType() == FE_ENTITY_INSTANCED)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, instancedEntityColorSceneBrowser);
+	}
+}
+
+void FEEditor::popCorrectSceneBrowserColor(FEObject* sceneObject)
+{
+	if (sceneObject->getType() == FE_DIRECTIONAL_LIGHT ||
+		sceneObject->getType() == FE_SPOT_LIGHT ||
+		sceneObject->getType() == FE_POINT_LIGHT ||
+		sceneObject->getType() == FE_CAMERA ||
+		sceneObject->getType() == FE_TERRAIN ||
+		sceneObject->getType() == FE_ENTITY ||
+		sceneObject->getType() == FE_ENTITY_INSTANCED)
+	{
+		ImGui::PopStyleColor();
+	}
 }

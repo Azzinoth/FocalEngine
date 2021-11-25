@@ -1,9 +1,8 @@
 #include "FEEditorTextureSourceNode.h"
 using namespace FocalEngine;
 
-FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture)
+FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture) : FEEditorNode()
 {
-	FEEditorNode::FEEditorNode();
 	type = "FEEditorTextureSourceNode";
 	
 	this->texture = texture;
@@ -12,25 +11,32 @@ FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture)
 
 	setSize(ImVec2(230, 180));
 	setName(texture->getName());
-	
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
 
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
+	if (texture->getInternalFormat() == GL_RED)
+	{
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
+	}
+	else
+	{
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
+
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
+		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
+	}
 }
 
 void FEEditorTextureSourceNode::draw()
 {
 	FEEditorNode::draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 10.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 10.0f));
-	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
-	if (openContextMenu)
+	if (contextMenu)
 	{
-		openContextMenu = false;
+		contextMenu = false;
 		ImGui::OpenPopup("##context_menu");
 	}
 	
@@ -66,11 +72,13 @@ bool FEEditorTextureSourceNode::canConnect(FEEditorNodeSocket* ownSocket, FEEdit
 	return false;
 }
 
-void FEEditorTextureSourceNode::mouseClick(int mouseButton)
+bool FEEditorTextureSourceNode::openContextMenu()
 {
-	FEEditorNode::mouseClick(mouseButton);
+	contextMenu = true;
+	return true;
+}
 
-	openContextMenu = false;
-	if (mouseButton == 1)
-		openContextMenu = true;
+Json::Value FEEditorTextureSourceNode::getInfoForSaving()
+{
+	return "";
 }

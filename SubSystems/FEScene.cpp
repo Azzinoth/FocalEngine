@@ -85,6 +85,30 @@ FEEntity* FEScene::getEntity(std::string ID)
 	return entityMap[ID];
 }
 
+std::vector<FEEntity*> FEScene::getEntityByName(std::string Name)
+{
+	std::vector<FEEntity*> result;
+
+	auto it = entityMap.begin();
+	while (it != entityMap.end())
+	{
+		if (it->second->getType() != FE_ENTITY)
+		{
+			it++;
+			continue;
+		}
+
+		if (it->second->getName() == Name)
+		{
+			result.push_back(it->second);
+		}
+
+		it++;
+	}
+
+	return result;
+}
+
 void FEScene::deleteEntity(std::string ID)
 {
 	if (entityMap.find(ID) == entityMap.end())
@@ -143,7 +167,12 @@ std::vector<std::string> FEScene::getLightsList()
 
 void FEScene::clear()
 {
-	// memory leak, need to delete entities not only clearing map.
+	auto entityIterator = entityMap.begin();
+	while (entityIterator != entityMap.end())
+	{
+		delete entityIterator->second;
+		entityIterator++;
+	}
 	entityMap.clear();
 
 	std::vector<FEObject*> allLights;

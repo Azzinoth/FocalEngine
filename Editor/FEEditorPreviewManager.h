@@ -51,9 +51,10 @@ private:
 	void createMaterialPreview(std::string materialID);
 	FETexture* getMaterialPreview(std::string materialID);
 
-	void createGameModelPreview(std::string gameModelName);
+	void createGameModelPreview(std::string gameModelID);
 	void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture);
 	FETexture* getGameModelPreview(std::string gameModelID);
+	void updateAllGameModelPreviews();
 
 	void clear();
 };

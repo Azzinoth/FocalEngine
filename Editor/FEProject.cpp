@@ -45,6 +45,7 @@ void FEProjectManager::closeCurrentProject()
 	WindowsManager::getInstance().closeAllWindows();
 	WindowsManager::getInstance().closeAllPopups();
 
+	SELECTED.clear();
 	for (size_t i = 0; i < list.size(); i++)
 	{
 		delete list[i];
@@ -54,7 +55,7 @@ void FEProjectManager::closeCurrentProject()
 	PREVIEW_MANAGER.clear();
 
 	loadProjectList();
-	SELECTED.clear();
+	
 	VIRTUAL_FILE_SYSTEM.setCurrentPath("/");
 }
 
@@ -63,6 +64,24 @@ void FEProjectManager::openProject(int projectIndex)
 	PROJECT_MANAGER.setCurrent(list[projectIndex]);
 	PROJECT_MANAGER.getCurrent()->loadScene();
 	indexChosen = -1;
+
+	EDITOR_INTERNAL_RESOURCES.internalEditorEntities.clear();
+	GIZMO_MANAGER.reInitializeEntities();
+
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity);
+
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity);
+
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity);
 
 	// all parts of Gizmos are standard resources except entities, so we need to register them again.
 	// if it is first start and those entities are already registered these calls just returns false.
@@ -90,12 +109,13 @@ void FEProjectManager::openProject(int projectIndex)
 
 void FEProjectManager::displayProjectSelection()
 {
+	static float lowerPanelHight = 90.0f;
 	float mainWindowW = float(ENGINE.getWindowWidth());
 	float mainWindowH = float(ENGINE.getWindowHeight());
 
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
 	ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f));
-	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH - 170.0f));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, mainWindowH - lowerPanelHight));
 	ImGui::Begin("Project Browser", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse);
 	{
 		ImGui::SetWindowFontScale(2.0f);
@@ -158,8 +178,8 @@ void FEProjectManager::displayProjectSelection()
 	ImGui::PopStyleVar();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 1.0f);
-	ImGui::SetNextWindowPos(ImVec2(0.0f, mainWindowH - 170.0f));
-	ImGui::SetNextWindowSize(ImVec2(mainWindowW, 170.0f));
+	ImGui::SetNextWindowPos(ImVec2(0.0f, mainWindowH - lowerPanelHight));
+	ImGui::SetNextWindowSize(ImVec2(mainWindowW, lowerPanelHight));
 	ImGui::Begin("##create project", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.0f, 162.0f / 255.0f, 232.0f / 255.0f, 1.0f));
@@ -176,20 +196,20 @@ void FEProjectManager::displayProjectSelection()
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Delete Project", ImVec2(200.0f, 64.0f)) && indexChosen != -1)
+		if (ImGui::Button("Delete Project", ImVec2(200.0f, 64.0f)) && indexChosen != -1 && indexChosen < int(list.size()))
 		{
 			std::string projectFolder = list[indexChosen]->getProjectFolder();
 			projectFolder.erase(projectFolder.begin() + projectFolder.size() - 1);
 
-			// geting list of all files and folders in project folder
-			auto fileList = FILE_SYSTEM.getFolderList(list[indexChosen]->getProjectFolder().c_str());
-			// we would delete all files in project folder, my editor would not create folders there
+			// Geting list of all files in project folder.
+			auto fileList = FILE_SYSTEM.getFileList(list[indexChosen]->getProjectFolder().c_str());
+			// We would delete all files in project folder, editor would not create folders there
 			// so we are deleting only files.
 			for (size_t i = 0; i < fileList.size(); i++)
 			{
 				FILE_SYSTEM.deleteFile((list[indexChosen]->getProjectFolder() + fileList[i]).c_str());
 			}
-			// then we can try to delete project folder, but if user created some folders in it we will fail.
+			// Then we can try to delete project folder, but if user created some folders in it we will fail.
 			FILE_SYSTEM.deleteFolder(projectFolder.c_str());
 
 			for (size_t i = 0; i < list.size(); i++)
@@ -214,7 +234,7 @@ void FEProjectManager::displayProjectSelection()
 		if (ImGui::Button("Choose projects directory", ImVec2(280.0f, 64.0f)))
 		{
 			std::string path = "";
-			FILE_SYSTEM.openFolderDialog(path);
+			FILE_SYSTEM.showFolderOpenDialog(path);
 			setProjectsFolder(path);
 		}
 
@@ -250,7 +270,15 @@ void FEProjectManager::displayProjectSelection()
 					FILE_SYSTEM.createFolder((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/").c_str());
 					list.push_back(new FEProject(projectName, std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/"));
 					list.back()->createDummyScreenshot();
-					SCENE.addLight(FE_DIRECTIONAL_LIGHT, "sun");
+					//SCENE.addLight(FE_DIRECTIONAL_LIGHT, "sun");
+					std::fstream file;
+					file.open((std::string(PROJECTS_FOLDER) + std::string("/") + projectName + "/" + "scene.txt").c_str(), std::ios::out);
+					file.write(basicScene, strlen(basicScene));
+					file.close();
+
+					//openProject(indexChosen);
+					//current->saveScene();
+
 					ImGui::CloseCurrentPopup();
 					strcpy_s(projectName, "");
 				}
@@ -356,31 +384,34 @@ void FEProject::writeTransformToJSON(Json::Value& root, FETransformComponent* tr
 	root["scale"]["Z"] = transform->getScale()[2];
 }
 
-void FEProject::saveScene()
+void FEProject::saveScene(bool fullSave)
 {
 	Json::Value root;
 	std::ofstream sceneFile;
 	sceneFile.open(projectFolder + "scene.txt");
 
-	root["version"] = 0.01f;
-	
-	// saving all unSaved objects
-	for (size_t i = 0; i < unSavedObjects.size(); i++)
-	{
-		switch (unSavedObjects[i]->getType())
-		{
-			case FE_MESH:
-			{
-				FEMesh* meshToSave = RESOURCE_MANAGER.getMesh(unSavedObjects[i]->getObjectID());
-				RESOURCE_MANAGER.saveFEMesh(meshToSave, (getProjectFolder() + meshToSave->getObjectID() + std::string(".model")).c_str());
-				break;
-			}
+	root["version"] = PROJECTS_FILE_VER;
 
-			case FE_TEXTURE:
+	if (!fullSave)
+	{
+		// saving all unSaved objects
+		for (size_t i = 0; i < unSavedObjects.size(); i++)
+		{
+			switch (unSavedObjects[i]->getType())
 			{
-				FETexture* textureToSave = RESOURCE_MANAGER.getTexture(unSavedObjects[i]->getObjectID());
-				RESOURCE_MANAGER.saveFETexture(textureToSave, (getProjectFolder() + textureToSave->getObjectID() + std::string(".texture")).c_str());
-				break;
+				case FE_MESH:
+				{
+					FEMesh* meshToSave = RESOURCE_MANAGER.getMesh(unSavedObjects[i]->getObjectID());
+					RESOURCE_MANAGER.saveFEMesh(meshToSave, (getProjectFolder() + meshToSave->getObjectID() + std::string(".model")).c_str());
+					break;
+				}
+
+				case FE_TEXTURE:
+				{
+					FETexture* textureToSave = RESOURCE_MANAGER.getTexture(unSavedObjects[i]->getObjectID());
+					RESOURCE_MANAGER.saveFETexture(textureToSave, (getProjectFolder() + textureToSave->getObjectID() + std::string(".texture")).c_str());
+					break;
+				}
 			}
 		}
 	}
@@ -395,6 +426,9 @@ void FEProject::saveScene()
 		meshData[mesh->getObjectID()]["name"] = mesh->getName();
 		meshData[mesh->getObjectID()]["fileName"] = mesh->getObjectID() + ".model";
 
+		if (fullSave)
+			RESOURCE_MANAGER.saveFEMesh(mesh, (getProjectFolder() + mesh->getObjectID() + std::string(".model")).c_str());
+
 		mesh->setDirtyFlag(false);
 	}
 	root["meshes"] = meshData;
@@ -405,10 +439,16 @@ void FEProject::saveScene()
 	for (size_t i = 0; i < texturesList.size(); i++)
 	{
 		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
+		if (!shouldIncludeInSceneFile(texture))
+			continue;
+		
 		texturesData[texture->getObjectID()]["ID"] = texture->getObjectID();
 		texturesData[texture->getObjectID()]["name"] = texture->getName();
 		texturesData[texture->getObjectID()]["fileName"] = texture->getObjectID() + ".texture";
 		texturesData[texture->getObjectID()]["type"] = texture->getInternalFormat();
+
+		if (fullSave)
+			RESOURCE_MANAGER.saveFETexture(texture, (getProjectFolder() + texture->getObjectID() + std::string(".texture")).c_str());
 
 		texture->setDirtyFlag(false);
 	}
@@ -442,6 +482,8 @@ void FEProject::saveScene()
 		materialData[material->getObjectID()]["ambientOcclusionMapIntensity"] = material->getAmbientOcclusionMapIntensity();
 		materialData[material->getObjectID()]["roughtnessMapIntensity"] = material->getRoughtnessMapIntensity();
 		materialData[material->getObjectID()]["metalnessMapIntensity"] = material->getMetalnessMapIntensity();
+		materialData[material->getObjectID()]["tiling"] = material->getTiling();
+		materialData[material->getObjectID()]["compackPacking"] = material->isCompackPacking();
 
 		material->setDirtyFlag(false);
 	}
@@ -557,18 +599,46 @@ void FEProject::saveScene()
 
 		terrainData[terrain->getObjectID()]["ID"] = terrain->getObjectID();
 		terrainData[terrain->getObjectID()]["name"] = terrain->getName();
+
 		terrainData[terrain->getObjectID()]["heightMap"]["ID"] = terrain->heightMap->getObjectID();
 		terrainData[terrain->getObjectID()]["heightMap"]["name"] = terrain->heightMap->getName();
 		terrainData[terrain->getObjectID()]["heightMap"]["fileName"] = terrain->heightMap->getObjectID() + ".texture";
+		RESOURCE_MANAGER.saveFETexture(terrain->heightMap, (getProjectFolder() + terrain->heightMap->getObjectID() + std::string(".texture")).c_str());
+
 		terrainData[terrain->getObjectID()]["hightScale"] = terrain->getHightScale();
 		terrainData[terrain->getObjectID()]["displacementScale"] = terrain->getDisplacementScale();
 		terrainData[terrain->getObjectID()]["tileMult"]["X"] = terrain->getTileMult().x;
 		terrainData[terrain->getObjectID()]["tileMult"]["Y"] = terrain->getTileMult().y;
 		terrainData[terrain->getObjectID()]["LODlevel"] = terrain->getLODlevel();
 		terrainData[terrain->getObjectID()]["chunkPerSide"] = terrain->getChunkPerSide();
-		terrainData[terrain->getObjectID()]["materials"]["layer0"] = terrain->layer0->getObjectID();
 
 		writeTransformToJSON(terrainData[terrain->getObjectID()]["transformation"], &terrain->transform);
+
+		// Saving terrains Layers.
+		for (size_t i = 0; i < terrain->layerMaps.size(); i++)
+		{
+			if (terrain->layerMaps[i] != nullptr)
+			{
+				terrainData[terrain->getObjectID()]["layerMaps"][i]["ID"] = terrain->layerMaps[i]->getObjectID();
+				terrainData[terrain->getObjectID()]["layerMaps"][i]["name"] = terrain->layerMaps[i]->getName();
+				terrainData[terrain->getObjectID()]["layerMaps"][i]["fileName"] = terrain->layerMaps[i]->getObjectID() + ".texture";
+				RESOURCE_MANAGER.saveFETexture(terrain->layerMaps[i], (getProjectFolder() + terrain->layerMaps[i]->getObjectID() + std::string(".texture")).c_str());
+			}
+		}
+
+		for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+		{
+			FETerrainLayer* currentLayer = terrain->getLayerInSlot(i);
+			if (currentLayer == nullptr)
+			{
+				terrainData[terrain->getObjectID()]["layers"][i]["acive"] = false;
+				break;
+			}
+
+			terrainData[terrain->getObjectID()]["layers"][i]["acive"] = true;
+			terrainData[terrain->getObjectID()]["layers"][i]["name"] = currentLayer->getMaterial()->getName();
+			terrainData[terrain->getObjectID()]["layers"][i]["materialID"] = currentLayer->getMaterial()->getObjectID();
+		}
 
 		terrain->setDirtyFlag(false);
 	}
@@ -595,6 +665,7 @@ void FEProject::saveScene()
 		lightData[light->getObjectID()]["staticShadowBias"] = light->isStaticShadowBias();
 		lightData[light->getObjectID()]["shadowBias"] = light->getShadowBias();
 		lightData[light->getObjectID()]["shadowBiasVariableIntensity"] = light->getShadowBiasVariableIntensity();
+		lightData[light->getObjectID()]["shadowBlurFactor"] = light->getShadowBlurFactor();
 
 		// type specific information
 		if (light->getType() == FE_DIRECTIONAL_LIGHT)
@@ -646,6 +717,7 @@ void FEProject::saveScene()
 	effectsData["Depth of Field"]["Strength"] = RENDERER.getDOFStrength();
 	effectsData["Depth of Field"]["Distance dependent strength"] = RENDERER.getDOFDistanceDependentStrength();
 	// *********** Distance fog ***********
+	effectsData["Distance fog"]["isDistanceFogEnabled"] = RENDERER.isDistanceFogEnabled();
 	effectsData["Distance fog"]["Density"] = RENDERER.getDistanceFogDensity();
 	effectsData["Distance fog"]["Gradient"] = RENDERER.getDistanceFogGradient();
 	// *********** Chromatic Aberration ***********
@@ -672,6 +744,8 @@ void FEProject::saveScene()
 	cameraData["roll"] = ENGINE.getCamera()->getRoll();
 
 	cameraData["aspectRatio"] = ENGINE.getCamera()->getAspectRatio();
+
+	cameraData["movementSpeed"] = ENGINE.getCamera()->getMovementSpeed();
 
 	root["camera"] = cameraData;
 
@@ -716,6 +790,7 @@ void FEProject::loadScene()
 	sceneFile.open(projectFolder + "scene.txt");
 
 	std::string fileData((std::istreambuf_iterator<char>(sceneFile)), std::istreambuf_iterator<char>());
+	sceneFile.close();
 
 	Json::Value root;
 	JSONCPP_STRING err;
@@ -731,14 +806,17 @@ void FEProject::loadScene()
 	// project file was created before any version was written to project files.
 	if (projectVersion != PROJECTS_FILE_VER)
 	{
-		sceneFile.close();
-		if (projectVersion == 0.0)
+		if (projectVersion == 0.0f)
 		{
 			LOG.add("Can't find version in scene file of project from " + projectFolder, FE_LOG_WARNING, FE_LOG_LOADING);
 			LOG.add("Trying to load project with old version of loader.", FE_LOG_WARNING, FE_LOG_LOADING);
 			loadSceneVer0();
+			return;
 		}
-		return;
+		else if (projectVersion == 0.01f)
+		{
+			// Do nothing.
+		}
 	}
 
 	// loading Meshes
@@ -782,6 +860,8 @@ void FEProject::loadScene()
 					{
 						std::string textureID = root["materials"][materialsList[i]]["textures"][std::to_string(k).c_str()].asCString();
 						newMat->textures[k] = RESOURCE_MANAGER.getTexture(textureID);
+						if (newMat->textures[k] == nullptr)
+							newMat->textures[k] = RESOURCE_MANAGER.noTexture;
 					}
 				}
 			}
@@ -818,6 +898,13 @@ void FEProject::loadScene()
 		newMat->setAmbientOcclusionMapIntensity(root["materials"][materialsList[i]]["ambientOcclusionMapIntensity"].asFloat());
 		newMat->setRoughtnessMapIntensity(root["materials"][materialsList[i]]["roughtnessMapIntensity"].asFloat());
 		newMat->setMetalnessMapIntensity(root["materials"][materialsList[i]]["metalnessMapIntensity"].asFloat());
+
+		if (projectVersion >= 0.02f)
+		{
+			if (root["materials"][materialsList[i]].isMember("tiling"))
+				newMat->setTiling(root["materials"][materialsList[i]]["tiling"].asFloat());
+			newMat->setCompackPacking(root["materials"][materialsList[i]]["compackPacking"].asBool());
+		}
 	}
 
 	// loading gameModels
@@ -857,7 +944,6 @@ void FEProject::loadScene()
 	{
 		FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(false, root["terrains"][terrainList[i]]["name"].asString(), root["terrains"][terrainList[i]]["ID"].asString());
 		newTerrain->heightMap = RESOURCE_MANAGER.LoadFEHeightmap((projectFolder + root["terrains"][terrainList[i]]["heightMap"]["fileName"].asCString()).c_str(), newTerrain, root["terrains"][terrainList[i]]["heightMap"]["name"].asCString());
-		newTerrain->layer0 = RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["materials"]["layer0"].asCString());
 
 		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
 		newTerrain->setDisplacementScale(root["terrains"][terrainList[i]]["displacementScale"].asFloat());
@@ -870,6 +956,27 @@ void FEProject::loadScene()
 		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
 		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
 		readTransformToJSON(root["terrains"][terrainList[i]]["transformation"], &newTerrain->transform);
+
+		if (projectVersion >= 0.02f)
+		{
+			for (size_t j = 0; j < FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE; j++)
+			{
+				if (root["terrains"][terrainList[i]].isMember("layerMaps"))
+				{
+					FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETextureAsync((projectFolder + root["terrains"][terrainList[i]]["layerMaps"][j]["fileName"].asCString()).c_str(), root["terrains"][terrainList[i]]["layerMaps"][j]["name"].asString(), nullptr, root["terrains"][terrainList[i]]["layerMaps"][j]["ID"].asString());
+					newTerrain->layerMaps[j] = loadedTexture;
+				}
+			}
+
+			for (size_t j = 0; j < FE_TERRAIN_MAX_LAYERS; j++)
+			{
+				if (root["terrains"][terrainList[i]]["layers"][j]["acive"].asBool())
+				{
+					RESOURCE_MANAGER.activateTerrainVacantLayerSlot(newTerrain, RESOURCE_MANAGER.getMaterial(root["terrains"][terrainList[i]]["layers"][j]["materialID"].asCString()));
+					newTerrain->getLayerInSlot(j)->setName(root["terrains"][terrainList[i]]["layers"][j]["name"].asCString());
+				}
+			}
+		}
 
 		SCENE.addTerrain(newTerrain);
 	}
@@ -983,6 +1090,8 @@ void FEProject::loadScene()
 		light->setIsStaticShadowBias(root["lights"][lightList[i]]["staticShadowBias"].asBool());
 		light->setShadowBias(root["lights"][lightList[i]]["shadowBias"].asFloat());
 		light->setShadowBiasVariableIntensity(root["lights"][lightList[i]]["shadowBiasVariableIntensity"].asFloat());
+		if (projectVersion >= 0.02f && root["lights"][lightList[i]].isMember("shadowBlurFactor"))
+			light->setShadowBlurFactor(root["lights"][lightList[i]]["shadowBlurFactor"].asFloat());
 
 		if (light->getType() == FE_POINT_LIGHT)
 		{
@@ -1030,7 +1139,14 @@ void FEProject::loadScene()
 	RENDERER.setDOFStrength(root["effects"]["Depth of Field"]["Strength"].asFloat());
 	RENDERER.setDOFDistanceDependentStrength(root["effects"]["Depth of Field"]["Distance dependent strength"].asFloat());
 	// *********** Distance fog ***********
-	RENDERER.setDistanceFogEnabled(root["effects"]["Distance fog"]["Density"].asFloat() > -1.0f ? true : false);
+	if (root["effects"]["Distance fog"].isMember("isDistanceFogEnabled"))
+	{
+		RENDERER.setDistanceFogEnabled(root["effects"]["Distance fog"]["isDistanceFogEnabled"].asBool());
+	}
+	else
+	{
+		RENDERER.setDistanceFogEnabled(root["effects"]["Distance fog"]["Density"].asFloat() > -1.0f ? true : false);
+	}
 	RENDERER.setDistanceFogDensity(root["effects"]["Distance fog"]["Density"].asFloat());
 	RENDERER.setDistanceFogGradient(root["effects"]["Distance fog"]["Gradient"].asFloat());
 	// *********** Chromatic Aberration ***********
@@ -1054,8 +1170,9 @@ void FEProject::loadScene()
 
 	ENGINE.getCamera()->setAspectRatio(root["camera"]["aspectRatio"].asFloat());
 
-	sceneFile.close();
-
+	if (projectVersion >= 0.02f && root["camera"].isMember("movementSpeed"))
+		ENGINE.getCamera()->setMovementSpeed(root["camera"]["movementSpeed"].asFloat());
+	
 	// VFS
 	if (FILE_SYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
 	{
@@ -1117,7 +1234,24 @@ void FEProject::loadScene()
 		std::vector<std::string> textureList = RESOURCE_MANAGER.getTextureList();
 		for (size_t i = 0; i < textureList.size(); i++)
 		{
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(textureList[i]), "/");
+			bool shouldAdd = true;
+			FETexture* textureToAdd = RESOURCE_MANAGER.getTexture(textureList[i]);
+			//if (textureToAdd->getInternalFormat() == GL_R16)
+			//{
+			//	// Potentially it could be texture hight map.
+			//	std::vector<std::string> terrainList = SCENE.getTerrainList();
+			//	for (size_t j = 0; j < terrainList.size(); j++)
+			//	{
+			//		if (SCENE.getTerrain(terrainList[j])->heightMap == textureToAdd)
+			//		{
+			//			shouldAdd = false;
+			//			break;
+			//		}
+			//	}
+			//}
+
+			if (shouldAdd)
+				VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(textureList[i]), "/");
 		}
 
 		std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
@@ -1310,7 +1444,6 @@ void FEProject::loadSceneVer0()
 		FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(false, terrainList[i], root["terrains"][terrainList[i]]["ID"].asString());
 		terrainNameToID[newTerrain->getName()] = newTerrain->getObjectID();
 		newTerrain->heightMap = RESOURCE_MANAGER.LoadFEHeightmap((projectFolder + root["terrains"][terrainList[i]]["heightMap"]["fileName"].asCString()).c_str(), newTerrain, root["terrains"][terrainList[i]]["heightMap"]["name"].asCString());
-		newTerrain->layer0 = RESOURCE_MANAGER.getMaterial(materialNameToID[root["terrains"][terrainList[i]]["materials"]["layer0"].asCString()]);
 
 		newTerrain->setHightScale(root["terrains"][terrainList[i]]["hightScale"].asFloat());
 		newTerrain->setDisplacementScale(root["terrains"][terrainList[i]]["displacementScale"].asFloat());
@@ -1525,4 +1658,43 @@ void FEProject::setModified(bool newValue)
 void FEProject::addUnSavedObject(FEObject* object)
 {
 	unSavedObjects.push_back(object);
+}
+
+bool FEProject::shouldIncludeInSceneFile(FETexture* texture)
+{
+	// Terrain should manage it's textures in a different way.
+	std::vector<std::string> terrainList = SCENE.getTerrainList();
+	Json::Value terrainData;
+	for (size_t i = 0; i < terrainList.size(); i++)
+	{
+		FETerrain* terrain = SCENE.getTerrain(terrainList[i]);
+		if (terrain->heightMap->getObjectID() == texture->getObjectID())
+			return false;
+
+		if (terrain->layerMaps[0] != nullptr && terrain->layerMaps[0]->getObjectID() == texture->getObjectID())
+			return false;
+
+		if (terrain->layerMaps[1] != nullptr && terrain->layerMaps[1]->getObjectID() == texture->getObjectID())
+			return false;
+	}
+
+	return true;
+}
+
+void FEProject::setProjectFolder(std::string newValue)
+{
+	if (!FILE_SYSTEM.isFolder(newValue.c_str()))
+		return;
+
+	projectFolder = newValue;
+}
+
+void FEProject::saveSceneTo(std::string newPath)
+{
+	if (!FILE_SYSTEM.isFolder(newPath.c_str()))
+		return;
+	
+	setProjectFolder(newPath);
+	ENGINE.takeScreenshot((getProjectFolder() + "projectScreenShot.texture").c_str());
+	saveScene(true);
 }

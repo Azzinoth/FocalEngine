@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Renderer/FEPostProcess.h"
-#include "../SubSystems/FETerrain.h"
+#include "../Renderer/FETerrain.h"
 #include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../SubSystems/FEJobManager.h"
@@ -26,6 +26,7 @@ namespace FocalEngine
 
 		bool makeShaderStandard(FEShader* shader);
 		FEShader* getShader(std::string shaderID);
+		std::vector<FEShader*> getShaderByName(std::string Name);
 		std::vector<std::string> getShadersList();
 		std::vector<std::string> getStandardShadersList();
 		void deleteShader(FEShader* shader);
@@ -40,13 +41,21 @@ namespace FocalEngine
 		FETexture* LoadFETextureAsync(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr, std::string forceObjectID = "");
 		FETexture* LoadPNGHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
 		FETexture* LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
-		FETexture* rawDataToFETexture(unsigned char* textureData, int width, int height, bool isAlphaUsed = false, GLint internalformat = -1, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
+		FETexture* rawDataToFETexture(unsigned char* textureData, int width, int height, GLint internalformat = -1, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> channelsToFETextures(FETexture* sourceTexture);
-		
+		unsigned char* resizeTextureRawData(FETexture* sourceTexture, size_t targetWidth, size_t targetHeight, int filtrationLevel = 0);
+		unsigned char* resizeTextureRawData(unsigned char* textureData, size_t width, size_t height, size_t targetWidth, size_t targetHeight, GLint internalFormat, int filtrationLevel = 0);
+		void resizeTexture(FETexture* sourceTexture, int targetWidth, int targetHeight, int filtrationLevel = 0);
+		unsigned char* getFETextureRawData(FETexture* sourceTexture, size_t* rawDataSize = nullptr);
+		void updateFETextureRawData(FETexture* texture, unsigned char* newRawData, size_t mipCount = 1);
+
 		void saveFETexture(FETexture* texture, const char* fileName);
+		bool exportFETextureToPNG(FETexture* textureToExport, const char* fileName);
+		bool exportRawDataToPNG(const char* fileName, unsigned char* textureData, int width, int height, GLint internalformat);
 		void deleteFETexture(FETexture* texture);
 		std::vector<std::string> getTextureList();
 		FETexture* getTexture(std::string ID);
+		std::vector<FETexture*> getTextureByName(std::string Name);
 		bool makeTextureStandard(FETexture* texture);
 		FETexture* noTexture;
 		FETexture* createTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool unManaged = true, std::string Name = "");
@@ -68,6 +77,7 @@ namespace FocalEngine
 		std::vector<std::string> getMeshList();
 		std::vector<std::string> getStandardMeshList();
 		FEMesh* getMesh(std::string ID);
+		std::vector<FEMesh*> getMeshByName(std::string Name);
 		FEMesh* LoadOBJMesh(const char* fileName, std::string Name = "");
 		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
 		void saveFEMesh(FEMesh* Mesh, const char* fileName);
@@ -77,6 +87,7 @@ namespace FocalEngine
 		std::vector<std::string> getMaterialList();
 		std::vector<std::string> getStandardMaterialList();
 		FEMaterial* getMaterial(std::string ID);
+		std::vector<FEMaterial*> getMaterialByName(std::string Name);
 		FEMaterial* createMaterial(std::string Name = "", std::string forceObjectID = "");
 		bool makeMaterialStandard(FEMaterial* material);
 		void deleteMaterial(FEMaterial* Material);
@@ -84,11 +95,18 @@ namespace FocalEngine
 		std::vector<std::string> getGameModelList();
 		std::vector<std::string> getStandardGameModelList();
 		FEGameModel* getGameModel(std::string ID);
+		std::vector<FEGameModel*> getGameModelByName(std::string Name);
 		FEGameModel* createGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string forceObjectID = "");
 		bool makeGameModelStandard(FEGameModel* gameModel);
 		void deleteGameModel(FEGameModel* gameModel);
 
 		FETerrain* createTerrain(bool createHeightMap = true, std::string name = "", std::string forceObjectID = "");
+		void activateTerrainVacantLayerSlot(FETerrain* terrain, FEMaterial* material);
+		void loadTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex);
+		void saveTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex);
+		void fillTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
+		void clearTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
+		void deleteTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
 
 		void clear();
 		void loadStandardMeshes();
@@ -106,8 +124,6 @@ namespace FocalEngine
 		std::string getDefaultResourcesFolder();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
-
-		static const int defaultHeighttMapResolution = 1024;
 
 		std::unordered_map<std::string, FEShader*> shaders;
 		std::unordered_map<std::string, FEShader*> standardShaders;
@@ -138,5 +154,6 @@ namespace FocalEngine
 		GLint maxColorAttachments = 1;
 
 		std::string defaultResourcesFolder = "Resources//";
+		void fillTerrainLayerMaskWithRawData(unsigned char* rawData, FETerrain* terrain, size_t layerIndex);
 	};
 }

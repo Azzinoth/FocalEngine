@@ -14,7 +14,11 @@ out vec2 TC_UV[];
 
 float height(float u, float v)
 {
-	return (texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * hightScale);
+	//float min = -hightScale;
+	//float max = hightScale;
+	return texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * 2 * hightScale - hightScale;
+	
+	//return texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * hightScale;
 }
 
 // frustum_edge should be 1, but I gave additional 10% for less aggressive culling. 

@@ -2,9 +2,8 @@
 
 using namespace FocalEngine;
 
-FEEditorTextureCreatingNode::FEEditorTextureCreatingNode()
+FEEditorTextureCreatingNode::FEEditorTextureCreatingNode() : FEEditorNode()
 {
-	FEEditorNode::FEEditorNode();
 	type = "FEEditorTextureCreatingNode";
 
 	this->resultTexture = RESOURCE_MANAGER.noTexture;
@@ -31,7 +30,7 @@ void FEEditorTextureCreatingNode::draw()
 {
 	FEEditorNode::draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 75.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 10.0f));
-	ImGui::Image((void*)(intptr_t)resultTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+	ImGui::Image((void*)(intptr_t)resultTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 }
 
 void FEEditorTextureCreatingNode::putDataFromColorChannelInArray(FEEditorNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel)
@@ -57,7 +56,7 @@ void FEEditorTextureCreatingNode::putDataFromColorChannelInArray(FEEditorNodeSoc
 	}
 }
 
-unsigned char* FEEditorTextureCreatingNode::getInputColorChennelData(size_t channel)
+unsigned char* FEEditorTextureCreatingNode::getInputColorChannelData(size_t channel)
 {
 	// Check if we have source on this channel
 	if (input.size() > channel && input[channel]->getConnections().size() > 0)
@@ -105,9 +104,10 @@ unsigned char* FEEditorTextureCreatingNode::getInputColorChennelData(size_t chan
 			FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
 
 			unsigned char* result = new unsigned char[sourceTexture->getWidth() * sourceTexture->getHeight()];
+			int index = 0;
 			for (size_t i = 0; i < textureDataLenght; i += 4)
 			{
-				result[i / 4] = textureData[i + sourceChannel];
+				result[index++] = textureData[i + sourceChannel];
 			}
 
 			delete[] textureData;
@@ -130,9 +130,10 @@ unsigned char* FEEditorTextureCreatingNode::getInputColorChennelData(size_t chan
 		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, textureData));
 
 		unsigned char* result = new unsigned char[sourceTexture->getWidth() * sourceTexture->getHeight()];
+		int index = 0;
 		for (size_t i = 0; i < textureDataLenght; i += 4)
 		{
-			result[i / 4] = textureData[i + channel];
+			result[index++] = textureData[i + channel];
 		}
 
 		delete[] textureData;
@@ -175,10 +176,10 @@ void FEEditorTextureCreatingNode::socketEvent(FEEditorNodeSocket* ownSocket, FEE
 	size_t textureDataLenght = textureWidth * textureHeight * 4;
 	unsigned char* resultPixels = new unsigned char[textureDataLenght];
 
-	unsigned char* redChannel = getInputColorChennelData(0);
-	unsigned char* greenChannel = getInputColorChennelData(1);
-	unsigned char* blueChannel = getInputColorChennelData(2);
-	unsigned char* alphaChannel = getInputColorChennelData(3);
+	unsigned char* redChannel = getInputColorChannelData(0);
+	unsigned char* greenChannel = getInputColorChannelData(1);
+	unsigned char* blueChannel = getInputColorChannelData(2);
+	unsigned char* alphaChannel = getInputColorChannelData(3);
 
 	if (redChannel == nullptr && greenChannel == nullptr && blueChannel == nullptr && alphaChannel == nullptr)
 	{
@@ -195,15 +196,17 @@ void FEEditorTextureCreatingNode::socketEvent(FEEditorNodeSocket* ownSocket, FEE
 		return;
 	}
 
+	int index = 0;
 	for (size_t i = 0; i < textureDataLenght; i += 4)
 	{
-		resultPixels[i] = redChannel == nullptr ? 0 : redChannel[i / 4];
-		resultPixels[i + 1] = greenChannel == nullptr ? 0 : greenChannel[i / 4];
-		resultPixels[i + 2] = blueChannel == nullptr ? 0 : blueChannel[i / 4];
-		resultPixels[i + 3] = alphaChannel == nullptr ? 255 : alphaChannel[i / 4];
+		resultPixels[i] = redChannel == nullptr ? 0 : redChannel[index];
+		resultPixels[i + 1] = greenChannel == nullptr ? 0 : greenChannel[index];
+		resultPixels[i + 2] = blueChannel == nullptr ? 0 : blueChannel[index];
+		resultPixels[i + 3] = alphaChannel == nullptr ? 255 : alphaChannel[index];
+		index++;
 	}
 
-	resultTexture = RESOURCE_MANAGER.rawDataToFETexture(resultPixels, textureWidth, textureHeight, false, -1);
+	resultTexture = RESOURCE_MANAGER.rawDataToFETexture(resultPixels, textureWidth, textureHeight, -1);
 
 	delete[] resultPixels;
 	delete[] redChannel;
@@ -336,4 +339,9 @@ bool FEEditorTextureCreatingNode::canConnect(FEEditorNodeSocket* ownSocket, FEEd
 FETexture* FEEditorTextureCreatingNode::getTexture()
 {
 	return resultTexture;
+}
+
+Json::Value FEEditorTextureCreatingNode::getInfoForSaving()
+{
+	return "";
 }

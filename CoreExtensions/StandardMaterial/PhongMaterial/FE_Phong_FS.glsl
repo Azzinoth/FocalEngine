@@ -67,13 +67,15 @@ vec2 filterTaps[NUM_BLUR_TAPS] = vec2[] ( vec2(-0.326212, -0.405805), vec2(-0.84
 										  vec2( 0.519456,  0.767022), vec2( 0.185461, -0.893124),
 										  vec2( 0.507431,  0.064425), vec2( 0.89642,   0.412458),
 										  vec2(-0.32194,  -0.932615), vec2(-0.791559, -0.597705));
+										  
+out vec4 out_Color;										  
 
 void main(void)
 {
 	// checking UV
 	if (debugFlag == 3)
 	{
-		gl_FragColor = vec4(FS_IN.UV.x, FS_IN.UV.y, 0.0, 1.0);
+		out_Color = vec4(FS_IN.UV.x, FS_IN.UV.y, 0.0, 1.0);
 		return;
 	}
 	// debug csm
@@ -85,7 +87,7 @@ void main(void)
 		projCoords = projCoords * 0.5 + 0.5;
 		if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
 		{
-			gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
+			out_Color = vec4(0.0, 1.0, 0.0, 1.0);
 			return;
 		}
 		
@@ -98,7 +100,7 @@ void main(void)
 
 			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
 			{
-				gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
+				out_Color = vec4(0.0, 0.0, 1.0, 1.0);
 				return;
 			}
 		}
@@ -112,7 +114,7 @@ void main(void)
 
 			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
 			{
-				gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+				out_Color = vec4(1.0, 1.0, 0.0, 1.0);
 				return;
 			}
 		}
@@ -126,7 +128,7 @@ void main(void)
 
 			if (projCoords.x <= 0.9 && projCoords.y <= 0.9 && projCoords.x >= 0.1 && projCoords.y >= 0.1)
 			{
-				gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+				out_Color = vec4(1.0, 0.0, 0.0, 1.0);
 				return;
 			}
 		}
@@ -146,7 +148,7 @@ void main(void)
     normal = normalize(normal * 2.0 - 1.0);
 	normal = normalize(FS_IN.TBN * normal);
 
-	gl_FragColor = vec4(baseColor * ambientColor, 0.0f);
+	out_Color = vec4(baseColor * ambientColor, 0.0f);
 	
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
@@ -155,15 +157,15 @@ void main(void)
 
 		if (FElight[i].typeAndAngles.x == 10)
 		{
-			gl_FragColor += vec4(pointLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+			out_Color += vec4(pointLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 		}
 		else if (FElight[i].typeAndAngles.x == 11)
 		{
-			gl_FragColor += vec4(spotLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+			out_Color += vec4(spotLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 		}
 	}
 
-	gl_FragColor += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
+	out_Color += vec4(directionalLightColor(normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 }
 
 float shadowCalculationCSM0(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)

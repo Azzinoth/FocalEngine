@@ -113,26 +113,24 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 	static int FERoughtnessMapIntensity_hash = std::hash<std::string>{}("FERoughtnessMapIntensity");
 	static int FEMetalness_hash = std::hash<std::string>{}("FEMetalness");
 	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
+	static int FETiling_hash = std::hash<std::string>{}("FETiling");
 
 	static int FETextureBindingsUniformLocations_hash = std::hash<std::string>{}("textureBindings[0]");
 	static int FETextureChannelsBindingsUniformLocations_hash = std::hash<std::string>{}("textureChannels[0]");
 
 	static int FEcompactMaterialPacking_hash = std::hash<std::string>{}("compactMaterialPacking");
 	
-	if (shader->materialTexturesList)
+	if (material != nullptr)
 	{
-		shader->loadIntArray(FETextureBindingsUniformLocations_hash, material->textureBindings.data(), material->textureBindings.size());
-		shader->loadIntArray(FETextureChannelsBindingsUniformLocations_hash, material->textureChannels.data(), material->textureChannels.size());
-	}	
+		if (shader->materialTexturesList)
+		{
+			shader->loadIntArray(FETextureBindingsUniformLocations_hash, material->textureBindings.data(), material->textureBindings.size());
+			shader->loadIntArray(FETextureChannelsBindingsUniformLocations_hash, material->textureChannels.data(), material->textureChannels.size());
+		}
+	}
 
 	//auto start = std::chrono::system_clock::now();
 	auto iterator = shader->parameters.begin();
-	if (shader->parameters.size() > 9)
-	{
-		int y = 0;
-		y++;
-	}
-
 	while (iterator != shader->parameters.end())
 	{
 		if (iterator->second.nameHash == FEWorldMatrix_hash)
@@ -159,29 +157,35 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 		if (iterator->second.nameHash == FEReceiveShadows_hash)
 			iterator->second.updateData(isReceivingShadows);
 
-		if (iterator->second.nameHash == FEAOIntensity_hash)
-			iterator->second.updateData(material->getAmbientOcclusionIntensity());
+		if (material != nullptr)
+		{
+			if (iterator->second.nameHash == FEAOIntensity_hash)
+				iterator->second.updateData(material->getAmbientOcclusionIntensity());
 
-		if (iterator->second.nameHash == FENormalMapIntensity_hash)
-			iterator->second.updateData(material->getNormalMapIntensity());
+			if (iterator->second.nameHash == FENormalMapIntensity_hash)
+				iterator->second.updateData(material->getNormalMapIntensity());
 
-		if (iterator->second.nameHash == FEAOMapIntensity_hash)
-			iterator->second.updateData(material->getAmbientOcclusionMapIntensity());
-		
-		if (iterator->second.nameHash == FERoughtness_hash)
-			iterator->second.updateData(material->roughtness);
+			if (iterator->second.nameHash == FEAOMapIntensity_hash)
+				iterator->second.updateData(material->getAmbientOcclusionMapIntensity());
 
-		if (iterator->second.nameHash == FERoughtnessMapIntensity_hash)
-			iterator->second.updateData(material->getRoughtnessMapIntensity());
+			if (iterator->second.nameHash == FERoughtness_hash)
+				iterator->second.updateData(material->roughtness);
 
-		if (iterator->second.nameHash == FEMetalness_hash)
-			iterator->second.updateData(material->metalness);
+			if (iterator->second.nameHash == FERoughtnessMapIntensity_hash)
+				iterator->second.updateData(material->getRoughtnessMapIntensity());
 
-		if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
-			iterator->second.updateData(material->getMetalnessMapIntensity());
+			if (iterator->second.nameHash == FEMetalness_hash)
+				iterator->second.updateData(material->metalness);
 
-		if (iterator->second.nameHash == FEcompactMaterialPacking_hash)
-			iterator->second.updateData(material->isCompackPacking());
+			if (iterator->second.nameHash == FEMetalnessMapIntensity_hash)
+				iterator->second.updateData(material->getMetalnessMapIntensity());
+
+			if (iterator->second.nameHash == FETiling_hash)
+				iterator->second.updateData(material->getTiling());
+
+			if (iterator->second.nameHash == FEcompactMaterialPacking_hash)
+				iterator->second.updateData(material->isCompackPacking());
+		}
 		
 		iterator++;
 	}
@@ -351,11 +355,6 @@ void FERenderer::loadUniformBlocks()
 				for (size_t j = 0; j < info.size(); j++)
 				{
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo, sizeOfFELightShaderInfo, &info[j]));
-					/*FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 0, 16, &info[j].typeAndAngles));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 16, 16, &info[j].position));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 32, 16, &info[j].color));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 48, 16, &info[j].direction));
-					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * sizeOfFELightShaderInfo + 64, 64, &info[j].lightSpace));*/
 				}
 
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
@@ -367,21 +366,7 @@ void FERenderer::loadUniformBlocks()
 					iteratorBlock->second = uniformBufferForDirectionalLight;
 
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
-				
 				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 384, &directionalLightInfo));
-				/*FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, 16, &directionalLightInfo.position));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 16, 16, &directionalLightInfo.color));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 32, 16, &directionalLightInfo.direction));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 48, 64, &directionalLightInfo.CSM0));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 112, 64, &directionalLightInfo.CSM1));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 176, 64, &directionalLightInfo.CSM2));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 240, 64, &directionalLightInfo.CSM3));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 304, 64, &directionalLightInfo.CSMSizes));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 368, 4, &directionalLightInfo.activeCascades));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 372, 4, &directionalLightInfo.biasFixed));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 376, 4, &directionalLightInfo.biasVariableIntensity));
-				FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 380, 4, &directionalLightInfo.intensity));*/
-
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, 0));
 			}
 
@@ -505,12 +490,28 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	loadUniformBlocks();
 
 	// ********* GENERATE SHADOW MAPS *********
+	CSM0 = nullptr;
+	CSM1 = nullptr;
+	CSM2 = nullptr;
+	CSM3 = nullptr;
+
+	FEShader* shaderPBR = FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	FEShader* shaderInstancedPBR = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+	FEShader* shaderTerrain = FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+
 	auto itLight = FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].begin();
 	while (itLight != FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
 		FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(itLight->second);
 		if (light->isCastShadows())
 		{
+			float shadowsBlurFactor = light->getShadowBlurFactor();
+			shaderPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
+			shaderInstancedPBR->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
+#ifndef USE_DEFERRED_RENDERER
+			shaderTerrain->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
+#endif // USE_DEFERRED_RENDERER
+
 			glm::vec3 oldCameraPosition = currentCamera->getPosition();
 			glm::mat4 oldViewMatrix = currentCamera->getViewMatrix();
 			glm::mat4 oldProjectionMatrix = currentCamera->getProjectionMatrix();
@@ -934,7 +935,6 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 			{
 				FE_GL_ERROR(glViewport(0, 0, sceneToTextureFB->getWidth(), sceneToTextureFB->getHeight()));
 			}
-			
 			effect.intermediateFramebuffer->bind();
 
 			FE_GL_ERROR(glBindVertexArray(effect.screenQuad->getVaoID()));
@@ -996,13 +996,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 		entityIterator++;
 	}
-
-
 	
 	sceneToTextureFB->unBind();
-
-	//testEntity->setVisibility(false);
-
 	sceneToTextureFB->setColorAttachment(originalColorAttachment);
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
@@ -1108,39 +1103,50 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 	}
 	else
 	{
-		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+		for (size_t i = 0; i < terrain->layers.size(); i++)
 		{
-			if (terrain->layer0->textures[i] != nullptr)
-				terrain->layer0->textures[i]->bind(i);
+			if (terrain->layers[i] != nullptr && terrain->layers[i]->getMaterial()->isCompackPacking())
+			{
+				if (terrain->layers[i]->getMaterial()->getAlbedoMap() != nullptr)
+					terrain->layers[i]->getMaterial()->getAlbedoMap()->bind(i * 3);
+
+				if (terrain->layers[i]->getMaterial()->getNormalMap() != nullptr)
+					terrain->layers[i]->getMaterial()->getNormalMap()->bind(i * 3 + 1);
+
+				if (terrain->layers[i]->getMaterial()->getAOMap() != nullptr)
+					terrain->layers[i]->getMaterial()->getAOMap()->bind(i * 3 + 2);
+			}
 		}
 
-		terrain->heightMap->bind(20);
+		terrain->heightMap->bind(24);
 		if (terrain->projectedMap != nullptr)
-			terrain->projectedMap->bind(21);
+			terrain->projectedMap->bind(25);
+
+		for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE; i++)
+		{
+			if (terrain->layerMaps[i] != nullptr)
+				terrain->layerMaps[i]->bind(26 + i);
+		}
 	}
-	
-	/*terrain->heightMap->bind(0);
-
-	if (terrain->layer0->displacementMap != nullptr)
-		terrain->layer0->displacementMap->bind(1);
-
-	if (terrain->layer0->albedoMap != nullptr)
-		terrain->layer0->albedoMap->bind(2);
-	if (terrain->layer0->normalMap != nullptr)
-		terrain->layer0->normalMap->bind(3);
-	if (terrain->layer0->AOMap != nullptr)
-		terrain->layer0->AOMap->bind(4);
-	if (terrain->layer0->roughtnessMap != nullptr)
-		terrain->layer0->roughtnessMap->bind(5);
-	if (terrain->layer0->metalnessMap != nullptr)
-		terrain->layer0->metalnessMap->bind(6);
-
-	if (terrain->projectedMap != nullptr)
-		terrain->projectedMap->bind(7);*/
 
 	terrain->shader->start();
+	loadStandardParams(terrain->shader, currentCamera, nullptr, &terrain->transform, terrain->isReceivingShadows());
+	// ************ Load materials data for all terrain layers ************
 
-	loadStandardParams(terrain->shader, currentCamera, terrain->layer0, &terrain->transform, terrain->isReceivingShadows());
+	int layersUsed = terrain->layersUsed();
+	if (layersUsed == 0)
+	{
+		// 0 index is for hightMap.
+		FEResourceManager::getInstance().noTexture->bind(1);
+	}
+
+	terrain->loadLayersDataToGPU();
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, terrain->GPULayersDataBuffer));
+
+	// Shadow map shader does not have this parameter.
+	if (terrain->shader->getParameter("usedLayersCount") != nullptr)
+		terrain->shader->getParameter("usedLayersCount")->updateData(float(layersUsed));
+	// ************ Load materials data for all terrain layers END ************
 
 	terrain->shader->getParameter("hightScale")->updateData(terrain->hightScale);
 	terrain->shader->getParameter("scaleFactor")->updateData(terrain->scaleFactor);
@@ -1176,6 +1182,7 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 
 			if (terrain->shader->getParameter("hightMapShift") != nullptr)
 				terrain->shader->loadVector(HShiftHash, *(glm::vec2*)terrain->shader->getParameter("hightMapShift")->data);
+
 			terrain->render();
 		}
 	}
@@ -1240,8 +1247,10 @@ void FERenderer::setDistanceFogEnabled(bool newValue)
 {
 	if (distanceFogEnabled == false && newValue == true)
 	{
-		distanceFogDensity = 0.007f;
-		distanceFogGradient = 2.5f;
+		if (distanceFogDensity <= 0.0f)
+			distanceFogDensity = 0.007f;
+		if (distanceFogGradient <= 0.0f)
+			distanceFogGradient = 2.5f;
 	}
 	distanceFogEnabled = newValue;
 	updateFogInShaders();
@@ -1304,11 +1313,15 @@ void FERenderer::updateFogInShaders()
 
 float FERenderer::getChromaticAberrationIntensity()
 {
+	if (getPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->stages[0]->shader->getParameter("intensity")->data;
 }
 
 void FERenderer::setChromaticAberrationIntensity(float newValue)
 {
+	if (getPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/) == nullptr)
+		return;
 	getPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->stages[0]->shader->getParameter("intensity")->updateData(newValue);
 }
 
@@ -1374,52 +1387,72 @@ void FERenderer::setDOFDistanceDependentStrength(float newValue)
 
 float FERenderer::getBloomThreshold()
 {
+	if (getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->stages[0]->shader->getParameter("thresholdBrightness")->data;
 }
 
 void FERenderer::setBloomThreshold(float newValue)
 {
+	if (getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
+		return;
 	getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->stages[0]->shader->getParameter("thresholdBrightness")->updateData(newValue);
 }
 
 float FERenderer::getBloomSize()
 {
+	if (getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->stages[1]->stageSpecificUniforms[1].data;
 }
 
 void FERenderer::setBloomSize(float newValue)
 {
+	if (getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
+		return;
 	getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->stages[1]->stageSpecificUniforms[1].updateData(newValue);
 	getPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->stages[2]->stageSpecificUniforms[1].updateData(newValue);
 }
 
 float FERenderer::getFXAASpanMax()
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAASpanMax")->data;
 }
 
 void FERenderer::setFXAASpanMax(float newValue)
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return;
 	getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAASpanMax")->updateData(newValue);
 }
 
 float FERenderer::getFXAAReduceMin()
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAAReduceMin")->data;
 }
 
 void FERenderer::setFXAAReduceMin(float newValue)
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return;
 	getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAAReduceMin")->updateData(newValue);
 }
 
 float FERenderer::getFXAAReduceMul()
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return 0.0f;
 	return *(float*)getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAAReduceMul")->data;
 }
 
 void FERenderer::setFXAAReduceMul(float newValue)
 {
+	if (getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
+		return;
 	getPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->stages[0]->shader->getParameter("FXAAReduceMul")->updateData(newValue);
 }
 

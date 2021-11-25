@@ -3,6 +3,8 @@ in VS_OUT
 	vec3 fragPosition;
 } FS_IN;
 
+out vec4 out_Color;
+
 uniform float FEGamma;
 uniform int debugFlag;
 
@@ -159,5 +161,5 @@ void main(void)
     color = 1.0 - exp(-1.0 * color);
     //vec3 mapped = vec3(1.0) - exp(-hdrColor * FEExposure);
 
-	gl_FragColor = vec4(color, 1.0f);
+	out_Color = vec4(color, 1.0f);
 }

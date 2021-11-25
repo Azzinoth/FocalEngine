@@ -49,6 +49,22 @@ void FELight::setIntensity(float newIntensity)
 	intensity = newIntensity;
 }
 
+float FELight::getShadowBlurFactor()
+{
+	return shadowBlurFactor;
+}
+
+void FELight::setShadowBlurFactor(float newValue)
+{
+	if (newValue < 0.0f)
+		newValue = 0.0f;
+
+	if (newValue > 16.0f)
+		newValue = 16.0f;
+
+	shadowBlurFactor = newValue;
+}
+
 bool FELight::isCastShadows()
 {
 	return castShadows;

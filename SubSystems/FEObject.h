@@ -3,8 +3,7 @@
 #ifndef FEOBJECT_H
 #define FEOBJECT_H
 
-#include "FECoreIncludes.h"
-#include <random>
+#include "FELog.h"
 
 namespace FocalEngine
 {
@@ -24,7 +23,8 @@ namespace FocalEngine
 		FE_SPOT_LIGHT = 11,
 		FE_CAMERA = 12,
 		FE_FRAME_BUFFER = 13,
-		FE_POST_PROCESS = 14
+		FE_POST_PROCESS = 14,
+		FE_TERRAIN_LAYER = 15
 	};
 
 	class FEObject;
@@ -47,7 +47,6 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEObjectManager)
 		std::unordered_map<std::string, FEObject*> allObjects;
 		std::vector<std::unordered_map<std::string, FEObject*>> objectsByType;
-		//std::unordered_map<std::string, std::string> testCheck;
 	};
 
 	static std::string FEObjectTypeToString(FEObjectType type)
@@ -137,31 +136,6 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	// This function can produce ID's that are identical but it is extremely rare
-	// to be 100% sure I could implement system to prevent it but for the sake of simplicity I choose not to do that, at least for now.
-	static std::string getUniqueId()
-	{
-		static std::random_device randomDevice;
-		static std::mt19937 mt(randomDevice());
-		static std::uniform_int_distribution<int> distribution(0, 128);
-
-		static bool firstInitialization = true;
-		if (firstInitialization)
-		{
-			srand(unsigned int(time(NULL)));
-			firstInitialization = false;
-		}
-
-		std::string ID = "";
-		ID += char(distribution(mt));
-		for (size_t j = 0; j < 11; j++)
-		{
-			ID.insert(rand() % ID.size(), 1, char(distribution(mt)));
-		}
-
-		return ID;
-	}
-
 	class FEShader;
 	class FEMesh;
 	class FETexture;
@@ -209,6 +183,9 @@ namespace FocalEngine
 		int nameHash = 0;
 		void setID(std::string newID);
 		void setType(FEObjectType newType);
+	protected:
+		std::vector<std::string> callListOnDeleteFEObject;
+		virtual void processOnDeleteCallbacks(std::string deletingFEObject);
 	};
 }
 

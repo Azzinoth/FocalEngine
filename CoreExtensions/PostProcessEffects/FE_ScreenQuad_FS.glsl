@@ -1,7 +1,9 @@
 in vec2 textureCoords;
 @Texture@ quadTexture;
 
+out vec4 out_Color;
+
 void main(void)
 {
-	gl_FragColor = texture(quadTexture, textureCoords);
+	out_Color = texture(quadTexture, textureCoords);
 }

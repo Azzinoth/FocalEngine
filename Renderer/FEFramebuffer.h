@@ -35,8 +35,11 @@ namespace FocalEngine
 
 		int getWidth();
 		int getHeight();
+
+		bool hasTexture(std::string objectID);
+		bool hasTexture(GLuint textureID);
 	private:
-		FEFramebuffer(/*int attachments, int Width, int Height, bool HDR = true*/);
+		FEFramebuffer();
 
 		GLuint fbo = -1;
 		bool binded = false;
@@ -49,5 +52,6 @@ namespace FocalEngine
 		FETexture* stencilAttachment = nullptr;
 
 		void attachTexture(GLenum attachment, GLenum textarget, FETexture* texture);
+		void processOnDeleteCallbacks(std::string deletingFEObject);
 	};
 }

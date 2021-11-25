@@ -11,7 +11,11 @@ out vec3 TES_normal;
 
 float height(float u, float v)
 {
-	return (texture(heightMap, vec2(u,v)).r * hightScale);
+	//float min = -hightScale;
+	//float max = hightScale;
+	return texture(heightMap, vec2(u,v)).r * 2 * hightScale - hightScale;
+	
+	//return (texture(heightMap, vec2(u,v)).r * hightScale);
 }
 
 void main(void)

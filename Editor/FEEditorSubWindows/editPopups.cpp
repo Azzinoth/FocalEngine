@@ -62,10 +62,7 @@ void editGameModelPopup::show(FEGameModel* GameModel)
 {
 	if (GameModel != nullptr)
 	{
-		switchMode(NO_LOD_MODE);
-		size = ImVec2(NO_LOD_WINDOW_WIDTH, NO_LOD_WINDOW_HEIGHT);
 		objToWorkWith = GameModel;
-
 		flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
 		tempModel->setMaterial(objToWorkWith->getMaterial());
@@ -105,6 +102,15 @@ void editGameModelPopup::show(FEGameModel* GameModel)
 			updatedLODMeshs.push_back(objToWorkWith->getLODMesh(i));
 		}
 		tempModel->setCullDistance(objToWorkWith->getCullDistance());
+
+		if (objToWorkWith->useLODlevels())
+		{
+			switchMode(HAS_LOD_MODE);
+		}
+		else
+		{
+			switchMode(NO_LOD_MODE);
+		}
 
 		std::string tempCaption = "Edit game model:";
 		tempCaption += " " + objToWorkWith->getName();
@@ -169,8 +175,6 @@ void editGameModelPopup::switchMode(int toMode)
 	{
 		case NO_LOD_MODE:
 		{
-			if (currentMode == NO_LOD_MODE)
-				return;
 			size.x = NO_LOD_WINDOW_WIDTH;
 			size.y = NO_LOD_WINDOW_HEIGHT;
 			currentMode = NO_LOD_MODE;
@@ -204,10 +208,8 @@ void editGameModelPopup::switchMode(int toMode)
 				changeLODMeshButton[i]->setSize(ImVec2(200, 35));
 			}
 
-			if (currentMode == HAS_LOD_MODE)
-				return;
 			size.x = 920.0f;
-			size.y = 830.0f;
+			size.y = 880.0f;
 			currentMode = HAS_LOD_MODE;
 			changeMaterialButton->setPosition(ImVec2(size.x / 2.0f - size.x / 4.0f - changeMaterialButton->getSize().x / 2, 35.0f + 340.0f + 200.0f));
 			changeBillboardMaterialButton->setPosition(ImVec2(size.x / 2 + size.x / 4 - changeBillboardMaterialButton->getSize().x / 2, 35 + 340.0f + 200.0f));
@@ -280,11 +282,20 @@ void editGameModelPopup::displayLODGroups()
 
 void editGameModelPopup::render()
 {
-	ImGui::SetNextWindowSize(size);
-	FEImGuiWindow::render();
-
 	if (!isVisible())
 		return;
+
+	if (tempModel->useLODlevels())
+	{
+		switchMode(HAS_LOD_MODE);
+	}
+	else
+	{
+		switchMode(NO_LOD_MODE);
+	}
+
+	ImGui::SetNextWindowSize(size);
+	FEImGuiWindow::render();
 
 	// if we change something we will update preview.
 	if (updatedMaterial != tempModel->getMaterial())
@@ -325,14 +336,14 @@ void editGameModelPopup::render()
 	ImGui::SetCursorPosY(currentY);
 	ImGui::Checkbox("have LOD levels", &isLODsActive);
 	tempModel->setUsingLODlevels(isLODsActive);
-	if (tempModel->useLODlevels())
+	/*if (tempModel->useLODlevels())
 	{
 		switchMode(HAS_LOD_MODE);
 	}
 	else
 	{
 		switchMode(NO_LOD_MODE);
-	}
+	}*/
 
 	ImVec2 textSize = ImGui::CalcTextSize("Preview of game model:");
 	ImGui::SetCursorPosX(size.x / 2 - textSize.x / 2);
@@ -489,8 +500,18 @@ void editGameModelPopup::render()
 					if (changeBillboardMaterialButton->getWasClicked())
 					{
 						updatedBillboardMaterial = tempModel->getBillboardMaterial();
-						selectMaterialPopUp::getInstance().setAllowedShader(RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
-						selectMaterialPopUp::getInstance().show(&updatedBillboardMaterial);
+
+						std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
+						std::vector<FEMaterial*> finalMaterialList;
+						for (size_t i = 0; i < tempMaterialList.size(); i++)
+						{
+							if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->shader->getObjectID() == "0800253C242B05321A332D09"/*"FEPBRShader"*/)
+							{
+								finalMaterialList.push_back(RESOURCE_MANAGER.getMaterial(tempMaterialList[i]));
+							}
+						}
+
+						selectMaterialPopUp::getInstance().showWithCustomList(&updatedBillboardMaterial, finalMaterialList);
 					}
 				}
 				else
@@ -1498,7 +1519,6 @@ void editMaterialPopup::render()
 	}
 
 	FEImGuiWindow::onRenderEnd();
-	selectTexturePopUp::getInstance().render();
 }
 
 void editMaterialPopup::close()
@@ -1633,6 +1653,9 @@ void editMaterialPopup::textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_E
 		return;
 
 	if (node->getType() != "FEEditorTextureSourceNode")
+		return;
+
+	if (eventWithNode != FE_EDITOR_NODE_DESTROYED && eventWithNode != FE_EDITOR_NODE_REMOVED)
 		return;
 
 	FEEditorTextureSourceNode* currentNode = reinterpret_cast<FEEditorTextureSourceNode*>(node);

@@ -1,5 +1,5 @@
 #pragma once
-#include "FELog.h"
+#include "FEObject.h"
 
 namespace FocalEngine
 {

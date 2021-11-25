@@ -9,7 +9,11 @@ in vec2 TC_UV[];
 
 float height(float u, float v)
 {
-	return (texture(heightMap, vec2(u,v)).r * hightScale);
+	//float min = -hightScale;
+	//float max = hightScale;
+	return texture(heightMap, vec2(u,v)).r * 2 * hightScale - hightScale;
+	
+	//return (texture(heightMap, vec2(u,v)).r * hightScale);
 }
 
 void main(void)

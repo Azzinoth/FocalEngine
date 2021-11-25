@@ -9,6 +9,8 @@ uniform float intMult;
 uniform float zNear;
 uniform float zFar;
 
+out vec4 out_Color;
+
 void main(void)
 {
 	float depthValue = texture(depthTexture, textureCoords).r;
@@ -22,7 +24,7 @@ void main(void)
 	
 	vec2 tex_offset = 1.0 / textureSize(sceneTexture, 0);
 
-	vec4 finalColor = vec4(0.0);
+	//vec4 out_Color = vec4(0.0);
 	if (depthValueWorld < depthThreshold)
 	{
 		float intensity = (thresholdInZbuffer - depthValue) * (intMult / 10.0);
@@ -35,17 +37,17 @@ void main(void)
 			blurTextureCoords[i + 5] = centerTexCoords + (tex_offset * FEBlurDirection) * i * blurSize * intensity;
 		}
 
-		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
-		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
-		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
-		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
-		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
-		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
-		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
-		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
-		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
-		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
-		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+		out_Color += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		out_Color += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		out_Color += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		out_Color += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		out_Color += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		out_Color += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		out_Color += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		out_Color += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		out_Color += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		out_Color += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		out_Color += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
 	}
 	else if (depthValueWorld > depthThresholdFar)
 	{
@@ -59,22 +61,20 @@ void main(void)
 			blurTextureCoords[i + 5] = centerTexCoords + (tex_offset * FEBlurDirection) * i * blurSize * intensity;
 		}
 
-		finalColor += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
-		finalColor += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
-		finalColor += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
-		finalColor += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
-		finalColor += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
-		finalColor += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
-		finalColor += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
-		finalColor += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
-		finalColor += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
-		finalColor += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
-		finalColor += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
+		out_Color += texture(sceneTexture, blurTextureCoords[0]) * 0.0093;
+		out_Color += texture(sceneTexture, blurTextureCoords[1]) * 0.028002;
+		out_Color += texture(sceneTexture, blurTextureCoords[2]) * 0.065984;
+		out_Color += texture(sceneTexture, blurTextureCoords[3]) * 0.121703;
+		out_Color += texture(sceneTexture, blurTextureCoords[4]) * 0.175713;
+		out_Color += texture(sceneTexture, blurTextureCoords[5]) * 0.198596;
+		out_Color += texture(sceneTexture, blurTextureCoords[6]) * 0.175713;
+		out_Color += texture(sceneTexture, blurTextureCoords[7]) * 0.121703;
+		out_Color += texture(sceneTexture, blurTextureCoords[8]) * 0.065984;
+		out_Color += texture(sceneTexture, blurTextureCoords[9]) * 0.028002;
+		out_Color += texture(sceneTexture, blurTextureCoords[10]) * 0.0093;
 	}
 	else
 	{
-		finalColor = texture(sceneTexture, textureCoords);
+		out_Color = texture(sceneTexture, textureCoords);
 	}
-
-	gl_FragColor = finalColor;
 }

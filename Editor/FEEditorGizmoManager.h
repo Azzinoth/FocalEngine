@@ -66,6 +66,8 @@ namespace FEGizmoManager
 		FETexture* rotateGizmoIcon = nullptr;
 
 		void initializeResources();
+		void reInitializeEntities();
+
 		void deactivateAllGizmo();
 		void hideAllGizmo();
 		void updateGizmoState(int newState);
@@ -96,4 +98,4 @@ namespace FEGizmoManager
 	};
 }
 
-#define GIZMO_MANAGER GizmoManager::getInstance()
+#define GIZMO_MANAGER FEGizmoManager::GizmoManager::getInstance()

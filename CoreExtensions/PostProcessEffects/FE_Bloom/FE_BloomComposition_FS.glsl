@@ -2,7 +2,9 @@ in vec2 textureCoords;
 @Texture@ inputTexture;
 @Texture@ otherTexture;
 
+out vec4 out_Color;
+
 void main(void)
 {
-	gl_FragColor = vec4(texture(inputTexture, textureCoords).rgb + texture(otherTexture, textureCoords).rgb, 1.0);
+	out_Color = vec4(texture(inputTexture, textureCoords).rgb + texture(otherTexture, textureCoords).rgb, 1.0);
 }

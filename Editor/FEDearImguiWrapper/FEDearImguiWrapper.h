@@ -165,6 +165,54 @@ public:
 	bool isMouseHovered();
 };
 
+class FEArrowScroller
+{
+	bool horizontal;
+
+	ImVec2 position;
+	bool selected;
+	bool mouseHover;
+
+	bool windowFlagWasAdded;
+	int originalWindowFlags;
+
+	RECT area;
+	float size;
+
+	ImColor color;
+	ImColor selectedColor;
+
+	float lastFrameMouseX;
+	float lastFrameMouseY;
+	float lastFrameDelta;
+
+	ImVec2 availableRange;
+public:
+	FEArrowScroller(bool Horizontal = true);
+
+	ImVec2 getPosition();
+	void setPosition(ImVec2 newPosition);
+
+	float getSize();
+	void setSize(float newValue);
+
+	bool isSelected();
+	void setSelected(bool newValue);
+
+	ImColor getColor();
+	void setColor(ImColor newValue);
+
+	ImColor getSelectedColor();
+	void setSelectedColor(ImColor newValue);
+
+	float getLastFrameDelta();
+
+	void render();
+
+	void setAvailableRange(ImVec2 newValue);
+	void liftRangeRestrictions();
+};
+
 class FERangeConfigurator;
 struct FERangeRecord
 {
@@ -177,7 +225,8 @@ private:
 
 	RECT rect;
 	RECT scrollRect;
-	bool scrollSelected = false;
+
+	FEArrowScroller scroller;
 public:
 	float getRangeSpan();
 
@@ -193,8 +242,6 @@ public:
 
 class FERangeConfigurator
 {
-	const float SCROLLER_SIZE = 20.0f;
-
 	bool visible;
 	ImVec2 position;
 	ImVec2 size;
@@ -202,7 +249,6 @@ class FERangeConfigurator
 
 	std::vector<FERangeRecord> ranges;
 	float screenX, screenY;
-	float lastMouseX;
 
 	void recalculateRangeInfo();
 	void normalizeRanges();

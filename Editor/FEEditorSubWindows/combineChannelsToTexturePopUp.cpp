@@ -60,12 +60,14 @@ void CombineChannelsToTexturePopUp::render()
 	
 	nodeAreaTarget->stickToItem();
 
-	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - 120.0f / 2.0f);
+	float yPosition = ImGui::GetCursorPosY();
+	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
 	if (ImGui::Button("Combine", ImVec2(120, 0)))
 	{
 		if (textureNode->getTexture() != RESOURCE_MANAGER.noTexture)
 		{
 			textureNode->getTexture()->setDirtyFlag(true);
+			PROJECT_MANAGER.getCurrent()->addUnSavedObject(textureNode->getTexture());
 			VIRTUAL_FILE_SYSTEM.createFile(textureNode->getTexture(), VIRTUAL_FILE_SYSTEM.getCurrentPath());
 			NODE_SYSTEM.deleteNodeArea(currentNodeArea);
 		}
@@ -73,8 +75,29 @@ void CombineChannelsToTexturePopUp::render()
 		FEImGuiWindow::close();
 	}
 
+	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+
+	ImGui::SetCursorPosY(yPosition);
+	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
+	if (ImGui::Button("Cancel", ImVec2(120, 0)))
+	{
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		ImGui::PopStyleVar();
+
+		FEImGuiWindow::close();
+		return;
+	}
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleColor();
+
 	ImGui::PopStyleVar();
-	selectTexturePopUp::getInstance().render();
 	FEImGuiWindow::onRenderEnd();
 }
 

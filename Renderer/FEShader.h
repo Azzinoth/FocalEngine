@@ -26,6 +26,7 @@
 #define FE_DEBUG_MACRO "@DEBUG@("
 
 #define FE_MATERIAL_TEXTURES_MACRO "@MaterialTextures@"
+#define FE_TERRAIN_LAYERS_TEXTURES_MACRO "@TerrainLayersTextures@"
 
 namespace FocalEngine
 {
@@ -92,6 +93,7 @@ namespace FocalEngine
 	class FERenderer;
 	class FEPostProcess;
 	class FEngine;
+	class FEResourceManager;
 
 	class FEShader : public FEObject
 	{
@@ -99,6 +101,7 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEPostProcess;
 		friend FEngine;
+		friend FEResourceManager;
 	public:
 		FEShader(std::string name, const char* vertexText, const char* fragmentText,
 			const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
@@ -179,6 +182,7 @@ namespace FocalEngine
 		bool CSM = false;
 		bool testCompilationMode = false;
 		bool materialTexturesList = false;
+		bool terrainLayersTexturesList = false;
 		int glslVersion;
 
 #ifdef FE_DEBUG_ENABLED
@@ -191,5 +195,8 @@ namespace FocalEngine
 		std::vector<std::string> debugVariables;
 		std::vector<std::vector<float>> debugData;
 #endif
+		void reCompile(std::string name, const char* vertexText, const char* fragmentText,
+					   const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
+					   const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false, int glslVersion = 450);
 	};
 }

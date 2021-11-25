@@ -63,6 +63,9 @@ namespace FocalEngine
 
 		virtual void updateFrustumPlanes();
 		virtual float** getFrustumPlanes();
+
+		virtual float getMovementSpeed();
+		virtual void setMovementSpeed(float newValue);
 	protected:
 		bool isInputActive = true;
 
@@ -77,6 +80,8 @@ namespace FocalEngine
 
 		float gamma = 2.2f;
 		float exposure = 1.0f;
+
+		float movementSpeed = 10.0f;
 
 		glm::vec3 position = glm::vec3(0.0f);
 		glm::mat4 viewMatrix;

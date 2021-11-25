@@ -1,21 +1,16 @@
 #include "FEEditorNodeSocket.h"
-using namespace FocalEngine;
 
 FEEditorNodeSocket::FEEditorNodeSocket(FEEditorNode* parent, FEEditorNodeSocketType type, std::string name)
 {
 	this->parent = parent;
 	this->type = type;
 	this->name = name;
+	this->ID = getUniqueHexID();
 }
 
-bool FEEditorNodeSocket::isLookingForConnection()
+std::string FEEditorNodeSocket::getID()
 {
-	return lookingForConnection;
-}
-
-void FEEditorNodeSocket::setIsLookingForConnection(bool newValue)
-{
-	lookingForConnection = newValue;
+	return ID;
 }
 
 FEEditorNode* FEEditorNodeSocket::getParent()
@@ -36,6 +31,21 @@ std::string FEEditorNodeSocket::getName()
 FEEditorNodeSocketType FEEditorNodeSocket::getType()
 {
 	return type;
+}
+
+bool FEEditorNodeSocket::getForcedConnectionColor(ImColor& color)
+{
+	if (forceColor == nullptr)
+		return false;
+
+	color = *forceColor;
+
+	return true;
+}
+
+void FEEditorNodeSocket::setForcedConnectionColor(ImColor* newValue)
+{
+	forceColor = newValue;
 }
 
 FEEditorNodeConnection::FEEditorNodeConnection(FEEditorNodeSocket* out, FEEditorNodeSocket* in)

@@ -67,7 +67,7 @@ file(GLOB TerrainMaterial_SRC
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_GS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_TCS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_TES.glsl"
-	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_VS.glsl"
+	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_LayersNormalize_FS.glsl"
 )
 
 file(GLOB TerrainEditorTools_SRC
@@ -75,6 +75,7 @@ file(GLOB TerrainEditorTools_SRC
 	"CoreExtensions/StandardMaterial/TerrainMaterial/EditTools/FE_BrushOutput_VS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/EditTools/FE_BrushVisual_FS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/EditTools/FE_BrushVisual_VS.glsl"
+	"CoreExtensions/StandardMaterial/TerrainMaterial/EditTools/FE_LayersNormalize_FS.glsl"
 )
 
 file(GLOB TerrainShadowMapShader_SRC
@@ -174,6 +175,8 @@ file(GLOB FEEditorSubWindows_SRC
 	"Editor/FEEditorSubWindows/selectPopups.h"
 	"Editor/FEEditorSubWindows/shaderEditorWindow.cpp"
 	"Editor/FEEditorSubWindows/shaderEditorWindow.h"
+	"Editor/FEEditorSubWindows/resizeTexturePopup.cpp"
+	"Editor/FEEditorSubWindows/resizeTexturePopup.h"
 )
 
 file(GLOB Editor_Materials_SRC
@@ -238,6 +241,8 @@ file(GLOB Renderer_SRC
 	"Renderer/FEShader.h"
 	"Renderer/FETexture.cpp"
 	"Renderer/FETexture.h"
+	"Renderer/FETerrain.cpp"
+	"Renderer/FETerrain.h"
 )
 
 # *************** RESOURCE MANAGER ***************
@@ -269,8 +274,6 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FEObject.h"
 	"SubSystems/FEScene.cpp"
 	"SubSystems/FEScene.h"
-	"SubSystems/FETerrain.cpp"
-	"SubSystems/FETerrain.h"
 	"SubSystems/FETime.cpp"
 	"SubSystems/FETime.h"
 	"SubSystems/FETransformComponent.cpp"
@@ -414,8 +417,6 @@ include_directories(
 
 #MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
 
-
-
 #add_definitions(-DFPM_DEFAULT)
 #add_definitions(-DWK_GLES2)
 #add_definitions(-DKTX_OPENGL_ES2=1)
@@ -426,8 +427,3 @@ include_directories(
 #add_definitions(-DKTX_OPENGL_ES3__)
 #add_definitions(-DWIN32)
 #add_definitions(-D_WIN32)
-
-
-
-
-

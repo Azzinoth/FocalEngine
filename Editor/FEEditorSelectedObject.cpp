@@ -8,7 +8,7 @@ FEEditorSelectedObject::~FEEditorSelectedObject() {}
 void FEEditorSelectedObject::initializeResources()
 {
 	HALO_SELECTION_EFFECT.initializeResources();
-
+	
 	pixelAccurateSelectionFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight());
 	delete pixelAccurateSelectionFB->getColorAttachment();
 	pixelAccurateSelectionFB->setColorAttachment(RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, ENGINE.getRenderTargetWidth(), ENGINE.getRenderTargetHeight()));
@@ -77,6 +77,13 @@ void FEEditorSelectedObject::setSelected(FEObject* selectedObject)
 	
 	if (container != selectedObject)
 		dirtyFlag = true;
+
+	if (container != nullptr && container->getType() == FE_TERRAIN && container != selectedObject)
+	{
+		FETerrain* deselectedTerrain = reinterpret_cast<FETerrain*>(container);
+		deselectedTerrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+	}
+
 	container = selectedObject;
 	if (onUpdateFunc != nullptr)
 		onUpdateFunc();
