@@ -1013,7 +1013,7 @@ void FEEditor::initializeResources()
 	smoothBrushButton = new ImGuiImageButton(smoothBrushIcon);
 	smoothBrushButton->setSize(ImVec2(24, 24));
 
-	drawBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/paintbrush_.png", "drawBrushIcon");
+	drawBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/paintbrush.png", "drawBrushIcon");
 	RESOURCE_MANAGER.makeTextureStandard(drawBrushIcon);
 	layerBrushButton = new ImGuiImageButton(drawBrushIcon);
 	layerBrushButton->setSize(ImVec2(48, 48));
