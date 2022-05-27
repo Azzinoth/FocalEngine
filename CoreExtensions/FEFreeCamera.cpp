@@ -1,9 +1,9 @@
 #include "FEFreeCamera.h"
 using namespace FocalEngine;
 
-FEFreeCamera::FEFreeCamera(GLFWwindow* Window, std::string name) : FEBasicCamera (name)
+FEFreeCamera::FEFreeCamera(std::string name) : FEBasicCamera (name)
 {
-	window = Window;
+
 }
 
 FEFreeCamera::~FEFreeCamera()
@@ -83,7 +83,7 @@ void FEFreeCamera::reset()
 
 void FEFreeCamera::setCursorToCenter()
 {
-	if (glfwGetWindowAttrib(window, GLFW_FOCUSED))
+	if (APPLICATION.isWindowInFocus())
 	{
 		lastMouseX = renderTargetCenterX;
 		lastMouseY = renderTargetCenterY;

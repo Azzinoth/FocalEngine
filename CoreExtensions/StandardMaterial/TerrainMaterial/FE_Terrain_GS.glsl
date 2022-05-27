@@ -40,7 +40,7 @@ void main(void)
 
 	float t1 = uv1.y - uv0.y;
 	float t2 = uv2.y - uv0.y;
-	vec3 tangent = t2 * q1 - t1 * q2;
+	vec3 tangent = t1 * q2 - t2 * q1;
 
 	gl_Position = FEPVMMatrix * gl_in[0].gl_Position;
 	gs_out.viewPosition = FEViewMatrix * FEWorldMatrix * gl_in[0].gl_Position;

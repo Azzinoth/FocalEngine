@@ -167,12 +167,12 @@ glm::quat FETransformComponent::getQuaternion()
 	return rotationQuaternion;
 }
 
-bool FETransformComponent::isDirty()
+bool FETransformComponent::getDirtyFlag()
 {
 	return dirtyFlag;
 }
 
-void FETransformComponent::setDirty(bool isDirty)
+void FETransformComponent::setDirtyFlag(bool isDirty)
 {
 	dirtyFlag = isDirty;
 }
@@ -180,4 +180,15 @@ void FETransformComponent::setDirty(bool isDirty)
 void FETransformComponent::forceSetTransformMatrix(glm::mat4 newValue)
 {
 	transformMatrix = newValue;
+}
+
+FETransformComponent FETransformComponent::combine(FETransformComponent& other)
+{
+	FETransformComponent result;
+
+	result.setPosition(getPosition() + other.getPosition());
+	result.setRotation(getRotation() + other.getRotation());
+	result.setScale(getScale() * other.getScale());
+
+	return result;
 }

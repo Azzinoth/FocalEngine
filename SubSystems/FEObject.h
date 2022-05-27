@@ -24,7 +24,8 @@ namespace FocalEngine
 		FE_CAMERA = 12,
 		FE_FRAME_BUFFER = 13,
 		FE_POST_PROCESS = 14,
-		FE_TERRAIN_LAYER = 15
+		FE_TERRAIN_LAYER = 15,
+		FE_PREFAB = 16
 	};
 
 	class FEObject;
@@ -127,6 +128,11 @@ namespace FocalEngine
 			case FocalEngine::FE_POST_PROCESS:
 			{
 				return "FE_POST_PROCESS";
+				break;
+			}
+			case FocalEngine::FE_PREFAB:
+			{
+				return "FE_PREFAB";
 				break;
 			}
 			default:

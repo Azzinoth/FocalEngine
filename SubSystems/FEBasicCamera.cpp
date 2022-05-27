@@ -225,7 +225,7 @@ void FEBasicCamera::updateFrustumPlanes()
 	float   t;
 
 	glm::mat4 cliping = getProjectionMatrix() * getViewMatrix();
-	for (size_t i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		clip[i * 4] = cliping[i][0];
 		clip[i * 4 + 1] = cliping[i][1];

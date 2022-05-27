@@ -95,7 +95,7 @@ void shaderDebugWindow::render()
 	{
 		for (size_t n = 0; n < occurrenceList.size(); n++)
 		{
-			ImGui::PushID(n);
+			ImGui::PushID(int(n));
 			bool is_selected = (selectedDebugData == occurrenceList[n]);
 			if (ImGui::Selectable(occurrenceList[n].c_str(), is_selected))
 			{

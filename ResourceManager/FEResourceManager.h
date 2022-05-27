@@ -2,9 +2,10 @@
 
 #include "../Renderer/FEPostProcess.h"
 #include "../Renderer/FETerrain.h"
-#include "../ResourceManager/FEObjLoader.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../SubSystems/FEJobManager.h"
+#include "../ThirdParty/stb_image/stb_image.h"
+#include "FEglTFLoader.h"
 
 namespace FocalEngine
 {
@@ -34,7 +35,8 @@ namespace FocalEngine
 		std::string loadGLSL(const char* fileName);
 
 		FETexture* LoadPNGTexture(const char* fileName, std::string Name = "");
-		FETexture* LoadPNGTextureWithTransparencyMask(const char* mainfileName, const char* maskFileName, std::string Name);
+		FETexture* LoadJPGTexture(const char* fileName, std::string Name = "");
+		FETexture* LoadBMPTexture(const char* fileName, std::string Name = "");
 		FETexture* LoadFETexture(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const char* fileName, std::string Name = "");
 		FETexture* LoadFETexture(char* fileData, std::string Name = "", FETexture* existingTexture = nullptr);
@@ -48,6 +50,7 @@ namespace FocalEngine
 		void resizeTexture(FETexture* sourceTexture, int targetWidth, int targetHeight, int filtrationLevel = 0);
 		unsigned char* getFETextureRawData(FETexture* sourceTexture, size_t* rawDataSize = nullptr);
 		void updateFETextureRawData(FETexture* texture, unsigned char* newRawData, size_t mipCount = 1);
+		FETexture* createTextureWithTransparency(FETexture* originalTexture, FETexture* maskTexture);
 
 		void saveFETexture(FETexture* texture, const char* fileName);
 		bool exportFETextureToPNG(FETexture* textureToExport, const char* fileName);
@@ -78,8 +81,8 @@ namespace FocalEngine
 		std::vector<std::string> getStandardMeshList();
 		FEMesh* getMesh(std::string ID);
 		std::vector<FEMesh*> getMeshByName(std::string Name);
-		FEMesh* LoadOBJMesh(const char* fileName, std::string Name = "");
-		FEMesh* LoadFEMesh(const char* fileName, std::string Name = "");
+		std::vector<FEObject*> importOBJ(const char* fileName, bool forceOneMesh = false);
+		FEMesh* loadFEMesh(const char* fileName, std::string Name = "");
 		void saveFEMesh(FEMesh* Mesh, const char* fileName);
 
 		FEFramebuffer* createFramebuffer(int attachments, int Width, int Height, bool HDR = true);
@@ -100,6 +103,14 @@ namespace FocalEngine
 		bool makeGameModelStandard(FEGameModel* gameModel);
 		void deleteGameModel(FEGameModel* gameModel);
 
+		std::vector<std::string> getPrefabList();
+		std::vector<std::string> getStandardPrefabList();
+		FEPrefab* getPrefab(std::string ID);
+		std::vector<FEPrefab*> getPrefabByName(std::string Name);
+		FEPrefab* createPrefab(FEGameModel* gameModel = nullptr, std::string Name = "", std::string forceObjectID = "");
+		bool makePrefabStandard(FEPrefab* prefab);
+		void deletePrefab(FEPrefab* prefab);
+
 		FETerrain* createTerrain(bool createHeightMap = true, std::string name = "", std::string forceObjectID = "");
 		void activateTerrainVacantLayerSlot(FETerrain* terrain, FEMaterial* material);
 		void loadTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex);
@@ -112,6 +123,7 @@ namespace FocalEngine
 		void loadStandardMeshes();
 		void loadStandardMaterial();
 		void loadStandardGameModels();
+		void loadStandardPrefabs();
 
 		void reSaveStandardTextures();
 		void reSaveStandardMeshes();
@@ -122,6 +134,9 @@ namespace FocalEngine
 		float TimeOpenGLmipload = 0.0f;
 
 		std::string getDefaultResourcesFolder();
+		std::vector<FEObject*> LoadGLTF(const char* fileName);
+
+		std::vector<FEObject*> importAsset(const char* fileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -144,8 +159,12 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEGameModel*> gameModels;
 		std::unordered_map<std::string, FEGameModel*> standardGameModels;
 
+		std::unordered_map<std::string, FEPrefab*> prefabs;
+		std::unordered_map<std::string, FEPrefab*> standardPrefabs;
+
 		std::string getFileNameFromFilePath(std::string filePath);
 		FEEntity* createEntity(FEGameModel* gameModel, std::string Name, std::string forceObjectID = "");
+		FEEntity* createEntity(FEPrefab* prefab, std::string Name, std::string forceObjectID = "");
 
 		void initTerrainEditTools(FETerrain* terrain);
 
@@ -155,5 +174,6 @@ namespace FocalEngine
 
 		std::string defaultResourcesFolder = "Resources//";
 		void fillTerrainLayerMaskWithRawData(unsigned char* rawData, FETerrain* terrain, size_t layerIndex);
+		void createMaterialsFromOBJData(std::vector<FEObject*>& resultArray);
 	};
 }

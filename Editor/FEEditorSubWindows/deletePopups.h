@@ -38,6 +38,22 @@ public:
 	void render() override;
 };
 
+class deleteMaterialPopup : public ImGuiModalPopup
+{
+	SINGLETON_PRIVATE_PART(deleteMaterialPopup)
+
+		friend deleteDirectoryPopup;
+	FEMaterial* objToWorkWith;
+
+	static void deleteMaterial(FEMaterial* material);
+public:
+	SINGLETON_PUBLIC_PART(deleteMaterialPopup)
+
+		int timesMaterialUsed(FEMaterial* material);
+	void show(FEMaterial* material);
+	void render() override;
+};
+
 class deleteGameModelPopup : public ImGuiModalPopup
 {
 	SINGLETON_PRIVATE_PART(deleteGameModelPopup)
@@ -54,19 +70,19 @@ public:
 	void render() override;
 };
 
-class deleteMaterialPopup : public ImGuiModalPopup
+class deletePrefabPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteMaterialPopup)
+	SINGLETON_PRIVATE_PART(deletePrefabPopup)
 
 	friend deleteDirectoryPopup;
-	FEMaterial* objToWorkWith;
+	FEPrefab* objToWorkWith;
 
-	static void deleteMaterial(FEMaterial* material);
+	static void deletePrefab(FEPrefab* Prefab);
 public:
-	SINGLETON_PUBLIC_PART(deleteMaterialPopup)
+	SINGLETON_PUBLIC_PART(deletePrefabPopup)
 
-	int timesMaterialUsed(FEMaterial* material);
-	void show(FEMaterial* material);
+	int timesPrefabUsed(FEPrefab* Prefab);
+	void show(FEPrefab* Prefab);
 	void render() override;
 };
 

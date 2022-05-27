@@ -1,6 +1,49 @@
 #include "editPopups.h"
 
 editGameModelPopup* editGameModelPopup::_instance = nullptr;
+FEMesh** editGameModelPopup::meshToModify = nullptr;
+
+FEMaterial** editGameModelPopup::materialToModify = nullptr;
+FEMaterial** editGameModelPopup::billboardMaterialToModify = nullptr;
+
+void editGameModelPopup::changeMeshCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (meshToModify == nullptr)
+		return;
+
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MESH)
+	{
+		FEMesh* selectedMesh = RESOURCE_MANAGER.getMesh(selectionsResult[0]->getObjectID());
+		if (selectedMesh == nullptr)
+			return;
+
+		*meshToModify = selectedMesh;
+	}
+}
+
+void editGameModelPopup::changeMaterialCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	{
+		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
+		if (selectedMaterial == nullptr)
+			return;
+
+		*materialToModify = selectedMaterial;
+	}
+}
+
+void editGameModelPopup::changeBillboardMaterialCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	{
+		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
+		if (selectedMaterial == nullptr)
+			return;
+
+		*billboardMaterialToModify = selectedMaterial;
+	}
+}
 
 editGameModelPopup::editGameModelPopup()
 {
@@ -136,11 +179,13 @@ void editGameModelPopup::show(FEGameModel* GameModel)
 
 		// ************** LOD Groups **************
 		LODGroups->clear();
+		float previous = 0.0f;
 		for (size_t i = 0; i < objToWorkWith->getMaxLODCount(); i++)
 		{
 			if (objToWorkWith->getLODMesh(i) != nullptr)
 			{
-				LODGroups->addRange((objToWorkWith->getLODMaxDrawDistance(i)) / objToWorkWith->getCullDistance(), std::string("LOD") + std::to_string(i), "", LODColors[i]);
+				LODGroups->addRange(((objToWorkWith->getLODMaxDrawDistance(i)) - previous) / objToWorkWith->getCullDistance(), std::string("LOD") + std::to_string(i), "", LODColors[i]);
+				previous = objToWorkWith->getLODMaxDrawDistance(i);
 			}
 		}
 		// ************** LOD Groups END **************
@@ -150,7 +195,7 @@ void editGameModelPopup::show(FEGameModel* GameModel)
 		LODsMeshTarget.resize(objToWorkWith->getMaxLODCount());
 		for (size_t i = 0; i < objToWorkWith->getMaxLODCount(); i++)
 		{
-			LODsMeshCallbackInfo[i].LODLevel = i;
+			LODsMeshCallbackInfo[i].LODLevel = int(i);
 			LODsMeshCallbackInfo[i].window = this;
 			LODsMeshTarget[i] = DRAG_AND_DROP_MANAGER.addTarget(FE_MESH, dragAndDropLODMeshCallback, reinterpret_cast<void**>(&LODsMeshCallbackInfo[i]), "Drop to assing LOD" + std::to_string(i) + " mesh");
 		}
@@ -368,7 +413,9 @@ void editGameModelPopup::render()
 		if (changeLODMeshButton[0]->getWasClicked())
 		{
 			updatedLODMeshs[0] = tempModel->getLODMesh(0);
-			selectMeshPopUp::getInstance().show(&updatedLODMeshs[0]);
+
+			meshToModify = &updatedLODMeshs[0];
+			selectFEObjectPopUp::getInstance().show(FE_MESH, changeMeshCallBack, updatedLODMeshs[0]);
 		}
 
 		textSize = ImGui::CalcTextSize("Material component:");
@@ -383,7 +430,9 @@ void editGameModelPopup::render()
 		if (changeMaterialButton->getWasClicked())
 		{
 			updatedMaterial = tempModel->getMaterial();
-			selectMaterialPopUp::getInstance().show(&updatedMaterial);
+
+			materialToModify = &updatedMaterial;
+			selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeMaterialCallBack, updatedMaterial);
 		}
 	}
 	else if (currentMode == HAS_LOD_MODE)
@@ -406,7 +455,9 @@ void editGameModelPopup::render()
 				if (changeLODMeshButton[i]->getWasClicked())
 				{
 					updatedLODMeshs[i] = tempModel->getLODMesh(i);
-					selectMeshPopUp::getInstance().show(&updatedLODMeshs[i]);
+
+					meshToModify = &updatedLODMeshs[i];
+					selectFEObjectPopUp::getInstance().show(FE_MESH, changeMeshCallBack, updatedLODMeshs[i]);
 				}
 
 				addBillboard->setPosition(ImVec2(currentXPosition - addBillboard->getSize().x / 2, currentY + 210.0f + 128.0f / 2.0f + 10.0f / 2.0f));
@@ -460,7 +511,9 @@ void editGameModelPopup::render()
 			if (changeLODMeshButton[i]->getWasClicked())
 			{
 				updatedLODMeshs[i] = tempModel->getLODMesh(i);
-				selectMeshPopUp::getInstance().show(&updatedLODMeshs[i]);
+
+				meshToModify = &updatedLODMeshs[i];
+				selectFEObjectPopUp::getInstance().show(FE_MESH, changeMeshCallBack, updatedLODMeshs[i]);
 			}
 		}
 
@@ -483,8 +536,8 @@ void editGameModelPopup::render()
 					changeMaterialButton->render();
 					if (changeMaterialButton->getWasClicked())
 					{
-						updatedMaterial = tempModel->getMaterial();
-						selectMaterialPopUp::getInstance().show(&updatedMaterial);
+						materialToModify = &updatedMaterial;
+						selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeMaterialCallBack, updatedMaterial);
 					}
 
 					textSize = ImGui::CalcTextSize("Billboard Material component:");
@@ -502,7 +555,7 @@ void editGameModelPopup::render()
 						updatedBillboardMaterial = tempModel->getBillboardMaterial();
 
 						std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
-						std::vector<FEMaterial*> finalMaterialList;
+						std::vector<FEObject*> finalMaterialList;
 						for (size_t i = 0; i < tempMaterialList.size(); i++)
 						{
 							if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->shader->getObjectID() == "0800253C242B05321A332D09"/*"FEPBRShader"*/)
@@ -511,7 +564,8 @@ void editGameModelPopup::render()
 							}
 						}
 
-						selectMaterialPopUp::getInstance().showWithCustomList(&updatedBillboardMaterial, finalMaterialList);
+						billboardMaterialToModify = &updatedBillboardMaterial;
+						selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeBillboardMaterialCallBack, updatedBillboardMaterial, finalMaterialList);
 					}
 				}
 				else
@@ -528,8 +582,8 @@ void editGameModelPopup::render()
 					changeMaterialButton->render();
 					if (changeMaterialButton->getWasClicked())
 					{
-						updatedMaterial = tempModel->getMaterial();
-						selectMaterialPopUp::getInstance().show(&updatedMaterial);
+						materialToModify = &updatedMaterial;
+						selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeMaterialCallBack, updatedMaterial);
 					}
 				}
 
@@ -585,7 +639,7 @@ void editGameModelPopup::render()
 	applyButton->render();
 	if (applyButton->getWasClicked())
 	{
-		objToWorkWith->dirtyFlag = true;
+		objToWorkWith->setDirtyFlag(true);
 		objToWorkWith->mesh = tempModel->mesh;
 		objToWorkWith->setUsingLODlevels(tempModel->useLODlevels());
 
@@ -1628,7 +1682,8 @@ void editMaterialPopup::nodeSystemMainContextMenu()
 		if (ImGui::MenuItem("Texture node"))
 		{
 			textureForNewNode = RESOURCE_MANAGER.noTexture;
-			selectTexturePopUp::getInstance().show(&textureForNewNode, textureNodeCreationCallback, reinterpret_cast<void*>(&textureForNewNode));
+
+			selectFEObjectPopUp::getInstance().show(FE_TEXTURE, textureNodeCreationCallback);
 		}
 
 		if (ImGui::MenuItem("Float node"))
@@ -1665,15 +1720,18 @@ void editMaterialPopup::textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_E
 	}
 }
 
-void editMaterialPopup::textureNodeCreationCallback(void* texture)
+void editMaterialPopup::textureNodeCreationCallback(std::vector<FEObject*> selectionsResult)
 {
-	if (texture != nullptr && texture != RESOURCE_MANAGER.noTexture)
+	if (selectionsResult.size() != 1 && selectionsResult[0]->getType() != FE_TEXTURE)
+		return;
+
+	if (selectionsResult[0] != nullptr && selectionsResult[0] != RESOURCE_MANAGER.noTexture)
 	{
-		if (!objToWorkWith->isTextureInList(*reinterpret_cast<FETexture**>(texture)))
+		if (!objToWorkWith->isTextureInList(reinterpret_cast<FETexture*>(selectionsResult[0])))
 		{
-			if (objToWorkWith->addTexture(*reinterpret_cast<FETexture**>(texture)))
+			if (objToWorkWith->addTexture(reinterpret_cast<FETexture*>(selectionsResult[0])))
 			{
-				FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(*reinterpret_cast<FETexture**>(texture));
+				FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(reinterpret_cast<FETexture*>(selectionsResult[0]));
 
 				ImVec2 positionOnCanvas;
 				positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;

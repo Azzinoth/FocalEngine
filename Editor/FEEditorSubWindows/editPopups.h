@@ -16,7 +16,9 @@ class editGameModelPopup : public FEImGuiWindow
 	FETexture* tempPreview = nullptr;
 
 	FEMaterial* updatedMaterial;
+	static FEMaterial** materialToModify;
 	FEMaterial* updatedBillboardMaterial;
+	static FEMaterial** billboardMaterialToModify;
 
 	std::vector<FEMesh*> updatedLODMeshs;
 
@@ -63,6 +65,11 @@ class editGameModelPopup : public FEImGuiWindow
 
 	const float NO_LOD_WINDOW_WIDTH = 460.0f;
 	const float NO_LOD_WINDOW_HEIGHT = 520.0f;
+
+	static FEMesh** meshToModify;
+	static void changeMeshCallBack(std::vector<FEObject*> selectionsResult);
+	static void changeMaterialCallBack(std::vector<FEObject*> selectionsResult);
+	static void changeBillboardMaterialCallBack(std::vector<FEObject*> selectionsResult);
 public:
 	SINGLETON_PUBLIC_PART(editGameModelPopup)
 
@@ -100,7 +107,7 @@ class editMaterialPopup : public FEImGuiWindow
 
 	static FETexture* textureForNewNode;
 	static void nodeSystemMainContextMenu();
-	static void textureNodeCreationCallback(void* texture);
+	static void textureNodeCreationCallback(std::vector<FEObject*> selectionsResult);
 	static void textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventWithNode);
 	// ************** Node area END **************
 	

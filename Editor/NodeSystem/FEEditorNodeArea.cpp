@@ -374,7 +374,7 @@ ImVec2 FEEditorNodeArea::socketToPosition(FEEditorNodeSocket* socket)
 		{
 			if (socket->parent->input[i] == socket)
 			{
-				socketIndex = i;
+				socketIndex = int(i);
 				break;
 			}
 		}
@@ -385,7 +385,7 @@ ImVec2 FEEditorNodeArea::socketToPosition(FEEditorNodeSocket* socket)
 		{
 			if (socket->parent->output[i] == socket)
 			{
-				socketIndex = i;
+				socketIndex = int(i);
 				break;
 			}
 		}

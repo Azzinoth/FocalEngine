@@ -206,7 +206,7 @@ void FEEditorTextureCreatingNode::socketEvent(FEEditorNodeSocket* ownSocket, FEE
 		index++;
 	}
 
-	resultTexture = RESOURCE_MANAGER.rawDataToFETexture(resultPixels, textureWidth, textureHeight, -1);
+	resultTexture = RESOURCE_MANAGER.rawDataToFETexture(resultPixels, int(textureWidth), int(textureHeight), -1);
 
 	delete[] resultPixels;
 	delete[] redChannel;

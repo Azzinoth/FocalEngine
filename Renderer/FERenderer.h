@@ -7,6 +7,8 @@
 
 namespace FocalEngine
 {
+	#define FE_MAX_LINES 100000
+
 	class FEngine;
 #ifdef USE_DEFERRED_RENDERER
 	class FERenderer;
@@ -39,9 +41,9 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void render(FEBasicCamera* currentCamera);
-		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
+		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false, int componentIndex = -1);
 		void renderEntityForward(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
-		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap = false, bool reloadUniformBlocks = false);
+		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap = false, bool reloadUniformBlocks = false, int componentIndex = -1);
 		void renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera);
 		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
 
@@ -143,7 +145,6 @@ namespace FocalEngine
 		// Instanced lines
 		FEShader* instancedLineShader = nullptr;
 		std::vector<FELine> linesBuffer;
-		int maxLines = 100000;
 		int lineCounter = 0;
 		GLuint instancedLineVAO = 0;
 		GLenum instancedLineBuffer = 0;
@@ -163,7 +164,6 @@ namespace FocalEngine
 		FEShader* shaderToForce = nullptr;
 		void forceShader(FEShader* shader);
 
-#ifdef USE_GPU_CULLING
 		// *********** GPU Culling ***********
 		FEShader* FE_FrustumCullingShader = nullptr;
 
@@ -171,9 +171,8 @@ namespace FocalEngine
 		GLuint cullingLODCountersBuffer = 0;
 
 		void updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition);
-		void GPUCulling(FEEntityInstanced* entity);
+		void GPUCulling(FEEntityInstanced* entity, int subGameModel);
 		// *********** GPU Culling END ***********
-#endif // USE_GPU_CULLING
 	};
 }
 

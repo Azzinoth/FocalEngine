@@ -262,6 +262,17 @@ bool FEVirtualFileSystem::createFile(FEObject* data, std::string path)
 		return false;
 	}
 
+	if (data->getType() != FE_SHADER &&
+		data->getType() != FE_TEXTURE &&
+		data->getType() != FE_MESH &&
+		data->getType() != FE_MATERIAL &&
+		data->getType() != FE_GAMEMODEL &&
+		data->getType() != FE_PREFAB)
+	{
+		LOG.add("data type is not supported in function FEVirtualFileSystem::createFile.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
 	if (!isPathCorrect(path))
 		return false;
 
@@ -448,7 +459,7 @@ int FEVirtualFileSystem::subDirectoriesCount(std::string path)
 	if (directory == nullptr)
 		return 0;
 
-	return directory->subDirectories.size();
+	return int(directory->subDirectories.size());
 }
 
 void FEVirtualFileSystem::deleteDirectory(FEVFSDirectory* directory)

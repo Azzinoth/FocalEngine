@@ -48,34 +48,62 @@ namespace FocalEngine
 		unsigned int baseInstance;
 	};
 
+	class FEEntityInstanced;
+	class FEGameModelInstancedRenderer
+	{
+		friend FERenderer;
+		friend FEEntityInstanced;
+
+		std::vector<std::vector<glm::mat4>> instancedMatricesLOD;
+
+		std::vector<glm::vec3> instancePositions;
+		int* LODCounts;
+		
+		int cullingType = FE_CULLING_LODS;
+
+		// GPU Culling
+		GLenum instancedBuffer = 0;
+		GLenum* LODBuffers = nullptr;
+
+		GLuint sourceDataBuffer = 0;
+		GLuint positionsBuffer = 0;
+		GLuint AABBSizesBuffer = 0;
+		GLuint LODInfoBuffer = 0;
+
+		FEDrawElementsIndirectCommand* indirectDrawsInfo;
+		GLuint indirectDrawInfoBuffer = 0;
+
+		FEAABB allInstancesAABB;
+		FEPrefab* lastFramePrefab = nullptr;
+
+		FETerrain* terrainToSnap = nullptr;
+		float(FETerrain::* getTerrainY)(glm::vec2);
+
+		std::vector<glm::mat4> instancedMatrices;
+		std::vector<glm::mat4> transformedInstancedMatrices;
+		std::vector<float> instancedAABBSizes;
+	};
+
 	class FEEntityInstanced : public FEEntity
 	{
 		friend FERenderer;
 		friend FETerrain;
 		friend FEScene;
 	public:
-		FEEntityInstanced(FEGameModel* gameModel, std::string Name);
+		FEEntityInstanced(FEPrefab* prefab, std::string Name);
 		~FEEntityInstanced();
 
 		bool populate(FESpawnInfo spawnInfo);
-		float cullInstances(glm::vec3 cameraPosition, float** frustum, bool freezeCulling = false);
-		void render();
+		void render(int subGameModel);
 		void renderOnlyBillbords(glm::vec3 cameraPosition);
 
 		FEAABB getAABB() final;
 		void clear();
 
-		int getInstanceCount();
-
-		size_t instancedXYZCount = 0;
-		float* instancedX;
-		float* instancedY;
-		float* instancedZ;
-
-		int* LODCounts;
 		size_t instanceCount = 0;
 
-		int cullingType = FE_CULLING_LODS;
+		int getInstanceCount();
+
 		FETerrain* getSnappedToTerrain();
 		FESpawnInfo spawnInfo;
 
@@ -96,44 +124,27 @@ namespace FocalEngine
 		int getSpawnModificationCount();
 		std::vector<FEInstanceModification> getSpawnModifications();
 
-		std::vector<glm::mat4> instancedMatrices;
-		std::vector<glm::mat4> transformedInstancedMatrices;
-		std::vector<float> instancedAABBSizes;
+		std::vector<FEInstanceModification> modifications;
 	private:
+		std::vector<FEGameModelInstancedRenderer*> renderers;
+
 		bool selectionMode = false;
 	
-		std::vector<std::vector<glm::mat4>> instancedMatricesLOD;
-		std::vector<glm::mat4> instancedMatricesBillboard;
-
 		void addInstanceInternal(glm::mat4 instanceMatrix);
 		void addInstances(glm::mat4* instanceMatrix, size_t count);
 
+		void clearRenderers();
+		void initRender(int index);
+
 		void updateBuffers();
 		void updateMatrices();
-#ifdef USE_GPU_CULLING
-		GLenum instancedBuffer = 0;
-		GLenum* LODBuffers = nullptr;
-		int* testLODCount = nullptr;
-
-		GLuint sourceDataBuffer = 0;
-		GLuint positionsBuffer = 0;
-		GLuint AABBSizesBuffer = 0;
-		GLuint LODInfoBuffer = 0;
 
 		void initializeGPUCulling();
 
-		FEDrawElementsIndirectCommand* indirectDrawsInfo;
-		GLuint indirectDrawInfoBuffer = 0;
-#else
-		GLenum instancedBuffer = 0;
-#endif // USE_GPU_CULLING
-		FEAABB allInstancesAABB;
-		FEGameModel* lastFrameGameModel = nullptr;
+		void snapToTerrain(FETerrain* terrain, float(FETerrain::* getTerrainY)(glm::vec2));
+		void unSnapFromTerrain();
 
-		FETerrain* terrainToSnap = nullptr;
-		float(FETerrain::* getTerrainY)(glm::vec2);
-
-		std::vector<FEInstanceModification> modifications;
+		void checkDirtyFlag(int subGameModel);
 	};
 }
 

@@ -19,6 +19,8 @@ namespace FocalEngine
 		FETransformComponent(glm::mat4 matrix);
 		~FETransformComponent();
 
+		FETransformComponent combine(FETransformComponent& other);
+
 		glm::vec3 getPosition();
 		glm::vec3 getRotation();
 		glm::quat getQuaternion();
@@ -38,8 +40,8 @@ namespace FocalEngine
 		void forceSetTransformMatrix(glm::mat4 newValue);
 		void update();
 
-		bool isDirty();
-		void setDirty(bool isDirty);
+		bool getDirtyFlag();
+		void setDirtyFlag(bool isDirty);
 
 		bool uniformScaling = true;
 	private:

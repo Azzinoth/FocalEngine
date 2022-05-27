@@ -6,14 +6,21 @@ using namespace FEGizmoManager;
 using namespace FocalEngine;
 
 #ifdef FE_WIN_32
-const COMDLG_FILTERSPEC meshLoadFilter[] =
+const COMDLG_FILTERSPEC OBJLoadFilter[] =
 {
-	{ L"Wavefront OBJ files (*.obj)", L"*.obj" },
+	{ L"Wavefront OBJ files (*.obj)", L"*.obj" }
 };
 
 const COMDLG_FILTERSPEC textureLoadFilter[] =
 {
-	{ L"PNG files (*.png)", L"*.png" },
+	{ L"Image files (*.png; *.jpg; *.bmp)", L"*.png;*.jpg;*.bmp" }
+};
+
+const COMDLG_FILTERSPEC allImportLoadFilter[] =
+{
+	{ L"All files (*.png; *.jpg; *.bmp; *.obj)", L"*.png;*.jpg;*.bmp;*.obj" },
+	{ L"Image files (*.png; *.jpg; *.bmp)", L"*.png;*.jpg;*.bmp" },
+	{ L"Wavefront OBJ files (*.obj)", L"*.obj" }
 };
 #endif
 
@@ -112,10 +119,13 @@ private:
 
 	ImGuiImageButton* layerBrushButton = nullptr;
 
-	static bool entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer);
+	static bool entityChangePrefabTargetCallBack(FEObject* object, void** entityPointer);
 	static bool terrainChangeMaterialTargetCallBack(FEObject* object, void** layerIndex);
 
-	DragAndDropTarget* entityChangeGameModelTarget = nullptr;
+	static FEEntity* entityToModify;
+	static void changePrefabOfEntityCallBack(std::vector<FEObject*> selectionsResult);
+
+	DragAndDropTarget* entityChangePrefabTarget = nullptr;
 	std::vector<int> terrainChangeMaterialIndecies;
 	std::vector<DragAndDropTarget*> terrainChangeLayerMaterialTargets;
 
@@ -133,9 +143,11 @@ private:
 	FETexture* shaderIcon = nullptr;
 	FETexture* VFSBackIcon = nullptr;
 
+	FETexture* textureContentBrowserIcon = nullptr;
 	FETexture* meshContentBrowserIcon = nullptr;
 	FETexture* materialContentBrowserIcon = nullptr;
 	FETexture* gameModelContentBrowserIcon = nullptr;
+	FETexture* prefabContentBrowserIcon = nullptr;
 
 	void displayContentBrowser();
 	bool contentBrowserVisible = true;
@@ -149,6 +161,15 @@ private:
 	std::vector<FEObject*> allResourcesContentBrowser;
 	std::vector<FEObject*> filteredResourcesContentBrowser;
 	char filterForResourcesContentBrowser[512];
+	std::string objTypeFilterForResourcesContentBrowser;
+	void updateFilterForResourcesContentBrowser();
+	FETexture* allContentBrowserIcon = nullptr;
+	ImGuiImageButton* filterAllTypesButton = nullptr;
+	ImGuiImageButton* filterTextureTypeButton = nullptr;
+	ImGuiImageButton* filterMeshTypeButton = nullptr;
+	ImGuiImageButton* filterMaterialTypeButton = nullptr;
+	ImGuiImageButton* filterGameModelTypeButton = nullptr;
+	ImGuiImageButton* filterPrefabTypeButton = nullptr;
 
 	bool isOpenContextMenuInContentBrowser = false;
 	bool isOpenContextMenuInSceneEntities = false;

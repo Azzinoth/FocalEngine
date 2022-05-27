@@ -142,7 +142,7 @@ void FEEditorSelectedObject::determineEntityUnderMouse(double mouseX, double mou
 					{
 						if(instancedEntity->instancedAABB[j].rayIntersect(ENGINE.getCamera()->getPosition(), mouseRayVector, dis))
 						{
-							instancedSubObjectsInfo[instancedEntity].push_back(j);
+							instancedSubObjectsInfo[instancedEntity].push_back(int(j));
 						}
 					}
 				}
@@ -199,15 +199,19 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 			if (!potentiallySelectedEntity->isVisible())
 				continue;
 
-			FEMaterial* regularMaterial = potentiallySelectedEntity->gameModel->material;
-			potentiallySelectedEntity->gameModel->material = pixelAccurateSelectionMaterial;
+			for (int j = 0; j < potentiallySelectedEntity->prefab->componentsCount(); j++)
+			{
+				FEMaterial* regularMaterial = potentiallySelectedEntity->prefab->getComponent(j)->gameModel->material;
+				potentiallySelectedEntity->prefab->getComponent(j)->gameModel->material = pixelAccurateSelectionMaterial;
+				pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+				pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-			pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
-			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
-			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
-			RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera());
-			potentiallySelectedEntity->gameModel->material = regularMaterial;
+				RENDERER.renderEntity(potentiallySelectedEntity, ENGINE.getCamera(), false, j);
+
+				potentiallySelectedEntity->prefab->getComponent(j)->gameModel->material = regularMaterial;
+			}
 			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
 			pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
 		}
@@ -219,26 +223,29 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 			if (instancedSubObjectsInfo.find(potentiallySelectedEntityInstanced) == instancedSubObjectsInfo.end())
 			{
-				FEMaterial* regularMaterial = potentiallySelectedEntityInstanced->gameModel->material;
-				potentiallySelectedEntityInstanced->gameModel->material = pixelAccurateSelectionMaterial;
+				for (int j = 0; j < potentiallySelectedEntityInstanced->prefab->componentsCount(); j++)
+				{
+					FEMaterial* regularMaterial = potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->material;
+					potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->material = pixelAccurateSelectionMaterial;
 
-				pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
-				pixelAccurateSelectionMaterial->clearAllTexturesInfo();
-				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+					pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+					pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+					pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+					pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-				pixelAccurateSelectionMaterial->shader = FEPixelAccurateInstancedSelection;
-				FEMaterial* regularBillboardMaterial = potentiallySelectedEntityInstanced->gameModel->getBillboardMaterial();
-				potentiallySelectedEntityInstanced->gameModel->setBillboardMaterial(pixelAccurateSelectionMaterial);
+					pixelAccurateSelectionMaterial->shader = FEPixelAccurateInstancedSelection;
+					FEMaterial* regularBillboardMaterials = potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->getBillboardMaterial();
+					potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->setBillboardMaterial(pixelAccurateSelectionMaterial);
 
-				RENDERER.renderEntityInstanced(potentiallySelectedEntityInstanced, ENGINE.getCamera(), nullptr);
+					RENDERER.renderEntityInstanced(potentiallySelectedEntityInstanced, ENGINE.getCamera(), nullptr, false, false, j);
 
-				pixelAccurateSelectionMaterial->shader = FEPixelAccurateSelection;
-				potentiallySelectedEntityInstanced->gameModel->setBillboardMaterial(regularBillboardMaterial);
+					pixelAccurateSelectionMaterial->shader = FEPixelAccurateSelection;
+					potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->setBillboardMaterial(regularBillboardMaterials);
+					potentiallySelectedEntityInstanced->prefab->getComponent(j)->gameModel->material = regularMaterial;
 
-				potentiallySelectedEntityInstanced->gameModel->material = regularMaterial;
-				pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
-				pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
+					pixelAccurateSelectionMaterial->setAlbedoMap(nullptr);
+					pixelAccurateSelectionMaterial->setAlbedoMap(nullptr, 1);
+				}
 			}
 		}
 		else if (SELECTED.objectsUnderMouse[i]->getType() == FE_TERRAIN)
@@ -258,7 +265,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 		}
 	}
 
-	int lastColorShiftIndex = SELECTED.objectsUnderMouse.size() - 1;
+	int lastColorShiftIndex = int(SELECTED.objectsUnderMouse.size() - 1);
 
 	auto it = instancedSubObjectsInfo.begin();
 	while (it != instancedSubObjectsInfo.end())
@@ -270,21 +277,23 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 			int g = ((lastColorShiftIndex + 1) >> 8) & 255;
 			int b = ((lastColorShiftIndex + 1) >> 16) & 255;
 
-			static FEEntity* dummyEntity = new FEEntity(it->first->gameModel, "dummyEntity");
-			dummyEntity->gameModel = it->first->gameModel;
-			dummyEntity->transform.forceSetTransformMatrix(it->first->getTransformedInstancedMatrix(it->second[j]));
+			static FEEntity* dummyEntity = new FEEntity(it->first->prefab, "dummyEntity");
+			dummyEntity->prefab = it->first->prefab;
+			dummyEntity->transform = FETransformComponent(it->first->getTransformedInstancedMatrix(it->second[j]));
 
-			FEMaterial* regularMaterial = it->first->gameModel->material;
-			dummyEntity->gameModel->material = pixelAccurateSelectionMaterial;
+			for (int k = 0; k < dummyEntity->prefab->componentsCount(); k++)
+			{
+				FEMaterial* regularMaterial = it->first->prefab->getComponent(k)->gameModel->material;
+				dummyEntity->prefab->getComponent(k)->gameModel->material = pixelAccurateSelectionMaterial;
+				pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
+				pixelAccurateSelectionMaterial->clearAllTexturesInfo();
+				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+				pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-			pixelAccurateSelectionMaterial->setBaseColor(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
-			pixelAccurateSelectionMaterial->clearAllTexturesInfo();
-			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-			pixelAccurateSelectionMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
-
-			RENDERER.renderEntity(dummyEntity, ENGINE.getCamera());
-
-			it->first->gameModel->material = regularMaterial;
+				RENDERER.renderEntity(dummyEntity, ENGINE.getCamera(), false, k);
+			
+				it->first->prefab->getComponent(k)->gameModel->material = regularMaterial;
+			}
 		}
 		it++;
 	}
@@ -307,7 +316,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 
 		if (colorIndex != -1 && colorIndex >= (int)SELECTED.objectsUnderMouse.size())
 		{
-			colorIndex -= SELECTED.objectsUnderMouse.size();
+			colorIndex -= int(SELECTED.objectsUnderMouse.size());
 
 			FEEntityInstanced* selectedSubObjectInInstance = nullptr;
 			auto it = instancedSubObjectsInfo.begin();
@@ -320,7 +329,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 					break;
 				}
 
-				colorIndex -= it->second.size();
+				colorIndex -= int(it->second.size());
 				it++;
 			}
 
@@ -330,7 +339,7 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 				{
 					if (SELECTED.objectsUnderMouse[i]->getObjectID() == selectedSubObjectInInstance->getObjectID())
 					{
-						return i;
+						return int(i);
 					}
 				}
 			}
@@ -363,6 +372,7 @@ void FEEditorSelectedObject::onCameraUpdate()
 	HALO_SELECTION_EFFECT.haloObjectsFB->bind();
 	HALO_SELECTION_EFFECT.haloMaterial->clearAllTexturesInfo();
 	HALO_SELECTION_EFFECT.haloMaterial->setBaseColor(glm::vec3(1.0f, 0.25f, 0.0f));
+	FE_GL_ERROR(glViewport(0, 0, RENDERER.sceneToTextureFB->getWidth(), RENDERER.sceneToTextureFB->getHeight()));
 	FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT));
 
@@ -378,14 +388,18 @@ void FEEditorSelectedObject::onCameraUpdate()
 	{
 		FEEntity* selectedEntity = SCENE.getEntity(container->getObjectID());
 
-		FEMaterial* regularMaterial = selectedEntity->gameModel->material;
-		selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
-		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-		HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+		for (int i = 0; i < selectedEntity->prefab->componentsCount(); i++)
+		{
+			FEMaterial* regularMaterial = selectedEntity->prefab->getComponent(i)->gameModel->material;
 
-		RENDERER.renderEntity(selectedEntity, ENGINE.getCamera());
-
-		selectedEntity->gameModel->material = regularMaterial;
+			selectedEntity->prefab->getComponent(i)->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+			
+			RENDERER.renderEntity(selectedEntity, ENGINE.getCamera(), false, i);
+			
+			selectedEntity->prefab->getComponent(i)->gameModel->material = regularMaterial;
+		}
 	}
 	else if (container->getType() == FE_ENTITY_INSTANCED)
 	{
@@ -393,40 +407,45 @@ void FEEditorSelectedObject::onCameraUpdate()
 
 		if (instancedSubObjectIndexSelected != -1)
 		{
-			static FEEntity* dummyEntity = new FEEntity(selectedEntity->gameModel, "dummyEntity");
-			dummyEntity->gameModel = selectedEntity->gameModel;
-			dummyEntity->transform.forceSetTransformMatrix(selectedEntity->getTransformedInstancedMatrix(instancedSubObjectIndexSelected));
+			static FEEntity* dummyEntity = new FEEntity(selectedEntity->prefab, "dummyEntity");
+			dummyEntity->prefab = selectedEntity->prefab;
+			dummyEntity->transform = FETransformComponent(selectedEntity->getTransformedInstancedMatrix(instancedSubObjectIndexSelected));
 
-			FEMaterial* regularMaterial = selectedEntity->gameModel->material;
-			dummyEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+			for (int i = 0; i < dummyEntity->prefab->componentsCount(); i++)
+			{
+				FEMaterial* regularMaterial = dummyEntity->prefab->getComponent(i)->gameModel->material;
 
-			HALO_SELECTION_EFFECT.haloMaterial->setBaseColor(glm::vec3(0.61f, 0.86f, 1.0f));
-			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+				dummyEntity->prefab->getComponent(i)->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
 
-			RENDERER.renderEntity(dummyEntity, ENGINE.getCamera());
+				HALO_SELECTION_EFFECT.haloMaterial->setBaseColor(glm::vec3(0.61f, 0.86f, 1.0f));
+				HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+				HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-			selectedEntity->gameModel->material = regularMaterial;
+				RENDERER.renderEntity(dummyEntity, ENGINE.getCamera(), false, i);
+
+				selectedEntity->prefab->getComponent(i)->gameModel->material = regularMaterial;
+			}
 		}
 		else
 		{
-			FEMaterial* regularMaterial = selectedEntity->gameModel->material;
-			selectedEntity->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
-			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
-			HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
+			for (int i = 0; i < selectedEntity->prefab->componentsCount(); i++)
+			{
+				FEMaterial* regularMaterial = selectedEntity->prefab->getComponent(i)->gameModel->material;
+				selectedEntity->prefab->getComponent(i)->gameModel->material = HALO_SELECTION_EFFECT.haloMaterial;
+				HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap());
+				HALO_SELECTION_EFFECT.haloMaterial->setAlbedoMap(regularMaterial->getAlbedoMap(1), 1);
 
-			HALO_SELECTION_EFFECT.haloMaterial->shader = HALO_SELECTION_EFFECT.HaloDrawInstancedObjectShader;
-			FEMaterial* regularBillboardMaterial = selectedEntity->gameModel->getBillboardMaterial();
-			selectedEntity->gameModel->setBillboardMaterial(HALO_SELECTION_EFFECT.haloMaterial);
+				HALO_SELECTION_EFFECT.haloMaterial->shader = HALO_SELECTION_EFFECT.HaloDrawInstancedObjectShader;
+				FEMaterial* regularBillboardMaterial = selectedEntity->prefab->getComponent(i)->gameModel->getBillboardMaterial();
+				selectedEntity->prefab->getComponent(i)->gameModel->setBillboardMaterial(HALO_SELECTION_EFFECT.haloMaterial);
 
-			RENDERER.renderEntityInstanced(selectedEntity, ENGINE.getCamera(), nullptr);
+				RENDERER.renderEntityInstanced(selectedEntity, ENGINE.getCamera(), nullptr, false, false, i);
 
-			HALO_SELECTION_EFFECT.haloMaterial->shader = HALO_SELECTION_EFFECT.HaloDrawObjectShader;
-			selectedEntity->gameModel->setBillboardMaterial(regularBillboardMaterial);
-
-			selectedEntity->gameModel->material = regularMaterial;
+				HALO_SELECTION_EFFECT.haloMaterial->shader = HALO_SELECTION_EFFECT.HaloDrawObjectShader;
+				selectedEntity->prefab->getComponent(i)->gameModel->setBillboardMaterial(regularBillboardMaterial);
+				selectedEntity->prefab->getComponent(i)->gameModel->material = regularMaterial;
+			}
 		}
-		
 	}
 	else if (container->getType() == FE_TERRAIN)
 	{

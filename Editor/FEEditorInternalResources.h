@@ -23,6 +23,12 @@ public:
 template <class RESOURCE>
 void FEEditorInternalResources::addResourceToInternalEditorList(RESOURCE* resource)
 {
+	if (resource == nullptr)
+	{
+		LOG.add("resource is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return;
+	}
+
 	if (resource->getType() == FE_ENTITY)
 	{
 		internalEditorEntities[resource->getNameHash()] = reinterpret_cast<FEEntity*>(resource);

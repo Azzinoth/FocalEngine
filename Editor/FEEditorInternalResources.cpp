@@ -7,12 +7,12 @@ FEEditorInternalResources::~FEEditorInternalResources() {}
 
 bool FEEditorInternalResources::isInInternalEditorList(FEMesh* mesh)
 {
-	return !(internalEditorMesh.find(std::hash<std::string>{}(mesh->getName())) == internalEditorMesh.end());
+	return !(internalEditorMesh.find(int(std::hash<std::string>{}(mesh->getName()))) == internalEditorMesh.end());
 }
 
 bool FEEditorInternalResources::isInInternalEditorList(FEGameModel* gameModel)
 {
-	return !(internalEditorGameModels.find(std::hash<std::string>{}(gameModel->getName())) == internalEditorGameModels.end());
+	return !(internalEditorGameModels.find(int(std::hash<std::string>{}(gameModel->getName()))) == internalEditorGameModels.end());
 }
 
 bool FEEditorInternalResources::isInInternalEditorList(FEEntity* entity)

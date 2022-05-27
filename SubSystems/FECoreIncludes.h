@@ -1,19 +1,9 @@
 #pragma once
 #pragma warning (disable: 4752)     // found Intel(R) Advanced Vector Extensions; consider using / arch:AVX	FocalEnginePrivate
+#pragma warning (disable: 4334)     // '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?) in lodepng.cpp
 
 #include "FETime.h"
-
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_opengl3.h"
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui/imgui_internal.h"
-
-#include "GL/glew.h"
-#include "GL/wglew.h"
-
-#include <GLFW/glfw3.h>
-#include <GL/GL.h>
+#include "FEBasicApplication/FEBasicApplication.h"
 
 #include <iostream>
 #include <fstream>
@@ -116,7 +106,6 @@ static double FENextPowerOfTwo(double currentNumber)
 
 #define USE_DEFERRED_RENDERER
 //#define USE_SSAO
-#define USE_GPU_CULLING
 
 #ifdef USE_DEFERRED_RENDERER
 	#define FE_CLEAR_COLOR glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f)

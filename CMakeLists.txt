@@ -1,10 +1,5 @@
 cmake_minimum_required(VERSION 3.1)
 
-# set default build to WIN32/X86
-set(CMAKE_VS_PLATFORM_NAME_DEFAULT Win32)
-set(CMAKE_GENERATOR_PLATFORM Win32)
-set(CMAKE_GENERATOR_TOOLSET host=x86)
-
 set(BUILD_TYPE "Debug and Release" CACHE STRING "Choose Build type")
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CONFIGURATION_TYPES Debug Release)
@@ -15,10 +10,8 @@ add_definitions(-D_UNICODE)
 # set the project name
 project(FocalEngine LANGUAGES CXX)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
-# set different compiler flags depending on build type
-set(CMAKE_CXX_FLAGS_DEBUG "/MP /ZI /W3 /Od /MDd /JMC /sdl /FC /D WIN32 /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D _WINDOWS /D _DEBUG /D FE_DEBUG_ENABLED")
-set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF /D WIN32 /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D NDEBUG /D _WINDOWS")
+set(CMAKE_CXX_FLAGS_DEBUG "/MP /ZI /W3 /Od /MDd /JMC /sdl /FC /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D WIN32 /D _WINDOWS /D _DEBUG /D FE_DEBUG_ENABLED")
+set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D NDEBUG /D WIN32 /D _WINDOWS")
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -177,6 +170,8 @@ file(GLOB FEEditorSubWindows_SRC
 	"Editor/FEEditorSubWindows/shaderEditorWindow.h"
 	"Editor/FEEditorSubWindows/resizeTexturePopup.cpp"
 	"Editor/FEEditorSubWindows/resizeTexturePopup.h"
+	"Editor/FEEditorSubWindows/prefabEditorWindow.cpp"
+	"Editor/FEEditorSubWindows/prefabEditorWindow.h"
 )
 
 file(GLOB Editor_Materials_SRC
@@ -221,6 +216,8 @@ file(GLOB Renderer_SRC
 	"Renderer/FEEntity.h"
 	"Renderer/FEEntityInstanced.cpp"
 	"Renderer/FEEntityInstanced.h"
+	"Renderer/FEPrefab.cpp"
+	"Renderer/FEPrefab.h"
 	"Renderer/FEFramebuffer.cpp"
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
@@ -250,6 +247,8 @@ file(GLOB Renderer_SRC
 file(GLOB ResourceManager_SRC
 	"ResourceManager/FEObjLoader.cpp"
 	"ResourceManager/FEObjLoader.h"
+	"ResourceManager/FEglTFLoader.cpp"
+	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
 	"ResourceManager/FEResourceManager.h"
 )
@@ -264,8 +263,6 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FEFileSystem.h"
 	"SubSystems/FEGeometricTools.cpp"
 	"SubSystems/FEGeometricTools.h"
-	"SubSystems/FEInput.cpp"
-	"SubSystems/FEInput.h"
 	"SubSystems/FEJobManager.cpp"
 	"SubSystems/FEJobManager.h"
 	"SubSystems/FELog.cpp"
@@ -280,16 +277,21 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FETransformComponent.h"
 )
 
+file(GLOB BasicApplicationSubSystem_SRC
+	"SubSystems/FEBasicApplication/FEBasicApplication.cpp"
+	"SubSystems/FEBasicApplication/FEBasicApplication.h"
+)
+
 # *************** THIRD_PARTY ***************
 
 file(GLOB imgui_SRC
-	"ThirdParty/imgui/imgui.cpp"
-	"ThirdParty/imgui/imgui_demo.cpp"
-	"ThirdParty/imgui/imgui_draw.cpp"
-	"ThirdParty/imgui/imgui_impl_glfw.cpp"
-	"ThirdParty/imgui/imgui_impl_opengl3.cpp"
-	"ThirdParty/imgui/imgui_tables.cpp"
-	"ThirdParty/imgui/imgui_widgets.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_demo.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_draw.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_impl_glfw.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_impl_opengl3.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_tables.cpp"
+	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_widgets.cpp"
 )
 
 file(GLOB jsoncpp_SRC
@@ -309,14 +311,18 @@ file(GLOB textEditor_SRC
 	"ThirdParty/textEditor/TextEditor.cpp"
 )
 
+file(GLOB stb_image_SRC
+	"ThirdParty/stb_image/stb_image.h"
+)
+
 file(GLOB source_SRC
 	"FEngine.cpp"
 	"FEngine.h"
 	"main.cpp"
 )
 
-link_directories("ThirdParty/glew2/lib")
-link_directories("ThirdParty/GLFW/lib")
+link_directories("SubSystems/FEBasicApplication/ThirdParty/glew2/lib/$(PlatformTarget)")
+link_directories("SubSystems/FEBasicApplication/ThirdParty/GLFW/lib/$(PlatformTarget)")
 
 # add the executable
 add_executable(FocalEngineEditor WIN32
@@ -352,11 +358,13 @@ add_executable(FocalEngineEditor WIN32
 								 ${ResourceManager_SRC}
 								 # *************** SUB_SYSTEM ***************
 								 ${SubSystems_SRC}
+								 ${BasicApplicationSubSystem_SRC}
 								 # *************** THIRD_PARTY ***************
 								 ${imgui_SRC}
 								 ${jsoncpp_SRC}
 								 ${lodepng_SRC}
 								 ${textEditor_SRC}
+								 ${stb_image_SRC}
 )
 
 target_link_libraries(FocalEngineEditor glew32.lib)
@@ -396,34 +404,19 @@ source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
+source_group("Source Files/SubSystems/BasicApplication" FILES ${BasicApplicationSubSystem_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/imgui" FILES ${imgui_SRC})
 source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/textEditor" FILES ${textEditor_SRC})
+source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
 
 # set FocalEngineEditor as the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngineEditor)
 
 include_directories(
-	"ThirdParty/glew2/include"
+	"SubSystems/FEBasicApplication/ThirdParty/glew2/include"
+	"SubSystems/FEBasicApplication/ThirdParty/"
 	"ThirdParty/"
 )
-
-#MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
-
-#string(REPLACE "/W3" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-#string(REPLACE "/GR" "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
-
-#MESSAGE( STATUS "CMAKE_CXX_FLAGS: " ${CMAKE_CXX_FLAGS} )
-
-#add_definitions(-DFPM_DEFAULT)
-#add_definitions(-DWK_GLES2)
-#add_definitions(-DKTX_OPENGL_ES2=1)
-#add_definitions(-DNOMINMAX)
-#add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-#add_definitions(-DFT2_BUILD_LIBRARY)
-#add_definitions(-D_GLFW_WIN32)
-#add_definitions(-DKTX_OPENGL_ES3__)
-#add_definitions(-DWIN32)
-#add_definitions(-D_WIN32)

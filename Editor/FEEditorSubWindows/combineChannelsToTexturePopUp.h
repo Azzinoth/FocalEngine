@@ -24,7 +24,7 @@ class CombineChannelsToTexturePopUp : public FEImGuiWindow
 
 	static FETexture* textureForNewNode;
 	static void nodeSystemMainContextMenu();
-	static void textureNodeCreationCallback(void* texture);
+	static void textureNodeCreationCallback(std::vector<FEObject*> selectionsResult);
 
 	static ImVec2 windowPosition;
 	static ImVec2 nodeGridRelativePosition;

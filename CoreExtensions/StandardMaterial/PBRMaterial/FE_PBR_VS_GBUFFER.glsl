@@ -8,6 +8,8 @@
 @ViewMatrix@
 @ProjectionMatrix@
 
+uniform	float FETiling;
+
 #define MAX_LIGHTS 10
 out VS_OUT
 {
@@ -21,7 +23,7 @@ out VS_OUT
 
 void main(void)
 {
-	vs_out.UV = FETexCoord;
+	vs_out.UV = FETexCoord * FETiling;
 
 	vec3 T = normalize(vec3(FEWorldMatrix * vec4(FETangent, 0.0)));
 	vec3 N = normalize(vec3(FEWorldMatrix * vec4(FENormal, 0.0)));

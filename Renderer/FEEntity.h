@@ -3,10 +3,8 @@
 #ifndef FEENTITY_H
 #define FEENTITY_H
 
-#include "../SubSystems/FETransformComponent.h"
-#include "FEMesh.h"
 #include "FEFramebuffer.h"
-#include "FEGameModel.h"
+#include "FEPrefab.h"
 
 namespace FocalEngine
 {
@@ -18,10 +16,10 @@ namespace FocalEngine
 		friend FEOctree;
 		FEEntity();
 	public:
-		FEEntity(FEGameModel* gameModel, std::string Name);
+		FEEntity(FEPrefab* Prefab, std::string Name);
 		~FEEntity();
 
-		FEGameModel* gameModel = nullptr;
+		FEPrefab* prefab = nullptr;
 		FETransformComponent transform;
 
 		virtual void render();
@@ -30,7 +28,6 @@ namespace FocalEngine
 		void setVisibility(bool isVisible);
 
 		virtual FEAABB getAABB();
-		FEAABB getPureAABB();
 
 		bool isCastShadows();
 		void setCastShadows(bool isCastShadows);

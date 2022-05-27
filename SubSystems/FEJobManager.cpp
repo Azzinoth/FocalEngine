@@ -83,7 +83,7 @@ int textureLoadJob::getReadyJobCount()
 	if (!loadingDone.load())
 		return 0;
 
-	return texturesData.size();
+	return int(texturesData.size());
 }
 
 std::pair<char**, void*> textureLoadJob::getJobByIndex(size_t index)

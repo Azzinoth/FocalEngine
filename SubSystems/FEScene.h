@@ -15,12 +15,14 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEScene)
 
 		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
+		FEEntity* addEntity(FEPrefab* prefab, std::string Name = "", std::string forceObjectID = "");
 		bool addEntity(FEEntity* newEntity);
 		FEEntity* getEntity(std::string ID);
 		std::vector<FEEntity*> getEntityByName(std::string Name);
 		std::vector<std::string> getEntityList();
 		void deleteEntity(std::string ID);
 
+		FEEntityInstanced* addEntityInstanced(FEPrefab* prefab, std::string Name = "", std::string forceObjectID = "");
 		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
 		bool addEntityInstanced(FEEntityInstanced* newEntityInstanced);
 		FEEntityInstanced* getEntityInstanced(std::string ID);
@@ -38,10 +40,9 @@ namespace FocalEngine
 		void deleteTerrain(std::string ID);
 
 		void prepareForGameModelDeletion(FEGameModel* gameModel);
+		void prepareForPrefabDeletion(FEPrefab* prefab);
 
 		void clear();
-
-		//FEOctree* testTree;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 

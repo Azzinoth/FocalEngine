@@ -70,7 +70,7 @@ void FEFramebuffer::setColorAttachment(FETexture* newTexture, size_t index)
 	bool wasBind = binded;
 	if (!wasBind) bind();
 	colorAttachments[index] = newTexture;
-	attachTexture(GL_COLOR_ATTACHMENT0 + index, GL_TEXTURE_2D, newTexture);
+	attachTexture(GL_COLOR_ATTACHMENT0 + int(index), GL_TEXTURE_2D, newTexture);
 	if (!wasBind) unBind();
 
 	newTexture->addToOnDeleteCallBackList(getObjectID());

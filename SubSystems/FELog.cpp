@@ -43,15 +43,15 @@ void FELOG::add(std::string text, LOG_SEVERITY severity, LOG_CHANNEL channel)
 	tempItem.channel = channel;
 	tempItem.timeStamp = (long)GetTickCount64();
 
-	auto logItem = channels[channel].find(std::hash<LogItem>()(tempItem));
+	auto logItem = channels[channel].find(int(std::hash<LogItem>()(tempItem)));
 	if (logItem == channels[channel].end())
 	{
-		channels[channel][std::hash<LogItem>()(tempItem)] = tempItem;
+		channels[channel][int(std::hash<LogItem>()(tempItem))] = tempItem;
 		return;
 	}
 
-	if (channels[channel][std::hash<LogItem>()(tempItem)].count < 1000)
-		channels[channel][std::hash<LogItem>()(tempItem)].count++;
+	if (channels[channel][int(std::hash<LogItem>()(tempItem))].count < 1000)
+		channels[channel][int(std::hash<LogItem>()(tempItem))].count++;
 }
 
 std::vector<LogItem> FELOG::getLogItems(LOG_CHANNEL channel)

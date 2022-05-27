@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Renderer\FERenderer.h"
-#include "SubSystems\FEInput.h"
+#include "SubSystems\FELog.h"
 
 namespace FocalEngine
 {
@@ -29,14 +29,14 @@ namespace FocalEngine
 		void setCamera(FEBasicCamera* newCamera);
 		FEBasicCamera* getCamera();
 
-		void setWindowCaption(const char* text);
-		void setRenderTargetResizeCallback(void(*func)(int, int));
-		void setWindowResizeCallback(void(*func)(int, int));
-		void setWindowCloseCallback(void(*func)());
-		void setKeyCallback(void(*func)(int, int, int, int));
-		void setMouseButtonCallback(void(*func)(int, int, int));
-		void setMouseMoveCallback(void(*func)(double, double));
-		void setDropCallback(void(*func)(int, const char**));
+		void setWindowCaption(std::string newCaption);
+		void addRenderTargetResizeCallback(void(*func)(int, int));
+		void addWindowResizeCallback(void(*func)(int, int));
+		void addWindowCloseCallback(void(*func)());
+		void addKeyCallback(void(*func)(int, int, int, int));
+		void addMouseButtonCallback(void(*func)(int, int, int));
+		void addMouseMoveCallback(void(*func)(double, double));
+		void addDropCallback(void(*func)(int, const char**));
 
 		int getWindowWidth();
 		int getWindowHeight();
@@ -83,26 +83,23 @@ namespace FocalEngine
 		static int renderTargetYShift;
 		static void renderTargetResize();
 
-		GLFWwindow* window;
-		static void windowCloseCallback(GLFWwindow* window);
-		void(*clientWindowCloseCallbackImpl)() = nullptr;
+		std::vector<void(*)(int, int)> clientRenderTargetResizeCallbacks;
+		//void(*clientRenderTargetResizeCallbackImpl)(int, int) = nullptr;
 
-		void(*clientRenderTargetResizeCallbackImpl)(int, int) = nullptr;
-
-		static void windowResizeCallback(GLFWwindow* window, int width, int height);
-		void(*clientWindowResizeCallbackImpl)(int, int) = nullptr;
+		static void windowResizeCallback(int width, int height);
+		std::vector<void(*)(int, int)> clientWindowResizeCallbacks;
 
 		static void mouseButtonCallback(int button, int action, int mods);
-		void(*clientMouseButtonCallbackImpl)(int, int, int) = nullptr;
+		std::vector<void(*)(int, int, int)> clientMouseButtonCallbacks;
 
 		static void mouseMoveCallback(double xpos, double ypos);
-		void(*clientMouseMoveCallbackImpl)(double, double) = nullptr;
+		std::vector<void(*)(double, double)> clientMouseMoveCallbacks;
 
 		static void keyButtonCallback(int key, int scancode, int action, int mods);
-		void(*clientKeyButtonCallbackImpl)(int, int, int, int) = nullptr;
+		std::vector<void(*)(int, int, int, int)> clientKeyButtonCallbacks;
 
 		static void dropCallback(int count, const char** paths);
-		void(*clientDropCallbackImpl)(int, const char**) = nullptr;
+		std::vector<void(*)(int, const char**)> clientDropCallbacks;
 
 		FEBasicCamera* currentCamera = nullptr;
 		void setImguiStyle();

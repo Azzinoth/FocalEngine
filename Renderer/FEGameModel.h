@@ -22,9 +22,12 @@ namespace FocalEngine
 		FEMaterial* material = nullptr;
 	};
 
+	class FEPrefab;
+
 	class FEGameModel : public FEObject
 	{
 		friend FERenderer;
+		friend FEPrefab;
 		friend FEEntityInstanced;
 	public:
 		FEGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name);

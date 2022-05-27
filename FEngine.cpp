@@ -14,21 +14,16 @@ int FEngine::renderTargetYShift = 0;
 
 FEngine::FEngine()
 {
-	FEInput::getInstance().mouseButtonCallbackImpl = &FEngine::mouseButtonCallback;
-	FEInput::getInstance().mouseMoveCallbackImpl = &FEngine::mouseMoveCallback;
-	FEInput::getInstance().keyButtonCallbackImpl = &FEngine::keyButtonCallback;
-	FEInput::getInstance().dropCallbackImpl = &FEngine::dropCallback;
+
 }
 
 FEngine::~FEngine()
 {
-	glfwDestroyWindow(window);
-	glfwTerminate();
 }
 
 bool FEngine::isWindowOpened()
 {
-	return !glfwWindowShouldClose(window);
+	return APPLICATION.isWindowOpened();
 }
 
 void FEngine::beginFrame(bool internalCall)
@@ -41,10 +36,7 @@ void FEngine::beginFrame(bool internalCall)
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	ImGui::GetIO().DeltaTime = 1.0f / 60.0f;
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
+	APPLICATION.beginFrame();
 
 #ifdef FE_DEBUG_ENABLED
 	std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
@@ -77,10 +69,7 @@ void FEngine::render(bool internalCall)
 void FEngine::endFrame(bool internalCall)
 {
 	if (!internalCall) TIME.beginTimeStamp();
-	ImGui::Render();
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	glfwSwapBuffers(window);
-	glfwPollEvents();
+	APPLICATION.endFrame();
 	if (!internalCall) gpuTime = TIME.endTimeStamp();
 }
 
@@ -163,33 +152,41 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	windowH = height;
 	windowTitle = WindowTitle;
 
-	glfwInit();
+	APPLICATION.createWindow(width, height, WindowTitle);
+	APPLICATION.setWindowResizeCallback(&FEngine::windowResizeCallback);
+	APPLICATION.setMouseButtonCallback(&FEngine::mouseButtonCallback);
+	APPLICATION.setMouseMoveCallback(&FEngine::mouseMoveCallback);
+	APPLICATION.setKeyCallback(&FEngine::keyButtonCallback);
+	APPLICATION.setDropCallback(&FEngine::dropCallback);
+	
+	ImGuiIO& io = ImGui::GetIO();
 
-	window = glfwCreateWindow(windowW, windowH, windowTitle.c_str(), NULL, NULL);
-	if (!window)
-	{
-		glfwTerminate();
-		//return -1;
-	}
+	size_t pathLen = strlen((RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str()) + 1;
+	char* imguiIniFile = new char[pathLen];
+	strcpy_s(imguiIniFile, pathLen, (RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str());
+	io.IniFilename = imguiIniFile;
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 32);
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-	glfwMakeContextCurrent(window);
-	glewInit();
+	unsigned char* tex_pixels = NULL;
+	int tex_w, tex_h;
+	io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);
 
-	glfwSetWindowCloseCallback(window, windowCloseCallback);
-	glfwSetWindowSizeCallback(window, windowResizeCallback);
-	glfwSetMouseButtonCallback(window, &FEInput::mouseButtonCallback);
-	glfwSetCursorPosCallback(window, &FEInput::mouseMoveCallback);
-	glfwSetKeyCallback(window, &FEInput::keyButtonCallback);
-	glfwSetDropCallback(window, &FEInput::dropCallback);
+	io.DisplaySize = ImVec2(float(windowW), float(windowH));
+	ImGui::StyleColorsDark();
+
+	setImguiStyle();
 
 	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
 
 	// turn off v-sync
 	//glfwSwapInterval(0);
 
-	currentCamera = new FEFreeCamera(window, "mainCamera");
+	currentCamera = new FEFreeCamera("mainCamera");
 	int finalWidth, finalHeight;
-	glfwGetWindowSize(window, &finalWidth, &finalHeight);
+	APPLICATION.getWindowSize(&finalWidth, &finalHeight);
+	
 	windowW = finalWidth;
 	windowH = finalHeight;
 	renderTargetW = finalWidth;
@@ -377,110 +374,76 @@ void FEngine::createWindow(int width, int height, std::string WindowTitle)
 	
 	RESOURCE_MANAGER.makeShaderStandard(RENDERER.shadowMapMaterialInstanced->shader);
 	RESOURCE_MANAGER.makeMaterialStandard(RENDERER.shadowMapMaterialInstanced);
-
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-
-	size_t pathLen = strlen((RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str()) + 1;
-	char* imguiIniFile = new char[pathLen];
-	strcpy_s(imguiIniFile, pathLen, (RESOURCE_MANAGER.defaultResourcesFolder + "imgui.ini").c_str());
-	io.IniFilename = imguiIniFile;
-	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
-	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.defaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 32);
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-
-	unsigned char* tex_pixels = NULL;
-	int tex_w, tex_h;
-	io.Fonts->GetTexDataAsRGBA32(&tex_pixels, &tex_w, &tex_h);
-
-	io.DisplaySize = ImVec2(float(windowW), float(windowH));
-	ImGui::StyleColorsDark();
-
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
-	ImGui_ImplOpenGL3_Init("#version 410");
-
-	setImguiStyle();
 }
 
-void FEngine::setWindowCaption(const char* text)
+void FEngine::setWindowCaption(std::string newCaption)
 {
-	glfwSetWindowTitle(window, text);
+	APPLICATION.setWindowCaption(newCaption);
 }
 
-void FEngine::setWindowResizeCallback(void(*func)(int, int))
+void FEngine::addWindowResizeCallback(void(*func)(int, int))
 {
-	clientWindowResizeCallbackImpl = func;
+	if (func != nullptr)
+		clientWindowResizeCallbacks.push_back(func);
 }
 
-void FEngine::setWindowCloseCallback(void(*func)())
+void FEngine::addWindowCloseCallback(void(*func)())
 {
-	clientWindowCloseCallbackImpl = func;
+	APPLICATION.setWindowCloseCallback(func);
 }
 
-void FEngine::setKeyCallback(void(*func)(int, int, int, int))
+void FEngine::addKeyCallback(void(*func)(int, int, int, int))
 {
-	clientKeyButtonCallbackImpl = func;
+	if (func != nullptr)
+		clientKeyButtonCallbacks.push_back(func);
 }
 
-void FEngine::setMouseButtonCallback(void(*func)(int, int, int))
+void FEngine::addMouseButtonCallback(void(*func)(int, int, int))
 {
-	clientMouseButtonCallbackImpl = func;
+	if (func != nullptr)
+		clientMouseButtonCallbacks.push_back(func);
 }
 
-void FEngine::setMouseMoveCallback(void(*func)(double, double))
+void FEngine::addMouseMoveCallback(void(*func)(double, double))
 {
-	clientMouseMoveCallbackImpl = func;
+	if (func != nullptr)
+		clientMouseMoveCallbacks.push_back(func);
 }
 
-void FEngine::windowCloseCallback(GLFWwindow* window)
+void FEngine::windowResizeCallback(int width, int height)
 {
-	glfwSetWindowShouldClose(window, false);
 	FEngine& engineObj = getInstance();
-	if (engineObj.clientWindowCloseCallbackImpl != nullptr)
-	{
-		engineObj.clientWindowCloseCallbackImpl();
-	}
-	else
-	{
-		glfwSetWindowShouldClose(window, true);
-	}
-}
-
-void FEngine::windowResizeCallback(GLFWwindow* window, int width, int height)
-{
-	int finalWidth, finalHeight;
-	glfwGetWindowSize(window, &finalWidth, &finalHeight);
-
-	if (finalWidth == 0 || finalHeight == 0)
-		return;
-
-	FEngine& engineObj = getInstance();
-	engineObj.windowW = finalWidth;
-	engineObj.windowH = finalHeight;
-
-	ImGui::GetIO().DisplaySize = ImVec2(float(engineObj.renderTargetW), float(engineObj.renderTargetH));
+	engineObj.windowW = width;
+	engineObj.windowH = height;
 
 	if (renderTargetMode == FE_GLFW_MODE)
 	{
-		engineObj.renderTargetW = finalWidth;
-		engineObj.renderTargetH = finalHeight;
+		engineObj.renderTargetW = width;
+		engineObj.renderTargetH = height;
 
 		renderTargetResize();
 	}
 
-	if (engineObj.clientWindowResizeCallbackImpl != nullptr)
+	for (size_t i = 0; i < engineObj.clientWindowResizeCallbacks.size(); i++)
 	{
-		engineObj.clientWindowResizeCallbackImpl(engineObj.windowW, engineObj.windowH);
+		if (engineObj.clientWindowResizeCallbacks[i] == nullptr)
+			continue;
+
+		engineObj.clientWindowResizeCallbacks[i](engineObj.windowW, engineObj.windowH);
 	}
 }
 
 void FEngine::mouseButtonCallback(int button, int action, int mods)
 {
 	FEngine& engineObj = getInstance();
-	if (engineObj.clientMouseButtonCallbackImpl != nullptr)
-		engineObj.clientMouseButtonCallbackImpl(button, action, mods);
+
+	for (size_t i = 0; i < engineObj.clientMouseButtonCallbacks.size(); i++)
+	{
+		if (engineObj.clientMouseButtonCallbacks[i] == nullptr)
+			continue;
+
+		engineObj.clientMouseButtonCallbacks[i](button, action, mods);
+	}
 }
 
 void FEngine::mouseMoveCallback(double xpos, double ypos)
@@ -492,8 +455,13 @@ void FEngine::mouseMoveCallback(double xpos, double ypos)
 	}
 
 	FEngine& engineObj = getInstance();
-	if (engineObj.clientMouseMoveCallbackImpl != nullptr)
-		engineObj.clientMouseMoveCallbackImpl(xpos, ypos);
+	for (size_t i = 0; i < engineObj.clientMouseMoveCallbacks.size(); i++)
+	{
+		if (engineObj.clientMouseMoveCallbacks[i] == nullptr)
+			continue;
+
+		engineObj.clientMouseMoveCallbacks[i](xpos, ypos);
+	}
 
 	engineObj.currentCamera->mouseMoveInput(xpos, ypos);
 
@@ -504,8 +472,13 @@ void FEngine::mouseMoveCallback(double xpos, double ypos)
 void FEngine::keyButtonCallback(int key, int scancode, int action, int mods)
 {
 	FEngine& engineObj = getInstance();
-	if (engineObj.clientKeyButtonCallbackImpl != nullptr)
-		engineObj.clientKeyButtonCallbackImpl(key, scancode, action, mods);
+
+	for (size_t i = 0; i < engineObj.clientKeyButtonCallbacks.size(); i++)
+	{
+		if (engineObj.clientKeyButtonCallbacks[i] == nullptr)
+			continue;
+		engineObj.clientKeyButtonCallbacks[i](key, scancode, action, mods);
+	}
 
 	engineObj.currentCamera->keyboardInput(key, scancode, action, mods);
 }
@@ -561,7 +534,7 @@ FEPostProcess* FEngine::createPostProcess(std::string Name, int ScreenWidth, int
 
 void FEngine::terminate()
 {
-	glfwSetWindowShouldClose(window, true);
+	APPLICATION.terminate();
 }
 
 void FEngine::takeScreenshot(const char* fileName)
@@ -601,7 +574,7 @@ void FEngine::setRenderTargetMode(FERenderTargetMode newMode)
 	if (renderTargetMode != newMode && newMode == FE_GLFW_MODE)
 	{
 		renderTargetMode = newMode;
-		windowResizeCallback(window, 0, 0);
+		windowResizeCallback(0, 0);
 	}
 	else
 	{
@@ -733,15 +706,18 @@ void FEngine::renderTargetResize()
 #endif // USE_DEFERRED_RENDERER
 	// ************************************ SSAO END ************************************
 
-	if (engineObj.clientRenderTargetResizeCallbackImpl != nullptr)
+	for (size_t i = 0; i < engineObj.clientRenderTargetResizeCallbacks.size(); i++)
 	{
-		engineObj.clientRenderTargetResizeCallbackImpl(engineObj.renderTargetW, engineObj.renderTargetH);
+		if (engineObj.clientRenderTargetResizeCallbacks[i] == nullptr)
+			continue;
+		engineObj.clientRenderTargetResizeCallbacks[i](engineObj.renderTargetW, engineObj.renderTargetH);
 	}
 }
 
-void FEngine::setRenderTargetResizeCallback(void(*func)(int, int))
+void FEngine::addRenderTargetResizeCallback(void(*func)(int, int))
 {
-	clientRenderTargetResizeCallbackImpl = func;
+	if (func != nullptr)
+		clientRenderTargetResizeCallbacks.push_back(func);
 }
 
 inline int FEngine::getRenderTargetXShift()
@@ -770,7 +746,7 @@ void FEngine::renderTargetCenterForCamera(FEFreeCamera* camera)
 	int shiftX, shiftY = 0;
 
 	int xpos, ypos;
-	glfwGetWindowPos(window, &xpos, &ypos);
+	APPLICATION.getWindowPosition(&xpos, &ypos);
 
 	if (renderTargetMode == FE_GLFW_MODE)
 	{
@@ -799,11 +775,18 @@ void FEngine::renderTargetCenterForCamera(FEFreeCamera* camera)
 void FEngine::dropCallback(int count, const char** paths)
 {
 	FEngine& engineObj = getInstance();
-	if (engineObj.clientDropCallbackImpl != nullptr)
-		engineObj.clientDropCallbackImpl(count, paths);
+
+	for (size_t i = 0; i < engineObj.clientDropCallbacks.size(); i++)
+	{
+		if (engineObj.clientDropCallbacks[i] == nullptr)
+			continue;
+
+		engineObj.clientDropCallbacks[i](count, paths);
+	}
 }
 
-void FEngine::setDropCallback(void(*func)(int, const char**))
+void FEngine::addDropCallback(void(*func)(int, const char**))
 {
-	clientDropCallbackImpl = func;
+	if (func != nullptr)
+		clientDropCallbacks.push_back(func);
 }

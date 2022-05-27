@@ -16,7 +16,7 @@ void FETerrainLayer::setMaterial(FEMaterial* newValue)
 FETerrain::FETerrain(std::string Name) : FEObject(FE_TERRAIN, Name)
 {
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 
 	layers.resize(FE_TERRAIN_MAX_LAYERS);
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
@@ -363,23 +363,21 @@ glm::dvec3 FETerrain::getPointOnTerrain(glm::dvec3 mouseRayStart, glm::dvec3 mou
 
 void FETerrain::updateCPUHeightInfo()
 {
-	if (heightMap->getWidth() * heightMap->getHeight() * 2 != pixelBufferCount)
-	{
-		pixelBufferCount = heightMap->getWidth() * heightMap->getHeight() * 2;
-		delete[] pixelBuffer;
-		pixelBuffer = new char[pixelBufferCount];
-	}
-
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, heightMap->getTextureID()));
-	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, pixelBuffer));
+
+	size_t rawDataLenght = heightMap->getWidth() * heightMap->getHeight() * 2;
+	unsigned char* rawData = new unsigned char[rawDataLenght];
+	glPixelStorei(GL_PACK_ALIGNMENT, 2);
+	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, rawData));
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	heightMap->unBind();
 
 	float max = FLT_MIN;
 	float min = FLT_MAX;
 	int iterator = 0;
-	for (size_t i = 0; i < pixelBufferCount; i += 2)
+	for (size_t i = 0; i < rawDataLenght; i += 2)
 	{
-		unsigned short temp = *(unsigned short*)(&pixelBuffer[i]);
+		unsigned short temp = *(unsigned short*)(&rawData[i]);
 		heightMapArray[iterator] = temp / float(0xFFFF);
 
 		if (max < heightMapArray[iterator])
@@ -395,6 +393,8 @@ void FETerrain::updateCPUHeightInfo()
 	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
 	AABB = FEAABB(minPoint, maxPoint);
 	transform.dirtyFlag = true;
+
+	delete[] rawData;
 }
 // ********************************** PointOnTerrain END **********************************
 
@@ -608,8 +608,7 @@ void FETerrain::updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirecti
 
 void FETerrain::snapInstancedEntity(FEEntityInstanced* entityToSnap)
 {
-	entityToSnap->terrainToSnap = this;
-	entityToSnap->getTerrainY = &FETerrain::getHeightAt;
+	entityToSnap->snapToTerrain(this, &FETerrain::getHeightAt);
 	snapedInstancedEntities.push_back(entityToSnap);
 }
 
@@ -640,7 +639,7 @@ void FETerrain::unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap)
 		}
 	}
 
-	entityToUnSnap->terrainToSnap = nullptr;
+	entityToUnSnap->unSnapFromTerrain();
 }
 
 bool FETerrain::getNextEmptyLayerSlot(size_t& nextEmptyLayerIndex)

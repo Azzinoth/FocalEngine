@@ -265,13 +265,13 @@ void deleteGameModelPopup::render()
 		}
 
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
-		// check if this game model is used in some entities
+		// check if this game model is used in some prefabs
 		// to-do: should be done through counter, not by searching each time.
 		int result = timesGameModelUsed(objToWorkWith);
 
 		ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" game model ?").c_str());
 		if (result > 0)
-			ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
+			ImGui::Text(("It is used in " + std::to_string(result) + " prefabs !").c_str());
 
 		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 		if (ImGui::Button("Delete", ImVec2(120, 0)))
@@ -302,13 +302,16 @@ void deleteGameModelPopup::render()
 int deleteGameModelPopup::timesGameModelUsed(FEGameModel* gameModel)
 {
 	int result = 0;
-	std::vector<std::string> entitiesList = SCENE.getEntityList();
+	std::vector<std::string> prefabList = RESOURCE_MANAGER.getPrefabList();
 
-	for (size_t i = 0; i < entitiesList.size(); i++)
+	for (int i = 0; i < prefabList.size(); i++)
 	{
-		FEEntity* currentEntity = SCENE.getEntity(entitiesList[i]);
-		if (currentEntity->gameModel == gameModel)
-			result++;
+		FEPrefab* currentPrefab = FEResourceManager::getInstance().getPrefab(prefabList[i]);
+		for (int j = 0; j < currentPrefab->componentsCount(); j++)
+		{
+			if (currentPrefab->getComponent(j)->gameModel == gameModel)
+				result++;
+		}
 	}
 
 	return result;
@@ -321,6 +324,95 @@ void deleteGameModelPopup::deleteGameModel(FEGameModel* gameModel)
 	std::string name = gameModel->getName();
 	FEScene::getInstance().prepareForGameModelDeletion(gameModel);
 	RESOURCE_MANAGER.deleteGameModel(gameModel);
+	PROJECT_MANAGER.getCurrent()->setModified(true);
+}
+
+
+deletePrefabPopup* deletePrefabPopup::_instance = nullptr;
+
+deletePrefabPopup::deletePrefabPopup()
+{
+	popupCaption = "Delete prefab";
+	objToWorkWith = nullptr;
+}
+
+void deletePrefabPopup::show(FEPrefab* Prefab)
+{
+	shouldOpen = true;
+	objToWorkWith = Prefab;
+}
+
+void deletePrefabPopup::render()
+{
+	ImGuiModalPopup::render();
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		if (objToWorkWith == nullptr)
+		{
+			ImGui::PopStyleVar();
+			ImGuiModalPopup::close();
+			return;
+		}
+
+		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
+		// check if this prefab is used in some entities
+		// to-do: should be done through counter, not by searching each time.
+		int result = timesPrefabUsed(objToWorkWith);
+
+		ImGui::Text(("Do you want to delete \"" + objToWorkWith->getName() + "\" prefab ?").c_str());
+		if (result > 0)
+			ImGui::Text(("It is used in " + std::to_string(result) + " entities !").c_str());
+
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
+		if (ImGui::Button("Delete", ImVec2(120, 0)))
+		{
+			deletePrefab(objToWorkWith);
+
+			objToWorkWith = nullptr;
+			ImGuiModalPopup::close();
+		}
+
+		ImGui::SetItemDefaultFocus();
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
+		if (ImGui::Button("Cancel", ImVec2(120, 0)))
+		{
+			ImGuiModalPopup::close();
+		}
+
+		ImGui::PopStyleVar();
+		ImGui::EndPopup();
+	}
+	else
+	{
+		ImGui::PopStyleVar();
+	}
+}
+
+int deletePrefabPopup::timesPrefabUsed(FEPrefab* Prefab)
+{
+	int result = 0;
+	std::vector<std::string> entitiesList = SCENE.getEntityList();
+
+	for (size_t i = 0; i < entitiesList.size(); i++)
+	{
+		FEEntity* currentEntity = SCENE.getEntity(entitiesList[i]);
+		if (currentEntity->prefab == Prefab)
+			result++;
+	}
+
+	return result;
+}
+
+void deletePrefabPopup::deletePrefab(FEPrefab* Prefab)
+{
+	VIRTUAL_FILE_SYSTEM.locateAndDeleteFile(Prefab);
+
+	std::string name = Prefab->getName();
+	FEScene::getInstance().prepareForPrefabDeletion(Prefab);
+	RESOURCE_MANAGER.deletePrefab(Prefab);
 	PROJECT_MANAGER.getCurrent()->setModified(true);
 }
 

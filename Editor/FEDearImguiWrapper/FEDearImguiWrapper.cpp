@@ -696,7 +696,7 @@ FERangeRecord* FERangeConfigurator::getRangesRecord(size_t index)
 
 int FERangeConfigurator::getRangesCount()
 {
-	return ranges.size();
+	return int(ranges.size());
 }
 
 void FERangeConfigurator::clear()

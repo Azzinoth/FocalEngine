@@ -223,38 +223,38 @@ void FEEditorMaterialNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNo
 
 	if (ownSocket->getName() == "AO")
 	{
-		data->setAOMap(texure, socketIndex, 0);
+		data->setAOMap(texure, int(socketIndex), 0);
 	}
 	else if (ownSocket->getName() == "AO_1")
 	{
-		data->setAOMap(texure, socketIndex, 1);
+		data->setAOMap(texure, int(socketIndex), 1);
 	}
 
 	if (ownSocket->getName() == "Roughtness")
 	{
-		data->setRoughtnessMap(texure, socketIndex, 0);
+		data->setRoughtnessMap(texure, int(socketIndex), 0);
 	}
 	else if (ownSocket->getName() == "Roughtness_1")
 	{
-		data->setRoughtnessMap(texure, socketIndex, 1);
+		data->setRoughtnessMap(texure, int(socketIndex), 1);
 	}
 
 	if (ownSocket->getName() == "Metalness")
 	{
-		data->setMetalnessMap(texure, socketIndex, 0);
+		data->setMetalnessMap(texure, int(socketIndex), 0);
 	}
 	else if (ownSocket->getName() == "Metalness_1")
 	{
-		data->setMetalnessMap(texure, socketIndex, 1);
+		data->setMetalnessMap(texure, int(socketIndex), 1);
 	}
 
 	if (ownSocket->getName() == "Displacement")
 	{
-		data->setDisplacementMap(texure, socketIndex, 0);
+		data->setDisplacementMap(texure, int(socketIndex), 0);
 	}
 	else if (ownSocket->getName() == "Displacement_1")
 	{
-		data->setDisplacementMap(texure, socketIndex, 1);
+		data->setDisplacementMap(texure, int(socketIndex), 1);
 	}
 }
 

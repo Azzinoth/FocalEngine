@@ -9,7 +9,8 @@ void FEEditorPreviewManager::initializeResources()
 {
 	previewFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, 128, 128);
 	previewGameModel = new FEGameModel(nullptr, nullptr, "editorPreviewGameModel");
-	previewEntity = new FEEntity(previewGameModel, "editorPreviewEntity");
+	previewPrefab = new FEPrefab(previewGameModel, "editorPreviewPrefab");
+	previewEntity = new FEEntity(previewPrefab, "editorPreviewEntity");
 	meshPreviewMaterial = RESOURCE_MANAGER.createMaterial("meshPreviewMaterial");
 	RESOURCE_MANAGER.makeMaterialStandard(meshPreviewMaterial);
 	meshPreviewMaterial->shader = RESOURCE_MANAGER.createShader("FEMeshPreviewShader", RESOURCE_MANAGER.loadGLSL("Editor//Materials//FE_MeshPreview_VS.glsl").c_str(),
@@ -81,6 +82,22 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
 	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
 
+	FEDirectionalLight* currentDirectionalLight = nullptr;
+	std::vector<std::string> lightList = SCENE.getLightsList();
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (SCENE.getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight(lightList[i]));
+			break;
+		}
+	}
+	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
+	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
+
+	float regularLightIntensity = currentDirectionalLight->getIntensity();
+	currentDirectionalLight->setIntensity(10.0f);
+
 	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
 	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
 	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
@@ -103,6 +120,9 @@ void FEEditorPreviewManager::createMeshPreview(std::string meshID)
 	ENGINE.getCamera()->setPitch(regularCameraPitch);
 	ENGINE.getCamera()->setRoll(regularCameraRoll);
 	ENGINE.getCamera()->setYaw(regularCameraYaw);
+
+	currentDirectionalLight->transform.setRotation(regularLightRotation);
+	currentDirectionalLight->setIntensity(regularLightIntensity);
 
 	previewFB->unBind();
 
@@ -233,7 +253,16 @@ void FEEditorPreviewManager::createMaterialPreview(std::string materialID)
 	{
 		FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 		if (currentGameModel->material == previewMaterial && currentGameModel != previewGameModel)
-			createGameModelPreview(currentGameModel->getName());
+			createGameModelPreview(currentGameModel->getObjectID());
+	}
+
+	// looking for all prefabs that uses this material to also update them
+	std::vector<std::string> prefabList = RESOURCE_MANAGER.getPrefabList();
+	for (size_t i = 0; i < prefabList.size(); i++)
+	{
+		FEPrefab* currentPrefab = RESOURCE_MANAGER.getPrefab(prefabList[i]);
+		if (currentPrefab->usesMaterial(materialID))
+			createPrefabPreview(currentPrefab->getObjectID());
 	}
 }
 
@@ -245,13 +274,25 @@ FETexture* FEEditorPreviewManager::getMaterialPreview(std::string materialID)
 		createMaterialPreview(materialID);
 		// if some game model uses this material we should also update it's preview
 		std::vector<std::string> gameModelList = RESOURCE_MANAGER.getGameModelList();
-
 		for (size_t i = 0; i < gameModelList.size(); i++)
 		{
 			FEGameModel* currentGameModel = RESOURCE_MANAGER.getGameModel(gameModelList[i]);
 
 			if (currentGameModel->material == RESOURCE_MANAGER.getMaterial(materialID))
+			{
 				createGameModelPreview(currentGameModel->getObjectID());
+
+				// if some prefab uses this game model we should also update it's preview
+				std::vector<std::string> prefabList = RESOURCE_MANAGER.getPrefabList();
+				for (size_t j = 0; j < prefabList.size(); j++)
+				{
+					FEPrefab* currentPrefab = RESOURCE_MANAGER.getPrefab(prefabList[j]);
+					
+					if (currentPrefab->usesGameModel(currentGameModel->getObjectID()))
+						createPrefabPreview(currentPrefab->getObjectID());
+				}
+			}
+				
 		}
 
 		RESOURCE_MANAGER.getMaterial(materialID)->setDirtyFlag(false);
@@ -389,7 +430,7 @@ void FEEditorPreviewManager::createGameModelPreview(FEGameModel* gameModel, FETe
 	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
 
 	float regularLightIntensity = currentDirectionalLight->getIntensity();
-	currentDirectionalLight->setIntensity(5.0f);
+	currentDirectionalLight->setIntensity(10.0f);
 
 	previewGameModel->mesh = gameModel->mesh;
 	previewGameModel->material = gameModel->material;
@@ -493,6 +534,161 @@ FETexture* FEEditorPreviewManager::getGameModelPreview(std::string gameModelID)
 	return gameModelPreviewTextures[gameModelID];
 }
 
+void FEEditorPreviewManager::updateAllGameModelPreviews()
+{
+	// Geting list of all game models.
+	auto GMList = RESOURCE_MANAGER.getGameModelList();
+	for (size_t i = 0; i < GMList.size(); i++)
+	{
+		createGameModelPreview(GMList[i]);
+	}
+}
+
+void FEEditorPreviewManager::createPrefabPreview(std::string prefabID)
+{
+	FEPrefab* prefab = RESOURCE_MANAGER.getPrefab(prefabID);
+	if (prefab == nullptr)
+		return;
+
+	if (prefab->componentsCount() < 1)
+		return;
+
+	FEGameModel* gameModel = prefab->getComponent(0)->gameModel;
+	if (gameModel == nullptr)
+		return;
+
+	FEDirectionalLight* currentDirectionalLight = nullptr;
+	std::vector<std::string> lightList = SCENE.getLightsList();
+	for (size_t i = 0; i < lightList.size(); i++)
+	{
+		if (SCENE.getLight(lightList[i])->getType() == FE_DIRECTIONAL_LIGHT)
+		{
+			currentDirectionalLight = reinterpret_cast<FEDirectionalLight*>(SCENE.getLight(lightList[i]));
+			break;
+		}
+	}
+	glm::vec3 regularLightRotation = currentDirectionalLight->transform.getRotation();
+	currentDirectionalLight->transform.setRotation(glm::vec3(-40.0f, 10.0f, 0.0f));
+
+	float regularLightIntensity = currentDirectionalLight->getIntensity();
+	currentDirectionalLight->setIntensity(10.0f);
+
+	bool regularFog = RENDERER.isDistanceFogEnabled();
+	RENDERER.setDistanceFogEnabled(false);
+
+	previewEntity->prefab = prefab;
+	previewEntity->setReceivingShadows(false);
+
+	previewFB->bind();
+	// We use this values even with deffered renderer because final image will not be gamma corrected, so values over 1.0f would not work.
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	// saving currently used variables
+	FocalEngine::FETransformComponent regularMeshTransform = previewEntity->transform;
+	glm::vec3 regularCameraPosition = ENGINE.getCamera()->getPosition();
+	float regularAspectRation = ENGINE.getCamera()->getAspectRatio();
+	float regularCameraPitch = ENGINE.getCamera()->getPitch();
+	float regularCameraRoll = ENGINE.getCamera()->getRoll();
+	float regularCameraYaw = ENGINE.getCamera()->getYaw();
+	float regularExposure = ENGINE.getCamera()->getExposure();
+	ENGINE.getCamera()->setExposure(1.0f);
+
+	// transform has influence on AABB, so before any calculations setting needed values
+	previewEntity->transform.setPosition(glm::vec3(0.0, 0.0, 0.0));
+	previewEntity->transform.setScale(glm::vec3(1.0, 1.0, 1.0));
+	previewEntity->transform.setRotation(glm::vec3(15.0, -15.0, 0.0));
+
+	previewEntity->setDirtyFlag(true);
+	FEAABB meshAABB = previewEntity->getAABB();
+	glm::vec3 min = meshAABB.getMin();
+	glm::vec3 max = meshAABB.getMax();
+
+	float xSize = sqrt((max.x - min.x) * (max.x - min.x));
+	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
+	float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+
+	// invert center point and it will be exactly how much we need to translate mesh in order to place it in origin.
+	previewEntity->transform.setPosition(-glm::vec3(max.x - xSize / 2.0f, max.y - ySize / 2.0f, max.z - zSize / 2.0f));
+	ENGINE.getCamera()->setPosition(glm::vec3(0.0, 0.0, std::max(std::max(xSize, ySize), zSize) * 1.75f));
+
+	ENGINE.getCamera()->setAspectRatio(1.0f);
+	FE_GL_ERROR(glViewport(0, 0, 128, 128));
+
+	ENGINE.getCamera()->setPitch(0.0f);
+	ENGINE.getCamera()->setRoll(0.0f);
+	ENGINE.getCamera()->setYaw(0.0f);
+
+	// rendering game model to texture
+#ifdef USE_DEFERRED_RENDERER
+	RENDERER.renderEntityForward(previewEntity, ENGINE.getCamera(), true);
+#else
+	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
+#endif // USE_DEFERRED_RENDERER
+	previewEntity->prefab = previewPrefab;
+	// reversing all of our transformating.
+	previewEntity->transform = regularMeshTransform;
+
+	ENGINE.getCamera()->setPosition(regularCameraPosition);
+	ENGINE.getCamera()->setAspectRatio(regularAspectRation);
+	ENGINE.getCamera()->setPitch(regularCameraPitch);
+	ENGINE.getCamera()->setRoll(regularCameraRoll);
+	ENGINE.getCamera()->setYaw(regularCameraYaw);
+	ENGINE.getCamera()->setExposure(regularExposure);
+
+	currentDirectionalLight->transform.setRotation(regularLightRotation);
+	currentDirectionalLight->setIntensity(regularLightIntensity);
+
+	RENDERER.setDistanceFogEnabled(regularFog);
+
+	previewFB->unBind();
+
+	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
+
+	// if we are updating preview we should delete old texture.
+	if (prefabPreviewTextures.find(prefabID) != prefabPreviewTextures.end())
+		delete prefabPreviewTextures[prefabID];
+
+	prefabPreviewTextures[prefabID] = previewFB->getColorAttachment();
+	previewFB->setColorAttachment(RESOURCE_MANAGER.createSameFormatTexture(previewFB->getColorAttachment()));
+}
+
+void createPrefabPreview(FEPrefab* prefab, FETexture** resultingTexture)
+{
+
+}
+
+FETexture* FEEditorPreviewManager::getPrefabPreview(std::string prefabID)
+{
+	FEPrefab* currentPrefab = RESOURCE_MANAGER.getPrefab(prefabID);
+	// if prefab's dirty flag is set we need to update preview
+	if (currentPrefab->getDirtyFlag())
+	{
+		createPrefabPreview(prefabID);
+		currentPrefab->setDirtyFlag(false);
+	}
+
+	for (int i = 0; i < currentPrefab->componentsCount(); i++)
+	{
+		// if prefab's material dirty flag is set we need to update preview
+		if (currentPrefab->getComponent(i)->gameModel->getMaterial() != nullptr && currentPrefab->getComponent(i)->gameModel->getMaterial()->getDirtyFlag())
+		{
+			createMaterialPreview(currentPrefab->getComponent(i)->gameModel->getMaterial()->getObjectID());
+			currentPrefab->getComponent(i)->gameModel->getMaterial()->setDirtyFlag(false);
+		}
+	}
+
+	// if we somehow could not find preview, we will create it.
+	if (prefabPreviewTextures.find(prefabID) == prefabPreviewTextures.end())
+		createPrefabPreview(prefabID);
+
+	// if still we don't have it
+	if (prefabPreviewTextures.find(prefabID) == prefabPreviewTextures.end())
+		return RESOURCE_MANAGER.noTexture;
+
+	return prefabPreviewTextures[prefabID];
+}
+
 void FEEditorPreviewManager::clear()
 {
 	auto iterator = meshPreviewTextures.begin();
@@ -520,12 +716,31 @@ void FEEditorPreviewManager::clear()
 	gameModelPreviewTextures.clear();
 }
 
-void FEEditorPreviewManager::updateAllGameModelPreviews()
+FETexture* FEEditorPreviewManager::getPreview(FEObject* FEObject)
 {
-	// Geting list of all game models.
-	auto GMList = RESOURCE_MANAGER.getGameModelList();
-	for (size_t i = 0; i < GMList.size(); i++)
+	switch (FEObject->getType())
 	{
-		createGameModelPreview(GMList[i]);
+		case FE_TEXTURE:
+			return reinterpret_cast<FETexture*>(FEObject);
+
+		case FE_MESH:
+			return getMeshPreview(FEObject->getObjectID());
+
+		case FE_MATERIAL:
+			return getMaterialPreview(FEObject->getObjectID());
+
+		case FE_GAMEMODEL:
+			return getGameModelPreview(FEObject->getObjectID());
+
+		case FE_PREFAB:
+			return getPrefabPreview(FEObject->getObjectID());
+		
+		default:
+			return RESOURCE_MANAGER.noTexture;
 	}
+}
+
+FETexture* FEEditorPreviewManager::getPreview(std::string FEObjectID)
+{
+	return getPreview(FEObjectManager::getInstance().getFEObject(FEObjectID));
 }

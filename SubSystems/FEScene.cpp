@@ -64,12 +64,24 @@ FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name, std::stri
 	return entityMap[newEntity->getObjectID()];
 }
 
+FEEntity* FEScene::addEntity(FEPrefab* prefab, std::string Name, std::string forceObjectID)
+{
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+
+	if (Name.size() == 0)
+		Name = "unnamedEntity";
+
+	FEEntity* newEntity = resourceManager.createEntity(prefab, Name, forceObjectID);
+	entityMap[newEntity->getObjectID()] = newEntity;
+	return entityMap[newEntity->getObjectID()];
+}
+
 bool FEScene::addEntity(FEEntity* newEntity)
 {
 	if (newEntity == nullptr)
 		return false;
 
-	if (newEntity->gameModel == nullptr || newEntity->gameModel->mesh == nullptr || newEntity->gameModel->material == nullptr)
+	if (newEntity->prefab == nullptr)
 		return false;
 
 	entityMap[newEntity->getObjectID()] = newEntity;
@@ -224,14 +236,34 @@ void FEScene::clear()
 
 void FEScene::prepareForGameModelDeletion(FEGameModel* gameModel)
 {
-	// looking if this gameModel is used in some entities
+	// looking if this gameModel is used in some prefab
+	// to-do: should be done through list of pointers to entities that uses this gameModel.
+	auto prefabList = FEResourceManager::getInstance().getPrefabList();
+	for (size_t i = 0; i < prefabList.size(); i++)
+	{
+		FEPrefab* currentPrefab = FEResourceManager::getInstance().getPrefab(prefabList[i]);
+		for (int j = 0; j < currentPrefab->componentsCount(); j++)
+		{
+			if (currentPrefab->getComponent(j)->gameModel == gameModel)
+			{
+				currentPrefab->getComponent(j)->gameModel = FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getStandardGameModelList()[0]);
+				currentPrefab->setDirtyFlag(true);
+			}
+		}
+	}
+}
+
+void FEScene::prepareForPrefabDeletion(FEPrefab* prefab)
+{
+	// looking if this prefab is used in some entities
 	// to-do: should be done through list of pointers to entities that uses this gameModel.
 	auto entitiesIterator = entityMap.begin();
 	while (entitiesIterator != entityMap.end())
 	{
-		if (entitiesIterator->second->gameModel == gameModel)
+		if (entitiesIterator->second->prefab == prefab)
 		{
-			entitiesIterator->second->gameModel = FEResourceManager::getInstance().getGameModel(FEResourceManager::getInstance().getStandardGameModelList()[0]);
+			entitiesIterator->second->prefab = FEResourceManager::getInstance().getPrefab(FEResourceManager::getInstance().getStandardPrefabList()[0]);
+			entitiesIterator->second->setDirtyFlag(true);
 		}
 
 		entitiesIterator++;
@@ -276,7 +308,7 @@ void FEScene::deleteTerrain(std::string ID)
 			FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entityIt->second);
 			if (instancedEntity->getSnappedToTerrain() == terrainToDelete)
 			{
-				instancedEntity->terrainToSnap = nullptr;
+				instancedEntity->unSnapFromTerrain();
 			}
 		}
 
@@ -287,14 +319,14 @@ void FEScene::deleteTerrain(std::string ID)
 	terrainMap.erase(ID);
 }
 
-FEEntityInstanced* FEScene::addEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+FEEntityInstanced* FEScene::addEntityInstanced(FEPrefab* prefab, std::string Name, std::string forceObjectID)
 {
 	FEResourceManager& resourceManager = FEResourceManager::getInstance();
 
 	if (Name.size() == 0)
 		Name = "unnamedEntityInstanced";
 
-	FEEntityInstanced* newEntityInstanced = new FEEntityInstanced(gameModel, Name);
+	FEEntityInstanced* newEntityInstanced = new FEEntityInstanced(prefab, Name);
 	if (forceObjectID != "")
 		newEntityInstanced->setID(forceObjectID);
 
@@ -302,12 +334,20 @@ FEEntityInstanced* FEScene::addEntityInstanced(FEGameModel* gameModel, std::stri
 	return newEntityInstanced;
 }
 
+FEEntityInstanced* FEScene::addEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+{
+	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+	FEPrefab* tempPrefab = resourceManager.createPrefab(gameModel, gameModel->getName());
+
+	return addEntityInstanced(tempPrefab, Name, forceObjectID);
+}
+
 bool FEScene::addEntityInstanced(FEEntityInstanced* newEntityInstanced)
 {
 	if (newEntityInstanced == nullptr)
 		return false;
 
-	if (newEntityInstanced->gameModel == nullptr || newEntityInstanced->gameModel->mesh == nullptr || newEntityInstanced->gameModel->material == nullptr)
+	if (newEntityInstanced->prefab == nullptr)
 		return false;
 
 	entityMap[newEntityInstanced->getObjectID()] = newEntityInstanced;

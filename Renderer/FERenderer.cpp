@@ -18,7 +18,7 @@ FERenderer::FERenderer()
 	glBindBufferRange(GL_UNIFORM_BUFFER, uniformBufferCount++, uniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
 
 	// Instanced lines
-	linesBuffer.resize(maxLines);
+	linesBuffer.resize(FE_MAX_LINES);
 
 	float quadVertices[] = {
 		0.0f,  -0.5f,  0.0f,
@@ -58,10 +58,9 @@ FERenderer::FERenderer()
 	glBindVertexArray(0);
 
 	skyDome = FEResourceManager::getInstance().createEntity(FEResourceManager::getInstance().getGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
+	FEResourceManager::getInstance().makePrefabStandard(skyDome->prefab);
 	skyDome->visible = false;
 	skyDome->transform.setScale(glm::vec3(50.0f));
-
-#ifdef USE_GPU_CULLING
 
 	FE_FrustumCullingShader = FEResourceManager::getInstance().createShader("FE_FrustumCullingShader", nullptr, nullptr,
 																									   nullptr, nullptr,
@@ -82,8 +81,6 @@ FERenderer::FERenderer()
 	}
 
 	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), frustumData.data(), GL_DYNAMIC_DRAW));
-
-#endif // USE_GPU_CULLING
 }
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
@@ -98,27 +95,27 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
 {
-	static int FEWorldMatrix_hash = std::hash<std::string>{}("FEWorldMatrix");
-	static int FEViewMatrix_hash = std::hash<std::string>{}("FEViewMatrix");
-	static int FEProjectionMatrix_hash = std::hash<std::string>{}("FEProjectionMatrix");
-	static int FEPVMMatrix_hash = std::hash<std::string>{}("FEPVMMatrix");
-	static int FECameraPosition_hash = std::hash<std::string>{}("FECameraPosition");
-	static int FEGamma_hash = std::hash<std::string>{}("FEGamma");
-	static int FEExposure_hash = std::hash<std::string>{}("FEExposure");
-	static int FEReceiveShadows_hash = std::hash<std::string>{}("FEReceiveShadows");
-	static int FEAOIntensity_hash = std::hash<std::string>{}("FEAOIntensity");
-	static int FEAOMapIntensity_hash = std::hash<std::string>{}("FEAOMapIntensity");
-	static int FENormalMapIntensity_hash = std::hash<std::string>{}("FENormalMapIntensity");
-	static int FERoughtness_hash = std::hash<std::string>{}("FERoughtness");
-	static int FERoughtnessMapIntensity_hash = std::hash<std::string>{}("FERoughtnessMapIntensity");
-	static int FEMetalness_hash = std::hash<std::string>{}("FEMetalness");
-	static int FEMetalnessMapIntensity_hash = std::hash<std::string>{}("FEMetalnessMapIntensity");
-	static int FETiling_hash = std::hash<std::string>{}("FETiling");
+	static int FEWorldMatrix_hash = int(std::hash<std::string>{}("FEWorldMatrix"));
+	static int FEViewMatrix_hash = int(std::hash<std::string>{}("FEViewMatrix"));
+	static int FEProjectionMatrix_hash = int(std::hash<std::string>{}("FEProjectionMatrix"));
+	static int FEPVMMatrix_hash = int(std::hash<std::string>{}("FEPVMMatrix"));
+	static int FECameraPosition_hash = int(std::hash<std::string>{}("FECameraPosition"));
+	static int FEGamma_hash = int(std::hash<std::string>{}("FEGamma"));
+	static int FEExposure_hash = int(std::hash<std::string>{}("FEExposure"));
+	static int FEReceiveShadows_hash = int(std::hash<std::string>{}("FEReceiveShadows"));
+	static int FEAOIntensity_hash = int(std::hash<std::string>{}("FEAOIntensity"));
+	static int FEAOMapIntensity_hash = int(std::hash<std::string>{}("FEAOMapIntensity"));
+	static int FENormalMapIntensity_hash = int(std::hash<std::string>{}("FENormalMapIntensity"));
+	static int FERoughtness_hash = int(std::hash<std::string>{}("FERoughtness"));
+	static int FERoughtnessMapIntensity_hash = int(std::hash<std::string>{}("FERoughtnessMapIntensity"));
+	static int FEMetalness_hash = int(std::hash<std::string>{}("FEMetalness"));
+	static int FEMetalnessMapIntensity_hash = int(std::hash<std::string>{}("FEMetalnessMapIntensity"));
+	static int FETiling_hash = int(std::hash<std::string>{}("FETiling"));
 
-	static int FETextureBindingsUniformLocations_hash = std::hash<std::string>{}("textureBindings[0]");
-	static int FETextureChannelsBindingsUniformLocations_hash = std::hash<std::string>{}("textureChannels[0]");
+	static int FETextureBindingsUniformLocations_hash = int(std::hash<std::string>{}("textureBindings[0]"));
+	static int FETextureChannelsBindingsUniformLocations_hash = int(std::hash<std::string>{}("textureChannels[0]"));
 
-	static int FEcompactMaterialPacking_hash = std::hash<std::string>{}("compactMaterialPacking");
+	static int FEcompactMaterialPacking_hash = int(std::hash<std::string>{}("compactMaterialPacking"));
 	
 	if (material != nullptr)
 	{
@@ -203,12 +200,12 @@ void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCame
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, bool isReceivingShadows)
 {
-	static int FEViewMatrix_hash = std::hash<std::string>{}("FEViewMatrix");
-	static int FEProjectionMatrix_hash = std::hash<std::string>{}("FEProjectionMatrix");
-	static int FECameraPosition_hash = std::hash<std::string>{}("FECameraPosition");
-	static int FEGamma_hash = std::hash<std::string>{}("FEGamma");
-	static int FEExposure_hash = std::hash<std::string>{}("FEExposure");
-	static int FEReceiveShadows_hash = std::hash<std::string>{}("FEReceiveShadows");
+	static int FEViewMatrix_hash = int(std::hash<std::string>{}("FEViewMatrix"));
+	static int FEProjectionMatrix_hash = int(std::hash<std::string>{}("FEProjectionMatrix"));
+	static int FECameraPosition_hash = int(std::hash<std::string>{}("FECameraPosition"));
+	static int FEGamma_hash = int(std::hash<std::string>{}("FEGamma"));
+	static int FEExposure_hash = int(std::hash<std::string>{}("FEExposure"));
+	static int FEReceiveShadows_hash = int(std::hash<std::string>{}("FEReceiveShadows"));
 
 	auto iterator = shader->parameters.begin();
 	while (iterator != shader->parameters.end())
@@ -333,8 +330,8 @@ void FERenderer::loadUniformBlocks()
 	}
 
 	//#fix only standardShaders uniforms buffers are filled.
-	static int lightInfo_hash = std::hash<std::string>{}("lightInfo");
-	static int directionalLightInfo_hash = std::hash<std::string>{}("directionalLightInfo");
+	static int lightInfo_hash = int(std::hash<std::string>{}("lightInfo"));
+	static int directionalLightInfo_hash = int(std::hash<std::string>{}("directionalLightInfo"));
 	std::vector<std::string> shaderList = resourceManager.getStandardShadersList();
 	for (size_t i = 0; i < shaderList.size(); i++)
 	{
@@ -345,7 +342,7 @@ void FERenderer::loadUniformBlocks()
 			if (iteratorBlock->first == lightInfo_hash)
 			{
 				// if shader uniform block was not asigned yet.
-				if (iteratorBlock->second == size_t(-1))
+				if (iteratorBlock->second == GL_INVALID_INDEX)
 					iteratorBlock->second = uniformBufferForLights;
 				// adding 4 because vec3 in shader buffer will occupy 16 bytes not 12.
 				size_t sizeOfFELightShaderInfo = sizeof(FELightShaderInfo) + 4;
@@ -362,7 +359,7 @@ void FERenderer::loadUniformBlocks()
 			else if (iteratorBlock->first == directionalLightInfo_hash)
 			{
 				// if shader uniform block was not asigned yet.
-				if (iteratorBlock->second == size_t(-1))
+				if (iteratorBlock->second == GL_INVALID_INDEX)
 					iteratorBlock->second = uniformBufferForDirectionalLight;
 
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, iteratorBlock->second));
@@ -375,88 +372,158 @@ void FERenderer::loadUniformBlocks()
 	}
 }
 
-void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap, bool reloadUniformBlocks)
+void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap, bool reloadUniformBlocks, int componentIndex)
 {
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-#ifdef USE_GPU_CULLING
-	GPUCulling(entityInstanced);
-#else
-	if (shadowMap)
+	if (componentIndex != -1)
 	{
-		frustum[5][0] = currentCamera->getFrustumPlanes()[5][0];
-		frustum[5][1] = currentCamera->getFrustumPlanes()[5][1];
-		frustum[5][2] = currentCamera->getFrustumPlanes()[5][2];
-		frustum[5][3] = currentCamera->getFrustumPlanes()[5][3];
-	}
+		GPUCulling(entityInstanced, int(componentIndex));
 
-	testTime += entityInstanced->cullInstances(currentCamera->position, frustum, freezeCulling);
-#endif // USE_GPU_CULLING
+		FEGameModel* currentGameModel = entityInstanced->prefab->components[componentIndex]->gameModel;
 
-	FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
-	if (originalShader->getName() == "FEPBRShader")
-	{
-		if (shaderToForce)
-		{
-			entityInstanced->gameModel->getMaterial()->shader = shaderToForce;
-		}
-		else
-		{
-			entityInstanced->gameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-		}
-	}
-	
-	entityInstanced->gameModel->getMaterial()->bind();
-	loadStandardParams(entityInstanced->gameModel->getMaterial()->shader, currentCamera, entityInstanced->gameModel->material, &entityInstanced->transform, entityInstanced->isReceivingShadows());
-	entityInstanced->gameModel->getMaterial()->shader->loadDataToGPU();
-
-	entityInstanced->render();
-
-	entityInstanced->gameModel->getMaterial()->unBind();
-	if (originalShader->getName() == "FEPBRShader")
-	{
-		entityInstanced->gameModel->getMaterial()->shader = originalShader;
-		if (entityInstanced->gameModel->getBillboardMaterial() != nullptr)
-			entityInstanced->gameModel->getBillboardMaterial()->shader = originalShader;
-	}
-
-	// Billboards part
-	if (entityInstanced->gameModel->getBillboardMaterial() != nullptr)
-	{
-		FEMaterial* regularBillboardMaterial = entityInstanced->gameModel->getBillboardMaterial();
-		if (shadowMap)
-		{
-			shadowMapMaterialInstanced->setAlbedoMap(regularBillboardMaterial->getAlbedoMap());
-			entityInstanced->gameModel->setBillboardMaterial(shadowMapMaterialInstanced);
-		}
-
-		FEShader* originalShader = entityInstanced->gameModel->getMaterial()->shader;
+		FEShader* originalShader = currentGameModel->getMaterial()->shader;
 		if (originalShader->getName() == "FEPBRShader")
 		{
 			if (shaderToForce)
 			{
-				entityInstanced->gameModel->getBillboardMaterial()->shader = shaderToForce;
+				currentGameModel->getMaterial()->shader = shaderToForce;
 			}
 			else
 			{
-				entityInstanced->gameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+				currentGameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 			}
 		}
 
-		entityInstanced->gameModel->getBillboardMaterial()->bind();
-		loadStandardParams(entityInstanced->gameModel->getBillboardMaterial()->shader, currentCamera, entityInstanced->gameModel->getBillboardMaterial(), &entityInstanced->transform, entityInstanced->isReceivingShadows());
-		entityInstanced->gameModel->getBillboardMaterial()->shader->loadDataToGPU();
+		currentGameModel->getMaterial()->bind();
+		FETransformComponent tempTransform = entityInstanced->transform.combine(entityInstanced->prefab->components[componentIndex]->transform);
+		loadStandardParams(currentGameModel->getMaterial()->shader, currentCamera, currentGameModel->material, &tempTransform, entityInstanced->isReceivingShadows());
+		currentGameModel->getMaterial()->shader->loadDataToGPU();
 
-		entityInstanced->renderOnlyBillbords(currentCamera->getPosition());
+		entityInstanced->render(int(componentIndex));
 
-		entityInstanced->gameModel->getBillboardMaterial()->unBind();
+		currentGameModel->getMaterial()->unBind();
 		if (originalShader->getName() == "FEPBRShader")
-			entityInstanced->gameModel->getBillboardMaterial()->shader = originalShader;
-
-		if (shadowMap)
 		{
-			entityInstanced->gameModel->setBillboardMaterial(regularBillboardMaterial);
+			currentGameModel->getMaterial()->shader = originalShader;
+			if (currentGameModel->getBillboardMaterial() != nullptr)
+				currentGameModel->getBillboardMaterial()->shader = originalShader;
+		}
+
+		// Billboards part
+		if (currentGameModel->getBillboardMaterial() != nullptr)
+		{
+			FEMaterial* regularBillboardMaterial = currentGameModel->getBillboardMaterial();
+			if (shadowMap)
+			{
+				shadowMapMaterialInstanced->setAlbedoMap(regularBillboardMaterial->getAlbedoMap());
+				currentGameModel->setBillboardMaterial(shadowMapMaterialInstanced);
+			}
+
+			FEShader* originalShader = currentGameModel->getMaterial()->shader;
+			if (originalShader->getName() == "FEPBRShader")
+			{
+				if (shaderToForce)
+				{
+					currentGameModel->getBillboardMaterial()->shader = shaderToForce;
+				}
+				else
+				{
+					currentGameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+				}
+			}
+
+			currentGameModel->getBillboardMaterial()->bind();
+			loadStandardParams(currentGameModel->getBillboardMaterial()->shader, currentCamera, currentGameModel->getBillboardMaterial(), &entityInstanced->transform, entityInstanced->isReceivingShadows());
+			currentGameModel->getBillboardMaterial()->shader->loadDataToGPU();
+
+			entityInstanced->renderOnlyBillbords(currentCamera->getPosition());
+
+			currentGameModel->getBillboardMaterial()->unBind();
+			if (originalShader->getName() == "FEPBRShader")
+				currentGameModel->getBillboardMaterial()->shader = originalShader;
+
+			if (shadowMap)
+			{
+				currentGameModel->setBillboardMaterial(regularBillboardMaterial);
+			}
+		}
+
+		return;
+	}
+
+	for (size_t i = 0; i < entityInstanced->prefab->components.size(); i++)
+	{
+		GPUCulling(entityInstanced, int(i));
+
+		FEGameModel* currentGameModel = entityInstanced->prefab->components[i]->gameModel;
+
+		FEShader* originalShader = currentGameModel->getMaterial()->shader;
+		if (originalShader->getName() == "FEPBRShader")
+		{
+			if (shaderToForce)
+			{
+				currentGameModel->getMaterial()->shader = shaderToForce;
+			}
+			else
+			{
+				currentGameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+			}
+		}
+
+		currentGameModel->getMaterial()->bind();
+		FETransformComponent tempTransform = entityInstanced->transform.combine(entityInstanced->prefab->components[i]->transform);
+		loadStandardParams(currentGameModel->getMaterial()->shader, currentCamera, currentGameModel->material, &tempTransform, entityInstanced->isReceivingShadows());
+		currentGameModel->getMaterial()->shader->loadDataToGPU();
+
+		entityInstanced->render(int(i));
+
+		currentGameModel->getMaterial()->unBind();
+		if (originalShader->getName() == "FEPBRShader")
+		{
+			currentGameModel->getMaterial()->shader = originalShader;
+			if (currentGameModel->getBillboardMaterial() != nullptr)
+				currentGameModel->getBillboardMaterial()->shader = originalShader;
+		}
+
+		// Billboards part
+		if (currentGameModel->getBillboardMaterial() != nullptr)
+		{
+			FEMaterial* regularBillboardMaterial = currentGameModel->getBillboardMaterial();
+			if (shadowMap)
+			{
+				shadowMapMaterialInstanced->setAlbedoMap(regularBillboardMaterial->getAlbedoMap());
+				currentGameModel->setBillboardMaterial(shadowMapMaterialInstanced);
+			}
+
+			FEShader* originalShader = currentGameModel->getMaterial()->shader;
+			if (originalShader->getName() == "FEPBRShader")
+			{
+				if (shaderToForce)
+				{
+					currentGameModel->getBillboardMaterial()->shader = shaderToForce;
+				}
+				else
+				{
+					currentGameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+				}
+			}
+
+			currentGameModel->getBillboardMaterial()->bind();
+			loadStandardParams(currentGameModel->getBillboardMaterial()->shader, currentCamera, currentGameModel->getBillboardMaterial(), &entityInstanced->transform, entityInstanced->isReceivingShadows());
+			currentGameModel->getBillboardMaterial()->shader->loadDataToGPU();
+
+			entityInstanced->renderOnlyBillbords(currentCamera->getPosition());
+
+			currentGameModel->getBillboardMaterial()->unBind();
+			if (originalShader->getName() == "FEPBRShader")
+				currentGameModel->getBillboardMaterial()->shader = originalShader;
+
+			if (shadowMap)
+			{
+				currentGameModel->setBillboardMaterial(regularBillboardMaterial);
+			}
 		}
 	}
 }
@@ -523,9 +590,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				currentCamera->viewMatrix = light->cascadeData[i].viewMat;
 
 				FE_GL_ERROR(glViewport(0, 0, light->cascadeData[i].frameBuffer->getWidth(), light->cascadeData[i].frameBuffer->getHeight()));
-#ifdef USE_GPU_CULLING
+
 				updateGPUCullingFrustum(light->cascadeData[i].frustum, currentCamera->getPosition());
-#endif //USE_GPU_CULLING
+
 				light->cascadeData[i].frameBuffer->bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
 
@@ -549,48 +616,68 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				while (it != scene.entityMap.end())
 				{
 					auto entity = it->second;
-					if (!entity->isCastShadows() || !entity->isVisible())
+					if (!entity->isCastShadows() || !entity->isVisible() || entity->prefab == nullptr)
 					{
 						it++;
 						continue;
 					}
 
-					FEMaterial* originalMaterial = entity->gameModel->material;
 					if (entity->getType() == FE_ENTITY)
 					{
-						entity->gameModel->material = shadowMapMaterial;
-						shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap());
-						// if material have submaterial
-						if (originalMaterial->getAlbedoMap(1) != nullptr)
+						for (size_t j = 0; j < entity->prefab->components.size(); j++)
 						{
-							shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
-							shadowMapMaterial->getAlbedoMap(1)->bind(1);
-						}
+							FEMaterial* originalMaterial = entity->prefab->components[j]->gameModel->material;
+							entity->prefab->components[j]->gameModel->material = shadowMapMaterial;
+							shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap());
+							// if material have submaterial
+							if (originalMaterial->getAlbedoMap(1) != nullptr)
+							{
+								shadowMapMaterial->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
+								shadowMapMaterial->getAlbedoMap(1)->bind(1);
+							}
 
-						renderEntity(entity, currentCamera);
+							renderEntity(entity, currentCamera, false, int(j));
+
+							entity->prefab->components[j]->gameModel->material = originalMaterial;
+							for (size_t k = 0; k < shadowMapMaterial->textures.size(); k++)
+							{
+								shadowMapMaterial->textures[k] = nullptr;
+								shadowMapMaterial->textureBindings[k] = -1;
+
+								shadowMapMaterialInstanced->textures[k] = nullptr;
+								shadowMapMaterialInstanced->textureBindings[k] = -1;
+							}
+						}
 					}
 					else if (entity->getType() == FE_ENTITY_INSTANCED)
 					{
-						entity->gameModel->material = shadowMapMaterialInstanced;
-						shadowMapMaterialInstanced->setAlbedoMap(originalMaterial->getAlbedoMap());
-						// if material have submaterial
-						if (originalMaterial->getAlbedoMap(1) != nullptr)
+						std::vector<FEMaterial*> originalMaterials;
+						FEEntityInstanced* currentEntity = reinterpret_cast<FEEntityInstanced*>(entity);
+						for (size_t j = 0; j < currentEntity->prefab->components.size(); j++)
 						{
-							shadowMapMaterialInstanced->setAlbedoMap(originalMaterial->getAlbedoMap(1), 1);
-							shadowMapMaterialInstanced->getAlbedoMap(1)->bind(1);
+							originalMaterials.push_back(currentEntity->prefab->components[j]->gameModel->material);
+
+							currentEntity->prefab->components[j]->gameModel->material = shadowMapMaterialInstanced;
+							shadowMapMaterialInstanced->setAlbedoMap(originalMaterials.back()->getAlbedoMap());
+							// if material have submaterial
+							if (originalMaterials.back()->getAlbedoMap(1) != nullptr)
+							{
+								shadowMapMaterialInstanced->setAlbedoMap(originalMaterials.back()->getAlbedoMap(1), 1);
+								shadowMapMaterialInstanced->getAlbedoMap(1)->bind(1);
+							}
+							
+							renderEntityInstanced(currentEntity, currentCamera, light->cascadeData[i].frustum, true, false, int(j));
+							
+							entity->prefab->components[j]->gameModel->material = originalMaterials[j];
+							for (size_t k = 0; k < shadowMapMaterial->textures.size(); k++)
+							{
+								shadowMapMaterial->textures[k] = nullptr;
+								shadowMapMaterial->textureBindings[k] = -1;
+
+								shadowMapMaterialInstanced->textures[k] = nullptr;
+								shadowMapMaterialInstanced->textureBindings[k] = -1;
+							}
 						}
-
-						renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, /*currentCamera->getFrustumPlanes()*/light->cascadeData[i].frustum, true);
-					}
-
-					entity->gameModel->material = originalMaterial;
-					for (size_t j = 0; j < shadowMapMaterial->textures.size(); j++)
-					{
-						shadowMapMaterial->textures[j] = nullptr;
-						shadowMapMaterial->textureBindings[j] = -1;
-
-						shadowMapMaterialInstanced->textures[j] = nullptr;
-						shadowMapMaterialInstanced->textureBindings[j] = -1;
 					}
 						
 					it++;
@@ -643,9 +730,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-#ifdef USE_GPU_CULLING
 	updateGPUCullingFrustum(currentCamera->frustum, currentCamera->getPosition());
-#endif //USE_GPU_CULLING
 
 	auto entityIterator = scene.entityMap.begin();
 	while (entityIterator != scene.entityMap.end())
@@ -838,7 +923,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, instancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, maxLines * sizeof(FELine), this->linesBuffer.data()));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->linesBuffer.data()));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	instancedLineShader->start();
@@ -907,21 +992,21 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 				if (effect.stages[j]->inTextureSource[k] == FEPP_PREVIOUS_STAGE_RESULT0)
 				{
 					effect.stages[j]->inTexture[k] = prevStageTex;
-					effect.stages[j]->inTexture[k]->bind(k);
+					effect.stages[j]->inTexture[k]->bind(int(k));
 				}
 				else if (effect.stages[j]->inTextureSource[k] == FEPP_SCENE_HDR_COLOR)
 				{
 					effect.stages[j]->inTexture[k] = sceneToTextureFB->getColorAttachment();
-					effect.stages[j]->inTexture[k]->bind(k);
+					effect.stages[j]->inTexture[k]->bind(int(k));
 				}
 				else if (effect.stages[j]->inTextureSource[k] == FEPP_SCENE_DEPTH)
 				{
 					effect.stages[j]->inTexture[k] = sceneToTextureFB->getDepthAttachment();
-					effect.stages[j]->inTexture[k]->bind(k);
+					effect.stages[j]->inTexture[k]->bind(int(k));
 				}
 				else if (effect.stages[j]->inTextureSource[k] == FEPP_OWN_TEXTURE)
 				{
-					effect.stages[j]->inTexture[k]->bind(k);
+					effect.stages[j]->inTexture[k]->bind(int(k));
 				}
 			}
 
@@ -957,7 +1042,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		}
 	}
 
-	for (int i = postProcessEffects.size() - 1; i >= 0; i--)
+	for (int i = int(postProcessEffects.size() - 1); i >= 0; i--)
 	{
 		FEPostProcess& effect = *postProcessEffects[i];
 		
@@ -1051,28 +1136,87 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	delete[] pixels;
 }
 
-void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks)
+void FERenderer::renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks, int componentIndex)
 {
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-	FEShader* originalShader = entity->gameModel->material->shader;
-	if (shaderToForce)
+	if (componentIndex == -1)
 	{
-		if (originalShader->getName() == "FEPBRShader")
-			entity->gameModel->material->shader = shaderToForce;
+		for (size_t i = 0; i < entity->prefab->components.size(); i++)
+		{
+			FEShader* originalShader = entity->prefab->components[i]->gameModel->material->shader;
+			if (shaderToForce)
+			{
+				if (originalShader->getName() == "FEPBRShader")
+					entity->prefab->components[i]->gameModel->material->shader = shaderToForce;
+			}
+
+			entity->prefab->components[i]->gameModel->material->bind();
+			FETransformComponent tempTransform = entity->transform.combine(entity->prefab->components[i]->transform);
+			loadStandardParams(entity->prefab->components[i]->gameModel->material->shader, currentCamera, entity->prefab->components[i]->gameModel->material, &tempTransform, entity->isReceivingShadows());
+			entity->prefab->components[i]->gameModel->material->shader->loadDataToGPU();
+
+			FE_GL_ERROR(glBindVertexArray(entity->prefab->components[i]->gameModel->mesh->getVaoID()));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_INDEX) == FE_INDEX)
+				FE_GL_ERROR(glDrawElements(GL_TRIANGLES, entity->prefab->components[i]->gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
+			if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_INDEX) != FE_INDEX)
+				FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, entity->prefab->components[i]->gameModel->mesh->getVertexCount()));
+
+			FE_GL_ERROR(glBindVertexArray(0));
+
+			entity->prefab->components[i]->gameModel->material->unBind();
+
+			if (shaderToForce)
+			{
+				if (originalShader->getName() == "FEPBRShader")
+					entity->prefab->components[i]->gameModel->material->shader = originalShader;
+			}
+		}
 	}
-
-	entity->gameModel->material->bind();
-	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity->gameModel->material, &entity->transform, entity->isReceivingShadows());
-	entity->gameModel->material->shader->loadDataToGPU();
-	entity->render();
-	entity->gameModel->material->unBind();
-
-	if (shaderToForce)
+	else
 	{
-		if (originalShader->getName() == "FEPBRShader")
-			entity->gameModel->material->shader = originalShader;
+		FEShader* originalShader = entity->prefab->components[componentIndex]->gameModel->material->shader;
+		if (shaderToForce)
+		{
+			if (originalShader->getName() == "FEPBRShader")
+				entity->prefab->components[componentIndex]->gameModel->material->shader = shaderToForce;
+		}
+
+		entity->prefab->components[componentIndex]->gameModel->material->bind();
+		FETransformComponent tempTransform = entity->transform.combine(entity->prefab->components[componentIndex]->transform);
+		loadStandardParams(entity->prefab->components[componentIndex]->gameModel->material->shader, currentCamera, entity->prefab->components[componentIndex]->gameModel->material, &tempTransform, entity->isReceivingShadows());
+		entity->prefab->components[componentIndex]->gameModel->material->shader->loadDataToGPU();
+
+		FE_GL_ERROR(glBindVertexArray(entity->prefab->components[componentIndex]->gameModel->mesh->getVaoID()));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_INDEX) == FE_INDEX)
+			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, entity->prefab->components[componentIndex]->gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
+		if ((entity->prefab->components[componentIndex]->gameModel->mesh->vertexAttributes & FE_INDEX) != FE_INDEX)
+			FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, entity->prefab->components[componentIndex]->gameModel->mesh->getVertexCount()));
+
+		FE_GL_ERROR(glBindVertexArray(0));
+
+		entity->prefab->components[componentIndex]->gameModel->material->unBind();
+
+		if (shaderToForce)
+		{
+			if (originalShader->getName() == "FEPBRShader")
+				entity->prefab->components[componentIndex]->gameModel->material->shader = originalShader;
+		}
 	}
 }
 
@@ -1081,15 +1225,37 @@ void FERenderer::renderEntityForward(FEEntity* entity, FEBasicCamera* currentCam
 	if (reloadUniformBlocks)
 		loadUniformBlocks();
 
-	FEShader* originalShader = entity->gameModel->material->shader;
-	entity->gameModel->material->shader = FEResourceManager::getInstance().getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+	std::vector<FEShader*> originalShaders;
 
-	entity->gameModel->material->bind();
-	loadStandardParams(entity->gameModel->material->shader, currentCamera, entity->gameModel->material, &entity->transform, entity->isReceivingShadows());
-	entity->gameModel->material->shader->loadDataToGPU();
-	entity->render();
-	entity->gameModel->material->unBind();
-	entity->gameModel->material->shader = originalShader;
+	for (size_t i = 0; i < entity->prefab->components.size(); i++)
+	{
+		FEShader* originalShader = entity->prefab->components[i]->gameModel->material->shader;
+		entity->prefab->components[i]->gameModel->material->shader = FEResourceManager::getInstance().getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+			
+
+		entity->prefab->components[i]->gameModel->material->bind();
+		loadStandardParams(entity->prefab->components[i]->gameModel->material->shader, currentCamera, entity->prefab->components[i]->gameModel->material, &entity->transform, entity->isReceivingShadows());
+		entity->prefab->components[i]->gameModel->material->shader->loadDataToGPU();
+
+		FE_GL_ERROR(glBindVertexArray(entity->prefab->components[i]->gameModel->mesh->getVaoID()));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_INDEX) == FE_INDEX)
+			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, entity->prefab->components[i]->gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0));
+		if ((entity->prefab->components[i]->gameModel->mesh->vertexAttributes & FE_INDEX) != FE_INDEX)
+			FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, entity->prefab->components[i]->gameModel->mesh->getVertexCount()));
+
+		FE_GL_ERROR(glBindVertexArray(0));
+
+		entity->prefab->components[i]->gameModel->material->unBind();
+
+		entity->prefab->components[i]->gameModel->material->shader = originalShader;
+	}
 }
 
 void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
@@ -1108,13 +1274,13 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 			if (terrain->layers[i] != nullptr && terrain->layers[i]->getMaterial()->isCompackPacking())
 			{
 				if (terrain->layers[i]->getMaterial()->getAlbedoMap() != nullptr)
-					terrain->layers[i]->getMaterial()->getAlbedoMap()->bind(i * 3);
+					terrain->layers[i]->getMaterial()->getAlbedoMap()->bind(int(i * 3));
 
 				if (terrain->layers[i]->getMaterial()->getNormalMap() != nullptr)
-					terrain->layers[i]->getMaterial()->getNormalMap()->bind(i * 3 + 1);
+					terrain->layers[i]->getMaterial()->getNormalMap()->bind(int(i * 3 + 1));
 
 				if (terrain->layers[i]->getMaterial()->getAOMap() != nullptr)
-					terrain->layers[i]->getMaterial()->getAOMap()->bind(i * 3 + 2);
+					terrain->layers[i]->getMaterial()->getAOMap()->bind(int(i * 3 + 2));
 			}
 		}
 
@@ -1125,7 +1291,7 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 		for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE; i++)
 		{
 			if (terrain->layerMaps[i] != nullptr)
-				terrain->layerMaps[i]->bind(26 + i);
+				terrain->layerMaps[i]->bind(int(26 + i));
 		}
 	}
 
@@ -1159,9 +1325,9 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 	pivotPosition = terrain->transform.getPosition();
 	terrain->scaleFactor = 1.0f * terrain->chunkPerSide;
 
-	static int PVMHash = std::hash<std::string>{}("FEPVMMatrix");
-	static int WMHash = std::hash<std::string>{}("FEWorldMatrix");
-	static int HShiftHash = std::hash<std::string>{}("hightMapShift");
+	static int PVMHash = int(std::hash<std::string>{}("FEPVMMatrix"));
+	static int WMHash = int(std::hash<std::string>{}("FEWorldMatrix"));
+	static int HShiftHash = int(std::hash<std::string>{}("hightMapShift"));
 
 	bool wasDirty = terrain->transform.dirtyFlag;
 	terrain->shader->loadDataToGPU();
@@ -1198,7 +1364,7 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 
 void FERenderer::drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color, float width)
 {
-	if (lineCounter >= maxLines)
+	if (lineCounter >= FE_MAX_LINES)
 	{
 		LOG.add("Tring to draw more than maxLines", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return;
@@ -1482,8 +1648,6 @@ void FERenderer::forceShader(FEShader* shader)
 	shaderToForce = shader;
 }
 
-#ifdef USE_GPU_CULLING
-
 void FERenderer::updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition)
 {
 	float* frustumBufferData = (float*)glMapNamedBufferRange(frustumInfoBuffer, 0, sizeof(float) * (32),
@@ -1506,32 +1670,29 @@ void FERenderer::updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPositi
 	FE_GL_ERROR(glUnmapNamedBuffer(frustumInfoBuffer));
 }
 
-void FERenderer::GPUCulling(FEEntityInstanced* entity)
+void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
 {
 	if (freezeCulling)
 		return;
 
-	if (entity->getDirtyFlag())
-		entity->initializeGPUCulling();
+	entity->checkDirtyFlag(subGameModel);
 
-	//FE_GL_ERROR(glUseProgram(cullingComputeProgram));
 	FE_FrustumCullingShader->start();
 
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, entity->sourceDataBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, entity->positionsBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, entity->renderers[subGameModel]->sourceDataBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, entity->renderers[subGameModel]->positionsBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, frustumInfoBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, entity->LODBuffers[0]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, entity->AABBSizesBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, entity->renderers[subGameModel]->LODBuffers[0]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, entity->renderers[subGameModel]->AABBSizesBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cullingLODCountersBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, entity->LODInfoBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, entity->LODBuffers[1]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, entity->LODBuffers[2]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, entity->LODBuffers[3]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, entity->indirectDrawInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, entity->renderers[subGameModel]->LODInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, entity->renderers[subGameModel]->LODBuffers[1]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, entity->renderers[subGameModel]->LODBuffers[2]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, entity->renderers[subGameModel]->LODBuffers[3]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, entity->renderers[subGameModel]->indirectDrawInfoBuffer));
 
 	FE_FrustumCullingShader->dispatch(GLuint(ceil(entity->instanceCount / 64.0f)), 1, 1);
-	//FE_GL_ERROR(glDispatchCompute(GLuint(ceil(entity->instanceCount / 64.0f)), 1, 1));
-	FE_GL_ERROR(glMemoryBarrier(/*GL_SHADER_STORAGE_BARRIER_BIT*/GL_ALL_BARRIER_BITS));
+	FE_GL_ERROR(glMemoryBarrier(GL_ALL_BARRIER_BITS));
 
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0));
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0));
@@ -1545,7 +1706,6 @@ void FERenderer::GPUCulling(FEEntityInstanced* entity)
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, 0));
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, 0));
 }
-#endif // USE_GPU_CULLING
 
 #ifdef USE_DEFERRED_RENDERER
 

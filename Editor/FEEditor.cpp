@@ -2,12 +2,13 @@
 
 FEEditor* FEEditor::_instance = nullptr;
 ImGuiWindow* FEEditor::sceneWindow = nullptr;
+FEEntity* FEEditor::entityToModify = nullptr;
 
 bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
 {
-	if (object->getType() == FE_GAMEMODEL)
+	if (object->getType() == FE_PREFAB)
 	{
-		FEEntity* newEntity = FEScene::getInstance().addEntity(RESOURCE_MANAGER.getGameModel(object->getObjectID()));
+		FEEntity* newEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefab(object->getObjectID()));
 		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
 		SELECTED.setSelected(newEntity);
 		PROJECT_MANAGER.getCurrent()->setModified(true);
@@ -16,6 +17,53 @@ bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
 	}
 
 	return false;
+}
+
+static void createNewInstancedEntityCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	{
+		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
+		if (selectedPrefab == nullptr)
+			return;
+
+		FEEntityInstanced* newEntity = SCENE.addEntityInstanced(selectedPrefab);
+		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+		SELECTED.setSelected(newEntity);
+		
+		PROJECT_MANAGER.getCurrent()->setModified(true);
+	}
+}
+
+static void createNewEntityCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	{
+		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
+		if (selectedPrefab == nullptr)
+			return;
+
+		FEEntity* newEntity = FEScene::getInstance().addEntity(selectedPrefab);
+		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
+		SELECTED.setSelected(newEntity);
+
+		PROJECT_MANAGER.getCurrent()->setModified(true);
+	}
+}
+
+void FEEditor::changePrefabOfEntityCallBack(std::vector<FEObject*> selectionsResult)
+{
+	if (FEEditor::entityToModify == nullptr)
+		return;
+
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	{
+		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
+		if (selectedPrefab == nullptr)
+			return;
+
+		FEEditor::entityToModify->prefab = selectedPrefab;
+	}
 }
 
 FEEditor::FEEditor()
@@ -193,7 +241,7 @@ void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
 	{
 		if (EDITOR.getObjectNameInClipboard() != "")
 		{
-			FEEntity* newEntity = SCENE.addEntity(SCENE.getEntity(EDITOR.getObjectNameInClipboard())->gameModel, "");
+			FEEntity* newEntity = SCENE.addEntity(SCENE.getEntity(EDITOR.getObjectNameInClipboard())->prefab, "");
 			newEntity->transform = SCENE.getEntity(EDITOR.getObjectNameInClipboard())->transform;
 			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
 			SELECTED.setSelected(newEntity);
@@ -686,7 +734,7 @@ void FEEditor::displaySceneBrowser()
 
 		if (ImGui::IsItemHovered())
 		{
-			sceneObjectHoveredIndex = i;
+			sceneObjectHoveredIndex = int(i);
 		}
 	}
 
@@ -709,12 +757,14 @@ void FEEditor::displaySceneBrowser()
 			{
 				if (ImGui::MenuItem("Entity"))
 				{
-					selectGameModelPopUp::getInstance().show(nullptr, true);
+					selectFEObjectPopUp::getInstance().show(FE_PREFAB, createNewEntityCallBack);
+					//selectGameModelPopUp::getInstance().show(nullptr, true);
 				}
 
 				if (ImGui::MenuItem("Instanced entity"))
 				{
-					selectGameModelPopUp::getInstance().show(nullptr, true, true);
+					selectFEObjectPopUp::getInstance().show(FE_PREFAB, createNewInstancedEntityCallBack);
+					//selectGameModelPopUp::getInstance().show(nullptr, true, true);
 				}
 
 				if (ImGui::MenuItem("Terrain"))
@@ -894,6 +944,23 @@ void FEEditor::displaySceneBrowser()
 	{
 		FEAABB selectedAABB = SELECTED.getEntity() != nullptr ? SELECTED.getEntity()->getAABB() : SELECTED.getTerrain()->getAABB();
 		RENDERER.drawAABB(selectedAABB);
+
+		if (SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED)
+		{
+			static bool displaySubObjAABB = false;
+			ImGui::Checkbox("Display AABB of instanced entity subobjects", &displaySubObjAABB);
+
+			if (displaySubObjAABB)
+			{
+				FEEntityInstanced* entityInstanced = reinterpret_cast<FEEntityInstanced*> (SELECTED.getSelected());
+				int maxIterations = entityInstanced->instancedAABB.size() * 8 >= FE_MAX_LINES ? FE_MAX_LINES : int(entityInstanced->instancedAABB.size());
+
+				for (size_t j = 0; j < maxIterations; j++)
+				{
+					RENDERER.drawAABB(entityInstanced->instancedAABB[j]);
+				}
+			}
+		}
 	}
 
 	ImGui::PopStyleVar();
@@ -902,18 +969,18 @@ void FEEditor::displaySceneBrowser()
 
 void FEEditor::initializeResources()
 {
-	ENGINE.setKeyCallback(keyButtonCallback);
-	ENGINE.setMouseButtonCallback(mouseButtonCallback);
-	ENGINE.setMouseMoveCallback(mouseMoveCallback);
-	ENGINE.setRenderTargetResizeCallback(renderTargetResizeCallback);
-	ENGINE.setDropCallback(dropCallback);
+	ENGINE.addKeyCallback(keyButtonCallback);
+	ENGINE.addMouseButtonCallback(mouseButtonCallback);
+	ENGINE.addMouseMoveCallback(mouseMoveCallback);
+	ENGINE.addRenderTargetResizeCallback(renderTargetResizeCallback);
+	ENGINE.addDropCallback(dropCallback);
 	
 	SELECTED.initializeResources();
 	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
 	PROJECT_MANAGER.initializeResources();
 	PREVIEW_MANAGER.initializeResources();
 	DRAG_AND_DROP_MANAGER.initializeResources();
-	sceneWindowTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, sceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
+	sceneWindowTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_PREFAB, sceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
 	
 	// **************************** Gizmos ****************************
 	GIZMO_MANAGER.initializeResources();
@@ -923,31 +990,31 @@ void FEEditor::initializeResources()
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(RESOURCE_MANAGER.getMesh("637C784B2E5E5C6548190E1B"/*"scaleGizmoMesh"*/));
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(RESOURCE_MANAGER.getMesh("19622421516E5B317E1B5360"/*"rotateGizmoMesh"*/));
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity);
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity);
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity->gameModel);
+	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity->prefab->getComponent(0)->gameModel);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity);
 
 	mouseCursorIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/mouseCursorIcon.png", "mouseCursorIcon");
@@ -982,6 +1049,9 @@ void FEEditor::initializeResources()
 	VFSBackIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/VFSBackIcon.png", "VFSBackIcon");
 	RESOURCE_MANAGER.makeTextureStandard(VFSBackIcon);
 
+	textureContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/textureContentBrowserIcon.png", "textureContentBrowserIcon");
+	RESOURCE_MANAGER.makeTextureStandard(textureContentBrowserIcon);
+
 	meshContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/meshContentBrowserIcon.png", "meshContentBrowserIcon");
 	RESOURCE_MANAGER.makeTextureStandard(meshContentBrowserIcon);
 
@@ -990,6 +1060,9 @@ void FEEditor::initializeResources()
 
 	gameModelContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/gameModelContentBrowserIcon.png", "gameModelContentBrowserIcon");
 	RESOURCE_MANAGER.makeTextureStandard(gameModelContentBrowserIcon);
+
+	prefabContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/prefabContentBrowserIcon.png", "prefabContentBrowserIcon");
+	RESOURCE_MANAGER.makeTextureStandard(prefabContentBrowserIcon);
 
 	// ************** Terrain Settings **************
 	exportHeightMapButton = new ImGuiButton("Export HeightMap");
@@ -1018,11 +1091,31 @@ void FEEditor::initializeResources()
 	layerBrushButton = new ImGuiImageButton(drawBrushIcon);
 	layerBrushButton->setSize(ImVec2(48, 48));
 
-	entityChangeGameModelTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, entityChangeGameModelTargetCallBack, nullptr, "Drop to assign game model");
+	entityChangePrefabTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_PREFAB, entityChangePrefabTargetCallBack, nullptr, "Drop to assign prefab");
 	// ************** Terrain Settings END **************
+
+	allContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/allContentBrowserIcon.png", "allIcon");
+	filterAllTypesButton = new ImGuiImageButton(allContentBrowserIcon);
+	RESOURCE_MANAGER.makeTextureStandard(allContentBrowserIcon);
+	filterAllTypesButton->setSize(ImVec2(32, 32));
+
+	filterTextureTypeButton = new ImGuiImageButton(textureContentBrowserIcon);
+	filterTextureTypeButton->setSize(ImVec2(32, 32));
+
+	filterMeshTypeButton = new ImGuiImageButton(meshContentBrowserIcon);
+	filterMeshTypeButton->setSize(ImVec2(32, 32));
+
+	filterMaterialTypeButton = new ImGuiImageButton(materialContentBrowserIcon);
+	filterMaterialTypeButton->setSize(ImVec2(32, 32));
+
+	filterGameModelTypeButton = new ImGuiImageButton(gameModelContentBrowserIcon);
+	filterGameModelTypeButton->setSize(ImVec2(32, 32));
+
+	filterPrefabTypeButton = new ImGuiImageButton(prefabContentBrowserIcon);
+	filterPrefabTypeButton->setSize(ImVec2(32, 32));
 	
 	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
-	ENGINE.setWindowCloseCallback(closeWindowCallBack);
+	ENGINE.addWindowCloseCallback(closeWindowCallBack);
 }
 
 void FEEditor::mouseMoveCallback(double xpos, double ypos)
@@ -1245,33 +1338,20 @@ void FEEditor::dropCallback(int count, const char** paths)
 
 		if (PROJECT_MANAGER.getCurrent() != nullptr)
 		{
-			if (FILE_SYSTEM.getFileExtension(paths[i]) == ".png")
+			std::vector<FEObject*> loadedObjects = RESOURCE_MANAGER.importAsset(paths[i]);
+			for (size_t i = 0; i < loadedObjects.size(); i++)
 			{
-				FETexture* newTexture = RESOURCE_MANAGER.LoadPNGTexture(paths[i]);
-				if (newTexture != nullptr && newTexture != RESOURCE_MANAGER.noTexture)
+				if (loadedObjects[i] != nullptr)
 				{
-					PROJECT_MANAGER.getCurrent()->addUnSavedObject(newTexture);
-					VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
-					PROJECT_MANAGER.getCurrent()->setModified(true);
-				}
-			}
-
-			if (FILE_SYSTEM.getFileExtension(paths[i]) == ".obj")
-			{
-				FEMesh* loadedMesh = RESOURCE_MANAGER.LoadOBJMesh(paths[i]);
-				if (loadedMesh != nullptr)
-				{
-					VIRTUAL_FILE_SYSTEM.createFile(loadedMesh, VIRTUAL_FILE_SYSTEM.getCurrentPath());
-					// checking material count in this mesh
-					if (loadedMesh != nullptr && loadedMesh->getMaterialCount() > 2)
+					if (loadedObjects[i]->getType() == FE_ENTITY)
 					{
-						messagePopUp::getInstance().show("Error!", "Mesh that you was trying to load has more than 2 materials, currently it is not supported!");
-						RESOURCE_MANAGER.deleteFEMesh(loadedMesh);
+						//SCENE.addEntity(reinterpret_cast<FEEntity*>(loadedObjects[i]));
 					}
 					else
 					{
+						VIRTUAL_FILE_SYSTEM.createFile(loadedObjects[i], VIRTUAL_FILE_SYSTEM.getCurrentPath());
 						PROJECT_MANAGER.getCurrent()->setModified(true);
-						PROJECT_MANAGER.getCurrent()->addUnSavedObject(loadedMesh);
+						PROJECT_MANAGER.getCurrent()->addUnSavedObject(loadedObjects[i]);
 					}
 				}
 			}
@@ -1299,13 +1379,13 @@ void FEEditor::setGameMode(bool gameMode)
 	}
 }
 
-bool FEEditor::entityChangeGameModelTargetCallBack(FEObject* object, void** entityPointer)
+bool FEEditor::entityChangePrefabTargetCallBack(FEObject* object, void** entityPointer)
 {
 	FEEntity* entity = SELECTED.getEntity();
 	if (entity == nullptr)
 		return false;
 
-	entity->gameModel = (RESOURCE_MANAGER.getGameModel(object->getObjectID()));
+	entity->prefab = (RESOURCE_MANAGER.getPrefab(object->getObjectID()));
 	return true;
 }
 
@@ -1354,13 +1434,15 @@ void FEEditor::displayInspector()
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
 			ImGui::Separator();
-			ImGui::Text("Game model : ");
-			FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
+			ImGui::Text("Prefab : ");
+			FETexture* previewTexture = PREVIEW_MANAGER.getPrefabPreview(entity->prefab->getObjectID());
+			
 			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
-				selectGameModelPopUp::getInstance().show(&entity->gameModel);
+				entityToModify = entity;
+				selectFEObjectPopUp::getInstance().show(FE_PREFAB, changePrefabOfEntityCallBack, entity->prefab);
 			}
-			entityChangeGameModelTarget->stickToItem();
+			entityChangePrefabTarget->stickToItem();
 			ImGui::Separator();
 
 			ImGui::PopStyleColor();
@@ -1406,13 +1488,15 @@ void FEEditor::displayInspector()
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
 				ImGui::Separator();
-				ImGui::Text("Game model : ");
-				FETexture* previewTexture = PREVIEW_MANAGER.getGameModelPreview(entity->gameModel->getObjectID());
+
+				ImGui::Text("Prefab : ");
+				FETexture* previewTexture = PREVIEW_MANAGER.getPrefabPreview(entity->prefab->getObjectID());
 				if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
-					selectGameModelPopUp::getInstance().show(&entity->gameModel);
+					entityToModify = entity;
+					selectFEObjectPopUp::getInstance().show(FE_PREFAB, changePrefabOfEntityCallBack, entity->prefab);
 				}
-				entityChangeGameModelTarget->stickToItem();
+				entityChangePrefabTarget->stickToItem();
 				ImGui::Separator();
 
 				ImGui::PopStyleColor();
@@ -1945,7 +2029,7 @@ void FEEditor::displayEffectsWindow()
 			ImGui::Text("Density:");
 			ImGui::SetNextItemWidth(fieldWidth);
 			float fogDensity = RENDERER.getDistanceFogDensity();
-			ImGui::DragFloat("##fogDensity", &fogDensity, 0.001f, 0.0f, 5.0f);
+			ImGui::DragFloat("##fogDensity", &fogDensity, 0.0001f, 0.0f, 5.0f);
 			RENDERER.setDistanceFogDensity(fogDensity);
 
 			ImGui::PushID(GUIID++);
@@ -2128,28 +2212,41 @@ void FEEditor::displayLogWindow()
 	ImGui::End();
 }
 
-static FEMaterial* tempMaterial = nullptr;
-static void createNewTerrainLayerWithMaterialCallBack(void* terrain)
+//static FEMaterial* tempMaterial = nullptr;
+static FETerrain* terrainToWorkWith = nullptr;
+static void createNewTerrainLayerWithMaterialCallBack(std::vector<FEObject*> selectionsResult)
 {
-	if (tempMaterial == nullptr)
-		return;
-	
-	FETerrain* terrainObj = reinterpret_cast<FETerrain*>(terrain);
-	RESOURCE_MANAGER.activateTerrainVacantLayerSlot(terrainObj, tempMaterial);
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	{
+		if (terrainToWorkWith == nullptr)
+			return;
 
-	tempMaterial = nullptr;
+		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
+		if (selectedMaterial == nullptr)
+			return;
+
+		RESOURCE_MANAGER.activateTerrainVacantLayerSlot(terrainToWorkWith, selectedMaterial);
+	}
+
+	terrainToWorkWith = nullptr;
 }
 
 static size_t tempLayerIndex = -1;
-static void changeMaterialInTerrainLayerCallBack(void* terrain)
+static void changeMaterialInTerrainLayerCallBack(std::vector<FEObject*> selectionsResult)
 {
-	if (tempMaterial == nullptr || tempLayerIndex == -1)
-		return;
+	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	{
+		if (tempLayerIndex == -1)
+			return;
 
-	FETerrain* terrainObj = reinterpret_cast<FETerrain*>(terrain);
-	terrainObj->getLayerInSlot(tempLayerIndex)->setMaterial(tempMaterial);
+		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
+		if (selectedMaterial == nullptr)
+			return;
 
-	tempMaterial = nullptr;
+		terrainToWorkWith->getLayerInSlot(tempLayerIndex)->setMaterial(selectedMaterial);
+	}
+
+	terrainToWorkWith = nullptr;
 	tempLayerIndex = -1;
 }
 
@@ -2166,7 +2263,7 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 		terrainChangeMaterialIndecies.resize(terrain->layersUsed());
 		for (size_t i = 0; i < size_t(terrain->layersUsed()); i++)
 		{
-			terrainChangeMaterialIndecies[i] = i;
+			terrainChangeMaterialIndecies[i] = int(i);
 			terrainChangeLayerMaterialTargets[i] = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, terrainChangeMaterialTargetCallBack, (void**)&terrainChangeMaterialIndecies[i], "Drop to assing material to " + terrain->getLayerInSlot(i)->getName());
 		}
 	}
@@ -2432,17 +2529,17 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 				}
 				ImGui::SetCursorPos(postionBeforeDraw);
 
-				ImGui::PushID(i);
+				ImGui::PushID(int(i));
 				if (ImGui::Selectable("##item", selectedLayer == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
 				{
-					selectedLayer = i;
+					selectedLayer = int(i);
 					terrain->setBrushLayerIndex(selectedLayer);
 				}
 				terrainChangeLayerMaterialTargets[i]->stickToItem();
 				ImGui::PopID();
 
 				if (ImGui::IsItemHovered())
-					hoveredTerrainLayerItem = i;
+					hoveredTerrainLayerItem = int(i);
 
 				ImGui::SetCursorPos(postionBeforeDraw);
 				ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -2473,7 +2570,7 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 				if (ImGui::MenuItem("Add layer..."))
 				{
 					std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
-					std::vector<FEMaterial*> finalMaterialList;
+					std::vector<FEObject*> finalMaterialList;
 					for (size_t i = 0; i < tempMaterialList.size(); i++)
 					{
 						if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
@@ -2488,8 +2585,8 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 					}
 					else
 					{
-						tempMaterial = nullptr;
-						selectMaterialPopUp::getInstance().showWithCustomList(&tempMaterial, finalMaterialList, createNewTerrainLayerWithMaterialCallBack, terrain);
+						terrainToWorkWith = terrain;
+						selectFEObjectPopUp::getInstance().show(FE_MATERIAL, createNewTerrainLayerWithMaterialCallBack, nullptr, finalMaterialList);
 					}
 				}
 
@@ -2534,7 +2631,7 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 						if (ImGui::MenuItem("Change material..."))
 						{
 							std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
-							std::vector<FEMaterial*> finalMaterialList;
+							std::vector<FEObject*> finalMaterialList;
 							for (size_t i = 0; i < tempMaterialList.size(); i++)
 							{
 								if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
@@ -2549,9 +2646,9 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 							}
 							else
 							{
-								tempMaterial = nullptr;
+								terrainToWorkWith = terrain;
 								tempLayerIndex = hoveredTerrainLayerItem;
-								selectMaterialPopUp::getInstance().showWithCustomList(&tempMaterial, finalMaterialList, changeMaterialInTerrainLayerCallBack, terrain);
+								selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeMaterialInTerrainLayerCallBack, terrain->getLayerInSlot(hoveredTerrainLayerItem)->getMaterial(), finalMaterialList);
 							}
 						}
 
@@ -2594,20 +2691,19 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 
 void FEEditor::renderAllSubWindows()
 {
-	selectMeshPopUp::getInstance().render();
-	selectTexturePopUp::getInstance().render();
-	selectMaterialPopUp::getInstance().render();
-	selectGameModelPopUp::getInstance().render();
+	selectFEObjectPopUp::getInstance().render();
 
 	deleteTexturePopup::getInstance().render();
 	deleteMeshPopup::getInstance().render();
 	deleteGameModelPopup::getInstance().render();
 	deleteMaterialPopup::getInstance().render();
+	deletePrefabPopup::getInstance().render();
 	deleteDirectoryPopup::getInstance().render();
 
 	editGameModelPopup::getInstance().render();
 	editMaterialPopup::getInstance().render();
 	resizeTexturePopup::getInstance().render();
+	prefabEditorWindow::getInstance().render();
 
 	shaderEditorWindow::getInstance().render();
 	shaderDebugWindow::getInstance().render();

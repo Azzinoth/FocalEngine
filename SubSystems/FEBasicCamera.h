@@ -71,7 +71,7 @@ namespace FocalEngine
 
 		float fov = 70.0f;
 		float nearPlane = 0.1f;
-		float farPlane = 5000.0f;
+		float farPlane = 15000.0f;
 		float aspectRatio = 1.0f;
 
 		float yaw = 0.0f;
@@ -86,8 +86,6 @@ namespace FocalEngine
 		glm::vec3 position = glm::vec3(0.0f);
 		glm::mat4 viewMatrix;
 		glm::mat4 projectionMatrix;
-
-		GLFWwindow* window;
 
 		void(*clientOnUpdateImpl)(FEBasicCamera*) = nullptr;
 

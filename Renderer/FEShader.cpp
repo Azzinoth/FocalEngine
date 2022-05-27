@@ -14,7 +14,7 @@ std::string FEShaderParam::getName()
 void FEShaderParam::setName(std::string newName)
 {
 	name = newName;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(int Data, std::string Name)
@@ -22,7 +22,7 @@ FEShaderParam::FEShaderParam(int Data, std::string Name)
 	data = new int(Data);
 	type = FE_INT_SCALAR_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(float Data, std::string Name)
@@ -30,7 +30,7 @@ FEShaderParam::FEShaderParam(float Data, std::string Name)
 	data = new float(Data);
 	type = FE_FLOAT_SCALAR_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
@@ -38,7 +38,7 @@ FEShaderParam::FEShaderParam(glm::vec2 Data, std::string Name)
 	data = new glm::vec2(Data);
 	type = FE_VECTOR2_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
@@ -46,7 +46,7 @@ FEShaderParam::FEShaderParam(glm::vec3 Data, std::string Name)
 	data = new glm::vec3(Data);
 	type = FE_VECTOR3_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
@@ -54,7 +54,7 @@ FEShaderParam::FEShaderParam(glm::vec4 Data, std::string Name)
 	data = new glm::vec4(Data);
 	type = FE_VECTOR4_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
@@ -62,7 +62,7 @@ FEShaderParam::FEShaderParam(glm::mat4 Data, std::string Name)
 	data = new glm::mat4(Data);
 	type = FE_MAT4_UNIFORM;
 	name = Name;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 void FEShaderParam::updateData(void* Data)
@@ -494,7 +494,7 @@ void FEShader::registerUniforms()
 	{
 		FE_GL_ERROR(glGetActiveUniform(programID, (GLuint)i, bufSize, &length, &size, &type, name));
 		// arrays are not currently part of params
-		if (std::string(name).find("[") != size_t(-1))
+		if (std::string(name).find("[") != std::string::npos)
 			continue;
 		
 		switch (type)
@@ -539,22 +539,21 @@ void FEShader::registerUniforms()
 				break;
 		}
 	}
-
-	// uniformBlocks
+	
 	GLuint uniformBlockIndex = -1;
 	FE_GL_ERROR(uniformBlockIndex = glGetUniformBlockIndex(programID, "lightInfo"));
-	if (uniformBlockIndex != size_t(-1))
+	if (uniformBlockIndex != GL_INVALID_INDEX)
 	{
 		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 0));
-		blockUniforms[std::hash<std::string>{}("lightInfo")] = size_t(-1);
+		blockUniforms[int(std::hash<std::string>{}("lightInfo"))] = GL_INVALID_INDEX;
 	}
 
 	uniformBlockIndex = -1;
 	FE_GL_ERROR(uniformBlockIndex = glGetUniformBlockIndex(programID, "directionalLightInfo"));
-	if (uniformBlockIndex != size_t(-1))
+	if (uniformBlockIndex != GL_INVALID_INDEX)
 	{
 		FE_GL_ERROR(glUniformBlockBinding(programID, uniformBlockIndex, 1));
-		blockUniforms[std::hash<std::string>{}("directionalLightInfo")] = size_t(-1);
+		blockUniforms[int(std::hash<std::string>{}("directionalLightInfo"))] = GL_INVALID_INDEX;
 	}
 
 	start();
@@ -566,35 +565,35 @@ void FEShader::registerUniforms()
 			std::string temp = "textures[" + std::to_string(i) + "]";
 			std::string secondTemp = "textureBindings[" + std::to_string(i) + "]";
 			std::string thirdTemp = "textureChannels[" + std::to_string(i) + "]";
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, temp.c_str()), i));
-			uniformLocations[std::hash<std::string>{}(secondTemp)] = glGetUniformLocation(programID, secondTemp.c_str());
-			uniformLocations[std::hash<std::string>{}(thirdTemp)] = glGetUniformLocation(programID, thirdTemp.c_str());
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, temp.c_str()), int(i)));
+			uniformLocations[int(std::hash<std::string>{}(secondTemp))] = glGetUniformLocation(programID, secondTemp.c_str());
+			uniformLocations[int(std::hash<std::string>{}(thirdTemp))] = glGetUniformLocation(programID, thirdTemp.c_str());
 		}
 
 		// 16 textures for material + 4 CSM textures at the end. Next available binding is 20. Max is 27.
 		for (size_t i = 20; i < 20 + textureUniforms.size(); i++)
 		{
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 20].c_str()), i));
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 20].c_str()), int(i)));
 		}
 	}
 	else if (terrainLayersTexturesList)
 	{
 		for (size_t i = 0; i < 24; i++)
 		{
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, std::string("textures[" + std::to_string(i) + "]").c_str()), i));
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, std::string("textures[" + std::to_string(i) + "]").c_str()), int(i)));
 		}
 
 		// 24 textures for terrain layers + 4 CSM textures at the end. next available binding is 24. Max is 27.
 		for (size_t i = 24; i < 24 + textureUniforms.size(); i++)
 		{
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 24].c_str()), i));
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i - 24].c_str()), int(i)));
 		}
 	}
 	else
 	{
 		for (size_t i = 0; i < textureUniforms.size(); i++)
 		{
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i].c_str()), i));
+			FE_GL_ERROR(glUniform1i(glGetUniformLocation(programID, textureUniforms[i].c_str()), int(i)));
 		}
 	}
 
@@ -706,8 +705,8 @@ void FEShader::stop()
 	if (debugData.size() <= size_t(thisFrameDebugBind))
 		debugData.push_back(std::vector<float>());
 
-	if (thisFrameDebugBind >= debugData.size())
-		thisFrameDebugBind = debugData.size() - 1;
+	if (thisFrameDebugBind >= int(debugData.size()))
+		thisFrameDebugBind = int(debugData.size() - 1);
 
 	if (debugData[thisFrameDebugBind].size() != debugSize + 1)
 		debugData[thisFrameDebugBind].resize(debugSize + 1);
@@ -717,7 +716,6 @@ void FEShader::stop()
 
 	thisFrameDebugBind++;
 #endif
-	// simple command but unnecessary and cause slowdown
 	//FE_GL_ERROR(glUseProgram(0));
 }
 
@@ -879,7 +877,7 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	index = parsedShaderText.find(FE_DEBUG_MACRO);
 	while (index != std::string::npos)
 	{
-		int beginIndex = index;
+		int beginIndex = int(index);
 		int endIndex = -1;
 		std::string variableName = "";
 
@@ -888,7 +886,7 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 			char text = parsedShaderText[i];
 			if (parsedShaderText[i] == ')')
 			{
-				endIndex = i;
+				endIndex = int(i);
 				variableName = parsedShaderText.substr(index + strlen(FE_DEBUG_MACRO), endIndex - (index + strlen(FE_DEBUG_MACRO)));
 				break;
 			}
@@ -899,7 +897,7 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 			parsedShaderText.erase(index, endIndex - index + 1);
 			
 			if (debugRequestCount == 0)
-				firstOccurrenceIndex = index;
+				firstOccurrenceIndex = int(index);
 
 #ifdef FE_DEBUG_ENABLED
 			debugVariables.push_back(variableName);
@@ -1002,17 +1000,17 @@ void FEShader::loadMatrix(int& uniformNameHash, glm::mat4& matrix)
 
 void FEShader::loadIntArray(int& uniformNameHash, GLint* array, size_t arraySize)
 {
-	FE_GL_ERROR(glUniform1iv(uniformLocations[uniformNameHash], arraySize, array));
+	FE_GL_ERROR(glUniform1iv(uniformLocations[uniformNameHash], int(arraySize), array));
 }
 
 void FEShader::loadIntArray(GLuint uniformLocation, GLint* array, size_t arraySize)
 {
-	FE_GL_ERROR(glUniform1iv(uniformLocation, arraySize, array));
+	FE_GL_ERROR(glUniform1iv(uniformLocation, int(arraySize), array));
 }
 
 void FEShader::loadFloatArray(int& uniformNameHash, GLfloat* array, size_t arraySize)
 {
-	FE_GL_ERROR(glUniform1fv(uniformLocations[uniformNameHash], arraySize, array));
+	FE_GL_ERROR(glUniform1fv(uniformLocations[uniformNameHash], int(arraySize), array));
 }
 
 void FEShader::loadDataToGPU()
@@ -1073,14 +1071,14 @@ void FEShader::addParameter(FEShaderParam Parameter)
 	/*bool find = false;
 	for (size_t i = 0; i < FEStandardUniforms.size(); i++)
 	{
-		if (Parameter.getName().find(FEStandardUniforms[i]) != size_t(-1))
+		if (Parameter.getName().find(FEStandardUniforms[i]) != GL_INVALID_INDEX)
 			find = true;
 	}
 	Parameter.loadedFromEngine = find;*/
 
 	parameters[Parameter.getName()] = Parameter;
 
-	parameters[Parameter.getName()].nameHash = std::hash<std::string>{}(Parameter.getName());
+	parameters[Parameter.getName()].nameHash = int(std::hash<std::string>{}(Parameter.getName()));
 	uniformLocations[parameters[Parameter.getName()].nameHash] = glGetUniformLocation(programID, Parameter.getName().c_str());
 }
 

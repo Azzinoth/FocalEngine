@@ -24,22 +24,28 @@ uniform float FERoughtness;
 uniform float FERoughtnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapIntensity;
-uniform	float FETiling;
 
 uniform int debugFlag;
 uniform int compactMaterialPacking;
 vec4 materialProperties;
+uniform vec3 baseColor;
 
 vec4 getAlbedo()
 {
-	vec4 result = vec4(0);
+	vec4 result = vec4(baseColor, 1.0);
+	if (baseColor.x != 0 || baseColor.y != 0|| baseColor.z != 0)
+		return result;
+
+	//vec4 result = vec4(0.0);
 	if (FS_IN.materialIndex == 0.0)
 	{
-		result = texture(textures[textureBindings[0]], FS_IN.UV * FETiling);
+		//float gamma = 1 / 2.2;
+		//result = pow(texture(textures[textureBindings[0]], FS_IN.UV).rgba, vec4(gamma));
+		result = texture(textures[textureBindings[0]], FS_IN.UV);
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
-		result = texture(textures[textureBindings[6]], FS_IN.UV * FETiling);
+		result = texture(textures[textureBindings[6]], FS_IN.UV);
 	}
 
 	return result;
@@ -52,11 +58,11 @@ vec3 getNormal()
 	{
 		if (FS_IN.materialIndex == 0.0)
 		{
-			result = texture(textures[textureBindings[1]], FS_IN.UV * FETiling).rgb;
+			result = texture(textures[textureBindings[1]], FS_IN.UV).rgb;
 		}
 		else if (FS_IN.materialIndex == 1.0)
 		{
-			result = texture(textures[textureBindings[7]], FS_IN.UV * FETiling).rgb;
+			result = texture(textures[textureBindings[7]], FS_IN.UV).rgb;
 		}
 
 		result = normalize(result * 2.0 - 1.0);
@@ -87,12 +93,12 @@ float getAO()
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[2] != -1)
-			result = texture(textures[textureBindings[2]], FS_IN.UV * FETiling)[textureChannels[2]];
+			result = texture(textures[textureBindings[2]], FS_IN.UV)[textureChannels[2]];
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
 		if (textureBindings[8] != -1)
-			result = texture(textures[textureBindings[8]], FS_IN.UV * FETiling)[textureChannels[8]];
+			result = texture(textures[textureBindings[8]], FS_IN.UV)[textureChannels[8]];
 	}
 	
 	result *= FEAOMapIntensity;
@@ -114,12 +120,20 @@ float getRoughtness()
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[3] != -1)
-			result = texture(textures[textureBindings[3]], FS_IN.UV * FETiling)[textureChannels[3]] * FERoughtnessMapIntensity;
+		{
+
+			//float gamma = 2.2;
+			//result = pow(texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]], gamma);
+			//result = result * FERoughtnessMapIntensity;
+
+			result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
+		}
+			
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
 		if (textureBindings[9] != -1)
-			result = texture(textures[textureBindings[9]], FS_IN.UV * FETiling)[textureChannels[9]] * FERoughtnessMapIntensity;
+			result = texture(textures[textureBindings[9]], FS_IN.UV)[textureChannels[9]] * FERoughtnessMapIntensity;
 	}
 
 	return result;
@@ -138,12 +152,12 @@ float getMetalness()
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[4] != -1)
-			result = texture(textures[textureBindings[4]], FS_IN.UV * FETiling)[textureChannels[4]] * FEMetalnessMapIntensity;
+			result = texture(textures[textureBindings[4]], FS_IN.UV)[textureChannels[4]] * FEMetalnessMapIntensity;
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
 		if (textureBindings[10] != -1)
-			result = texture(textures[textureBindings[10]], FS_IN.UV * FETiling)[textureChannels[10]] * FEMetalnessMapIntensity;
+			result = texture(textures[textureBindings[10]], FS_IN.UV)[textureChannels[10]] * FEMetalnessMapIntensity;
 	}
 
 	return result;
@@ -162,12 +176,12 @@ float getDisplacement()
 	if (FS_IN.materialIndex == 0.0)
 	{
 		if (textureBindings[5] != -1)
-			result = texture(textures[textureBindings[5]], FS_IN.UV * FETiling)[textureChannels[5]];
+			result = texture(textures[textureBindings[5]], FS_IN.UV)[textureChannels[5]];
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
 		if (textureBindings[11] != -1)
-			result = texture(textures[textureBindings[11]], FS_IN.UV * FETiling)[textureChannels[11]];
+			result = texture(textures[textureBindings[11]], FS_IN.UV)[textureChannels[11]];
 	}
 
 	return result;
@@ -179,11 +193,11 @@ void main(void)
 	{
 		if (FS_IN.materialIndex == 0.0)
 		{
-			materialProperties = texture(textures[textureBindings[2]], FS_IN.UV * FETiling);
+			materialProperties = texture(textures[textureBindings[2]], FS_IN.UV);
 		}
 		else if (FS_IN.materialIndex == 1.0)
 		{
-			materialProperties = texture(textures[textureBindings[8]], FS_IN.UV * FETiling);
+			materialProperties = texture(textures[textureBindings[8]], FS_IN.UV);
 		}
 	}
 

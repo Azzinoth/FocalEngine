@@ -55,7 +55,7 @@ void FEProjectManager::closeCurrentProject()
 	PREVIEW_MANAGER.clear();
 
 	loadProjectList();
-	
+
 	VIRTUAL_FILE_SYSTEM.setCurrentPath("/");
 }
 
@@ -103,7 +103,7 @@ void FEProjectManager::openProject(int projectIndex)
 		FEEntity* entity = SCENE.getEntity(entityList[i]);
 		// but before that update AABB
 		entity->getAABB();
-		entity->transform.setDirty(false);
+		entity->transform.setDirtyFlag(false);
 	}
 }
 
@@ -131,7 +131,7 @@ void FEProjectManager::displayProjectSelection()
 		static bool pushedStyle = false;
 		for (size_t i = 0; i < list.size(); i++)
 		{
-			ImGui::PushID(i);
+			ImGui::PushID(int(i));
 			pushedStyle = false;
 			if (indexChosen == i)
 			{
@@ -151,7 +151,7 @@ void FEProjectManager::displayProjectSelection()
 
 			if (ImGui::ImageButton((void*)(intptr_t)list[i]->sceneScreenshot->getTextureID(), ImVec2(512.0f, 288.0f), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
-				indexChosen = i;
+				indexChosen = int(i);
 			}
 
 			ImVec2 textWidth = ImGui::CalcTextSize(list[i]->getName().c_str());
@@ -230,7 +230,7 @@ void FEProjectManager::displayProjectSelection()
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.0f, 202.0f / 255.0f, 66.0f / 255.0f, 1.0f));
 
 		ImGui::SameLine();
-		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() - 280.0f - 32.0f ,ImGui::GetCursorPos().y));
+		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowContentRegionWidth() - 280.0f - 32.0f, ImGui::GetCursorPos().y));
 		if (ImGui::Button("Choose projects directory", ImVec2(280.0f, 64.0f)))
 		{
 			std::string path = "";
@@ -287,7 +287,7 @@ void FEProjectManager::displayProjectSelection()
 			ImGui::SetItemDefaultFocus();
 			ImGui::SameLine();
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
-			if (ImGui::Button("Cancel", ImVec2(120, 0))) 
+			if (ImGui::Button("Cancel", ImVec2(120, 0)))
 			{
 				ImGui::CloseCurrentPopup();
 			}
@@ -332,7 +332,7 @@ FEProject::FEProject(std::string Name, std::string ProjectFolder)
 	projectFolder = ProjectFolder;
 
 	std::ifstream screenshotFile((this->getProjectFolder() + "projectScreenShot.texture").c_str());
-	
+
 	if (!screenshotFile.good())
 	{
 		sceneScreenshot = RESOURCE_MANAGER.noTexture;
@@ -388,7 +388,6 @@ void FEProject::saveScene(bool fullSave)
 {
 	Json::Value root;
 	std::ofstream sceneFile;
-	sceneFile.open(projectFolder + "scene.txt");
 
 	root["version"] = PROJECTS_FILE_VER;
 
@@ -402,14 +401,16 @@ void FEProject::saveScene(bool fullSave)
 				case FE_MESH:
 				{
 					FEMesh* meshToSave = RESOURCE_MANAGER.getMesh(unSavedObjects[i]->getObjectID());
-					RESOURCE_MANAGER.saveFEMesh(meshToSave, (getProjectFolder() + meshToSave->getObjectID() + std::string(".model")).c_str());
+					if (meshToSave != nullptr)
+						RESOURCE_MANAGER.saveFEMesh(meshToSave, (getProjectFolder() + meshToSave->getObjectID() + std::string(".model")).c_str());
 					break;
 				}
 
 				case FE_TEXTURE:
 				{
 					FETexture* textureToSave = RESOURCE_MANAGER.getTexture(unSavedObjects[i]->getObjectID());
-					RESOURCE_MANAGER.saveFETexture(textureToSave, (getProjectFolder() + textureToSave->getObjectID() + std::string(".texture")).c_str());
+					if (textureToSave != nullptr)
+						RESOURCE_MANAGER.saveFETexture(textureToSave, (getProjectFolder() + textureToSave->getObjectID() + std::string(".texture")).c_str());
 					break;
 				}
 			}
@@ -441,7 +442,7 @@ void FEProject::saveScene(bool fullSave)
 		FETexture* texture = RESOURCE_MANAGER.getTexture(texturesList[i]);
 		if (!shouldIncludeInSceneFile(texture))
 			continue;
-		
+
 		texturesData[texture->getObjectID()]["ID"] = texture->getObjectID();
 		texturesData[texture->getObjectID()]["name"] = texture->getName();
 		texturesData[texture->getObjectID()]["fileName"] = texture->getObjectID() + ".texture";
@@ -516,10 +517,30 @@ void FEProject::saveScene(bool fullSave)
 					gameModelData[gameModel->getObjectID()]["LODs"][std::to_string(j)]["billboardMaterial"] = gameModel->getBillboardMaterial()->getObjectID();
 			}
 		}
-		
+
 		gameModel->setDirtyFlag(false);
 	}
 	root["gameModels"] = gameModelData;
+
+	// saving prefabs
+	std::vector<std::string> prefabList = RESOURCE_MANAGER.getPrefabList();
+	Json::Value prefabData;
+	for (size_t i = 0; i < prefabList.size(); i++)
+	{
+		FEPrefab* prefab = RESOURCE_MANAGER.getPrefab(prefabList[i]);
+		prefabData[prefab->getObjectID()]["ID"] = prefab->getObjectID();
+		prefabData[prefab->getObjectID()]["name"] = prefab->getName();
+
+		Json::Value componentsData;
+		for (int j = 0; j < prefab->componentsCount(); j++)
+		{
+			componentsData[j]["gameModel"]["ID"] = prefab->getComponent(j)->gameModel->getObjectID();
+			writeTransformToJSON(componentsData[j]["transformation"], &prefab->getComponent(j)->transform);
+		}
+
+		prefabData[prefab->getObjectID()]["components"] = componentsData;
+	}
+	root["prefabs"] = prefabData;
 
 	// saving Entities
 	std::vector<std::string> entityList = SCENE.getEntityList();
@@ -533,7 +554,8 @@ void FEProject::saveScene(bool fullSave)
 		entityData[entity->getObjectID()]["ID"] = entity->getObjectID();
 		entityData[entity->getObjectID()]["type"] = FEObjectTypeToString(entity->getType());
 		entityData[entity->getObjectID()]["name"] = entity->getName();
-		entityData[entity->getObjectID()]["gameModel"] = entity->gameModel->getObjectID();
+		entityData[entity->getObjectID()]["prefab"] = entity->prefab->getObjectID();
+		//entityData[entity->getObjectID()]["gameModel"] = entity->gameModel->getObjectID();
 		writeTransformToJSON(entityData[entity->getObjectID()]["transformation"], &entity->transform);
 
 		if (entity->getType() == FE_ENTITY_INSTANCED)
@@ -548,15 +570,15 @@ void FEProject::saveScene(bool fullSave)
 
 				Json::Value modificationsData;
 				auto modificationList = instancedEntity->getSpawnModifications();
-				for (size_t j = 0; j < modificationList.size(); j++)
+				for (int j = 0; j < modificationList.size(); j++)
 				{
 					modificationsData[j]["type"] = int(modificationList[j].type);
 					modificationsData[j]["index"] = modificationList[j].index;
 					if (modificationList[j].type != CHANGE_DELETED)
 					{
-						for (size_t k = 0; k < 4; k++)
+						for (int k = 0; k < 4; k++)
 						{
-							for (size_t p = 0; p < 4; p++)
+							for (int p = 0; p < 4; p++)
 							{
 								modificationsData[j]["modification"][k][p] = modificationList[j].modification[k][p];
 							}
@@ -615,7 +637,7 @@ void FEProject::saveScene(bool fullSave)
 		writeTransformToJSON(terrainData[terrain->getObjectID()]["transformation"], &terrain->transform);
 
 		// Saving terrains Layers.
-		for (size_t i = 0; i < terrain->layerMaps.size(); i++)
+		for (int i = 0; i < terrain->layerMaps.size(); i++)
 		{
 			if (terrain->layerMaps[i] != nullptr)
 			{
@@ -626,7 +648,7 @@ void FEProject::saveScene(bool fullSave)
 			}
 		}
 
-		for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+		for (int i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 		{
 			FETerrainLayer* currentLayer = terrain->getLayerInSlot(i);
 			if (currentLayer == nullptr)
@@ -753,9 +775,10 @@ void FEProject::saveScene(bool fullSave)
 	Json::StreamWriterBuilder builder;
 	const std::string json_file = Json::writeString(builder, root);
 
+	sceneFile.open(projectFolder + "scene.txt");
 	sceneFile << json_file;
 	sceneFile.close();
-	
+
 	for (size_t i = 0; i < filesToDelete.size(); i++)
 	{
 		FILE_SYSTEM.deleteFile(filesToDelete[i].c_str());
@@ -770,18 +793,18 @@ void FEProject::saveScene(bool fullSave)
 void FEProject::readTransformToJSON(Json::Value& root, FETransformComponent* transform)
 {
 	transform->setPosition(glm::vec3(root["position"]["X"].asFloat(),
-									 root["position"]["Y"].asFloat(),
-									 root["position"]["Z"].asFloat()));
+		root["position"]["Y"].asFloat(),
+		root["position"]["Z"].asFloat()));
 
 	transform->setRotation(glm::vec3(root["rotation"]["X"].asFloat(),
-									 root["rotation"]["Y"].asFloat(),
-									 root["rotation"]["Z"].asFloat()));
+		root["rotation"]["Y"].asFloat(),
+		root["rotation"]["Z"].asFloat()));
 
 	transform->uniformScaling = root["scale"]["uniformScaling"].asBool();
 
 	transform->setScale(glm::vec3(root["scale"]["X"].asFloat(),
-								  root["scale"]["Y"].asFloat(),
-								  root["scale"]["Z"].asFloat()));
+		root["scale"]["Y"].asFloat(),
+		root["scale"]["Z"].asFloat()));
 }
 
 void FEProject::loadScene()
@@ -823,7 +846,7 @@ void FEProject::loadScene()
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		RESOURCE_MANAGER.LoadFEMesh((projectFolder + root["meshes"][meshList[i]]["fileName"].asCString()).c_str(), root["meshes"][meshList[i]]["name"].asCString());
+		RESOURCE_MANAGER.loadFEMesh((projectFolder + root["meshes"][meshList[i]]["fileName"].asCString()).c_str(), root["meshes"][meshList[i]]["name"].asCString());
 	}
 
 	// loading Textures
@@ -914,7 +937,7 @@ void FEProject::loadScene()
 		FEGameModel* newGameModel = RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(root["gameModels"][gameModelList[i]]["mesh"].asCString()),
 																	 RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["material"].asCString()),
 																	 root["gameModels"][gameModelList[i]]["name"].asString(), root["gameModels"][gameModelList[i]]["ID"].asString());
-		
+
 		newGameModel->setScaleFactor(root["gameModels"][gameModelList[i]]["scaleFactor"].asFloat());
 
 		bool haveLODLevels = root["gameModels"][gameModelList[i]]["LODs"]["haveLODlevels"].asBool();
@@ -934,6 +957,25 @@ void FEProject::loadScene()
 				newGameModel->setIsLODBillboard(j, isLODBillboard);
 				if (isLODBillboard)
 					newGameModel->setBillboardMaterial(RESOURCE_MANAGER.getMaterial(root["gameModels"][gameModelList[i]]["LODs"][std::to_string(j)]["billboardMaterial"].asString()));
+			}
+		}
+	}
+
+	// loading prefabs
+	std::vector<Json::String> prefabList = root["prefabs"].getMemberNames();
+	for (size_t i = 0; i < prefabList.size(); i++)
+	{
+		FEPrefab* newPrefab = RESOURCE_MANAGER.createPrefab(nullptr, root["prefabs"][prefabList[i]]["name"].asString(), root["prefabs"][prefabList[i]]["ID"].asString());
+
+		if (root["prefabs"][prefabList[i]].isMember("components"))
+		{
+			Json::Value components = root["prefabs"][prefabList[i]]["components"];
+			for (int j = 0; j < int(components.size()); j++)
+			{
+				FETransformComponent componentTransform;
+				readTransformToJSON(components[j]["transformation"], &componentTransform);
+
+				newPrefab->addComponent(RESOURCE_MANAGER.getGameModel(components[j]["gameModel"]["ID"].asCString()), componentTransform);
 			}
 		}
 	}
@@ -959,7 +1001,7 @@ void FEProject::loadScene()
 
 		if (projectVersion >= 0.02f)
 		{
-			for (size_t j = 0; j < FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE; j++)
+			for (int j = 0; j < FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE; j++)
 			{
 				if (root["terrains"][terrainList[i]].isMember("layerMaps"))
 				{
@@ -968,7 +1010,7 @@ void FEProject::loadScene()
 				}
 			}
 
-			for (size_t j = 0; j < FE_TERRAIN_MAX_LAYERS; j++)
+			for (int j = 0; j < FE_TERRAIN_MAX_LAYERS; j++)
 			{
 				if (root["terrains"][terrainList[i]]["layers"][j]["acive"].asBool())
 				{
@@ -989,7 +1031,11 @@ void FEProject::loadScene()
 		{
 			if (root["entities"][entityList[i]]["type"] == "FE_ENTITY_INSTANCED")
 			{
-				FEEntityInstanced* instancedEntity = SCENE.addEntityInstanced(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), root["entities"][entityList[i]]["name"].asString(), root["entities"][entityList[i]]["ID"].asString());
+				FEEntityInstanced* instancedEntity = nullptr;
+				instancedEntity = SCENE.addEntityInstanced(RESOURCE_MANAGER.getPrefab(root["entities"][entityList[i]]["prefab"].asCString()),
+																					  root["entities"][entityList[i]]["name"].asString(),
+																					  root["entities"][entityList[i]]["ID"].asString());
+
 				readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
 
 				instancedEntity->spawnInfo.seed = root["entities"][entityList[i]]["spawnInfo"]["seed"].asInt();
@@ -1022,9 +1068,9 @@ void FEProject::loadScene()
 					const std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
 					if (!reader->parse(infoFileData.c_str(), infoFileData.c_str() + infoFileData.size(), &entityFileRoot, &err))
 						return;
-					
+
 					size_t count = entityFileRoot["modifications"].size();
-					for (size_t j = 0; j < count; j++)
+					for (int j = 0; j < count; j++)
 					{
 						if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_DELETED)
 						{
@@ -1033,22 +1079,22 @@ void FEProject::loadScene()
 						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_MODIFIED)
 						{
 							glm::mat4 modifedMatrix;
-							for (size_t k = 0; k < 4; k++)
+							for (int k = 0; k < 4; k++)
 							{
-								for (size_t p = 0; p < 4; p++)
+								for (int p = 0; p < 4; p++)
 								{
 									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
 								}
 							}
 
-							instancedEntity->modifyInstance(entityFileRoot["modifications"][j]["index"].asInt(), modifedMatrix);
+							instancedEntity->modifyInstance(entityFileRoot["modifications"][int(j)]["index"].asInt(), modifedMatrix);
 						}
 						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_ADDED)
 						{
 							glm::mat4 modifedMatrix;
-							for (size_t k = 0; k < 4; k++)
+							for (int k = 0; k < 4; k++)
 							{
-								for (size_t p = 0; p < 4; p++)
+								for (int p = 0; p < 4; p++)
 								{
 									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
 								}
@@ -1061,15 +1107,28 @@ void FEProject::loadScene()
 			}
 			else
 			{
-				SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), root["entities"][entityList[i]]["name"].asString(), root["entities"][entityList[i]]["ID"].asString());
+				if (root["entities"][entityList[i]].isMember("gameModel"))
+				{
+					FEPrefab* tempPrefab = RESOURCE_MANAGER.createPrefab(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()));
+					SCENE.addEntity(tempPrefab, root["entities"][entityList[i]]["name"].asString(), root["entities"][entityList[i]]["ID"].asString());
+				}
+				else
+				{
+					SCENE.addEntity(RESOURCE_MANAGER.getPrefab(root["entities"][entityList[i]]["prefab"].asCString()),
+									root["entities"][entityList[i]]["name"].asString(),
+									root["entities"][entityList[i]]["ID"].asString());
+				}
+				
 				readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
 			}
 		}
 		else
 		{
-			SCENE.addEntity(RESOURCE_MANAGER.getGameModel(root["entities"][entityList[i]]["gameModel"].asCString()), entityList[i], root["entities"][entityList[i]]["ID"].asString());
+			SCENE.addEntity(RESOURCE_MANAGER.getPrefab(root["entities"][entityList[i]]["prefab"].asCString()),
+							entityList[i],
+							root["entities"][entityList[i]]["ID"].asString());
 			readTransformToJSON(root["entities"][entityList[i]]["transformation"], &SCENE.getEntity(entityList[i])->transform);
-		}	
+		}
 	}
 
 	// loading Lights
@@ -1103,17 +1162,17 @@ void FEProject::loadScene()
 			reinterpret_cast<FESpotLight*>(light)->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
 
 			reinterpret_cast<FESpotLight*>(light)->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-																		  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-																		  root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+				root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+				root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
 		}
 		else if (light->getType() == FE_DIRECTIONAL_LIGHT)
 		{
 			FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
 
 			directionalLight->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-													 root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-													 root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
-			
+				root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+				root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+
 			directionalLight->setActiveCascades(root["lights"][lightList[i]]["CSM"]["activeCascades"].asInt());
 			directionalLight->setShadowCoverage(root["lights"][lightList[i]]["CSM"]["shadowCoverage"].asFloat());
 			directionalLight->setCSMZDepth(root["lights"][lightList[i]]["CSM"]["CSMZDepth"].asFloat());
@@ -1123,7 +1182,7 @@ void FEProject::loadScene()
 
 	// loading Effects settings
 	// *********** Gamma Correction & Exposure ***********
-	ENGINE.getCamera()->setGamma(root["effects"]["Gamma Correction & Exposure"] ["Gamma"].asFloat());
+	ENGINE.getCamera()->setGamma(root["effects"]["Gamma Correction & Exposure"]["Gamma"].asFloat());
 	ENGINE.getCamera()->setExposure(root["effects"]["Gamma Correction & Exposure"]["Exposure"].asFloat());
 	// *********** Anti-Aliasing(FXAA) ***********
 	RENDERER.setFXAASpanMax(root["effects"]["Anti-Aliasing(FXAA)"]["FXAASpanMax"].asFloat());
@@ -1157,8 +1216,8 @@ void FEProject::loadScene()
 
 	// loading Camera settings
 	ENGINE.getCamera()->setPosition(glm::vec3(root["camera"]["position"]["X"].asFloat(),
-											  root["camera"]["position"]["Y"].asFloat(),
-											  root["camera"]["position"]["Z"].asFloat()));
+		root["camera"]["position"]["Y"].asFloat(),
+		root["camera"]["position"]["Z"].asFloat()));
 
 	ENGINE.getCamera()->setFov(root["camera"]["fov"].asFloat());
 	ENGINE.getCamera()->setNearPlane(root["camera"]["nearPlane"].asFloat());
@@ -1172,7 +1231,7 @@ void FEProject::loadScene()
 
 	if (projectVersion >= 0.02f && root["camera"].isMember("movementSpeed"))
 		ENGINE.getCamera()->setMovementSpeed(root["camera"]["movementSpeed"].asFloat());
-	
+
 	// VFS
 	if (FILE_SYSTEM.checkFile((projectFolder + "VFS.txt").c_str()))
 	{
@@ -1185,7 +1244,7 @@ void FEProject::loadScene()
 		{
 			VIRTUAL_FILE_SYSTEM.deleteFile(files[i], "/Shaders");
 		}
-		
+
 		std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
 		for (size_t i = 0; i < shaderList.size(); i++)
 		{
@@ -1285,7 +1344,7 @@ void FEProject::createDummyScreenshot()
 		}
 	}
 
-	FETexture* tempTexture = RESOURCE_MANAGER.rawDataToFETexture(pixels, width, height);
+	FETexture* tempTexture = RESOURCE_MANAGER.rawDataToFETexture(pixels, int(width), int(height));
 	RESOURCE_MANAGER.saveFETexture(tempTexture, (getProjectFolder() + "/projectScreenShot.texture").c_str());
 	RESOURCE_MANAGER.deleteFETexture(tempTexture);
 	delete[] pixels;
@@ -1320,7 +1379,7 @@ void FEProject::loadSceneVer0()
 	std::vector<Json::String> meshList = root["meshes"].getMemberNames();
 	for (size_t i = 0; i < meshList.size(); i++)
 	{
-		RESOURCE_MANAGER.LoadFEMesh((projectFolder + root["meshes"][meshList[i]]["fileName"].asCString()).c_str(), root["meshes"][meshList[i]]["name"].asCString());
+		RESOURCE_MANAGER.loadFEMesh((projectFolder + root["meshes"][meshList[i]]["fileName"].asCString()).c_str(), root["meshes"][meshList[i]]["name"].asCString());
 		meshNameToID[root["meshes"][meshList[i]]["name"].asCString()] = root["meshes"][meshList[i]]["ID"].asCString();
 	}
 	// correction for loading Textures
@@ -1408,8 +1467,8 @@ void FEProject::loadSceneVer0()
 	for (size_t i = 0; i < gameModelList.size(); i++)
 	{
 		FEGameModel* newGameModel = RESOURCE_MANAGER.createGameModel(RESOURCE_MANAGER.getMesh(meshNameToID[root["gameModels"][gameModelList[i]]["mesh"].asCString()]),
-																	 RESOURCE_MANAGER.getMaterial(materialNameToID[root["gameModels"][gameModelList[i]]["material"].asCString()]),
-																	 gameModelList[i], root["gameModels"][gameModelList[i]]["ID"].asString());
+			RESOURCE_MANAGER.getMaterial(materialNameToID[root["gameModels"][gameModelList[i]]["material"].asCString()]),
+			gameModelList[i], root["gameModels"][gameModelList[i]]["ID"].asString());
 		gameModelNameToID[gameModelList[i]] = root["gameModels"][gameModelList[i]]["ID"].asString();
 
 		newGameModel->setScaleFactor(root["gameModels"][gameModelList[i]]["scaleFactor"].asFloat());
@@ -1505,7 +1564,7 @@ void FEProject::loadSceneVer0()
 						return;
 
 					size_t count = entityFileRoot["modifications"].size();
-					for (size_t j = 0; j < count; j++)
+					for (int j = 0; j < count; j++)
 					{
 						if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_DELETED)
 						{
@@ -1514,9 +1573,9 @@ void FEProject::loadSceneVer0()
 						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_MODIFIED)
 						{
 							glm::mat4 modifedMatrix;
-							for (size_t k = 0; k < 4; k++)
+							for (int k = 0; k < 4; k++)
 							{
-								for (size_t p = 0; p < 4; p++)
+								for (int p = 0; p < 4; p++)
 								{
 									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
 								}
@@ -1527,9 +1586,9 @@ void FEProject::loadSceneVer0()
 						else if (entityFileRoot["modifications"][j]["type"].asInt() == CHANGE_ADDED)
 						{
 							glm::mat4 modifedMatrix;
-							for (size_t k = 0; k < 4; k++)
+							for (int k = 0; k < 4; k++)
 							{
-								for (size_t p = 0; p < 4; p++)
+								for (int p = 0; p < 4; p++)
 								{
 									modifedMatrix[k][p] = entityFileRoot["modifications"][j]["modification"][k][p].asFloat();
 								}
@@ -1566,8 +1625,8 @@ void FEProject::loadSceneVer0()
 		light->setCastShadows(root["lights"][lightList[i]]["castShadows"].asBool());
 		light->setLightEnabled(root["lights"][lightList[i]]["enabled"].asBool());
 		light->setColor(glm::vec3(root["lights"][lightList[i]]["color"]["R"].asFloat(),
-								  root["lights"][lightList[i]]["color"]["G"].asFloat(),
-								  root["lights"][lightList[i]]["color"]["B"].asFloat()));
+			root["lights"][lightList[i]]["color"]["G"].asFloat(),
+			root["lights"][lightList[i]]["color"]["B"].asFloat()));
 		light->setIsStaticShadowBias(root["lights"][lightList[i]]["staticShadowBias"].asBool());
 		light->setShadowBias(root["lights"][lightList[i]]["shadowBias"].asFloat());
 		light->setShadowBiasVariableIntensity(root["lights"][lightList[i]]["shadowBiasVariableIntensity"].asFloat());
@@ -1582,16 +1641,16 @@ void FEProject::loadSceneVer0()
 			reinterpret_cast<FESpotLight*>(light)->setSpotAngleOuter(root["lights"][lightList[i]]["spotAngleOuter"].asFloat());
 
 			reinterpret_cast<FESpotLight*>(light)->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-																		  root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-																		  root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+				root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+				root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
 		}
 		else if (light->getType() == FE_DIRECTIONAL_LIGHT)
 		{
 			FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
 
 			directionalLight->setDirection(glm::vec3(root["lights"][lightList[i]]["direction"]["X"].asFloat(),
-													 root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
-													 root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
+				root["lights"][lightList[i]]["direction"]["Y"].asFloat(),
+				root["lights"][lightList[i]]["direction"]["Z"].asFloat()));
 
 			directionalLight->setActiveCascades(root["lights"][lightList[i]]["CSM"]["activeCascades"].asInt());
 			directionalLight->setShadowCoverage(root["lights"][lightList[i]]["CSM"]["shadowCoverage"].asFloat());
@@ -1693,7 +1752,7 @@ void FEProject::saveSceneTo(std::string newPath)
 {
 	if (!FILE_SYSTEM.isFolder(newPath.c_str()))
 		return;
-	
+
 	setProjectFolder(newPath);
 	ENGINE.takeScreenshot((getProjectFolder() + "projectScreenShot.texture").c_str());
 	saveScene(true);

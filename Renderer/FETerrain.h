@@ -167,8 +167,6 @@ namespace FocalEngine
 		void updateSnapedInstancedEntities();
 
 		bool CPUHeightInfoDirtyFlag = false;
-		char* pixelBuffer = nullptr;
-		size_t pixelBufferCount = 0;
 		size_t framesBeforeUpdate = 50;
 		bool brushVisualFBCleared = false;
 		// **************************** TERRAIN EDITOR TOOLS END ****************************

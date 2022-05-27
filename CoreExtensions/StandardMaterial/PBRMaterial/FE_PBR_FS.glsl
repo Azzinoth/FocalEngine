@@ -31,6 +31,8 @@ uniform float fogDensity;
 uniform float fogGradient;
 uniform float shadowBlurFactor;
 
+uniform vec3 baseColor;
+
 struct FELight
 {
 	vec3 typeAndAngles;
@@ -75,7 +77,11 @@ layout (set = 0, binding = 1, std140) uniform directionalLightInfo
 
 vec4 getAlbedo()
 {
-	vec4 result = vec4(0);
+	vec4 result = vec4(baseColor, 1.0);
+	if (baseColor.x != 0 || baseColor.y != 0|| baseColor.z != 0)
+		return result;
+
+	//vec4 result = vec4(0.0);
 	if (FS_IN.materialIndex == 0.0)
 	{
 		result = texture(textures[textureBindings[0]], FS_IN.UV);

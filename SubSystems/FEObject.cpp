@@ -5,7 +5,7 @@ FEObjectManager* FEObjectManager::_instance = nullptr;
 
 FEObjectManager::FEObjectManager()
 {
-	objectsByType.resize(16);
+	objectsByType.resize(17);
 }
 
 FEObjectManager::~FEObjectManager()
@@ -23,38 +23,7 @@ FEObject* FEObjectManager::getFEObject(std::string ID)
 FEObject::FEObject(FEObjectType objectType, std::string objectName)
 {
 	ID = getUniqueHexID();
-	//ID = getUniqueId();
-	//std::string IDinHex = "";
-
-	//for (size_t i = 0; i < ID.size(); i++)
-	//{
-	//	IDinHex.push_back("0123456789ABCDEF"[(ID[i] >> 4) & 15]);
-	//	IDinHex.push_back("0123456789ABCDEF"[ID[i] & 15]);
-	//}
-
-	//std::string additionalRandomness = getUniqueId();
-	//std::string additionalString = "";
-	//for (size_t i = 0; i < ID.size(); i++)
-	//{
-	//	additionalString.push_back("0123456789ABCDEF"[(additionalRandomness[i] >> 4) & 15]);
-	//	additionalString.push_back("0123456789ABCDEF"[additionalRandomness[i] & 15]);
-	//}
-	//std::string finalID = "";
-
-	//for (size_t i = 0; i < ID.size() * 2; i++)
-	//{
-	//	if (rand() % 2 - 1)
-	//	{
-	//		finalID += IDinHex[i];
-	//	}
-	//	else
-	//	{
-	//		finalID += additionalString[i];
-	//	}
-	//}
-
-	//ID = finalID;
-
+	
 	type = objectType;
 	name = objectName;
 
@@ -115,7 +84,7 @@ void FEObject::setName(std::string newName)
 	if (newName.size() == 0)
 		return;
 	name = newName;
-	nameHash = std::hash<std::string>{}(name);
+	nameHash = int(std::hash<std::string>{}(name));
 }
 
 int FEObject::getNameHash()

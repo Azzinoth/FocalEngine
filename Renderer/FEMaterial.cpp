@@ -34,7 +34,7 @@ void FEMaterial::bind()
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (textures[i] != nullptr)
-			textures[i]->bind(i);
+			textures[i]->bind(int(i));
 	}
 
 	// #fix such specific if statement in this class is not clean coding
@@ -218,7 +218,7 @@ int FEMaterial::placeTextureInList(FETexture* texture)
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (textures[i] == texture)
-			return i;
+			return int(i);
 	}
 
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
@@ -226,7 +226,7 @@ int FEMaterial::placeTextureInList(FETexture* texture)
 		if (textures[i] == nullptr)
 		{
 			textures[i] = texture;
-			return i;
+			return int(i);
 		}
 	}
 
@@ -448,7 +448,7 @@ void FEMaterial::removeTexture(FETexture* texture)
 	{
 		if (textures[i] == texture)
 		{
-			textureIndex = i;
+			textureIndex = int(i);
 			break;
 		}
 	}

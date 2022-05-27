@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/combineChannelsToTexturePopUp.h"
+#include "../Editor/FEEditorSubWindows/prefabEditorWindow.h"
 
 class projectWasModifiedPopUp : public ImGuiModalPopup
 {

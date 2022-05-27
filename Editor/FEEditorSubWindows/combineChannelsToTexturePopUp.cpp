@@ -121,7 +121,7 @@ void CombineChannelsToTexturePopUp::nodeSystemMainContextMenu()
 		if (ImGui::MenuItem("Texture node"))
 		{
 			textureForNewNode = RESOURCE_MANAGER.noTexture;
-			selectTexturePopUp::getInstance().show(&textureForNewNode, textureNodeCreationCallback, reinterpret_cast<void*>(&textureForNewNode));
+			selectFEObjectPopUp::getInstance().show(FE_TEXTURE, textureNodeCreationCallback);
 		}
 
 		if (ImGui::MenuItem("Float node"))
@@ -140,11 +140,14 @@ void CombineChannelsToTexturePopUp::nodeSystemMainContextMenu()
 	}
 }
 
-void CombineChannelsToTexturePopUp::textureNodeCreationCallback(void* texture)
+void CombineChannelsToTexturePopUp::textureNodeCreationCallback(std::vector<FEObject*> selectionsResult)
 {
-	if (texture != nullptr && texture != RESOURCE_MANAGER.noTexture)
+	if (selectionsResult.size() != 1 && selectionsResult[0]->getType() != FE_TEXTURE)
+		return;
+
+	if (selectionsResult[0] != nullptr && selectionsResult[0] != RESOURCE_MANAGER.noTexture)
 	{
-		FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(*reinterpret_cast<FETexture**>(texture));
+		FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(reinterpret_cast<FETexture*>(selectionsResult[0]));
 
 		ImVec2 positionOnCanvas;
 		positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;

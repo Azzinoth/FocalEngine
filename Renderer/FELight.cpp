@@ -355,7 +355,7 @@ void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, floa
 			float   t;
 
 			glm::mat4 cliping = cascadeData[i].projectionMat * cascadeView;
-			for (size_t j = 0; j < 4; j++)
+			for (int j = 0; j < 4; j++)
 			{
 				clip[j * 4] = cliping[j][0];
 				clip[j * 4 + 1] = cliping[j][1];
