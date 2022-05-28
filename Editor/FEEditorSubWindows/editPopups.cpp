@@ -754,7 +754,7 @@ editMaterialPopup::~editMaterialPopup()
 
 #ifdef USE_NODES
 FEMaterial* editMaterialPopup::objToWorkWith = nullptr;
-FEEditorNodeArea* editMaterialPopup::materialNodeArea = nullptr;
+FEVisualNodeArea* editMaterialPopup::materialNodeArea = nullptr;
 ImVec2 editMaterialPopup::nodeGridRelativePosition = ImVec2(5, 30);
 ImVec2 editMaterialPopup::windowPosition = ImVec2(0, 0);
 ImVec2 editMaterialPopup::mousePositionWhenContextMenuWasOpened = ImVec2(0, 0);
@@ -1702,7 +1702,7 @@ void editMaterialPopup::nodeSystemMainContextMenu()
 	}
 }
 
-void editMaterialPopup::textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_EVENT eventWithNode)
+void editMaterialPopup::textureNodeCallback(FEVisualNode* node, FE_VISUAL_NODE_EVENT eventWithNode)
 {
 	if (node == nullptr)
 		return;
@@ -1710,7 +1710,7 @@ void editMaterialPopup::textureNodeCallback(FEEditorNode* node, FE_EDITOR_NODE_E
 	if (node->getType() != "FEEditorTextureSourceNode")
 		return;
 
-	if (eventWithNode != FE_EDITOR_NODE_DESTROYED && eventWithNode != FE_EDITOR_NODE_REMOVED)
+	if (eventWithNode != FE_VISUAL_NODE_DESTROYED && eventWithNode != FE_VISUAL_NODE_REMOVED)
 		return;
 
 	FEEditorTextureSourceNode* currentNode = reinterpret_cast<FEEditorTextureSourceNode*>(node);

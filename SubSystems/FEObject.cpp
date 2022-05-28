@@ -22,7 +22,7 @@ FEObject* FEObjectManager::getFEObject(std::string ID)
 
 FEObject::FEObject(FEObjectType objectType, std::string objectName)
 {
-	ID = getUniqueHexID();
+	ID = APPLICATION.getUniqueHexID();
 	
 	type = objectType;
 	name = objectName;

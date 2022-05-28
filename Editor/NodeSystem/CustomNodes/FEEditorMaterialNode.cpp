@@ -1,7 +1,7 @@
 #include "FEEditorMaterialNode.h"
 using namespace FocalEngine;
 
-FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material) : FEEditorNode()
+FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material) : FEVisualNode()
 {
 	type = "FEEditorMaterialNode";
 
@@ -13,24 +13,24 @@ FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material) : FEEditorNode(
 	titleBackgroundColor = ImColor(200, 50, 200);
 	titleBackgroundColorHovered = ImColor(245, 50, 245);
 	
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement"));
 
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo_1"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal_1"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO_1"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness_1"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness_1"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness_1"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement_1"));
 }
 
 void FEEditorMaterialNode::draw()
 {	
-	FEEditorNode::draw();
+	FEVisualNode::draw();
 
 	ImVec2 currentPosition = ImVec2(ImGui::GetCursorScreenPos().x + 180.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 13.0f);
 	ImGui::SetCursorScreenPos(currentPosition);
@@ -178,15 +178,15 @@ void FEEditorMaterialNode::draw()
 	ImGui::PopStyleVar();
 }
 
-void FEEditorMaterialNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* connectedSocket, FE_EDITOR_NODE_SOCKET_EVENT eventType)
+void FEEditorMaterialNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
 {
-	FEEditorNode::socketEvent(ownSocket,  connectedSocket, eventType);
+	FEVisualNode::socketEvent(ownSocket,  connectedSocket, eventType);
 
-	if (eventType == FE_EDITOR_NODE_SOCKET_DESTRUCTION)
+	if (eventType == FE_VISUAL_NODE_SOCKET_DESTRUCTION)
 		return;
 
 	FETexture* texure = reinterpret_cast<FEEditorTextureSourceNode*>(connectedSocket->getParent())->getTexture();
-	if (eventType == FE_EDITOR_NODE_SOCKET_DISCONNECTED)
+	if (eventType == FE_VISUAL_NODE_SOCKET_DISCONNECTED)
 		texure = nullptr;
 
 	size_t socketIndex = 0; // "r"
@@ -263,9 +263,9 @@ FEMaterial* FEEditorMaterialNode::getData()
 	return data;
 }
 
-bool FEEditorMaterialNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorMaterialNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
 {
-	if (!FEEditorNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
 		return false;
 
 	// For now it is unsupported type.

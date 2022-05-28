@@ -186,27 +186,27 @@ file(GLOB Editor_Materials_SRC
 	"Editor/Materials/FE_PixelAccurateSelection_VS.glsl"
 )
 
-file(GLOB FEEditorNodeSystem_SRC
-	"Editor/NodeSystem/FEEditorNodeSystem.cpp"
-	"Editor/NodeSystem/FEEditorNodeSystem.h"
-	"Editor/NodeSystem/FEEditorNodeArea.cpp"
-	"Editor/NodeSystem/FEEditorNodeArea.h"
-	"Editor/NodeSystem/FEEditorNode.cpp"
-	"Editor/NodeSystem/FEEditorNode.h"
-	"Editor/NodeSystem/FEEditorNodeSocket.cpp"
-	"Editor/NodeSystem/FEEditorNodeSocket.h"
+file(GLOB FEVisualNodeSystem_SRC
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.cpp"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.h"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeArea.cpp"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeArea.h"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNode.cpp"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNode.h"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSocket.cpp"
+	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSocket.h"
 )
 
-file(GLOB FEEditorNodeSystem_StandardNodes_SRC
-	"Editor/NodeSystem/StandardNodes/FEEditorStandardNodes.h"
-	"Editor/NodeSystem/StandardNodes/FEEditorMaterialNode.cpp"
-	"Editor/NodeSystem/StandardNodes/FEEditorMaterialNode.h"
-	"Editor/NodeSystem/StandardNodes/FEEditorFloatSourceNode.cpp"
-	"Editor/NodeSystem/StandardNodes/FEEditorFloatSourceNode.h"
-	"Editor/NodeSystem/StandardNodes/FEEditorTextureSourceNode.cpp"
-	"Editor/NodeSystem/StandardNodes/FEEditorTextureSourceNode.h"
-	"Editor/NodeSystem/StandardNodes/FEEditorTextureCreatingNode.cpp"
-	"Editor/NodeSystem/StandardNodes/FEEditorTextureCreatingNode.h"
+file(GLOB FEVisualNodeSystem_CustomNodes_SRC
+	"Editor/NodeSystem/CustomNodes/FEEditorStandardNodes.h"
+	"Editor/NodeSystem/CustomNodes/FEEditorMaterialNode.cpp"
+	"Editor/NodeSystem/CustomNodes/FEEditorMaterialNode.h"
+	"Editor/NodeSystem/CustomNodes/FEEditorFloatSourceNode.cpp"
+	"Editor/NodeSystem/CustomNodes/FEEditorFloatSourceNode.h"
+	"Editor/NodeSystem/CustomNodes/FEEditorTextureSourceNode.cpp"
+	"Editor/NodeSystem/CustomNodes/FEEditorTextureSourceNode.h"
+	"Editor/NodeSystem/CustomNodes/FEEditorTextureCreatingNode.cpp"
+	"Editor/NodeSystem/CustomNodes/FEEditorTextureCreatingNode.h"
 )
 
 # *************** RENDERER ***************
@@ -350,8 +350,8 @@ add_executable(FocalEngineEditor WIN32
 								 ${FEDearImguiWrapper_SRC}
 								 ${FEEditorSubWindows_SRC}
 								 ${Editor_Materials_SRC}
-								 ${FEEditorNodeSystem_SRC}
-								 ${FEEditorNodeSystem_StandardNodes_SRC}
+								 ${FEVisualNodeSystem_SRC}
+								 ${FEVisualNodeSystem_CustomNodes_SRC}
 								 # *************** RENDERER ***************
 								 ${Renderer_SRC}
 								 # *************** RESOURCE MANAGER ***************
@@ -396,8 +396,8 @@ source_group("Source Files/Editor" FILES ${Editor_SRC})
 source_group("Source Files/Editor/FEDearImguiWrapper" FILES ${FEDearImguiWrapper_SRC})
 source_group("Source Files/Editor/FEEditorSubWindows" FILES ${FEEditorSubWindows_SRC})
 source_group("Source Files/Editor/Materials" FILES ${Editor_Materials_SRC})
-source_group("Source Files/Editor/NodeSystem" FILES ${FEEditorNodeSystem_SRC})
-source_group("Source Files/Editor/NodeSystem/StandardNodes" FILES ${FEEditorNodeSystem_StandardNodes_SRC})
+source_group("Source Files/Editor/NodeSystem/FEVisualNodeSystem" FILES ${FEVisualNodeSystem_SRC})
+source_group("Source Files/Editor/NodeSystem/CustomNodes" FILES ${FEVisualNodeSystem_CustomNodes_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************
@@ -418,5 +418,6 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT F
 include_directories(
 	"SubSystems/FEBasicApplication/ThirdParty/glew2/include"
 	"SubSystems/FEBasicApplication/ThirdParty/"
+	"SubSystems/FEBasicApplication/"
 	"ThirdParty/"
 )

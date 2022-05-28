@@ -2,7 +2,7 @@
 
 using namespace FocalEngine;
 
-FEEditorTextureCreatingNode::FEEditorTextureCreatingNode() : FEEditorNode()
+FEEditorTextureCreatingNode::FEEditorTextureCreatingNode() : FEVisualNode()
 {
 	type = "FEEditorTextureCreatingNode";
 
@@ -11,29 +11,29 @@ FEEditorTextureCreatingNode::FEEditorTextureCreatingNode() : FEEditorNode()
 	setSize(ImVec2(280, 180));
 	setName(resultTexture->getName());
 
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "r"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "g"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "b"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "a"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_IN, "rgb"));
-	addInputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "rgba"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "r"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "g"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "b"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "a"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_IN, "rgb"));
+	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "rgba"));
 
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
 }
 
 void FEEditorTextureCreatingNode::draw()
 {
-	FEEditorNode::draw();
+	FEVisualNode::draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 75.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 10.0f));
 	ImGui::Image((void*)(intptr_t)resultTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 }
 
-void FEEditorTextureCreatingNode::putDataFromColorChannelInArray(FEEditorNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel)
+void FEEditorTextureCreatingNode::putDataFromColorChannelInArray(FEVisualNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel)
 {
 	FEEditorTextureSourceNode* sourceNode = reinterpret_cast<FEEditorTextureSourceNode*>(sourceSocket->getConnections()[0]->getParent());
 	FETexture* sourceTexture = sourceNode->getTexture();
@@ -147,11 +147,11 @@ unsigned char* FEEditorTextureCreatingNode::getInputColorChannelData(size_t chan
 	return nullptr;
 }
 
-void FEEditorTextureCreatingNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* connectedSocket, FE_EDITOR_NODE_SOCKET_EVENT eventType)
+void FEEditorTextureCreatingNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
 {
-	FEEditorNode::socketEvent(ownSocket, connectedSocket, eventType);
+	FEVisualNode::socketEvent(ownSocket, connectedSocket, eventType);
 
-	if (eventType == FE_EDITOR_NODE_SOCKET_DESTRUCTION)
+	if (eventType == FE_VISUAL_NODE_SOCKET_DESTRUCTION)
 		return;
 
 	size_t textureWidth = 0;
@@ -215,9 +215,9 @@ void FEEditorTextureCreatingNode::socketEvent(FEEditorNodeSocket* ownSocket, FEE
 	delete[] alphaChannel;
 }
 
-bool FEEditorTextureCreatingNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorTextureCreatingNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
 {
-	if (!FEEditorNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
 		return false;
 
 	// we reject if sockets have incompatible types.

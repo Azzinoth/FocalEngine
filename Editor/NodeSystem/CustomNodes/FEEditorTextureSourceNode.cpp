@@ -1,7 +1,7 @@
 #include "FEEditorTextureSourceNode.h"
 using namespace FocalEngine;
 
-FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture) : FEEditorNode()
+FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture) : FEVisualNode()
 {
 	type = "FEEditorTextureSourceNode";
 	
@@ -14,23 +14,23 @@ FEEditorTextureSourceNode::FEEditorTextureSourceNode(FETexture* texture) : FEEdi
 
 	if (texture->getInternalFormat() == GL_RED)
 	{
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
 	}
 	else
 	{
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "r"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "g"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "b"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_OUT, "a"));
 
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
-		addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGB_CHANNEL_OUT, "rgb"));
+		addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT, "rgba"));
 	}
 }
 
 void FEEditorTextureSourceNode::draw()
 {
-	FEEditorNode::draw();
+	FEVisualNode::draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 10.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 10.0f));
 	ImGui::Image((void*)(intptr_t)texture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 
@@ -54,9 +54,9 @@ void FEEditorTextureSourceNode::draw()
 	ImGui::PopStyleVar();
 }
 
-void FEEditorTextureSourceNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* connectedSocket, FE_EDITOR_NODE_SOCKET_EVENT eventType)
+void FEEditorTextureSourceNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
 {
-	FEEditorNode::socketEvent(ownSocket,  connectedSocket, eventType);
+	FEVisualNode::socketEvent(ownSocket,  connectedSocket, eventType);
 }
 
 FETexture* FEEditorTextureSourceNode::getTexture()
@@ -64,9 +64,9 @@ FETexture* FEEditorTextureSourceNode::getTexture()
 	return texture;
 }
 
-bool FEEditorTextureSourceNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorTextureSourceNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
 {
-	if (!FEEditorNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
 		return false;
 
 	return false;

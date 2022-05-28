@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../FEProject.h"
-#include "../NodeSystem/FEEditorNodeSystem.h"
-#include "../NodeSystem/StandardNodes/FEEditorStandardNodes.h"
+#include "../NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.h"  
+#include "../NodeSystem/CustomNodes/FEEditorStandardNodes.h"
 
 class deleteDirectoryPopup;
 

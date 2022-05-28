@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../FEEditorNodeSystem.h"
+#include "../FEVisualNodeSystem/FEVisualNodeSystem.h"
 
-class FEEditorTextureCreatingNode : public FEEditorNode
+class FEEditorTextureCreatingNode : public FEVisualNode
 {
 	FETexture* resultTexture = nullptr;
 	char* incompatibleTypesMsg = "Incompatible socket types.";
@@ -11,11 +11,11 @@ class FEEditorTextureCreatingNode : public FEEditorNode
 	char* cantInferResolutionMsg = "Can't infer texture resolution.";
 	char* tooManyConnectionOfThisTypeMsg = "Too many connections of this type.";
 
-	void putDataFromColorChannelInArray(FEEditorNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel);
+	void putDataFromColorChannelInArray(FEVisualNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel);
 	unsigned char* getInputColorChannelData(size_t channel);
 
-	bool canConnect(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* candidateSocket, char** msgToUser);
-	void socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* connectedSocket, FE_EDITOR_NODE_SOCKET_EVENT eventType);
+	bool canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser);
+	void socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType);
 
 	Json::Value getInfoForSaving();
 public:

@@ -1,7 +1,7 @@
 #include "FEEditorFloatSourceNode.h"
 using namespace FocalEngine;
 
-FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData) : FEEditorNode()
+FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData) : FEVisualNode()
 {
 	type = "FEEditorFloatSourceNode";
 
@@ -13,12 +13,12 @@ FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData) : FEEditorNo
 	titleBackgroundColor = ImColor(31, 117, 208);
 	titleBackgroundColorHovered = ImColor(35, 145, 255);
 	
-	addOutputSocket(new FEEditorNodeSocket(this, FE_NODE_SOCKET_FLOAT_CHANNEL_OUT, "out"));
+	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_FLOAT_CHANNEL_OUT, "out"));
 }
 
 void FEEditorFloatSourceNode::draw()
 {	
-	FEEditorNode::draw();
+	FEVisualNode::draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 10.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 13.0f));
 	ImGui::SetNextItemWidth(140);
 	if (ImGui::InputFloat("##data", &data))
@@ -46,9 +46,9 @@ void FEEditorFloatSourceNode::draw()
 	ImGui::PopStyleVar();
 }
 
-void FEEditorFloatSourceNode::socketEvent(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* connectedSocket, FE_EDITOR_NODE_SOCKET_EVENT eventType)
+void FEEditorFloatSourceNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
 {
-	FEEditorNode::socketEvent(ownSocket,  connectedSocket, eventType);
+	FEVisualNode::socketEvent(ownSocket,  connectedSocket, eventType);
 }
 
 float FEEditorFloatSourceNode::getData()
@@ -56,9 +56,9 @@ float FEEditorFloatSourceNode::getData()
 	return data;
 }
 
-bool FEEditorFloatSourceNode::canConnect(FEEditorNodeSocket* ownSocket, FEEditorNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorFloatSourceNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
 {
-	if (!FEEditorNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
 		return false;
 
 	return false;
