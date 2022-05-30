@@ -6,12 +6,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	EDITOR.initializeResources();
 
 	const int frameCountTillMeasure = 20;
-	float cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
-	float gpuFrameDurations[frameCountTillMeasure] = { 0.0f };
+	double cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
+	double gpuFrameDurations[frameCountTillMeasure] = { 0.0f };
 	int frameCounter = 0;
 
-	float avarageCpuFrameDuration = 0.0f;
-	float avarageGpuFrameDuration = 0.0f;
+	double avarageCpuFrameDuration = 0.0;
+	double avarageGpuFrameDuration = 0.0;
 
 	while (ENGINE.isWindowOpened())
 	{
@@ -43,17 +43,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->albedo->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 			ImGui::Image((void*)(intptr_t)RENDERER.GBuffer->materialProperties->getTextureID(), ImVec2(256 * 1, 256 * 1), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 #endif
-			std::string totalTimeDisk = "totalTimeDisk: " + std::to_string(RESOURCE_MANAGER.totalTimeDisk);
-			ImGui::Text(totalTimeDisk.c_str());
-
-			std::string TimeOpenGL = "TimeOpenGL: " + std::to_string(RESOURCE_MANAGER.TimeOpenGL);
-			ImGui::Text(TimeOpenGL.c_str());
-
-			std::string TimeOpenGLmip = "TimeOpenGLmip: " + std::to_string(RESOURCE_MANAGER.TimeOpenGLmip);
-			ImGui::Text(TimeOpenGLmip.c_str());
-
-			std::string TimeOpenGLmipload = "TimeOpenGLmipload: " + std::to_string(RESOURCE_MANAGER.TimeOpenGLmipload);
-			ImGui::Text(TimeOpenGLmipload.c_str());
 
 #ifdef EDITOR_SELECTION_DEBUG_MODE
 			std::string objectsUnderMouse = "objectsUnderMouse: " + std::to_string(SELECTED.objectsUnderMouse.size());

@@ -65,8 +65,9 @@ void FEProjectManager::openProject(int projectIndex)
 	PROJECT_MANAGER.getCurrent()->loadScene();
 	indexChosen = -1;
 
-	EDITOR_INTERNAL_RESOURCES.internalEditorEntities.clear();
-	GIZMO_MANAGER.reInitializeEntities();
+	EDITOR_INTERNAL_RESOURCES.clearListByType(FE_ENTITY);
+	if (SCENE.getEntityByName("transformationXGizmoEntity").size() == 0)
+		GIZMO_MANAGER.reInitializeEntities();
 
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity);
 	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity);
@@ -85,10 +86,12 @@ void FEProjectManager::openProject(int projectIndex)
 
 	// all parts of Gizmos are standard resources except entities, so we need to register them again.
 	// if it is first start and those entities are already registered these calls just returns false.
-	auto it = EDITOR_INTERNAL_RESOURCES.internalEditorEntities.begin();
-	while (it != EDITOR_INTERNAL_RESOURCES.internalEditorEntities.end())
+	auto it = EDITOR_INTERNAL_RESOURCES.internalEditorObjects.begin();
+	while (it != EDITOR_INTERNAL_RESOURCES.internalEditorObjects.end())
 	{
-		SCENE.addEntity(it->second);
+		if (it->second->getType() == FE_ENTITY)
+			SCENE.addEntity(reinterpret_cast<FEEntity*>(it->second));
+		
 		it++;
 	}
 
@@ -555,7 +558,6 @@ void FEProject::saveScene(bool fullSave)
 		entityData[entity->getObjectID()]["type"] = FEObjectTypeToString(entity->getType());
 		entityData[entity->getObjectID()]["name"] = entity->getName();
 		entityData[entity->getObjectID()]["prefab"] = entity->prefab->getObjectID();
-		//entityData[entity->getObjectID()]["gameModel"] = entity->gameModel->getObjectID();
 		writeTransformToJSON(entityData[entity->getObjectID()]["transformation"], &entity->transform);
 
 		if (entity->getType() == FE_ENTITY_INSTANCED)
@@ -605,6 +607,8 @@ void FEProject::saveScene(bool fullSave)
 			else
 			{
 				entityData[entity->getObjectID()]["snappedToTerrain"] = instancedEntity->getSnappedToTerrain()->getObjectID();
+				entityData[entity->getObjectID()]["terrainLayer"] = instancedEntity->getTerrainLayer();
+				entityData[entity->getObjectID()]["minimalLayerIntensity"] = instancedEntity->getMinimalLayerIntensity();
 			}
 		}
 
@@ -1005,7 +1009,9 @@ void FEProject::loadScene()
 			{
 				if (root["terrains"][terrainList[i]].isMember("layerMaps"))
 				{
-					FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETextureAsync((projectFolder + root["terrains"][terrainList[i]]["layerMaps"][j]["fileName"].asCString()).c_str(), root["terrains"][terrainList[i]]["layerMaps"][j]["name"].asString(), nullptr, root["terrains"][terrainList[i]]["layerMaps"][j]["ID"].asString());
+					// Not using LoadFETextureAsync because these textures could be used for instanced entities initialization.
+					//FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETextureAsync((projectFolder + root["terrains"][terrainList[i]]["layerMaps"][j]["fileName"].asCString()).c_str(), root["terrains"][terrainList[i]]["layerMaps"][j]["name"].asString(), nullptr, root["terrains"][terrainList[i]]["layerMaps"][j]["ID"].asString());
+					FETexture* loadedTexture = RESOURCE_MANAGER.LoadFETexture((projectFolder + root["terrains"][terrainList[i]]["layerMaps"][j]["fileName"].asCString()).c_str(), root["terrains"][terrainList[i]]["layerMaps"][j]["name"].asString());
 					newTerrain->layerMaps[j] = loadedTexture;
 				}
 			}
@@ -1050,6 +1056,16 @@ void FEProject::loadScene()
 				{
 					FETerrain* terrain = SCENE.getTerrain(root["entities"][entityList[i]]["snappedToTerrain"].asString());
 					terrain->snapInstancedEntity(instancedEntity);
+
+					if (root["entities"][entityList[i]].isMember("terrainLayer"))
+					{
+						if (root["entities"][entityList[i]]["terrainLayer"].asInt() != -1)
+						{
+							terrain->connectInstancedEntityToLayer(instancedEntity, root["entities"][entityList[i]]["terrainLayer"].asInt());
+						}
+
+						instancedEntity->setMinimalLayerIntensity(root["entities"][entityList[i]]["minimalLayerIntensity"].asFloat());
+					}
 				}
 
 				instancedEntity->populate(instancedEntity->spawnInfo);

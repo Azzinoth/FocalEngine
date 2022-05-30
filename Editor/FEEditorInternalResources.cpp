@@ -5,17 +5,42 @@ FEEditorInternalResources* FEEditorInternalResources::_instance = nullptr;
 FEEditorInternalResources::FEEditorInternalResources() {}
 FEEditorInternalResources::~FEEditorInternalResources() {}
 
-bool FEEditorInternalResources::isInInternalEditorList(FEMesh* mesh)
+void FEEditorInternalResources::addResourceToInternalEditorList(FEObject* object)
 {
-	return !(internalEditorMesh.find(int(std::hash<std::string>{}(mesh->getName()))) == internalEditorMesh.end());
+	if (object == nullptr)
+	{
+		LOG.add("object is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return;
+	}
+
+	internalEditorObjects[object->getObjectID()] = object;
 }
 
-bool FEEditorInternalResources::isInInternalEditorList(FEGameModel* gameModel)
+bool FEEditorInternalResources::isInInternalEditorList(FEObject* object)
 {
-	return !(internalEditorGameModels.find(int(std::hash<std::string>{}(gameModel->getName()))) == internalEditorGameModels.end());
+	if (object == nullptr)
+	{
+		LOG.add("object is nullptr in function FEEditorInternalResources::isInInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		return false;
+	}
+
+	return !(internalEditorObjects.find(object->getObjectID()) == internalEditorObjects.end());
 }
 
-bool FEEditorInternalResources::isInInternalEditorList(FEEntity* entity)
+void FEEditorInternalResources::clearListByType(FEObjectType type)
 {
-	return !(internalEditorEntities.find(entity->getNameHash()) == internalEditorEntities.end());
+	auto it = internalEditorObjects.begin();
+	while (it != internalEditorObjects.end())
+	{
+		if (it->second->getType() == type)
+		{
+			auto temp = it->second;
+			it++;
+			internalEditorObjects.erase(temp->getObjectID());
+		}
+		else
+		{
+			it++;
+		}
+	}
 }

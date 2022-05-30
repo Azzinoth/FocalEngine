@@ -2,7 +2,6 @@
 #pragma warning (disable: 4752)     // found Intel(R) Advanced Vector Extensions; consider using / arch:AVX	FocalEnginePrivate
 #pragma warning (disable: 4334)     // '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?) in lodepng.cpp
 
-#include "FETime.h"
 #include "FEBasicApplication/FEBasicApplication.h"
 
 #include <iostream>
@@ -12,7 +11,6 @@
 // run time checking(/RTC) makes the Microsoft implementation of std containers 
 // *very* slow in debug builds !
 // So in visual studio go to Project -> Properties -> C/C++ -> Code Generation -> Basic Runtime Checks and set to "Default"
-#include <unordered_map>
 #include <map>
 #define GLM_FORCE_XYZW_ONLY
 #include "glm/vec3.hpp"

@@ -43,8 +43,8 @@ namespace FocalEngine
 
 		void renderTo(FEFramebuffer* renderTo);
 
-		float getCpuTime();
-		float getGpuTime();
+		double getCpuTime();
+		double getGpuTime();
 
 		FEPostProcess* createPostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
 		void takeScreenshot(const char* fileName);
@@ -73,7 +73,7 @@ namespace FocalEngine
 		int windowH;
 		std::string windowTitle;
 
-		float cpuTime, gpuTime;
+		double cpuTime, gpuTime;
 		double mouseX, mouseY;
 
 		static FERenderTargetMode renderTargetMode;

@@ -169,7 +169,7 @@ void FEResourceManager::saveFETexture(FETexture* texture, const char* fileName)
 	if (texture->internalFormat == GL_R16 || texture->internalFormat == GL_RED || texture->internalFormat == GL_RGBA)
 	{
 		size_t dataSize = 0;
-		unsigned char* pixels = getFETextureRawData(texture, &dataSize);
+		unsigned char* pixels = texture->getRawData(&dataSize);
 
 		file.write((char*)&dataSize, sizeof(int));
 		file.write((char*)pixels, sizeof(char) * dataSize);
@@ -311,8 +311,6 @@ FETexture* FEResourceManager::LoadFETextureAsync(const char* fileName, std::stri
 
 FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name, FETexture* existingTexture)
 {
-	auto start = std::chrono::system_clock::now();
-
 	std::fstream file;
 	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 	std::streamsize fileSize = file.tellg();
@@ -327,152 +325,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Na
 	file.read(fileData, fileSize);
 	file.close();
 
-	int currentShift = 0;
-	// version of FETexture file type
-	float version = *(float*)(&fileData[currentShift]);
-	currentShift += 4;
-	if (version != FE_TEXTURE_VERSION)
-	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardTextures.size() > 0)
-		{
-			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	int objectIDSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-
-	char* objectID = new char[objectIDSize];
-	strcpy_s(objectID, objectIDSize, (char*)(&fileData[currentShift]));
-	currentShift += objectIDSize;
-
-	int width = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int height = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int internalFormat = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-
-	int nameSize = 0;
-	nameSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-
-	char* textureName = new char[nameSize];
-	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
-	currentShift += nameSize;
-
-	FETexture* newTexture = nullptr;
-	if (existingTexture != nullptr)
-	{
-		newTexture = existingTexture;
-		newTexture->setName(textureName);
-	}
-	else
-	{
-		newTexture = createTexture(textureName);
-	}
-	
-	newTexture->width = width;
-	newTexture->height = height;
-	newTexture->internalFormat = internalFormat;
-	newTexture->fileName = fileName;
-
-	auto end = std::chrono::system_clock::now();
-	totalTimeDisk += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
-
-	start = std::chrono::system_clock::now();
-
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
-
-	// Height map should not be loaded by this function
-	if (newTexture->internalFormat == GL_R16)
-		return nullptr;
-
-	int maxDimention = std::max(newTexture->width, newTexture->height);
-	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), newTexture->internalFormat, newTexture->width, newTexture->height));
-
-	end = std::chrono::system_clock::now();
-	TimeOpenGL += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
-	start = std::chrono::system_clock::now();
-
-	if (newTexture->mipEnabled)
-	{
-		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	end = std::chrono::system_clock::now();
-	TimeOpenGLmip += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
-	start = std::chrono::system_clock::now();
-
-	int mipW = newTexture->width / 2;
-	int mipH = newTexture->height / 2;
-	for (size_t i = 0; i < mipCount; i++)
-	{
-		int size = *(int*)(&fileData[currentShift]);
-		currentShift += 4;
-
-		if (i == 0)
-		{
-			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
-		}
-		else
-		{
-			FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, int(i), 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
-			
-			mipW = mipW / 2;
-			mipH = mipH / 2;
-
-			if (mipW <= 0 || mipH <= 0)
-				break;
-		}
-
-		currentShift += size;
-	}
-
-	// overwrite objectID with objectID from file.
-	if (objectID != nullptr)
-	{
-		std::string oldID = newTexture->getObjectID();
-		newTexture->setID(objectID);
-
-		if (textures.find(oldID) != textures.end())
-		{
-			textures.erase(oldID);
-			textures[newTexture->getObjectID()] = newTexture;
-		}
-	}
-
-	end = std::chrono::system_clock::now();
-	TimeOpenGLmipload += std::chrono::duration_cast<std::chrono::duration<float>>(end - start).count() * 1000.0f;
-
-	delete[] objectID;
-	delete[] fileData;
-	delete[] textureName;
-
-	totalTimeDisk;
-	TimeOpenGL;
-	TimeOpenGLmip;
-	TimeOpenGLmipload;
-
-	return newTexture;
+	return LoadFETexture(fileData, Name, existingTexture);
 }
 
 FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FETexture* existingTexture)
@@ -543,7 +396,7 @@ FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FE
 		int size = *(int*)(&fileData[currentShift]);
 		currentShift += 4;
 		
-		updateFETextureRawData(newTexture, (unsigned char*)(&fileData[currentShift]));
+		newTexture->updateRawData((unsigned char*)(&fileData[currentShift]));
 	}
 	else
 	{
@@ -710,7 +563,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
 	terrain->AABB = FEAABB(minPoint, maxPoint);
 
-	updateFETextureRawData(newTexture, (unsigned char*)(&fileData[currentShift]));
+	newTexture->updateRawData((unsigned char*)(&fileData[currentShift]));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
@@ -2418,7 +2271,7 @@ std::vector<FETexture*> FEResourceManager::channelsToFETextures(FETexture* sourc
 	std::vector<FETexture*> result;
 
 	size_t textureDataLenght = 0;
-	unsigned char* pixels = getFETextureRawData(sourceTexture, &textureDataLenght);
+	unsigned char* pixels = sourceTexture->getRawData(&textureDataLenght);
 
 	unsigned char* redChannel = new unsigned char[size_t(textureDataLenght / 4.0f)];
 	int index = 0;
@@ -2638,8 +2491,8 @@ void FEResourceManager::fillTerrainLayerMaskWithRawData(unsigned char* rawData, 
 
 	std::vector<unsigned char*> layersPerTextureData;
 	layersPerTextureData.resize(2);
-	layersPerTextureData[0] = getFETextureRawData(terrain->layerMaps[0]); 
-	layersPerTextureData[1] = getFETextureRawData(terrain->layerMaps[1]);
+	layersPerTextureData[0] = terrain->layerMaps[0]->getRawData();
+	layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
 
 	std::vector<unsigned char*> layersPerChannelData;
 	layersPerChannelData.resize(FE_TERRAIN_MAX_LAYERS);
@@ -2723,12 +2576,12 @@ void FEResourceManager::fillTerrainLayerMaskWithRawData(unsigned char* rawData, 
 	int maxDimention = std::max(int(textureWidht), int(textureHeight));
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 
-	updateFETextureRawData(terrain->layerMaps[0], finalTextureChannels[0], mipCount);
+	terrain->layerMaps[0]->updateRawData(finalTextureChannels[0], mipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	updateFETextureRawData(terrain->layerMaps[1], finalTextureChannels[1], mipCount);
+	terrain->layerMaps[1]->updateRawData(finalTextureChannels[1], mipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
@@ -2791,8 +2644,8 @@ void FEResourceManager::loadTerrainLayerMask(const char* fileName, FETerrain* te
 		// Firstly we check if current masks has any data.
 		std::vector<unsigned char*> layersPerTextureData;
 		layersPerTextureData.resize(2);
-		layersPerTextureData[0] = getFETextureRawData(terrain->layerMaps[0]);
-		layersPerTextureData[1] = getFETextureRawData(terrain->layerMaps[1]);
+		layersPerTextureData[0] = terrain->layerMaps[0]->getRawData();
+		layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
 
 		// We fill first layer by default so we should check it differently
 		unsigned char firstValue = layersPerTextureData[0][0];
@@ -2905,12 +2758,12 @@ void FEResourceManager::saveTerrainLayerMask(const char* fileName, FETerrain* te
 	// Reading data from current layer map texture.
 	size_t resultingTextureDataLenght = 0;
 	FETexture* correctLayer = terrain->layerMaps[layerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	unsigned char* rawData = getFETextureRawData(correctLayer, &resultingTextureDataLenght);
+	unsigned char* rawData = correctLayer->getRawData(&resultingTextureDataLenght);
 	unsigned char* resultingData = new unsigned char[resultingTextureDataLenght];
 
 	for (size_t i = 0; i < resultingTextureDataLenght; i += 4)
 	{
-		size_t index = i + layerIndex;
+		size_t index = i + layerIndex % FE_TERRAIN_LAYER_PER_TEXTURE;
 		resultingData[i] = rawData[index];
 		resultingData[i + 1] = rawData[index];
 		resultingData[i + 2] = rawData[index];
@@ -3009,7 +2862,7 @@ bool FEResourceManager::exportFETextureToPNG(FETexture* textureToExport, const c
 	if (textureToExport->internalFormat == GL_RED)
 	{
 		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 4);
-		unsigned char* textreData = getFETextureRawData(textureToExport);
+		unsigned char* textreData = textureToExport->getRawData();
 
 		for (size_t i = 0; i < rawData.size(); i += 4)
 		{
@@ -3022,7 +2875,7 @@ bool FEResourceManager::exportFETextureToPNG(FETexture* textureToExport, const c
 	else if (textureToExport->internalFormat == GL_R16)
 	{
 		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 2);
-		unsigned char* textreData = getFETextureRawData(textureToExport);
+		unsigned char* textreData = textureToExport->getRawData();
 
 		for (size_t i = 0; i < rawData.size(); i++)
 		{
@@ -3037,7 +2890,8 @@ bool FEResourceManager::exportFETextureToPNG(FETexture* textureToExport, const c
 	else
 	{
 		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 4);
-		unsigned char* textreData = getFETextureRawData(textureToExport);
+		unsigned char* textreData = textureToExport->getRawData();
+
 		for (size_t i = 0; i < rawData.size(); i++)
 		{
 			rawData[i] = textreData[i];
@@ -3122,7 +2976,7 @@ unsigned char* FEResourceManager::resizeTextureRawData(FETexture* sourceTexture,
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, sourceTexture->getTextureID()));
 
-	unsigned char* currentData = getFETextureRawData(sourceTexture);
+	unsigned char* currentData = sourceTexture->getRawData();
 	unsigned char* result = resizeTextureRawData(currentData, sourceTexture->getWidth(), sourceTexture->getHeight(), targetWidth, targetHeight, sourceTexture->internalFormat, filtrationLevel);
 	delete[] currentData;
 
@@ -3320,7 +3174,7 @@ void FEResourceManager::resizeTexture(FETexture* sourceTexture, int targetWidth,
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, sourceTexture->getTextureID()));
 
-	unsigned char* currentData = getFETextureRawData(sourceTexture);
+	unsigned char* currentData = sourceTexture->getRawData();
 	unsigned char* result = resizeTextureRawData(currentData, sourceTexture->getWidth(), sourceTexture->getHeight(), targetWidth, targetHeight, sourceTexture->internalFormat, filtrationLevel);
 
 	sourceTexture->width = targetWidth;
@@ -3330,11 +3184,11 @@ void FEResourceManager::resizeTexture(FETexture* sourceTexture, int targetWidth,
 
 	if (sourceTexture->internalFormat == GL_RGBA)
 	{
-		updateFETextureRawData(sourceTexture, result, mipCount);
+		sourceTexture->updateRawData(result, mipCount);
 	}
 	else if (sourceTexture->internalFormat == GL_RED)
 	{
-		// Function resizeTextureRawData will output RGBA data  we will need to take only R channel.
+		// Function resizeTextureRawData will output RGBA data, we need to take only R channel.
 		std::vector<unsigned char> redChannel;
 		redChannel.resize(sourceTexture->getWidth() * sourceTexture->getHeight());
 		for (size_t i = 0; i < redChannel.size() * 4; i+=4)
@@ -3342,11 +3196,11 @@ void FEResourceManager::resizeTexture(FETexture* sourceTexture, int targetWidth,
 			redChannel[i / 4] = result[i];
 		}
 
-		updateFETextureRawData(sourceTexture, redChannel.data(), mipCount);
+		sourceTexture->updateRawData(redChannel.data(), mipCount);
 	}
 	else
 	{
-		updateFETextureRawData(sourceTexture, result, mipCount);
+		sourceTexture->updateRawData(result, mipCount);
 	}
 
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -3355,121 +3209,6 @@ void FEResourceManager::resizeTexture(FETexture* sourceTexture, int targetWidth,
 
 	delete[] currentData;
 	delete[] result;
-}
-
-unsigned char* FEResourceManager::getFETextureRawData(FETexture* sourceTexture, size_t* rawDataSize)
-{
-	unsigned char* result = nullptr;
-	if (rawDataSize != nullptr)
-		*rawDataSize = 0;
-
-	if (sourceTexture == nullptr)
-	{
-		LOG.add("FEResourceManager::getFETextureRawData with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
-		return result;
-	}
-
-	if (sourceTexture->internalFormat != GL_RGBA &&
-		sourceTexture->internalFormat != GL_RED &&
-		sourceTexture->internalFormat != GL_R16 &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-	{
-		LOG.add("FEResourceManager::getFETextureRawData internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
-		return result;
-	}
-
-	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, sourceTexture->textureID));
-
-	if (sourceTexture->internalFormat == GL_R16)
-	{
-		if (rawDataSize != nullptr)
-			*rawDataSize = sourceTexture->getWidth() * sourceTexture->getHeight() * 2;
-		result = new unsigned char[sourceTexture->getWidth() * sourceTexture->getHeight() * 2];
-		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, result));
-		glPixelStorei(GL_PACK_ALIGNMENT, 4);
-	}
-	else if (sourceTexture->internalFormat == GL_RED)
-	{
-		if (rawDataSize != nullptr)
-			*rawDataSize = sourceTexture->getWidth() * sourceTexture->getHeight();
-		result = new unsigned char[sourceTexture->getWidth() * sourceTexture->getHeight()];
-		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, result));
-		glPixelStorei(GL_PACK_ALIGNMENT, 4);
-	}
-	else
-	{
-		if (rawDataSize != nullptr)
-			*rawDataSize = sourceTexture->getWidth() * sourceTexture->getHeight() * 4;
-		result = new unsigned char[sourceTexture->getWidth() * sourceTexture->getHeight() * 4];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, result));
-	}
-	
-	return result;
-}
-
-void FEResourceManager::updateFETextureRawData(FETexture* texture, unsigned char* newRawData, size_t mipCount)
-{
-	if (texture == nullptr)
-	{
-		LOG.add("FEResourceManager::updateFETextureRawData with nullptr texture", FE_LOG_ERROR, FE_LOG_GENERAL);
-		return;
-	}
-
-	if (texture->internalFormat != GL_RGBA &&
-		texture->internalFormat != GL_RED &&
-		texture->internalFormat != GL_R16 &&
-		texture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		texture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-	{
-		LOG.add("FEResourceManager::updateFETextureRawData internalFormat of texture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
-		return;
-	}
-
-	if (texture->internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT || texture->internalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
-	{
-		texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		for (size_t i = 3; i < size_t(texture->getWidth() * texture->getHeight() * 4); i += 4)
-		{
-			if (newRawData[i] != 255)
-			{
-				texture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-				break;
-			}
-		}
-	}
-
-	FE_GL_ERROR(glDeleteTextures(1, &texture->textureID));
-	FE_GL_ERROR(glGenTextures(1, &texture->textureID));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture->textureID));
-
-	if (texture->internalFormat == GL_RGBA)
-	{
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), GL_RGBA8, texture->getWidth(), texture->getHeight()));
-		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->getWidth(), texture->getHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(newRawData)));
-	}
-	else if (texture->internalFormat == GL_RED)
-	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), GL_R8, texture->getWidth(), texture->getHeight()));
-		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->getWidth(), texture->getHeight(), GL_RED, GL_UNSIGNED_BYTE, (void*)(newRawData)));
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-	}
-	else if (texture->internalFormat == GL_R16)
-	{
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), GL_R16, texture->getWidth(), texture->getHeight()));
-		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->getWidth(), texture->getHeight(), GL_RED, GL_UNSIGNED_SHORT, (void*)(newRawData)));
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-	}
-	else
-	{
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), texture->internalFormat, texture->getWidth(), texture->getHeight()));
-		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texture->getWidth(), texture->getHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(newRawData)));
-	}
 }
 
 void FEResourceManager::deleteTerrainLayerMask(FETerrain* terrain, size_t layerIndex)
@@ -3497,8 +3236,8 @@ void FEResourceManager::deleteTerrainLayerMask(FETerrain* terrain, size_t layerI
 	std::vector<unsigned char*> layersPerTextureData;
 	layersPerTextureData.resize(2);
 	size_t rawDataSize = 0;
-	layersPerTextureData[0] = getFETextureRawData(terrain->layerMaps[0], &rawDataSize);
-	layersPerTextureData[1] = getFETextureRawData(terrain->layerMaps[1]);
+	layersPerTextureData[0] = terrain->layerMaps[0]->getRawData(&rawDataSize);
+	layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
 
 	std::vector<unsigned char*> allLayers;
 	allLayers.resize(8);
@@ -3556,12 +3295,12 @@ void FEResourceManager::deleteTerrainLayerMask(FETerrain* terrain, size_t layerI
 	int maxDimention = std::max(terrain->layerMaps[0]->getWidth(), terrain->layerMaps[0]->getHeight());
 	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
 
-	updateFETextureRawData(terrain->layerMaps[0], firstTextureData, mipCount);
+	terrain->layerMaps[0]->updateRawData(firstTextureData, mipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	updateFETextureRawData(terrain->layerMaps[1], secondTextureData, mipCount);
+	terrain->layerMaps[1]->updateRawData(secondTextureData, mipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
@@ -3902,11 +3641,11 @@ FETexture* FEResourceManager::createTextureWithTransparency(FETexture* originalT
 	}
 
 	FETexture* result = createTexture();
-	unsigned char* rawData = getFETextureRawData(originalTexture);
+	unsigned char* rawData = originalTexture->getRawData();
 	result->width = originalTexture->getWidth();
 	result->height = originalTexture->getHeight();
 
-	unsigned char* maskRawData = getFETextureRawData(maskTexture);
+	unsigned char* maskRawData = maskTexture->getRawData();
 	for (size_t i = 4; i < size_t(result->width * result->height * 4); i += 4)
 	{
 		rawData[-1 + i] = maskRawData[-4 + i];

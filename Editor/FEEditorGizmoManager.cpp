@@ -19,6 +19,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationXGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationXGizmoGM"), "transformationXGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationXGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationXGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationXGizmoEntity->setCastShadows(false);
 	transformationXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -32,6 +33,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationYGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationYGizmoGM"), "transformationYGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationYGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationYGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationYGizmoEntity->setCastShadows(false);
 	transformationYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -45,6 +47,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationZGizmoEntity = SCENE.addEntity(new FEGameModel(TransformationGizmoMesh, currentMaterial, "TransformationZGizmoGM"), "transformationZGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationZGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationZGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationZGizmoEntity->setCastShadows(false);
 	transformationZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -58,6 +61,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationXYGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationXYGizmoGM"), "transformationXYGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationXYGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationXYGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationXYGizmoEntity->setCastShadows(false);
 	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
@@ -70,6 +74,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationYZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationYZGizmoGM"), "transformationYZGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationYZGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationYZGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationYZGizmoEntity->setCastShadows(false);
 	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
@@ -82,6 +87,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	transformationXZGizmoEntity = SCENE.addEntity(new FEGameModel(RESOURCE_MANAGER.getMesh("84251E6E0D0801363579317R"/*"cube"*/), currentMaterial, "TransformationXZGizmoGM"), "transformationXZGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(transformationXZGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(transformationXZGizmoEntity->prefab->getComponent(0)->gameModel);
 	transformationXZGizmoEntity->setCastShadows(false);
 	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
@@ -99,6 +105,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleXGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleXGizmoGM"), "scaleXGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(scaleXGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(scaleXGizmoEntity->prefab->getComponent(0)->gameModel);
 	scaleXGizmoEntity->setCastShadows(false);
 	scaleXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -112,6 +119,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleYGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleYGizmoGM"), "scaleYGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(scaleYGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(scaleYGizmoEntity->prefab->getComponent(0)->gameModel);
 	scaleYGizmoEntity->setCastShadows(false);
 	scaleYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -125,6 +133,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	scaleZGizmoEntity = SCENE.addEntity(new FEGameModel(scaleGizmoMesh, currentMaterial, "scaleZGizmoGM"), "scaleZGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(scaleZGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(scaleZGizmoEntity->prefab->getComponent(0)->gameModel);
 	scaleZGizmoEntity->setCastShadows(false);
 	scaleZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
@@ -142,6 +151,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.9f, 0.1f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateXGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateXGizmoGM"), "rotateXGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(rotateXGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(rotateXGizmoEntity->prefab->getComponent(0)->gameModel);
 	rotateXGizmoEntity->setCastShadows(false);
 	rotateXGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
@@ -155,6 +165,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.9f, 0.1f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateYGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateYGizmoGM"), "rotateYGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(rotateYGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(rotateYGizmoEntity->prefab->getComponent(0)->gameModel);
 	rotateYGizmoEntity->setCastShadows(false);
 	rotateYGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
@@ -168,6 +179,7 @@ void GizmoManager::initializeResources()
 	currentMaterial->addParameter(FEShaderParam(glm::vec3(0.1f, 0.1f, 0.9f), "baseColor"));
 	RESOURCE_MANAGER.makeMaterialStandard(currentMaterial);
 	rotateZGizmoEntity = SCENE.addEntity(new FEGameModel(rotateGizmoMesh, currentMaterial, "rotateZGizmoGM"), "rotateZGizmoEntity");
+	RESOURCE_MANAGER.makePrefabStandard(rotateZGizmoEntity->prefab);
 	RESOURCE_MANAGER.makeGameModelStandard(rotateZGizmoEntity->prefab->getComponent(0)->gameModel);
 	rotateZGizmoEntity->setCastShadows(false);
 	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
@@ -901,83 +913,83 @@ void GizmoManager::applyChangesToSelectedObject(FETransformComponent changes)
 void GizmoManager::reInitializeEntities()
 {
 	// transformationXGizmo
-	transformationXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXGizmoGM")[0], "transformationXGizmoEntity");
+	transformationXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationXGizmoGM")[0], "transformationXGizmoEntity");
 	transformationXGizmoEntity->setCastShadows(false);
 	transformationXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 	transformationXGizmoEntity->setIsPostprocessApplied(false);
 
 	// transformationYGizmo
-	transformationYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationYGizmoGM")[0], "transformationYGizmoEntity");
+	transformationYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationYGizmoGM")[0], "transformationYGizmoEntity");
 	transformationYGizmoEntity->setCastShadows(false);
 	transformationYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
 	transformationYGizmoEntity->setIsPostprocessApplied(false);
 
 	// transformationZGizmo
-	transformationZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationZGizmoGM")[0], "transformationZGizmoEntity");
+	transformationZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationZGizmoGM")[0], "transformationZGizmoEntity");
 	transformationZGizmoEntity->setCastShadows(false);
 	transformationZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	transformationZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
 	transformationZGizmoEntity->setIsPostprocessApplied(false);
 
 	// plane gizmos
-	transformationXYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXYGizmoGM")[0], "transformationXYGizmoEntity");
+	transformationXYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationXYGizmoGM")[0], "transformationXYGizmoEntity");
 	transformationXYGizmoEntity->setCastShadows(false);
 	transformationXYGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale, gizmosScale * 0.02f));
 	transformationXYGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 	transformationXYGizmoEntity->setIsPostprocessApplied(false);
 
 	
-	transformationYZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationYZGizmoGM")[0], "transformationYZGizmoEntity");
+	transformationYZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationYZGizmoGM")[0], "transformationYZGizmoEntity");
 	transformationYZGizmoEntity->setCastShadows(false);
 	transformationYZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 0.02f, gizmosScale, gizmosScale));
 	transformationYZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	transformationYZGizmoEntity->setIsPostprocessApplied(false);
 
-	transformationXZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("TransformationXZGizmoGM")[0], "transformationXZGizmoEntity");
+	transformationXZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("TransformationXZGizmoGM")[0], "transformationXZGizmoEntity");
 	transformationXZGizmoEntity->setCastShadows(false);
 	transformationXZGizmoEntity->transform.setScale(glm::vec3(gizmosScale, gizmosScale * 0.02f, gizmosScale));
 	transformationXZGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, 0.0f));
 	transformationXZGizmoEntity->setIsPostprocessApplied(false);
 
 	// scaleXGizmo
-	scaleXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleXGizmoGM")[0], "scaleXGizmoEntity");
+	scaleXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("scaleXGizmoGM")[0], "scaleXGizmoEntity");
 	scaleXGizmoEntity->setCastShadows(false);
 	scaleXGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleXGizmoEntity->transform.setRotation(glm::vec3(0.0f, 0.0f, -90.0f));
 	scaleXGizmoEntity->setIsPostprocessApplied(false);
 
 	// scaleYGizmo
-	scaleYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleYGizmoGM")[0], "scaleYGizmoEntity");
+	scaleYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("scaleYGizmoGM")[0], "scaleYGizmoEntity");
 	scaleYGizmoEntity->setCastShadows(false);
 	scaleYGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleYGizmoEntity->transform.setRotation(glm::vec3(0.0f));
 	scaleYGizmoEntity->setIsPostprocessApplied(false);
 
 	// scaleZGizmo
-	scaleZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("scaleZGizmoGM")[0], "scaleZGizmoEntity");
+	scaleZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("scaleZGizmoGM")[0], "scaleZGizmoEntity");
 	scaleZGizmoEntity->setCastShadows(false);
 	scaleZGizmoEntity->transform.setScale(glm::vec3(gizmosScale));
 	scaleZGizmoEntity->transform.setRotation(glm::vec3(90.0f, 0.0f, 90.0f));
 	scaleZGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotateXGizmo
-	rotateXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateXGizmoGM")[0], "rotateXGizmoEntity");
+	rotateXGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("rotateXGizmoGM")[0], "rotateXGizmoEntity");
 	rotateXGizmoEntity->setCastShadows(false);
 	rotateXGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateXGizmoEntity->transform.setRotation(rotateXStandardRotation);
 	rotateXGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotateYGizmo
-	rotateYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateYGizmoGM")[0], "rotateYGizmoEntity");
+	rotateYGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("rotateYGizmoGM")[0], "rotateYGizmoEntity");
 	rotateYGizmoEntity->setCastShadows(false);
 	rotateYGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateYGizmoEntity->transform.setRotation(rotateYStandardRotation);
 	rotateYGizmoEntity->setIsPostprocessApplied(false);
 
 	// rotateZGizmo
-	rotateZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getGameModelByName("rotateZGizmoGM")[0], "rotateZGizmoEntity");
+	rotateZGizmoEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefabByName("rotateZGizmoGM")[0], "rotateZGizmoEntity");
 	rotateZGizmoEntity->setCastShadows(false);
 	rotateZGizmoEntity->transform.setScale(glm::vec3(gizmosScale * 2.0f));
 	rotateZGizmoEntity->transform.setRotation(rotateZStandardRotation);

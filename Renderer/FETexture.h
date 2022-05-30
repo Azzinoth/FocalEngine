@@ -40,6 +40,9 @@ namespace FocalEngine
 		GLint getInternalFormat();
 		int getWidth();
 		int getHeight();
+
+		unsigned char* getRawData(size_t* rawDataSize = nullptr);
+		void updateRawData(unsigned char* newRawData, size_t mipCount = 1);
 	private:
 		GLuint textureID = -1;
 		void getNewGLTextureID();

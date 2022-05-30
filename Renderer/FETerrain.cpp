@@ -25,6 +25,7 @@ FETerrain::FETerrain(std::string Name) : FEObject(FE_TERRAIN, Name)
 	}
 
 	layerMaps.resize(FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE);
+	layerMapsRawData.resize(FE_TERRAIN_MAX_LAYERS / FE_TERRAIN_LAYER_PER_TEXTURE);
 	layerMaps[0] = nullptr;
 	layerMaps[1] = nullptr;
 
@@ -269,7 +270,6 @@ float FETerrain::getHeightAt(glm::vec2 XZWorldPosition)
 
 		int index = int(localZ * this->heightMap->getWidth() + localX);
 		return (heightMapArray[index] * 2 * hightScale - hightScale) * transform.getScale()[1] + transform.getPosition()[1];
-		//return heightMapArray[index] * hightScale * transform.getScale()[1] + transform.getPosition()[1];
 	}
 
 	return -FLT_MAX;
@@ -309,14 +309,6 @@ bool FETerrain::intersectionInRange(float start, float finish, glm::dvec3 mouseR
 	glm::dvec3 startPoint = getPointOnRay(mouseRayStart, mouseRayDirection, start);
 	glm::dvec3 endPoint = getPointOnRay(mouseRayStart, mouseRayDirection, finish);
 	return !isUnderGround(startPoint) && isUnderGround(endPoint) ? true : false;
-	/*if (!isUnderGround(startPoint) && isUnderGround(endPoint))
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}*/
 }
 
 glm::dvec3 FETerrain::binarySearch(int count, float start, float finish, glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection)
@@ -363,14 +355,17 @@ glm::dvec3 FETerrain::getPointOnTerrain(glm::dvec3 mouseRayStart, glm::dvec3 mou
 
 void FETerrain::updateCPUHeightInfo()
 {
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, heightMap->getTextureID()));
+	/*FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, heightMap->getTextureID()));
 
 	size_t rawDataLenght = heightMap->getWidth() * heightMap->getHeight() * 2;
 	unsigned char* rawData = new unsigned char[rawDataLenght];
 	glPixelStorei(GL_PACK_ALIGNMENT, 2);
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, rawData));
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
-	heightMap->unBind();
+	heightMap->unBind();*/
+
+	size_t rawDataLenght;
+	unsigned char* rawData = heightMap->getRawData(&rawDataLenght);
 
 	float max = FLT_MIN;
 	float min = FLT_MAX;
@@ -830,4 +825,110 @@ int FETerrain::layersUsed()
 	}
 
 	return layersUsed;
+}
+
+bool FETerrain::updateLayerMapsRawData()
+{
+	if (TIME.endTimeStamp(this->getObjectID()) != -1.0)
+	{
+		if (TIME.endTimeStamp(this->getObjectID()) < 2000)
+			return false;
+	}
+
+	TIME.beginTimeStamp(this->getObjectID());
+
+	for (size_t i = 0; i < layerMaps.size(); i++)
+	{
+		if (layerMapsRawData[i] != nullptr)
+		{
+			delete layerMapsRawData[i];
+			layerMapsRawData[i] = nullptr;
+		}
+
+		if (layerMaps[i] == nullptr)
+		{
+			layerMapsRawData[i] = nullptr;
+		}
+		else
+		{
+			layerMapsRawData[i] = layerMaps[i]->getRawData();
+		}
+	}
+
+	return true;
+}
+
+float FETerrain::getLayerIntensityAt(glm::vec2 XZWorldPosition, int layerIndex)
+{
+	//return 1.0;
+	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	{
+		LOG.add("FETerrain::getLayerIntensityAt with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_GENERAL);
+		return 0.0f;
+	}
+
+	if (layers[layerIndex] == nullptr)
+	{
+		LOG.add("FETerrain::getLayerIntensityAt on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_GENERAL);
+		return 0.0f;
+	}
+
+	updateLayerMapsRawData();
+
+	float localX = XZWorldPosition[0];
+	float localZ = XZWorldPosition[1];
+
+	localX -= finalAABB.getMin()[0];
+	localZ -= finalAABB.getMin()[2];
+
+	if (xSize == 0 || zSize == 0)
+		getAABB();
+
+	localX = localX / xSize;
+	localZ = localZ / zSize;
+
+	if (localX > 0 && localZ > 0 && localX < 1.0 && localZ < 1.0)
+	{
+		int textureIndex = layerIndex / FE_TERRAIN_LAYER_PER_TEXTURE;
+		FETexture* texture = this->layerMaps[textureIndex];
+		localX = float(int(localX * texture->getWidth()));
+		localZ = float(int(localZ * texture->getHeight()));
+
+		int index = int(localZ * texture->getWidth() + localX) * 4 + layerIndex % FE_TERRAIN_LAYER_PER_TEXTURE;
+
+		if (layerMapsRawData[textureIndex] != nullptr)
+			return layerMapsRawData[textureIndex][index] / 255.0f;
+
+	}
+
+	return 0.0f;
+}
+
+void FETerrain::connectInstancedEntityToLayer(FEEntityInstanced* entity, int layerIndex)
+{
+	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	{
+		LOG.add("FETerrain::connectInstancedEntityToLayer with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_GENERAL);
+		return;
+	}
+
+	if (layers[layerIndex] == nullptr)
+	{
+		LOG.add("FETerrain::connectInstancedEntityToLayer on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_GENERAL);
+		return;
+	}
+
+	for (size_t i = 0; i < snapedInstancedEntities.size(); i++)
+	{
+		if (snapedInstancedEntities[i]->getObjectID() == entity->getObjectID())
+		{
+			entity->connectToTerrainLayer(this, layerIndex, &FETerrain::getLayerIntensityAt);
+			break;
+		}
+	}
+}
+
+void FETerrain::unConnectInstancedEntityFromLayer(FEEntityInstanced* entity)
+{
+	entity->unConnectFromTerrainLayer();
 }

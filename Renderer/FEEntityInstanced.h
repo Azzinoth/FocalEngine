@@ -58,8 +58,6 @@ namespace FocalEngine
 
 		std::vector<glm::vec3> instancePositions;
 		int* LODCounts;
-		
-		int cullingType = FE_CULLING_LODS;
 
 		// GPU Culling
 		GLenum instancedBuffer = 0;
@@ -75,9 +73,6 @@ namespace FocalEngine
 
 		FEAABB allInstancesAABB;
 		FEPrefab* lastFramePrefab = nullptr;
-
-		FETerrain* terrainToSnap = nullptr;
-		float(FETerrain::* getTerrainY)(glm::vec2);
 
 		std::vector<glm::mat4> instancedMatrices;
 		std::vector<glm::mat4> transformedInstancedMatrices;
@@ -105,6 +100,11 @@ namespace FocalEngine
 		int getInstanceCount();
 
 		FETerrain* getSnappedToTerrain();
+		int getTerrainLayer();
+
+		float getMinimalLayerIntensity();
+		void setMinimalLayerIntensity(float newValue);
+
 		FESpawnInfo spawnInfo;
 
 		void updateSelectModeAABBData();
@@ -129,7 +129,15 @@ namespace FocalEngine
 		std::vector<FEGameModelInstancedRenderer*> renderers;
 
 		bool selectionMode = false;
-	
+
+		int cullingType = FE_CULLING_LODS;
+
+		FETerrain* terrainToSnap = nullptr;
+		int terrainLayer = -1;
+		float minLayerIntensity = 0.4f;
+		float(FETerrain::* getTerrainY)(glm::vec2);
+		float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int);
+
 		void addInstanceInternal(glm::mat4 instanceMatrix);
 		void addInstances(glm::mat4* instanceMatrix, size_t count);
 
@@ -143,6 +151,9 @@ namespace FocalEngine
 
 		void snapToTerrain(FETerrain* terrain, float(FETerrain::* getTerrainY)(glm::vec2));
 		void unSnapFromTerrain();
+
+		void connectToTerrainLayer(FETerrain* terrain, int layerIndex, float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int));
+		void unConnectFromTerrainLayer();
 
 		void checkDirtyFlag(int subGameModel);
 	};

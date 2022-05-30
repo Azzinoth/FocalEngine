@@ -8,39 +8,12 @@ public:
 	SINGLETON_PUBLIC_PART(FEEditorInternalResources)
 	SINGLETON_PRIVATE_PART(FEEditorInternalResources)
 
-	std::unordered_map<int, FEMesh*> internalEditorMesh;
-	std::unordered_map<int, FEGameModel*> internalEditorGameModels;
-	std::unordered_map<int, FEEntity*> internalEditorEntities;
+	std::unordered_map<std::string, FEObject*> internalEditorObjects;
 
-	template <class RESOURCE>
-	void addResourceToInternalEditorList(RESOURCE* resource);
+	void addResourceToInternalEditorList(FEObject* object);
+	bool isInInternalEditorList(FEObject* object);
 
-	bool isInInternalEditorList(FEMesh* mesh);
-	bool isInInternalEditorList(FEGameModel* gameModel);
-	bool isInInternalEditorList(FEEntity* entity);
+	void clearListByType(FEObjectType type);
 };
-
-template <class RESOURCE>
-void FEEditorInternalResources::addResourceToInternalEditorList(RESOURCE* resource)
-{
-	if (resource == nullptr)
-	{
-		LOG.add("resource is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
-		return;
-	}
-
-	if (resource->getType() == FE_ENTITY)
-	{
-		internalEditorEntities[resource->getNameHash()] = reinterpret_cast<FEEntity*>(resource);
-	}
-	else if (resource->getType() == FE_GAMEMODEL)
-	{
-		internalEditorGameModels[resource->getNameHash()] = reinterpret_cast<FEGameModel*>(resource);;
-	}
-	else if (resource->getType() == FE_MESH)
-	{
-		internalEditorMesh[resource->getNameHash()] = reinterpret_cast<FEMesh*>(resource);;
-	}
-}
 
 #define EDITOR_INTERNAL_RESOURCES FEEditorInternalResources::getInstance()

@@ -271,8 +271,6 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FEObject.h"
 	"SubSystems/FEScene.cpp"
 	"SubSystems/FEScene.h"
-	"SubSystems/FETime.cpp"
-	"SubSystems/FETime.h"
 	"SubSystems/FETransformComponent.cpp"
 	"SubSystems/FETransformComponent.h"
 )
@@ -280,6 +278,8 @@ file(GLOB SubSystems_SRC
 file(GLOB BasicApplicationSubSystem_SRC
 	"SubSystems/FEBasicApplication/FEBasicApplication.cpp"
 	"SubSystems/FEBasicApplication/FEBasicApplication.h"
+	"SubSystems/FEBasicApplication/FETime.cpp"
+	"SubSystems/FEBasicApplication/FETime.h"
 )
 
 # *************** THIRD_PARTY ***************

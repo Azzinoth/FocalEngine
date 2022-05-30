@@ -48,8 +48,6 @@ namespace FocalEngine
 		unsigned char* resizeTextureRawData(FETexture* sourceTexture, size_t targetWidth, size_t targetHeight, int filtrationLevel = 0);
 		unsigned char* resizeTextureRawData(unsigned char* textureData, size_t width, size_t height, size_t targetWidth, size_t targetHeight, GLint internalFormat, int filtrationLevel = 0);
 		void resizeTexture(FETexture* sourceTexture, int targetWidth, int targetHeight, int filtrationLevel = 0);
-		unsigned char* getFETextureRawData(FETexture* sourceTexture, size_t* rawDataSize = nullptr);
-		void updateFETextureRawData(FETexture* texture, unsigned char* newRawData, size_t mipCount = 1);
 		FETexture* createTextureWithTransparency(FETexture* originalTexture, FETexture* maskTexture);
 
 		void saveFETexture(FETexture* texture, const char* fileName);
@@ -127,11 +125,6 @@ namespace FocalEngine
 
 		void reSaveStandardTextures();
 		void reSaveStandardMeshes();
-
-		float totalTimeDisk = 0.0f;
-		float TimeOpenGL = 0.0f;
-		float TimeOpenGLmip = 0.0f;
-		float TimeOpenGLmipload = 0.0f;
 
 		std::string getDefaultResourcesFolder();
 		std::vector<FEObject*> LoadGLTF(const char* fileName);

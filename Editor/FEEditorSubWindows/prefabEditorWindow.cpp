@@ -125,7 +125,7 @@ void prefabEditorWindow::render()
 	if (!isVisible())
 		return;
 
-	if (ImGui::BeginTabBar("##terrainSettings", ImGuiTabBarFlags_None))
+	if (ImGui::BeginTabBar("##prefabSettings", ImGuiTabBarFlags_None))
 	{
 		if (ImGui::BeginTabItem("Game Models"))
 		{

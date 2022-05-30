@@ -10,7 +10,6 @@ int FEngine::renderTargetYShift = 0;
 #define RESOURCE_MANAGER FEResourceManager::getInstance()
 #define ENGINE FEngine::getInstance()
 #define SCENE FEScene::getInstance()
-#define TIME FETime::getInstance()
 
 FEngine::FEngine()
 {
@@ -60,7 +59,7 @@ void FEngine::render(bool internalCall)
 {
 	RENDERER.engineMainCamera = ENGINE.currentCamera;
 	RENDERER.mouseRay = ENGINE.constructMouseRay();
-	ENGINE.currentCamera->move(cpuTime + gpuTime);
+	ENGINE.currentCamera->move(float(cpuTime + gpuTime));
 	RENDERER.render(currentCamera);
 
 	if (!internalCall) cpuTime = TIME.endTimeStamp();
@@ -511,12 +510,12 @@ void FEngine::renderTo(FEFramebuffer* renderTo)
 	renderTo->unBind();
 }
 
-float FEngine::getCpuTime()
+double FEngine::getCpuTime()
 {
 	return cpuTime;
 }
 
-float FEngine::getGpuTime()
+double FEngine::getGpuTime()
 {
 	return gpuTime;
 }

@@ -1518,6 +1518,7 @@ void FEEditor::displayInspector()
 					currentTerrain = instancedEntity->getSnappedToTerrain()->getName();
 				}
 
+				ImGui::SetNextItemWidth(220);
 				if (ImGui::BeginCombo("##Terrain", currentTerrain.c_str(), ImGuiWindowFlags_None))
 				{
 					bool is_selected = (currentTerrain == "none");
@@ -1544,15 +1545,78 @@ void FEEditor::displayInspector()
 					ImGui::EndCombo();
 				}
 
+				if (instancedEntity->getSnappedToTerrain() != nullptr)
+				{
+					ImGui::Text("Terrain layer: ");
+					ImGui::SameLine();
+
+					int currentLayer = instancedEntity->getTerrainLayer();
+					FETerrain* currentTerrain = instancedEntity->getSnappedToTerrain();
+
+					std::string caption = "none";
+					auto layer = currentTerrain->getLayerInSlot(currentLayer);
+					if (layer != nullptr)
+						caption = layer->getName();
+					
+					ImGui::SetNextItemWidth(220);
+					if (ImGui::BeginCombo("##TerrainLayers", caption.c_str(), ImGuiWindowFlags_None))
+					{
+						bool is_selected = (currentLayer == -1);
+						ImGui::PushID("none_TerrainLayers_entity");
+						if (ImGui::Selectable("none", is_selected))
+						{
+							if (currentTerrain != nullptr)
+								currentTerrain->unConnectInstancedEntityFromLayer(instancedEntity);
+						}
+						ImGui::PopID();
+
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+
+						for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+						{
+							FETerrainLayer* layer = currentTerrain->getLayerInSlot(i);
+							if (layer == nullptr)
+								break;
+
+							bool is_selected = (currentLayer == i);
+							ImGui::PushID(layer->getObjectID().c_str());
+							if (ImGui::Selectable(layer->getName().c_str(), is_selected))
+							{
+								currentTerrain->connectInstancedEntityToLayer(instancedEntity, i);
+							}
+							ImGui::PopID();
+
+							if (is_selected)
+								ImGui::SetItemDefaultFocus();
+						}
+						ImGui::EndCombo();
+					}
+
+					if (currentLayer != -1)
+					{
+						ImGui::Text("Minimal layer intensity:");
+						float minLevel = instancedEntity->getMinimalLayerIntensity();
+						ImGui::SameLine();
+						ImGui::SetNextItemWidth(80);
+						ImGui::DragFloat("##minLevel", &minLevel);
+						instancedEntity->setMinimalLayerIntensity(minLevel);
+					}
+				}
+
+				ImGui::Separator();
+
 				ImGui::Text("Seed:");
 				int seed = instancedEntity->spawnInfo.seed;
 				ImGui::SameLine();
+				ImGui::SetNextItemWidth(200);
 				ImGui::DragInt("##Seed", &seed);
 				instancedEntity->spawnInfo.seed = seed;
 
 				ImGui::Text("Object count:");
 				int objectCount = instancedEntity->spawnInfo.objectCount;
 				ImGui::SameLine();
+				ImGui::SetNextItemWidth(200);
 				ImGui::DragInt("##Object count", &objectCount);
 				if (objectCount <= 0)
 					objectCount = 1;
@@ -1561,6 +1625,7 @@ void FEEditor::displayInspector()
 				ImGui::Text("Radius:");
 				float radius = instancedEntity->spawnInfo.radius;
 				ImGui::SameLine();
+				ImGui::SetNextItemWidth(200);
 				ImGui::DragFloat("##Radius", &radius);
 				if (radius < 0.0f)
 					radius = 0.1f;
@@ -1569,6 +1634,7 @@ void FEEditor::displayInspector()
 				ImGui::Text("Scale deviation:");
 				float scaleDeviation = instancedEntity->spawnInfo.scaleDeviation;
 				ImGui::SameLine();
+				ImGui::SetNextItemWidth(150);
 				ImGui::DragFloat("##Scale deviation", &scaleDeviation, 0.01f);
 				if (scaleDeviation < 0.0f)
 					scaleDeviation = 0.0f;

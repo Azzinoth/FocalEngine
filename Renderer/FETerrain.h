@@ -114,10 +114,15 @@ namespace FocalEngine
 		void snapInstancedEntity(FEEntityInstanced* entityToSnap);
 		void unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap);
 
+		void connectInstancedEntityToLayer(FEEntityInstanced* entity, int layerIndex);
+		void unConnectInstancedEntityFromLayer(FEEntityInstanced* entity);
+
 		bool getNextEmptyLayerSlot(size_t& nextEmptyLayerIndex);
 		FETerrainLayer* getLayerInSlot(size_t layerIndex);
 
 		int layersUsed();
+
+		float getLayerIntensityAt(glm::vec2 XZWorldPosition, int layerIndex);
 	private:
 		bool wireframeMode = false;
 		bool visible = true;
@@ -174,6 +179,8 @@ namespace FocalEngine
 		std::vector<FEEntityInstanced*> snapedInstancedEntities;
 
 		std::vector<FETerrainLayer*> layers;
+		std::vector<unsigned char*> layerMapsRawData;
+		bool updateLayerMapsRawData();
 		FETerrainLayer* activateVacantLayerSlot(FEMaterial* material);
 		void deleteLayerInSlot(size_t layerIndex);
 		

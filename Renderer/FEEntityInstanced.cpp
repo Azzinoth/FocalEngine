@@ -4,7 +4,14 @@ using namespace FocalEngine;
 
 float FESpawnInfo::getPositionDeviation()
 {
-	return (rand() % int(radius * 100)) / 100.0f - radius / 2.0f;
+	int integerPart = rand() % int(radius);
+	float fractionalPart = float((rand() % 100) / 100.0f);
+	float result = float(integerPart) + fractionalPart;
+
+	result -= radius / 2.0f;
+
+	return result;
+	//return (rand() % int(radius * 100)) / 100.0f - radius / 2.0f;
 }
 
 float FESpawnInfo::getScaleDeviation()
@@ -148,7 +155,7 @@ void FEEntityInstanced::render(int subGameModel)
 		}
 	}
 
-	if (renderers[subGameModel]->cullingType == FE_CULLING_NONE)
+	if (cullingType == FE_CULLING_NONE)
 	{
 		FE_GL_ERROR(glBindVertexArray(prefab->components[subGameModel]->gameModel->mesh->getVaoID()));
 		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -451,22 +458,37 @@ bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 		float z = spawnInfo.getPositionDeviation();
 		float y = spawnInfo.getPositionDeviation();
 
-		if (renderers[0]->terrainToSnap != nullptr)
+		if (terrainToSnap != nullptr)
 		{
-			y = std::invoke(renderers[0]->getTerrainY, renderers[0]->terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+			y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+
+			if (terrainLayer != -1 && y != -FLT_MAX)
+			{
+				float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z), terrainLayer);
+				if (layerIntensity < minLayerIntensity)
+					y = -FLT_MAX;
+			}
 
 			int countOfTries = 0;
 			while (y == -FLT_MAX)
 			{
 				x = spawnInfo.getPositionDeviation();
 				z = spawnInfo.getPositionDeviation();
-				y = std::invoke(renderers[0]->getTerrainY, renderers[0]->terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+				y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+
+				if (terrainLayer != -1 && y != -FLT_MAX)
+				{
+					float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z), terrainLayer);
+					if (layerIntensity < minLayerIntensity)
+						y = -FLT_MAX;
+				}
+
 				countOfTries++;
-				if (countOfTries > 100)
+				if (countOfTries > 300)
 					break;
 			}
 
-			if (countOfTries > 100)
+			if (countOfTries > 300)
 			{
 				y = transform.position.y + spawnInfo.getPositionDeviation();
 			}
@@ -487,7 +509,7 @@ bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 	}
 	addInstances(newMats.data(), newMats.size());
 
-	if (renderers[0]->terrainToSnap != nullptr)
+	if (terrainToSnap != nullptr)
 	{
 		// terrain.y could be not 0.0f but here we should indicate 0.0f as Y.
 		transform.setPosition(glm::vec3(transform.position.x, 0.0f, transform.position.z));
@@ -501,7 +523,7 @@ bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
 
 FETerrain* FEEntityInstanced::getSnappedToTerrain()
 {
-	return renderers[0]->terrainToSnap;
+	return terrainToSnap;
 }
 
 void FEEntityInstanced::updateSelectModeAABBData()
@@ -633,14 +655,18 @@ void FEEntityInstanced::addInstance(glm::mat4 instanceMatrix)
 
 bool FEEntityInstanced::tryToSnapInstance(size_t instanceIndex)
 {
-	if (instanceIndex < 0 || instanceIndex >= renderers[0]->transformedInstancedMatrices.size() || renderers[0]->terrainToSnap == nullptr)
+	if (instanceIndex < 0 || instanceIndex >= renderers[0]->transformedInstancedMatrices.size() || terrainToSnap == nullptr)
 		return false;
 
 	if (!isSelectMode())
 		return false;
 
-	float y = std::invoke(renderers[0]->getTerrainY, renderers[0]->terrainToSnap, glm::vec2(renderers[0]->transformedInstancedMatrices[instanceIndex][3][0], renderers[0]->transformedInstancedMatrices[instanceIndex][3][2]));
+	float y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(renderers[0]->transformedInstancedMatrices[instanceIndex][3][0], renderers[0]->transformedInstancedMatrices[instanceIndex][3][2]));
 	if (y == -FLT_MAX)
+		return false;
+
+	float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(renderers[0]->transformedInstancedMatrices[instanceIndex][3][0], renderers[0]->transformedInstancedMatrices[instanceIndex][3][2]), terrainLayer);
+	if (layerIntensity < minLayerIntensity)
 		return false;
 
 	if (abs(renderers[0]->transformedInstancedMatrices[instanceIndex][3][1] - y) < 0.01f)
@@ -763,19 +789,13 @@ void FEEntityInstanced::initializeGPUCulling()
 
 void FEEntityInstanced::snapToTerrain(FETerrain* terrain, float(FETerrain::* getTerrainY)(glm::vec2))
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
-	{
-		renderers[i]->terrainToSnap = terrain;
-		renderers[i]->getTerrainY = getTerrainY;
-	}
+	terrainToSnap = terrain;
+	this->getTerrainY = getTerrainY;
 }
 
 void FEEntityInstanced::unSnapFromTerrain()
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
-	{
-		renderers[i]->terrainToSnap = nullptr;
-	}
+	terrainToSnap = nullptr;
 }
 
 void FEEntityInstanced::clearRenderers()
@@ -835,4 +855,36 @@ void FEEntityInstanced::checkDirtyFlag(int subGameModel)
 	{
 		updateMatrices();
 	}
+}
+
+void FEEntityInstanced::connectToTerrainLayer(FETerrain* terrain, int layerIndex, float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int))
+{
+	this->getTerrainLayerIntensity = getTerrainLayerIntensity;
+	terrainLayer = layerIndex;
+}
+
+int FEEntityInstanced::getTerrainLayer()
+{
+	return terrainLayer;
+}
+
+void FEEntityInstanced::unConnectFromTerrainLayer()
+{
+	terrainLayer = -1;
+}
+
+float FEEntityInstanced::getMinimalLayerIntensity()
+{
+	return minLayerIntensity;
+}
+
+void FEEntityInstanced::setMinimalLayerIntensity(float newValue)
+{
+	if (newValue < 0.0001f)
+		newValue = 0.0001f;
+
+	if (newValue > 1.0f)
+		newValue = 1.0f;
+
+	minLayerIntensity = newValue;
 }

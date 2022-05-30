@@ -17,10 +17,10 @@ static void addTransparencyToTextureCallBack(std::vector<FEObject*> selectionsRe
 			return;
 		}
 
-		unsigned char* newRawData = RESOURCE_MANAGER.getFETextureRawData(newTexture);
+		unsigned char* newRawData = newTexture->getRawData();
 		int maxDimention = std::max(originalTexture->getWidth(), originalTexture->getHeight());
 		size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-		RESOURCE_MANAGER.updateFETextureRawData(originalTexture, newRawData, mipCount);
+		originalTexture->updateRawData(newRawData, mipCount);
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));

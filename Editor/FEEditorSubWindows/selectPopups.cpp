@@ -143,7 +143,7 @@ void selectFEObjectPopUp::render()
 		ImGui::SameLine();
 
 		ImGui::SetCursorPosY(35);
-		if (ImGui::InputText("selectFEObjectPopUpFilter", filter, IM_ARRAYSIZE(filter)))
+		if (ImGui::InputText("##selectFEObjectPopUpFilter", filter, IM_ARRAYSIZE(filter)))
 		{
 			if (strlen(filter) == 0)
 			{

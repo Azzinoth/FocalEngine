@@ -74,7 +74,7 @@ void renamePopUp::render()
 
 		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::Text("New object name :");
-		ImGui::InputText("", newName, IM_ARRAYSIZE(newName));
+		ImGui::InputText("##New object name", newName, IM_ARRAYSIZE(newName));
 
 		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f);
