@@ -596,7 +596,8 @@ void FEProject::saveScene(bool fullSave)
 			entityData[entity->getObjectID()]["spawnInfo"]["seed"] = instancedEntity->spawnInfo.seed;
 			entityData[entity->getObjectID()]["spawnInfo"]["objectCount"] = instancedEntity->spawnInfo.objectCount;
 			entityData[entity->getObjectID()]["spawnInfo"]["radius"] = instancedEntity->spawnInfo.radius;
-			entityData[entity->getObjectID()]["spawnInfo"]["scaleDeviation"] = instancedEntity->spawnInfo.scaleDeviation;
+			entityData[entity->getObjectID()]["spawnInfo"]["minScale"] = instancedEntity->spawnInfo.getMinScale();
+			entityData[entity->getObjectID()]["spawnInfo"]["maxScale"] = instancedEntity->spawnInfo.getMaxScale();
 			entityData[entity->getObjectID()]["spawnInfo"]["rotationDeviation.x"] = instancedEntity->spawnInfo.rotationDeviation.x;
 			entityData[entity->getObjectID()]["spawnInfo"]["rotationDeviation.y"] = instancedEntity->spawnInfo.rotationDeviation.y;
 			entityData[entity->getObjectID()]["spawnInfo"]["rotationDeviation.z"] = instancedEntity->spawnInfo.rotationDeviation.z;
@@ -1047,7 +1048,8 @@ void FEProject::loadScene()
 				instancedEntity->spawnInfo.seed = root["entities"][entityList[i]]["spawnInfo"]["seed"].asInt();
 				instancedEntity->spawnInfo.objectCount = root["entities"][entityList[i]]["spawnInfo"]["objectCount"].asInt();
 				instancedEntity->spawnInfo.radius = root["entities"][entityList[i]]["spawnInfo"]["radius"].asFloat();
-				instancedEntity->spawnInfo.scaleDeviation = root["entities"][entityList[i]]["spawnInfo"]["scaleDeviation"].asFloat();
+				instancedEntity->spawnInfo.setMinScale(root["entities"][entityList[i]]["spawnInfo"]["minScale"].asFloat());
+				instancedEntity->spawnInfo.setMaxScale(root["entities"][entityList[i]]["spawnInfo"]["maxScale"].asFloat());
 				instancedEntity->spawnInfo.rotationDeviation.x = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.x"].asFloat();
 				instancedEntity->spawnInfo.rotationDeviation.y = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.y"].asFloat();
 				instancedEntity->spawnInfo.rotationDeviation.z = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.z"].asFloat();
@@ -1264,17 +1266,17 @@ void FEProject::loadScene()
 		std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
 		for (size_t i = 0; i < shaderList.size(); i++)
 		{
-			if (FEObjectManager::getInstance().getFEObject(shaderList[i]) == nullptr)
+			if (OBJECT_MANAGER.getFEObject(shaderList[i]) == nullptr)
 				continue;
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(shaderList[i]), "/Shaders");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(shaderList[i]), "/Shaders");
 		}
 
 		std::vector<std::string> standardShaderList = RESOURCE_MANAGER.getStandardShadersList();
 		for (size_t i = 0; i < standardShaderList.size(); i++)
 		{
-			if (FEObjectManager::getInstance().getFEObject(standardShaderList[i]) == nullptr)
+			if (OBJECT_MANAGER.getFEObject(standardShaderList[i]) == nullptr)
 				continue;
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(standardShaderList[i]), "/Shaders");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(standardShaderList[i]), "/Shaders");
 		}
 
 		VIRTUAL_FILE_SYSTEM.setDirectoryReadOnly(true, "/Shaders");
@@ -1287,23 +1289,23 @@ void FEProject::loadScene()
 		std::vector<std::string> shaderList = RESOURCE_MANAGER.getShadersList();
 		for (size_t i = 0; i < shaderList.size(); i++)
 		{
-			if (FEObjectManager::getInstance().getFEObject(shaderList[i]) == nullptr)
+			if (OBJECT_MANAGER.getFEObject(shaderList[i]) == nullptr)
 				continue;
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(shaderList[i]), "/Shaders");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(shaderList[i]), "/Shaders");
 		}
 
 		std::vector<std::string> standardShaderList = RESOURCE_MANAGER.getStandardShadersList();
 		for (size_t i = 0; i < standardShaderList.size(); i++)
 		{
-			if (FEObjectManager::getInstance().getFEObject(standardShaderList[i]) == nullptr)
+			if (OBJECT_MANAGER.getFEObject(standardShaderList[i]) == nullptr)
 				continue;
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(standardShaderList[i]), "/Shaders");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(standardShaderList[i]), "/Shaders");
 		}
 
 		std::vector<std::string> meshList_ = RESOURCE_MANAGER.getMeshList();
 		for (size_t i = 0; i < meshList_.size(); i++)
 		{
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(meshList_[i]), "/");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(meshList_[i]), "/");
 		}
 
 		std::vector<std::string> textureList = RESOURCE_MANAGER.getTextureList();
@@ -1326,19 +1328,19 @@ void FEProject::loadScene()
 			//}
 
 			if (shouldAdd)
-				VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(textureList[i]), "/");
+				VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(textureList[i]), "/");
 		}
 
 		std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
 		for (size_t i = 0; i < materialList.size(); i++)
 		{
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(materialList[i]), "/");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(materialList[i]), "/");
 		}
 
 		std::vector<std::string> gameModelList_ = RESOURCE_MANAGER.getGameModelList();
 		for (size_t i = 0; i < gameModelList_.size(); i++)
 		{
-			VIRTUAL_FILE_SYSTEM.createFile(FEObjectManager::getInstance().getFEObject(gameModelList_[i]), "/");
+			VIRTUAL_FILE_SYSTEM.createFile(OBJECT_MANAGER.getFEObject(gameModelList_[i]), "/");
 		}
 	}
 }
@@ -1551,7 +1553,8 @@ void FEProject::loadSceneVer0()
 				instancedEntity->spawnInfo.seed = root["entities"][entityList[i]]["spawnInfo"]["seed"].asInt();
 				instancedEntity->spawnInfo.objectCount = root["entities"][entityList[i]]["spawnInfo"]["objectCount"].asInt();
 				instancedEntity->spawnInfo.radius = root["entities"][entityList[i]]["spawnInfo"]["radius"].asFloat();
-				instancedEntity->spawnInfo.scaleDeviation = root["entities"][entityList[i]]["spawnInfo"]["scaleDeviation"].asFloat();
+				instancedEntity->spawnInfo.setMinScale(root["entities"][entityList[i]]["spawnInfo"]["minScale"].asFloat());
+				instancedEntity->spawnInfo.setMaxScale(root["entities"][entityList[i]]["spawnInfo"]["maxScale"].asFloat());
 				instancedEntity->spawnInfo.rotationDeviation.x = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.x"].asFloat();
 				instancedEntity->spawnInfo.rotationDeviation.y = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.y"].asFloat();
 				instancedEntity->spawnInfo.rotationDeviation.z = root["entities"][entityList[i]]["spawnInfo"]["rotationDeviation.z"].asFloat();

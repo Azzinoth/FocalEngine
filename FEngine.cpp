@@ -6,11 +6,6 @@ FERenderTargetMode FEngine::renderTargetMode = FE_GLFW_MODE;
 int FEngine::renderTargetXShift = 0;
 int FEngine::renderTargetYShift = 0;
 
-#define RENDERER FERenderer::getInstance()
-#define RESOURCE_MANAGER FEResourceManager::getInstance()
-#define ENGINE FEngine::getInstance()
-#define SCENE FEScene::getInstance()
-
 FEngine::FEngine()
 {
 
@@ -615,7 +610,7 @@ void FEngine::renderTargetResize()
 	FERenderer& renderer = RENDERER;
 
 	delete RENDERER.sceneToTextureFB;
-	RENDERER.sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH);
+	RENDERER.sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH);
 
 #ifdef USE_DEFERRED_RENDERER
 	RENDERER.GBuffer->renderTargetResize(RENDERER.sceneToTextureFB);
@@ -701,7 +696,7 @@ void FEngine::renderTargetResize()
 
 	// ************************************ SSAO ************************************
 #ifdef USE_DEFERRED_RENDERER
-	RENDERER.SSAOFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH, false);
+	RENDERER.SSAOFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH, false);
 #endif // USE_DEFERRED_RENDERER
 	// ************************************ SSAO END ************************************
 

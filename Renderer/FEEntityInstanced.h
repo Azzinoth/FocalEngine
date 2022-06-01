@@ -30,13 +30,22 @@ namespace FocalEngine
 		int seed = 0;
 		int objectCount = 1;
 		float radius = 1.0f;
-		// 0.1f == 10 % from base scale
-		float scaleDeviation = 0.1f;
+
+		float getMinScale();
+		void setMinScale(float newValue);
+
+		float getMaxScale();
+		void setMaxScale(float newValue);
+
 		glm::vec3 rotationDeviation = glm::vec3(0.02f, 1.0f, 0.02f);
 
 		float getPositionDeviation();
 		float getScaleDeviation();
 		int getRotaionDeviation(glm::vec3 axis);
+
+	private:
+		float minScale = 1.0f;
+		float maxScale = 1.5f;
 	};
 
 	struct FEDrawElementsIndirectCommand

@@ -43,7 +43,7 @@ static void createNewEntityCallBack(std::vector<FEObject*> selectionsResult)
 		if (selectedPrefab == nullptr)
 			return;
 
-		FEEntity* newEntity = FEScene::getInstance().addEntity(selectedPrefab);
+		FEEntity* newEntity = SCENE.addEntity(selectedPrefab);
 		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
 		SELECTED.setSelected(newEntity);
 
@@ -75,6 +75,7 @@ FEEditor::FEEditor()
 	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
 
 	strcpy_s(filterForResourcesContentBrowser, "");
+	strcpy_s(filterForSceneEntities, "");
 }
 
 FEEditor::~FEEditor() {}
@@ -706,29 +707,54 @@ void FEEditor::displaySceneBrowser()
 
 	sceneObjectsList.push_back(ENGINE.getCamera()->getObjectID());
 
+	// Filtering.
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+	ImGui::Text("Filter: ");
+	ImGui::SameLine();
+
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5.0f);
+	ImGui::InputText("##selectFEObjectPopUpFilter", filterForSceneEntities, IM_ARRAYSIZE(filterForSceneEntities));
+
+	std::vector<std::string> filteredSceneObjectsList;
+	if (strlen(filterForSceneEntities) == 0)
+	{
+		filteredSceneObjectsList = sceneObjectsList;
+	}
+	else
+	{
+		filteredSceneObjectsList.clear();
+		for (size_t i = 0; i < sceneObjectsList.size(); i++)
+		{
+			if (OBJECT_MANAGER.getFEObject(sceneObjectsList[i])->getName().find(filterForSceneEntities) != -1)
+			{
+				filteredSceneObjectsList.push_back(sceneObjectsList[i]);
+			}
+		}
+	}
+
 	if (!isOpenContextMenuInSceneEntities)
 		sceneObjectHoveredIndex = -1;
 	
-	for (size_t i = 0; i < sceneObjectsList.size(); i++)
+	for (size_t i = 0; i < filteredSceneObjectsList.size(); i++)
 	{
-		drawCorrectSceneBrowserIcon(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
+		drawCorrectSceneBrowserIcon(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
 
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		if (SELECTED.getSelected() != nullptr)
 		{
-			if (SELECTED.getSelected()->getObjectID() == sceneObjectsList[i])
+			if (SELECTED.getSelected()->getObjectID() == filteredSceneObjectsList[i])
 			{
 				node_flags |= ImGuiTreeNodeFlags_Selected;
 			}
 		}
 
-		setCorrectSceneBrowserColor(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
-		ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, FEObjectManager::getInstance().getFEObject(sceneObjectsList[i])->getName().c_str(), i);
-		popCorrectSceneBrowserColor(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
+		setCorrectSceneBrowserColor(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
+		ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i])->getName().c_str(), i);
+		popCorrectSceneBrowserColor(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
 
 		if (ImGui::IsItemClicked())
 		{
-			SELECTED.setSelected(FEObjectManager::getInstance().getFEObject(sceneObjectsList[i]));
+			SELECTED.setSelected(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
 			SELECTED.setDirtyFlag(false);
 		}
 
@@ -826,42 +852,42 @@ void FEEditor::displaySceneBrowser()
 		{
 			if (ImGui::MenuItem("Rename"))
 			{
-				if (SCENE.getEntity(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				if (SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getEntity(sceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().show(SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]));
 				}
-				else if (SCENE.getTerrain(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getTerrain(sceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().show(SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]));
 				}
-				else if (SCENE.getLight(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getLight(sceneObjectsList[sceneObjectHoveredIndex]));
-					//renameLightWindow.show(SCENE.getLight(sceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().show(SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]));
+					//renameLightWindow.show(SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]));
 				}
 			}
 
 			if (ImGui::MenuItem("Delete"))
 			{
-				if (SCENE.getEntity(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				if (SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					FEEntity* entity = SCENE.getEntity(sceneObjectsList[sceneObjectHoveredIndex]);
+					FEEntity* entity = SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]);
 					if (SELECTED.getEntity() == entity)
 						SELECTED.clear();
 
 					SCENE.deleteEntity(entity->getObjectID());
 				}
-				else if (SCENE.getTerrain(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					FETerrain* terrain = SCENE.getTerrain(sceneObjectsList[sceneObjectHoveredIndex]);
+					FETerrain* terrain = SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]);
 					if (SELECTED.getTerrain() == terrain)
 						SELECTED.clear();
 
 					SCENE.deleteTerrain(terrain->getObjectID());
 				}
-				else if (SCENE.getLight(sceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
 				{
-					FELight* light = SCENE.getLight(sceneObjectsList[sceneObjectHoveredIndex]);
+					FELight* light = SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]);
 					if (SELECTED.getLight() == light)
 						SELECTED.clear();
 
@@ -1188,6 +1214,7 @@ void FEEditor::render()
 					{
 						PROJECT_MANAGER.closeCurrentProject();
 						strcpy_s(filterForResourcesContentBrowser, "");
+						strcpy_s(filterForSceneEntities, "");
 
 						ImGui::PopStyleVar();
 						ImGui::EndMenu();
@@ -1583,7 +1610,7 @@ void FEEditor::displayInspector()
 							ImGui::PushID(layer->getObjectID().c_str());
 							if (ImGui::Selectable(layer->getName().c_str(), is_selected))
 							{
-								currentTerrain->connectInstancedEntityToLayer(instancedEntity, i);
+								currentTerrain->connectInstancedEntityToLayer(instancedEntity, int(i));
 							}
 							ImGui::PopID();
 
@@ -1631,15 +1658,27 @@ void FEEditor::displayInspector()
 					radius = 0.1f;
 				instancedEntity->spawnInfo.radius = radius;
 
-				ImGui::Text("Scale deviation:");
-				float scaleDeviation = instancedEntity->spawnInfo.scaleDeviation;
-				ImGui::SameLine();
-				ImGui::SetNextItemWidth(150);
-				ImGui::DragFloat("##Scale deviation", &scaleDeviation, 0.01f);
-				if (scaleDeviation < 0.0f)
-					scaleDeviation = 0.0f;
-				instancedEntity->spawnInfo.scaleDeviation = scaleDeviation;
+				// Scale deviation.
+				ImGui::Text("Scale: ");
 
+				ImGui::SameLine();
+				ImGui::Text("min ");
+
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(100);
+				float minScale = instancedEntity->spawnInfo.getMinScale();
+				ImGui::DragFloat("##minScale", &minScale, 0.01f);
+				instancedEntity->spawnInfo.setMinScale(minScale);
+
+				ImGui::SameLine();
+				ImGui::Text("max ");
+
+				ImGui::SameLine();
+				float maxScale = instancedEntity->spawnInfo.getMaxScale();
+				ImGui::SetNextItemWidth(100);
+				ImGui::DragFloat("##maxScale", &maxScale, 0.01f);
+				instancedEntity->spawnInfo.setMaxScale(maxScale);
+				
 				ImGui::Text("Rotation deviation:");
 				float rotationDeviationX = instancedEntity->spawnInfo.rotationDeviation.x;
 				ImGui::Text("X:");

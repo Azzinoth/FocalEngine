@@ -640,7 +640,7 @@ void FEVirtualFileSystem::loadStateRecursive(Json::Value* localRoot, FEVFSDirect
 	std::vector<Json::String> files = localRoot->operator[]("files").getMemberNames();
 	for (size_t j = 0; j < files.size(); j++)
 	{
-		directory->addFile(FEObjectManager::getInstance().getFEObject(files[j]));
+		directory->addFile(OBJECT_MANAGER.getFEObject(files[j]));
 	}
 
 	std::vector<Json::String> subDirectories = localRoot->operator[]("subDirectories").getMemberNames();

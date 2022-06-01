@@ -193,6 +193,8 @@ namespace FocalEngine
 		std::vector<std::string> callListOnDeleteFEObject;
 		virtual void processOnDeleteCallbacks(std::string deletingFEObject);
 	};
+
+	#define OBJECT_MANAGER FEObjectManager::getInstance()
 }
 
 #endif FEOBJECT_H

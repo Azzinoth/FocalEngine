@@ -256,11 +256,11 @@ int FEEditorSelectedObject::getIndexOfObjectUnderMouse(double mouseX, double mou
 				if (!potentiallySelectedTerrain->isVisible())
 					continue;
 
-				potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
+				potentiallySelectedTerrain->shader = RESOURCE_MANAGER.getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
 				potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(float(r) / 255.0f, float(g) / 255.0f, float(b) / 255.0f));
 				RENDERER.renderTerrain(potentiallySelectedTerrain, ENGINE.getCamera());
 				potentiallySelectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
-				potentiallySelectedTerrain->shader = FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+				potentiallySelectedTerrain->shader = RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 			}
 		}
 	}
@@ -451,14 +451,14 @@ void FEEditorSelectedObject::onCameraUpdate()
 	{
 		FETerrain* selectedTerrain = SCENE.getTerrain(container->getObjectID());
 
-		selectedTerrain->shader = FEResourceManager::getInstance().getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
+		selectedTerrain->shader = RESOURCE_MANAGER.getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
 		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f, 0.25f, 0.0f));
 		float regularLODLevel = selectedTerrain->getLODlevel();
 		selectedTerrain->setLODlevel(0.0f);
 		RENDERER.renderTerrain(selectedTerrain, ENGINE.getCamera());
 		selectedTerrain->setLODlevel(regularLODLevel);
 		selectedTerrain->shader->getParameter("baseColor")->updateData(glm::vec3(1.0f));
-		selectedTerrain->shader = FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+		selectedTerrain->shader = RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 	}
 
 	HALO_SELECTION_EFFECT.haloObjectsFB->unBind();

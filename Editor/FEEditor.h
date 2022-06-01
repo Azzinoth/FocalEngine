@@ -171,6 +171,7 @@ private:
 	ImGuiImageButton* filterGameModelTypeButton = nullptr;
 	ImGuiImageButton* filterPrefabTypeButton = nullptr;
 
+	char filterForSceneEntities[512];
 	bool isOpenContextMenuInContentBrowser = false;
 	bool isOpenContextMenuInSceneEntities = false;
 	int activeTabContentBrowser = 0;

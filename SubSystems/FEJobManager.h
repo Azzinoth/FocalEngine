@@ -45,4 +45,3 @@ namespace FocalEngine
 
 	#define JOB_MANAGER FEJobManager::getInstance()
 }
-

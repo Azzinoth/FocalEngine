@@ -742,5 +742,5 @@ FETexture* FEEditorPreviewManager::getPreview(FEObject* FEObject)
 
 FETexture* FEEditorPreviewManager::getPreview(std::string FEObjectID)
 {
-	return getPreview(FEObjectManager::getInstance().getFEObject(FEObjectID));
+	return getPreview(OBJECT_MANAGER.getFEObject(FEObjectID));
 }

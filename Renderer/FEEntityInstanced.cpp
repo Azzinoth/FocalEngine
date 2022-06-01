@@ -2,6 +2,32 @@
 
 using namespace FocalEngine;
 
+float FESpawnInfo::getMinScale()
+{
+	return minScale;
+}
+
+void FESpawnInfo::setMinScale(float newValue)
+{
+	if (newValue >= maxScale)
+		return;
+
+	minScale = newValue;
+}
+
+float FESpawnInfo::getMaxScale()
+{
+	return maxScale;
+}
+
+void FESpawnInfo::setMaxScale(float newValue)
+{
+	if (newValue <= minScale)
+		return;
+
+	maxScale = newValue;
+}
+
 float FESpawnInfo::getPositionDeviation()
 {
 	int integerPart = rand() % int(radius);
@@ -16,9 +42,12 @@ float FESpawnInfo::getPositionDeviation()
 
 float FESpawnInfo::getScaleDeviation()
 {
-	float finalDeviation = ((float(rand() % int(scaleDeviation * 10000)) / 10000.0f) - scaleDeviation / 2.0f);
-	/*if (finalDeviation < 0.0f)
-		finalDeviation = 0.0f;*/
+	//float finalDeviation = ((float(rand() % int(scaleDeviation * 10000)) / 10000.0f) - scaleDeviation / 2.0f);
+
+	//float minScale = 0.5f;
+	//float maxScale = 1.5f;
+	float finalDeviation = minScale + ((float(rand() % int((maxScale - minScale) * 10000)) / 10000.0f));
+
 	return finalDeviation;
 }
 

@@ -49,4 +49,6 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEEntity*> entityMap;
 		std::unordered_map<std::string, FETerrain*> terrainMap;
 	};
+
+	#define SCENE FEScene::getInstance()
 }

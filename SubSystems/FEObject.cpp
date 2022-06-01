@@ -27,31 +27,31 @@ FEObject::FEObject(FEObjectType objectType, std::string objectName)
 	type = objectType;
 	name = objectName;
 
-	FEObjectManager::getInstance().allObjects[ID] = this;
-	FEObjectManager::getInstance().objectsByType[type][ID] = this;
+	OBJECT_MANAGER.allObjects[ID] = this;
+	OBJECT_MANAGER.objectsByType[type][ID] = this;
 }
 
 FEObject::~FEObject()
 {
-	if (FEObjectManager::getInstance().allObjects.find(ID) == FEObjectManager::getInstance().allObjects.end())
+	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().objectsByType[type].find(ID) == FEObjectManager::getInstance().objectsByType[type].end())
+	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
 	{
 		assert(0);
 	}
 
 	for (size_t i = 0; i < callListOnDeleteFEObject.size(); i++)
 	{
-		FEObject* objectToCall = FEObjectManager::getInstance().allObjects[callListOnDeleteFEObject[i]];
+		FEObject* objectToCall = OBJECT_MANAGER.allObjects[callListOnDeleteFEObject[i]];
 		if (objectToCall != nullptr)
 			objectToCall->processOnDeleteCallbacks(ID);
 	}
 
-	FEObjectManager::getInstance().allObjects.erase(ID);
-	FEObjectManager::getInstance().objectsByType[type].erase(ID);
+	OBJECT_MANAGER.allObjects.erase(ID);
+	OBJECT_MANAGER.objectsByType[type].erase(ID);
 }
 
 std::string FEObject::getObjectID() const
@@ -100,38 +100,38 @@ void FEObject::setID(std::string newID)
 		return;
 	}
 
-	if (FEObjectManager::getInstance().allObjects.find(ID) == FEObjectManager::getInstance().allObjects.end())
+	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().allObjects.find(newID) != FEObjectManager::getInstance().allObjects.end())
+	if (OBJECT_MANAGER.allObjects.find(newID) != OBJECT_MANAGER.allObjects.end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().objectsByType[type].find(ID) == FEObjectManager::getInstance().objectsByType[type].end())
+	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().objectsByType[type].find(newID) != FEObjectManager::getInstance().objectsByType[type].end())
+	if (OBJECT_MANAGER.objectsByType[type].find(newID) != OBJECT_MANAGER.objectsByType[type].end())
 	{
 		assert(0);
 	}
 
-	FEObjectManager::getInstance().objectsByType[type].erase(ID);
-	FEObjectManager::getInstance().allObjects.erase(ID);
+	OBJECT_MANAGER.objectsByType[type].erase(ID);
+	OBJECT_MANAGER.allObjects.erase(ID);
 	ID = newID;
-	FEObjectManager::getInstance().allObjects[newID] = this;
-	FEObjectManager::getInstance().objectsByType[type][newID] = this;
+	OBJECT_MANAGER.allObjects[newID] = this;
+	OBJECT_MANAGER.objectsByType[type][newID] = this;
 }
 
 void FEObject::setType(FEObjectType newType)
 {
-	FEObjectManager::getInstance().objectsByType[type].erase(ID);
+	OBJECT_MANAGER.objectsByType[type].erase(ID);
 	type = newType;
-	FEObjectManager::getInstance().objectsByType[type][ID] = this;
+	OBJECT_MANAGER.objectsByType[type][ID] = this;
 }
 
 void FEObject::setIDOfUnTyped(std::string newID)
@@ -148,31 +148,31 @@ void FEObject::setIDOfUnTyped(std::string newID)
 		return;
 	}
 
-	if (FEObjectManager::getInstance().allObjects.find(ID) == FEObjectManager::getInstance().allObjects.end())
+	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().allObjects.find(newID) != FEObjectManager::getInstance().allObjects.end())
+	if (OBJECT_MANAGER.allObjects.find(newID) != OBJECT_MANAGER.allObjects.end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().objectsByType[type].find(ID) == FEObjectManager::getInstance().objectsByType[type].end())
+	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
 	{
 		assert(0);
 	}
 
-	if (FEObjectManager::getInstance().objectsByType[type].find(newID) != FEObjectManager::getInstance().objectsByType[type].end())
+	if (OBJECT_MANAGER.objectsByType[type].find(newID) != OBJECT_MANAGER.objectsByType[type].end())
 	{
 		assert(0);
 	}
 
-	FEObjectManager::getInstance().objectsByType[type].erase(ID);
-	FEObjectManager::getInstance().allObjects.erase(ID);
+	OBJECT_MANAGER.objectsByType[type].erase(ID);
+	OBJECT_MANAGER.allObjects.erase(ID);
 	ID = newID;
-	FEObjectManager::getInstance().allObjects[newID] = this;
-	FEObjectManager::getInstance().objectsByType[type][newID] = this;
+	OBJECT_MANAGER.allObjects[newID] = this;
+	OBJECT_MANAGER.objectsByType[type][newID] = this;
 }
 
 void FEObject::processOnDeleteCallbacks(std::string deletingFEObject)

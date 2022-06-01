@@ -169,4 +169,6 @@ namespace FocalEngine
 		void fillTerrainLayerMaskWithRawData(unsigned char* rawData, FETerrain* terrain, size_t layerIndex);
 		void createMaterialsFromOBJData(std::vector<FEObject*>& resultArray);
 	};
+
+	#define RESOURCE_MANAGER FEResourceManager::getInstance()
 }

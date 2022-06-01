@@ -76,7 +76,6 @@ void selectFEObjectPopUp::show(FEObjectType type, void(*CallBack)(std::vector<FE
 				break;
 			}
 			
-
 			case FE_MATERIAL:
 			{
 				tempList = RESOURCE_MANAGER.getMaterialList();
@@ -85,24 +84,21 @@ void selectFEObjectPopUp::show(FEObjectType type, void(*CallBack)(std::vector<FE
 				break;
 			}
 			
-
 			case FE_GAMEMODEL:
 			{
 				tempList = RESOURCE_MANAGER.getGameModelList();
 				break;
 			}
 			
-
 			case FE_PREFAB:
 			{
 				tempList = RESOURCE_MANAGER.getPrefabList();
 				break;
 			}
-
 		}
 		
 		for (size_t i = 0; i < tempList.size(); i++)
-			itemsList.push_back(FEObjectManager::getInstance().getFEObject(tempList[i]));
+			itemsList.push_back(OBJECT_MANAGER.getFEObject(tempList[i]));
 	}
 	else
 	{
@@ -173,7 +169,7 @@ void selectFEObjectPopUp::render()
 			{
 				if (IndexUnderMouse != -1)
 				{
-					selectedObjects.push_back(FEObjectManager::getInstance().getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
+					selectedObjects.push_back(OBJECT_MANAGER.getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
 					if (!controlButtonPressed)
 					{
 						onSelectAction();
@@ -226,7 +222,7 @@ void selectFEObjectPopUp::render()
 		{
 			if (IndexSelected != -1)
 			{
-				selectedObjects.push_back(FEObjectManager::getInstance().getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
+				selectedObjects.push_back(OBJECT_MANAGER.getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
 				onSelectAction();
 
 				close();

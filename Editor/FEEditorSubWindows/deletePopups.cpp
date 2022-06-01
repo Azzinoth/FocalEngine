@@ -306,7 +306,7 @@ int deleteGameModelPopup::timesGameModelUsed(FEGameModel* gameModel)
 
 	for (int i = 0; i < prefabList.size(); i++)
 	{
-		FEPrefab* currentPrefab = FEResourceManager::getInstance().getPrefab(prefabList[i]);
+		FEPrefab* currentPrefab = RESOURCE_MANAGER.getPrefab(prefabList[i]);
 		for (int j = 0; j < currentPrefab->componentsCount(); j++)
 		{
 			if (currentPrefab->getComponent(j)->gameModel == gameModel)
@@ -322,7 +322,7 @@ void deleteGameModelPopup::deleteGameModel(FEGameModel* gameModel)
 	VIRTUAL_FILE_SYSTEM.locateAndDeleteFile(gameModel);
 
 	std::string name = gameModel->getName();
-	FEScene::getInstance().prepareForGameModelDeletion(gameModel);
+	SCENE.prepareForGameModelDeletion(gameModel);
 	RESOURCE_MANAGER.deleteGameModel(gameModel);
 	PROJECT_MANAGER.getCurrent()->setModified(true);
 }
@@ -411,7 +411,7 @@ void deletePrefabPopup::deletePrefab(FEPrefab* Prefab)
 	VIRTUAL_FILE_SYSTEM.locateAndDeleteFile(Prefab);
 
 	std::string name = Prefab->getName();
-	FEScene::getInstance().prepareForPrefabDeletion(Prefab);
+	SCENE.prepareForPrefabDeletion(Prefab);
 	RESOURCE_MANAGER.deletePrefab(Prefab);
 	PROJECT_MANAGER.getCurrent()->setModified(true);
 }
@@ -612,7 +612,7 @@ void deleteDirectoryPopup::render()
 
 
 			//PREVIEW_MANAGER. recreateAll ?
-			//FEScene::getInstance().prepareForGameModelDeletion(objToWorkWith);
+			//SCENE.prepareForGameModelDeletion(objToWorkWith);
 			//PROJECT_MANAGER.getCurrent()->addFileToDeleteList(PROJECT_MANAGER.getCurrent()->getProjectFolder() + objToWorkWith->getObjectID() + ".model");
 
 			objToWorkWith = "";

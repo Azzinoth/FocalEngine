@@ -57,14 +57,14 @@ FERenderer::FERenderer()
 
 	glBindVertexArray(0);
 
-	skyDome = FEResourceManager::getInstance().createEntity(FEResourceManager::getInstance().getGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
-	FEResourceManager::getInstance().makePrefabStandard(skyDome->prefab);
+	skyDome = RESOURCE_MANAGER.createEntity(RESOURCE_MANAGER.getGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
+	RESOURCE_MANAGER.makePrefabStandard(skyDome->prefab);
 	skyDome->visible = false;
 	skyDome->transform.setScale(glm::vec3(50.0f));
 
-	FE_FrustumCullingShader = FEResourceManager::getInstance().createShader("FE_FrustumCullingShader", nullptr, nullptr,
+	FE_FrustumCullingShader = RESOURCE_MANAGER.createShader("FE_FrustumCullingShader", nullptr, nullptr,
 																									   nullptr, nullptr,
-																									   nullptr, FEResourceManager::getInstance().loadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
+																									   nullptr, RESOURCE_MANAGER.loadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
 
 	FE_GL_ERROR(glGenBuffers(1, &frustumInfoBuffer));
 	FE_GL_ERROR(glGenBuffers(1, &cullingLODCountersBuffer));
@@ -85,11 +85,11 @@ FERenderer::FERenderer()
 
 void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 {
-	sceneToTextureFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
+	sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
 
 #ifdef USE_DEFERRED_RENDERER
 	GBuffer = new FEGBuffer(sceneToTextureFB);
-	SSAOFB = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
+	SSAOFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
 #endif // USE_DEFERRED_RENDERER
 }
 
@@ -246,13 +246,13 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing
 		//#fix
 		if (i == postProcessEffects.back()->stages.size() - 1)
 		{
-			postProcessEffects.back()->stages[i]->outTexture = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getColorAttachment());
+			postProcessEffects.back()->stages[i]->outTexture = RESOURCE_MANAGER.createSameFormatTexture(sceneToTextureFB->getColorAttachment());
 		}
 		else
 		{
 			int finalW = postProcessEffects.back()->screenWidth;
 			int finalH = postProcessEffects.back()->screenHeight;
-			postProcessEffects.back()->stages[i]->outTexture = FEResourceManager::getInstance().createSameFormatTexture(sceneToTextureFB->getColorAttachment(), finalW, finalH);
+			postProcessEffects.back()->stages[i]->outTexture = RESOURCE_MANAGER.createSameFormatTexture(sceneToTextureFB->getColorAttachment(), finalW, finalH);
 		}
 
 		postProcessEffects.back()->texturesToDelete.push_back(postProcessEffects.back()->stages[i]->outTexture);
@@ -261,8 +261,8 @@ void FERenderer::addPostProcess(FEPostProcess* newPostProcess, bool noProcessing
 
 void FERenderer::loadUniformBlocks()
 {
-	FEScene& scene = FEScene::getInstance();
-	FEResourceManager& resourceManager = FEResourceManager::getInstance();
+	FEScene& scene = SCENE;
+	FEResourceManager& resourceManager = RESOURCE_MANAGER;
 
 	std::vector<FELightShaderInfo> info;
 	info.resize(FE_MAX_LIGHTS);
@@ -271,8 +271,8 @@ void FERenderer::loadUniformBlocks()
 	FEDirectionalLightShaderInfo directionalLightInfo;
 
 	int index = 0;
-	auto lightIterator = FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (lightIterator != FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	auto lightIterator = OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].begin();
+	while (lightIterator != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
 		FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(lightIterator->second);
 
@@ -298,8 +298,8 @@ void FERenderer::loadUniformBlocks()
 		lightIterator++;
 	}
 
-	lightIterator = FEObjectManager::getInstance().objectsByType[FE_SPOT_LIGHT].begin();
-	while (lightIterator != FEObjectManager::getInstance().objectsByType[FE_SPOT_LIGHT].end())
+	lightIterator = OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].begin();
+	while (lightIterator != OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].end())
 	{
 		FESpotLight* light = reinterpret_cast<FESpotLight*>(lightIterator->second);
 
@@ -316,8 +316,8 @@ void FERenderer::loadUniformBlocks()
 		lightIterator++;
 	}
 
-	lightIterator = FEObjectManager::getInstance().objectsByType[FE_POINT_LIGHT].begin();
-	while (lightIterator != FEObjectManager::getInstance().objectsByType[FE_POINT_LIGHT].end())
+	lightIterator = OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].begin();
+	while (lightIterator != OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].end())
 	{
 		FEPointLight* light = reinterpret_cast<FEPointLight*>(lightIterator->second);
 		info[index].typeAndAngles = glm::vec3(light->getType(), 0.0f, 0.0f);
@@ -392,7 +392,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 			}
 			else
 			{
-				currentGameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+				currentGameModel->getMaterial()->shader = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 			}
 		}
 
@@ -430,7 +430,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 				}
 				else
 				{
-					currentGameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+					currentGameModel->getBillboardMaterial()->shader = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 				}
 			}
 
@@ -468,7 +468,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 			}
 			else
 			{
-				currentGameModel->getMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+				currentGameModel->getMaterial()->shader = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 			}
 		}
 
@@ -506,7 +506,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 				}
 				else
 				{
-					currentGameModel->getBillboardMaterial()->shader = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+					currentGameModel->getBillboardMaterial()->shader = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 				}
 			}
 
@@ -534,14 +534,14 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 	lastTestTime = testTime;
 	testTime = 0.0f;
-	FEScene& scene = FEScene::getInstance();
+	FEScene& scene = SCENE;
 
 	// there is only 1 directional light, sun.
 	// and we need to set correct light position
 	//#fix it should update view matries for each cascade!
 
-	auto lightIterator = FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (lightIterator != FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	auto lightIterator = OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].begin();
+	while (lightIterator != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
 		FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(lightIterator->second);
 		if (light->isCastShadows())
@@ -562,12 +562,12 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	CSM2 = nullptr;
 	CSM3 = nullptr;
 
-	FEShader* shaderPBR = FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-	FEShader* shaderInstancedPBR = FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-	FEShader* shaderTerrain = FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+	FEShader* shaderPBR = RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	FEShader* shaderInstancedPBR = RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+	FEShader* shaderTerrain = RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 
-	auto itLight = FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (itLight != FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	auto itLight = OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].begin();
+	while (itLight != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
 		FEDirectionalLight* light = reinterpret_cast<FEDirectionalLight*>(itLight->second);
 		if (light->isCastShadows())
@@ -606,9 +606,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 						continue;
 					}
 						
-					terrain->shader = FEResourceManager::getInstance().getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
+					terrain->shader = RESOURCE_MANAGER.getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
 					renderTerrain(terrain, currentCamera);
-					terrain->shader = FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+					terrain->shader = RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 					itTerrain++;
 				}
 
@@ -712,7 +712,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
-	if (FEObjectManager::getInstance().objectsByType[FE_DIRECTIONAL_LIGHT].size() != 0)
+	if (OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].size() != 0)
 	{
 		if (CSM0) CSM0->bind(FE_CSM_UNIT);
 		if (CSM1) CSM1->bind(FE_CSM_UNIT + 1);
@@ -741,12 +741,12 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 		{
 			if (entity->getType() == FE_ENTITY)
 			{
-				forceShader(FEResourceManager::getInstance().getShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+				forceShader(RESOURCE_MANAGER.getShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
 				renderEntity(entity, currentCamera);
 			}
 			else if (entity->getType() == FE_ENTITY_INSTANCED)
 			{
-				forceShader(FEResourceManager::getInstance().getShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+				forceShader(RESOURCE_MANAGER.getShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
 				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
 			}
 		}
@@ -783,7 +783,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// ************************************ SSAO ************************************
 #ifdef USE_SSAO
 	SSAOFB->bind();
-	FEShader* SSAOShader = FEResourceManager::getInstance().getShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+	FEShader* SSAOShader = RESOURCE_MANAGER.getShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
 	SSAOShader->start();
 	loadStandardParams(SSAOShader, currentCamera, true);
 	SSAOShader->loadDataToGPU();
@@ -794,16 +794,16 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	GBuffer->positions->bind(3);
 	GBuffer->shaderProperties->bind(4);
 #ifdef USE_SSAO
-	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
 	SSAOShader->stop();
 
 	// First blur stage
-	FEShader* BlurShader = FEResourceManager::getInstance().getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
+	FEShader* BlurShader = RESOURCE_MANAGER.getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
 	BlurShader->start();
 	BlurShader->getParameter("FEBlurDirection")->updateData(glm::vec2(0.0f, 1.0f));
 	BlurShader->getParameter("BloomSize")->updateData(1.5f);
@@ -811,9 +811,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	BlurShader->loadDataToGPU();
 
 	SSAOFB->getColorAttachment()->bind(0);
-	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
@@ -824,9 +824,9 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	BlurShader->loadDataToGPU();
 
 	SSAOFB->getColorAttachment()->bind(0);
-	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
@@ -860,14 +860,14 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
 
-	FEShader* screenQuadShader = FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	FEShader* screenQuadShader = RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	screenQuadShader->start();
 	loadStandardParams(screenQuadShader, currentCamera, true);
 	screenQuadShader->loadDataToGPU();
 
-	FE_GL_ERROR(glBindVertexArray(FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, FEResourceManager::getInstance().getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
@@ -1128,11 +1128,11 @@ void FERenderer::takeScreenshot(const char* fileName, int width, int height)
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, postProcessEffects.back()->stages.back()->outTexture->getTextureID()));
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels));
 	
-	FETexture* tempTexture = FEResourceManager::getInstance().rawDataToFETexture(pixels, width, height);
-	FEResourceManager::getInstance().saveFETexture(tempTexture, fileName);
-	FEResourceManager::getInstance().deleteFETexture(tempTexture);
+	FETexture* tempTexture = RESOURCE_MANAGER.rawDataToFETexture(pixels, width, height);
+	RESOURCE_MANAGER.saveFETexture(tempTexture, fileName);
+	RESOURCE_MANAGER.deleteFETexture(tempTexture);
 
-	//FEResourceManager::getInstance().saveFETexture(fileName, pixels, width, height);
+	//RESOURCE_MANAGER.saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
 }
 
@@ -1230,7 +1230,7 @@ void FERenderer::renderEntityForward(FEEntity* entity, FEBasicCamera* currentCam
 	for (size_t i = 0; i < entity->prefab->components.size(); i++)
 	{
 		FEShader* originalShader = entity->prefab->components[i]->gameModel->material->shader;
-		entity->prefab->components[i]->gameModel->material->shader = FEResourceManager::getInstance().getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+		entity->prefab->components[i]->gameModel->material->shader = RESOURCE_MANAGER.getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
 			
 
 		entity->prefab->components[i]->gameModel->material->bind();
@@ -1303,7 +1303,7 @@ void FERenderer::renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera)
 	if (layersUsed == 0)
 	{
 		// 0 index is for hightMap.
-		FEResourceManager::getInstance().noTexture->bind(1);
+		RESOURCE_MANAGER.noTexture->bind(1);
 	}
 
 	terrain->loadLayersDataToGPU();
@@ -1448,31 +1448,31 @@ void FERenderer::updateFogInShaders()
 {
 	if (distanceFogEnabled)
 	{
-		FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
-		FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
+		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
+		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
 
-		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
-		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
+		RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
+		RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
 
 #ifdef USE_DEFERRED_RENDERER
 
 #else
-		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
-		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
+		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
+		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
 #endif // USE_DEFERRED_RENDERER
 	}
 	else
 	{
-		FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
-		FEResourceManager::getInstance().getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
 
-		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
-		FEResourceManager::getInstance().getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
 #ifdef USE_DEFERRED_RENDERER
 
 #else
-		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
-		FEResourceManager::getInstance().getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
+		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
 #endif // USE_DEFERRED_RENDERER
 	}
 }
@@ -1711,21 +1711,21 @@ void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
 
 void FEGBuffer::initializeResources(FEFramebuffer* mainFrameBuffer)
 {
-	GFrameBuffer = FEResourceManager::getInstance().createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	GFrameBuffer = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 
-	positions = FEResourceManager::getInstance().createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	positions = RESOURCE_MANAGER.createTexture(GL_RGB32F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(positions, 1);
 
-	normals = FEResourceManager::getInstance().createTexture(GL_RGB16F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	normals = RESOURCE_MANAGER.createTexture(GL_RGB16F, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(normals, 2);
 
-	albedo = FEResourceManager::getInstance().createTexture(GL_RGB, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	albedo = RESOURCE_MANAGER.createTexture(GL_RGB, GL_RGB, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(albedo, 3);
 
-	materialProperties = FEResourceManager::getInstance().createTexture(GL_RGBA16F, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	materialProperties = RESOURCE_MANAGER.createTexture(GL_RGBA16F, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(materialProperties, 4);
 
-	shaderProperties = FEResourceManager::getInstance().createTexture(GL_RGBA, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
+	shaderProperties = RESOURCE_MANAGER.createTexture(GL_RGBA, GL_RGBA, mainFrameBuffer->getColorAttachment()->getWidth(), mainFrameBuffer->getColorAttachment()->getHeight());
 	GFrameBuffer->setColorAttachment(shaderProperties, 5);
 }
 

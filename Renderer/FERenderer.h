@@ -174,6 +174,8 @@ namespace FocalEngine
 		void GPUCulling(FEEntityInstanced* entity, int subGameModel);
 		// *********** GPU Culling END ***********
 	};
+
+	#define RENDERER FERenderer::getInstance()
 }
 
 #endif FERENDERER_H
