@@ -129,7 +129,6 @@ void prefabEditorWindow::render()
 	{
 		if (ImGui::BeginTabItem("Game Models"))
 		{
-			ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
 			static bool contextMenuOpened = false;
 
 			ImGui::BeginChildFrame(ImGui::GetID("GameModels ListBox Child"), ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f), ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
@@ -149,41 +148,46 @@ void prefabEditorWindow::render()
 				}
 			}
 
-			ImGui::BeginListBox("##GameModels ListBox", ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f));
-			for (int i = 0; i < objToWorkWith->componentsCount(); i++)
+			if (ImGui::BeginListBox("##GameModels ListBox", ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f)))
 			{
-				FEGameModel* gameModel = objToWorkWith->getComponent(i)->gameModel;
-				if (gameModel == nullptr)
-					break;
+				ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
 
-				ImVec2 postionBeforeDraw = ImGui::GetCursorPos();
-
-				ImVec2 textSize = ImGui::CalcTextSize(gameModel->getName().c_str());
-				ImGui::SetCursorPos(postionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - textSize.x / 2.0f, 16));
-				ImGui::Text(gameModel->getName().c_str());
-				ImGui::SetCursorPos(postionBeforeDraw);
-
-				ImGui::PushID(int(i));
-				if (ImGui::Selectable("##item", selectedGameModel == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
+				for (int i = 0; i < objToWorkWith->componentsCount(); i++)
 				{
-					selectedGameModel = int(i);
+					FEGameModel* gameModel = objToWorkWith->getComponent(i)->gameModel;
+					if (gameModel == nullptr)
+						break;
+
+					ImVec2 postionBeforeDraw = ImGui::GetCursorPos();
+
+					ImVec2 textSize = ImGui::CalcTextSize(gameModel->getName().c_str());
+					ImGui::SetCursorPos(postionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - textSize.x / 2.0f, 16));
+					ImGui::Text(gameModel->getName().c_str());
+					ImGui::SetCursorPos(postionBeforeDraw);
+
+					ImGui::PushID(int(i));
+					if (ImGui::Selectable("##item", selectedGameModel == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
+					{
+						selectedGameModel = int(i);
+					}
+					ImGui::PopID();
+
+					if (ImGui::IsItemHovered())
+						hoveredGameModelItem = int(i);
+
+					ImGui::SetCursorPos(postionBeforeDraw);
+					ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
+					FETexture* previewTexture = PREVIEW_MANAGER.getPreview(gameModel->getObjectID());
+					ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), imageTint);
+
+
+					showTransformConfiguration(&objToWorkWith->getComponent(i)->transform, i);
 				}
-				ImGui::PopID();
 
-				if (ImGui::IsItemHovered())
-					hoveredGameModelItem = int(i);
-
-				ImGui::SetCursorPos(postionBeforeDraw);
-				ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
-				FETexture* previewTexture = PREVIEW_MANAGER.getPreview(gameModel->getObjectID());
-				ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), imageTint);
-
-
-				showTransformConfiguration(&objToWorkWith->getComponent(i)->transform, i);
+				ImGui::EndListBox();
+				ImGui::PopFont();
 			}
-
-			ImGui::EndListBox();
-			ImGui::PopFont();
+			
 
 			ImGui::EndChildFrame();
 			ImGui::EndTabItem();

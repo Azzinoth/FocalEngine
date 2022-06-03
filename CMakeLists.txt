@@ -172,6 +172,8 @@ file(GLOB FEEditorSubWindows_SRC
 	"Editor/FEEditorSubWindows/resizeTexturePopup.h"
 	"Editor/FEEditorSubWindows/prefabEditorWindow.cpp"
 	"Editor/FEEditorSubWindows/prefabEditorWindow.h"
+	"Editor/FEEditorSubWindows/debugTextureViewWindow.cpp"
+	"Editor/FEEditorSubWindows/debugTextureViewWindow.h"
 )
 
 file(GLOB Editor_Materials_SRC

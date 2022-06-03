@@ -55,12 +55,6 @@ namespace FocalEngine
 		FETexture* finalScene = nullptr;
 		std::vector<FEPostProcess*> postProcessEffects;
 
-		// in current version only shadows from one directional light is supported.
-		FETexture* CSM0 = nullptr;
-		FETexture* CSM1 = nullptr;
-		FETexture* CSM2 = nullptr;
-		FETexture* CSM3 = nullptr;
-
 		void drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color = glm::vec3(1.0f), float width = 0.1f);
 		// *********** Anti-Aliasing(FXAA) ***********
 		float getFXAASpanMax();
@@ -123,7 +117,8 @@ namespace FocalEngine
 		FEGBuffer* GBuffer = nullptr;
 		FEFramebuffer* SSAOFB = nullptr;
 #endif // USE_DEFERRED_RENDERER
-		
+
+		std::unordered_map<std::string, std::function<FETexture* ()>> getDebugOutputTextures();
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
@@ -141,6 +136,12 @@ namespace FocalEngine
 		GLuint uniformBufferForLights;
 		const int UBufferForDirectionalLightSize = 384;
 		GLuint uniformBufferForDirectionalLight;
+
+		// in current version only shadows from one directional light is supported.
+		FETexture* CSM0 = nullptr;
+		FETexture* CSM1 = nullptr;
+		FETexture* CSM2 = nullptr;
+		FETexture* CSM3 = nullptr;
 
 		// Instanced lines
 		FEShader* instancedLineShader = nullptr;
@@ -173,6 +174,8 @@ namespace FocalEngine
 		void updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition);
 		void GPUCulling(FEEntityInstanced* entity, int subGameModel);
 		// *********** GPU Culling END ***********
+
+		std::unordered_map<std::string, std::function<FETexture* ()>> debugOutputTextures;
 	};
 
 	#define RENDERER FERenderer::getInstance()

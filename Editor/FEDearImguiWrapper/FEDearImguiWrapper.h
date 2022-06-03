@@ -16,14 +16,21 @@ public:
 	void registerWindow(FEImGuiWindow* window);
 	void registerPopup(ImGuiModalPopup* popup);
 
+	bool isRegisteredWindowWithCaption(std::string caption);
+	FEImGuiWindow* getWindowByCaption(std::string caption);
+
 	void closeAllPopups();
 	void closeAllWindows();
+
+	void renderAllWindows();
 private:
 	SINGLETON_PRIVATE_PART(WindowsManager)
 
 	std::vector<ImGuiModalPopup*> popUps;
 	std::vector<FEImGuiWindow*> windows;
 };
+
+#define IMGUI_WINDOW_MANAGER WindowsManager::getInstance()
 
 class ImGuiModalPopup
 {
@@ -161,8 +168,13 @@ public:
 	virtual void close();
 	virtual void render();
 	virtual void onRenderEnd();
+
 	bool isVisible();
+	void setVisible(bool newValue);
+
 	bool isMouseHovered();
+
+	virtual void setCaption(std::string newCaption);
 };
 
 class FEArrowScroller

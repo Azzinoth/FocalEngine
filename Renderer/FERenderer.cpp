@@ -91,6 +91,17 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 	GBuffer = new FEGBuffer(sceneToTextureFB);
 	SSAOFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
 #endif // USE_DEFERRED_RENDERER
+
+	debugOutputTextures["albedoRenderTarget"] = []() { return RENDERER.GBuffer->albedo; };
+	debugOutputTextures["positionsRenderTarget"] = []() { return RENDERER.GBuffer->positions; };
+	debugOutputTextures["normalsRenderTarget"] = []() { return RENDERER.GBuffer->normals; };
+	debugOutputTextures["materialPropertiesRenderTarget"] = []() { return RENDERER.GBuffer->materialProperties; };
+	debugOutputTextures["shaderPropertiesRenderTarget"] = []() { return RENDERER.GBuffer->shaderProperties; };
+
+	debugOutputTextures["CSM0"] = []() { return RENDERER.CSM0; };
+	debugOutputTextures["CSM1"] = []() { return RENDERER.CSM1; };
+	debugOutputTextures["CSM2"] = []() { return RENDERER.CSM2; };
+	debugOutputTextures["CSM3"] = []() { return RENDERER.CSM3; };
 }
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
@@ -1741,3 +1752,8 @@ void FEGBuffer::renderTargetResize(FEFramebuffer* mainFrameBuffer)
 }
 
 #endif // USE_DEFERRED_RENDERER
+
+std::unordered_map<std::string, std::function<FETexture* ()>> FERenderer::getDebugOutputTextures()
+{
+	return debugOutputTextures;
+}

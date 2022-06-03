@@ -388,6 +388,16 @@ void FEImGuiWindow::close()
 	}
 }
 
+void FEImGuiWindow::setCaption(std::string newCaption)
+{
+	strcpy_s(caption, newCaption.size() + 1, newCaption.c_str());
+}
+
+void FEImGuiWindow::setVisible(bool newValue)
+{
+	visible = newValue;
+}
+
 WindowsManager::WindowsManager()
 {
 }
@@ -416,6 +426,36 @@ void WindowsManager::closeAllWindows()
 	{
 		windows[i]->visible = false;
 	}
+}
+
+void WindowsManager::renderAllWindows()
+{
+	for (size_t i = 0; i < windows.size(); i++)
+	{
+		windows[i]->render();
+	}
+}
+
+bool WindowsManager::isRegisteredWindowWithCaption(std::string caption)
+{
+	for (size_t i = 0; i < windows.size(); i++)
+	{
+		if (windows[i]->caption == caption)
+			return true;
+	}
+
+	return false;
+}
+
+FEImGuiWindow* WindowsManager::getWindowByCaption(std::string caption)
+{
+	for (size_t i = 0; i < windows.size(); i++)
+	{
+		if (windows[i]->caption == caption)
+			return windows[i];
+	}
+
+	return nullptr;
 }
 
 void showToolTip(const char* text)

@@ -1259,6 +1259,50 @@ void FEEditor::render()
 					logWindowVisible = !logWindowVisible;
 				}
 
+				if (ImGui::BeginMenu("Debug"))
+				{
+					auto possibleWindows = RENDERER.getDebugOutputTextures();
+
+					auto iterator = possibleWindows.begin();
+					while (iterator != possibleWindows.end())
+					{
+						if (iterator->second != nullptr)
+						{
+							FEImGuiWindow* currentWindow = IMGUI_WINDOW_MANAGER.getWindowByCaption(iterator->first.c_str());
+							bool isVisible = false;
+							if (currentWindow != nullptr)
+								isVisible = currentWindow->isVisible();
+							
+							if (ImGui::MenuItem(iterator->first.c_str(), NULL, isVisible))
+							{
+								isVisible = !isVisible;
+
+								if (isVisible)
+								{
+									if (currentWindow == nullptr)
+									{
+										currentWindow = new debugTextureViewWindow(iterator->second);
+										currentWindow->setCaption(iterator->first);
+										currentWindow->show();
+									}
+									else
+									{
+										currentWindow->show();
+									}
+								}
+								else
+								{
+									if (currentWindow != nullptr)
+										currentWindow->setVisible(false);
+								}
+							}
+						}
+						iterator++;
+					}
+
+					ImGui::EndMenu();
+				}
+
 				ImGui::EndMenu();
 			}
 
@@ -2805,22 +2849,16 @@ void FEEditor::renderAllSubWindows()
 	deletePrefabPopup::getInstance().render();
 	deleteDirectoryPopup::getInstance().render();
 
-	editGameModelPopup::getInstance().render();
-	editMaterialPopup::getInstance().render();
 	resizeTexturePopup::getInstance().render();
-	prefabEditorWindow::getInstance().render();
-
-	shaderEditorWindow::getInstance().render();
-	shaderDebugWindow::getInstance().render();
 	justTextWindowObj.render();
 
 	renamePopUp::getInstance().render();
 	renameFailedPopUp::getInstance().render();
 	messagePopUp::getInstance().render();
-
-	CombineChannelsToTexturePopUp::getInstance().render();
 	
 	projectWasModifiedPopUp::getInstance().render();
+
+	IMGUI_WINDOW_MANAGER.renderAllWindows();
 }
 
 void FEEditor::setCorrectSceneBrowserColor(FEObject* sceneObject)

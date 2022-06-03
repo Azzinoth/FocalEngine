@@ -448,6 +448,7 @@ bool FEVirtualFileSystem::moveDirectory(std::string directoryPath, std::string n
 		}
 	}
 
+	directory->parent = pathToDirectory(newPath);
 	newDirectory->subDirectories.push_back(directory);
 
 	return true;
