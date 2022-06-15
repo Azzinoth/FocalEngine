@@ -271,7 +271,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 	vec3 specular = specularStrength * specularFactor * directionalLight.color.xyz;
 	
-	if (FEReceiveShadows == 0)
+	if (!FEReceiveShadows)
 		return (baseColor * (diffuseColor + specular));
 
 	float shadow = 0.0;

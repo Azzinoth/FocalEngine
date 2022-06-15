@@ -17,6 +17,14 @@ void FEShaderParam::setName(std::string newName)
 	nameHash = int(std::hash<std::string>{}(name));
 }
 
+FEShaderParam::FEShaderParam(bool Data, std::string Name)
+{
+	data = new bool(Data);
+	type = FE_BOOL_UNIFORM;
+	name = Name;
+	nameHash = int(std::hash<std::string>{}(name));
+}
+
 FEShaderParam::FEShaderParam(int Data, std::string Name)
 {
 	data = new int(Data);
@@ -69,6 +77,12 @@ void FEShaderParam::updateData(void* Data)
 {
 	switch (type)
 	{
+		case FE_BOOL_UNIFORM:
+		{
+			*(bool*)data = *((bool*)Data);
+			break;
+		}
+
 		case FE_INT_SCALAR_UNIFORM:
 		{
 			*(int*)data = *((int*)Data);
@@ -108,6 +122,17 @@ void FEShaderParam::updateData(void* Data)
 		default:
 			break;
 	}
+}
+
+void FEShaderParam::updateData(bool Data)
+{
+	if (type != FE_BOOL_UNIFORM)
+	{
+		LOG.add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		return;
+	}
+
+	*(bool*)data = Data;
 }
 
 void FEShaderParam::updateData(int Data)
@@ -180,6 +205,13 @@ void FEShaderParam::copyCode(const FEShaderParam& copy)
 {
 	switch (copy.type)
 	{
+		case FE_BOOL_UNIFORM:
+		{
+			data = new bool;
+			*(bool*)data = *((bool*)copy.data);
+			break;
+		}
+
 		case FE_INT_SCALAR_UNIFORM:
 		{
 			data = new int;
@@ -499,6 +531,12 @@ void FEShader::registerUniforms()
 		
 		switch (type)
 		{
+			case GL_BOOL:
+			{
+				addParameter(FEShaderParam(false, name));
+				break;
+			}
+
 			case GL_INT:
 			{
 				addParameter(FEShaderParam(0, name));
@@ -854,7 +892,7 @@ std::string FEShader::parseShaderForMacro(const char* shaderText)
 	index = parsedShaderText.find(FE_RECEVESHADOWS_MACRO);
 	if (index != std::string::npos)
 	{
-		parsedShaderText.replace(index, strlen(FE_RECEVESHADOWS_MACRO), "uniform int FEReceiveShadows;");
+		parsedShaderText.replace(index, strlen(FE_RECEVESHADOWS_MACRO), "uniform bool FEReceiveShadows;");
 	}
 
 	index = parsedShaderText.find(FE_MATERIAL_TEXTURES_MACRO);
@@ -968,6 +1006,11 @@ GLuint FEShader::getUniformLocation(int& uniformNameHash)
 	return uniformLocations[uniformNameHash];
 }
 
+void FEShader::loadScalar(int& uniformNameHash, GLboolean& value)
+{
+	FE_GL_ERROR(glUniform1f(uniformLocations[uniformNameHash], value));
+}
+
 void FEShader::loadScalar(int& uniformNameHash, GLfloat& value)
 {
 	FE_GL_ERROR(glUniform1f(uniformLocations[uniformNameHash], value));
@@ -1023,6 +1066,12 @@ void FEShader::loadDataToGPU()
 
 		switch (iterator->second.type)
 		{
+			case FE_BOOL_UNIFORM:
+			{
+				loadScalar(iterator->second.nameHash, *(GLboolean*)iterator->second.data);
+				break;
+			}
+
 			case FE_INT_SCALAR_UNIFORM:
 			{
 				loadScalar(iterator->second.nameHash, *(int*)iterator->second.data);

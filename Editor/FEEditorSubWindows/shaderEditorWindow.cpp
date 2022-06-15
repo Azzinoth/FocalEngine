@@ -182,6 +182,7 @@ void shaderEditorWindow::show(FEShader* shader)
 	strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
 
 	FEImGuiWindow::show();
+	currentEditor->SetText("");
 	currentEditor = nullptr;
 
 	if (shaderToEdit->getVertexShaderText() != nullptr)
@@ -398,7 +399,9 @@ void shaderEditorWindow::render()
 		if (dummyShader != nullptr)
 			delete dummyShader;
 
-		dummyShader = new FEShader("dummyShader", vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
+		dummyShader = new FEShader("dummyShader", 
+			vertexShaderUsed ? vertexShaderEditor.GetText().c_str() : nullptr,
+			fragmentShaderUsed ? fragmentShaderEditor.GetText().c_str() : nullptr,
 			tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
 			tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
 			geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
@@ -418,7 +421,9 @@ void shaderEditorWindow::render()
 		}
 		else
 		{
-			FEShader* reCompiledShader = new FEShader(shaderToEdit->getName(), vertexShaderEditor.GetText().c_str(), fragmentShaderEditor.GetText().c_str(),
+			FEShader* reCompiledShader = new FEShader(shaderToEdit->getName(), 
+				vertexShaderUsed ? vertexShaderEditor.GetText().c_str() : nullptr,
+				fragmentShaderUsed ? fragmentShaderEditor.GetText().c_str() : nullptr,
 				tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
 				tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
 				geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,

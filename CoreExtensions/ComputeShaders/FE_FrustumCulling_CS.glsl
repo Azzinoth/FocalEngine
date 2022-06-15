@@ -1,5 +1,9 @@
 layout (local_size_x = 64) in;
 
+@ViewMatrix@
+@ProjectionMatrix@
+@PVMMatrix@
+
 struct DrawElementsIndirectCommand
 {
 	uint count;
@@ -63,8 +67,13 @@ layout(std430, binding = 9) writeonly buffer resultLOD3Buffer
 
 layout(std430, binding = 10) writeonly buffer drawCallsInfoBuffer
 {
-	DrawElementsIndirectCommand drawCallsInfo[LOD_COUNT];
+	DrawElementsIndirectCommand drawCallsInfo[]; // drawCallsInfo[LOD_COUNT]
 };
+
+layout(binding = 0) uniform sampler2D depthPyramid;
+uniform bool useOccusionCulling;
+uniform vec2 renderTargetSize;
+uniform vec2 nearFarPlanes;
 
 mat4 rotateMat(mat4 original, float angle)
 {
@@ -96,7 +105,29 @@ mat4 rotateBillboard(mat4 originalMat)
 	return result;
 }
 
-void main()
+// 2D Polyhedral Bounds of a Clipped, Perspective-Projected 3D Sphere. Michael Mara, Morgan McGuire. 2013
+bool projectSphere(vec3 C, float r, float znear, float P00, float P11, out vec4 aabb)
+{
+	if (C.z < r + znear)
+		return false;
+
+	vec2 cx = -C.xz;
+	vec2 vx = vec2(sqrt(dot(cx, cx) - r * r), r);
+	vec2 minx = mat2(vx.x, vx.y, -vx.y, vx.x) * cx;
+	vec2 maxx = mat2(vx.x, -vx.y, vx.y, vx.x) * cx;
+
+	vec2 cy = -C.yz;
+	vec2 vy = vec2(sqrt(dot(cy, cy) - r * r), r);
+	vec2 miny = mat2(vy.x, vy.y, -vy.y, vy.x) * cy;
+	vec2 maxy = mat2(vy.x, -vy.y, vy.y, vy.x) * cy;
+
+	aabb = vec4(minx.x / minx.y * P00, miny.x / miny.y * P11, maxx.x / maxx.y * P00, maxy.x / maxy.y * P11);
+	aabb = aabb.xwzy * vec4(0.5f, -0.5f, 0.5f, -0.5f) + vec4(0.5f); // clip space -> uv space
+
+	return true;
+}
+
+void main() // FEViewMatrix
 {
 	// I am in doubt that this should work. But test show that it is...
 	if (gl_GlobalInvocationID.x == 0)
@@ -115,7 +146,7 @@ void main()
 	// If instanceCount can't be divided by threadCount evenly
 	// we would have threads that will try to work on garbage data from buffer 
 	// and result of that work could end up in a output(because of threads scheduling).
-	// To avoid this issue, we will not do any work if gl_GlobalInvocationID is put of allowed range.
+	// To avoid this issue, we will not do any work if gl_GlobalInvocationID is out of allowed range.
 	uint instanceCount = uint(LODInfo[6]);
 	if (gl_GlobalInvocationID.x >= instanceCount)
 		return;
@@ -139,6 +170,61 @@ void main()
 								frustum[index + 3];
 
 		if (distanceToPlane <= AABBSizes[gl_GlobalInvocationID.x])
+			return;
+	}
+
+	// Occusion culling
+	// Based on https://vkguide.dev/docs/gpudriven/compute_culling/
+	if (useOccusionCulling)
+	{
+		vec3 center = vec3(positions[invocationOffset], positions[invocationOffset + 1], positions[invocationOffset + 2]);
+		center = (FEViewMatrix * vec4(center, 1.0)).xyz;
+		center.z = -center.z;
+
+		//flip Y because we access depth texture that way
+		center.y *= -1;
+
+		// my AABBSizes buffer containe negative sizes.
+		float AABBSize = -(AABBSizes[gl_GlobalInvocationID.x] / 2.0f);
+		float zNear = nearFarPlanes.x;
+		float zFar = nearFarPlanes.y;
+
+		float P00 = FEProjectionMatrix[0][0];
+		float P11 = FEProjectionMatrix[1][1];
+
+		vec4 aabb;
+		projectSphere(center, AABBSize, zNear, P00, P11, aabb);
+
+		float width = (aabb.z - aabb.x) * renderTargetSize.x;
+		float height = (aabb.w - aabb.y) * renderTargetSize.y;
+		float level = floor(log2(max(width, height)));
+
+		vec2 texCoord = (aabb.xy + aabb.zw) * 0.5;
+
+		float downScale = float(pow(2.0, level));
+		float levelW = renderTargetSize.x / downScale;
+		float levelH = renderTargetSize.y / downScale;
+
+		int pixelX = int(levelW * texCoord.x);
+		int pixelY = int(levelH * texCoord.y);
+
+		float candidateDepth_0 = texelFetch(depthPyramid, ivec2(pixelX, pixelY), int(level)).x;
+		float candidateDepth_1 = texelFetch(depthPyramid, ivec2(pixelX - 1, pixelY), int(level)).x;
+		float candidateDepth_2 = texelFetch(depthPyramid, ivec2(pixelX + 1, pixelY), int(level)).x;
+		float candidateDepth_3 = texelFetch(depthPyramid, ivec2(pixelX, pixelY - 1), int(level)).x;
+		float candidateDepth_4 = texelFetch(depthPyramid, ivec2(pixelX, pixelY + 1), int(level)).x;
+
+		float depth = max(max(max(max(candidateDepth_0, candidateDepth_1), candidateDepth_2), candidateDepth_3), candidateDepth_4);
+
+		// Multiplication by 3.5 is to minimize false occlusions. (Also on line 188 we divided AABBSize by 2)
+		// But this is a problem that should be solved more solidly.
+		float viewPosition = center.z - AABBSize * 3.5f;
+
+		float objectDepth = (1.0 / viewPosition - 1.0 / zNear) / (1.0 / zFar - 1.0 / zNear);
+
+		// depth could be 0.0 if we try to read pass valid coordinates or pass valid mip level.
+		// objectDepth < 1.0 check because of our multiplication trick above.
+		if (objectDepth > depth && objectDepth < 1.0  && depth != 0.0)
 			return;
 	}
 

@@ -63,8 +63,8 @@ FERenderer::FERenderer()
 	skyDome->transform.setScale(glm::vec3(50.0f));
 
 	FE_FrustumCullingShader = RESOURCE_MANAGER.createShader("FE_FrustumCullingShader", nullptr, nullptr,
-																									   nullptr, nullptr,
-																									   nullptr, RESOURCE_MANAGER.loadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
+															nullptr, nullptr,
+															nullptr, RESOURCE_MANAGER.loadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
 
 	FE_GL_ERROR(glGenBuffers(1, &frustumInfoBuffer));
 	FE_GL_ERROR(glGenBuffers(1, &cullingLODCountersBuffer));
@@ -81,15 +81,27 @@ FERenderer::FERenderer()
 	}
 
 	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), frustumData.data(), GL_DYNAMIC_DRAW));
+
+
+	FE_ComputeTextureCopy = RESOURCE_MANAGER.createShader("FE_ComputeTextureCopy", nullptr, nullptr,
+														  nullptr, nullptr,
+														  nullptr, RESOURCE_MANAGER.loadGLSL("CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str());
+
+
+	FE_ComputeDepthPyramidDownSample = RESOURCE_MANAGER.createShader("FE_ComputeDepthPyramidDownSample", nullptr, nullptr,
+																	 nullptr, nullptr,
+																	 nullptr, RESOURCE_MANAGER.loadGLSL("CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str());
+	
+	FE_ComputeDepthPyramidDownSample->getParameter("scaleDownBy")->updateData(2);
 }
 
-void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
+void FERenderer::standardFBInit(int windowWidth, int windowHeight)
 {
-	sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
+	sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, windowWidth, windowHeight);
 
 #ifdef USE_DEFERRED_RENDERER
 	GBuffer = new FEGBuffer(sceneToTextureFB);
-	SSAOFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
+	SSAOFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT, windowWidth, windowHeight, false);
 #endif // USE_DEFERRED_RENDERER
 
 	debugOutputTextures["albedoRenderTarget"] = []() { return RENDERER.GBuffer->albedo; };
@@ -102,6 +114,20 @@ void FERenderer::standardFBInit(int WindowWidth, int WindowHeight)
 	debugOutputTextures["CSM1"] = []() { return RENDERER.CSM1; };
 	debugOutputTextures["CSM2"] = []() { return RENDERER.CSM2; };
 	debugOutputTextures["CSM3"] = []() { return RENDERER.CSM3; };
+
+	depthPyramid = RESOURCE_MANAGER.createTexture();
+
+	depthPyramid->bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+	int maxDimention = std::max(windowWidth, windowHeight);
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), GL_R32F, windowWidth, windowHeight));
+	depthPyramid->width = windowWidth;
+	depthPyramid->height = windowHeight;
 }
 
 void FERenderer::loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows)
@@ -390,7 +416,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 	if (componentIndex != -1)
 	{
-		GPUCulling(entityInstanced, int(componentIndex));
+		GPUCulling(entityInstanced, int(componentIndex), currentCamera);
 
 		FEGameModel* currentGameModel = entityInstanced->prefab->components[componentIndex]->gameModel;
 
@@ -466,7 +492,7 @@ void FERenderer::renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBas
 
 	for (size_t i = 0; i < entityInstanced->prefab->components.size(); i++)
 	{
-		GPUCulling(entityInstanced, int(i));
+		GPUCulling(entityInstanced, int(i), currentCamera);
 
 		FEGameModel* currentGameModel = entityInstanced->prefab->components[i]->gameModel;
 
@@ -568,6 +594,10 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	loadUniformBlocks();
 
 	// ********* GENERATE SHADOW MAPS *********
+	bool previousState = useOccusionCulling;
+	// Currently OCCUSION_CULLING is not supported in shadow maps pass.
+	useOccusionCulling = false;
+
 	CSM0 = nullptr;
 	CSM1 = nullptr;
 	CSM2 = nullptr;
@@ -720,6 +750,8 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 
 		itLight++;
 	}
+
+	useOccusionCulling = previousState;
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
@@ -891,6 +923,7 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	screenQuadShader->stop();
 
 	glDepthMask(GL_TRUE);
+	// Could impact depth pyramid construction( min vs max ).
 	glDepthFunc(GL_LESS);
 	
 #else
@@ -1110,6 +1143,36 @@ void FERenderer::render(FEBasicCamera* currentCamera)
 	// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 	lineCounter = 0;
+
+	// **************************** DEPTH PYRAMID ****************************
+#ifdef USE_OCCUSION_CULLING
+
+	FE_ComputeTextureCopy->start();
+	FE_ComputeTextureCopy->getParameter("textureSize")->updateData(glm::vec2(RENDERER.depthPyramid->getWidth(), RENDERER.depthPyramid->getHeight()));
+	FE_ComputeTextureCopy->loadDataToGPU();
+
+	RENDERER.sceneToTextureFB->getDepthAttachment()->bind(0);
+	glBindImageTexture(1, RENDERER.depthPyramid->getTextureID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+	FE_ComputeTextureCopy->dispatch((unsigned int)ceil(float(RENDERER.depthPyramid->getWidth()) / 32.0f), (unsigned int)ceil(float(RENDERER.depthPyramid->getHeight()) / 32.0f), 1);
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+	size_t mipCount = size_t(floor(log2(std::max(RENDERER.depthPyramid->getWidth(), RENDERER.depthPyramid->getHeight()))) + 1);
+	for (size_t i = 0; i < mipCount; i++)
+	{
+		float downScale = float(pow(2.0f, i));
+
+		FE_ComputeDepthPyramidDownSample->start();
+		FE_ComputeDepthPyramidDownSample->getParameter("textureSize")->updateData(glm::vec2(RENDERER.depthPyramid->getWidth() / downScale, RENDERER.depthPyramid->getHeight() / downScale));
+		FE_ComputeDepthPyramidDownSample->loadDataToGPU();
+		glBindImageTexture(0, RENDERER.depthPyramid->getTextureID(), GLint(i), GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+		glBindImageTexture(1, RENDERER.depthPyramid->getTextureID(), GLint(i + 1), GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+
+		FE_ComputeDepthPyramidDownSample->dispatch((unsigned int)ceil(float(RENDERER.depthPyramid->getWidth() / downScale) / 32.0f), (unsigned int)ceil(float(RENDERER.depthPyramid->getHeight() / downScale) / 32.0f), 1);
+		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+	}
+#endif // USE_OCCUSION_CULLING
+	// **************************** DEPTH PYRAMID END ****************************
 }
 
 FEPostProcess* FERenderer::getPostProcessEffect(std::string ID)
@@ -1681,7 +1744,7 @@ void FERenderer::updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPositi
 	FE_GL_ERROR(glUnmapNamedBuffer(frustumInfoBuffer));
 }
 
-void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
+void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel, FEBasicCamera* currentCamera)
 {
 	if (freezeCulling)
 		return;
@@ -1689,6 +1752,18 @@ void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
 	entity->checkDirtyFlag(subGameModel);
 
 	FE_FrustumCullingShader->start();
+
+#ifdef USE_OCCUSION_CULLING
+	FE_FrustumCullingShader->getParameter("FEProjectionMatrix")->updateData(currentCamera->getProjectionMatrix());
+	FE_FrustumCullingShader->getParameter("FEViewMatrix")->updateData(currentCamera->getViewMatrix());
+	FE_FrustumCullingShader->getParameter("useOccusionCulling")->updateData(useOccusionCulling);
+	// It should be last frame size!
+	glm::vec2 renderTargetSize = glm::vec2(GBuffer->GFrameBuffer->depthAttachment->getWidth(), GBuffer->GFrameBuffer->depthAttachment->getHeight());
+	FE_FrustumCullingShader->getParameter("renderTargetSize")->updateData(renderTargetSize);
+	FE_FrustumCullingShader->getParameter("nearFarPlanes")->updateData(glm::vec2(currentCamera->nearPlane, currentCamera->farPlane));
+#endif // USE_OCCUSION_CULLING
+
+	FE_FrustumCullingShader->loadDataToGPU();
 
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, entity->renderers[subGameModel]->sourceDataBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, entity->renderers[subGameModel]->positionsBuffer));
@@ -1701,6 +1776,10 @@ void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, entity->renderers[subGameModel]->LODBuffers[2]));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, entity->renderers[subGameModel]->LODBuffers[3]));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, entity->renderers[subGameModel]->indirectDrawInfoBuffer));
+
+	depthPyramid->bind(0);
+	/*FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, depthPyramid));*/
 
 	FE_FrustumCullingShader->dispatch(GLuint(ceil(entity->instanceCount / 64.0f)), 1, 1);
 	FE_GL_ERROR(glMemoryBarrier(GL_ALL_BARRIER_BITS));
@@ -1716,6 +1795,60 @@ void FERenderer::GPUCulling(FEEntityInstanced* entity, int subGameModel)
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, 0));
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, 0));
 	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, 0));
+}
+
+std::unordered_map<std::string, std::function<FETexture* ()>> FERenderer::getDebugOutputTextures()
+{
+	return debugOutputTextures;
+}
+
+void FERenderer::renderTargetResize(int newWidth, int newHeight)
+{
+	delete sceneToTextureFB;
+	sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, newWidth, newHeight);
+
+	delete depthPyramid;
+	depthPyramid = RESOURCE_MANAGER.createTexture();
+	
+	depthPyramid->bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+	int maxDimention = std::max(newWidth, newHeight);
+	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), GL_R32F, newWidth, newHeight));
+	depthPyramid->width = newWidth;
+	depthPyramid->height = newHeight;
+	
+	#ifdef USE_DEFERRED_RENDERER
+		GBuffer->renderTargetResize(sceneToTextureFB);
+	#endif // USE_DEFERRED_RENDERER
+	
+	for (size_t i = 0; i < postProcessEffects.size(); i++)
+	{
+		// We should delete only internally created frame buffers.
+		// Other wise user created postProcess could create UB.
+		if (postProcessEffects[i]->getName() == "bloom" || 
+			postProcessEffects[i]->getName() == "GammaAndHDR" ||
+			postProcessEffects[i]->getName() == "FE_FXAA" || 
+			postProcessEffects[i]->getName() == "DOF" || 
+			postProcessEffects[i]->getName() == "chromaticAberration")
+		delete postProcessEffects[i];
+	}
+
+	postProcessEffects.clear();
+}
+
+bool FERenderer::isOccusionCullingEnabled()
+{
+	return useOccusionCulling;
+}
+
+void FERenderer::setOccusionCullingEnabled(bool newValue)
+{
+	useOccusionCulling = newValue;
 }
 
 #ifdef USE_DEFERRED_RENDERER
@@ -1752,8 +1885,3 @@ void FEGBuffer::renderTargetResize(FEFramebuffer* mainFrameBuffer)
 }
 
 #endif // USE_DEFERRED_RENDERER
-
-std::unordered_map<std::string, std::function<FETexture* ()>> FERenderer::getDebugOutputTextures()
-{
-	return debugOutputTextures;
-}

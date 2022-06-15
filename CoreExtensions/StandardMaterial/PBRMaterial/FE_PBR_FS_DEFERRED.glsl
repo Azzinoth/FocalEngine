@@ -544,7 +544,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
     // add to outgoing radiance Lo
     Lo = (kD * albedo / PI + specular) * radiance * NdotL;  // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by kS again
 
-	if (FEReceiveShadows == 0)
+	if (!FEReceiveShadows)
 		return Lo;
 		
 

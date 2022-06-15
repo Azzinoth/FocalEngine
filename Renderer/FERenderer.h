@@ -113,6 +113,9 @@ namespace FocalEngine
 		bool freezeCulling = false;
 		void drawAABB(FEAABB AABB, glm::vec3 color = glm::vec3(0.1f, 0.6f, 0.1f), float lineWidth = 0.2f);
 
+		bool isOccusionCullingEnabled();
+		void setOccusionCullingEnabled(bool newValue);
+
 #ifdef USE_DEFERRED_RENDERER
 		FEGBuffer* GBuffer = nullptr;
 		FEFramebuffer* SSAOFB = nullptr;
@@ -125,7 +128,7 @@ namespace FocalEngine
 		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, bool isReceivingShadows);
 		void loadUniformBlocks();
 
-		void standardFBInit(int WindowWidth, int WindowHeight);
+		void standardFBInit(int windowWidth, int windowHeight);
 		void takeScreenshot(const char* fileName, int width, int height);
 
 		FEMaterial* shadowMapMaterial;
@@ -167,15 +170,23 @@ namespace FocalEngine
 
 		// *********** GPU Culling ***********
 		FEShader* FE_FrustumCullingShader = nullptr;
+		FEShader* FE_ComputeTextureCopy = nullptr;
+		FEShader* FE_ComputeDepthPyramidDownSample = nullptr;
 
 		GLuint frustumInfoBuffer = 0;
 		GLuint cullingLODCountersBuffer = 0;
 
 		void updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition);
-		void GPUCulling(FEEntityInstanced* entity, int subGameModel);
+		void GPUCulling(FEEntityInstanced* entity, int subGameModel, FEBasicCamera* currentCamera);
+
+		FETexture* depthPyramid = nullptr;
+		bool useOccusionCulling = true;
 		// *********** GPU Culling END ***********
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> debugOutputTextures;
+
+		void renderTargetResize(int newWidth, int newHeight);
+		
 	};
 
 	#define RENDERER FERenderer::getInstance()

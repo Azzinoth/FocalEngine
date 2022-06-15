@@ -18,7 +18,6 @@ void main(void)
 			finalIntensity = -finalIntensity;
 
 		float percentage = (distanceToBrush / brushSize);
-		@DEBUG@(percentage)
 		float displacement = finalIntensity * (1 - percentage);
 		if (brushMode == 5.0)
 		{

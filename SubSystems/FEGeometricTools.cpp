@@ -241,3 +241,8 @@ FEAABB::FEAABB(FEAABB other, glm::mat4 transformMatrix)
 	if (abs(max.z - min.z) > size)
 		size = abs(max.z - min.z);
 }
+
+float FEAABB::getSize()
+{
+	return size;
+}

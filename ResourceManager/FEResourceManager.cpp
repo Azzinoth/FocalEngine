@@ -2068,7 +2068,7 @@ FEFramebuffer* FEResourceManager::createFramebuffer(int attachments, int Width, 
 
 	if (attachments & FE_DEPTH_ATTACHMENT)
 	{
-		newFramebuffer->setDepthAttachment(createTexture(GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, Width, Height));
+		newFramebuffer->setDepthAttachment(createTexture(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, Width, Height));
 
 		// if only DEPTH_ATTACHMENT
 		if (!(attachments & FE_COLOR_ATTACHMENT))

@@ -607,27 +607,7 @@ void FEngine::renderTargetResize()
 	FEngine& engineObj = getInstance();
 	engineObj.currentCamera->setAspectRatio(float(engineObj.renderTargetW) / float(engineObj.renderTargetH));
 
-	FERenderer& renderer = RENDERER;
-
-	delete RENDERER.sceneToTextureFB;
-	RENDERER.sceneToTextureFB = RESOURCE_MANAGER.createFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, engineObj.renderTargetW, engineObj.renderTargetH);
-
-#ifdef USE_DEFERRED_RENDERER
-	RENDERER.GBuffer->renderTargetResize(RENDERER.sceneToTextureFB);
-#endif // USE_DEFERRED_RENDERER
-
-	for (size_t i = 0; i < RENDERER.postProcessEffects.size(); i++)
-	{
-		// We should delete only internally created frame buffers.
-		// Other wise user created postProcess could create UB.
-		if (RENDERER.postProcessEffects[i]->getName() == "bloom" || 
-			RENDERER.postProcessEffects[i]->getName() == "GammaAndHDR" ||
-			RENDERER.postProcessEffects[i]->getName() == "FE_FXAA" || 
-			RENDERER.postProcessEffects[i]->getName() == "DOF" || 
-			RENDERER.postProcessEffects[i]->getName() == "chromaticAberration")
-		delete RENDERER.postProcessEffects[i];
-	}
-	RENDERER.postProcessEffects.clear();
+	RENDERER.renderTargetResize(engineObj.renderTargetW, engineObj.renderTargetH);
 
 	// ************************************ Bloom ************************************
 	FEPostProcess* bloomEffect = ENGINE.createPostProcess("bloom", int(engineObj.renderTargetW / 4.0f), int(engineObj.renderTargetH / 4.0f));

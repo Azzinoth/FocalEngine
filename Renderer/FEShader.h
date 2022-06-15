@@ -38,7 +38,8 @@ namespace FocalEngine
 		FE_VECTOR3_UNIFORM = 3,
 		FE_VECTOR4_UNIFORM = 4,
 		FE_MAT4_UNIFORM = 5,
-		FE_NULL_UNIFORM = 6
+		FE_NULL_UNIFORM = 6,
+		FE_BOOL_UNIFORM = 7
 	};
 
 	enum FEVertexAttributes
@@ -59,6 +60,7 @@ namespace FocalEngine
 	struct FEShaderParam
 	{
 		FEShaderParam();
+		FEShaderParam(bool Data, std::string Name);
 		FEShaderParam(int Data, std::string Name);
 		FEShaderParam(float Data, std::string Name);
 		FEShaderParam(glm::vec2 Data, std::string Name);
@@ -73,6 +75,7 @@ namespace FocalEngine
 		~FEShaderParam();
 
 		void updateData(void* Data);
+		void updateData(bool Data);
 		void updateData(int Data);
 		void updateData(float Data);
 		void updateData(glm::vec2 Data);
@@ -114,6 +117,7 @@ namespace FocalEngine
 		virtual void start();
 		virtual void stop();
 
+		void loadScalar(int& uniformNameHash, GLboolean& value);
 		void loadScalar(int& uniformNameHash, GLfloat& value);
 		void loadScalar(int& uniformNameHash, GLint& value);
 		void loadVector(int& uniformNameHash, glm::vec2& vector);

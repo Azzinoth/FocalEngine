@@ -115,8 +115,10 @@ file(GLOB FE_SSAO_SRC
 	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_VS.glsl"
 )
 
-file(GLOB FE_FrustumCulling_CS_SRC
+file(GLOB ComputeShaders_SRC
 	"CoreExtensions/ComputeShaders/FE_FrustumCulling_CS.glsl"
+	"CoreExtensions/ComputeShaders/FE_ComputeTextureCopy_CS.glsl"
+	"CoreExtensions/ComputeShaders/FE_ComputeDepthPyramidDownSample_CS.glsl"
 )
 
 file(GLOB CoreExtensions_SRC
@@ -345,7 +347,7 @@ add_executable(FocalEngineEditor WIN32
 								 ${FE_FXAA_SRC}
 								 ${FE_GammaAndHDRCorrection_SRC}
 								 ${FE_SSAO_SRC}
-								 ${FE_FrustumCulling_CS_SRC}
+								 ${ComputeShaders_SRC}
 								 ${CoreExtensions_SRC}
 								 # *************** EDITOR ***************
 								 ${Editor_SRC}
@@ -391,7 +393,7 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_DOF" FILES ${FE_
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_FXAA" FILES ${FE_FXAA_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection" FILES ${FE_GammaAndHDRCorrection_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
-source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${FE_FrustumCulling_CS_SRC})
+source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${ComputeShaders_SRC})
 source_group("Source Files/CoreExtensions" FILES ${CoreExtensions_SRC})
 # *************** EDITOR ***************
 source_group("Source Files/Editor" FILES ${Editor_SRC})

@@ -252,7 +252,7 @@ void FEProjectManager::displayProjectSelection()
 			ImGui::Text("Insert name of new project :");
 			static char projectName[512] = "";
 
-			ImGui::InputText("", projectName, IM_ARRAYSIZE(projectName));
+			ImGui::InputText("##newProjectName", projectName, IM_ARRAYSIZE(projectName));
 
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 4.0f - 120.0f / 2.0f);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10.0f);

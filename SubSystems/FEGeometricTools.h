@@ -159,6 +159,8 @@ namespace FocalEngine
 
 			return result;
 		}
+
+		float getSize();
 		
 	private:
 		glm::vec3 min = glm::vec3(0.0f);

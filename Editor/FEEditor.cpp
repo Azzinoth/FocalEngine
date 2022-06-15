@@ -960,6 +960,10 @@ void FEEditor::displaySceneBrowser()
 	ImGui::Checkbox("freezeCulling", &freezeCulling);
 	RENDERER.freezeCulling = freezeCulling;
 
+	bool freezeOccusionCulling = !RENDERER.isOccusionCullingEnabled();
+	ImGui::Checkbox("freezeOccusionCulling", &freezeOccusionCulling);
+	RENDERER.setOccusionCullingEnabled(!freezeOccusionCulling);
+
 	static bool displaySelectedObjAABB = false;
 	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
 
