@@ -116,6 +116,7 @@ void FERenderer::standardFBInit(int windowWidth, int windowHeight)
 	debugOutputTextures["CSM3"] = []() { return RENDERER.CSM3; };
 
 	depthPyramid = RESOURCE_MANAGER.createTexture();
+	RESOURCE_MANAGER.textures.erase(depthPyramid->getObjectID());
 
 	depthPyramid->bind();
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
@@ -1809,7 +1810,8 @@ void FERenderer::renderTargetResize(int newWidth, int newHeight)
 
 	delete depthPyramid;
 	depthPyramid = RESOURCE_MANAGER.createTexture();
-	
+	RESOURCE_MANAGER.textures.erase(depthPyramid->getObjectID());
+
 	depthPyramid->bind();
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
