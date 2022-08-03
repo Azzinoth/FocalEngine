@@ -1,112 +1,106 @@
 #pragma once
 
 #include "../Editor/FEEditorSubWindows/shaderEditorWindow.h"
-using namespace FEGizmoManager;
 
 class gyzmosSettingsWindow : public FEImGuiWindow
 {
-	ImGuiImageButton* transformationGizmoButton = nullptr;
-	ImGuiImageButton* scaleGizmoButton = nullptr;
-	ImGuiImageButton* rotateGizmoButton = nullptr;
+	ImGuiImageButton* TransformationGizmoButton = nullptr;
+	ImGuiImageButton* ScaleGizmoButton = nullptr;
+	ImGuiImageButton* RotateGizmoButton = nullptr;
 public:
 	gyzmosSettingsWindow()
 	{
-		flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
+		Flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar;
 	}
 
 	~gyzmosSettingsWindow() override
 	{
-		if (transformationGizmoButton != nullptr)
-			delete transformationGizmoButton;
-
-		if (scaleGizmoButton != nullptr)
-			delete scaleGizmoButton;
-
-		if (rotateGizmoButton != nullptr)
-			delete rotateGizmoButton;
+		delete TransformationGizmoButton;
+		delete ScaleGizmoButton;
+		delete RotateGizmoButton;
 	}
 
-	void show() override
+	void Show() override
 	{
-		std::string tempCaption = "##GizmosSettingsWindow";
-		strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
-		size = ImVec2(146.0f, 48.0f);
-		position = ImVec2(FEngine::getInstance().getWindowWidth() / 2.0f - 150.0f / 2.0f, 10.0f);
-		FEImGuiWindow::show();
+		const std::string TempCaption = "##GizmosSettingsWindow";
+		strcpy_s(Caption, TempCaption.size() + 1, TempCaption.c_str());
+		Size = ImVec2(146.0f, 48.0f);
+		Position = ImVec2(FEngine::getInstance().GetWindowWidth() / 2.0f - 150.0f / 2.0f, 10.0f);
+		FEImGuiWindow::Show();
 
-		if (transformationGizmoButton == nullptr)
-			transformationGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.transformationGizmoIcon);
+		if (TransformationGizmoButton == nullptr)
+			TransformationGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.TransformationGizmoIcon);
 
-		if (scaleGizmoButton == nullptr)
-			scaleGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.scaleGizmoIcon);
+		if (ScaleGizmoButton == nullptr)
+			ScaleGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.ScaleGizmoIcon);
 
-		if (rotateGizmoButton == nullptr)
-			rotateGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.rotateGizmoIcon);
+		if (RotateGizmoButton == nullptr)
+			RotateGizmoButton = new ImGuiImageButton(GIZMO_MANAGER.RotateGizmoIcon);
 
-		float currentX = 5.0f;
-		transformationGizmoButton->setPosition(ImVec2(currentX, 5.0f));
-		currentX += 32.0f + 16.0f;
-		scaleGizmoButton->setPosition(ImVec2(currentX, 5.0f));
-		currentX += 32.0f + 16.0f;
-		rotateGizmoButton->setPosition(ImVec2(currentX, 5.0f));
+		float CurrentX = 5.0f;
+		TransformationGizmoButton->SetPosition(ImVec2(CurrentX, 5.0f));
+		CurrentX += 32.0f + 16.0f;
+		ScaleGizmoButton->SetPosition(ImVec2(CurrentX, 5.0f));
+		CurrentX += 32.0f + 16.0f;
+		RotateGizmoButton->SetPosition(ImVec2(CurrentX, 5.0f));
 	}
 
-	void render() override
+	void Render() override
 	{
-		FEImGuiWindow::render();
+		FEImGuiWindow::Render();
 
-		if (!isVisible())
+		if (!IsVisible())
 			return;
 
-		GIZMO_MANAGER.gizmosState == TRANSFORM_GIZMOS ? setSelectedStyle(transformationGizmoButton) : setDefaultStyle(transformationGizmoButton);
+		GIZMO_MANAGER.GizmosState == TRANSFORM_GIZMOS ? SetSelectedStyle(TransformationGizmoButton) : SetDefaultStyle(TransformationGizmoButton);
 		ImGui::PushID(0);
-		transformationGizmoButton->render();
-		if (transformationGizmoButton->getWasClicked())
+		TransformationGizmoButton->Render();
+		if (TransformationGizmoButton->IsClicked())
 		{
-			if (GIZMO_MANAGER.gizmosState != TRANSFORM_GIZMOS)
+			if (GIZMO_MANAGER.GizmosState != TRANSFORM_GIZMOS)
 			{
-				GIZMO_MANAGER.updateGizmoState(TRANSFORM_GIZMOS);
+				GIZMO_MANAGER.UpdateGizmoState(TRANSFORM_GIZMOS);
 				ImGui::PopID();
-				FEImGuiWindow::onRenderEnd();
+				FEImGuiWindow::OnRenderEnd();
 				return;
 			}
 		}
 		ImGui::PopID();
-		showToolTip("Translate objects. key = shift");
+		ShowToolTip("Translate objects. key = shift");
 
-		GIZMO_MANAGER.gizmosState == SCALE_GIZMOS ? setSelectedStyle(scaleGizmoButton) : setDefaultStyle(scaleGizmoButton);
+		GIZMO_MANAGER.GizmosState == SCALE_GIZMOS ? SetSelectedStyle(ScaleGizmoButton) : SetDefaultStyle(ScaleGizmoButton);
 		ImGui::PushID(1);
-		scaleGizmoButton->render();
-		if (scaleGizmoButton->getWasClicked())
+		ScaleGizmoButton->Render();
+		if (ScaleGizmoButton->IsClicked())
 		{
-			if (GIZMO_MANAGER.gizmosState != SCALE_GIZMOS)
+			if (GIZMO_MANAGER.GizmosState != SCALE_GIZMOS)
 			{
-				GIZMO_MANAGER.updateGizmoState(SCALE_GIZMOS);
+				GIZMO_MANAGER.UpdateGizmoState(SCALE_GIZMOS);
 				ImGui::PopID();
-				FEImGuiWindow::onRenderEnd();
+				FEImGuiWindow::OnRenderEnd();
 				return;
 			}
 		}
 		ImGui::PopID();
-		showToolTip("Scale objects. key = shift");
+		ShowToolTip("Scale objects. key = shift");
 
-		GIZMO_MANAGER.gizmosState == ROTATE_GIZMOS ? setSelectedStyle(rotateGizmoButton) : setDefaultStyle(rotateGizmoButton);
+		GIZMO_MANAGER.GizmosState == ROTATE_GIZMOS ? SetSelectedStyle(RotateGizmoButton) : SetDefaultStyle(RotateGizmoButton);
 		ImGui::PushID(2);
-		rotateGizmoButton->render();
-		if (rotateGizmoButton->getWasClicked())
+		RotateGizmoButton->Render();
+		if (RotateGizmoButton->IsClicked())
 		{
-			if (GIZMO_MANAGER.gizmosState != ROTATE_GIZMOS)
+			if (GIZMO_MANAGER.GizmosState != ROTATE_GIZMOS)
 			{
-				GIZMO_MANAGER.updateGizmoState(ROTATE_GIZMOS);
+				GIZMO_MANAGER.UpdateGizmoState(ROTATE_GIZMOS);
 				ImGui::PopID();
-				FEImGuiWindow::onRenderEnd();
+				FEImGuiWindow::OnRenderEnd();
 				return;
 			}
 		}
 		ImGui::PopID();
-		showToolTip("Rotate objects. key = shift");
+		ShowToolTip("Rotate objects. key = shift");
 
-		FEImGuiWindow::onRenderEnd();
+		FEImGuiWindow::OnRenderEnd();
 	}
 };
-static gyzmosSettingsWindow gyzmosSettingsWindowObject;
+static gyzmosSettingsWindow GyzmosSettingsWindowObject;

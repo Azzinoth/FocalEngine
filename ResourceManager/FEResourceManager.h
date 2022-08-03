@@ -5,7 +5,7 @@
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../SubSystems/FEJobManager.h"
 #include "../ThirdParty/stb_image/stb_image.h"
-#include "FEglTFLoader.h"
+#include "FEGLTFLoader.h"
 
 namespace FocalEngine
 {
@@ -21,153 +21,155 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
-		FEShader* createShader(std::string shaderName, const char* vertexText, const char* fragmentText,
-							   const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-							   const char* geometryText = nullptr, const char* computeText = nullptr, std::string forceObjectID = "");
+		FEShader* CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
+							   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
+							   const char* GeometryText = nullptr, const char* ComputeText = nullptr, std::string ForceObjectID = "");
 
-		bool makeShaderStandard(FEShader* shader);
-		FEShader* getShader(std::string shaderID);
-		std::vector<FEShader*> getShaderByName(std::string Name);
-		std::vector<std::string> getShadersList();
-		std::vector<std::string> getStandardShadersList();
-		void deleteShader(FEShader* shader);
-		bool replaceShader(std::string oldShaderID, FEShader* newShader);
-		std::string loadGLSL(const char* fileName);
+		bool MakeShaderStandard(FEShader* Shader);
+		FEShader* GetShader(std::string ShaderID);
+		std::vector<FEShader*> GetShaderByName(std::string Name);
+		std::vector<std::string> GetShadersList();
+		std::vector<std::string> GetStandardShadersList();
+		void DeleteShader(const FEShader* Shader);
+		bool ReplaceShader(std::string OldShaderID, FEShader* NewShader);
+		std::string LoadGLSL(const char* FileName);
 
-		FETexture* LoadPNGTexture(const char* fileName, std::string Name = "");
-		FETexture* LoadJPGTexture(const char* fileName, std::string Name = "");
-		FETexture* LoadBMPTexture(const char* fileName, std::string Name = "");
-		FETexture* LoadFETexture(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr);
-		FETexture* LoadFETextureUnmanaged(const char* fileName, std::string Name = "");
-		FETexture* LoadFETexture(char* fileData, std::string Name = "", FETexture* existingTexture = nullptr);
-		FETexture* LoadFETextureAsync(const char* fileName, std::string Name = "", FETexture* existingTexture = nullptr, std::string forceObjectID = "");
-		FETexture* LoadPNGHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
-		FETexture* LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name = "");
-		FETexture* rawDataToFETexture(unsigned char* textureData, int width, int height, GLint internalformat = -1, GLenum format = GL_RGBA, GLenum type = GL_UNSIGNED_BYTE);
-		std::vector<FETexture*> channelsToFETextures(FETexture* sourceTexture);
-		unsigned char* resizeTextureRawData(FETexture* sourceTexture, size_t targetWidth, size_t targetHeight, int filtrationLevel = 0);
-		unsigned char* resizeTextureRawData(unsigned char* textureData, size_t width, size_t height, size_t targetWidth, size_t targetHeight, GLint internalFormat, int filtrationLevel = 0);
-		void resizeTexture(FETexture* sourceTexture, int targetWidth, int targetHeight, int filtrationLevel = 0);
-		FETexture* createTextureWithTransparency(FETexture* originalTexture, FETexture* maskTexture);
+		FETexture* LoadPNGTexture(const char* FileName, std::string Name = "");
+		FETexture* LoadJPGTexture(const char* FileName, std::string Name = "");
+		FETexture* LoadBMPTexture(const char* FileName, std::string Name = "");
+		FETexture* LoadFETexture(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr);
+		FETexture* LoadFETextureUnmanaged(const char* FileName, std::string Name = "");
+		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
+		FETexture* LoadFETextureAsync(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
+		FETexture* LoadPNGHeightmap(const char* FileName, FETerrain* Terrain, std::string Name = "");
+		FETexture* LoadFEHeightmap(const char* FileName, FETerrain* Terrain, std::string Name = "");
+		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
+		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
+		unsigned char* ResizeTextureRawData(FETexture* SourceTexture, size_t TargetWidth, size_t TargetHeight, int FiltrationLevel = 0);
+		unsigned char* ResizeTextureRawData(const unsigned char* TextureData, size_t Width, size_t Height, size_t TargetWidth, size_t TargetHeight, GLint InternalFormat, int FiltrationLevel = 0);
+		void ResizeTexture(FETexture* SourceTexture, int TargetWidth, int TargetHeight, int FiltrationLevel = 0);
+		FETexture* CreateTextureWithTransparency(FETexture* OriginalTexture, FETexture* MaskTexture);
 
-		void saveFETexture(FETexture* texture, const char* fileName);
-		bool exportFETextureToPNG(FETexture* textureToExport, const char* fileName);
-		bool exportRawDataToPNG(const char* fileName, unsigned char* textureData, int width, int height, GLint internalformat);
-		void deleteFETexture(FETexture* texture);
-		std::vector<std::string> getTextureList();
-		FETexture* getTexture(std::string ID);
-		std::vector<FETexture*> getTextureByName(std::string Name);
-		bool makeTextureStandard(FETexture* texture);
-		FETexture* noTexture;
-		FETexture* createTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool unManaged = true, std::string Name = "");
-		FETexture* createSameFormatTexture(FETexture* exampleTexture, int differentW = 0, int differentH = 0, bool unManaged = true, std::string Name = "");
-		void updateAsyncLoadedResources();
+		void SaveFETexture(FETexture* Texture, const char* FileName);
+		bool ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName);
+		bool ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
+		void DeleteFETexture(const FETexture* Texture);
+		std::vector<std::string> GetTextureList();
+		FETexture* GetTexture(std::string ID);
+		std::vector<FETexture*> GetTextureByName(std::string Name);
+		bool MakeTextureStandard(FETexture* Texture);
+		FETexture* NoTexture;
+		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
+		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
+		void UpdateAsyncLoadedResources();
 
-		FEMesh* rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name = "");
-		FEMesh* rawDataToMesh(float* positions, int posSize,
+		FEMesh* RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name = "");
+		FEMesh* RawDataToMesh(float* Positions, int PosSize,
 							  float* UV, int UVSize,
-							  float* normals, int normSize,
-							  float* tangents, int tanSize,
-							  int* indices, int indexSize,
-							  float* matIndexs = nullptr, int matIndexsSize = 0, int matCount = 0,
+							  float* Normals, int NormSize,
+							  float* Tangents, int TanSize,
+							  int* Indices, int IndexSize,
+							  float* MatIndexs = nullptr, int MatIndexsSize = 0, int MatCount = 0,
 							  std::string Name = "");
 
-		void deleteFEMesh(FEMesh* mesh);
-		bool makeMeshStandard(FEMesh* mesh);
+		void DeleteFEMesh(const FEMesh* Mesh);
+		bool MakeMeshStandard(FEMesh* Mesh);
 
-		std::vector<std::string> getMeshList();
-		std::vector<std::string> getStandardMeshList();
-		FEMesh* getMesh(std::string ID);
-		std::vector<FEMesh*> getMeshByName(std::string Name);
-		std::vector<FEObject*> importOBJ(const char* fileName, bool forceOneMesh = false);
-		FEMesh* loadFEMesh(const char* fileName, std::string Name = "");
-		void saveFEMesh(FEMesh* Mesh, const char* fileName);
+		std::vector<std::string> GetMeshList();
+		std::vector<std::string> GetStandardMeshList();
+		FEMesh* GetMesh(std::string ID);
+		std::vector<FEMesh*> GetMeshByName(std::string Name);
+		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
+		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
+		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
 
-		FEFramebuffer* createFramebuffer(int attachments, int Width, int Height, bool HDR = true);
+		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
-		std::vector<std::string> getMaterialList();
-		std::vector<std::string> getStandardMaterialList();
-		FEMaterial* getMaterial(std::string ID);
-		std::vector<FEMaterial*> getMaterialByName(std::string Name);
-		FEMaterial* createMaterial(std::string Name = "", std::string forceObjectID = "");
-		bool makeMaterialStandard(FEMaterial* material);
-		void deleteMaterial(FEMaterial* Material);
+		std::vector<std::string> GetMaterialList();
+		std::vector<std::string> GetStandardMaterialList();
+		FEMaterial* GetMaterial(std::string ID);
+		std::vector<FEMaterial*> GetMaterialByName(std::string Name);
+		FEMaterial* CreateMaterial(std::string Name = "", std::string ForceObjectID = "");
+		bool MakeMaterialStandard(FEMaterial* Material);
+		void DeleteMaterial(const FEMaterial* Material);
 
-		std::vector<std::string> getGameModelList();
-		std::vector<std::string> getStandardGameModelList();
-		FEGameModel* getGameModel(std::string ID);
-		std::vector<FEGameModel*> getGameModelByName(std::string Name);
-		FEGameModel* createGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string forceObjectID = "");
-		bool makeGameModelStandard(FEGameModel* gameModel);
-		void deleteGameModel(FEGameModel* gameModel);
+		std::vector<std::string> GetGameModelList();
+		std::vector<std::string> GetStandardGameModelList();
+		FEGameModel* GetGameModel(std::string ID);
+		std::vector<FEGameModel*> GetGameModelByName(std::string Name);
+		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string ForceObjectID = "");
+		bool MakeGameModelStandard(FEGameModel* GameModel);
+		void DeleteGameModel(const FEGameModel* GameModel);
 
-		std::vector<std::string> getPrefabList();
-		std::vector<std::string> getStandardPrefabList();
-		FEPrefab* getPrefab(std::string ID);
-		std::vector<FEPrefab*> getPrefabByName(std::string Name);
-		FEPrefab* createPrefab(FEGameModel* gameModel = nullptr, std::string Name = "", std::string forceObjectID = "");
-		bool makePrefabStandard(FEPrefab* prefab);
-		void deletePrefab(FEPrefab* prefab);
+		std::vector<std::string> GetPrefabList();
+		std::vector<std::string> GetStandardPrefabList();
+		FEPrefab* GetPrefab(std::string ID);
+		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
+		FEPrefab* CreatePrefab(FEGameModel* GameModel = nullptr, std::string Name = "", std::string ForceObjectID = "");
+		bool MakePrefabStandard(FEPrefab* Prefab);
+		void DeletePrefab(const FEPrefab* Prefab);
 
-		FETerrain* createTerrain(bool createHeightMap = true, std::string name = "", std::string forceObjectID = "");
-		void activateTerrainVacantLayerSlot(FETerrain* terrain, FEMaterial* material);
-		void loadTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex);
-		void saveTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex);
-		void fillTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
-		void clearTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
-		void deleteTerrainLayerMask(FETerrain* terrain, size_t layerIndex);
+		FETerrain* CreateTerrain(bool bCreateHeightMap = true, std::string Name = "", std::string ForceObjectID = "");
+		void ActivateTerrainVacantLayerSlot(FETerrain* Terrain, FEMaterial* Material);
+		void LoadTerrainLayerMask(const char* FileName, FETerrain* Terrain, size_t LayerIndex);
+		void SaveTerrainLayerMask(const char* FileName, const FETerrain* Terrain, size_t LayerIndex);
+		void FillTerrainLayerMask(const FETerrain* Terrain, size_t LayerIndex);
+		void ClearTerrainLayerMask(const FETerrain* Terrain, size_t LayerIndex);
+		void DeleteTerrainLayerMask(FETerrain* Terrain, size_t LayerIndex);
 
-		void clear();
-		void loadStandardMeshes();
-		void loadStandardMaterial();
-		void loadStandardGameModels();
-		void loadStandardPrefabs();
+		void Clear();
+		void LoadStandardMeshes();
+		void LoadStandardMaterial();
+		void LoadStandardGameModels();
+		void LoadStandardPrefabs();
 
-		void reSaveStandardTextures();
-		void reSaveStandardMeshes();
+		void ReSaveStandardTextures();
+		void ReSaveStandardMeshes();
 
-		std::string getDefaultResourcesFolder();
-		std::vector<FEObject*> LoadGLTF(const char* fileName);
+		std::string GetDefaultResourcesFolder();
+		std::vector<FEObject*> LoadGLTF(const char* FileName);
 
-		std::vector<FEObject*> importAsset(const char* fileName);
+		std::vector<FEObject*> ImportAsset(const char* FileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
-		std::unordered_map<std::string, FEShader*> shaders;
-		std::unordered_map<std::string, FEShader*> standardShaders;
+		std::unordered_map<std::string, FEShader*> Shaders;
+		std::unordered_map<std::string, FEShader*> StandardShaders;
 
-		FETexture* createTexture(std::string Name = "", std::string forceObjectID = "");
-		FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
+		FETexture* CreateTexture(std::string Name = "", std::string ForceObjectID = "");
+		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
 
-		FEPostProcess* createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
-		std::unordered_map<std::string, FETexture*> textures;
-		std::unordered_map<std::string, FETexture*> standardTextures;
+		FEPostProcess* CreatePostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
+		std::unordered_map<std::string, FETexture*> Textures;
+		std::unordered_map<std::string, FETexture*> StandardTextures;
 
-		std::unordered_map<std::string, FEMaterial*> materials;
-		std::unordered_map<std::string, FEMaterial*> standardMaterials;
+		std::unordered_map<std::string, FEMaterial*> Materials;
+		std::unordered_map<std::string, FEMaterial*> StandardMaterials;
 
-		std::unordered_map<std::string, FEMesh*> meshes;
-		std::unordered_map<std::string, FEMesh*> standardMeshes;
+		std::unordered_map<std::string, FEMesh*> Meshes;
+		std::unordered_map<std::string, FEMesh*> StandardMeshes;
 
-		std::unordered_map<std::string, FEGameModel*> gameModels;
-		std::unordered_map<std::string, FEGameModel*> standardGameModels;
+		std::unordered_map<std::string, FEGameModel*> GameModels;
+		std::unordered_map<std::string, FEGameModel*> StandardGameModels;
 
-		std::unordered_map<std::string, FEPrefab*> prefabs;
-		std::unordered_map<std::string, FEPrefab*> standardPrefabs;
+		std::unordered_map<std::string, FEPrefab*> Prefabs;
+		std::unordered_map<std::string, FEPrefab*> StandardPrefabs;
 
-		std::string getFileNameFromFilePath(std::string filePath);
-		FEEntity* createEntity(FEGameModel* gameModel, std::string Name, std::string forceObjectID = "");
-		FEEntity* createEntity(FEPrefab* prefab, std::string Name, std::string forceObjectID = "");
+		std::string GetFileNameFromFilePath(std::string FilePath);
+		FEEntity* CreateEntity(FEGameModel* GameModel, std::string Name, std::string ForceObjectID = "");
+		FEEntity* CreateEntity(FEPrefab* Prefab, std::string Name, std::string ForceObjectID = "");
 
-		void initTerrainEditTools(FETerrain* terrain);
+		void InitTerrainEditTools(FETerrain* Terrain);
 
-		std::string freeObjectName(FEObjectType objectType);
+		std::string FreeObjectName(FE_OBJECT_TYPE ObjectType);
 
-		GLint maxColorAttachments = 1;
+		GLint MaxColorAttachments = 1;
 
-		std::string defaultResourcesFolder = "Resources//";
-		void fillTerrainLayerMaskWithRawData(unsigned char* rawData, FETerrain* terrain, size_t layerIndex);
-		void createMaterialsFromOBJData(std::vector<FEObject*>& resultArray);
+		std::string DefaultResourcesFolder = "Resources//";
+		void FillTerrainLayerMaskWithRawData(const unsigned char* RawData, const FETerrain* Terrain, size_t LayerIndex);
+		void CreateMaterialsFromOBJData(std::vector<FEObject*>& ResultArray);
+
+		static void LoadTextureFileAsyncCallBack(void* OutputData);
 	};
 
 	#define RESOURCE_MANAGER FEResourceManager::getInstance()

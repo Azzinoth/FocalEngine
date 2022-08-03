@@ -1,12 +1,12 @@
 #include "FELog.h"
 using namespace FocalEngine;
-FELOG* FELOG::_instance = nullptr;
+FELOG* FELOG::Instance = nullptr;
 
 LogItem::LogItem()
 {
-	text = "";
-	severity = FE_LOG_INFO;
-	count = 0;
+	Text = "";
+	Severity = FE_LOG_INFO;
+	Count = 0;
 }
 
 LogItem::~LogItem()
@@ -15,56 +15,56 @@ LogItem::~LogItem()
 
 FELOG::FELOG()
 {
-	channels.resize(channelCount);
+	Channels.resize(ChannelCount);
 }
 
 FELOG::~FELOG()
 {
 }
 
-void FELOG::add(std::string text, LOG_SEVERITY severity, LOG_CHANNEL channel)
+void FELOG::Add(const std::string Text, const LOG_SEVERITY Severity, const LOG_CHANNEL Channel)
 {
-	if (severity < 0 || severity >= severityLevelsCount)
+	if (Severity < 0 || Severity >= SeverityLevelsCount)
 	{
-		add("Incorrect severity argument" + std::to_string(severity) + " in FELOG::add function", FE_LOG_WARNING);
+		Add("Incorrect severity argument" + std::to_string(Severity) + " in FELOG::add function", FE_LOG_WARNING);
 		return;
 	}
 
-	if (channel < 0 || channel >= channelCount)
+	if (Channel < 0 || Channel >= ChannelCount)
 	{
-		add("Incorrect channel argument" + std::to_string(channel) + " in FELOG::add function", FE_LOG_WARNING);
+		Add("Incorrect channel argument" + std::to_string(Channel) + " in FELOG::add function", FE_LOG_WARNING);
 		return;
 	}
 
-	LogItem tempItem;
-	tempItem.text = text;
-	tempItem.severity = severity;
-	tempItem.count = 1;
-	tempItem.channel = channel;
-	tempItem.timeStamp = (long)GetTickCount64();
+	LogItem TempItem;
+	TempItem.Text = Text;
+	TempItem.Severity = Severity;
+	TempItem.Count = 1;
+	TempItem.Channel = Channel;
+	TempItem.TimeStamp = static_cast<long>(GetTickCount64());
 
-	auto logItem = channels[channel].find(int(std::hash<LogItem>()(tempItem)));
-	if (logItem == channels[channel].end())
+	const auto CurrentLogItem = Channels[Channel].find(static_cast<int>(std::hash<LogItem>()(TempItem)));
+	if (CurrentLogItem == Channels[Channel].end())
 	{
-		channels[channel][int(std::hash<LogItem>()(tempItem))] = tempItem;
+		Channels[Channel][static_cast<int>(std::hash<LogItem>()(TempItem))] = TempItem;
 		return;
 	}
 
-	if (channels[channel][int(std::hash<LogItem>()(tempItem))].count < 1000)
-		channels[channel][int(std::hash<LogItem>()(tempItem))].count++;
+	if (Channels[Channel][static_cast<int>(std::hash<LogItem>()(TempItem))].Count < 1000)
+		Channels[Channel][static_cast<int>(std::hash<LogItem>()(TempItem))].Count++;
 }
 
-std::vector<LogItem> FELOG::getLogItems(LOG_CHANNEL channel)
+std::vector<LogItem> FELOG::GetLogItems(const LOG_CHANNEL Channel)
 {
-	if (channel < 0 || channel >= channelCount)
+	if (Channel < 0 || Channel >= ChannelCount)
 	{
-		add("Incorrect channel argument" + std::to_string(channel) + " in FELOG::getLogItems function", FE_LOG_WARNING);
+		Add("Incorrect channel argument" + std::to_string(Channel) + " in FELOG::getLogItems function", FE_LOG_WARNING);
 		return std::vector<LogItem>();
 	}
 
 	std::vector<LogItem> result;
-	auto iterator = channels[channel].begin();
-	while (iterator != channels[channel].end())
+	auto iterator = Channels[Channel].begin();
+	while (iterator != Channels[Channel].end())
 	{
 		result.push_back(iterator->second);
 		iterator++;
@@ -73,16 +73,16 @@ std::vector<LogItem> FELOG::getLogItems(LOG_CHANNEL channel)
 	return result;
 }
 
-std::string FELOG::severityLevelToString(LOG_SEVERITY severity)
+std::string FELOG::SeverityLevelToString(const LOG_SEVERITY Severity)
 {
-	std::string result = "";
-	if (severity < 0 || severity >= severityLevelsCount)
+	std::string result;
+	if (Severity < 0 || Severity >= SeverityLevelsCount)
 	{
-		add("Incorrect severity argument" + std::to_string(severity) + " in FELOG::severityLevelToString function", FE_LOG_WARNING);
+		Add("Incorrect severity argument" + std::to_string(Severity) + " in FELOG::severityLevelToString function", FE_LOG_WARNING);
 		return result;
 	}
 
-	switch (severity)
+	switch (Severity)
 	{
 		case FocalEngine::FE_LOG_INFO:
 		{
@@ -114,16 +114,16 @@ std::string FELOG::severityLevelToString(LOG_SEVERITY severity)
 	return result;
 }
 
-std::string FELOG::channelTypeToString(LOG_CHANNEL channel)
+std::string FELOG::ChannelTypeToString(const LOG_CHANNEL Channel)
 {
-	std::string result = "";
-	if (channel < 0 || channel >= channelCount)
+	std::string result;
+	if (Channel < 0 || Channel >= ChannelCount)
 	{
-		add("Incorrect channel argument" + std::to_string(channel) + " in FELOG::channelTypeToString function", FE_LOG_WARNING);
+		Add("Incorrect channel argument" + std::to_string(Channel) + " in FELOG::channelTypeToString function", FE_LOG_WARNING);
 		return result;
 	}
 
-	switch (channel)
+	switch (Channel)
 	{
 		case FocalEngine::FE_LOG_GENERAL:
 		{

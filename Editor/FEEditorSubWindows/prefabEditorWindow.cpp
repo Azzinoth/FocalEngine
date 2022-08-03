@@ -1,150 +1,152 @@
 #include "prefabEditorWindow.h"
 
-prefabEditorWindow* prefabEditorWindow::_instance = nullptr;
-FEPrefab* prefabEditorWindow::objToWorkWith = nullptr;
+PrefabEditorWindow* PrefabEditorWindow::Instance = nullptr;
+FEPrefab* PrefabEditorWindow::ObjToWorkWith = nullptr;
 
-bool prefabEditorWindow::addGameModelTargetCallBack(FEObject* object, void** entityPointer)
+bool PrefabEditorWindow::AddGameModelTargetCallBack(FEObject* Object, void** EntityPointer)
 {
-	if (object == nullptr)
+	if (Object == nullptr)
 		return false;
 
-	FEGameModel* newGameModel = reinterpret_cast<FEGameModel*>(object);
-	objToWorkWith->addComponent(newGameModel);
+	FEGameModel* NewGameModel = reinterpret_cast<FEGameModel*>(Object);
+	ObjToWorkWith->AddComponent(NewGameModel);
 
 	return true;
 }
 
-void prefabEditorWindow::showTransformConfiguration(FETransformComponent* transform, int index)
+void PrefabEditorWindow::ShowTransformConfiguration(FETransformComponent* Transform, const int Index)
 {
 	// ********************* POSITION *********************
-	glm::vec3 position = transform->getPosition();
+	glm::vec3 position = Transform->GetPosition();
 	ImGui::Text("Position : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X pos : ") + std::to_string(index)).c_str(), &position[0], 0.1f);
-	showToolTip("X position");
+	ImGui::DragFloat((std::string("##X pos : ") + std::to_string(Index)).c_str(), &position[0], 0.1f);
+	ShowToolTip("X position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y pos : ") + std::to_string(index)).c_str(), &position[1], 0.1f);
-	showToolTip("Y position");
+	ImGui::DragFloat((std::string("##Y pos : ") + std::to_string(Index)).c_str(), &position[1], 0.1f);
+	ShowToolTip("Y position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z pos : ") + std::to_string(index)).c_str(), &position[2], 0.1f);
-	showToolTip("Z position");
-	transform->setPosition(position);
+	ImGui::DragFloat((std::string("##Z pos : ") + std::to_string(Index)).c_str(), &position[2], 0.1f);
+	ShowToolTip("Z position");
+	Transform->SetPosition(position);
 
 	// ********************* ROTATION *********************
-	glm::vec3 rotation = transform->getRotation();
+	glm::vec3 rotation = Transform->GetRotation();
 	ImGui::Text("Rotation : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X rot : ") + std::to_string(index)).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
-	showToolTip("X rotation");
+	ImGui::DragFloat((std::string("##X rot : ") + std::to_string(Index)).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("X rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y rot : ") + std::to_string(index)).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
-	showToolTip("Y rotation");
+	ImGui::DragFloat((std::string("##Y rot : ") + std::to_string(Index)).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Y rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z rot : ") + std::to_string(index)).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
-	showToolTip("Z rotation");
-	transform->setRotation(rotation);
+	ImGui::DragFloat((std::string("##Z rot : ") + std::to_string(Index)).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Z rotation");
+	Transform->SetRotation(rotation);
 
 	// ********************* SCALE *********************
-	ImGui::Checkbox("Uniform scaling", &transform->uniformScaling);
-	glm::vec3 scale = transform->getScale();
+	bool bUniformScaling = Transform->IsUniformScalingSet();
+	ImGui::Checkbox("Uniform scaling", &bUniformScaling);
+	Transform->SetUniformScaling(bUniformScaling);
+
+	glm::vec3 scale = Transform->GetScale();
 	ImGui::Text("Scale : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X scale : ") + std::to_string(index)).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
-	showToolTip("X scale");
+	ImGui::DragFloat((std::string("##X scale : ") + std::to_string(Index)).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("X scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y scale : ") + std::to_string(index)).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Y scale");
+	ImGui::DragFloat((std::string("##Y scale : ") + std::to_string(Index)).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Y scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z scale : ") + std::to_string(index)).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Z scale");
+	ImGui::DragFloat((std::string("##Z scale : ") + std::to_string(Index)).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Z scale");
 
-	glm::vec3 oldScale = transform->getScale();
-	transform->changeXScaleBy(scale[0] - oldScale[0]);
-	transform->changeYScaleBy(scale[1] - oldScale[1]);
-	transform->changeZScaleBy(scale[2] - oldScale[2]);
+	glm::vec3 OldScale = Transform->GetScale();
+	Transform->ChangeXScaleBy(scale[0] - OldScale[0]);
+	Transform->ChangeYScaleBy(scale[1] - OldScale[1]);
+	Transform->ChangeZScaleBy(scale[2] - OldScale[2]);
 }
 
-void prefabEditorWindow::addNewGameModelCallBack(std::vector<FEObject*> selectionsResult)
+void PrefabEditorWindow::AddNewGameModelCallBack(const std::vector<FEObject*> SelectionsResult)
 {
-	for (int i = 0; i < selectionsResult.size(); i++)
+	for (int i = 0; i < SelectionsResult.size(); i++)
 	{
-		if (selectionsResult[i]->getType() == FE_GAMEMODEL)
-			objToWorkWith->addComponent(reinterpret_cast<FEGameModel*>(selectionsResult[i]));
+		if (SelectionsResult[i]->GetType() == FE_GAMEMODEL)
+			ObjToWorkWith->AddComponent(reinterpret_cast<FEGameModel*>(SelectionsResult[i]));
 	}	
 }
 
-prefabEditorWindow::prefabEditorWindow()
+PrefabEditorWindow::PrefabEditorWindow()
 {
-	std::string tempCaption = "Edit Prefab";
-	strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+	const std::string TempCaption = "Edit Prefab";
+	strcpy_s(Caption, TempCaption.size() + 1, TempCaption.c_str());
 
-	closeButton = new ImGuiButton("Close");
-	closeButton->setSize(ImVec2(140, 24));
-	closeButton->setPosition(ImVec2(800.0 / 2.0 - 140.0 / 2.0, 800.0 - 35.0));
+	CloseButton = new ImGuiButton("Close");
+	CloseButton->SetSize(ImVec2(140, 24));
+	CloseButton->SetPosition(ImVec2(800.0 / 2.0 - 140.0 / 2.0, 800.0 - 35.0));
 
 	//addGameModelTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_GAMEMODEL, addGameModelTargetCallBack, nullptr, "Drop to add Game model");
 }
 
-prefabEditorWindow::~prefabEditorWindow()
+PrefabEditorWindow::~PrefabEditorWindow()
 {
-	if (closeButton != nullptr)
-		delete closeButton;
+	delete CloseButton;
 }
 
-void prefabEditorWindow::show(FEPrefab* Prefab)
+void PrefabEditorWindow::Show(FEPrefab* Prefab)
 {
-	size = ImVec2(800, 800);
-	position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
+	Size = ImVec2(800, 800);
+	Position = ImVec2(FEngine::getInstance().GetWindowWidth() / 2 - Size.x / 2, FEngine::getInstance().GetWindowHeight() / 2 - Size.y / 2);
 
-	flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
+	Flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
 
-	objToWorkWith = Prefab;
+	ObjToWorkWith = Prefab;
 	
-	FEImGuiWindow::show();
+	FEImGuiWindow::Show();
 }
 
-void prefabEditorWindow::render()
+void PrefabEditorWindow::Render()
 {
-	FEImGuiWindow::render();
+	FEImGuiWindow::Render();
 
-	if (!isVisible())
+	if (!IsVisible())
 		return;
 
 	if (ImGui::BeginTabBar("##prefabSettings", ImGuiTabBarFlags_None))
 	{
 		if (ImGui::BeginTabItem("Game Models"))
 		{
-			static bool contextMenuOpened = false;
+			static bool ContextMenuOpened = false;
 
 			ImGui::BeginChildFrame(ImGui::GetID("GameModels ListBox Child"), ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f), ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-			bool isListBoxHovered = false;
+			bool bListBoxHovered = false;
 			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
 			{
-				isListBoxHovered = true;
+				bListBoxHovered = true;
 				//addGameModelTarget->setActive(true);
 			}
 
-			static bool openContextMenu = false;
+			static bool bOpenContextMenu = false;
 			if (ImGui::IsMouseClicked(1))
 			{
-				if (isListBoxHovered)
+				if (bListBoxHovered)
 				{
-					openContextMenu = true;
+					bOpenContextMenu = true;
 				}
 			}
 
@@ -152,36 +154,36 @@ void prefabEditorWindow::render()
 			{
 				ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
 
-				for (int i = 0; i < objToWorkWith->componentsCount(); i++)
+				for (int i = 0; i < ObjToWorkWith->ComponentsCount(); i++)
 				{
-					FEGameModel* gameModel = objToWorkWith->getComponent(i)->gameModel;
-					if (gameModel == nullptr)
+					FEGameModel* GameModel = ObjToWorkWith->GetComponent(i)->GameModel;
+					if (GameModel == nullptr)
 						break;
 
-					ImVec2 postionBeforeDraw = ImGui::GetCursorPos();
+					ImVec2 PostionBeforeDraw = ImGui::GetCursorPos();
 
-					ImVec2 textSize = ImGui::CalcTextSize(gameModel->getName().c_str());
-					ImGui::SetCursorPos(postionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - textSize.x / 2.0f, 16));
-					ImGui::Text(gameModel->getName().c_str());
-					ImGui::SetCursorPos(postionBeforeDraw);
+					const ImVec2 TextSize = ImGui::CalcTextSize(GameModel->GetName().c_str());
+					ImGui::SetCursorPos(PostionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - TextSize.x / 2.0f, 16));
+					ImGui::Text(GameModel->GetName().c_str());
+					ImGui::SetCursorPos(PostionBeforeDraw);
 
-					ImGui::PushID(int(i));
-					if (ImGui::Selectable("##item", selectedGameModel == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
+					ImGui::PushID(i);
+					if (ImGui::Selectable("##item", SelectedGameModel == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
 					{
-						selectedGameModel = int(i);
+						SelectedGameModel = i;
 					}
 					ImGui::PopID();
 
 					if (ImGui::IsItemHovered())
-						hoveredGameModelItem = int(i);
+						HoveredGameModelItem = i;
 
-					ImGui::SetCursorPos(postionBeforeDraw);
-					ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
-					FETexture* previewTexture = PREVIEW_MANAGER.getPreview(gameModel->getObjectID());
-					ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), imageTint);
+					ImGui::SetCursorPos(PostionBeforeDraw);
+					ImColor ImageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
+					FETexture* PreviewTexture = PREVIEW_MANAGER.GetPreview(GameModel->GetObjectID());
+					ImGui::Image((void*)static_cast<intptr_t>(PreviewTexture->GetTextureID()), ImVec2(64, 64), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), ImageTint);
 
 
-					showTransformConfiguration(&objToWorkWith->getComponent(i)->transform, i);
+					ShowTransformConfiguration(&ObjToWorkWith->GetComponent(i)->Transform, i);
 				}
 
 				ImGui::EndListBox();
@@ -192,35 +194,35 @@ void prefabEditorWindow::render()
 			ImGui::EndChildFrame();
 			ImGui::EndTabItem();
 
-			if (openContextMenu)
+			if (bOpenContextMenu)
 			{
-				openContextMenu = false;
+				bOpenContextMenu = false;
 				ImGui::OpenPopup("##layers_listBox_context_menu");
 			}
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 			if (ImGui::BeginPopup("##layers_listBox_context_menu"))
 			{
-				contextMenuOpened = true;
+				ContextMenuOpened = true;
 
 				if (ImGui::MenuItem("Add game model..."))
 				{
-					selectFEObjectPopUp::getInstance().show(FE_GAMEMODEL, addNewGameModelCallBack);
+					SelectFeObjectPopUp::getInstance().Show(FE_GAMEMODEL, AddNewGameModelCallBack);
 				}
 
-				if (hoveredGameModelItem != -1)
+				if (HoveredGameModelItem != -1)
 				{
-					FEGameModel* gameModel = objToWorkWith->getComponent(hoveredGameModelItem)->gameModel;
-					if (gameModel != nullptr)
+					FEGameModel* GameModel = ObjToWorkWith->GetComponent(HoveredGameModelItem)->GameModel;
+					if (GameModel != nullptr)
 					{
 						ImGui::Separator();
-						std::string layerName = gameModel->getName();
-						ImGui::Text((std::string("Actions with ") + layerName).c_str());
+						const std::string LayerName = GameModel->GetName();
+						ImGui::Text((std::string("Actions with ") + LayerName).c_str());
 						ImGui::Separator();
 
 						if (ImGui::MenuItem("Remove"))
 						{
-							objToWorkWith->removeComponent(hoveredGameModelItem);
+							ObjToWorkWith->RemoveComponent(HoveredGameModelItem);
 						}
 					}
 				}
@@ -229,125 +231,17 @@ void prefabEditorWindow::render()
 			}
 			ImGui::PopStyleVar();
 
-			if (!contextMenuOpened)
-				hoveredGameModelItem = -1;
+			if (!ContextMenuOpened)
+				HoveredGameModelItem = -1;
 
-			contextMenuOpened = false;
+			ContextMenuOpened = false;
 		}
 		ImGui::EndTabBar();
 	}
 
-	closeButton->render();
-	if (closeButton->getWasClicked())
-		close();
+	CloseButton->Render();
+	if (CloseButton->IsClicked())
+		Close();
 	
-
-
-
-
-	/*windowPosition = ImGui::GetWindowPos();
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-	
-	currentNodeArea->setAreaPosition(nodeGridRelativePosition);
-	currentNodeArea->setAreaSize(ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 67));
-	currentNodeArea->update();
-
-	if (ImGui::GetIO().MouseReleased[1])
-		mousePositionWhenContextMenuWasOpened = ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y);
-	
-	nodeAreaTarget->stickToItem();
-
-	float yPosition = ImGui::GetCursorPosY();
-	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
-	if (ImGui::Button("Combine", ImVec2(120, 0)))
-	{
-		if (textureNode->getTexture() != RESOURCE_MANAGER.noTexture)
-		{
-			textureNode->getTexture()->setDirtyFlag(true);
-			PROJECT_MANAGER.getCurrent()->addUnSavedObject(textureNode->getTexture());
-			VIRTUAL_FILE_SYSTEM.createFile(textureNode->getTexture(), VIRTUAL_FILE_SYSTEM.getCurrentPath());
-			NODE_SYSTEM.deleteNodeArea(currentNodeArea);
-		}
-
-		FEImGuiWindow::close();
-	}
-
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
-
-	ImGui::SetCursorPosY(yPosition);
-	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
-	if (ImGui::Button("Cancel", ImVec2(120, 0)))
-	{
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-		ImGui::PopStyleColor();
-
-		ImGui::PopStyleVar();
-
-		FEImGuiWindow::close();
-		return;
-	}
-
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
-
-	ImGui::PopStyleVar();*/
-	FEImGuiWindow::onRenderEnd();
+	FEImGuiWindow::OnRenderEnd();
 }
-
-//bool CombineChannelsToTexturePopUp::dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo)
-//{
-//	FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(RESOURCE_MANAGER.getTexture(object->getObjectID()));
-//	
-//	ImVec2 positionOnCanvas;
-//	positionOnCanvas.x = ImGui::GetMousePos().x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-//	positionOnCanvas.y = ImGui::GetMousePos().y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
-//
-//	newNode->setPosition(positionOnCanvas);
-//	currentNodeArea->addNode(newNode);
-//	return true;
-//}
-//
-//void CombineChannelsToTexturePopUp::nodeSystemMainContextMenu()
-//{
-//	if (ImGui::BeginMenu("Add"))
-//	{
-//		if (ImGui::MenuItem("Texture node"))
-//		{
-//			textureForNewNode = RESOURCE_MANAGER.noTexture;
-//			selectTexturePopUp::getInstance().show(&textureForNewNode, textureNodeCreationCallback, reinterpret_cast<void*>(&textureForNewNode));
-//		}
-//
-//		if (ImGui::MenuItem("Float node"))
-//		{
-//			FEEditorFloatSourceNode* newNode = new FEEditorFloatSourceNode();
-//
-//			ImVec2 positionOnCanvas;
-//			positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-//			positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
-//
-//			newNode->setPosition(positionOnCanvas);
-//			currentNodeArea->addNode(newNode);
-//		}
-//
-//		ImGui::EndMenu();
-//	}
-//}
-//
-//void CombineChannelsToTexturePopUp::textureNodeCreationCallback(void* texture)
-//{
-//	if (texture != nullptr && texture != RESOURCE_MANAGER.noTexture)
-//	{
-//		FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(*reinterpret_cast<FETexture**>(texture));
-//
-//		ImVec2 positionOnCanvas;
-//		positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-//		positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
-//
-//		newNode->setPosition(positionOnCanvas);
-//		currentNodeArea->addNode(newNode);
-//	}
-//}

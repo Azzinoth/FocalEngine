@@ -20,11 +20,11 @@ namespace FocalEngine
 		friend FETerrain;
 		friend FEResourceManager;
 
-		FEMaterial* material = nullptr;
-		FETerrainLayer(std::string name);
+		FEMaterial* Material = nullptr;
+		FETerrainLayer(std::string Name);
 	public:
-		void setMaterial(FEMaterial* newValue);
-		FEMaterial* getMaterial();
+		void SetMaterial(FEMaterial* NewValue);
+		FEMaterial* GetMaterial();
 	};
 
 	enum FE_TERRAIN_BRUSH_MODE
@@ -45,147 +45,147 @@ namespace FocalEngine
 		FETerrain(std::string Name);
 		~FETerrain();
 
-		FETransformComponent transform;
+		FETransformComponent Transform;
 
-		void render();
+		void Render();
 
-		bool isVisible();
-		void setVisibility(bool isVisible);
+		bool IsVisible();
+		void SetVisibility(bool NewValue);
 
-		FEAABB getAABB();
-		FEAABB getPureAABB();
+		FEAABB GetAABB();
+		FEAABB GetPureAABB();
 
-		bool isCastShadows();
-		void setCastShadows(bool isCastShadows);
+		bool IsCastingShadows();
+		void SetCastingShadows(bool NewValue);
 
-		bool isReceivingShadows();
-		void setReceivingShadows(bool isReceivingShadows);
+		bool IsReceivingShadows();
+		void SetReceivingShadows(bool NewValue);
 
-		FEShader* shader = nullptr;
+		FEShader* Shader = nullptr;
 
-		FETexture* heightMap = nullptr;
-		std::vector<FETexture*> layerMaps;
-		FETexture* projectedMap = nullptr;
+		FETexture* HeightMap = nullptr;
+		std::vector<FETexture*> LayerMaps;
+		FETexture* ProjectedMap = nullptr;
 
-		bool isWireframeMode();
-		void setWireframeMode(bool isActive);
+		bool IsWireframeMode();
+		void SetWireframeMode(bool NewValue);
 		
-		float getHightScale();
-		void setHightScale(float newHightScale);
+		float GetHightScale();
+		void SetHightScale(float NewValue);
 
-		float getDisplacementScale();
-		void setDisplacementScale(float newDisplacementScale);
+		float GetDisplacementScale();
+		void SetDisplacementScale(float NewValue);
 
-		glm::vec2 getTileMult();
-		void setTileMult(glm::vec2 newTileMult);
+		glm::vec2 GetTileMult();
+		void SetTileMult(glm::vec2 NewValue);
 
-		float getLODlevel();
-		void setLODlevel(float newLODlevel);
+		float GetLODLevel();
+		void SetLODLevel(float NewValue);
 
-		float getChunkPerSide();
-		void setChunkPerSide(float newChunkPerSide);
+		float GetChunkPerSide();
+		void SetChunkPerSide(float NewValue);
 
-		float getHeightAt(glm::vec2 XZWorldPosition);
+		float GetHeightAt(glm::vec2 XZWorldPosition);
 		
-		float getXSize();
-		float getZSize();
+		float GetXSize();
+		float GetZSize();
 
 		// ********************************** PointOnTerrain **********************************
-		glm::dvec3 getPointOnTerrain(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection, float startDistance = 0.0f, float endDistance = 256.0f);
+		glm::dvec3 GetPointOnTerrain(glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection, float StartDistance = 0.0f, float EndDistance = 256.0f);
 		// ********************************** PointOnTerrain END **********************************
 
 		// **************************** TERRAIN EDITOR TOOLS ****************************
-		float getBrushSize();
-		void setBrushSize(float newBrushSize);
+		float GetBrushSize();
+		void SetBrushSize(float NewValue);
 
-		float getBrushIntensity();
-		void setBrushIntensity(float newBrushIntensity);
+		float GetBrushIntensity();
+		void SetBrushIntensity(float NewValue);
 
-		bool isBrushActive();
-		void setBrushActive(bool newBrushActive);
+		bool IsBrushActive();
+		void SetBrushActive(bool NewValue);
 
-		FE_TERRAIN_BRUSH_MODE getBrushMode();
-		void setBrushMode(FE_TERRAIN_BRUSH_MODE newBrushMode);
+		FE_TERRAIN_BRUSH_MODE GetBrushMode();
+		void SetBrushMode(FE_TERRAIN_BRUSH_MODE NewValue);
 
-		size_t getBrushLayerIndex();
-		void setBrushLayerIndex(size_t newBrushLayerIndex);
+		size_t GetBrushLayerIndex();
+		void SetBrushLayerIndex(size_t NewValue);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
-		void snapInstancedEntity(FEEntityInstanced* entityToSnap);
-		void unSnapInstancedEntity(FEEntityInstanced* entityToUnSnap);
+		void SnapInstancedEntity(FEEntityInstanced* EntityToSnap);
+		void UnSnapInstancedEntity(FEEntityInstanced* EntityToUnSnap);
 
-		void connectInstancedEntityToLayer(FEEntityInstanced* entity, int layerIndex);
-		void unConnectInstancedEntityFromLayer(FEEntityInstanced* entity);
+		void ConnectInstancedEntityToLayer(FEEntityInstanced* Entity, int LayerIndex);
+		void UnConnectInstancedEntityFromLayer(FEEntityInstanced* Entity);
 
-		bool getNextEmptyLayerSlot(size_t& nextEmptyLayerIndex);
-		FETerrainLayer* getLayerInSlot(size_t layerIndex);
+		bool GetNextEmptyLayerSlot(size_t& NextEmptyLayerIndex);
+		FETerrainLayer* GetLayerInSlot(size_t LayerIndex);
 
-		int layersUsed();
+		int LayersUsed();
 
-		float getLayerIntensityAt(glm::vec2 XZWorldPosition, int layerIndex);
+		float GetLayerIntensityAt(glm::vec2 XZWorldPosition, int LayerIndex);
 	private:
-		bool wireframeMode = false;
-		bool visible = true;
-		bool castShadows = true;
-		bool receiveShadows = true;
+		bool bWireframeMode = false;
+		bool bVisible = true;
+		bool bCastShadows = true;
+		bool bReceiveShadows = true;
 
-		float hightScale = 1.0f;
-		float displacementScale = 0.2f;
-		float scaleFactor = 1.0f;
-		glm::vec2 tileMult = glm::vec2(1.0);
-		glm::vec2 hightMapShift = glm::vec2(0.0);
-		float chunkPerSide = 2.0f;
+		float HightScale = 1.0f;
+		float DisplacementScale = 0.2f;
+		float ScaleFactor = 1.0f;
+		glm::vec2 TileMult = glm::vec2(1.0);
+		glm::vec2 HightMapShift = glm::vec2(0.0);
+		float ChunkPerSide = 2.0f;
 
-		float LODlevel = 64.0f;
+		float LODLevel = 64.0f;
 		FEAABB AABB;
-		FEAABB finalAABB;
-		float xSize = 0.0f;
-		float zSize = 0.0f;
+		FEAABB FinalAABB;
+		float XSize = 0.0f;
+		float ZSize = 0.0f;
 
-		std::vector<float> heightMapArray;
+		std::vector<float> HeightMapArray;
 
 		// ********************************** PointOnTerrain **********************************
-		glm::dvec3 binarySearch(int count, float start, float finish, glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection);
-		bool intersectionInRange(float start, float finish, glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection);
-		glm::dvec3 getPointOnRay(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection, float distance);
-		bool isUnderGround(glm::dvec3 testPoint);
+		glm::dvec3 BinarySearch(int Count, float Start, float Finish, glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection);
+		bool IntersectionInRange(float Start, float Finish, glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection);
+		glm::dvec3 GetPointOnRay(glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection, float Distance);
+		bool IsUnderGround(glm::dvec3 TestPoint);
 		// ********************************** PointOnTerrain END **********************************
 
 		// **************************** TERRAIN EDITOR TOOLS ****************************
-		bool brushActive = false;
-		FE_TERRAIN_BRUSH_MODE brushMode = FE_TERRAIN_BRUSH_NONE;
+		bool bBrushActive = false;
+		FE_TERRAIN_BRUSH_MODE BrushMode = FE_TERRAIN_BRUSH_NONE;
 
-		size_t brushLayerIndex = 0;
-		float brushSize = 2.0f;
-		float brushIntensity = 0.01f;
-		FEFramebuffer* brushOutputFB = nullptr;
-		FEShader* brushOutputShader = nullptr;
-		FEShader* layersNormalizeShader = nullptr;
-		FEFramebuffer* brushVisualFB = nullptr;
-		FEShader* brushVisualShader = nullptr;
-		FEMesh* planeMesh = nullptr;
+		size_t BrushLayerIndex = 0;
+		float BrushSize = 2.0f;
+		float BrushIntensity = 0.01f;
+		FEFramebuffer* BrushOutputFB = nullptr;
+		FEShader* BrushOutputShader = nullptr;
+		FEShader* LayersNormalizeShader = nullptr;
+		FEFramebuffer* BrushVisualFB = nullptr;
+		FEShader* BrushVisualShader = nullptr;
+		FEMesh* PlaneMesh = nullptr;
 
-		void updateBrush(glm::dvec3 mouseRayStart, glm::dvec3 mouseRayDirection);
-		size_t waitBeforeUpdateMS = 50;
-		std::chrono::system_clock::time_point lastChangesTimeStamp;
-		void updateCPUHeightInfo();
-		void updateSnapedInstancedEntities();
+		void UpdateBrush(glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection);
+		size_t WaitBeforeUpdateMs = 50;
+		std::chrono::system_clock::time_point LastChangesTimeStamp;
+		void UpdateCpuHeightInfo();
+		void UpdateSnapedInstancedEntities();
 
-		bool CPUHeightInfoDirtyFlag = false;
-		size_t framesBeforeUpdate = 50;
-		bool brushVisualFBCleared = false;
+		bool bCPUHeightInfoDirtyFlag = false;
+		size_t FramesBeforeUpdate = 50;
+		bool bBrushVisualFBCleared = false;
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
-		std::vector<FEEntityInstanced*> snapedInstancedEntities;
+		std::vector<FEEntityInstanced*> SnapedInstancedEntities;
 
-		std::vector<FETerrainLayer*> layers;
-		std::vector<unsigned char*> layerMapsRawData;
-		bool updateLayerMapsRawData();
-		FETerrainLayer* activateVacantLayerSlot(FEMaterial* material);
-		void deleteLayerInSlot(size_t layerIndex);
+		std::vector<FETerrainLayer*> Layers;
+		std::vector<unsigned char*> LayerMapsRawData;
+		bool UpdateLayerMapsRawData();
+		FETerrainLayer* ActivateVacantLayerSlot(FEMaterial* Material);
+		void DeleteLayerInSlot(size_t LayerIndex);
 		
 		GLuint GPULayersDataBuffer = 0;
-		void loadLayersDataToGPU();
+		void LoadLayersDataToGPU();
 		std::vector<float> GPULayersData;
 		std::vector<float> OldGPULayersData;
 	};

@@ -1,181 +1,181 @@
 #include "FEObject.h"
 using namespace FocalEngine;
 
-FEObjectManager* FEObjectManager::_instance = nullptr;
+FEObjectManager* FEObjectManager::Instance = nullptr;
 
 FEObjectManager::FEObjectManager()
 {
-	objectsByType.resize(17);
+	ObjectsByType.resize(17);
 }
 
 FEObjectManager::~FEObjectManager()
 {
 }
 
-FEObject* FEObjectManager::getFEObject(std::string ID)
+FEObject* FEObjectManager::GetFEObject(std::string ID)
 {
-	if (allObjects.find(ID) != allObjects.end())
-		return allObjects[ID];
+	if (AllObjects.find(ID) != AllObjects.end())
+		return AllObjects[ID];
 
 	return nullptr;
 }
 
-FEObject::FEObject(FEObjectType objectType, std::string objectName)
+FEObject::FEObject(const FE_OBJECT_TYPE ObjectType, const std::string ObjectName)
 {
-	ID = APPLICATION.getUniqueHexID();
+	ID = APPLICATION.GetUniqueHexID();
 	
-	type = objectType;
-	name = objectName;
+	Type = ObjectType;
+	Name = ObjectName;
 
-	OBJECT_MANAGER.allObjects[ID] = this;
-	OBJECT_MANAGER.objectsByType[type][ID] = this;
+	OBJECT_MANAGER.AllObjects[ID] = this;
+	OBJECT_MANAGER.ObjectsByType[Type][ID] = this;
 }
 
 FEObject::~FEObject()
 {
-	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
+	if (OBJECT_MANAGER.AllObjects.find(ID) == OBJECT_MANAGER.AllObjects.end())
 	{
 		assert(0);
 	}
 
-	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
+	if (OBJECT_MANAGER.ObjectsByType[Type].find(ID) == OBJECT_MANAGER.ObjectsByType[Type].end())
 	{
 		assert(0);
 	}
 
-	for (size_t i = 0; i < callListOnDeleteFEObject.size(); i++)
+	for (size_t i = 0; i < CallListOnDeleteFEObject.size(); i++)
 	{
-		FEObject* objectToCall = OBJECT_MANAGER.allObjects[callListOnDeleteFEObject[i]];
-		if (objectToCall != nullptr)
-			objectToCall->processOnDeleteCallbacks(ID);
+		FEObject* ObjectToCall = OBJECT_MANAGER.AllObjects[CallListOnDeleteFEObject[i]];
+		if (ObjectToCall != nullptr)
+			ObjectToCall->ProcessOnDeleteCallbacks(ID);
 	}
 
-	OBJECT_MANAGER.allObjects.erase(ID);
-	OBJECT_MANAGER.objectsByType[type].erase(ID);
+	OBJECT_MANAGER.AllObjects.erase(ID);
+	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
 }
 
-std::string FEObject::getObjectID() const
+std::string FEObject::GetObjectID() const
 {
 	return ID;
 }
 
-FEObjectType FEObject::getType() const
+FE_OBJECT_TYPE FEObject::GetType() const
 {
-	return type;
+	return Type;
 }
 
-bool FEObject::getDirtyFlag()
+bool FEObject::IsDirty() const
 {
-	return dirtyFlag;
+	return bDirtyFlag;
 }
 
-void FEObject::setDirtyFlag(bool newDirtyFlag)
+void FEObject::SetDirtyFlag(const bool NewValue)
 {
-	dirtyFlag = newDirtyFlag;
+	bDirtyFlag = NewValue;
 }
 
-std::string FEObject::getName()
+std::string FEObject::GetName()
 {
-	return name;
+	return Name;
 }
 
-void FEObject::setName(std::string newName)
+void FEObject::SetName(const std::string NewValue)
 {
-	if (newName.size() == 0)
+	if (NewValue.empty())
 		return;
-	name = newName;
-	nameHash = int(std::hash<std::string>{}(name));
+	Name = NewValue;
+	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
 }
 
-int FEObject::getNameHash()
+int FEObject::GetNameHash() const
 {
-	return nameHash;
+	return NameHash;
 }
 
-void FEObject::setID(std::string newID)
+void FEObject::SetID(std::string NewValue)
 {
-	if (ID == newID)
+	if (ID == NewValue)
 	{
-		LOG.add("FEObject::setID newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
-		return;
-	}
-
-	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
-	{
-		assert(0);
-	}
-
-	if (OBJECT_MANAGER.allObjects.find(newID) != OBJECT_MANAGER.allObjects.end())
-	{
-		assert(0);
-	}
-
-	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
-	{
-		assert(0);
-	}
-
-	if (OBJECT_MANAGER.objectsByType[type].find(newID) != OBJECT_MANAGER.objectsByType[type].end())
-	{
-		assert(0);
-	}
-
-	OBJECT_MANAGER.objectsByType[type].erase(ID);
-	OBJECT_MANAGER.allObjects.erase(ID);
-	ID = newID;
-	OBJECT_MANAGER.allObjects[newID] = this;
-	OBJECT_MANAGER.objectsByType[type][newID] = this;
-}
-
-void FEObject::setType(FEObjectType newType)
-{
-	OBJECT_MANAGER.objectsByType[type].erase(ID);
-	type = newType;
-	OBJECT_MANAGER.objectsByType[type][ID] = this;
-}
-
-void FEObject::setIDOfUnTyped(std::string newID)
-{
-	if (type != FE_NULL)
-	{
-		LOG.add("FEObject::setIDOfUnTyped type is FE_NULL", FE_LOG_WARNING, FE_LOG_LOADING);
+		LOG.Add("FEObject::setID newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
 		return;
 	}
 
-	if (ID == newID)
+	if (OBJECT_MANAGER.AllObjects.find(ID) == OBJECT_MANAGER.AllObjects.end())
 	{
-		LOG.add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
+		assert(0);
+	}
+
+	if (OBJECT_MANAGER.AllObjects.find(NewValue) != OBJECT_MANAGER.AllObjects.end())
+	{
+		assert(0);
+	}
+
+	if (OBJECT_MANAGER.ObjectsByType[Type].find(ID) == OBJECT_MANAGER.ObjectsByType[Type].end())
+	{
+		assert(0);
+	}
+
+	if (OBJECT_MANAGER.ObjectsByType[Type].find(NewValue) != OBJECT_MANAGER.ObjectsByType[Type].end())
+	{
+		assert(0);
+	}
+
+	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
+	OBJECT_MANAGER.AllObjects.erase(ID);
+	ID = NewValue;
+	OBJECT_MANAGER.AllObjects[NewValue] = this;
+	OBJECT_MANAGER.ObjectsByType[Type][NewValue] = this;
+}
+
+void FEObject::SetType(const FE_OBJECT_TYPE NewValue)
+{
+	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
+	Type = NewValue;
+	OBJECT_MANAGER.ObjectsByType[Type][ID] = this;
+}
+
+void FEObject::SetIDOfUnTyped(const std::string NewValue)
+{
+	if (Type != FE_NULL)
+	{
+		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", FE_LOG_WARNING, FE_LOG_LOADING);
 		return;
 	}
 
-	if (OBJECT_MANAGER.allObjects.find(ID) == OBJECT_MANAGER.allObjects.end())
+	if (ID == NewValue)
+	{
+		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
+		return;
+	}
+
+	if (OBJECT_MANAGER.AllObjects.find(ID) == OBJECT_MANAGER.AllObjects.end())
 	{
 		assert(0);
 	}
 
-	if (OBJECT_MANAGER.allObjects.find(newID) != OBJECT_MANAGER.allObjects.end())
+	if (OBJECT_MANAGER.AllObjects.find(NewValue) != OBJECT_MANAGER.AllObjects.end())
 	{
 		assert(0);
 	}
 
-	if (OBJECT_MANAGER.objectsByType[type].find(ID) == OBJECT_MANAGER.objectsByType[type].end())
+	if (OBJECT_MANAGER.ObjectsByType[Type].find(ID) == OBJECT_MANAGER.ObjectsByType[Type].end())
 	{
 		assert(0);
 	}
 
-	if (OBJECT_MANAGER.objectsByType[type].find(newID) != OBJECT_MANAGER.objectsByType[type].end())
+	if (OBJECT_MANAGER.ObjectsByType[Type].find(NewValue) != OBJECT_MANAGER.ObjectsByType[Type].end())
 	{
 		assert(0);
 	}
 
-	OBJECT_MANAGER.objectsByType[type].erase(ID);
-	OBJECT_MANAGER.allObjects.erase(ID);
-	ID = newID;
-	OBJECT_MANAGER.allObjects[newID] = this;
-	OBJECT_MANAGER.objectsByType[type][newID] = this;
+	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
+	OBJECT_MANAGER.AllObjects.erase(ID);
+	ID = NewValue;
+	OBJECT_MANAGER.AllObjects[NewValue] = this;
+	OBJECT_MANAGER.ObjectsByType[Type][NewValue] = this;
 }
 
-void FEObject::processOnDeleteCallbacks(std::string deletingFEObject)
+void FEObject::ProcessOnDeleteCallbacks(std::string DeletingFEObject)
 {
 
 }

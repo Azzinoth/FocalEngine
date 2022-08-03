@@ -1,15 +1,15 @@
 #include "FEBasicCamera.h"
 using namespace FocalEngine;
 
-FEBasicCamera::FEBasicCamera(std::string name) : FEObject(FE_CAMERA, name)
+FEBasicCamera::FEBasicCamera(const std::string Name) : FEObject(FE_CAMERA, Name)
 {
-	yaw = 0.0f;
-	updateAll();
+	Yaw = 0.0f;
+	UpdateAll();
 
-	frustum = new float*[6];
+	Frustum = new float*[6];
 	for (size_t i = 0; i < 6; i++)
 	{
-		frustum[i] = new float[4];
+		Frustum[i] = new float[4];
 	}
 }
 
@@ -17,312 +17,311 @@ FEBasicCamera::~FEBasicCamera()
 {
 	for (size_t i = 0; i < 6; i++)
 	{
-		delete[] frustum[i];
+		delete[] Frustum[i];
 	}
-	delete[] frustum;
+	delete[] Frustum;
 }
 
-float FEBasicCamera::getYaw()
+float FEBasicCamera::GetYaw()
 {
-	return yaw;
+	return Yaw;
 }
 
-void FEBasicCamera::setYaw(float newYaw)
+void FEBasicCamera::SetYaw(const float NewYaw)
 {
-	yaw = newYaw;
-	updateViewMatrix();
+	Yaw = NewYaw;
+	UpdateViewMatrix();
 }
 
-float FEBasicCamera::getPitch()
+float FEBasicCamera::GetPitch()
 {
-	return pitch;
+	return Pitch;
 }
 
-void FEBasicCamera::setPitch(float newPitch)
+void FEBasicCamera::SetPitch(const float NewPitch)
 {
-	pitch = newPitch;
-	updateViewMatrix();
+	Pitch = NewPitch;
+	UpdateViewMatrix();
 }
 
-float FEBasicCamera::getRoll()
+float FEBasicCamera::GetRoll()
 {
-	return roll;
+	return Roll;
 }
 
-void FEBasicCamera::setRoll(float newRoll)
+void FEBasicCamera::SetRoll(const float NewRoll)
 {
-	roll = newRoll;
-	updateViewMatrix();
+	Roll = NewRoll;
+	UpdateViewMatrix();
 }
 
-glm::vec3 FEBasicCamera::getPosition()
+glm::vec3 FEBasicCamera::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-void FEBasicCamera::setPosition(glm::vec3 newPosition)
+void FEBasicCamera::SetPosition(const glm::vec3 NewPosition)
 {
-	position = newPosition;
-	updateViewMatrix();
+	Position = NewPosition;
+	UpdateViewMatrix();
 }
 
-float FEBasicCamera::getAspectRatio()
+float FEBasicCamera::GetAspectRatio() const
 {
-	return aspectRatio;
+	return AspectRatio;
 }
 
-void FEBasicCamera::setAspectRatio(float newAspectRatio)
+void FEBasicCamera::SetAspectRatio(const float NewAspectRatio)
 {
-	aspectRatio = newAspectRatio;
-	updateProjectionMatrix();
+	AspectRatio = NewAspectRatio;
+	UpdateProjectionMatrix();
 }
 
-void FEBasicCamera::updateViewMatrix()
+void FEBasicCamera::UpdateViewMatrix()
 {
-	viewMatrix = glm::mat4(1.0f);
+	ViewMatrix = glm::mat4(1.0f);
 
-	viewMatrix = glm::rotate(viewMatrix, getPitch() * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-	viewMatrix = glm::rotate(viewMatrix, getYaw() * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-	viewMatrix = glm::rotate(viewMatrix, getRoll() * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+	ViewMatrix = glm::rotate(ViewMatrix, GetPitch() * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+	ViewMatrix = glm::rotate(ViewMatrix, GetYaw() * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+	ViewMatrix = glm::rotate(ViewMatrix, GetRoll() * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
-	glm::vec3 cameraPosition = getPosition();
-	glm::vec3 negativeCameraPosition = -cameraPosition;
+	const glm::vec3 CameraPosition = GetPosition();
+	const glm::vec3 NegativeCameraPosition = -CameraPosition;
 
-	viewMatrix = glm::translate(viewMatrix, negativeCameraPosition);
+	ViewMatrix = glm::translate(ViewMatrix, NegativeCameraPosition);
 }
 
-glm::mat4 FEBasicCamera::getViewMatrix()
+glm::mat4 FEBasicCamera::GetViewMatrix() const
 {
-	return viewMatrix;
+	return ViewMatrix;
 }
 
-glm::mat4 FEBasicCamera::getProjectionMatrix()
+glm::mat4 FEBasicCamera::GetProjectionMatrix() const
 {
-	return projectionMatrix;
+	return ProjectionMatrix;
 }
 
-void FEBasicCamera::updateProjectionMatrix()
+void FEBasicCamera::UpdateProjectionMatrix()
 {
-	projectionMatrix = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
+	ProjectionMatrix = glm::perspective(Fov, AspectRatio, NearPlane, FarPlane);
 }
 
-void FEBasicCamera::updateAll()
+void FEBasicCamera::UpdateAll()
 {
-	updateViewMatrix();
-	updateProjectionMatrix();
+	UpdateViewMatrix();
+	UpdateProjectionMatrix();
 }
 
-float FEBasicCamera::getFov()
+float FEBasicCamera::GetFov() const
 {
-	return fov;
+	return Fov;
 }
 
-void FEBasicCamera::setFov(float newFov)
+void FEBasicCamera::SetFov(const float NewFov)
 {
-	fov = newFov;
-	updateProjectionMatrix();
+	Fov = NewFov;
+	UpdateProjectionMatrix();
 }
 
-float FEBasicCamera::getNearPlane()
+float FEBasicCamera::GetNearPlane() const
 {
-	return nearPlane;
+	return NearPlane;
 }
 
-void FEBasicCamera::setNearPlane(float newNearPlane)
+void FEBasicCamera::SetNearPlane(const float NewNearPlane)
 {
-	nearPlane = newNearPlane;
-	updateProjectionMatrix();
+	NearPlane = NewNearPlane;
+	UpdateProjectionMatrix();
 }
 
-float FEBasicCamera::getFarPlane()
+float FEBasicCamera::GetFarPlane() const
 {
-	return farPlane;
+	return FarPlane;
 }
 
-void FEBasicCamera::setFarPlane(float newFarPlane)
+void FEBasicCamera::SetFarPlane(const float NewFarPlane)
 {
-	farPlane = newFarPlane;
-	updateProjectionMatrix();
+	FarPlane = NewFarPlane;
+	UpdateProjectionMatrix();
 }
 
-float FEBasicCamera::getGamma()
+float FEBasicCamera::GetGamma() const
 {
-	return gamma;
+	return Gamma;
 }
 
-void FEBasicCamera::setGamma(float newGamma)
+void FEBasicCamera::SetGamma(const float NewGamma)
 {
-	gamma = newGamma;
+	Gamma = NewGamma;
 }
 
-float FEBasicCamera::getExposure()
+float FEBasicCamera::GetExposure() const
 {
-	return exposure;
+	return Exposure;
 }
 
-void FEBasicCamera::setExposure(float newExposure)
+void FEBasicCamera::SetExposure(const float NewExposure)
 {
-	exposure = newExposure;
+	Exposure = NewExposure;
 }
 
-bool FEBasicCamera::getIsInputActive()
+bool FEBasicCamera::GetIsInputActive()
 {
-	return isInputActive;
+	return bIsInputActive;
 }
 
-void FEBasicCamera::setIsInputActive(bool isActive)
+void FEBasicCamera::SetIsInputActive(const bool bIsActive)
 {
-	isInputActive = isActive;
+	bIsInputActive = bIsActive;
 }
 
-void FocalEngine::FEBasicCamera::reset()
+void FocalEngine::FEBasicCamera::Reset()
 {
-	fov = 70.0f;
-	nearPlane = 0.1f;
-	farPlane = 5000.0f;
-	aspectRatio = 1.0f;
+	Fov = 70.0f;
+	NearPlane = 0.1f;
+	FarPlane = 5000.0f;
+	AspectRatio = 1.0f;
 
-	yaw = 0.0f;
-	pitch = 0.0f;
-	roll = 0.0f;
+	Yaw = 0.0f;
+	Pitch = 0.0f;
+	Roll = 0.0f;
 
-	gamma = 2.2f;
-	exposure = 1.0f;
+	Gamma = 2.2f;
+	Exposure = 1.0f;
 
-	glm::vec3 position = glm::vec3(0.0f);
+	Position = glm::vec3(0.0f);
 
-	updateAll();
+	UpdateAll();
 }
 
-void FEBasicCamera::setLookAt(glm::vec3 lookAt)
+void FEBasicCamera::SetLookAt(const glm::vec3 LookAt)
 {
-	viewMatrix = glm::lookAt(getPosition(), lookAt, glm::vec3(0.0, 1.0, 0.0));
+	ViewMatrix = glm::lookAt(GetPosition(), LookAt, glm::vec3(0.0, 1.0, 0.0));
 }
 
-glm::vec3 FEBasicCamera::getForward()
+glm::vec3 FEBasicCamera::GetForward()
 {
-	return glm::normalize(glm::vec3(glm::vec4(0.0f, 0.0f, -1.0f, 0.0f) * viewMatrix));
+	return glm::normalize(glm::vec3(glm::vec4(0.0f, 0.0f, -1.0f, 0.0f) * ViewMatrix));
 }
 
-void FEBasicCamera::setOnUpdate(void(*func)(FEBasicCamera*))
+void FEBasicCamera::SetOnUpdate(void(*Func)(FEBasicCamera*))
 {
-	clientOnUpdateImpl = func;
+	ClientOnUpdateImpl = Func;
 }
 
-glm::vec3 FEBasicCamera::getRight()
+glm::vec3 FEBasicCamera::GetRight()
 {
-	return glm::normalize(glm::vec3(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) * viewMatrix));
+	return glm::normalize(glm::vec3(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) * ViewMatrix));
 }
 
-glm::vec3 FEBasicCamera::getUp()
+glm::vec3 FEBasicCamera::GetUp()
 {
-	return glm::normalize(glm::vec3(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) * viewMatrix));
+	return glm::normalize(glm::vec3(glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) * ViewMatrix));
 }
 
-void FEBasicCamera::updateFrustumPlanes()
+void FEBasicCamera::UpdateFrustumPlanes()
 {
-	float   clip[16];
-	float   t;
+	float Clip[16];
 
-	glm::mat4 cliping = getProjectionMatrix() * getViewMatrix();
+	glm::mat4 Cliping = GetProjectionMatrix() * GetViewMatrix();
 	for (int i = 0; i < 4; i++)
 	{
-		clip[i * 4] = cliping[i][0];
-		clip[i * 4 + 1] = cliping[i][1];
-		clip[i * 4 + 2] = cliping[i][2];
-		clip[i * 4 + 3] = cliping[i][3];
+		Clip[i * 4] = Cliping[i][0];
+		Clip[i * 4 + 1] = Cliping[i][1];
+		Clip[i * 4 + 2] = Cliping[i][2];
+		Clip[i * 4 + 3] = Cliping[i][3];
 	}
 
 	/* Extract the numbers for the RIGHT plane */
-	frustum[0][0] = clip[3] - clip[0];
-	frustum[0][1] = clip[7] - clip[4];
-	frustum[0][2] = clip[11] - clip[8];
-	frustum[0][3] = clip[15] - clip[12];
+	Frustum[0][0] = Clip[3] - Clip[0];
+	Frustum[0][1] = Clip[7] - Clip[4];
+	Frustum[0][2] = Clip[11] - Clip[8];
+	Frustum[0][3] = Clip[15] - Clip[12];
 
 	/* Normalize the result */
-	t = sqrt(frustum[0][0] * frustum[0][0] + frustum[0][1] * frustum[0][1] + frustum[0][2] * frustum[0][2]);
-	frustum[0][0] /= t;
-	frustum[0][1] /= t;
-	frustum[0][2] /= t;
-	frustum[0][3] /= t;
+	float T = sqrt(Frustum[0][0] * Frustum[0][0] + Frustum[0][1] * Frustum[0][1] + Frustum[0][2] * Frustum[0][2]);
+	Frustum[0][0] /= T;
+	Frustum[0][1] /= T;
+	Frustum[0][2] /= T;
+	Frustum[0][3] /= T;
 
 	/* Extract the numbers for the LEFT plane */
-	frustum[1][0] = clip[3] + clip[0];
-	frustum[1][1] = clip[7] + clip[4];
-	frustum[1][2] = clip[11] + clip[8];
-	frustum[1][3] = clip[15] + clip[12];
+	Frustum[1][0] = Clip[3] + Clip[0];
+	Frustum[1][1] = Clip[7] + Clip[4];
+	Frustum[1][2] = Clip[11] + Clip[8];
+	Frustum[1][3] = Clip[15] + Clip[12];
 
 	/* Normalize the result */
-	t = sqrt(frustum[1][0] * frustum[1][0] + frustum[1][1] * frustum[1][1] + frustum[1][2] * frustum[1][2]);
-	frustum[1][0] /= t;
-	frustum[1][1] /= t;
-	frustum[1][2] /= t;
-	frustum[1][3] /= t;
+	T = sqrt(Frustum[1][0] * Frustum[1][0] + Frustum[1][1] * Frustum[1][1] + Frustum[1][2] * Frustum[1][2]);
+	Frustum[1][0] /= T;
+	Frustum[1][1] /= T;
+	Frustum[1][2] /= T;
+	Frustum[1][3] /= T;
 
 	/* Extract the BOTTOM plane */
-	frustum[2][0] = clip[3] + clip[1];
-	frustum[2][1] = clip[7] + clip[5];
-	frustum[2][2] = clip[11] + clip[9];
-	frustum[2][3] = clip[15] + clip[13];
+	Frustum[2][0] = Clip[3] + Clip[1];
+	Frustum[2][1] = Clip[7] + Clip[5];
+	Frustum[2][2] = Clip[11] + Clip[9];
+	Frustum[2][3] = Clip[15] + Clip[13];
 
 	/* Normalize the result */
-	t = sqrt(frustum[2][0] * frustum[2][0] + frustum[2][1] * frustum[2][1] + frustum[2][2] * frustum[2][2]);
-	frustum[2][0] /= t;
-	frustum[2][1] /= t;
-	frustum[2][2] /= t;
-	frustum[2][3] /= t;
+	T = sqrt(Frustum[2][0] * Frustum[2][0] + Frustum[2][1] * Frustum[2][1] + Frustum[2][2] * Frustum[2][2]);
+	Frustum[2][0] /= T;
+	Frustum[2][1] /= T;
+	Frustum[2][2] /= T;
+	Frustum[2][3] /= T;
 
 	/* Extract the TOP plane */
-	frustum[3][0] = clip[3] - clip[1];
-	frustum[3][1] = clip[7] - clip[5];
-	frustum[3][2] = clip[11] - clip[9];
-	frustum[3][3] = clip[15] - clip[13];
+	Frustum[3][0] = Clip[3] - Clip[1];
+	Frustum[3][1] = Clip[7] - Clip[5];
+	Frustum[3][2] = Clip[11] - Clip[9];
+	Frustum[3][3] = Clip[15] - Clip[13];
 
 	/* Normalize the result */
-	t = sqrt(frustum[3][0] * frustum[3][0] + frustum[3][1] * frustum[3][1] + frustum[3][2] * frustum[3][2]);
-	frustum[3][0] /= t;
-	frustum[3][1] /= t;
-	frustum[3][2] /= t;
-	frustum[3][3] /= t;
+	T = sqrt(Frustum[3][0] * Frustum[3][0] + Frustum[3][1] * Frustum[3][1] + Frustum[3][2] * Frustum[3][2]);
+	Frustum[3][0] /= T;
+	Frustum[3][1] /= T;
+	Frustum[3][2] /= T;
+	Frustum[3][3] /= T;
 
 	/* Extract the FAR plane */
-	frustum[4][0] = clip[3] - clip[2];
-	frustum[4][1] = clip[7] - clip[6];
-	frustum[4][2] = clip[11] - clip[10];
-	frustum[4][3] = clip[15] - clip[14];
+	Frustum[4][0] = Clip[3] - Clip[2];
+	Frustum[4][1] = Clip[7] - Clip[6];
+	Frustum[4][2] = Clip[11] - Clip[10];
+	Frustum[4][3] = Clip[15] - Clip[14];
 
 	/* Normalize the result */
-	t = sqrt(frustum[4][0] * frustum[4][0] + frustum[4][1] * frustum[4][1] + frustum[4][2] * frustum[4][2]);
-	frustum[4][0] /= t;
-	frustum[4][1] /= t;
-	frustum[4][2] /= t;
-	frustum[4][3] /= t;
+	T = sqrt(Frustum[4][0] * Frustum[4][0] + Frustum[4][1] * Frustum[4][1] + Frustum[4][2] * Frustum[4][2]);
+	Frustum[4][0] /= T;
+	Frustum[4][1] /= T;
+	Frustum[4][2] /= T;
+	Frustum[4][3] /= T;
 
 	/* Extract the NEAR plane */
-	frustum[5][0] = clip[3] + clip[2];
-	frustum[5][1] = clip[7] + clip[6];
-	frustum[5][2] = clip[11] + clip[10];
-	frustum[5][3] = clip[15] + clip[14];
+	Frustum[5][0] = Clip[3] + Clip[2];
+	Frustum[5][1] = Clip[7] + Clip[6];
+	Frustum[5][2] = Clip[11] + Clip[10];
+	Frustum[5][3] = Clip[15] + Clip[14];
 
 	/* Normalize the result */
-	t = sqrt(frustum[5][0] * frustum[5][0] + frustum[5][1] * frustum[5][1] + frustum[5][2] * frustum[5][2]);
-	frustum[5][0] /= t;
-	frustum[5][1] /= t;
-	frustum[5][2] /= t;
-	frustum[5][3] /= t;
+	T = sqrt(Frustum[5][0] * Frustum[5][0] + Frustum[5][1] * Frustum[5][1] + Frustum[5][2] * Frustum[5][2]);
+	Frustum[5][0] /= T;
+	Frustum[5][1] /= T;
+	Frustum[5][2] /= T;
+	Frustum[5][3] /= T;
 }
 
-float** FEBasicCamera::getFrustumPlanes()
+float** FEBasicCamera::GetFrustumPlanes()
 {
-	return frustum;
+	return Frustum;
 }
 
-float FEBasicCamera::getMovementSpeed()
+float FEBasicCamera::GetMovementSpeed()
 {
-	return movementSpeed;
+	return MovementSpeed;
 }
 
-void FEBasicCamera::setMovementSpeed(float newValue)
+void FEBasicCamera::SetMovementSpeed(const float NewValue)
 {
-	movementSpeed = newValue;
+	MovementSpeed = NewValue;
 }

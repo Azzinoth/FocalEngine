@@ -3,114 +3,114 @@ using namespace FocalEngine;
 
 FEPrefab::FEPrefab() : FEObject(FE_PREFAB, "")
 {
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-FEPrefab::FEPrefab(FEGameModel* gameModel, std::string Name) : FEObject(FE_PREFAB, Name)
+FEPrefab::FEPrefab(FEGameModel* GameModel, const std::string Name) : FEObject(FE_PREFAB, Name)
 {
-	components.push_back(new FEPrefabComponent());
-	components.back()->gameModel = gameModel;
+	Components.push_back(new FEPrefabComponent());
+	Components.back()->GameModel = GameModel;
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
 FEPrefab::~FEPrefab()
 {
-	for (int i = 0; i < components.size(); i++)
+	for (int i = 0; i < Components.size(); i++)
 	{
-		delete components[i];
+		delete Components[i];
 	}
 }
 
-void FEPrefab::updateAABB()
+void FEPrefab::UpdateAABB()
 {
 	AABB = FEAABB();
 
-	for (int i = 0; i < components.size(); i++)
+	for (int i = 0; i < Components.size(); i++)
 	{
-		if (components[i]->gameModel == nullptr || components[i]->gameModel->mesh == nullptr)
+		if (Components[i]->GameModel == nullptr || Components[i]->GameModel->Mesh == nullptr)
 			continue;
-		AABB = AABB.merge(components[i]->gameModel->mesh->getAABB().transform(components[i]->transform.getTransformMatrix()));
+		AABB = AABB.Merge(Components[i]->GameModel->Mesh->GetAABB().Transform(Components[i]->Transform.GetTransformMatrix()));
 	}
 }
 
-FEAABB FEPrefab::getAABB()
+FEAABB FEPrefab::GetAABB()
 {
-	if (getDirtyFlag())
-		updateAABB();
+	if (IsDirty())
+		UpdateAABB();
 
 	return AABB;
 }
 
-bool FEPrefab::usesMaterial(std::string materialID)
+bool FEPrefab::UsesMaterial(const std::string MaterialID) const
 {
-	for (int i = 0; i < components.size(); i++)
+	for (int i = 0; i < Components.size(); i++)
 	{
-		if (components[i]->gameModel->material->getObjectID() == materialID)
+		if (Components[i]->GameModel->Material->GetObjectID() == MaterialID)
 			return true;
 
-		if (components[i]->gameModel->billboardMaterial != nullptr && components[i]->gameModel->billboardMaterial->getObjectID() == materialID)
+		if (Components[i]->GameModel->BillboardMaterial != nullptr && Components[i]->GameModel->BillboardMaterial->GetObjectID() == MaterialID)
 			return true;
 	}
 
 	return false;
 }
 
-bool FEPrefab::usesGameModel(std::string gameModelID)
+bool FEPrefab::UsesGameModel(const std::string GameModelID) const
 {
-	for (int i = 0; i < components.size(); i++)
+	for (int i = 0; i < Components.size(); i++)
 	{
-		if (components[i]->gameModel->getObjectID() == gameModelID)
+		if (Components[i]->GameModel->GetObjectID() == GameModelID)
 			return true;
 	}
 
 	return false;
 }
 
-int FEPrefab::componentsCount()
+int FEPrefab::ComponentsCount() const
 {
-	return int(components.size());
+	return static_cast<int>(Components.size());
 }
 
-void FEPrefab::addComponent(FEGameModel* gameModel, FETransformComponent transform)
+void FEPrefab::AddComponent(FEGameModel* GameModel, const FETransformComponent Transform)
 {
-	if (gameModel == nullptr)
+	if (GameModel == nullptr)
 		return;
 
-	components.push_back(new FEPrefabComponent());
-	components.back()->gameModel = gameModel;
-	components.back()->transform = transform;
+	Components.push_back(new FEPrefabComponent());
+	Components.back()->GameModel = GameModel;
+	Components.back()->Transform = Transform;
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-FEPrefabComponent* FEPrefab::getComponent(int index)
+FEPrefabComponent* FEPrefab::GetComponent(const int Index) const
 {
-	if (index >= components.size())
+	if (Index >= Components.size())
 		return nullptr;
 
-	return components[index];
+	return Components[Index];
 }
 
-void FEPrefab::removeComponent(FEGameModel* gameModel)
+void FEPrefab::RemoveComponent(const FEGameModel* GameModel)
 {
-	for (int i = 0; i < components.size(); i++)
+	for (int i = 0; i < Components.size(); i++)
 	{
-		if (components[i]->gameModel == gameModel)
+		if (Components[i]->GameModel == GameModel)
 		{
-			removeComponent(i);
+			RemoveComponent(i);
 			i--;
 		}
 	}
 }
 
-void FEPrefab::removeComponent(int index)
+void FEPrefab::RemoveComponent(const int Index)
 {
-	if (index >= components.size())
+	if (Index >= Components.size())
 		return;
 
-	delete components[index];
-	components.erase(components.begin() + index);
+	delete Components[Index];
+	Components.erase(Components.begin() + Index);
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }

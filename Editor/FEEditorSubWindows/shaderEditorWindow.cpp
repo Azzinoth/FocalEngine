@@ -1,117 +1,112 @@
 #include "shaderEditorWindow.h"
 
-shaderDebugWindow* shaderDebugWindow::_instance = nullptr;
+shaderDebugWindow* shaderDebugWindow::Instance = nullptr;
 
 shaderDebugWindow::shaderDebugWindow()
 {
-	flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
-	editor.SetShowWhitespaces(false);
-	editor.SetReadOnly(true);
-	size = ImVec2(800, 600);
-	closeButton = new ImGuiButton("Close");
-	updateButton = new ImGuiButton("Update");
-	editor.SetPalette(TextEditor::GetLightPalette());
-	editor.SetColorizerEnable(false);
+	Flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+	Editor.SetShowWhitespaces(false);
+	Editor.SetReadOnly(true);
+	Size = ImVec2(800, 600);
+	CloseButton = new ImGuiButton("Close");
+	UpdateButton = new ImGuiButton("Update");
+	Editor.SetPalette(TextEditor::GetLightPalette());
+	Editor.SetColorizerEnable(false);
 }
 
 shaderDebugWindow::~shaderDebugWindow()
 {
-	if (closeButton != nullptr)
-		delete closeButton;
+	delete CloseButton;
+	delete UpdateButton;
 
-	if (updateButton != nullptr)
-		delete updateButton;
-
-	shaderToWorkWith = nullptr;
+	ShaderToWorkWith = nullptr;
 }
 
-void shaderDebugWindow::show(FEShader* shader, std::string caption)
+void shaderDebugWindow::Show(FEShader* Shader, std::string Caption)
 {
-	updateNeeded = true;
-	shaderToWorkWith = shader;
+	bUpdateNeeded = true;
+	ShaderToWorkWith = Shader;
 
-	selectedDebugData = "";
-	occurrenceList.clear();
-	data = nullptr;
-	dataDump.clear();
+	SelectedDebugData = "";
+	OccurrenceList.clear();
+	Data = nullptr;
+	DataDump.clear();
 
-	if (caption.size() == 0)
-		caption = "Text view";
+	if (Caption.empty())
+		Caption = "Text view";
 
-	strcpy_s(this->caption, caption.size() + 1, caption.c_str());
-	FEImGuiWindow::show();
+	strcpy_s(this->Caption, Caption.size() + 1, Caption.c_str());
+	FEImGuiWindow::Show();
 }
 
-void shaderDebugWindow::render()
+void shaderDebugWindow::Render()
 {
-	FEImGuiWindow::render();
+	FEImGuiWindow::Render();
 
-	if (!isVisible())
+	if (!IsVisible())
 		return;
 
-	if (updateNeeded)
+	if (bUpdateNeeded)
 	{
-		data = shaderToWorkWith->getDebugData();
-		if (data->size() > 0)
+		Data = ShaderToWorkWith->GetDebugData();
+		if (!Data->empty())
 		{
-			dataDump.clear();
-			occurrenceList.clear();
-			updateNeeded = false;
-			for (size_t i = 0; i < data->size(); i++)
+			DataDump.clear();
+			OccurrenceList.clear();
+			bUpdateNeeded = false;
+			for (size_t i = 0; i < Data->size(); i++)
 			{
-				std::string debugItemsCount = std::to_string(data->operator[](i)[0]);
-				for (size_t j = 0; j < debugItemsCount.size(); j++)
+				std::string DebugItemsCount = std::to_string(Data->operator[](i)[0]);
+				for (size_t j = 0; j < DebugItemsCount.size(); j++)
 				{
-					if (debugItemsCount[j] == '.')
+					if (DebugItemsCount[j] == '.')
 					{
-						debugItemsCount.erase(debugItemsCount.begin() + j, debugItemsCount.end());
+						DebugItemsCount.erase(DebugItemsCount.begin() + j, DebugItemsCount.end());
 						break;
 					}
 				}
 
-				occurrenceList.push_back("occurrence with " + debugItemsCount + " debug items");
-				dataDump.push_back(data->operator[](i));
+				OccurrenceList.push_back("occurrence with " + DebugItemsCount + " debug items");
+				DataDump.push_back(Data->operator[](i));
 			}
 
-			selectedDebugData = occurrenceList[0];
-
-			selectedDebugData = occurrenceList[0].c_str();
-			std::string text = "";
-			std::vector<std::string> debugVariables = shaderToWorkWith->getDebugVariables();
-			for (size_t i = 1; i < dataDump[0].size(); i++)
+			SelectedDebugData = OccurrenceList[0];
+			std::string text;
+			const std::vector<std::string> DebugVariables = ShaderToWorkWith->GetDebugVariables();
+			for (size_t i = 1; i < DataDump[0].size(); i++)
 			{
-				float t = dataDump[0][i];
-				text += debugVariables[(i - 1) % debugVariables.size()];
+				const float t = DataDump[0][i];
+				text += DebugVariables[(i - 1) % DebugVariables.size()];
 				text += " : ";
 				text += std::to_string(t);
-				if (i < dataDump[0].size() - 1)
+				if (i < DataDump[0].size() - 1)
 					text += "\n";
 			}
-			editor.SetText(text);
+			Editor.SetText(text);
 		}
 	}
 
-	if (ImGui::BeginCombo("Shader occurrence", selectedDebugData.c_str(), ImGuiWindowFlags_None))
+	if (ImGui::BeginCombo("Shader occurrence", SelectedDebugData.c_str(), ImGuiWindowFlags_None))
 	{
-		for (size_t n = 0; n < occurrenceList.size(); n++)
+		for (size_t n = 0; n < OccurrenceList.size(); n++)
 		{
-			ImGui::PushID(int(n));
-			bool is_selected = (selectedDebugData == occurrenceList[n]);
-			if (ImGui::Selectable(occurrenceList[n].c_str(), is_selected))
+			ImGui::PushID(static_cast<int>(n));
+			const bool is_selected = (SelectedDebugData == OccurrenceList[n]);
+			if (ImGui::Selectable(OccurrenceList[n].c_str(), is_selected))
 			{
-				selectedDebugData = occurrenceList[n].c_str();
-				std::string text = "";
-				std::vector<std::string> debugVariables = shaderToWorkWith->getDebugVariables();
-				for (size_t i = 1; i < dataDump[n].size(); i++)
+				SelectedDebugData = OccurrenceList[n];
+				std::string text;
+				std::vector<std::string> DebugVariables = ShaderToWorkWith->GetDebugVariables();
+				for (size_t i = 1; i < DataDump[n].size(); i++)
 				{
-					float t = dataDump[n][i];
-					text += debugVariables[(i - 1) % debugVariables.size()];
+					const float t = DataDump[n][i];
+					text += DebugVariables[(i - 1) % DebugVariables.size()];
 					text += " : ";
 					text += std::to_string(t);
-					if (i < dataDump[n].size() - 1)
+					if (i < DataDump[n].size() - 1)
 						text += "\n";
 				}
-				editor.SetText(text);
+				Editor.SetText(text);
 			}
 
 			if (is_selected)
@@ -122,183 +117,182 @@ void shaderDebugWindow::render()
 		ImGui::EndCombo();
 	}
 
-	closeButton->render();
-	if (closeButton->getWasClicked())
+	CloseButton->Render();
+	if (CloseButton->IsClicked())
 	{
-		FEImGuiWindow::close();
+		FEImGuiWindow::Close();
 	}
 
-	updateButton->render();
-	if (updateButton->getWasClicked())
+	UpdateButton->Render();
+	if (UpdateButton->IsClicked())
 	{
-		updateNeeded = true;
+		bUpdateNeeded = true;
 	}
 
 	//ImGui::GetCurrentWindow()->Size = ImVec2(ImGui::GetCurrentWindow()->Size.x, ImGui::GetCurrentWindow()->Size.y - 150);
-	editor.Render("TextEditor", ImVec2(ImGui::GetCurrentWindow()->Size.x, 250));
+	Editor.Render("TextEditor", ImVec2(ImGui::GetCurrentWindow()->Size.x, 250));
 	//ImGui::GetCurrentWindow()->Size = ImVec2(ImGui::GetCurrentWindow()->Size.x, ImGui::GetCurrentWindow()->Size.y + 150);
-	FEImGuiWindow::onRenderEnd();
+	FEImGuiWindow::OnRenderEnd();
 }
 
-shaderEditorWindow* shaderEditorWindow::_instance = nullptr;
+shaderEditorWindow* shaderEditorWindow::Instance = nullptr;
 
 shaderEditorWindow::shaderEditorWindow()
 {
-	flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
-	currentEditor = &vertexShaderEditor;
-	vertexShaderEditor.SetShowWhitespaces(false);
-	vertexShaderEditor.SetPalette(TextEditor::GetLightPalette());
-	tessControlShaderEditor.SetShowWhitespaces(false);
-	tessControlShaderEditor.SetPalette(TextEditor::GetLightPalette());
-	tessEvalShaderEditor.SetShowWhitespaces(false);
-	tessEvalShaderEditor.SetPalette(TextEditor::GetLightPalette());
-	geometryShaderEditor.SetShowWhitespaces(false);
-	geometryShaderEditor.SetPalette(TextEditor::GetLightPalette());
-	fragmentShaderEditor.SetShowWhitespaces(false);
-	fragmentShaderEditor.SetPalette(TextEditor::GetLightPalette());
-	computeShaderEditor.SetShowWhitespaces(false);
-	computeShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	Flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+	CurrentEditor = &VertexShaderEditor;
+	VertexShaderEditor.SetShowWhitespaces(false);
+	VertexShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	TessControlShaderEditor.SetShowWhitespaces(false);
+	TessControlShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	TessEvalShaderEditor.SetShowWhitespaces(false);
+	TessEvalShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	GeometryShaderEditor.SetShowWhitespaces(false);
+	GeometryShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	FragmentShaderEditor.SetShowWhitespaces(false);
+	FragmentShaderEditor.SetPalette(TextEditor::GetLightPalette());
+	ComputeShaderEditor.SetShowWhitespaces(false);
+	ComputeShaderEditor.SetPalette(TextEditor::GetLightPalette());
 
-	size = ImVec2(800, 650);
-	compileButton = new ImGuiButton("Compile");
+	Size = ImVec2(800, 650);
+	CompileButton = new ImGuiButton("Compile");
 
-	closeButton = new ImGuiButton("Close");
-	closeButton->setDefaultColor((ImVec4)ImColor(0.6f, 0.24f, 0.24f));
-	closeButton->setHoveredColor((ImVec4)ImColor(0.7f, 0.21f, 0.21f));
-	closeButton->setHoveredColor((ImVec4)ImColor(0.8f, 0.16f, 0.16f));
+	CloseButton = new ImGuiButton("Close");
+	CloseButton->SetDefaultColor((ImVec4)ImColor(0.6f, 0.24f, 0.24f));
+	CloseButton->SetHoveredColor((ImVec4)ImColor(0.7f, 0.21f, 0.21f));
+	CloseButton->SetHoveredColor((ImVec4)ImColor(0.8f, 0.16f, 0.16f));
 }
 
 shaderEditorWindow::~shaderEditorWindow()
 {
-	if (compileButton != nullptr)
-		delete compileButton;
+	delete CompileButton;
 }
 
-void shaderEditorWindow::show(FEShader* shader)
+void shaderEditorWindow::Show(FEShader* Shader)
 {
-	shaderToEdit = shader;
-	std::string tempCaption = "Edit shader: ";
-	tempCaption += shaderToEdit->getName();
-	strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+	ShaderToEdit = Shader;
+	std::string TempCaption = "Edit shader: ";
+	TempCaption += ShaderToEdit->GetName();
+	strcpy_s(Caption, TempCaption.size() + 1, TempCaption.c_str());
 
-	FEImGuiWindow::show();
-	currentEditor->SetText("");
-	currentEditor = nullptr;
+	FEImGuiWindow::Show();
+	CurrentEditor->SetText("");
+	CurrentEditor = nullptr;
 
-	if (shaderToEdit->getVertexShaderText() != nullptr)
+	if (ShaderToEdit->GetVertexShaderText() != nullptr)
 	{
-		vertexShaderEditor.SetText(shaderToEdit->getVertexShaderText());
-		vertexShaderUsed = true;
-		currentEditor = &vertexShaderEditor;
+		VertexShaderEditor.SetText(ShaderToEdit->GetVertexShaderText());
+		bVertexShaderUsed = true;
+		CurrentEditor = &VertexShaderEditor;
 	}
 	else
 	{
-		vertexShaderEditor.SetText("");
-		vertexShaderUsed = false;
+		VertexShaderEditor.SetText("");
+		bVertexShaderUsed = false;
 	}
 
-	if (shaderToEdit->getFragmentShaderText() != nullptr)
+	if (ShaderToEdit->GetFragmentShaderText() != nullptr)
 	{
-		fragmentShaderEditor.SetText(shaderToEdit->getFragmentShaderText());
-		fragmentShaderUsed = true;
-		if (currentEditor == nullptr)
-			currentEditor = &fragmentShaderEditor;
+		FragmentShaderEditor.SetText(ShaderToEdit->GetFragmentShaderText());
+		bFragmentShaderUsed = true;
+		if (CurrentEditor == nullptr)
+			CurrentEditor = &FragmentShaderEditor;
 	}
 	else
 	{
-		fragmentShaderEditor.SetText("");
-		fragmentShaderUsed = false;
+		FragmentShaderEditor.SetText("");
+		bFragmentShaderUsed = false;
 	}
 
-	if (shaderToEdit->getTessControlShaderText() != nullptr)
+	if (ShaderToEdit->GetTessControlShaderText() != nullptr)
 	{
-		tessControlShaderEditor.SetText(shaderToEdit->getTessControlShaderText());
-		tessControlShaderUsed = true;
-		if (currentEditor == nullptr)
-			currentEditor = &tessControlShaderEditor;
+		TessControlShaderEditor.SetText(ShaderToEdit->GetTessControlShaderText());
+		bTessControlShaderUsed = true;
+		if (CurrentEditor == nullptr)
+			CurrentEditor = &TessControlShaderEditor;
 	}
 	else
 	{
-		tessControlShaderEditor.SetText("");
-		tessControlShaderUsed = false;
+		TessControlShaderEditor.SetText("");
+		bTessControlShaderUsed = false;
 	}
 
-	if (shaderToEdit->getTessEvalShaderText() != nullptr)
+	if (ShaderToEdit->GetTessEvalShaderText() != nullptr)
 	{
-		tessEvalShaderEditor.SetText(shaderToEdit->getTessEvalShaderText());
-		tessEvalShaderUsed = true;
-		if (currentEditor == nullptr)
-			currentEditor = &tessEvalShaderEditor;
+		TessEvalShaderEditor.SetText(ShaderToEdit->GetTessEvalShaderText());
+		bTessEvalShaderUsed = true;
+		if (CurrentEditor == nullptr)
+			CurrentEditor = &TessEvalShaderEditor;
 	}
 	else
 	{
-		tessEvalShaderEditor.SetText("");
-		tessEvalShaderUsed = false;
+		TessEvalShaderEditor.SetText("");
+		bTessEvalShaderUsed = false;
 	}
 
-	if (shaderToEdit->getGeometryShaderText() != nullptr)
+	if (ShaderToEdit->GetGeometryShaderText() != nullptr)
 	{
-		geometryShaderEditor.SetText(shaderToEdit->getGeometryShaderText());
-		geometryShaderUsed = true;
-		if (currentEditor == nullptr)
-			currentEditor = &geometryShaderEditor;
+		GeometryShaderEditor.SetText(ShaderToEdit->GetGeometryShaderText());
+		bGeometryShaderUsed = true;
+		if (CurrentEditor == nullptr)
+			CurrentEditor = &GeometryShaderEditor;
 	}
 	else
 	{
-		geometryShaderEditor.SetText("");
-		geometryShaderUsed = false;
+		GeometryShaderEditor.SetText("");
+		bGeometryShaderUsed = false;
 	}
 
-	if (shaderToEdit->getComputeShaderText() != nullptr)
+	if (ShaderToEdit->GetComputeShaderText() != nullptr)
 	{
-		computeShaderEditor.SetText(shaderToEdit->getComputeShaderText());
-		computeShaderUsed = true;
-		if (currentEditor == nullptr)
-			currentEditor = &computeShaderEditor;
+		ComputeShaderEditor.SetText(ShaderToEdit->GetComputeShaderText());
+		bComputeShaderUsed = true;
+		if (CurrentEditor == nullptr)
+			CurrentEditor = &ComputeShaderEditor;
 	}
 	else
 	{
-		computeShaderEditor.SetText("");
-		computeShaderUsed = false;
+		ComputeShaderEditor.SetText("");
+		bComputeShaderUsed = false;
 	}
 }
 
-void shaderEditorWindow::render()
+void shaderEditorWindow::Render()
 {
-	FEImGuiWindow::render();
+	FEImGuiWindow::Render();
 
-	if (!isVisible())
+	if (!IsVisible())
 		return;
 
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("Edit"))
 		{
-			bool ro = currentEditor->IsReadOnly();
+			bool ro = CurrentEditor->IsReadOnly();
 			if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
-				currentEditor->SetReadOnly(ro);
+				CurrentEditor->SetReadOnly(ro);
 			ImGui::Separator();
 
-			if (ImGui::MenuItem("Undo", "ALT-Backspace", nullptr, !ro && currentEditor->CanUndo()))
-				currentEditor->Undo();
-			if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && currentEditor->CanRedo()))
-				currentEditor->Redo();
+			if (ImGui::MenuItem("Undo", "ALT-Backspace", nullptr, !ro && CurrentEditor->CanUndo()))
+				CurrentEditor->Undo();
+			if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && CurrentEditor->CanRedo()))
+				CurrentEditor->Redo();
 
 			ImGui::Separator();
 
-			if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, currentEditor->HasSelection()))
-				currentEditor->Copy();
-			if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && currentEditor->HasSelection()))
-				currentEditor->Cut();
-			if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && currentEditor->HasSelection()))
-				currentEditor->Delete();
+			if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, CurrentEditor->HasSelection()))
+				CurrentEditor->Copy();
+			if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && CurrentEditor->HasSelection()))
+				CurrentEditor->Cut();
+			if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && CurrentEditor->HasSelection()))
+				CurrentEditor->Delete();
 			if (ImGui::MenuItem("Paste", "Ctrl-V", nullptr, !ro && ImGui::GetClipboardText() != nullptr))
-				currentEditor->Paste();
+				CurrentEditor->Paste();
 
 			ImGui::Separator();
 
 			if (ImGui::MenuItem("Select all", nullptr, nullptr))
-				currentEditor->SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(currentEditor->GetTotalLines(), 0));
+				CurrentEditor->SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(CurrentEditor->GetTotalLines(), 0));
 
 			ImGui::EndMenu();
 		}
@@ -306,81 +300,81 @@ void shaderEditorWindow::render()
 		if (ImGui::BeginMenu("View"))
 		{
 			if (ImGui::MenuItem("Dark palette"))
-				currentEditor->SetPalette(TextEditor::GetDarkPalette());
+				CurrentEditor->SetPalette(TextEditor::GetDarkPalette());
 			if (ImGui::MenuItem("Light palette"))
-				currentEditor->SetPalette(TextEditor::GetLightPalette());
+				CurrentEditor->SetPalette(TextEditor::GetLightPalette());
 			if (ImGui::MenuItem("Retro blue palette"))
-				currentEditor->SetPalette(TextEditor::GetRetroBluePalette());
+				CurrentEditor->SetPalette(TextEditor::GetRetroBluePalette());
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
 	}
 
-	auto cpos = currentEditor->GetCursorPosition();
-	ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, currentEditor->GetTotalLines(),
-		currentEditor->IsOverwrite() ? "Ovr" : "Ins",
-		currentEditor->CanUndo() ? "*" : " ",
-		currentEditor->GetLanguageDefinition().mName.c_str(), "none");
+	const auto cpos = CurrentEditor->GetCursorPosition();
+	ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, CurrentEditor->GetTotalLines(),
+		CurrentEditor->IsOverwrite() ? "Ovr" : "Ins",
+		CurrentEditor->CanUndo() ? "*" : " ",
+		CurrentEditor->GetLanguageDefinition().mName.c_str(), "none");
 
-	ImGui::PushStyleColor(ImGuiCol_TabActive, (ImVec4)ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_TabActive, static_cast<ImVec4>(ImColor::ImColor(0.4f, 0.9f, 0.4f, 1.0f)));
 	if (ImGui::BeginTabBar("##Shaders Editors", ImGuiTabBarFlags_None))
 	{
-		if (vertexShaderUsed)
+		if (bVertexShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Vertex Shader"))
 			{
-				activeTab = 0;
-				currentEditor = &vertexShaderEditor;
+				ActiveTab = 0;
+				CurrentEditor = &VertexShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
 
-		if (tessControlShaderUsed)
+		if (bTessControlShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Tessalation Control Shader"))
 			{
-				activeTab = 1;
-				currentEditor = &tessControlShaderEditor;
+				ActiveTab = 1;
+				CurrentEditor = &TessControlShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
 
-		if (tessEvalShaderUsed)
+		if (bTessEvalShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Tessalation Evaluation Shader"))
 			{
-				activeTab = 2;
-				currentEditor = &tessEvalShaderEditor;
+				ActiveTab = 2;
+				CurrentEditor = &TessEvalShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
 
-		if (geometryShaderUsed)
+		if (bGeometryShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Geometry Shader"))
 			{
-				activeTab = 3;
-				currentEditor = &geometryShaderEditor;
+				ActiveTab = 3;
+				CurrentEditor = &GeometryShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
 
-		if (fragmentShaderUsed)
+		if (bFragmentShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Fragment Shader"))
 			{
-				activeTab = 4;
-				currentEditor = &fragmentShaderEditor;
+				ActiveTab = 4;
+				CurrentEditor = &FragmentShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
 
-		if (computeShaderUsed)
+		if (bComputeShaderUsed)
 		{
 			if (ImGui::BeginTabItem("Compute Shader"))
 			{
-				activeTab = 5;
-				currentEditor = &computeShaderEditor;
+				ActiveTab = 5;
+				CurrentEditor = &ComputeShaderEditor;
 				ImGui::EndTabItem();
 			}
 		}
@@ -389,101 +383,100 @@ void shaderEditorWindow::render()
 	}
 	ImGui::PopStyleColor();
 	
-	currentEditor->Render("Editor", ImVec2(ImGui::GetCurrentWindow()->Size.x - 40, ImGui::GetCurrentWindow()->Size.y - 190));
+	CurrentEditor->Render("Editor", ImVec2(ImGui::GetCurrentWindow()->Size.x - 40, ImGui::GetCurrentWindow()->Size.y - 190));
 
-	float currentYPosition = ImGui::GetCursorPosY() + 15;
-	compileButton->setPosition(ImVec2(ImGui::GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f, currentYPosition));
-	compileButton->render();
-	if (compileButton->getWasClicked())
+	const float CurrentYPosition = ImGui::GetCursorPosY() + 15;
+	CompileButton->SetPosition(ImVec2(ImGui::GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f, CurrentYPosition));
+	CompileButton->Render();
+	if (CompileButton->IsClicked())
 	{
-		if (dummyShader != nullptr)
-			delete dummyShader;
+		delete DummyShader;
 
-		dummyShader = new FEShader("dummyShader", 
-			vertexShaderUsed ? vertexShaderEditor.GetText().c_str() : nullptr,
-			fragmentShaderUsed ? fragmentShaderEditor.GetText().c_str() : nullptr,
-			tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
-			tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
-			geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
-			computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr,
+		DummyShader = new FEShader("dummyShader", 
+			bVertexShaderUsed ? VertexShaderEditor.GetText().c_str() : nullptr,
+			bFragmentShaderUsed ? FragmentShaderEditor.GetText().c_str() : nullptr,
+			bTessControlShaderUsed ? TessControlShaderEditor.GetText().c_str() : nullptr,
+			bTessEvalShaderUsed ? TessEvalShaderEditor.GetText().c_str() : nullptr,
+			bGeometryShaderUsed ? GeometryShaderEditor.GetText().c_str() : nullptr,
+			bComputeShaderUsed ? ComputeShaderEditor.GetText().c_str() : nullptr,
 			true);
 
-		std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
-		for (size_t i = 0; i < oldParameters.size(); i++)
+		const std::vector<std::string> OldParameters = ShaderToEdit->GetParameterList();
+		for (size_t i = 0; i < OldParameters.size(); i++)
 		{
-			dummyShader->addParameter(*shaderToEdit->getParameter(oldParameters[i]));
+			DummyShader->AddParameter(*ShaderToEdit->GetParameter(OldParameters[i]));
 		}
 
-		std::string errors = dummyShader->getCompilationErrors();
-		if (errors.size() != 0)
+		const std::string errors = DummyShader->GetCompilationErrors();
+		if (!errors.empty())
 		{
-			justTextWindowObj.show(errors, "Shader compilation error!");
+			JustTextWindowObj.Show(errors, "Shader compilation error!");
 		}
 		else
 		{
-			FEShader* reCompiledShader = new FEShader(shaderToEdit->getName(), 
-				vertexShaderUsed ? vertexShaderEditor.GetText().c_str() : nullptr,
-				fragmentShaderUsed ? fragmentShaderEditor.GetText().c_str() : nullptr,
-				tessControlShaderUsed ? tessControlShaderEditor.GetText().c_str() : nullptr,
-				tessEvalShaderUsed ? tessEvalShaderEditor.GetText().c_str() : nullptr,
-				geometryShaderUsed ? geometryShaderEditor.GetText().c_str() : nullptr,
-				computeShaderUsed ? computeShaderEditor.GetText().c_str() : nullptr);
+			FEShader* ReCompiledShader = new FEShader(ShaderToEdit->GetName(), 
+				bVertexShaderUsed ? VertexShaderEditor.GetText().c_str() : nullptr,
+				bFragmentShaderUsed ? FragmentShaderEditor.GetText().c_str() : nullptr,
+				bTessControlShaderUsed ? TessControlShaderEditor.GetText().c_str() : nullptr,
+				bTessEvalShaderUsed ? TessEvalShaderEditor.GetText().c_str() : nullptr,
+				bGeometryShaderUsed ? GeometryShaderEditor.GetText().c_str() : nullptr,
+				bComputeShaderUsed ? ComputeShaderEditor.GetText().c_str() : nullptr);
 
-			std::vector<std::string> oldParameters = shaderToEdit->getParameterList();
-			for (size_t i = 0; i < oldParameters.size(); i++)
+			const std::vector<std::string> OldParameters = ShaderToEdit->GetParameterList();
+			for (size_t i = 0; i < OldParameters.size(); i++)
 			{
-				reCompiledShader->addParameter(*shaderToEdit->getParameter(oldParameters[i]));
+				ReCompiledShader->AddParameter(*ShaderToEdit->GetParameter(OldParameters[i]));
 			}
 
-			RESOURCE_MANAGER.replaceShader(shaderToEdit->getObjectID(), reCompiledShader);
+			RESOURCE_MANAGER.ReplaceShader(ShaderToEdit->GetObjectID(), ReCompiledShader);
 
-			if (shaderToEdit->isDebugRequest())
+			if (ShaderToEdit->IsDebugRequest())
 			{
 				//shaderToEdit->updateDebugData();
-				shaderDebugWindow::getInstance().show(shaderToEdit, "Shader debug info");
+				shaderDebugWindow::getInstance().Show(ShaderToEdit, "Shader debug info");
 			}
 		}
 	}
 
-	closeButton->setPosition(ImVec2(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f, currentYPosition));
-	closeButton->render();
-	if (closeButton->getWasClicked())
+	CloseButton->SetPosition(ImVec2(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f, CurrentYPosition));
+	CloseButton->Render();
+	if (CloseButton->IsClicked())
 	{
-		FEImGuiWindow::close();
+		FEImGuiWindow::Close();
 	}
 
-	FEImGuiWindow::onRenderEnd();
+	FEImGuiWindow::OnRenderEnd();
 }
 
-void shaderEditorWindow::replaceShader(FEShader* oldShader, FEShader* newShader)
+void shaderEditorWindow::ReplaceShader(FEShader* OldShader, FEShader* NewShader)
 {
-	std::vector<std::string> materialList = RESOURCE_MANAGER.getMaterialList();
-	for (size_t i = 0; i < materialList.size(); i++)
+	std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialList();
+	for (size_t i = 0; i < MaterialList.size(); i++)
 	{
-		FEMaterial* tempMaterial = RESOURCE_MANAGER.getMaterial(materialList[i]);
-		if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
+		FEMaterial* TempMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[i]);
+		if (TempMaterial->Shader->GetNameHash() == OldShader->GetNameHash())
 		{
-			tempMaterial->shader = newShader;
+			TempMaterial->Shader = NewShader;
 		}
 	}
 
-	materialList = RESOURCE_MANAGER.getStandardMaterialList();
-	for (size_t i = 0; i < materialList.size(); i++)
+	MaterialList = RESOURCE_MANAGER.GetStandardMaterialList();
+	for (size_t i = 0; i < MaterialList.size(); i++)
 	{
-		FEMaterial* tempMaterial = RESOURCE_MANAGER.getMaterial(materialList[i]);
-		if (tempMaterial->shader->getNameHash() == oldShader->getNameHash())
+		FEMaterial* TempMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[i]);
+		if (TempMaterial->Shader->GetNameHash() == OldShader->GetNameHash())
 		{
-			tempMaterial->shader = newShader;
+			TempMaterial->Shader = NewShader;
 		}
 	}
 
-	std::vector<std::string> terrainList = SCENE.getTerrainList();
-	for (size_t i = 0; i < terrainList.size(); i++)
+	const std::vector<std::string> TerrainList = SCENE.GetTerrainList();
+	for (size_t i = 0; i < TerrainList.size(); i++)
 	{
-		FETerrain* tempTerrain = SCENE.getTerrain(terrainList[i]);
-		if (tempTerrain->shader->getNameHash() == oldShader->getNameHash())
+		FETerrain* TempTerrain = SCENE.GetTerrain(TerrainList[i]);
+		if (TempTerrain->Shader->GetNameHash() == OldShader->GetNameHash())
 		{
-			tempTerrain->shader = newShader;
+			TempTerrain->Shader = NewShader;
 		}
 	}
 }

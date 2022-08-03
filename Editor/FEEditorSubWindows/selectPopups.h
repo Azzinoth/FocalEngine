@@ -2,36 +2,36 @@
 
 #include "../Editor/FEEditorSubWindows/resizeTexturePopup.h"
 
-class selectFEObjectPopUp : public ImGuiModalPopup
+class SelectFeObjectPopUp : public ImGuiModalPopup
 {
 	int IndexUnderMouse = -1;
 	int IndexSelected = -1;
-	FEObject* highlightedObject = nullptr;
+	FEObject* HighlightedObject = nullptr;
 
-	std::vector<FEObject*> itemsList;
-	std::vector<FEObject*> filteredItemsList;
-	char filter[512];
+	std::vector<FEObject*> ItemsList;
+	std::vector<FEObject*> FilteredItemsList;
+	char Filter[512];
 
-	ImGuiButton* selectButton = nullptr;
-	ImGuiButton* cancelButton = nullptr;
-	ImGuiImageButton* iconButton = nullptr;
+	ImGuiButton* SelectButton = nullptr;
+	ImGuiButton* CancelButton = nullptr;
+	ImGuiImageButton* IconButton = nullptr;
 
-	void(*callBack)(std::vector<FEObject*>) = nullptr;
-	std::vector<FEObject*> selectedObjects;
-	void onSelectAction();
+	void(*CallBack)(std::vector<FEObject*>) = nullptr;
+	std::vector<FEObject*> SelectedObjects;
+	void OnSelectAction();
 
-	FEObjectType currenType;
+	FE_OBJECT_TYPE CurrenType;
 
-	static void keyButtonCallback(int key, int scancode, int action, int mods);
-	static bool controlButtonPressed;
-	bool isSelected(FEObject* object);
+	static void KeyButtonCallback(int Key, int Scancode, int Action, int Mods);
+	static bool ControlButtonPressed;
+	bool IsSelected(const FEObject* Object) const;
 public:
-	SINGLETON_PUBLIC_PART(selectFEObjectPopUp)
+	SINGLETON_PUBLIC_PART(SelectFeObjectPopUp)
 
-	void show(FEObjectType type, void(*CallBack)(std::vector<FEObject*>), FEObject* HighlightedObject = nullptr, std::vector<FEObject*> customList = std::vector<FEObject*>());
-	void close() override;
-	void render() override;
+	void Show(FE_OBJECT_TYPE Type, void(*CallBack)(std::vector<FEObject*>), FEObject* HighlightedObject = nullptr, std::vector<FEObject*> CustomList = std::vector<FEObject*>());
+	void Close() override;
+	void Render() override;
 
 private:
-	SINGLETON_PRIVATE_PART(selectFEObjectPopUp)
+	SINGLETON_PRIVATE_PART(SelectFeObjectPopUp)
 };

@@ -1,76 +1,71 @@
 #include "selectPopups.h"
 
-selectFEObjectPopUp* selectFEObjectPopUp::_instance = nullptr;
-bool selectFEObjectPopUp::controlButtonPressed = false;
+SelectFeObjectPopUp* SelectFeObjectPopUp::Instance = nullptr;
+bool SelectFeObjectPopUp::ControlButtonPressed = false;
 
-selectFEObjectPopUp::selectFEObjectPopUp()
+SelectFeObjectPopUp::SelectFeObjectPopUp()
 {
-	popupCaption = "Select";
-	iconButton = new ImGuiImageButton(nullptr);
-	iconButton->setSize(ImVec2(128, 128));
-	iconButton->setUV0(ImVec2(0.0f, 1.0f));
-	iconButton->setUV1(ImVec2(1.0f, 0.0f));
-	iconButton->setFramePadding(8);
+	PopupCaption = "Select";
+	IconButton = new ImGuiImageButton(nullptr);
+	IconButton->SetSize(ImVec2(128, 128));
+	IconButton->SetUV0(ImVec2(0.0f, 1.0f));
+	IconButton->SetUV1(ImVec2(1.0f, 0.0f));
+	IconButton->SetFramePadding(8);
 
-	selectButton = new ImGuiButton("Select");
-	selectButton->setSize(ImVec2(140, 24));
-	selectButton->setPosition(ImVec2(500, 35));
-	cancelButton = new ImGuiButton("Cancel");
-	cancelButton->setSize(ImVec2(140, 24));
-	cancelButton->setPosition(ImVec2(660, 35));
+	SelectButton = new ImGuiButton("Select");
+	SelectButton->SetSize(ImVec2(140, 24));
+	SelectButton->SetPosition(ImVec2(500, 35));
+	CancelButton = new ImGuiButton("Cancel");
+	CancelButton->SetSize(ImVec2(140, 24));
+	CancelButton->SetPosition(ImVec2(660, 35));
 
-	ENGINE.addKeyCallback(selectFEObjectPopUp::keyButtonCallback);
+	ENGINE.AddKeyCallback(SelectFeObjectPopUp::KeyButtonCallback);
 }
 
-selectFEObjectPopUp::~selectFEObjectPopUp()
+SelectFeObjectPopUp::~SelectFeObjectPopUp()
 {
-	if (selectButton != nullptr)
-		delete selectButton;
-
-	if (cancelButton != nullptr)
-		delete cancelButton;
-
-	if (iconButton != nullptr)
-		delete iconButton;
+	delete SelectButton;
+	delete CancelButton;
+	delete IconButton;
 }
 
-void selectFEObjectPopUp::show(FEObjectType type, void(*CallBack)(std::vector<FEObject*>), FEObject* HighlightedObject, std::vector<FEObject*> customList)
+void SelectFeObjectPopUp::Show(const FE_OBJECT_TYPE Type, void(*CallBack)(std::vector<FEObject*>), FEObject* HighlightedObject, const std::vector<FEObject*> CustomList)
 {
-	currenType = type;
-	if (currenType == FE_NULL)
+	CurrenType = Type;
+	if (CurrenType == FE_NULL)
 		return;
 
-	highlightedObject = HighlightedObject;
-	callBack = CallBack;
-	shouldOpen = true;
+	this->HighlightedObject = HighlightedObject;
+	this->CallBack = CallBack;
+	bShouldOpen = true;
 
-	itemsList.clear();
+	ItemsList.clear();
 
-	if (customList.size() == 0)
+	if (CustomList.empty())
 	{
-		std::vector<std::string> tempList;
+		std::vector<std::string> TempList;
 
-		switch (currenType)
+		switch (CurrenType)
 		{
 			case FE_TEXTURE:
 			{
-				tempList = RESOURCE_MANAGER.getTextureList();
-				tempList.insert(tempList.begin(), RESOURCE_MANAGER.noTexture->getObjectID());
+				TempList = RESOURCE_MANAGER.GetTextureList();
+				TempList.insert(TempList.begin(), RESOURCE_MANAGER.NoTexture->GetObjectID());
 
 				break;
 			}
 
 			case FE_MESH:
 			{
-				tempList = RESOURCE_MANAGER.getMeshList();
+				TempList = RESOURCE_MANAGER.GetMeshList();
 
-				std::vector<std::string> standardMeshList = RESOURCE_MANAGER.getStandardMeshList();
-				for (size_t i = 0; i < standardMeshList.size(); i++)
+				const std::vector<std::string> StandardMeshList = RESOURCE_MANAGER.GetStandardMeshList();
+				for (size_t i = 0; i < StandardMeshList.size(); i++)
 				{
-					if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(RESOURCE_MANAGER.getMesh(standardMeshList[i])))
+					if (EDITOR_INTERNAL_RESOURCES.IsInInternalEditorList(RESOURCE_MANAGER.GetMesh(StandardMeshList[i])))
 						continue;
 
-					tempList.push_back(standardMeshList[i]);
+					TempList.push_back(StandardMeshList[i]);
 				}
 
 				break;
@@ -78,43 +73,43 @@ void selectFEObjectPopUp::show(FEObjectType type, void(*CallBack)(std::vector<FE
 			
 			case FE_MATERIAL:
 			{
-				tempList = RESOURCE_MANAGER.getMaterialList();
-				tempList.insert(tempList.begin(), "18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+				TempList = RESOURCE_MANAGER.GetMaterialList();
+				TempList.insert(TempList.begin(), "18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
 
 				break;
 			}
 			
 			case FE_GAMEMODEL:
 			{
-				tempList = RESOURCE_MANAGER.getGameModelList();
+				TempList = RESOURCE_MANAGER.GetGameModelList();
 				break;
 			}
 			
 			case FE_PREFAB:
 			{
-				tempList = RESOURCE_MANAGER.getPrefabList();
+				TempList = RESOURCE_MANAGER.GetPrefabList();
 				break;
 			}
 		}
 		
-		for (size_t i = 0; i < tempList.size(); i++)
-			itemsList.push_back(OBJECT_MANAGER.getFEObject(tempList[i]));
+		for (size_t i = 0; i < TempList.size(); i++)
+			ItemsList.push_back(OBJECT_MANAGER.GetFEObject(TempList[i]));
 	}
 	else
 	{
-		itemsList = customList;
+		ItemsList = CustomList;
 	}
 
-	filteredItemsList = itemsList;
-	strcpy_s(filter, "");
+	FilteredItemsList = ItemsList;
+	strcpy_s(Filter, "");
 
-	if (highlightedObject != nullptr)
+	if (HighlightedObject != nullptr)
 	{
-		for (size_t i = 0; i < itemsList.size(); i++)
+		for (size_t i = 0; i < ItemsList.size(); i++)
 		{
-			if (itemsList[i]->getObjectID() == highlightedObject->getObjectID())
+			if (ItemsList[i]->GetObjectID() == HighlightedObject->GetObjectID())
 			{
-				IndexSelected = int(i);
+				IndexSelected = static_cast<int>(i);
 				break;
 			}
 		}
@@ -125,34 +120,34 @@ void selectFEObjectPopUp::show(FEObjectType type, void(*CallBack)(std::vector<FE
 	}
 }
 
-void selectFEObjectPopUp::render()
+void SelectFeObjectPopUp::Render()
 {
-	ImGuiModalPopup::render();
+	ImGuiModalPopup::Render();
 
 	ImGui::SetNextWindowSize(ImVec2(128 * 7, 800));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+	if (ImGui::BeginPopupModal(PopupCaption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
-		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
+		ImGui::SetWindowPos(ImVec2(ENGINE.GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.GetWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::SetCursorPosX(10);
 		ImGui::SetCursorPosY(40);
 		ImGui::Text("Filter: ");
 		ImGui::SameLine();
 
 		ImGui::SetCursorPosY(35);
-		if (ImGui::InputText("##selectFEObjectPopUpFilter", filter, IM_ARRAYSIZE(filter)))
+		if (ImGui::InputText("##selectFEObjectPopUpFilter", Filter, IM_ARRAYSIZE(Filter)))
 		{
-			if (strlen(filter) == 0)
+			if (strlen(Filter) == 0)
 			{
-				filteredItemsList = itemsList;
+				FilteredItemsList = ItemsList;
 			}
 			else
 			{
-				filteredItemsList.clear();
-				for (size_t i = 0; i < itemsList.size(); i++)
+				FilteredItemsList.clear();
+				for (size_t i = 0; i < ItemsList.size(); i++)
 				{
-					if (itemsList[i]->getName().find(filter) != -1)
+					if (ItemsList[i]->GetName().find(Filter) != -1)
 					{
-						filteredItemsList.push_back(itemsList[i]);
+						FilteredItemsList.push_back(ItemsList[i]);
 					}
 				}
 			}
@@ -162,118 +157,118 @@ void selectFEObjectPopUp::render()
 		ImGui::SetCursorPosX(0);
 		ImGui::SetCursorPosY(80);
 		ImGui::Columns(5, "selectPopupColumns", false);
-		for (size_t i = 0; i < filteredItemsList.size(); i++)
+		for (size_t i = 0; i < FilteredItemsList.size(); i++)
 		{
-			ImGui::PushID(filteredItemsList[i]->getName().c_str());
+			ImGui::PushID(FilteredItemsList[i]->GetName().c_str());
 			if (ImGui::IsMouseDoubleClicked(0))
 			{
 				if (IndexUnderMouse != -1)
 				{
-					selectedObjects.push_back(OBJECT_MANAGER.getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
-					if (!controlButtonPressed)
+					SelectedObjects.push_back(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
+					if (!ControlButtonPressed)
 					{
-						onSelectAction();
-						close();
+						OnSelectAction();
+						Close();
 					}
 				}
 			}
 
 			//IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-			isSelected(filteredItemsList[i]) ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
-			iconButton->setTexture(PREVIEW_MANAGER.getPreview(filteredItemsList[i]));
-			iconButton->render();
-			if (iconButton->getWasClicked())
+			IsSelected(FilteredItemsList[i]) ? SetSelectedStyle(IconButton) : SetDefaultStyle(IconButton);
+			IconButton->SetTexture(PREVIEW_MANAGER.GetPreview(FilteredItemsList[i]));
+			IconButton->Render();
+			if (IconButton->IsClicked())
 			{
-				IndexSelected = int(i);
+				IndexSelected = static_cast<int>(i);
 			}
 
 			if (ImGui::IsItemHovered())
 			{
-				std::string additionalTypeInfo = "";
-				if (filteredItemsList[i]->getType() == FE_TEXTURE)
+				std::string AdditionalTypeInfo;
+				if (FilteredItemsList[i]->GetType() == FE_TEXTURE)
 				{
-					additionalTypeInfo += "\nTexture type: ";
-					additionalTypeInfo += FETexture::textureInternalFormatToString(RESOURCE_MANAGER.getTexture(filteredItemsList[i]->getObjectID())->getInternalFormat());
+					AdditionalTypeInfo += "\nTexture type: ";
+					AdditionalTypeInfo += FETexture::TextureInternalFormatToString(RESOURCE_MANAGER.GetTexture(FilteredItemsList[i]->GetObjectID())->GetInternalFormat());
 				}
 
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-				ImGui::TextUnformatted(("Name: " + filteredItemsList[i]->getName() +
-										"\nType: " + FEObjectTypeToString(filteredItemsList[i]->getType()) +
-										additionalTypeInfo
+				ImGui::TextUnformatted(("Name: " + FilteredItemsList[i]->GetName() +
+										"\nType: " + FEObjectTypeToString(FilteredItemsList[i]->GetType()) +
+										AdditionalTypeInfo
 										).c_str());
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
 
-			if (iconButton->isHovered())
+			if (IconButton->IsHovered())
 			{
-				IndexUnderMouse = int(i);
+				IndexUnderMouse = static_cast<int>(i);
 			}
 
-			ImGui::Text(filteredItemsList[i]->getName().c_str());
+			ImGui::Text(FilteredItemsList[i]->GetName().c_str());
 			ImGui::PopID();
 			ImGui::NextColumn();
 		}
 		ImGui::Columns(1);
 
-		selectButton->render();
-		if (selectButton->getWasClicked())
+		SelectButton->Render();
+		if (SelectButton->IsClicked())
 		{
 			if (IndexSelected != -1)
 			{
-				selectedObjects.push_back(OBJECT_MANAGER.getFEObject(filteredItemsList[IndexUnderMouse]->getObjectID()));
-				onSelectAction();
+				SelectedObjects.push_back(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
+				OnSelectAction();
 
-				close();
+				Close();
 			}
 		}
 
-		cancelButton->render();
-		if (cancelButton->getWasClicked())
+		CancelButton->Render();
+		if (CancelButton->IsClicked())
 		{
-			close();
+			Close();
 		}
 
 		ImGui::EndPopup();
 	}
 }
 
-void selectFEObjectPopUp::onSelectAction()
+void SelectFeObjectPopUp::OnSelectAction()
 {
-	if (callBack != nullptr)
+	if (CallBack != nullptr)
 	{
-		callBack(selectedObjects);
-		callBack = nullptr;
+		CallBack(SelectedObjects);
+		CallBack = nullptr;
 	}
 }
 
-void selectFEObjectPopUp::close()
+void SelectFeObjectPopUp::Close()
 {
-	ImGuiModalPopup::close();
+	ImGuiModalPopup::Close();
 	IndexUnderMouse = -1;
 	IndexSelected = -1;
-	highlightedObject = nullptr;
-	selectedObjects.clear();
+	HighlightedObject = nullptr;
+	SelectedObjects.clear();
 }
 
-void selectFEObjectPopUp::keyButtonCallback(int key, int scancode, int action, int mods)
+void SelectFeObjectPopUp::KeyButtonCallback(const int Key, int Scancode, const int Action, int Mods)
 {
-	if ((key == GLFW_KEY_LEFT_CONTROL || action == GLFW_KEY_RIGHT_CONTROL) && action == GLFW_RELEASE)
+	if ((Key == GLFW_KEY_LEFT_CONTROL || Action == GLFW_KEY_RIGHT_CONTROL) && Action == GLFW_RELEASE)
 	{
-		controlButtonPressed = false;
+		ControlButtonPressed = false;
 	}
-	else if ((key == GLFW_KEY_LEFT_CONTROL || action == GLFW_KEY_RIGHT_CONTROL) && action == GLFW_PRESS)
+	else if ((Key == GLFW_KEY_LEFT_CONTROL || Action == GLFW_KEY_RIGHT_CONTROL) && Action == GLFW_PRESS)
 	{
-		controlButtonPressed = true;
+		ControlButtonPressed = true;
 	}
 }
 
-bool selectFEObjectPopUp::isSelected(FEObject* object)
+bool SelectFeObjectPopUp::IsSelected(const FEObject* Object) const
 {
-	for (size_t i = 0; i < selectedObjects.size(); i++)
+	for (size_t i = 0; i < SelectedObjects.size(); i++)
 	{
-		if (selectedObjects[i] == object)
+		if (SelectedObjects[i] == Object)
 			return true;
 	}
 	

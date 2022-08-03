@@ -3,192 +3,202 @@ using namespace FocalEngine;
 
 FETransformComponent::FETransformComponent()
 {
-	position = glm::vec3(0.0f);
-	rotationAngles = glm::vec3(0.0f);
-	rotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
-	scale = glm::vec3(1.0f, 1.0f, 1.0f);
+	Position = glm::vec3(0.0f);
+	RotationAngles = glm::vec3(0.0f);
+	RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
+	Scale = glm::vec3(1.0f, 1.0f, 1.0f);
 
-	update();
+	Update();
 }
 
-FETransformComponent::FETransformComponent(glm::mat4 matrix)
+FETransformComponent::FETransformComponent(glm::mat4 Matrix)
 {
-	position = glm::vec3(matrix[3][0], matrix[3][1], matrix[3][2]);
-	scale = glm::vec3(glm::length(matrix[0]), glm::length(matrix[1]), glm::length(matrix[2]));
+	Position = glm::vec3(Matrix[3][0], Matrix[3][1], Matrix[3][2]);
+	Scale = glm::vec3(glm::length(Matrix[0]), glm::length(Matrix[1]), glm::length(Matrix[2]));
 
-	matrix[3][0] = 0.0f;
-	matrix[3][1] = 0.0f;
-	matrix[3][2] = 0.0f;
+	Matrix[3][0] = 0.0f;
+	Matrix[3][1] = 0.0f;
+	Matrix[3][2] = 0.0f;
 
-	matrix[0] /= scale.x;
-	matrix[1] /= scale.y;
-	matrix[2] /= scale.z;
+	Matrix[0] /= Scale.x;
+	Matrix[1] /= Scale.y;
+	Matrix[2] /= Scale.z;
 
-	rotationQuaternion = glm::quat_cast(matrix);
-	rotationAngles = glm::eulerAngles(rotationQuaternion) * 180.0f / glm::pi<float>();
+	RotationQuaternion = glm::quat_cast(Matrix);
+	RotationAngles = glm::eulerAngles(RotationQuaternion) * 180.0f / glm::pi<float>();
 
-	update();
+	Update();
 }
 
 FETransformComponent::~FETransformComponent()
 {
 }
 
-glm::vec3 FETransformComponent::getPosition()
+glm::vec3 FETransformComponent::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-glm::vec3 FETransformComponent::getRotation()
+glm::vec3 FETransformComponent::GetRotation() const
 {
-	return rotationAngles;
+	return RotationAngles;
 }
 
-glm::vec3 FETransformComponent::getScale()
+glm::vec3 FETransformComponent::GetScale() const
 {
-	return scale;
+	return Scale;
 }
 
-void FETransformComponent::setPosition(glm::vec3 newPosition)
+void FETransformComponent::SetPosition(const glm::vec3 NewPosition)
 {
-	position = newPosition;
-	update();
+	Position = NewPosition;
+	Update();
 }
 
-void FETransformComponent::rotateQuaternion(float angle, glm::vec3 axis)
+void FETransformComponent::RotateQuaternion(const float Angle, const glm::vec3 Axis)
 {
-	rotationQuaternion = glm::quat(cos(angle / 2),
-								   axis.x * sin(angle / 2),
-								   axis.y * sin(angle / 2),
-								   axis.z * sin(angle / 2)) * rotationQuaternion;
+	RotationQuaternion = glm::quat(cos(Angle / 2),
+								   Axis.x * sin(Angle / 2),
+								   Axis.y * sin(Angle / 2),
+								   Axis.z * sin(Angle / 2)) * RotationQuaternion;
 }
 
-void FETransformComponent::setRotation(glm::vec3 newRotation)
+void FETransformComponent::SetRotation(const glm::vec3 NewRotation)
 {
-	if (rotationAngles == newRotation)
+	if (RotationAngles == NewRotation)
 		return;
 
-	rotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
-	rotateQuaternion((float)(newRotation.x) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-	rotateQuaternion((float)(newRotation.y) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-	rotateQuaternion((float)(newRotation.z) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+	RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
+	RotateQuaternion(static_cast<float>(NewRotation.x) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+	RotateQuaternion(static_cast<float>(NewRotation.y) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+	RotateQuaternion(static_cast<float>(NewRotation.z) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 	
-	rotationAngles = newRotation;
-	update();
+	RotationAngles = NewRotation;
+	Update();
 }
 
-void FETransformComponent::rotateByQuaternion(glm::quat quaternion)
+void FETransformComponent::RotateByQuaternion(const glm::quat Quaternion)
 {
-	rotationQuaternion = quaternion * rotationQuaternion;
-	glm::vec3 newRotationAngle = glm::eulerAngles(getQuaternion());
+	RotationQuaternion = Quaternion * RotationQuaternion;
+	glm::vec3 NewRotationAngle = glm::eulerAngles(GetQuaternion());
 
-	newRotationAngle.x /= ANGLE_TORADIANS_COF;
-	newRotationAngle.y /= ANGLE_TORADIANS_COF;
-	newRotationAngle.z /= ANGLE_TORADIANS_COF;
+	NewRotationAngle.x /= ANGLE_TORADIANS_COF;
+	NewRotationAngle.y /= ANGLE_TORADIANS_COF;
+	NewRotationAngle.z /= ANGLE_TORADIANS_COF;
 
-	rotationAngles = newRotationAngle;
-	update();
+	RotationAngles = NewRotationAngle;
+	Update();
 }
 
-void FETransformComponent::changeScaleUniformlyBy(float delta)
+void FETransformComponent::ChangeScaleUniformlyBy(const float Delta)
 {
-	scale += delta;
-	update();
+	Scale += Delta;
+	Update();
 }
 
-void FETransformComponent::changeXScaleBy(float delta)
+void FETransformComponent::ChangeXScaleBy(const float Delta)
 {
-	if (uniformScaling)
+	if (bUniformScaling)
 	{
-		changeScaleUniformlyBy(delta);
+		ChangeScaleUniformlyBy(Delta);
 	}
 	else
 	{
-		scale[0] += delta;
+		Scale[0] += Delta;
 	}
 
-	update();
+	Update();
 }
 
-void FETransformComponent::changeYScaleBy(float delta)
+void FETransformComponent::ChangeYScaleBy(const float Delta)
 {
-	if (uniformScaling)
+	if (bUniformScaling)
 	{
-		changeScaleUniformlyBy(delta);
+		ChangeScaleUniformlyBy(Delta);
 	}
 	else
 	{
-		scale[1] += delta;
+		Scale[1] += Delta;
 	}
 
-	update();
+	Update();
 }
 
-void FETransformComponent::changeZScaleBy(float delta)
+void FETransformComponent::ChangeZScaleBy(const float Delta)
 {
-	if (uniformScaling)
+	if (bUniformScaling)
 	{
-		changeScaleUniformlyBy(delta);
+		ChangeScaleUniformlyBy(Delta);
 	}
 	else
 	{
-		scale[2] += delta;
+		Scale[2] += Delta;
 	}
 
-	update();
+	Update();
 }
 
-void FETransformComponent::setScale(glm::vec3 newScale)
+void FETransformComponent::SetScale(const glm::vec3 NewScale)
 {
-	scale = newScale;
-	update();
+	Scale = NewScale;
+	Update();
 }
 
-void FETransformComponent::update()
+void FETransformComponent::Update()
 {
-	transformMatrix = glm::mat4(1.0);
-	transformMatrix = glm::translate(transformMatrix, position);
+	TransformMatrix = glm::mat4(1.0);
+	TransformMatrix = glm::translate(TransformMatrix, Position);
 
-	transformMatrix *= glm::toMat4(rotationQuaternion);
-	transformMatrix = glm::scale(transformMatrix, glm::vec3(scale[0], scale[1], scale[2]));
+	TransformMatrix *= glm::toMat4(RotationQuaternion);
+	TransformMatrix = glm::scale(TransformMatrix, glm::vec3(Scale[0], Scale[1], Scale[2]));
 
-	if (previousTransformMatrix != transformMatrix)
-		dirtyFlag = true;
-	previousTransformMatrix = transformMatrix;
+	if (PreviousTransformMatrix != TransformMatrix)
+		bDirtyFlag = true;
+	PreviousTransformMatrix = TransformMatrix;
 }
 
-glm::mat4 FETransformComponent::getTransformMatrix()
+glm::mat4 FETransformComponent::GetTransformMatrix() const
 {
-	return transformMatrix;
+	return TransformMatrix;
 }
 
-glm::quat FETransformComponent::getQuaternion()
+glm::quat FETransformComponent::GetQuaternion() const
 {
-	return rotationQuaternion;
+	return RotationQuaternion;
 }
 
-bool FETransformComponent::getDirtyFlag()
+bool FETransformComponent::IsDirty() const
 {
-	return dirtyFlag;
+	return bDirtyFlag;
 }
 
-void FETransformComponent::setDirtyFlag(bool isDirty)
+void FETransformComponent::SetDirtyFlag(const bool NewValue)
 {
-	dirtyFlag = isDirty;
+	bDirtyFlag = NewValue;
 }
 
-void FETransformComponent::forceSetTransformMatrix(glm::mat4 newValue)
+void FETransformComponent::ForceSetTransformMatrix(const glm::mat4 NewValue)
 {
-	transformMatrix = newValue;
+	TransformMatrix = NewValue;
 }
 
-FETransformComponent FETransformComponent::combine(FETransformComponent& other)
+FETransformComponent FETransformComponent::Combine(const FETransformComponent& Other) const
 {
 	FETransformComponent result;
 
-	result.setPosition(getPosition() + other.getPosition());
-	result.setRotation(getRotation() + other.getRotation());
-	result.setScale(getScale() * other.getScale());
+	result.SetPosition(GetPosition() + Other.GetPosition());
+	result.SetRotation(GetRotation() + Other.GetRotation());
+	result.SetScale(GetScale() * Other.GetScale());
 
 	return result;
+}
+
+bool FETransformComponent::IsUniformScalingSet() const
+{
+	return bUniformScaling;
+}
+
+void FETransformComponent::SetUniformScaling(const bool NewValue)
+{
+	bUniformScaling = NewValue;
 }

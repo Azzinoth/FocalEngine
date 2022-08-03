@@ -7,52 +7,52 @@ class shaderDebugWindow : public FEImGuiWindow
 {
 	SINGLETON_PRIVATE_PART(shaderDebugWindow)
 
-	TextEditor editor;
-	ImGuiButton* closeButton = nullptr;
-	ImGuiButton* updateButton = nullptr;
-	FEShader* shaderToWorkWith = nullptr;
-	bool updateNeeded = true;
-	std::string selectedDebugData = "";
-	std::vector<std::string> occurrenceList;
-	std::vector<std::vector<float>>* data = nullptr;
-	std::vector<std::vector<float>> dataDump;
+	TextEditor Editor;
+	ImGuiButton* CloseButton = nullptr;
+	ImGuiButton* UpdateButton = nullptr;
+	FEShader* ShaderToWorkWith = nullptr;
+	bool bUpdateNeeded = true;
+	std::string SelectedDebugData;
+	std::vector<std::string> OccurrenceList;
+	std::vector<std::vector<float>>* Data = nullptr;
+	std::vector<std::vector<float>> DataDump;
 public:
 	SINGLETON_PUBLIC_PART(shaderDebugWindow)
 
-	void show(FEShader* shader, std::string caption);
-	void render() override;
+	void Show(FEShader* Shader, std::string Caption);
+	void Render() override;
 };
 
 class shaderEditorWindow : public FEImGuiWindow
 {
 	SINGLETON_PRIVATE_PART(shaderEditorWindow)
 
-	FEShader* shaderToEdit = nullptr;
-	FEShader* dummyShader = nullptr;
-	TextEditor* currentEditor = nullptr;
-	TextEditor vertexShaderEditor;
-	TextEditor tessControlShaderEditor;
-	TextEditor tessEvalShaderEditor;
-	TextEditor geometryShaderEditor;
-	TextEditor fragmentShaderEditor;
-	TextEditor computeShaderEditor;
+	FEShader* ShaderToEdit = nullptr;
+	FEShader* DummyShader = nullptr;
+	TextEditor* CurrentEditor = nullptr;
+	TextEditor VertexShaderEditor;
+	TextEditor TessControlShaderEditor;
+	TextEditor TessEvalShaderEditor;
+	TextEditor GeometryShaderEditor;
+	TextEditor FragmentShaderEditor;
+	TextEditor ComputeShaderEditor;
 
-	bool vertexShaderUsed = false;
-	bool fragmentShaderUsed = false;
-	bool tessControlShaderUsed = false;
-	bool tessEvalShaderUsed = false;
-	bool geometryShaderUsed = false;
-	bool computeShaderUsed = false;
+	bool bVertexShaderUsed = false;
+	bool bFragmentShaderUsed = false;
+	bool bTessControlShaderUsed = false;
+	bool bTessEvalShaderUsed = false;
+	bool bGeometryShaderUsed = false;
+	bool bComputeShaderUsed = false;
 
-	ImGuiButton* compileButton = nullptr;
-	ImGuiButton* closeButton = nullptr;
-	int activeTab = 0;
+	ImGuiButton* CompileButton = nullptr;
+	ImGuiButton* CloseButton = nullptr;
+	int ActiveTab = 0;
 
-	void replaceShader(FEShader* oldShader, FEShader* newShader);
+	void ReplaceShader(FEShader* OldShader, FEShader* NewShader);
 public:
 	SINGLETON_PUBLIC_PART(shaderEditorWindow)
 
-	void show(FEShader* shader);
+	void Show(FEShader* Shader);
 
-	void render() override;
+	void Render() override;
 };

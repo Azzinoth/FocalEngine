@@ -282,6 +282,8 @@ file(GLOB SubSystems_SRC
 file(GLOB BasicApplicationSubSystem_SRC
 	"SubSystems/FEBasicApplication/FEBasicApplication.cpp"
 	"SubSystems/FEBasicApplication/FEBasicApplication.h"
+	"SubSystems/FEBasicApplication/FEThreadPool.cpp"
+	"SubSystems/FEBasicApplication/FEThreadPool.h"
 	"SubSystems/FEBasicApplication/FETime.cpp"
 	"SubSystems/FEBasicApplication/FETime.h"
 )

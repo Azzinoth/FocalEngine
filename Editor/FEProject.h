@@ -16,37 +16,37 @@ public:
 	FEProject(std::string Name, std::string ProjectFolder);
 	~FEProject();
 
-	std::string getName();
-	void setName(std::string newName);
+	std::string GetName();
+	void SetName(std::string NewValue);
 
-	std::string getProjectFolder();
-	void saveScene(bool fullSave = false);
-	void saveSceneTo(std::string newPath);
-	void loadScene();
-	void loadSceneVer0();
+	std::string GetProjectFolder();
+	void SaveScene(bool bFullSave = false);
+	void SaveSceneTo(std::string NewPath);
+	void LoadScene();
+	void LoadSceneVer0();
 
-	FETexture* sceneScreenshot;
-	void createDummyScreenshot();
+	FETexture* SceneScreenshot;
+	void CreateDummyScreenshot();
 
-	void addFileToDeleteList(std::string fileName);
+	void AddFileToDeleteList(std::string FileName);
 
-	bool isModified();
-	void setModified(bool newValue);
+	bool IsModified();
+	void SetModified(bool NewValue);
 
-	void addUnSavedObject(FEObject* object);
+	void AddUnSavedObject(FEObject* Object);
 private:
-	std::string name;
-	std::string projectFolder;
-	bool modified = false;
-	std::vector<FEObject*> unSavedObjects;
+	std::string Name;
+	std::string ProjectFolder;
+	bool bModified = false;
+	std::vector<FEObject*> UnSavedObjects;
 
-	void writeTransformToJSON(Json::Value& root, FETransformComponent* transform);
-	void readTransformToJSON(Json::Value& root, FETransformComponent* transform);
+	void WriteTransformToJson(Json::Value& Root, const FETransformComponent* Transform);
+	void ReadTransformToJson(Json::Value& Root, FETransformComponent* Transform);
 
-	std::vector<std::string> filesToDelete;
+	std::vector<std::string> FilesToDelete;
 
-	bool shouldIncludeInSceneFile(FETexture* texture);
-	void setProjectFolder(std::string newValue);
+	bool ShouldIncludeInSceneFile(const FETexture* Texture);
+	void SetProjectFolder(std::string NewValue);
 };
 
 //#define PROJECTS_FOLDER "../FocalEngineProjects"
@@ -56,35 +56,35 @@ private:
 
 class FEProjectManager
 {
-	std::vector<FEProject*> list;
-	int indexChosen = -1;
-	FEProject* current = nullptr;
-	std::string customProjectFolder = "../FocalEngineProjects-master";
+	std::vector<FEProject*> List;
+	int IndexChosen = -1;
+	FEProject* Current = nullptr;
+	std::string CustomProjectFolder = "../FocalEngineProjects-master";
 public:
 	SINGLETON_PUBLIC_PART(FEProjectManager)
 	SINGLETON_PRIVATE_PART(FEProjectManager)
 
-	void initializeResources();
+	void InitializeResources();
 
-	FEProject* getCurrent();
-	void setCurrent(FEProject* project);
+	FEProject* GetCurrent();
+	void SetCurrent(FEProject* Project);
 
-	std::vector<FEProject*> getList();
+	std::vector<FEProject*> GetList();
 
-	void openProject(int projectIndex);
-	void loadProjectList();
-	void closeCurrentProject();
+	void OpenProject(int ProjectIndex);
+	void LoadProjectList();
+	void CloseCurrentProject();
 
-	void displayProjectSelection();
+	void DisplayProjectSelection();
 
-	bool containProject(std::string path);
-	void setProjectsFolder(std::string folderPath);
+	bool ContainProject(std::string Path);
+	void SetProjectsFolder(std::string FolderPath);
 };
 
-#define PROJECTS_FOLDER PROJECT_MANAGER.customProjectFolder.c_str()
+#define PROJECTS_FOLDER PROJECT_MANAGER.CustomProjectFolder.c_str()
 #define PROJECT_MANAGER FEProjectManager::getInstance()
 
-static const char* const basicScene = R"(
+static const char* const BASIC_SCENE = R"(
 	{
 	"camera" : 
 	{

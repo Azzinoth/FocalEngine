@@ -8,12 +8,12 @@ public:
 	SINGLETON_PUBLIC_PART(FEEditorInternalResources)
 	SINGLETON_PRIVATE_PART(FEEditorInternalResources)
 
-	std::unordered_map<std::string, FEObject*> internalEditorObjects;
+	std::unordered_map<std::string, FEObject*> InternalEditorObjects;
 
-	void addResourceToInternalEditorList(FEObject* object);
-	bool isInInternalEditorList(FEObject* object);
+	void AddResourceToInternalEditorList(FEObject* Object);
+	bool IsInInternalEditorList(const FEObject* Object);
 
-	void clearListByType(FEObjectType type);
+	void ClearListByType(FE_OBJECT_TYPE Type);
 };
 
 #define EDITOR_INTERNAL_RESOURCES FEEditorInternalResources::getInstance()

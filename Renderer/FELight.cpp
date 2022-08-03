@@ -1,7 +1,7 @@
 #include "FELight.h"
 using namespace FocalEngine;
 
-FELight::FELight(FEObjectType lightType) : FEObject(lightType, "")
+FELight::FELight(const FE_OBJECT_TYPE LightType) : FEObject(LightType, "")
 {
 }
 
@@ -9,78 +9,78 @@ FELight::~FELight()
 {
 }
 
-glm::vec3 FELight::getColor()
+glm::vec3 FELight::GetColor()
 {
-	return color;
+	return Color;
 }
 
-void FELight::setColor(glm::vec3 newColor)
+void FELight::SetColor(const glm::vec3 NewValue)
 {
-	color = newColor;
+	Color = NewValue;
 }
 
-bool FELight::isLightEnabled()
+bool FELight::IsLightEnabled()
 {
-	return enabled;
+	return bEnabled;
 }
 
-void FELight::setLightEnabled(bool isLightEnabled)
+void FELight::SetLightEnabled(const bool NewValue)
 {
-	enabled = isLightEnabled;
+	bEnabled = NewValue;
 }
 
-float FELight::getShadowBias()
+float FELight::GetShadowBias()
 {
-	return shadowBias;
+	return ShadowBias;
 }
 
-void FELight::setShadowBias(float newShadowBias)
+void FELight::SetShadowBias(const float NewValue)
 {
-	shadowBias = newShadowBias;
+	ShadowBias = NewValue;
 }
 
-float FELight::getIntensity()
+float FELight::GetIntensity()
 {
-	return intensity;
+	return Intensity;
 }
 
-void FELight::setIntensity(float newIntensity)
+void FELight::SetIntensity(const float NewValue)
 {
-	intensity = newIntensity;
+	Intensity = NewValue;
 }
 
-float FELight::getShadowBlurFactor()
+float FELight::GetShadowBlurFactor()
 {
-	return shadowBlurFactor;
+	return ShadowBlurFactor;
 }
 
-void FELight::setShadowBlurFactor(float newValue)
+void FELight::SetShadowBlurFactor(float NewValue)
 {
-	if (newValue < 0.0f)
-		newValue = 0.0f;
+	if (NewValue < 0.0f)
+		NewValue = 0.0f;
 
-	if (newValue > 16.0f)
-		newValue = 16.0f;
+	if (NewValue > 16.0f)
+		NewValue = 16.0f;
 
-	shadowBlurFactor = newValue;
+	ShadowBlurFactor = NewValue;
 }
 
-bool FELight::isCastShadows()
+bool FELight::IsCastShadows()
 {
-	return castShadows;
+	return bCastShadows;
 }
 
-void FELight::setCastShadows(bool isCastShadows)
+void FELight::SetCastShadows(const bool NewValue)
 {
-	castShadows = isCastShadows;
+	bCastShadows = NewValue;
 }
 
 FECascadeData::FECascadeData()
 {
-	frustum = new float* [6];
+	Frustum = new float* [6];
 	for (size_t i = 0; i < 6; i++)
 	{
-		frustum[i] = new float[4];
+		Frustum[i] = new float[4];
 	}
 }
 
@@ -88,9 +88,9 @@ FECascadeData::~FECascadeData()
 {
 	for (size_t i = 0; i < 6; i++)
 	{
-		delete[] frustum[i];
+		delete[] Frustum[i];
 	}
-	delete[] frustum;
+	delete[] Frustum;
 }
 
 // old
@@ -180,181 +180,181 @@ FECascadeData::~FECascadeData()
 //}
 
 
-void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, float nearPlane, float farPlane, glm::mat4 viewMatrix, glm::vec3 cameraForward, glm::vec3 cameraRight, glm::vec3 cameraUp)
+void FEDirectionalLight::UpdateCascades(float CameraFov, float AspectRatio, float NearPlane, float FarPlane, glm::mat4 ViewMatrix, glm::vec3 CameraForward, glm::vec3 CameraRight, glm::vec3 CameraUp)
 {
-	static glm::vec4 basisX = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
-	static glm::vec4 basisY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-	static glm::vec4 basisZ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
+	static glm::vec4 BasisX = glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
+	static glm::vec4 BasisY = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
+	static glm::vec4 BasisZ = glm::vec4(0.0f, 0.0f, 1.0f, 0.0f);
 
-	glm::vec4 fbasisX = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisX);
-	glm::vec4 fbasisY = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisY);
-	glm::vec4 fbasisZ = glm::normalize(glm::toMat4(transform.getQuaternion()) * basisZ);
+	glm::vec4 FbasisX = glm::normalize(glm::toMat4(Transform.GetQuaternion()) * BasisX);
+	glm::vec4 FbasisY = glm::normalize(glm::toMat4(Transform.GetQuaternion()) * BasisY);
+	glm::vec4 FbasisZ = glm::normalize(glm::toMat4(Transform.GetQuaternion()) * BasisZ);
 
-	glm::mat4 cascadeView = glm::mat4(1.0f);
-	cascadeView[0][0] = fbasisX.x;
-	cascadeView[1][0] = fbasisX.y;
-	cascadeView[2][0] = fbasisX.z;
-	cascadeView[0][1] = fbasisY.x;
-	cascadeView[1][1] = fbasisY.y;
-	cascadeView[2][1] = fbasisY.z;
-	cascadeView[0][2] = fbasisZ.x;
-	cascadeView[1][2] = fbasisZ.y;
-	cascadeView[2][2] = fbasisZ.z;
+	glm::mat4 CascadeView = glm::mat4(1.0f);
+	CascadeView[0][0] = FbasisX.x;
+	CascadeView[1][0] = FbasisX.y;
+	CascadeView[2][0] = FbasisX.z;
+	CascadeView[0][1] = FbasisY.x;
+	CascadeView[1][1] = FbasisY.y;
+	CascadeView[2][1] = FbasisY.z;
+	CascadeView[0][2] = FbasisZ.x;
+	CascadeView[1][2] = FbasisZ.y;
+	CascadeView[2][2] = FbasisZ.z;
 
-	farPlane = nearPlane;
-	glm::mat4 inverseVM = glm::inverse(viewMatrix);
-	static std::vector<glm::vec4> frustumEdges;
-	frustumEdges.resize(8);
+	FarPlane = NearPlane;
+	glm::mat4 InverseVm = glm::inverse(ViewMatrix);
+	static std::vector<glm::vec4> FrustumEdges;
+	FrustumEdges.resize(8);
 
-	float TEST_CASCADE_DISTANCE_SCALE_FACTOR = 4.0f;
-	float testCSM0 = 0.050f;
-	float testCSM1 = 0.150f;
-	float testCSM2 = 0.550f;
-	float testCSM3 = 1.1f;
-	float testCSMScale = 1.75f;
+	float TestCascadeDistanceScaleFactor = 4.0f;
+	float TestCSM0 = 0.050f;
+	float TestCSM1 = 0.150f;
+	float TestCSM2 = 0.550f;
+	float TestCSM3 = 1.1f;
+	float TestCSMScale = 1.75f;
 
-	float testCSMType = 1;
+	float TestCSMType = 1;
 
 	// old and incorrect
-	if (testCSMType == 0)
+	if (TestCSMType == 0)
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			cascadeData[i].viewMat = cascadeView;
+			CascadeData[i].ViewMat = CascadeView;
 
-			nearPlane = farPlane;
-			farPlane = shadowCoverage * (0.0447f * float(pow(2.1867f, (i + 1))));
-			cascadeData[i].size = float(int(farPlane) - 1) * TEST_CASCADE_DISTANCE_SCALE_FACTOR;
-			if (cascadeData[i].size <= 0.01f)
-				cascadeData[i].size = 1.0;
+			NearPlane = FarPlane;
+			FarPlane = ShadowCoverage * (0.0447f * static_cast<float>(pow(2.1867f, (i + 1))));
+			CascadeData[i].Size = static_cast<float>(static_cast<int>(FarPlane) - 1) * TestCascadeDistanceScaleFactor;
+			if (CascadeData[i].Size <= 0.01f)
+				CascadeData[i].Size = 1.0;
 
-			float firstCascadeY1 = nearPlane * tan(glm::radians(cameraFov / 2.0f));
-			float firstCascadeY2 = farPlane * tan(glm::radians(cameraFov / 2.0f));
+			float FirstCascadeY1 = NearPlane * tan(glm::radians(CameraFov / 2.0f));
+			float FirstCascadeY2 = FarPlane * tan(glm::radians(CameraFov / 2.0f));
 
-			float firstCascadeX1 = nearPlane * tan((aspectRatio) / 2.0f);
-			float firstCascadeX2 = farPlane * tan((aspectRatio) / 2.0f);
+			float FirstCascadeX1 = NearPlane * tan((AspectRatio) / 2.0f);
+			float FirstCascadeX2 = FarPlane * tan((AspectRatio) / 2.0f);
 
-			frustumEdges[0] = glm::vec4(firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[1] = glm::vec4(firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[2] = glm::vec4(-firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[3] = glm::vec4(-firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
+			FrustumEdges[0] = glm::vec4(FirstCascadeX1, -FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[1] = glm::vec4(FirstCascadeX1, FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[2] = glm::vec4(-FirstCascadeX1, FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[3] = glm::vec4(-FirstCascadeX1, -FirstCascadeY1, -NearPlane, 1.0f);
 
-			frustumEdges[4] = glm::vec4(firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[5] = glm::vec4(firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[6] = glm::vec4(-firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[7] = glm::vec4(-firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
+			FrustumEdges[4] = glm::vec4(FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[5] = glm::vec4(FirstCascadeX2, FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[6] = glm::vec4(-FirstCascadeX2, FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[7] = glm::vec4(-FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j] = cascadeData[0].viewMat * inverseVM * frustumEdges[j];
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j] = CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j].z = -frustumEdges[j].z;
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float minX = FLT_MAX;
-			float maxX = FLT_MIN;
-			float minY = FLT_MAX;
-			float maxY = FLT_MIN;
-			float minZ = FLT_MAX;
-			float maxZ = FLT_MIN;
+			float MinX = FLT_MAX;
+			float MaxX = FLT_MIN;
+			float MinY = FLT_MAX;
+			float MaxY = FLT_MIN;
+			float MinZ = FLT_MAX;
+			float MaxZ = FLT_MIN;
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{
-				minX = std::min(minX, frustumEdges[j].x);
-				minY = std::min(minY, frustumEdges[j].y);
-				minZ = std::min(minZ, frustumEdges[j].z);
+				MinX = std::min(MinX, FrustumEdges[j].x);
+				MinY = std::min(MinY, FrustumEdges[j].y);
+				MinZ = std::min(MinZ, FrustumEdges[j].z);
 
-				maxX = std::max(maxX, frustumEdges[j].x);
-				maxY = std::max(maxY, frustumEdges[j].y);
-				maxZ = std::max(maxZ, frustumEdges[j].z);
+				MaxX = std::max(MaxX, FrustumEdges[j].x);
+				MaxY = std::max(MaxY, FrustumEdges[j].y);
+				MaxZ = std::max(MaxZ, FrustumEdges[j].z);
 			}
 
-			cascadeData[i].projectionMat = glm::ortho(minX - farPlane * (CSMXYDepth / 4.0f), maxX + farPlane * (CSMXYDepth / 4.0f),
-				minY - farPlane * (CSMXYDepth / 4.0f), maxY + farPlane * (CSMXYDepth / 4.0f),
-				minZ - farPlane * CSMZDepth, maxZ + farPlane * CSMZDepth);
+			CascadeData[i].ProjectionMat = glm::ortho(MinX - FarPlane * (CSMXYDepth / 4.0f), MaxX + FarPlane * (CSMXYDepth / 4.0f),
+				MinY - FarPlane * (CSMXYDepth / 4.0f), MaxY + FarPlane * (CSMXYDepth / 4.0f),
+				MinZ - FarPlane * CSMZDepth, MaxZ + FarPlane * CSMZDepth);
 		}
 	}
-	else if (testCSMType == 1)
+	else if (TestCSMType == 1)
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			cascadeData[i].viewMat = cascadeView;
+			CascadeData[i].ViewMat = CascadeView;
 
-			nearPlane = farPlane;
+			NearPlane = FarPlane;
 			if (i == 0)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM0;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM0;
 			}
 			else if (i == 1)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM1;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM1;
 			}
 			else if (i == 2)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM2;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM2;
 			}
 			else if (i == 3)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM3;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM3;
 			}
-			cascadeData[i].size = farPlane * testCSMScale;
+			CascadeData[i].Size = FarPlane * TestCSMScale;
 
-			float firstCascadeY1 = nearPlane * tan(glm::radians(cameraFov / 2.0f));
-			float firstCascadeY2 = farPlane * tan(glm::radians(cameraFov / 2.0f));
+			float FirstCascadeY1 = NearPlane * tan(glm::radians(CameraFov / 2.0f));
+			float FirstCascadeY2 = FarPlane * tan(glm::radians(CameraFov / 2.0f));
 
-			float firstCascadeX1 = nearPlane * tan((aspectRatio) / 2.0f);
-			float firstCascadeX2 = farPlane * tan((aspectRatio) / 2.0f);
+			float FirstCascadeX1 = NearPlane * tan((AspectRatio) / 2.0f);
+			float FirstCascadeX2 = FarPlane * tan((AspectRatio) / 2.0f);
 
-			frustumEdges[0] = glm::vec4(firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[1] = glm::vec4(firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[2] = glm::vec4(-firstCascadeX1, firstCascadeY1, -nearPlane, 1.0f);
-			frustumEdges[3] = glm::vec4(-firstCascadeX1, -firstCascadeY1, -nearPlane, 1.0f);
+			FrustumEdges[0] = glm::vec4(FirstCascadeX1, -FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[1] = glm::vec4(FirstCascadeX1, FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[2] = glm::vec4(-FirstCascadeX1, FirstCascadeY1, -NearPlane, 1.0f);
+			FrustumEdges[3] = glm::vec4(-FirstCascadeX1, -FirstCascadeY1, -NearPlane, 1.0f);
 
-			frustumEdges[4] = glm::vec4(firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[5] = glm::vec4(firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[6] = glm::vec4(-firstCascadeX2, firstCascadeY2, -farPlane, 1.0f);
-			frustumEdges[7] = glm::vec4(-firstCascadeX2, -firstCascadeY2, -farPlane, 1.0f);
+			FrustumEdges[4] = glm::vec4(FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[5] = glm::vec4(FirstCascadeX2, FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[6] = glm::vec4(-FirstCascadeX2, FirstCascadeY2, -FarPlane, 1.0f);
+			FrustumEdges[7] = glm::vec4(-FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j] = cascadeData[0].viewMat * inverseVM * frustumEdges[j];
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j] = CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j].z = -frustumEdges[j].z;
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float minX = FLT_MAX;
-			float maxX = -FLT_MAX;
-			float minY = FLT_MAX;
-			float maxY = -FLT_MAX;
-			float minZ = FLT_MAX;
-			float maxZ = -FLT_MAX;
+			float MinX = FLT_MAX;
+			float MaxX = -FLT_MAX;
+			float MinY = FLT_MAX;
+			float MaxY = -FLT_MAX;
+			float MinZ = FLT_MAX;
+			float MaxZ = -FLT_MAX;
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{
-				minX = std::min(minX, frustumEdges[j].x);
-				minY = std::min(minY, frustumEdges[j].y);
-				minZ = std::min(minZ, frustumEdges[j].z);
+				MinX = std::min(MinX, FrustumEdges[j].x);
+				MinY = std::min(MinY, FrustumEdges[j].y);
+				MinZ = std::min(MinZ, FrustumEdges[j].z);
 
-				maxX = std::max(maxX, frustumEdges[j].x);
-				maxY = std::max(maxY, frustumEdges[j].y);
-				maxZ = std::max(maxZ, frustumEdges[j].z);
+				MaxX = std::max(MaxX, FrustumEdges[j].x);
+				MaxY = std::max(MaxY, FrustumEdges[j].y);
+				MaxZ = std::max(MaxZ, FrustumEdges[j].z);
 			}
 
-			float left = minX - farPlane * (CSMXYDepth / 4.0f);
-			float right = maxX + farPlane * (CSMXYDepth / 4.0f);
+			float left = MinX - FarPlane * (CSMXYDepth / 4.0f);
+			float right = MaxX + FarPlane * (CSMXYDepth / 4.0f);
 
-			float bottom = minY - farPlane * (CSMXYDepth / 4.0f);
-			float top = maxY + farPlane * (CSMXYDepth / 4.0f);
+			float bottom = MinY - FarPlane * (CSMXYDepth / 4.0f);
+			float top = MaxY + FarPlane * (CSMXYDepth / 4.0f);
 
-			float zNear = minZ - farPlane * CSMZDepth;
-			float zFar = maxZ + farPlane * CSMZDepth;
+			float ZNear = MinZ - FarPlane * CSMZDepth;
+			float ZFar = MaxZ + FarPlane * CSMZDepth;
 
-			cascadeData[i].projectionMat = glm::ortho(left, right,
+			CascadeData[i].ProjectionMat = glm::ortho(left, right,
 													  bottom, top,
-													  zNear, zFar);
+													  ZNear, ZFar);
 
-			float   clip[16];
-			float   t;
+			float clip[16];
+			float t;
 
-			glm::mat4 cliping = cascadeData[i].projectionMat * cascadeView;
+			glm::mat4 cliping = CascadeData[i].ProjectionMat * CascadeView;
 			for (int j = 0; j < 4; j++)
 			{
 				clip[j * 4] = cliping[j][0];
@@ -364,183 +364,182 @@ void FEDirectionalLight::updateCascades(float cameraFov, float aspectRatio, floa
 			}
 
 			/* Extract the numbers for the RIGHT plane */
-			cascadeData[i].frustum[0][0] = clip[3] - clip[0];
-			cascadeData[i].frustum[0][1] = clip[7] - clip[4];
-			cascadeData[i].frustum[0][2] = clip[11] - clip[8];
-			cascadeData[i].frustum[0][3] = clip[15] - clip[12];
+			CascadeData[i].Frustum[0][0] = clip[3] - clip[0];
+			CascadeData[i].Frustum[0][1] = clip[7] - clip[4];
+			CascadeData[i].Frustum[0][2] = clip[11] - clip[8];
+			CascadeData[i].Frustum[0][3] = clip[15] - clip[12];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[0][0] * cascadeData[i].frustum[0][0] + cascadeData[i].frustum[0][1] * cascadeData[i].frustum[0][1] + cascadeData[i].frustum[0][2] * cascadeData[i].frustum[0][2]);
-			cascadeData[i].frustum[0][0] /= t;
-			cascadeData[i].frustum[0][1] /= t;
-			cascadeData[i].frustum[0][2] /= t;
-			cascadeData[i].frustum[0][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[0][0] * CascadeData[i].Frustum[0][0] + CascadeData[i].Frustum[0][1] * CascadeData[i].Frustum[0][1] + CascadeData[i].Frustum[0][2] * CascadeData[i].Frustum[0][2]);
+			CascadeData[i].Frustum[0][0] /= t;
+			CascadeData[i].Frustum[0][1] /= t;
+			CascadeData[i].Frustum[0][2] /= t;
+			CascadeData[i].Frustum[0][3] /= t;
 
 			/* Extract the numbers for the LEFT plane */
-			cascadeData[i].frustum[1][0] = clip[3] + clip[0];
-			cascadeData[i].frustum[1][1] = clip[7] + clip[4];
-			cascadeData[i].frustum[1][2] = clip[11] + clip[8];
-			cascadeData[i].frustum[1][3] = clip[15] + clip[12];
+			CascadeData[i].Frustum[1][0] = clip[3] + clip[0];
+			CascadeData[i].Frustum[1][1] = clip[7] + clip[4];
+			CascadeData[i].Frustum[1][2] = clip[11] + clip[8];
+			CascadeData[i].Frustum[1][3] = clip[15] + clip[12];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[1][0] * cascadeData[i].frustum[1][0] + cascadeData[i].frustum[1][1] * cascadeData[i].frustum[1][1] + cascadeData[i].frustum[1][2] * cascadeData[i].frustum[1][2]);
-			cascadeData[i].frustum[1][0] /= t;
-			cascadeData[i].frustum[1][1] /= t;
-			cascadeData[i].frustum[1][2] /= t;
-			cascadeData[i].frustum[1][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[1][0] * CascadeData[i].Frustum[1][0] + CascadeData[i].Frustum[1][1] * CascadeData[i].Frustum[1][1] + CascadeData[i].Frustum[1][2] * CascadeData[i].Frustum[1][2]);
+			CascadeData[i].Frustum[1][0] /= t;
+			CascadeData[i].Frustum[1][1] /= t;
+			CascadeData[i].Frustum[1][2] /= t;
+			CascadeData[i].Frustum[1][3] /= t;
 
 			/* Extract the BOTTOM plane */
-			cascadeData[i].frustum[2][0] = clip[3] + clip[1];
-			cascadeData[i].frustum[2][1] = clip[7] + clip[5];
-			cascadeData[i].frustum[2][2] = clip[11] + clip[9];
-			cascadeData[i].frustum[2][3] = clip[15] + clip[13];
+			CascadeData[i].Frustum[2][0] = clip[3] + clip[1];
+			CascadeData[i].Frustum[2][1] = clip[7] + clip[5];
+			CascadeData[i].Frustum[2][2] = clip[11] + clip[9];
+			CascadeData[i].Frustum[2][3] = clip[15] + clip[13];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[2][0] * cascadeData[i].frustum[2][0] + cascadeData[i].frustum[2][1] * cascadeData[i].frustum[2][1] + cascadeData[i].frustum[2][2] * cascadeData[i].frustum[2][2]);
-			cascadeData[i].frustum[2][0] /= t;
-			cascadeData[i].frustum[2][1] /= t;
-			cascadeData[i].frustum[2][2] /= t;
-			cascadeData[i].frustum[2][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[2][0] * CascadeData[i].Frustum[2][0] + CascadeData[i].Frustum[2][1] * CascadeData[i].Frustum[2][1] + CascadeData[i].Frustum[2][2] * CascadeData[i].Frustum[2][2]);
+			CascadeData[i].Frustum[2][0] /= t;
+			CascadeData[i].Frustum[2][1] /= t;
+			CascadeData[i].Frustum[2][2] /= t;
+			CascadeData[i].Frustum[2][3] /= t;
 
 			/* Extract the TOP plane */
-			cascadeData[i].frustum[3][0] = clip[3] - clip[1];
-			cascadeData[i].frustum[3][1] = clip[7] - clip[5];
-			cascadeData[i].frustum[3][2] = clip[11] - clip[9];
-			cascadeData[i].frustum[3][3] = clip[15] - clip[13];
+			CascadeData[i].Frustum[3][0] = clip[3] - clip[1];
+			CascadeData[i].Frustum[3][1] = clip[7] - clip[5];
+			CascadeData[i].Frustum[3][2] = clip[11] - clip[9];
+			CascadeData[i].Frustum[3][3] = clip[15] - clip[13];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[3][0] * cascadeData[i].frustum[3][0] + cascadeData[i].frustum[3][1] * cascadeData[i].frustum[3][1] + cascadeData[i].frustum[3][2] * cascadeData[i].frustum[3][2]);
-			cascadeData[i].frustum[3][0] /= t;
-			cascadeData[i].frustum[3][1] /= t;
-			cascadeData[i].frustum[3][2] /= t;
-			cascadeData[i].frustum[3][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[3][0] * CascadeData[i].Frustum[3][0] + CascadeData[i].Frustum[3][1] * CascadeData[i].Frustum[3][1] + CascadeData[i].Frustum[3][2] * CascadeData[i].Frustum[3][2]);
+			CascadeData[i].Frustum[3][0] /= t;
+			CascadeData[i].Frustum[3][1] /= t;
+			CascadeData[i].Frustum[3][2] /= t;
+			CascadeData[i].Frustum[3][3] /= t;
 
 			/* Extract the FAR plane */
-			cascadeData[i].frustum[4][0] = clip[3] - clip[2];
-			cascadeData[i].frustum[4][1] = clip[7] - clip[6];
-			cascadeData[i].frustum[4][2] = clip[11] - clip[10];
-			cascadeData[i].frustum[4][3] = clip[15] - clip[14];
+			CascadeData[i].Frustum[4][0] = clip[3] - clip[2];
+			CascadeData[i].Frustum[4][1] = clip[7] - clip[6];
+			CascadeData[i].Frustum[4][2] = clip[11] - clip[10];
+			CascadeData[i].Frustum[4][3] = clip[15] - clip[14];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[4][0] * cascadeData[i].frustum[4][0] + cascadeData[i].frustum[4][1] * cascadeData[i].frustum[4][1] + cascadeData[i].frustum[4][2] * cascadeData[i].frustum[4][2]);
-			cascadeData[i].frustum[4][0] /= t;
-			cascadeData[i].frustum[4][1] /= t;
-			cascadeData[i].frustum[4][2] /= t;
-			cascadeData[i].frustum[4][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[4][0] * CascadeData[i].Frustum[4][0] + CascadeData[i].Frustum[4][1] * CascadeData[i].Frustum[4][1] + CascadeData[i].Frustum[4][2] * CascadeData[i].Frustum[4][2]);
+			CascadeData[i].Frustum[4][0] /= t;
+			CascadeData[i].Frustum[4][1] /= t;
+			CascadeData[i].Frustum[4][2] /= t;
+			CascadeData[i].Frustum[4][3] /= t;
 
 			/* Extract the NEAR plane */
-			cascadeData[i].frustum[5][0] = clip[3] + clip[2];
-			cascadeData[i].frustum[5][1] = clip[7] + clip[6];
-			cascadeData[i].frustum[5][2] = clip[11] + clip[10];
-			cascadeData[i].frustum[5][3] = clip[15] + clip[14];
+			CascadeData[i].Frustum[5][0] = clip[3] + clip[2];
+			CascadeData[i].Frustum[5][1] = clip[7] + clip[6];
+			CascadeData[i].Frustum[5][2] = clip[11] + clip[10];
+			CascadeData[i].Frustum[5][3] = clip[15] + clip[14];
 
 			/* Normalize the result */
-			t = sqrt(cascadeData[i].frustum[5][0] * cascadeData[i].frustum[5][0] + cascadeData[i].frustum[5][1] * cascadeData[i].frustum[5][1] + cascadeData[i].frustum[5][2] * cascadeData[i].frustum[5][2]);
-			cascadeData[i].frustum[5][0] /= t;
-			cascadeData[i].frustum[5][1] /= t;
-			cascadeData[i].frustum[5][2] /= t;
-			cascadeData[i].frustum[5][3] /= t;
+			t = sqrt(CascadeData[i].Frustum[5][0] * CascadeData[i].Frustum[5][0] + CascadeData[i].Frustum[5][1] * CascadeData[i].Frustum[5][1] + CascadeData[i].Frustum[5][2] * CascadeData[i].Frustum[5][2]);
+			CascadeData[i].Frustum[5][0] /= t;
+			CascadeData[i].Frustum[5][1] /= t;
+			CascadeData[i].Frustum[5][2] /= t;
+			CascadeData[i].Frustum[5][3] /= t;
 
 			int ty = 0;
 			ty++;
 		}
 	}
 	// my way of frustum reconstruction
-	else if (testCSMType == 2)
+	else if (TestCSMType == 2)
 	{
-		float alphaDivTwo = cameraFov / 2.0f;
-		float nearPlaneXLength = nearPlane * glm::tan(aspectRatio / 2.0f) * 2.0f;
-		float nearPlaneYLength = nearPlaneXLength / aspectRatio;
+		float NearPlaneXLength = NearPlane * glm::tan(AspectRatio / 2.0f) * 2.0f;
+		float NearPlaneYLength = NearPlaneXLength / AspectRatio;
 
-		glm::vec3 cameraPos = glm::vec3(viewMatrix[3][0], viewMatrix[3][1], viewMatrix[3][2]);
+		glm::vec3 CameraPos = glm::vec3(ViewMatrix[3][0], ViewMatrix[3][1], ViewMatrix[3][2]);
 
-		glm::vec3 nearTopLeft = cameraPos;
-		nearTopLeft += -cameraRight * (nearPlaneXLength / 2.0f);
-		nearTopLeft += cameraUp * (nearPlaneYLength / 2.0f);
-		nearTopLeft += cameraForward * nearPlane;
+		glm::vec3 NearTopLeft = CameraPos;
+		NearTopLeft += -CameraRight * (NearPlaneXLength / 2.0f);
+		NearTopLeft += CameraUp * (NearPlaneYLength / 2.0f);
+		NearTopLeft += CameraForward * NearPlane;
 
-		glm::vec3 nearTopRight = cameraPos;
-		nearTopRight += cameraRight * (nearPlaneXLength / 2.0f);
-		nearTopRight += cameraUp * (nearPlaneYLength / 2.0f);
-		nearTopRight += cameraForward * nearPlane;
+		glm::vec3 NearTopRight = CameraPos;
+		NearTopRight += CameraRight * (NearPlaneXLength / 2.0f);
+		NearTopRight += CameraUp * (NearPlaneYLength / 2.0f);
+		NearTopRight += CameraForward * NearPlane;
 
-		glm::vec3 nearBottomLeft = cameraPos;
-		nearBottomLeft += -cameraRight * (nearPlaneXLength / 2.0f);
-		nearBottomLeft += -cameraUp * (nearPlaneYLength / 2.0f);
-		nearBottomLeft += cameraForward * nearPlane;
+		glm::vec3 NearBottomLeft = CameraPos;
+		NearBottomLeft += -CameraRight * (NearPlaneXLength / 2.0f);
+		NearBottomLeft += -CameraUp * (NearPlaneYLength / 2.0f);
+		NearBottomLeft += CameraForward * NearPlane;
 
-		glm::vec3 nearBottomRight = cameraPos;
-		nearBottomRight += cameraRight * (nearPlaneXLength / 2.0f);
-		nearBottomRight += -cameraUp * (nearPlaneYLength / 2.0f);
-		nearBottomRight += cameraForward * nearPlane;
+		glm::vec3 NearBottomRight = CameraPos;
+		NearBottomRight += CameraRight * (NearPlaneXLength / 2.0f);
+		NearBottomRight += -CameraUp * (NearPlaneYLength / 2.0f);
+		NearBottomRight += CameraForward * NearPlane;
 
-		glm::vec3 cameraToTopLeft = glm::normalize(nearTopLeft - cameraPos);
-		glm::vec3 cameraToTopRight = glm::normalize(nearTopRight - cameraPos);
-		glm::vec3 cameraToBottomLeft = glm::normalize(nearBottomLeft - cameraPos);
-		glm::vec3 cameraToBottomRight = glm::normalize(nearBottomRight - cameraPos);
+		glm::vec3 CameraToTopLeft = glm::normalize(NearTopLeft - CameraPos);
+		glm::vec3 CameraToTopRight = glm::normalize(NearTopRight - CameraPos);
+		glm::vec3 CameraToBottomLeft = glm::normalize(NearBottomLeft - CameraPos);
+		glm::vec3 CameraToBottomRight = glm::normalize(NearBottomRight - CameraPos);
 
 		for (size_t i = 0; i < 4; i++)
 		{
-			cascadeData[i].viewMat = cascadeView;
+			CascadeData[i].ViewMat = CascadeView;
 
-			nearPlane = farPlane;
+			NearPlane = FarPlane;
 			if (i == 0)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM0;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM0;
 			}
 			else if (i == 1)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM1;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM1;
 			}
 			else if (i == 2)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM2;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM2;
 			}
 			else if (i == 3)
 			{
-				farPlane = (shadowCoverage / 4.0f) * testCSM3;
+				FarPlane = (ShadowCoverage / 4.0f) * TestCSM3;
 			}
-			cascadeData[i].size = farPlane * testCSMScale;
+			CascadeData[i].Size = FarPlane * TestCSMScale;
 
-			cameraPos = glm::vec3(0.0f);
+			CameraPos = glm::vec3(0.0f);
 
-			frustumEdges[0] = glm::vec4(cameraPos + cameraToTopLeft * nearPlane, 1.0f);
-			frustumEdges[1] = glm::vec4(cameraPos + cameraToTopRight * nearPlane, 1.0f);
-			frustumEdges[2] = glm::vec4(cameraPos + cameraToBottomLeft * nearPlane, 1.0f);
-			frustumEdges[3] = glm::vec4(cameraPos + cameraToBottomRight * nearPlane, 1.0f);
+			FrustumEdges[0] = glm::vec4(CameraPos + CameraToTopLeft * NearPlane, 1.0f);
+			FrustumEdges[1] = glm::vec4(CameraPos + CameraToTopRight * NearPlane, 1.0f);
+			FrustumEdges[2] = glm::vec4(CameraPos + CameraToBottomLeft * NearPlane, 1.0f);
+			FrustumEdges[3] = glm::vec4(CameraPos + CameraToBottomRight * NearPlane, 1.0f);
 
-			frustumEdges[4] = glm::vec4(cameraPos + cameraToTopLeft * farPlane, 1.0f);
-			frustumEdges[5] = glm::vec4(cameraPos + cameraToTopRight * farPlane, 1.0f);
-			frustumEdges[6] = glm::vec4(cameraPos + cameraToBottomLeft * farPlane, 1.0f);
-			frustumEdges[7] = glm::vec4(cameraPos + cameraToBottomRight * farPlane, 1.0f);
+			FrustumEdges[4] = glm::vec4(CameraPos + CameraToTopLeft * FarPlane, 1.0f);
+			FrustumEdges[5] = glm::vec4(CameraPos + CameraToTopRight * FarPlane, 1.0f);
+			FrustumEdges[6] = glm::vec4(CameraPos + CameraToBottomLeft * FarPlane, 1.0f);
+			FrustumEdges[7] = glm::vec4(CameraPos + CameraToBottomRight * FarPlane, 1.0f);
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j] = cascadeData[0].viewMat * inverseVM * frustumEdges[j];
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j] = CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
-				frustumEdges[j].z = -frustumEdges[j].z;
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
+				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float minX = FLT_MAX;
-			float maxX = -FLT_MAX;
-			float minY = FLT_MAX;
-			float maxY = -FLT_MAX;
-			float minZ = FLT_MAX;
-			float maxZ = -FLT_MAX;
+			float MinX = FLT_MAX;
+			float MaxX = -FLT_MAX;
+			float MinY = FLT_MAX;
+			float MaxY = -FLT_MAX;
+			float MinZ = FLT_MAX;
+			float MaxZ = -FLT_MAX;
 
-			for (size_t j = 0; j < frustumEdges.size(); j++)
+			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{
-				minX = std::min(minX, frustumEdges[j].x);
-				minY = std::min(minY, frustumEdges[j].y);
-				minZ = std::min(minZ, frustumEdges[j].z);
+				MinX = std::min(MinX, FrustumEdges[j].x);
+				MinY = std::min(MinY, FrustumEdges[j].y);
+				MinZ = std::min(MinZ, FrustumEdges[j].z);
 
-				maxX = std::max(maxX, frustumEdges[j].x);
-				maxY = std::max(maxY, frustumEdges[j].y);
-				maxZ = std::max(maxZ, frustumEdges[j].z);
+				MaxX = std::max(MaxX, FrustumEdges[j].x);
+				MaxY = std::max(MaxY, FrustumEdges[j].y);
+				MaxZ = std::max(MaxZ, FrustumEdges[j].z);
 			}
 
-			cascadeData[i].projectionMat = glm::ortho(minX - farPlane * (CSMXYDepth / 4.0f), maxX + farPlane * (CSMXYDepth / 4.0f),
-				minY - farPlane * (CSMXYDepth / 4.0f), maxY + farPlane * (CSMXYDepth / 4.0f),
-				minZ - farPlane * CSMZDepth, maxZ + farPlane * CSMZDepth);
+			CascadeData[i].ProjectionMat = glm::ortho(MinX - FarPlane * (CSMXYDepth / 4.0f), MaxX + FarPlane * (CSMXYDepth / 4.0f),
+				MinY - FarPlane * (CSMXYDepth / 4.0f), MaxY + FarPlane * (CSMXYDepth / 4.0f),
+				MinZ - FarPlane * CSMZDepth, MaxZ + FarPlane * CSMZDepth);
 		}
 	}
 }
@@ -549,88 +548,88 @@ FEDirectionalLight::FEDirectionalLight() : FELight(FE_DIRECTIONAL_LIGHT)
 {
 }
 
-glm::vec3 FEDirectionalLight::getDirection()
+glm::vec3 FEDirectionalLight::GetDirection()
 {
-	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
-	return direction;
+	Direction = glm::normalize(Transform.GetTransformMatrix() * glm::vec4(DefaultDirection, 0.0f));
+	return Direction;
 }
 
-void FEDirectionalLight::setDirection(glm::vec3 newDirection)
+void FEDirectionalLight::SetDirection(const glm::vec3 NewValue)
 {
-	direction = newDirection;
+	Direction = NewValue;
 }
 
 FEDirectionalLight::~FEDirectionalLight()
 {
-	delete cascadeData[0].frameBuffer;
-	delete cascadeData[1].frameBuffer;
-	delete cascadeData[2].frameBuffer;
-	delete cascadeData[3].frameBuffer;
+	delete CascadeData[0].FrameBuffer;
+	delete CascadeData[1].FrameBuffer;
+	delete CascadeData[2].FrameBuffer;
+	delete CascadeData[3].FrameBuffer;
 }
 
-int FEDirectionalLight::getActiveCascades()
+int FEDirectionalLight::GetActiveCascades()
 {
-	return activeCascades;
+	return ActiveCascades;
 }
 
-void FEDirectionalLight::setActiveCascades(int newActiveCascades)
+void FEDirectionalLight::SetActiveCascades(int NewValue)
 {
-	if (newActiveCascades < 1 || newActiveCascades > 4)
-		newActiveCascades = 1;
+	if (NewValue < 1 || NewValue > 4)
+		NewValue = 1;
 
-	activeCascades = newActiveCascades;
+	ActiveCascades = NewValue;
 }
 
-float FEDirectionalLight::getShadowCoverage()
+float FEDirectionalLight::GetShadowCoverage()
 {
-	return shadowCoverage;
+	return ShadowCoverage;
 }
 
-void FEDirectionalLight::setShadowCoverage(float newShadowCoverage)
+void FEDirectionalLight::SetShadowCoverage(float NewValue)
 {
-	if (newShadowCoverage <= 0.0f)
-		newShadowCoverage = 0.1f;
+	if (NewValue <= 0.0f)
+		NewValue = 0.1f;
 
-	shadowCoverage = newShadowCoverage;
+	ShadowCoverage = NewValue;
 	//updateProjectionMat();
 }
 
-float FEDirectionalLight::getCSMZDepth()
+float FEDirectionalLight::GetCSMZDepth()
 {
 	return CSMZDepth;
 }
 
-void FEDirectionalLight::setCSMZDepth(float newCSMZDepth)
+void FEDirectionalLight::SetCSMZDepth(float NewValue)
 {
-	if (newCSMZDepth <= 0.5f)
-		newCSMZDepth = 0.5f;
+	if (NewValue <= 0.5f)
+		NewValue = 0.5f;
 
-	CSMZDepth = newCSMZDepth;
+	CSMZDepth = NewValue;
 }
 
-float FEDirectionalLight::getCSMXYDepth()
+float FEDirectionalLight::GetCSMXYDepth()
 {
 	return CSMXYDepth;
 }
 
-void FEDirectionalLight::setCSMXYDepth(float newCSMXYDepth)
+void FEDirectionalLight::SetCSMXYDepth(float NewValue)
 {
-	if (newCSMXYDepth <= 0.5f)
-		newCSMXYDepth = 0.5f;
+	if (NewValue <= 0.5f)
+		NewValue = 0.5f;
 
-	CSMXYDepth = newCSMXYDepth;
+	CSMXYDepth = NewValue;
 }
 
-void FEDirectionalLight::setCastShadows(bool isCastShadows)
+void FEDirectionalLight::SetCastShadows(const bool NewValue)
 {
-	FELight::setCastShadows(isCastShadows);
-	if (!isCastShadows)
+	FELight::SetCastShadows(NewValue);
+	if (!NewValue)
 	{
-		for (size_t i = 0; i < size_t(activeCascades); i++)
+		for (size_t i = 0; i < static_cast<size_t>(ActiveCascades); i++)
 		{
-			cascadeData[i].frameBuffer->bind();
+			CascadeData[i].FrameBuffer->Bind();
 			FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
-			cascadeData[i].frameBuffer->unBind();
+			CascadeData[i].FrameBuffer->UnBind();
 		}
 	}
 }
@@ -643,45 +642,45 @@ FESpotLight::~FESpotLight()
 {
 }
 
-float FESpotLight::getSpotAngle()
+float FESpotLight::GetSpotAngle()
 {
-	return spotAngle;
+	return SpotAngle;
 }
 
-void FESpotLight::setSpotAngle(float newSpotAngle)
+void FESpotLight::SetSpotAngle(const float NewValue)
 {
-	spotAngle = newSpotAngle;
+	SpotAngle = NewValue;
 }
 
-float FESpotLight::getSpotAngleOuter()
+float FESpotLight::GetSpotAngleOuter()
 {
-	return spotAngleOuter;
+	return SpotAngleOuter;
 }
 
-void FESpotLight::setSpotAngleOuter(float newSpotAngleOuter)
+void FESpotLight::SetSpotAngleOuter(const float NewValue)
 {
-	spotAngleOuter = newSpotAngleOuter;
+	SpotAngleOuter = NewValue;
 }
 
-float FESpotLight::getRange()
+float FESpotLight::GetRange()
 {
-	return range;
+	return Range;
 }
 
-void FESpotLight::setRange(float newRange)
+void FESpotLight::SetRange(const float NewValue)
 {
-	range = newRange;
+	Range = NewValue;
 }
 
-glm::vec3 FESpotLight::getDirection()
+glm::vec3 FESpotLight::GetDirection()
 {
-	direction = glm::normalize(transform.getTransformMatrix() * glm::vec4(defaultDirection, 0.0f));
-	return direction;
+	Direction = glm::normalize(Transform.GetTransformMatrix() * glm::vec4(DefaultDirection, 0.0f));
+	return Direction;
 }
 
-void FESpotLight::setDirection(glm::vec3 newDirection)
+void FESpotLight::SetDirection(const glm::vec3 NewValue)
 {
-	direction = newDirection;
+	Direction = NewValue;
 }
 
 FEPointLight::FEPointLight() : FELight(FE_POINT_LIGHT)
@@ -692,35 +691,35 @@ FEPointLight::~FEPointLight()
 {
 }
 
-float FEPointLight::getRange()
+float FEPointLight::GetRange()
 {
-	return range;
+	return Range;
 }
 
-void FEPointLight::setRange(float newRange)
+void FEPointLight::SetRange(const float NewValue)
 {
-	range = newRange;
+	Range = NewValue;
 }
 
-bool FELight::isStaticShadowBias()
+bool FELight::IsStaticShadowBias()
 {
-	return staticShadowBias;
+	return bStaticShadowBias;
 }
 
-void FELight::setIsStaticShadowBias(bool isStaticShadowBias)
+void FELight::SetIsStaticShadowBias(const bool NewValue)
 {
-	staticShadowBias = isStaticShadowBias;
+	bStaticShadowBias = NewValue;
 }
 
-float FELight::getShadowBiasVariableIntensity()
+float FELight::GetShadowBiasVariableIntensity()
 {
-	return shadowBiasVariableIntensity;
+	return ShadowBiasVariableIntensity;
 }
 
-void FELight::setShadowBiasVariableIntensity(float newShadowBiasVariableIntensity)
+void FELight::SetShadowBiasVariableIntensity(float NewValue)
 {
-	if (newShadowBiasVariableIntensity <= 0.0f)
-		newShadowBiasVariableIntensity = 0.01f;
+	if (NewValue <= 0.0f)
+		NewValue = 0.01f;
 
-	shadowBiasVariableIntensity = newShadowBiasVariableIntensity;
+	ShadowBiasVariableIntensity = NewValue;
 }

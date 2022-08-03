@@ -14,58 +14,58 @@ class FEEditorSelectedObject
 public:
 	SINGLETON_PUBLIC_PART(FEEditorSelectedObject)
 
-	void initializeResources();
-	void reInitializeResources();
-	void setOnUpdateFunc(void(*func)());
+	void InitializeResources();
+	void ReInitializeResources();
+	void SetOnUpdateFunc(void(*Func)());
 
-	FEObject* getSelected();
+	FEObject* GetSelected() const;
 
-	FEEntity* getEntity();
-	FETerrain* getTerrain();
-	FELight* getLight();
+	FEEntity* GetEntity() const;
+	FETerrain* GetTerrain() const;
+	FELight* GetLight() const;
 
 	/*template <class T>
 	T* getSelected(FEObjectType type);*/
 
-	bool getDirtyFlag();
-	void setDirtyFlag(bool newValue);
+	bool GetDirtyFlag() const;
+	void SetDirtyFlag(bool NewValue);
 
-	void setSelected(FEObject* selectedObject);
-	void clear();
+	void SetSelected(FEObject* SelectedObject);
+	void Clear();
 
-	glm::dvec3 mouseRay(double mouseX, double mouseY);
-	void determineEntityUnderMouse(double mouseX, double mouseY);
-	std::vector<FEObject*> objectsUnderMouse;
+	glm::dvec3 MouseRay(double MouseX, double MouseY) const;
+	void DetermineEntityUnderMouse(double MouseX, double MouseY);
+	std::vector<FEObject*> ObjectsUnderMouse;
 
-	bool checkForSelectionisNeeded = false;
-	int getIndexOfObjectUnderMouse(double mouseX, double mouseY);
+	bool CheckForSelectionisNeeded = false;
+	int GetIndexOfObjectUnderMouse(double MouseX, double MouseY);
 
-	void onCameraUpdate();
+	void OnCameraUpdate() const;
 
-	int debugGetLastColorIndex();
-	std::unordered_map<FEEntityInstanced*, std::vector<int>> instancedSubObjectsInfo;
-	int instancedSubObjectIndexSelected = -1;
-	void setSelectedByIndex(size_t index);
+	int DebugGetLastColorIndex() const;
+	std::unordered_map<FEEntityInstanced*, std::vector<int>> InstancedSubObjectsInfo;
+	int InstancedSubObjectIndexSelected = -1;
+	void SetSelectedByIndex(size_t Index);
 
 	FEShader* FEPixelAccurateInstancedSelection = nullptr; 
 	FEShader* FEPixelAccurateSelection = nullptr;
 private:
-	FEObject* container = nullptr;
+	FEObject* Container = nullptr;
 	
-	bool dirtyFlag = false;
+	bool bDirtyFlag = false;
 
-	void(*onUpdateFunc)() = nullptr;
+	void(*OnUpdateFunc)() = nullptr;
 #ifdef EDITOR_SELECTION_DEBUG_MODE
 public:
 #endif
-	unsigned char* colorUnderMouse = new unsigned char[3];
-	FEFramebuffer* pixelAccurateSelectionFB;
-	int colorIndex = -1;
+	unsigned char* ColorUnderMouse = new unsigned char[3];
+	FEFramebuffer* PixelAccurateSelectionFB;
+	int ColorIndex = -1;
 #ifdef EDITOR_SELECTION_DEBUG_MODE
 private:
 #endif
-	FEEntity* potentiallySelectedEntity = nullptr;
-	FEMaterial* pixelAccurateSelectionMaterial = nullptr;
+	FEEntity* PotentiallySelectedEntity = nullptr;
+	FEMaterial* PixelAccurateSelectionMaterial = nullptr;
 };
 
 #define SELECTED FEEditorSelectedObject::getInstance()

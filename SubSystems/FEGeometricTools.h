@@ -22,19 +22,19 @@ namespace FocalEngine
 		FEAABB(std::vector<float>& VertexPositions);
 		FEAABB(float* VertexPositions, int VertexCount);
 		// only for uniform sized AABB
-		FEAABB(glm::vec3 center, float size);
-		FEAABB(FEAABB other, glm::mat4 transformMatrix);
+		FEAABB(glm::vec3 Center, float Size);
+		FEAABB(FEAABB Other, glm::mat4 TransformMatrix);
 		~FEAABB();
 
-		glm::vec3 getMin();
-		glm::vec3 getMax();
+		glm::vec3 GetMin();
+		glm::vec3 GetMax();
 
-		bool rayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& distance);
-		inline bool FEAABB::AABBIntersect(FEAABB other)
+		bool RayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& Distance);
+		inline bool FEAABB::AABBIntersect(FEAABB Other)
 		{
-			if (max[0] < other.min[0] || min[0] > other.max[0]) return false;
-			if (max[1] < other.min[1] || min[1] > other.max[1]) return false;
-			if (max[2] < other.min[2] || min[2] > other.max[2]) return false;
+			if (Max[0] < Other.Min[0] || Min[0] > Other.Max[0]) return false;
+			if (Max[1] < Other.Min[1] || Min[1] > Other.Max[1]) return false;
+			if (Max[2] < Other.Min[2] || Min[2] > Other.Max[2]) return false;
 			return true;
 
 			/*__m128 max_ = _mm_set_ps(max[0], max[1], max[2], max[2]);
@@ -52,120 +52,121 @@ namespace FocalEngine
 									  _mm256_set_ps(other.min[0], other.min[1], other.min[2], other.min[2], min[0], min[1], min[2], min[2]), _CMP_GT_OS)) == 255;*/
 		}
 
-		inline bool FEAABB::AABBContain(FEAABB& other)
+		inline bool FEAABB::AABBContain(FEAABB& Other)
 		{
-			if (min[0] > other.min[0] || max[0] < other.max[0]) return false;
-			if (min[1] > other.min[1] || max[1] < other.max[1]) return false;
-			if (min[2] > other.min[2] || max[2] < other.max[2]) return false;
+			if (Min[0] > Other.Min[0] || Max[0] < Other.Max[0]) return false;
+			if (Min[1] > Other.Min[1] || Max[1] < Other.Max[1]) return false;
+			if (Min[2] > Other.Min[2] || Max[2] < Other.Max[2]) return false;
 			return true;
 
 			/*return _mm256_movemask_ps(_mm256_cmp_ps(_mm256_set_ps(other.min[0], other.min[1], other.min[2], other.min[2], max[0], max[1], max[2], max[2]),
 									  _mm256_set_ps(min[0], min[1], min[2], min[2], other.max[0], other.max[1], other.max[2], other.max[2]), _CMP_GT_OS)) == 255;*/
 		}
 
-		FEAABB FEAABB::transform(glm::mat4 transformMatrix)
+		FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix)
 		{
-			FEAABB result;
+			FEAABB Result;
 
 			// firstly we generate 8 points that represent AABBCube.
 			// bottom 4 points
-			glm::vec4 bottomLeftFront = glm::vec4(min.x, min.y, max.z, 1.0f);
-			glm::vec4 bottomRightFront = glm::vec4(max.x, min.y, max.z, 1.0f);
-			glm::vec4 bottomRightBack = glm::vec4(max.x, min.y, min.z, 1.0f);
-			glm::vec4 bottomLeftBack = glm::vec4(min.x, min.y, min.z, 1.0f);
+			glm::vec4 BottomLeftFront = glm::vec4(Min.x, Min.y, Max.z, 1.0f);
+			glm::vec4 BottomRightFront = glm::vec4(Max.x, Min.y, Max.z, 1.0f);
+			glm::vec4 BottomRightBack = glm::vec4(Max.x, Min.y, Min.z, 1.0f);
+			glm::vec4 BottomLeftBack = glm::vec4(Min.x, Min.y, Min.z, 1.0f);
 			// top 4 points
-			glm::vec4 topLeftFront = glm::vec4(min.x, max.y, max.z, 1.0f);
-			glm::vec4 topRightFront = glm::vec4(max.x, max.y, max.z, 1.0f);
-			glm::vec4 topRightBack = glm::vec4(max.x, max.y, min.z, 1.0f);
-			glm::vec4 topLeftBack = glm::vec4(min.x, max.y, min.z, 1.0f);
+			glm::vec4 TopLeftFront = glm::vec4(Min.x, Max.y, Max.z, 1.0f);
+			glm::vec4 TopRightFront = glm::vec4(Max.x, Max.y, Max.z, 1.0f);
+			glm::vec4 TopRightBack = glm::vec4(Max.x, Max.y, Min.z, 1.0f);
+			glm::vec4 TopLeftBack = glm::vec4(Min.x, Max.y, Min.z, 1.0f);
 
 			// transform each point of this cube
-			bottomLeftFront = transformMatrix * bottomLeftFront;
-			bottomRightFront = transformMatrix * bottomRightFront;
-			bottomRightBack = transformMatrix * bottomRightBack;
-			bottomLeftBack = transformMatrix * bottomLeftBack;
+			BottomLeftFront = TransformMatrix * BottomLeftFront;
+			BottomRightFront = TransformMatrix * BottomRightFront;
+			BottomRightBack = TransformMatrix * BottomRightBack;
+			BottomLeftBack = TransformMatrix * BottomLeftBack;
 
-			topLeftFront = transformMatrix * topLeftFront;
-			topRightFront = transformMatrix * topRightFront;
-			topRightBack = transformMatrix * topRightBack;
-			topLeftBack = transformMatrix * topLeftBack;
+			TopLeftFront = TransformMatrix * TopLeftFront;
+			TopRightFront = TransformMatrix * TopRightFront;
+			TopRightBack = TransformMatrix * TopRightBack;
+			TopLeftBack = TransformMatrix * TopLeftBack;
 
 			// for more convenient searching
-			std::vector<glm::vec4> allPoints;
-			allPoints.push_back(bottomLeftFront);
-			allPoints.push_back(bottomRightFront);
-			allPoints.push_back(bottomRightBack);
-			allPoints.push_back(bottomLeftBack);
+			std::vector<glm::vec4> AllPoints;
+			AllPoints.push_back(BottomLeftFront);
+			AllPoints.push_back(BottomRightFront);
+			AllPoints.push_back(BottomRightBack);
+			AllPoints.push_back(BottomLeftBack);
 
-			allPoints.push_back(topLeftFront);
-			allPoints.push_back(topRightFront);
-			allPoints.push_back(topRightBack);
-			allPoints.push_back(topLeftBack);
+			AllPoints.push_back(TopLeftFront);
+			AllPoints.push_back(TopRightFront);
+			AllPoints.push_back(TopRightBack);
+			AllPoints.push_back(TopLeftBack);
 
-			result.min = glm::vec3(FLT_MAX);
-			result.max = glm::vec3(-FLT_MAX);
-			for (auto point : allPoints)
+			Result.Min = glm::vec3(FLT_MAX);
+			Result.Max = glm::vec3(-FLT_MAX);
+			for (const auto Point : AllPoints)
 			{
-				if (point.x < result.min.x)
-					result.min.x = point.x;
+				if (Point.x < Result.Min.x)
+					Result.Min.x = Point.x;
 
-				if (point.x > result.max.x)
-					result.max.x = point.x;
+				if (Point.x > Result.Max.x)
+					Result.Max.x = Point.x;
 
-				if (point.y < result.min.y)
-					result.min.y = point.y;
+				if (Point.y < Result.Min.y)
+					Result.Min.y = Point.y;
 
-				if (point.y > result.max.y)
-					result.max.y = point.y;
+				if (Point.y > Result.Max.y)
+					Result.Max.y = Point.y;
 
-				if (point.z < result.min.z)
-					result.min.z = point.z;
+				if (Point.z < Result.Min.z)
+					Result.Min.z = Point.z;
 
-				if (point.z > result.max.z)
-					result.max.z = point.z;
+				if (Point.z > Result.Max.z)
+					Result.Max.z = Point.z;
 			}
 
-			result.size = abs(result.max.x - result.min.x);
-			if (abs(result.max.y - result.min.y) > result.size)
-				result.size = abs(result.max.y - result.min.y);
+			Result.Size = abs(Result.Max.x - Result.Min.x);
+			if (abs(Result.Max.y - Result.Min.y) > Result.Size)
+				Result.Size = abs(Result.Max.y - Result.Min.y);
 
-			if (abs(result.max.z - result.min.z) > result.size)
-				result.size = abs(result.max.z - result.min.z);
+			if (abs(Result.Max.z - Result.Min.z) > Result.Size)
+				Result.Size = abs(Result.Max.z - Result.Min.z);
 
-			return result;
+			return Result;
 		}
 
-		FEAABB FEAABB::merge(FEAABB& other)
+		FEAABB FEAABB::Merge(FEAABB& Other)
 		{
-			if (this->size == 0)
-				return other;
+			if (this->Size == 0)
+				return Other;
 
 			FEAABB result;
 
-			result.min[0] = min[0] < other.min[0] ? min[0] : other.min[0];
-			result.min[1] = min[1] < other.min[1] ? min[1] : other.min[1];
-			result.min[2] = min[2] < other.min[2] ? min[2] : other.min[2];
+			result.Min[0] = Min[0] < Other.Min[0] ? Min[0] : Other.Min[0];
+			result.Min[1] = Min[1] < Other.Min[1] ? Min[1] : Other.Min[1];
+			result.Min[2] = Min[2] < Other.Min[2] ? Min[2] : Other.Min[2];
 
-			result.max[0] = max[0] > other.max[0] ? max[0] : other.max[0];
-			result.max[1] = max[1] > other.max[1] ? max[1] : other.max[1];
-			result.max[2] = max[2] > other.max[2] ? max[2] : other.max[2];
+			result.Max[0] = Max[0] > Other.Max[0] ? Max[0] : Other.Max[0];
+			result.Max[1] = Max[1] > Other.Max[1] ? Max[1] : Other.Max[1];
+			result.Max[2] = Max[2] > Other.Max[2] ? Max[2] : Other.Max[2];
 
-			result.size = abs(result.max.x - result.min.x);
-			if (abs(result.max.y - result.min.y) > result.size)
-				result.size = abs(result.max.y - result.min.y);
+			result.Size = abs(result.Max.x - result.Min.x);
+			if (abs(result.Max.y - result.Min.y) > result.Size)
+				result.Size = abs(result.Max.y - result.Min.y);
 
-			if (abs(result.max.z - result.min.z) > result.size)
-				result.size = abs(result.max.z - result.min.z);
+			if (abs(result.Max.z - result.Min.z) > result.Size)
+				result.Size = abs(result.Max.z - result.Min.z);
 
 			return result;
 		}
 
-		float getSize();
-		
-	private:
-		glm::vec3 min = glm::vec3(0.0f);
-		glm::vec3 max = glm::vec3(0.0f);
+		float GetSize();
+		glm::vec3 FEAABB::GetCenter();
 
-		float size = 0.0f;
+	private:
+		glm::vec3 Min = glm::vec3(0.0f);
+		glm::vec3 Max = glm::vec3(0.0f);
+
+		float Size = 0.0f;
 	};
 }

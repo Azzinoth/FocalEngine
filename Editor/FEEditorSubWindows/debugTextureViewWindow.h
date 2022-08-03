@@ -4,11 +4,11 @@
 
 class debugTextureViewWindow : public FEImGuiWindow
 {
-	ImGuiButton* closeButton = nullptr;
-	std::function<FETexture* ()> textureToView;
+	ImGuiButton* CloseButton = nullptr;
+	std::function<FETexture* ()> TextureToView;
 public:
-	debugTextureViewWindow(std::function<FETexture* ()> func);
+	debugTextureViewWindow(std::function<FETexture* ()> Func);
 	~debugTextureViewWindow();
 
-	void render() override;
+	void Render() override;
 };

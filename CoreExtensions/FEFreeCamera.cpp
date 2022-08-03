@@ -1,204 +1,200 @@
 #include "FEFreeCamera.h"
+
+#include <utility>
 using namespace FocalEngine;
 
-FEFreeCamera::FEFreeCamera(std::string name) : FEBasicCamera (name)
+FEFreeCamera::FEFreeCamera(std::string Name) : FEBasicCamera (std::move(Name))
 {
 
 }
 
-FEFreeCamera::~FEFreeCamera()
-{
+FEFreeCamera::~FEFreeCamera() = default;
 
+void FEFreeCamera::Move(const float DeltaTime)
+{
+	glm::vec4 Forward = { 0.0f, 0.0f, -(MovementSpeed * 2) * (DeltaTime / 1000), 0.0f };
+	glm::vec4 Right = { (MovementSpeed * 2) * (DeltaTime / 1000), 0.0f, 0.0f, 0.0f };
+
+	Right = Right * ViewMatrix;
+	Forward = Forward * ViewMatrix;
+
+	glm::normalize(Right);
+	glm::normalize(Forward);
+
+	if (bLeftKeyPressed)
+	{
+		Position.x -= Right.x;
+		Position.y -= Right.y;
+		Position.z -= Right.z;
+	}
+
+	if (bUpKeyPressed)
+	{
+		Position.x += Forward.x;
+		Position.y += Forward.y;
+		Position.z += Forward.z;
+	}
+
+	if (bRightKeyPressed)
+	{
+		Position.x += Right.x;
+		Position.y += Right.y;
+		Position.z += Right.z;
+	}
+
+	if (bDownKeyPressed)
+	{
+		Position.x -= Forward.x;
+		Position.y -= Forward.y;
+		Position.z -= Forward.z;
+	}
+
+	UpdateViewMatrix();
+
+	if (ClientOnUpdateImpl)
+		ClientOnUpdateImpl(this);
 }
 
-void FEFreeCamera::move(float deltaTime)
+void FEFreeCamera::SetIsInputActive(const bool bIsActive)
 {
-	glm::vec4 forward = { 0.0f, 0.0f, -(movementSpeed * 2) * (deltaTime / 1000), 0.0f };
-	glm::vec4 right = { (movementSpeed * 2) * (deltaTime / 1000), 0.0f, 0.0f, 0.0f };
-
-	right = right * viewMatrix;
-	forward = forward * viewMatrix;
-
-	glm::normalize(right);
-	glm::normalize(forward);
-
-	if (leftKeyPressed)
+	if (bIsActive)
 	{
-		position.x -= right.x;
-		position.y -= right.y;
-		position.z -= right.z;
-	}
-
-	if (upKeyPressed)
-	{
-		position.x += forward.x;
-		position.y += forward.y;
-		position.z += forward.z;
-	}
-
-	if (rightKeyPressed)
-	{
-		position.x += right.x;
-		position.y += right.y;
-		position.z += right.z;
-	}
-
-	if (downKeyPressed)
-	{
-		position.x -= forward.x;
-		position.y -= forward.y;
-		position.z -= forward.z;
-	}
-
-	updateViewMatrix();
-
-	if (clientOnUpdateImpl)
-		clientOnUpdateImpl(this);
-}
-
-void FEFreeCamera::setIsInputActive(bool isActive)
-{
-	if (isActive)
-	{
-		setCursorToCenter();
+		SetCursorToCenter();
 	}
 	else
 	{
-		leftKeyPressed = false;
-		upKeyPressed = false;
-		downKeyPressed = false;
-		rightKeyPressed = false;
+		bLeftKeyPressed = false;
+		bUpKeyPressed = false;
+		bDownKeyPressed = false;
+		bRightKeyPressed = false;
 	}
 
-	FEBasicCamera::setIsInputActive(isActive);
+	FEBasicCamera::SetIsInputActive(bIsActive);
 }
 
-void FEFreeCamera::reset()
+void FEFreeCamera::Reset()
 {
-	currentMouseXAngle = 0;
-	currentMouseYAngle = 0;
+	CurrentMouseXAngle = 0;
+	CurrentMouseYAngle = 0;
 
-	FEBasicCamera::reset();
+	FEBasicCamera::Reset();
 }
 
-void FEFreeCamera::setCursorToCenter()
+void FEFreeCamera::SetCursorToCenter()
 {
-	if (APPLICATION.isWindowInFocus())
+	if (APPLICATION.IsWindowInFocus())
 	{
-		lastMouseX = renderTargetCenterX;
-		lastMouseY = renderTargetCenterY;
+		LastMouseX = RenderTargetCenterX;
+		LastMouseY = RenderTargetCenterY;
 
-		SetCursorPos(lastMouseX, lastMouseY);
+		SetCursorPos(LastMouseX, LastMouseY);
 
-		lastMouseX = lastMouseX - renderTargetShiftX;
-		lastMouseY = lastMouseY - renderTargetShiftY;
+		LastMouseX = LastMouseX - RenderTargetShiftX;
+		LastMouseY = LastMouseY - RenderTargetShiftY;
 	}
 }
 
-void FEFreeCamera::mouseMoveInput(double xpos, double ypos)
+void FEFreeCamera::MouseMoveInput(const double Xpos, const double Ypos)
 {
-	if (!isInputActive)
+	if (!bIsInputActive)
 		return;
 
-	int mouseX = int(xpos);
-	int mouseY = int(ypos);
+	const int MouseX = static_cast<int>(Xpos);
+	const int MouseY = static_cast<int>(Ypos);
 
-	if (lastMouseX == 0) lastMouseX = mouseX;
-	if (lastMouseY == 0) lastMouseY = mouseY;
+	if (LastMouseX == 0) LastMouseX = MouseX;
+	if (LastMouseY == 0) LastMouseY = MouseY;
 
-	int test = renderTargetCenterX;
-	int test2 = renderTargetCenterX - renderTargetShiftX;
-
-	if (lastMouseX < mouseX || abs(lastMouseX - mouseX) > correctionToSensitivity)
+	if (LastMouseX < MouseX || abs(LastMouseX - MouseX) > CorrectionToSensitivity)
 	{
-		currentMouseXAngle += (mouseX - lastMouseX) * 0.15f;
-		setCursorToCenter();
+		CurrentMouseXAngle += (MouseX - LastMouseX) * 0.15f;
+		SetCursorToCenter();
 	}
 
-	if (lastMouseY < mouseY || abs(lastMouseY - mouseY) > correctionToSensitivity)
+	if (LastMouseY < MouseY || abs(LastMouseY - MouseY) > CorrectionToSensitivity)
 	{
-		currentMouseYAngle += (mouseY - lastMouseY) * 0.15f;
-		setCursorToCenter();
+		CurrentMouseYAngle += (MouseY - LastMouseY) * 0.15f;
+		SetCursorToCenter();
 	}
 
-	setYaw(currentMouseXAngle);
-	if (currentMouseYAngle > 89.0f)
-		currentMouseYAngle = 89.0f;
-	if (currentMouseYAngle < -89.0f)
-		currentMouseYAngle = -89.0f;
-	setPitch(currentMouseYAngle);
+	SetYaw(CurrentMouseXAngle);
+	if (CurrentMouseYAngle > 89.0f)
+		CurrentMouseYAngle = 89.0f;
+	if (CurrentMouseYAngle < -89.0f)
+		CurrentMouseYAngle = -89.0f;
+	SetPitch(CurrentMouseYAngle);
 }
 
-void FEFreeCamera::keyboardInput(int key, int scancode, int action, int mods)
+void FEFreeCamera::KeyboardInput(const int Key, int Scancode, const int Action, int Mods)
 {
-	if (!isInputActive)
+	if (!bIsInputActive)
 		return;
 
-	if (key == GLFW_KEY_A && action == GLFW_PRESS)
+	if (Key == GLFW_KEY_A && Action == GLFW_PRESS)
 	{
-		leftKeyPressed = true;
+		bLeftKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_A && action == GLFW_RELEASE)
+	else if (Key == GLFW_KEY_A && Action == GLFW_RELEASE)
 	{
-		leftKeyPressed = false;
-	}
-
-	if (key == GLFW_KEY_W && action == GLFW_PRESS)
-	{
-		upKeyPressed = true;
-	}
-	else if (key == GLFW_KEY_W && action == GLFW_RELEASE)
-	{
-		upKeyPressed = false;
+		bLeftKeyPressed = false;
 	}
 
-	if (key == GLFW_KEY_S && action == GLFW_PRESS)
+	if (Key == GLFW_KEY_W && Action == GLFW_PRESS)
 	{
-		downKeyPressed = true;
+		bUpKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_S && action == GLFW_RELEASE)
+	else if (Key == GLFW_KEY_W && Action == GLFW_RELEASE)
 	{
-		downKeyPressed = false;
+		bUpKeyPressed = false;
 	}
 
-	if (key == GLFW_KEY_D && action == GLFW_PRESS)
+	if (Key == GLFW_KEY_S && Action == GLFW_PRESS)
 	{
-		rightKeyPressed = true;
+		bDownKeyPressed = true;
 	}
-	else if (key == GLFW_KEY_D && action == GLFW_RELEASE)
+	else if (Key == GLFW_KEY_S && Action == GLFW_RELEASE)
 	{
-		rightKeyPressed = false;
+		bDownKeyPressed = false;
+	}
+
+	if (Key == GLFW_KEY_D && Action == GLFW_PRESS)
+	{
+		bRightKeyPressed = true;
+	}
+	else if (Key == GLFW_KEY_D && Action == GLFW_RELEASE)
+	{
+		bRightKeyPressed = false;
 	}
 }
 
-void FEFreeCamera::setYaw(float newYaw)
+void FEFreeCamera::SetYaw(const float NewYaw)
 {
-	FEBasicCamera::setYaw(newYaw);
-	currentMouseXAngle = newYaw;
+	FEBasicCamera::SetYaw(NewYaw);
+	CurrentMouseXAngle = NewYaw;
 }
 
-void FEFreeCamera::setPitch(float newPitch)
+void FEFreeCamera::SetPitch(const float NewPitch)
 {
-	FEBasicCamera::setPitch(newPitch);
-	currentMouseYAngle = newPitch;
+	FEBasicCamera::SetPitch(NewPitch);
+	CurrentMouseYAngle = NewPitch;
 }
 
-void FEFreeCamera::setRenderTargetCenterX(int newRenderTargetCenterX)
+void FEFreeCamera::SetRenderTargetCenterX(const int NewRenderTargetCenterX)
 {
-	renderTargetCenterX = newRenderTargetCenterX;
+	RenderTargetCenterX = NewRenderTargetCenterX;
 }
 
-void FEFreeCamera::setRenderTargetCenterY(int newRenderTargetCenterY)
+void FEFreeCamera::SetRenderTargetCenterY(const int NewRenderTargetCenterY)
 {
-	renderTargetCenterY = newRenderTargetCenterY;
+	RenderTargetCenterY = NewRenderTargetCenterY;
 }
 
-void FEFreeCamera::setRenderTargetShiftX(int newRenderTargetShiftX)
+void FEFreeCamera::SetRenderTargetShiftX(const int NewRenderTargetShiftX)
 {
-	renderTargetShiftX = newRenderTargetShiftX;
+	RenderTargetShiftX = NewRenderTargetShiftX;
 }
 
-void FEFreeCamera::setRenderTargetShiftY(int newRenderTargetShiftY)
+void FEFreeCamera::SetRenderTargetShiftY(const int NewRenderTargetShiftY)
 {
-	renderTargetShiftY = newRenderTargetShiftY;
+	RenderTargetShiftY = NewRenderTargetShiftY;
 }

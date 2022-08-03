@@ -14,40 +14,40 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
-		FEEntity* addEntity(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
-		FEEntity* addEntity(FEPrefab* prefab, std::string Name = "", std::string forceObjectID = "");
-		bool addEntity(FEEntity* newEntity);
-		FEEntity* getEntity(std::string ID);
-		std::vector<FEEntity*> getEntityByName(std::string Name);
-		std::vector<std::string> getEntityList();
-		void deleteEntity(std::string ID);
+		FEEntity* AddEntity(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* AddEntity(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
+		bool AddEntity(FEEntity* NewEntity);
+		FEEntity* GetEntity(std::string ID);
+		std::vector<FEEntity*> GetEntityByName(std::string Name);
+		std::vector<std::string> GetEntityList();
+		void DeleteEntity(std::string ID);
 
-		FEEntityInstanced* addEntityInstanced(FEPrefab* prefab, std::string Name = "", std::string forceObjectID = "");
-		FEEntityInstanced* addEntityInstanced(FEGameModel* gameModel, std::string Name = "", std::string forceObjectID = "");
-		bool addEntityInstanced(FEEntityInstanced* newEntityInstanced);
-		FEEntityInstanced* getEntityInstanced(std::string ID);
-		std::vector<FEEntityInstanced*> getEntityInstancedByName(std::string Name);
-		void setSelectMode(FEEntityInstanced* entityInstanced, bool newValue);
+		FEEntityInstanced* AddEntityInstanced(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
+		FEEntityInstanced* AddEntityInstanced(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
+		bool AddEntityInstanced(FEEntityInstanced* NewEntityInstanced);
+		FEEntityInstanced* GetEntityInstanced(std::string ID);
+		std::vector<FEEntityInstanced*> GetEntityInstancedByName(std::string Name);
+		void SetSelectMode(FEEntityInstanced* EntityInstanced, bool NewValue);
 
-		FELight* addLight(FEObjectType lightType, std::string Name, std::string forceObjectID = "");
-		FELight* getLight(std::string ID);
-		std::vector<std::string> getLightsList();
-		void deleteLight(std::string ID);
+		FELight* AddLight(FE_OBJECT_TYPE LightType, std::string Name, std::string ForceObjectID = "");
+		FELight* GetLight(std::string ID);
+		std::vector<std::string> GetLightsList();
+		void DeleteLight(std::string ID);
 
-		bool addTerrain(FETerrain* newTerrain);
-		std::vector<std::string> getTerrainList();
-		FETerrain* getTerrain(std::string ID);
-		void deleteTerrain(std::string ID);
+		bool AddTerrain(FETerrain* NewTerrain);
+		std::vector<std::string> GetTerrainList();
+		FETerrain* GetTerrain(std::string ID);
+		void DeleteTerrain(std::string ID);
 
-		void prepareForGameModelDeletion(FEGameModel* gameModel);
-		void prepareForPrefabDeletion(FEPrefab* prefab);
+		void PrepareForGameModelDeletion(const FEGameModel* GameModel);
+		void PrepareForPrefabDeletion(const FEPrefab* Prefab);
 
-		void clear();
+		void Clear();
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
-		std::unordered_map<std::string, FEEntity*> entityMap;
-		std::unordered_map<std::string, FETerrain*> terrainMap;
+		std::unordered_map<std::string, FEEntity*> EntityMap;
+		std::unordered_map<std::string, FETerrain*> TerrainMap;
 	};
 
 	#define SCENE FEScene::getInstance()

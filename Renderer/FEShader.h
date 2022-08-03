@@ -28,9 +28,12 @@
 #define FE_MATERIAL_TEXTURES_MACRO "@MaterialTextures@"
 #define FE_TERRAIN_LAYERS_TEXTURES_MACRO "@TerrainLayersTextures@"
 
+#define FE_MAX_TEXTURES_PER_MATERIAL 16
+#define FE_MAX_SUBMATERIALS_PER_MATERIAL 2
+
 namespace FocalEngine
 {
-	enum FEShaderParamType
+	enum FE_SHADER_PARAM_TYPE
 	{
 		FE_INT_SCALAR_UNIFORM = 0,
 		FE_FLOAT_SCALAR_UNIFORM = 1,
@@ -42,7 +45,7 @@ namespace FocalEngine
 		FE_BOOL_UNIFORM = 7
 	};
 
-	enum FEVertexAttributes
+	enum FE_VERTEX_ATTRIBUTES
 	{
 		FE_POSITION = 1 << 0,
 		FE_COLOR = 1 << 1,
@@ -53,9 +56,6 @@ namespace FocalEngine
 		FE_MATINDEX = 1 << 6,
 		FE_INSTANCEDATA = 1 << 7
 	};
-
-	const int FE_MAX_TEXTURES_PER_MATERIAL = 16;
-	const int FE_MAX_SUBMATERIALS_PER_MATERIAL = 2;
 
 	struct FEShaderParam
 	{
@@ -68,28 +68,28 @@ namespace FocalEngine
 		FEShaderParam(glm::vec4 Data, std::string Name);
 		FEShaderParam(glm::mat4 Data, std::string Name);
 
-		void copyCode(const FEShaderParam& copy);
-		FEShaderParam(const FEShaderParam& copy);
-		void operator=(const FEShaderParam& assign);
+		void CopyCode(const FEShaderParam& Copy);
+		FEShaderParam(const FEShaderParam& Copy);
+		void operator=(const FEShaderParam& Assign);
 
 		~FEShaderParam();
 
-		void updateData(void* Data);
-		void updateData(bool Data);
-		void updateData(int Data);
-		void updateData(float Data);
-		void updateData(glm::vec2 Data);
-		void updateData(glm::vec3 Data);
-		void updateData(glm::vec4 Data);
-		void updateData(glm::mat4 Data);
+		void UpdateData(void* Data);
+		void UpdateData(bool Data);
+		void UpdateData(int Data);
+		void UpdateData(float Data);
+		void UpdateData(glm::vec2 Data);
+		void UpdateData(glm::vec3 Data);
+		void UpdateData(glm::vec4 Data);
+		void UpdateData(glm::mat4 Data);
 
-		int nameHash = 0;
-		std::string getName();
-		void setName(std::string newName);
+		int NameHash = 0;
+		std::string GetName();
+		void SetName(std::string NewName);
 
-		void* data;
-		FEShaderParamType type;
-		std::string name;
+		void* Data;
+		FE_SHADER_PARAM_TYPE Type;
+		std::string Name;
 	};
 
 	class FEMaterial;
@@ -106,101 +106,101 @@ namespace FocalEngine
 		friend FEngine;
 		friend FEResourceManager;
 	public:
-		FEShader(std::string name, const char* vertexText, const char* fragmentText,
-			const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-			const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false, int glslVersion = 450);
+		FEShader(std::string Name, const char* VertexText, const char* FragmentText,
+			const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
+			const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool TestCompilation = false, int GlslVersion = 450);
 		~FEShader();
 
-		FEShader(const FEShader& shader);
-		void operator= (const FEShader& shader);
+		FEShader(const FEShader& Shader);
+		void operator= (const FEShader& Shader);
 
-		virtual void start();
-		virtual void stop();
+		virtual void Start();
+		virtual void Stop();
 
-		void loadScalar(int& uniformNameHash, GLboolean& value);
-		void loadScalar(int& uniformNameHash, GLfloat& value);
-		void loadScalar(int& uniformNameHash, GLint& value);
-		void loadVector(int& uniformNameHash, glm::vec2& vector);
-		void loadVector(int& uniformNameHash, glm::vec3& vector);
-		void loadVector(int& uniformNameHash, glm::vec4& vector);
-		void loadMatrix(int& uniformNameHash, glm::mat4& matrix);
-		void loadIntArray(int& uniformNameHash, GLint* array, size_t arraySize);
-		void loadIntArray(GLuint uniformLocation, GLint* array, size_t arraySize);
-		void loadFloatArray(int& uniformNameHash, GLfloat* array, size_t arraySize);
+		void LoadScalar(const int& UniformNameHash, const GLboolean& Value);
+		void LoadScalar(const int& UniformNameHash, const GLfloat& Value);
+		void LoadScalar(const int& UniformNameHash, const GLint& Value);
+		void LoadVector(const int& UniformNameHash, const glm::vec2& Vector);
+		void LoadVector(const int& UniformNameHash, const glm::vec3& Vector);
+		void LoadVector(const int& UniformNameHash, const glm::vec4& Vector);
+		void LoadMatrix(const int& UniformNameHash, glm::mat4& Matrix);
+		void LoadIntArray(const int& UniformNameHash, const GLint* Array, size_t ArraySize);
+		void LoadIntArray(GLuint UniformLocation, const GLint* Array, size_t ArraySize);
+		void LoadFloatArray(const int& UniformNameHash, const GLfloat* Array, size_t ArraySize);
 
-		virtual void loadDataToGPU();
-		virtual void addParameter(FEShaderParam Parameter);
+		virtual void LoadDataToGPU();
+		virtual void AddParameter(FEShaderParam Parameter);
 
-		std::vector<std::string> getParameterList();
-		std::vector<std::string> getTextureList();
-		FEShaderParam* getParameter(std::string name);
+		std::vector<std::string> GetParameterList();
+		std::vector<std::string> GetTextureList();
+		FEShaderParam* GetParameter(std::string Name);
 
-		char* getVertexShaderText();
-		char* getTessControlShaderText();
-		char* getTessEvalShaderText();
-		char* getGeometryShaderText();
-		char* getFragmentShaderText();
-		char* getComputeShaderText();
+		char* GetVertexShaderText();
+		char* GetTessControlShaderText();
+		char* GetTessEvalShaderText();
+		char* GetGeometryShaderText();
+		char* GetFragmentShaderText();
+		char* GetComputeShaderText();
 
-		std::string getCompilationErrors();
+		std::string GetCompilationErrors();
 
-		bool isDebugRequest();
-		std::vector<std::vector<float>>* getDebugData();
-		std::vector<std::string> getDebugVariables();
+		bool IsDebugRequest();
+		std::vector<std::vector<float>>* GetDebugData();
+		std::vector<std::string> GetDebugVariables();
 
-		void dispatch(GLuint num_groups_x, GLuint num_groups_y, GLuint num_groups_z);
+		void Dispatch(GLuint GroupXCount, GLuint GroupYCount, GLuint GroupZCount);
 	private:
-		void copyCode(const FEShader& shader);
+		void CopyCode(const FEShader& Shader);
 
-		std::string compilationErrors;
+		std::string CompilationErrors;
 
-		GLuint programID;
-		GLuint vertexShaderID;
-		char* vertexShaderText = nullptr;
-		GLuint tessControlShaderID;
-		char* tessControlShaderText = nullptr;
-		GLuint tessEvalShaderID;
-		char* tessEvalShaderText = nullptr;
-		GLuint geometryShaderID;
-		char* geometryShaderText = nullptr;
-		GLuint fragmentShaderID;
-		char* fragmentShaderText = nullptr;
-		GLuint computeShaderID;
-		char* computeShaderText = nullptr;
+		GLuint ProgramID;
+		GLuint VertexShaderID;
+		char* VertexShaderText = nullptr;
+		GLuint TessControlShaderID;
+		char* TessControlShaderText = nullptr;
+		GLuint TessEvalShaderID;
+		char* TessEvalShaderText = nullptr;
+		GLuint GeometryShaderID;
+		char* GeometryShaderText = nullptr;
+		GLuint FragmentShaderID;
+		char* FragmentShaderText = nullptr;
+		GLuint ComputeShaderID;
+		char* ComputeShaderText = nullptr;
 
-		int vertexAttributes = 0;
+		int VertexAttributes = 0;
 
-		std::unordered_map<std::string, FEShaderParam> parameters;
-		std::unordered_map<int, GLuint> blockUniforms;
+		std::unordered_map<std::string, FEShaderParam> Parameters;
+		std::unordered_map<int, GLuint> BlockUniforms;
 
-		GLuint loadShader(const char* shaderText, GLuint shaderType);
-		void cleanUp();
-		void bindAttributes();
-		std::unordered_map<int, GLuint> uniformLocations;
-		GLuint getUniformLocation(int& uniformNameHash);
-		std::vector<std::string> textureUniforms;
+		GLuint LoadShader(const char* ShaderText, GLuint ShaderType);
+		void CleanUp();
+		void BindAttributes();
+		std::unordered_map<int, GLuint> UniformLocations;
+		GLuint GetUniformLocation(const int& UniformNameHash);
+		std::vector<std::string> TextureUniforms;
 
-		std::string parseShaderForMacro(const char* shaderText);
-		void registerUniforms();
+		std::string ParseShaderForMacro(const char* ShaderText);
+		void RegisterUniforms();
 
-		bool CSM = false;
-		bool testCompilationMode = false;
-		bool materialTexturesList = false;
-		bool terrainLayersTexturesList = false;
-		int glslVersion;
+		bool bCSM = false;
+		bool bTestCompilationMode = false;
+		bool bMaterialTexturesList = false;
+		bool bTerrainLayersTexturesList = false;
+		int GlslVersion;
 
 #ifdef FE_DEBUG_ENABLED
-		bool debugRequest = false;
+		bool bDebugRequest = false;
 		GLuint SSBO = -1;
 		GLint SSBOBinding;
 		unsigned int SSBOSize = 1024 * 1024 * sizeof(float);
-		inline void createSSBO();
-		int thisFrameDebugBind = 0;
-		std::vector<std::string> debugVariables;
-		std::vector<std::vector<float>> debugData;
+		inline void CreateSSBO();
+		int ThisFrameDebugBind = 0;
+		std::vector<std::string> DebugVariables;
+		std::vector<std::vector<float>> DebugData;
 #endif
-		void reCompile(std::string name, const char* vertexText, const char* fragmentText,
-					   const char* tessControlText = nullptr, const char* tessEvalText = nullptr,
-					   const char* geometryText = nullptr, const char* computeText = nullptr, bool testCompilation = false, int glslVersion = 450);
+		void ReCompile(std::string Name, const char* VertexText, const char* FragmentText,
+					   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
+					   const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool TestCompilation = false, int GlslVersion = 450);
 	};
 }

@@ -4,23 +4,23 @@
 
 class FEEditorTextureCreatingNode : public FEVisualNode
 {
-	FETexture* resultTexture = nullptr;
-	char* incompatibleTypesMsg = "Incompatible socket types.";
-	char* tooManyConnectionsMsg = "Too many connections.";
-	char* incompatibleResolutionMsg = "Incompatible texture resolution.";
-	char* cantInferResolutionMsg = "Can't infer texture resolution.";
-	char* tooManyConnectionOfThisTypeMsg = "Too many connections of this type.";
+	FETexture* ResultTexture = nullptr;
+	char* IncompatibleTypesMsg = "Incompatible socket types.";
+	char* TooManyConnectionsMsg = "Too many connections.";
+	char* IncompatibleResolutionMsg = "Incompatible texture resolution.";
+	char* CantInferResolutionMsg = "Can't infer texture resolution.";
+	char* TooManyConnectionOfThisTypeMsg = "Too many connections of this type.";
 
-	void putDataFromColorChannelInArray(FEVisualNodeSocket* sourceSocket, unsigned char* dataArray, size_t textureDataLenght, size_t toWhatChannel);
-	unsigned char* getInputColorChannelData(size_t channel);
+	void PutDataFromColorChannelInArray(FEVisualNodeSocket* SourceSocket, unsigned char* DataArray, size_t TextureDataLenght, size_t ToWhatChannel);
+	unsigned char* GetInputColorChannelData(size_t Channel) const;
 
-	bool canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser);
-	void socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType);
+	bool CanConnect(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* CandidateSocket, char** MsgToUser);
+	void SocketEvent(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* ConnectedSocket, FE_VISUAL_NODE_SOCKET_EVENT EventType);
 
-	Json::Value getInfoForSaving();
+	Json::Value GetInfoForSaving();
 public:
 	FEEditorTextureCreatingNode();
 
-	void draw();
-	FETexture* getTexture();
+	void Draw();
+	FETexture* GetTexture() const;
 };

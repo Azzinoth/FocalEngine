@@ -5,71 +5,71 @@ using namespace FocalEngine;
 
 class FEEditor;
 class FEProjectManager;
-class deleteTexturePopup;
-class renameMeshPopUp;
-class deleteMeshPopup;
-class selectMeshPopUp;
-class selectMaterialPopUp;
-class selectGameModelPopUp;
-class editGameModelPopup;
-class editMaterialPopup;
-class deleteMaterialPopup;
-class selectFEObjectPopUp;
-class prefabEditorWindow;
+class DeleteTexturePopup;
+class RenameMeshPopUp;
+class DeleteMeshPopup;
+class SelectMeshPopUp;
+class SelectMaterialPopUp;
+class SelectGameModelPopUp;
+class EditGameModelPopup;
+class EditMaterialPopup;
+class DeleteMaterialPopup;
+class SelectFeObjectPopUp;
+class PrefabEditorWindow;
 
 class FEEditorPreviewManager
 {
 	friend FEEditor;
 	friend FEProjectManager;
-	friend deleteTexturePopup;
-	friend renameMeshPopUp;
-	friend deleteMeshPopup;
-	friend selectMeshPopUp;
-	friend selectMaterialPopUp;
-	friend selectGameModelPopUp;
-	friend editGameModelPopup;
-	friend editMaterialPopup;
-	friend deleteMaterialPopup;
-	friend selectFEObjectPopUp;
-	friend prefabEditorWindow;
+	friend DeleteTexturePopup;
+	friend RenameMeshPopUp;
+	friend DeleteMeshPopup;
+	friend SelectMeshPopUp;
+	friend SelectMaterialPopUp;
+	friend SelectGameModelPopUp;
+	friend EditGameModelPopup;
+	friend EditMaterialPopup;
+	friend DeleteMaterialPopup;
+	friend SelectFeObjectPopUp;
+	friend PrefabEditorWindow;
 
 private:
 	SINGLETON_PUBLIC_PART(FEEditorPreviewManager)
 	SINGLETON_PRIVATE_PART(FEEditorPreviewManager)
 
-	void initializeResources();
-	void updateAll();
+	void InitializeResources();
+	void UpdateAll();
 
-	FEFramebuffer* previewFB;
-	FEEntity* previewEntity;
-	FEPrefab* previewPrefab;
-	FEGameModel* previewGameModel;
-	FEMaterial* meshPreviewMaterial;
+	FEFramebuffer* PreviewFB;
+	FEEntity* PreviewEntity;
+	FEPrefab* PreviewPrefab;
+	FEGameModel* PreviewGameModel;
+	FEMaterial* MeshPreviewMaterial;
 
-	std::unordered_map<std::string, FETexture*> meshPreviewTextures;
-	std::unordered_map<std::string, FETexture*> materialPreviewTextures;
-	std::unordered_map<std::string, FETexture*> gameModelPreviewTextures;
-	std::unordered_map<std::string, FETexture*> prefabPreviewTextures;
+	std::unordered_map<std::string, FETexture*> MeshPreviewTextures;
+	std::unordered_map<std::string, FETexture*> MaterialPreviewTextures;
+	std::unordered_map<std::string, FETexture*> GameModelPreviewTextures;
+	std::unordered_map<std::string, FETexture*> PrefabPreviewTextures;
 
-	void createMeshPreview(std::string meshID);
-	FETexture* getMeshPreview(std::string meshID);
+	void CreateMeshPreview(std::string MeshID);
+	FETexture* GetMeshPreview(std::string MeshID);
 
-	void createMaterialPreview(std::string materialID);
-	FETexture* getMaterialPreview(std::string materialID);
+	void CreateMaterialPreview(std::string MaterialID);
+	FETexture* GetMaterialPreview(std::string MaterialID);
 
-	void createGameModelPreview(std::string gameModelID);
-	void createGameModelPreview(FEGameModel* gameModel, FETexture** resultingTexture);
-	FETexture* getGameModelPreview(std::string gameModelID);
-	void updateAllGameModelPreviews();
+	void CreateGameModelPreview(std::string GameModelID);
+	void CreateGameModelPreview(const FEGameModel* GameModel, FETexture** ResultingTexture) const;
+	FETexture* GetGameModelPreview(std::string GameModelID);
+	void UpdateAllGameModelPreviews();
 
-	void createPrefabPreview(std::string prefabID);
-	void createPrefabPreview(FEPrefab* prefab, FETexture** resultingTexture);
-	FETexture* getPrefabPreview(std::string prefabID);
+	void CreatePrefabPreview(std::string PrefabID);
+	void CreatePrefabPreview(FEPrefab* Prefab, FETexture** ResultingTexture);
+	FETexture* GetPrefabPreview(std::string PrefabID);
 
-	FETexture* getPreview(FEObject* FEObject);
-	FETexture* getPreview(std::string FEObjectID);
+	FETexture* GetPreview(FEObject* Object);
+	FETexture* GetPreview(std::string ObjectID);
 
-	void clear();
+	void Clear();
 };
 
 #define PREVIEW_MANAGER FEEditorPreviewManager::getInstance()

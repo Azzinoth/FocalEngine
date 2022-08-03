@@ -4,12 +4,12 @@
 
 namespace FocalEngine
 {
-	enum FEPostProcessSources
+	enum FE_POST_PROCESS_SOURCES
 	{
-		FEPP_PREVIOUS_STAGE_RESULT0 = 0,
-		FEPP_SCENE_HDR_COLOR = 1,
-		FEPP_SCENE_DEPTH = 2,
-		FEPP_OWN_TEXTURE = 3,
+		FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 = 0,
+		FE_POST_PROCESS_SCENE_HDR_COLOR = 1,
+		FE_POST_PROCESS_SCENE_DEPTH = 2,
+		FE_POST_PROCESS_OWN_TEXTURE = 3,
 	};
 
 	struct FEPostProcessStage
@@ -17,11 +17,11 @@ namespace FocalEngine
 		FEPostProcessStage(int InTextureSource, FEShader* Shader);
 		FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader);
 
-		std::vector<FEShaderParam> stageSpecificUniforms;
-		std::vector<int> inTextureSource;
-		std::vector<FETexture*> inTexture;
-		FEShader* shader = nullptr;
-		FETexture* outTexture = nullptr;
+		std::vector<FEShaderParam> StageSpecificUniforms;
+		std::vector<int> InTextureSource;
+		std::vector<FETexture*> InTexture;
+		FEShader* Shader = nullptr;
+		FETexture* OutTexture = nullptr;
 	};
 
 	class FEResourceManager;
@@ -34,25 +34,25 @@ namespace FocalEngine
 	public:
 		~FEPostProcess();
 
-		void renderResult();
+		void RenderResult();
 
-		FETexture* getInTexture();
-		void addStage(FEPostProcessStage* newStage);
+		FETexture* GetInTexture();
+		void AddStage(FEPostProcessStage* NewStage);
 
-		bool active = true;
-		bool replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture = true);
+		bool bActive = true;
+		bool ReplaceOutTexture(size_t StageIndex, FETexture* NewTexture, bool bDeleteOldTexture = true);
 	private:
 		FEPostProcess(std::string Name);
 
-		int screenWidth, screenHeight;
-		FEMesh* screenQuad;
-		FEShader* screenQuadShader;
-		FETexture* inTexture = nullptr;
-		FETexture* finalTexture = nullptr;
+		int ScreenWidth, ScreenHeight;
+		FEMesh* ScreenQuad;
+		FEShader* ScreenQuadShader;
+		FETexture* InTexture = nullptr;
+		FETexture* FinalTexture = nullptr;
 
-		FEFramebuffer* intermediateFramebuffer = nullptr;
-		std::vector<FETexture*> texturesToDelete;
+		FEFramebuffer* IntermediateFramebuffer = nullptr;
+		std::vector<FETexture*> TexturesToDelete;
 	public:
-		std::vector<FEPostProcessStage*> stages;
+		std::vector<FEPostProcessStage*> Stages;
 	};
 }

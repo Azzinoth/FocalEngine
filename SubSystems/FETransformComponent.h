@@ -16,45 +16,47 @@ namespace FocalEngine
 		friend FERenderer;
 	public:
 		FETransformComponent();
-		FETransformComponent(glm::mat4 matrix);
+		FETransformComponent(glm::mat4 Matrix);
 		~FETransformComponent();
 
-		FETransformComponent combine(FETransformComponent& other);
+		FETransformComponent Combine(const FETransformComponent& Other) const;
 
-		glm::vec3 getPosition();
-		glm::vec3 getRotation();
-		glm::quat getQuaternion();
-		glm::vec3 getScale();
+		glm::vec3 GetPosition() const;
+		glm::vec3 GetRotation() const;
+		glm::quat GetQuaternion() const;
+		glm::vec3 GetScale() const;
 
-		void setPosition(glm::vec3 newPosition);
-		void setRotation(glm::vec3 newRotation);
-		void rotateByQuaternion(glm::quat quaternion);
-		void setScale(glm::vec3 newScale);
+		void SetPosition(glm::vec3 NewPosition);
+		void SetRotation(glm::vec3 NewRotation);
+		void RotateByQuaternion(glm::quat Quaternion);
+		void SetScale(glm::vec3 NewScale);
 
-		void changeScaleUniformlyBy(float delta);
-		void changeXScaleBy(float delta);
-		void changeYScaleBy(float delta);
-		void changeZScaleBy(float delta);
+		void ChangeScaleUniformlyBy(float Delta);
+		void ChangeXScaleBy(float Delta);
+		void ChangeYScaleBy(float Delta);
+		void ChangeZScaleBy(float Delta);
 
-		glm::mat4 getTransformMatrix();
-		void forceSetTransformMatrix(glm::mat4 newValue);
-		void update();
+		glm::mat4 GetTransformMatrix() const;
+		void ForceSetTransformMatrix(glm::mat4 NewValue);
+		void Update();
 
-		bool getDirtyFlag();
-		void setDirtyFlag(bool isDirty);
+		bool IsDirty() const;
+		void SetDirtyFlag(bool NewValue);
 
-		bool uniformScaling = true;
+		bool IsUniformScalingSet() const;
+		void SetUniformScaling(bool NewValue);
 	private:
-		bool dirtyFlag = false;
-		glm::vec3 position;
-		glm::quat rotationQuaternion;
-		glm::vec3 rotationAngles;
+		bool bDirtyFlag = false;
+		glm::vec3 Position;
+		glm::quat RotationQuaternion;
+		glm::vec3 RotationAngles;
+		bool bUniformScaling = true;
 		
-		glm::vec3 scale;
+		glm::vec3 Scale;
 
-		glm::mat4 transformMatrix;
-		glm::mat4 previousTransformMatrix;
+		glm::mat4 TransformMatrix;
+		glm::mat4 PreviousTransformMatrix;
 
-		void rotateQuaternion(float angle, glm::vec3 axis);
+		void RotateQuaternion(float Angle, glm::vec3 Axis);
 	};
 }

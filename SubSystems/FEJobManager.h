@@ -2,28 +2,30 @@
 
 #include "../SubSystems/FEFileSystem.h"
 
+#ifdef OLD_LOADING
+
 namespace FocalEngine
 {
-	class textureLoadJob
+	class TextureLoadJob
 	{
-		std::thread threadHandler;
-		std::atomic<bool> loadingDone;
-		std::atomic<bool> newJobsReady;
-		std::vector<std::pair<std::string, void*>> texturesToLoad;
-		std::vector<std::pair<char*, void*>> texturesData;
+		std::thread ThreadHandler;
+		std::atomic<bool> LoadingDone;
+		std::atomic<bool> NewJobsReady;
+		std::vector<std::pair<std::string, void*>> TexturesToLoad;
+		std::vector<std::pair<char*, void*>> TexturesData;
 
-		void loadTextureFunc();
+		void LoadTextureFunc();
 	public:
-		textureLoadJob();
-		~textureLoadJob();
+		TextureLoadJob();
+		~TextureLoadJob();
 
-		bool isThreadReadyForJob();
-		bool beginJobsUpdate();
-		void addTextureToLoad(std::pair<std::string, void*> textureFilePath);
-		int getReadyJobCount();
-		std::pair<char**, void*> getJobByIndex(size_t index);
-		void endJobsUpdate();
-		bool clearJobs();
+		bool IsThreadReadyForJob();
+		bool BeginJobsUpdate();
+		void AddTextureToLoad(std::pair<std::string, void*> TextureFilePath);
+		int GetReadyJobCount();
+		std::pair<char**, void*> GetJobByIndex(size_t Index);
+		void EndJobsUpdate();
+		bool ClearJobs();
 	};
 
 	class FEResourceManager;
@@ -34,14 +36,16 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEJobManager)
 
-		void loadTextureAsync(std::string texturePath, void* texture);
-		int getFreeTextureThreadCount();
+		void LoadTextureAsync(std::string TexturePath, void* Texture);
+		int GetFreeTextureThreadCount();
 	private:
 		SINGLETON_PRIVATE_PART(FEJobManager)
 
-		std::vector<textureLoadJob*> textureLoadJobs;
-		std::vector<std::pair<std::string, void*>> textureListToLoad;
+		std::vector<TextureLoadJob*> TextureLoadJobs;
+		std::vector<std::pair<std::string, void*>> TextureListToLoad;
 	};
 
 	#define JOB_MANAGER FEJobManager::getInstance()
 }
+
+#endif // OLD_LOADING

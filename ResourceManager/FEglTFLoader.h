@@ -6,128 +6,128 @@ namespace FocalEngine
 {
 	class FEResourceManager;
 
-	struct glTFBuffer
+	struct GLTFBuffer
 	{
-		std::string uri;
-		int byteLength = -1;
-		char* rawData = nullptr;
+		std::string Uri;
+		int ByteLength = -1;
+		char* RawData = nullptr;
 	};
 
-	struct glTFBufferView
+	struct GLTFBufferView
 	{
-		int buffer = -1;
-		int byteLength = -1;
-		int byteOffset = -1;
-		int target = -1;
+		int Buffer = -1;
+		int ByteLength = -1;
+		int ByteOffset = -1;
+		int Target = -1;
 	};
 
-	struct glTFAccessor
+	struct GLTFAccessor
 	{
-		int bufferView = -1;
-		int byteOffset = -1;
-		int componentType = -1;
-		int count = -1;
-		std::vector<int> max;
-		std::vector<int> min;
+		int BufferView = -1;
+		int ByteOffset = -1;
+		int ComponentType = -1;
+		int Count = -1;
+		std::vector<int> Max;
+		std::vector<int> Min;
 
-		std::string type;
+		std::string Type;
 	};
 
-	struct glTFPrimitiveRawData
+	struct GLTFPrimitiveRawData
 	{
-		std::string name;
-		std::vector<float> positions;
-		std::vector<float> normals;
-		std::vector<float> tangents;
+		std::string Name;
+		std::vector<float> Positions;
+		std::vector<float> Normals;
+		std::vector<float> Tangents;
 		std::vector<std::vector<float>> UVs;
-		std::vector<int> indices;
+		std::vector<int> Indices;
 	};
 
-	struct glTFPrimitive
+	struct GLTFPrimitive
 	{
-		std::unordered_map<std::string, int> attributes;
-		int indices = -1;
-		int material = -1;
-		int mode = -1;
+		std::unordered_map<std::string, int> Attributes;
+		int Indices = -1;
+		int Material = -1;
+		int Mode = -1;
 
-		glTFPrimitiveRawData rawData;
+		GLTFPrimitiveRawData RawData;
 	};
 
-	struct glTFMesh
+	struct GLTFMesh
 	{
-		std::string name;
-		std::vector<glTFPrimitive> primitives;
+		std::string Name;
+		std::vector<GLTFPrimitive> Primitives;
 	};
 
-	struct glTFMaterialTexture
+	struct GLTFMaterialTexture
 	{
-		int index = -1;
-		int texCoord = -1;
-		int scale = 1;
+		int Index = -1;
+		int TexCoord = -1;
+		int Scale = 1;
 	};
 
-	struct glTFMaterial
+	struct GLTFMaterial
 	{
-		std::string name;
+		std::string Name;
 
-		glm::vec4 baseColor = glm::vec4(-1);
-		glTFMaterialTexture baseColorTexture;
+		glm::vec4 BaseColor = glm::vec4(-1);
+		GLTFMaterialTexture BaseColorTexture;
 
-		glTFMaterialTexture metallicRoughnessTexture;
-		glTFMaterialTexture normalTexture;
-		glTFMaterialTexture occlusionTexture;
+		GLTFMaterialTexture MetallicRoughnessTexture;
+		GLTFMaterialTexture NormalTexture;
+		GLTFMaterialTexture OcclusionTexture;
 	};
 
-	struct glTFGameModel
+	struct GLTFGameModel
 	{
-		std::string name;
-		int primitive = -1;
-		int material = -1;
+		std::string Name;
+		int Primitive = -1;
+		int Material = -1;
 
-		int meshParent = -1;
+		int MeshParent = -1;
 	};
 
-	struct glTFEntity
+	struct GLTFEntity
 	{
-		std::string name;
-		int mesh = -1;
-		glm::vec3 translation = glm::vec3(0);
-		glm::vec4 rotation = glm::vec4(0);
-		glm::vec3 scale = glm::vec3(1);
+		std::string Name;
+		int Mesh = -1;
+		glm::vec3 Translation = glm::vec3(0);
+		glm::vec4 Rotation = glm::vec4(0);
+		glm::vec3 Scale = glm::vec3(1);
 	};
 
-	class FEglTFLoader
+	class FEGLTFLoader
 	{
 		friend FEResourceManager;
 	public:
-		SINGLETON_PUBLIC_PART(FEglTFLoader)
+		SINGLETON_PUBLIC_PART(FEGLTFLoader)
 
-		void load(const char* fileName);
-		void clear();
+		void Load(const char* FileName);
+		void Clear();
 		
 	private:
-		SINGLETON_PRIVATE_PART(FEglTFLoader)
+		SINGLETON_PRIVATE_PART(FEGLTFLoader)
 
-		std::vector<glTFBuffer> buffers;
-		std::vector<glTFBufferView> bufferViews;
-		std::vector<glTFAccessor> accessors;
-		std::vector<glTFPrimitive> primitives;
-		std::vector<glTFMesh> meshes;
-		std::vector<glTFEntity> entities;
+		std::vector<GLTFBuffer> Buffers;
+		std::vector<GLTFBufferView> BufferViews;
+		std::vector<GLTFAccessor> Accessors;
+		std::vector<GLTFPrimitive> Primitives;
+		std::vector<GLTFMesh> Meshes;
+		std::vector<GLTFEntity> Entities;
 
-		void loadPrimitive(Json::Value jsonPrimitive, glTFPrimitive& newPrimitive);
-		bool loadMeshRawData(glTFPrimitive& primitive);
-		bool loadPositions(glTFPrimitive& primitive);
-		bool loadNomals(glTFPrimitive& primitive);
-		bool loadTangents(glTFPrimitive& primitive);
-		bool loadUV(glTFPrimitive& primitive);
-		bool loadIndices(glTFPrimitive& primitive);
+		void LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPrimitive);
+		bool LoadMeshRawData(GLTFPrimitive& Primitive);
+		bool LoadPositions(GLTFPrimitive& Primitive);
+		bool LoadNomals(GLTFPrimitive& Primitive);
+		bool LoadTangents(GLTFPrimitive& Primitive);
+		bool LoadUV(GLTFPrimitive& Primitive);
+		bool LoadIndices(GLTFPrimitive& Primitive);
 
-		glTFMaterialTexture loadMaterialTexture(Json::Value jsonTextureNode);
+		GLTFMaterialTexture LoadMaterialTexture(Json::Value JsonTextureNode);
 
-		std::vector<std::string> images;
-		std::vector<std::string> textures;
-		std::vector<glTFMaterial> materials;
-		std::vector<glTFGameModel> gameModels;
+		std::vector<std::string> Images;
+		std::vector<std::string> Textures;
+		std::vector<GLTFMaterial> Materials;
+		std::vector<GLTFGameModel> GameModels;
 	};
 }

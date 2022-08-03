@@ -1,131 +1,133 @@
 #include "FEJobManager.h"
+
+#ifdef OLD_LOADING
 using namespace FocalEngine;
 
-FEJobManager* FEJobManager::_instance = nullptr;
+FEJobManager* FEJobManager::Instance = nullptr;
 
-void textureLoadJob::loadTextureFunc()
+void TextureLoadJob::LoadTextureFunc()
 {
 	while (true)
 	{
-		newJobsReady = false;
+		NewJobsReady = false;
 
-		for (size_t i = 0; i < texturesToLoad.size(); i++)
+		for (size_t i = 0; i < TexturesToLoad.size(); i++)
 		{
 			std::fstream file;
-			file.open(texturesToLoad[i].first.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
-			std::streamsize fileSize = file.tellg();
-			if (fileSize <= 0)
+			file.open(TexturesToLoad[i].first.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+			const std::streamsize FileSize = file.tellg();
+			if (FileSize <= 0)
 			{
-				texturesData.push_back(std::make_pair(nullptr, texturesToLoad[i].second));
+				TexturesData.push_back(std::make_pair(nullptr, TexturesToLoad[i].second));
 				continue;
 			}
 
 			file.seekg(0, std::ios::beg);
-			char* fileData = new char[int(fileSize)];
-			file.read(fileData, fileSize);
+			char* FileData = new char[static_cast<int>(FileSize)];
+			file.read(FileData, FileSize);
 			file.close();
 
-			texturesData.push_back(std::make_pair(fileData, texturesToLoad[i].second));
+			TexturesData.push_back(std::make_pair(FileData, TexturesToLoad[i].second));
 		}
 
-		loadingDone = true;
+		LoadingDone = true;
 		while (true)
 		{
 			Sleep(5);
-			if (newJobsReady.load())
+			if (NewJobsReady.load())
 				break;
 		}
 	}
 }
 
-textureLoadJob::textureLoadJob()
+TextureLoadJob::TextureLoadJob()
 {
-	loadingDone = false;
-	newJobsReady = false;
-	threadHandler = std::thread(&textureLoadJob::loadTextureFunc, this);
-	threadHandler.detach();
+	LoadingDone = false;
+	NewJobsReady = false;
+	ThreadHandler = std::thread(&TextureLoadJob::LoadTextureFunc, this);
+	ThreadHandler.detach();
 }
 
-textureLoadJob::~textureLoadJob()
+TextureLoadJob::~TextureLoadJob()
 {
 
 }
 
-bool textureLoadJob::isThreadReadyForJob()
+bool TextureLoadJob::IsThreadReadyForJob()
 {
-	return loadingDone.load();
+	return LoadingDone.load();
 }
 
-bool textureLoadJob::beginJobsUpdate()
+bool TextureLoadJob::BeginJobsUpdate()
 {
-	if (loadingDone.load())
+	if (LoadingDone.load())
 	{
-		texturesToLoad.clear();
+		TexturesToLoad.clear();
 		return true;
 	}
 
 	return false;
 }
 
-void textureLoadJob::addTextureToLoad(std::pair<std::string, void*> textureFilePath)
+void TextureLoadJob::AddTextureToLoad(const std::pair<std::string, void*> TextureFilePath)
 {
-	if (!loadingDone.load())
+	if (!LoadingDone.load())
 		return;
 
-	if (textureFilePath.first == "")
+	if (TextureFilePath.first.empty())
 		return;
 
-	texturesToLoad.push_back(textureFilePath);
+	TexturesToLoad.push_back(TextureFilePath);
 }
 
-int textureLoadJob::getReadyJobCount()
+int TextureLoadJob::GetReadyJobCount()
 {
-	if (!loadingDone.load())
+	if (!LoadingDone.load())
 		return 0;
 
-	return int(texturesData.size());
+	return static_cast<int>(TexturesData.size());
 }
 
-std::pair<char**, void*> textureLoadJob::getJobByIndex(size_t index)
+std::pair<char**, void*> TextureLoadJob::GetJobByIndex(const size_t Index)
 {
-	if (!loadingDone.load())
+	if (!LoadingDone.load())
 		return std::make_pair(nullptr, nullptr);
 
-	if (index >= texturesData.size())
+	if (Index >= TexturesData.size())
 		return std::make_pair(nullptr, nullptr);
 
-	return std::make_pair(&texturesData[index].first, texturesData[index].second);
+	return std::make_pair(&TexturesData[Index].first, TexturesData[Index].second);
 }
 
-bool textureLoadJob::clearJobs()
+bool TextureLoadJob::ClearJobs()
 {
-	if (!loadingDone.load())
+	if (!LoadingDone.load())
 		return false;
 
-	for (size_t i = 0; i < texturesData.size(); i++)
+	for (size_t i = 0; i < TexturesData.size(); i++)
 	{
-		delete[] texturesData[i].first;
+		delete[] TexturesData[i].first;
 	}
-	texturesData.clear();
+	TexturesData.clear();
 
 	return true;
 }
 
-void textureLoadJob::endJobsUpdate()
+void TextureLoadJob::EndJobsUpdate()
 {
-	if (!loadingDone.load())
+	if (!LoadingDone.load())
 		return;
 
-	loadingDone = false;
-	newJobsReady = true;
+	LoadingDone = false;
+	NewJobsReady = true;
 }
 
 FEJobManager::FEJobManager()
 {
-	textureLoadJobs.resize(4);
-	for (size_t i = 0; i < textureLoadJobs.size(); i++)
+	TextureLoadJobs.resize(4);
+	for (size_t i = 0; i < TextureLoadJobs.size(); i++)
 	{
-		textureLoadJobs[i] = new textureLoadJob();
+		TextureLoadJobs[i] = new TextureLoadJob();
 	}
 }
 
@@ -134,18 +136,20 @@ FEJobManager::~FEJobManager()
 
 }
 
-void FEJobManager::loadTextureAsync(std::string texturePath, void* texture)
+void FEJobManager::LoadTextureAsync(std::string TexturePath, void* Texture)
 {
-	textureListToLoad.push_back(std::make_pair(texturePath, texture));
+	TextureListToLoad.push_back(std::make_pair(TexturePath, Texture));
 }
 
-int FEJobManager::getFreeTextureThreadCount()
+int FEJobManager::GetFreeTextureThreadCount()
 {
 	int result = 0;
-	for (size_t i = 0; i < textureLoadJobs.size(); i++)
+	for (size_t i = 0; i < TextureLoadJobs.size(); i++)
 	{
-		result += textureLoadJobs[i]->isThreadReadyForJob() ? 1 : 0;
+		result += TextureLoadJobs[i]->IsThreadReadyForJob() ? 1 : 0;
 	}
 
 	return result;
 }
+
+#endif // OLD_LOADING

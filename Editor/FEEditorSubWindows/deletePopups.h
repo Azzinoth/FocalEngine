@@ -4,98 +4,98 @@
 #include "../NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.h"  
 #include "../NodeSystem/CustomNodes/FEEditorStandardNodes.h"
 
-class deleteDirectoryPopup;
+class DeleteDirectoryPopup;
 
-class deleteTexturePopup : public ImGuiModalPopup
+class DeleteTexturePopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteTexturePopup)
+	SINGLETON_PRIVATE_PART(DeleteTexturePopup)
 
-	friend deleteDirectoryPopup;
-	FETexture* objToWorkWith;
+	friend DeleteDirectoryPopup;
+	FETexture* ObjToWorkWith;
 
-	static void deleteTexture(FETexture* texture);
+	static void DeleteTexture(FETexture* Texture);
 public:
-	SINGLETON_PUBLIC_PART(deleteTexturePopup)
+	SINGLETON_PUBLIC_PART(DeleteTexturePopup)
 
-	static std::vector<FEMaterial*> materialsThatUsesTexture(FETexture* texture);
-	void show(FETexture* TextureToDelete);
-	void render() override;
+	static std::vector<FEMaterial*> MaterialsThatUsesTexture(const FETexture* Texture);
+	void Show(FETexture* TextureToDelete);
+	void Render() override;
 };
 
-class deleteMeshPopup : public ImGuiModalPopup
+class DeleteMeshPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteMeshPopup)
+	SINGLETON_PRIVATE_PART(DeleteMeshPopup)
 
-	friend deleteDirectoryPopup;
-	FEMesh* objToWorkWith;
+	friend DeleteDirectoryPopup;
+	FEMesh* ObjToWorkWith;
 
-	static void deleteMesh(FEMesh* mesh);
+	static void DeleteMesh(FEMesh* Mesh);
 public:
-	SINGLETON_PUBLIC_PART(deleteMeshPopup)
+	SINGLETON_PUBLIC_PART(DeleteMeshPopup)
 
-	int timesMeshUsed(FEMesh* mesh);
-	void show(FEMesh* MeshToDelete);
-	void render() override;
+	int TimesMeshUsed(const FEMesh* Mesh);
+	void Show(FEMesh* MeshToDelete);
+	void Render() override;
 };
 
-class deleteMaterialPopup : public ImGuiModalPopup
+class DeleteMaterialPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteMaterialPopup)
+	SINGLETON_PRIVATE_PART(DeleteMaterialPopup)
 
-		friend deleteDirectoryPopup;
-	FEMaterial* objToWorkWith;
+	friend DeleteDirectoryPopup;
+	FEMaterial* ObjToWorkWith;
 
-	static void deleteMaterial(FEMaterial* material);
+	static void DeleteMaterial(FEMaterial* Material);
 public:
-	SINGLETON_PUBLIC_PART(deleteMaterialPopup)
+	SINGLETON_PUBLIC_PART(DeleteMaterialPopup)
 
-		int timesMaterialUsed(FEMaterial* material);
-	void show(FEMaterial* material);
-	void render() override;
+	int TimesMaterialUsed(const FEMaterial* Material);
+	void Show(FEMaterial* Material);
+	void Render() override;
 };
 
-class deleteGameModelPopup : public ImGuiModalPopup
+class DeleteGameModelPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteGameModelPopup)
+	SINGLETON_PRIVATE_PART(DeleteGameModelPopup)
 
-	friend deleteDirectoryPopup;
-	FEGameModel* objToWorkWith;
+	friend DeleteDirectoryPopup;
+	FEGameModel* ObjToWorkWith;
 
-	static void deleteGameModel(FEGameModel* gameModel);
+	static void DeleteGameModel(FEGameModel* GameModel);
 public:
-	SINGLETON_PUBLIC_PART(deleteGameModelPopup)
+	SINGLETON_PUBLIC_PART(DeleteGameModelPopup)
 
-	int timesGameModelUsed(FEGameModel* gameModel);
-	void show(FEGameModel* GameModel);
-	void render() override;
+	int TimesGameModelUsed(const FEGameModel* GameModel);
+	void Show(FEGameModel* GameModel);
+	void Render() override;
 };
 
-class deletePrefabPopup : public ImGuiModalPopup
+class DeletePrefabPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deletePrefabPopup)
+	SINGLETON_PRIVATE_PART(DeletePrefabPopup)
 
-	friend deleteDirectoryPopup;
-	FEPrefab* objToWorkWith;
+	friend DeleteDirectoryPopup;
+	FEPrefab* ObjToWorkWith;
 
-	static void deletePrefab(FEPrefab* Prefab);
+	static void DeletePrefab(FEPrefab* Prefab);
 public:
-	SINGLETON_PUBLIC_PART(deletePrefabPopup)
+	SINGLETON_PUBLIC_PART(DeletePrefabPopup)
 
-	int timesPrefabUsed(FEPrefab* Prefab);
-	void show(FEPrefab* Prefab);
-	void render() override;
+	int TimesPrefabUsed(const FEPrefab* Prefab);
+	void Show(FEPrefab* Prefab);
+	void Render() override;
 };
 
-class deleteDirectoryPopup : public ImGuiModalPopup
+class DeleteDirectoryPopup : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(deleteDirectoryPopup)
+	SINGLETON_PRIVATE_PART(DeleteDirectoryPopup)
 
-	std::string objToWorkWith;
-	std::string pathToDirectory;
+	std::string ObjToWorkWith;
+	std::string PathToDirectory;
 public:
-	SINGLETON_PUBLIC_PART(deleteDirectoryPopup)
+	SINGLETON_PUBLIC_PART(DeleteDirectoryPopup)
 
-	void show(std::string directoryName);
-	void recursiveDeletion(std::string path);
-	void render() override;
+	void Show(std::string DirectoryName);
+	void RecursiveDeletion(std::string Path);
+	void Render() override;
 };

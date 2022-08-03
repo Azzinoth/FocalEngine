@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	enum FECulingType
+	enum FE_CULING_TYPE
 	{
 		FE_CULLING_NONE = 0,
 		FE_CULLING_LODS = 1,
@@ -16,10 +16,10 @@ namespace FocalEngine
 
 	struct FELODRecord
 	{
-		FEMesh* mesh = nullptr;
-		float maxDrawDistance = 0.0f;
-		bool isBillboard = false;
-		FEMaterial* material = nullptr;
+		FEMesh* Mesh = nullptr;
+		float MaxDrawDistance = 0.0f;
+		bool bBillboard = false;
+		FEMaterial* Material = nullptr;
 	};
 
 	class FEPrefab;
@@ -33,54 +33,52 @@ namespace FocalEngine
 		FEGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name);
 		~FEGameModel();
 
-		FEMesh* mesh = nullptr;
-		FEMaterial* material = nullptr;
+		FEMesh* Mesh = nullptr;
+		FEMaterial* Material = nullptr;
 
-		bool useLODlevels();
-		void setUsingLODlevels(bool newValue);
+		bool IsUsingLOD();
+		void SetUsingLOD(bool NewValue);
 
-		FEMaterial* getMaterial();
-		FEMaterial* getBillboardMaterial();
+		FEMaterial* GetMaterial();
+		FEMaterial* GetBillboardMaterial();
 
-		void setMaterial(FEMaterial* newValue);
-		void setBillboardMaterial(FEMaterial* newValue);
+		void SetMaterial(FEMaterial* NewValue);
+		void SetBillboardMaterial(FEMaterial* NewValue);
 
-		FEMesh* getMesh();
-		void setMesh(FEMesh* newValue);
+		FEMesh* GetMesh();
+		void SetMesh(FEMesh* NewValue);
 
-		FEMesh* getLODMesh(size_t LODindex);
-		void setLODMesh(size_t LODindex, FEMesh* newValue);
+		FEMesh* GetLODMesh(size_t LODIndex);
+		void SetLODMesh(size_t LODIndex, FEMesh* NewValue);
 
-		float getLODMaxDrawDistance(size_t LODindex);
-		void setLODMaxDrawDistance(size_t LODindex, float newValue);
+		float GetLODMaxDrawDistance(size_t LODIndex);
+		void SetLODMaxDrawDistance(size_t LODIndex, float NewValue);
 
-		bool isLODBillboard(size_t LODindex);
-		void setIsLODBillboard(size_t LODindex, bool newValue);
+		bool IsLODBillboard(size_t LODIndex);
+		void SetIsLODBillboard(size_t LODIndex, bool NewValue);
 
-		size_t getMaxLODCount();
-		size_t getLODCount();
+		size_t GetMaxLODCount();
+		size_t GetLODCount();
 
-		float getBillboardZeroRotaion();
-		void setBillboardZeroRotaion(float newValue);
+		float GetBillboardZeroRotaion();
+		void SetBillboardZeroRotaion(float NewValue);
 
-		float getCullDistance();
-		void setCullDistance(float newValue);
+		float GetCullDistance();
+		void SetCullDistance(float NewValue);
 
-		float getScaleFactor();
-		void setScaleFactor(float newValue);
-
-		bool dirtyFlag = false;
+		float GetScaleFactor();
+		void SetScaleFactor(float NewValue);
 	private:
-		int maxLODCount = 4;
-		float cullDistance = 300.0f;
-		bool haveLODlevels = false;
+		int MaxLODCount = 4;
+		float CullDistance = 300.0f;
+		bool bHaveLODLevels = false;
 
-		FEMaterial* billboardMaterial = nullptr;
+		FEMaterial* BillboardMaterial = nullptr;
 		std::vector<FELODRecord> LODRecords;
-		float billboardZeroRotaion = 0.0f;
-		float scaleFactor = 1.0f;
+		float BillboardZeroRotaion = 0.0f;
+		float ScaleFactor = 1.0f;
 
-		void correctLODDistances();
+		void CorrectLODDistances();
 	};
 }
 

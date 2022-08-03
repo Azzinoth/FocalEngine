@@ -1,116 +1,112 @@
 #include "FEScene.h"
 using namespace FocalEngine;
 
-FEScene* FEScene::_instance = nullptr;
+FEScene* FEScene::Instance = nullptr;
 
 FEScene::FEScene()
 {
 }
 
-FELight* FEScene::addLight(FEObjectType lightType, std::string Name, std::string forceObjectID)
+FELight* FEScene::AddLight(const FE_OBJECT_TYPE LightType, std::string Name, const std::string ForceObjectID)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedLight";
 
-	if (lightType == FE_DIRECTIONAL_LIGHT)
+	if (LightType == FE_DIRECTIONAL_LIGHT)
 	{
-		FEDirectionalLight* newLight = new FEDirectionalLight();
-		if (forceObjectID != "")
-			newLight->setID(forceObjectID);
-		newLight->setName(Name);
+		FEDirectionalLight* NewLight = new FEDirectionalLight();
+		if (!ForceObjectID.empty())
+			NewLight->SetID(ForceObjectID);
+		NewLight->SetName(Name);
 
-		newLight->cascadeData[0].frameBuffer = RESOURCE_MANAGER.createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		newLight->cascadeData[1].frameBuffer = RESOURCE_MANAGER.createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		newLight->cascadeData[2].frameBuffer = RESOURCE_MANAGER.createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		newLight->cascadeData[3].frameBuffer = RESOURCE_MANAGER.createFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		NewLight->CascadeData[0].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		NewLight->CascadeData[1].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		NewLight->CascadeData[2].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+		NewLight->CascadeData[3].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
 
 		// to clear cascades framebuffer
-		newLight->setCastShadows(false);
-		newLight->setCastShadows(true);
+		NewLight->SetCastShadows(false);
+		NewLight->SetCastShadows(true);
 
-		return newLight;
+		return NewLight;
 	}
-	else if (lightType == FE_SPOT_LIGHT)
+	else if (LightType == FE_SPOT_LIGHT)
 	{
-		FESpotLight* newLight = new FESpotLight();
-		if (forceObjectID != "")
-			newLight->setID(forceObjectID);
-		newLight->setName(Name);
+		FESpotLight* NewLight = new FESpotLight();
+		if (!ForceObjectID.empty())
+			NewLight->SetID(ForceObjectID);
+		NewLight->SetName(Name);
 
-		return newLight;
+		return NewLight;
 	}
-	else if (lightType == FE_POINT_LIGHT)
+	else if (LightType == FE_POINT_LIGHT)
 	{
-		FEPointLight* newLight = new FEPointLight();
-		if (forceObjectID != "")
-			newLight->setID(forceObjectID);
-		newLight->setName(Name);
+		FEPointLight* NewLight = new FEPointLight();
+		if (!ForceObjectID.empty())
+			NewLight->SetID(ForceObjectID);
+		NewLight->SetName(Name);
 
-		return newLight;
+		return NewLight;
 	}
 
 	return nullptr;
 }
 
-FEEntity* FEScene::addEntity(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+FEEntity* FEScene::AddEntity(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
 {
-	FEResourceManager& resourceManager = RESOURCE_MANAGER;
-
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedEntity";
 
-	FEEntity* newEntity = resourceManager.createEntity(gameModel, Name, forceObjectID);
-	entityMap[newEntity->getObjectID()] = newEntity;
-	return entityMap[newEntity->getObjectID()];
+	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(GameModel, Name, ForceObjectID);
+	EntityMap[NewEntity->GetObjectID()] = NewEntity;
+	return EntityMap[NewEntity->GetObjectID()];
 }
 
-FEEntity* FEScene::addEntity(FEPrefab* prefab, std::string Name, std::string forceObjectID)
+FEEntity* FEScene::AddEntity(FEPrefab* Prefab, std::string Name, const std::string ForceObjectID)
 {
-	FEResourceManager& resourceManager = RESOURCE_MANAGER;
-
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedEntity";
 
-	FEEntity* newEntity = resourceManager.createEntity(prefab, Name, forceObjectID);
-	entityMap[newEntity->getObjectID()] = newEntity;
-	return entityMap[newEntity->getObjectID()];
+	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(Prefab, Name, ForceObjectID);
+	EntityMap[NewEntity->GetObjectID()] = NewEntity;
+	return EntityMap[NewEntity->GetObjectID()];
 }
 
-bool FEScene::addEntity(FEEntity* newEntity)
+bool FEScene::AddEntity(FEEntity* NewEntity)
 {
-	if (newEntity == nullptr)
+	if (NewEntity == nullptr)
 		return false;
 
-	if (newEntity->prefab == nullptr)
+	if (NewEntity->Prefab == nullptr)
 		return false;
 
-	entityMap[newEntity->getObjectID()] = newEntity;
+	EntityMap[NewEntity->GetObjectID()] = NewEntity;
 
 	return true;
 }
 
-FEEntity* FEScene::getEntity(std::string ID)
+FEEntity* FEScene::GetEntity(const std::string ID)
 {
-	if (entityMap.find(ID) == entityMap.end())
+	if (EntityMap.find(ID) == EntityMap.end())
 		return nullptr;
 
-	return entityMap[ID];
+	return EntityMap[ID];
 }
 
-std::vector<FEEntity*> FEScene::getEntityByName(std::string Name)
+std::vector<FEEntity*> FEScene::GetEntityByName(const std::string Name)
 {
 	std::vector<FEEntity*> result;
 
-	auto it = entityMap.begin();
-	while (it != entityMap.end())
+	auto it = EntityMap.begin();
+	while (it != EntityMap.end())
 	{
-		if (it->second->getType() != FE_ENTITY)
+		if (it->second->GetType() != FE_ENTITY)
 		{
 			it++;
 			continue;
 		}
 
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -121,54 +117,54 @@ std::vector<FEEntity*> FEScene::getEntityByName(std::string Name)
 	return result;
 }
 
-void FEScene::deleteEntity(std::string ID)
+void FEScene::DeleteEntity(const std::string ID)
 {
-	if (entityMap.find(ID) == entityMap.end())
+	if (EntityMap.find(ID) == EntityMap.end())
 		return;
 
-	FEEntity* entityToDelete = entityMap[ID];
-	delete entityToDelete;
-	entityMap.erase(ID);
+	const FEEntity* EntityToDelete = EntityMap[ID];
+	delete EntityToDelete;
+	EntityMap.erase(ID);
 }
 
-std::vector<std::string> FEScene::getEntityList()
+std::vector<std::string> FEScene::GetEntityList()
 {
-	FE_MAP_TO_STR_VECTOR(entityMap)
+	FE_MAP_TO_STR_VECTOR(EntityMap)
 }
 
-FELight* FEScene::getLight(std::string ID)
+FELight* FEScene::GetLight(const std::string ID)
 {
-	if (OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
-		return reinterpret_cast<FEDirectionalLight*>(OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT][ID]);
+	if (OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
+		return reinterpret_cast<FEDirectionalLight*>(OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT][ID]);
 
-	if (OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].end())
-		return reinterpret_cast<FESpotLight*>(OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT][ID]);
+	if (OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
+		return reinterpret_cast<FESpotLight*>(OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT][ID]);
 
-	if (OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].end())
-		return reinterpret_cast<FEPointLight*>(OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT][ID]);
+	if (OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
+		return reinterpret_cast<FEPointLight*>(OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT][ID]);
 	
 	return nullptr;
 }
 
-std::vector<std::string> FEScene::getLightsList()
+std::vector<std::string> FEScene::GetLightsList()
 {
 	std::vector<std::string> result;
-	auto iterator = OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	auto iterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
 		result.push_back(iterator->first);
 		iterator++;
 	}
 
-	iterator = OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].end())
+	iterator = OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
 	{
 		result.push_back(iterator->first);
 		iterator++;
 	}
 
-	iterator = OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].end())
+	iterator = OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
 	{
 		result.push_back(iterator->first);
 		iterator++;
@@ -177,209 +173,205 @@ std::vector<std::string> FEScene::getLightsList()
 	return result;
 }
 
-void FEScene::clear()
+void FEScene::Clear()
 {
-	auto entityIterator = entityMap.begin();
-	while (entityIterator != entityMap.end())
+	auto EntityIterator = EntityMap.begin();
+	while (EntityIterator != EntityMap.end())
 	{
-		delete entityIterator->second;
-		entityIterator++;
+		delete EntityIterator->second;
+		EntityIterator++;
 	}
-	entityMap.clear();
+	EntityMap.clear();
 
-	std::vector<FEObject*> allLights;
-	auto iterator = OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	std::vector<FEObject*> AllLights;
+	auto iterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
-		allLights.push_back(iterator->second);
+		AllLights.push_back(iterator->second);
 		iterator++;
 	}
 
-	iterator = OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].end())
+	iterator = OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
 	{
-		allLights.push_back(iterator->second);
+		AllLights.push_back(iterator->second);
 		iterator++;
 	}
 
-	iterator = OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].end())
+	iterator = OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].begin();
+	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
 	{
-		allLights.push_back(iterator->second);
+		AllLights.push_back(iterator->second);
 		iterator++;
 	}
 
-	for (size_t i = 0; i < allLights.size(); i++)
+	for (size_t i = 0; i < AllLights.size(); i++)
 	{
-		if (allLights[i]->getType() == FE_DIRECTIONAL_LIGHT)
+		if (AllLights[i]->GetType() == FE_DIRECTIONAL_LIGHT)
 		{
-			delete reinterpret_cast<FEDirectionalLight*>(allLights[i]);
+			delete reinterpret_cast<FEDirectionalLight*>(AllLights[i]);
 		}
-		else if (allLights[i]->getType() == FE_POINT_LIGHT)
+		else if (AllLights[i]->GetType() == FE_POINT_LIGHT)
 		{
-			delete reinterpret_cast<FEPointLight*>(allLights[i]);
+			delete reinterpret_cast<FEPointLight*>(AllLights[i]);
 		}
-		else if (allLights[i]->getType() == FE_SPOT_LIGHT)
+		else if (AllLights[i]->GetType() == FE_SPOT_LIGHT)
 		{
-			delete reinterpret_cast<FESpotLight*>(allLights[i]);
+			delete reinterpret_cast<FESpotLight*>(AllLights[i]);
 		}
 	}
 
-	auto terrainIterator = terrainMap.begin();
-	while (terrainIterator != terrainMap.end())
+	auto TerrainIterator = TerrainMap.begin();
+	while (TerrainIterator != TerrainMap.end())
 	{
-		delete terrainIterator->second;
-		terrainIterator++;
+		delete TerrainIterator->second;
+		TerrainIterator++;
 	}
-	terrainMap.clear();
+	TerrainMap.clear();
 }
 
-void FEScene::prepareForGameModelDeletion(FEGameModel* gameModel)
+void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
 	// looking if this gameModel is used in some prefab
 	// to-do: should be done through list of pointers to entities that uses this gameModel.
-	auto prefabList = RESOURCE_MANAGER.getPrefabList();
-	for (size_t i = 0; i < prefabList.size(); i++)
+	const auto PrefabList = RESOURCE_MANAGER.GetPrefabList();
+	for (size_t i = 0; i < PrefabList.size(); i++)
 	{
-		FEPrefab* currentPrefab = RESOURCE_MANAGER.getPrefab(prefabList[i]);
-		for (int j = 0; j < currentPrefab->componentsCount(); j++)
+		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabList[i]);
+		for (int j = 0; j < CurrentPrefab->ComponentsCount(); j++)
 		{
-			if (currentPrefab->getComponent(j)->gameModel == gameModel)
+			if (CurrentPrefab->GetComponent(j)->GameModel == GameModel)
 			{
-				currentPrefab->getComponent(j)->gameModel = RESOURCE_MANAGER.getGameModel(RESOURCE_MANAGER.getStandardGameModelList()[0]);
-				currentPrefab->setDirtyFlag(true);
+				CurrentPrefab->GetComponent(j)->GameModel = RESOURCE_MANAGER.GetGameModel(RESOURCE_MANAGER.GetStandardGameModelList()[0]);
+				CurrentPrefab->SetDirtyFlag(true);
 			}
 		}
 	}
 }
 
-void FEScene::prepareForPrefabDeletion(FEPrefab* prefab)
+void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 {
 	// looking if this prefab is used in some entities
 	// to-do: should be done through list of pointers to entities that uses this gameModel.
-	auto entitiesIterator = entityMap.begin();
-	while (entitiesIterator != entityMap.end())
+	auto EntitiesIterator = EntityMap.begin();
+	while (EntitiesIterator != EntityMap.end())
 	{
-		if (entitiesIterator->second->prefab == prefab)
+		if (EntitiesIterator->second->Prefab == Prefab)
 		{
-			entitiesIterator->second->prefab = RESOURCE_MANAGER.getPrefab(RESOURCE_MANAGER.getStandardPrefabList()[0]);
-			entitiesIterator->second->setDirtyFlag(true);
+			EntitiesIterator->second->Prefab = RESOURCE_MANAGER.GetPrefab(RESOURCE_MANAGER.GetStandardPrefabList()[0]);
+			EntitiesIterator->second->SetDirtyFlag(true);
 		}
 
-		entitiesIterator++;
+		EntitiesIterator++;
 	}
 }
 
-bool FEScene::addTerrain(FETerrain* newTerrain)
+bool FEScene::AddTerrain(FETerrain* NewTerrain)
 {
-	if (newTerrain == nullptr)
+	if (NewTerrain == nullptr)
 		return false;
 
-	terrainMap[newTerrain->getObjectID()] = newTerrain;
+	TerrainMap[NewTerrain->GetObjectID()] = NewTerrain;
 
 	return true;
 }
 
-std::vector<std::string> FEScene::getTerrainList()
+std::vector<std::string> FEScene::GetTerrainList()
 {
-	FE_MAP_TO_STR_VECTOR(terrainMap)
+	FE_MAP_TO_STR_VECTOR(TerrainMap)
 }
 
-FETerrain* FEScene::getTerrain(std::string ID)
+FETerrain* FEScene::GetTerrain(const std::string ID)
 {
-	if (terrainMap.find(ID) == terrainMap.end())
+	if (TerrainMap.find(ID) == TerrainMap.end())
 		return nullptr;
 
-	return terrainMap[ID];
+	return TerrainMap[ID];
 }
 
-void FEScene::deleteTerrain(std::string ID)
+void FEScene::DeleteTerrain(const std::string ID)
 {
-	if (terrainMap.find(ID) == terrainMap.end())
+	if (TerrainMap.find(ID) == TerrainMap.end())
 		return;
 
-	FETerrain* terrainToDelete = terrainMap[ID];
+	const FETerrain* TerrainToDelete = TerrainMap[ID];
 
-	auto entityIt = entityMap.begin();
-	while (entityIt != entityMap.end())
+	auto EntityIt = EntityMap.begin();
+	while (EntityIt != EntityMap.end())
 	{
-		if (entityIt->second->getType() == FE_ENTITY_INSTANCED)
+		if (EntityIt->second->GetType() == FE_ENTITY_INSTANCED)
 		{
-			FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entityIt->second);
-			if (instancedEntity->getSnappedToTerrain() == terrainToDelete)
+			FEEntityInstanced* InstancedEntity = reinterpret_cast<FEEntityInstanced*>(EntityIt->second);
+			if (InstancedEntity->GetSnappedToTerrain() == TerrainToDelete)
 			{
-				instancedEntity->unSnapFromTerrain();
+				InstancedEntity->UnSnapFromTerrain();
 			}
 		}
 
-		entityIt++;
+		EntityIt++;
 	}
 	
-	delete terrainToDelete;
-	terrainMap.erase(ID);
+	delete TerrainToDelete;
+	TerrainMap.erase(ID);
 }
 
-FEEntityInstanced* FEScene::addEntityInstanced(FEPrefab* prefab, std::string Name, std::string forceObjectID)
+FEEntityInstanced* FEScene::AddEntityInstanced(FEPrefab* Prefab, std::string Name, const std::string ForceObjectID)
 {
-	FEResourceManager& resourceManager = RESOURCE_MANAGER;
-
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedEntityInstanced";
 
-	FEEntityInstanced* newEntityInstanced = new FEEntityInstanced(prefab, Name);
-	if (forceObjectID != "")
-		newEntityInstanced->setID(forceObjectID);
+	FEEntityInstanced* NewEntityInstanced = new FEEntityInstanced(Prefab, Name);
+	if (!ForceObjectID.empty())
+		NewEntityInstanced->SetID(ForceObjectID);
 
-	entityMap[newEntityInstanced->getObjectID()] = newEntityInstanced;
-	return newEntityInstanced;
+	EntityMap[NewEntityInstanced->GetObjectID()] = NewEntityInstanced;
+	return NewEntityInstanced;
 }
 
-FEEntityInstanced* FEScene::addEntityInstanced(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+FEEntityInstanced* FEScene::AddEntityInstanced(FEGameModel* GameModel, const std::string Name, const std::string ForceObjectID)
 {
-	FEResourceManager& resourceManager = RESOURCE_MANAGER;
-	FEPrefab* tempPrefab = resourceManager.createPrefab(gameModel, gameModel->getName());
-
-	return addEntityInstanced(tempPrefab, Name, forceObjectID);
+	FEPrefab* TempPrefab = RESOURCE_MANAGER.CreatePrefab(GameModel, GameModel->GetName());
+	return AddEntityInstanced(TempPrefab, Name, ForceObjectID);
 }
 
-bool FEScene::addEntityInstanced(FEEntityInstanced* newEntityInstanced)
+bool FEScene::AddEntityInstanced(FEEntityInstanced* NewEntityInstanced)
 {
-	if (newEntityInstanced == nullptr)
+	if (NewEntityInstanced == nullptr)
 		return false;
 
-	if (newEntityInstanced->prefab == nullptr)
+	if (NewEntityInstanced->Prefab == nullptr)
 		return false;
 
-	entityMap[newEntityInstanced->getObjectID()] = newEntityInstanced;
+	EntityMap[NewEntityInstanced->GetObjectID()] = NewEntityInstanced;
 
 	return true;
 }
 
-FEEntityInstanced* FEScene::getEntityInstanced(std::string ID)
+FEEntityInstanced* FEScene::GetEntityInstanced(const std::string ID)
 {
-	if (entityMap.find(ID) == entityMap.end())
+	if (EntityMap.find(ID) == EntityMap.end())
 		return nullptr;
 
-	if (entityMap[ID]->getType() != FE_ENTITY_INSTANCED)
+	if (EntityMap[ID]->GetType() != FE_ENTITY_INSTANCED)
 		return nullptr;
 
-	return reinterpret_cast<FEEntityInstanced*>(entityMap[ID]);
+	return reinterpret_cast<FEEntityInstanced*>(EntityMap[ID]);
 }
 
-std::vector<FEEntityInstanced*> FEScene::getEntityInstancedByName(std::string Name)
+std::vector<FEEntityInstanced*> FEScene::GetEntityInstancedByName(const std::string Name)
 {
 	std::vector<FEEntityInstanced*> result;
 
-	auto it = entityMap.begin();
-	while (it != entityMap.end())
+	auto it = EntityMap.begin();
+	while (it != EntityMap.end())
 	{
-		if (it->second->getType() != FE_ENTITY_INSTANCED)
+		if (it->second->GetType() != FE_ENTITY_INSTANCED)
 		{
 			it++;
 			continue;
 		}
 
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(reinterpret_cast<FEEntityInstanced*>(it->second));
 		}
@@ -390,41 +382,41 @@ std::vector<FEEntityInstanced*> FEScene::getEntityInstancedByName(std::string Na
 	return result;
 }
 
-void FEScene::setSelectMode(FEEntityInstanced* entityInstanced, bool newValue)
+void FEScene::SetSelectMode(FEEntityInstanced* EntityInstanced, const bool NewValue)
 {
-	auto it = entityMap.begin();
-	while (it != entityMap.end())
+	auto it = EntityMap.begin();
+	while (it != EntityMap.end())
 	{
-		if (it->second->getType() != FE_ENTITY_INSTANCED)
+		if (it->second->GetType() != FE_ENTITY_INSTANCED)
 		{
 			it++;
 			continue;
 		}
 
-		reinterpret_cast<FEEntityInstanced*>(it->second)->setSelectMode(false);
+		reinterpret_cast<FEEntityInstanced*>(it->second)->SetSelectMode(false);
 		it++;
 	}
 
-	entityInstanced->setSelectMode(newValue);
+	EntityInstanced->SetSelectMode(NewValue);
 }
 
-void FEScene::deleteLight(std::string ID)
+void FEScene::DeleteLight(const std::string ID)
 {
-	if (OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].end())
+	if (OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
 	{
-		OBJECT_MANAGER.objectsByType[FE_DIRECTIONAL_LIGHT].erase(ID);
+		OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].erase(ID);
 		return;
 	}
 	
-	if (OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].end())
+	if (OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
 	{
-		OBJECT_MANAGER.objectsByType[FE_SPOT_LIGHT].erase(ID);
+		OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].erase(ID);
 		return;
 	}
 
-	if (OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].end())
+	if (OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
 	{
-		OBJECT_MANAGER.objectsByType[FE_POINT_LIGHT].erase(ID);
+		OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].erase(ID);
 		return;
 	}
 

@@ -2,21 +2,22 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	ENGINE.createWindow();
-	EDITOR.initializeResources();
+	ENGINE.InitWindow();
+	EDITOR.InitializeResources();
+	THREAD_POOL.SetConcurrentThreadCount(10);
 
-	const int frameCountTillMeasure = 20;
-	double cpuFrameDurations[frameCountTillMeasure] = { 0.0f };
-	double gpuFrameDurations[frameCountTillMeasure] = { 0.0f };
-	int frameCounter = 0;
+	const int FrameCountTillMeasure = 20;
+	double CPUFrameDurations[FrameCountTillMeasure] = { 0.0f };
+	double GPUFrameDurations[FrameCountTillMeasure] = { 0.0f };
+	int FrameCounter = 0;
 
-	double avarageCpuFrameDuration = 0.0;
-	double avarageGpuFrameDuration = 0.0;
+	double AvarageCpuFrameDuration = 0.0;
+	double AvarageGpuFrameDuration = 0.0;
 
-	while (ENGINE.isWindowOpened())
+	while (ENGINE.IsWindowOpened())
 	{
-		ENGINE.beginFrame();
-		ENGINE.render();
+		ENGINE.BeginFrame();
+		ENGINE.Render();
 
 #ifdef EDITOR_SELECTION_DEBUG_MODE
 		std::string objectsUnderMouse = "objectsUnderMouse: " + std::to_string(SELECTED.objectsUnderMouse.size());
@@ -29,48 +30,48 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 #endif
 
 		//ImGui::ShowDemoWindow();
-		EDITOR.render();
-		ENGINE.endFrame();
+		EDITOR.Render();
+		ENGINE.EndFrame();
 
 		// CPU and GPU Time
-		cpuFrameDurations[frameCounter++] = ENGINE.getCpuTime();
-		gpuFrameDurations[frameCounter++] = ENGINE.getGpuTime();
+		CPUFrameDurations[FrameCounter++] = ENGINE.GetCpuTime();
+		GPUFrameDurations[FrameCounter++] = ENGINE.GetGpuTime();
 
-		if (frameCounter > frameCountTillMeasure - 1)
+		if (FrameCounter > FrameCountTillMeasure - 1)
 		{
-			avarageCpuFrameDuration = 0.0f;
-			avarageGpuFrameDuration = 0.0f;
-			for (size_t i = 0; i < frameCountTillMeasure; i++)
+			AvarageCpuFrameDuration = 0.0f;
+			AvarageGpuFrameDuration = 0.0f;
+			for (size_t i = 0; i < FrameCountTillMeasure; i++)
 			{
-				avarageCpuFrameDuration += cpuFrameDurations[i];
-				avarageGpuFrameDuration += gpuFrameDurations[i];
+				AvarageCpuFrameDuration += CPUFrameDurations[i];
+				AvarageGpuFrameDuration += GPUFrameDurations[i];
 			}
-			avarageCpuFrameDuration /= frameCountTillMeasure;
-			avarageGpuFrameDuration /= frameCountTillMeasure;
+			AvarageCpuFrameDuration /= FrameCountTillMeasure;
+			AvarageGpuFrameDuration /= FrameCountTillMeasure;
 			
-			frameCounter = 0;
+			FrameCounter = 0;
 		}
 
-		std::string cpuMS = std::to_string(avarageCpuFrameDuration);
-		cpuMS.erase(cpuMS.begin() + 4, cpuMS.end());
+		std::string CPUMs = std::to_string(AvarageCpuFrameDuration);
+		CPUMs.erase(CPUMs.begin() + 4, CPUMs.end());
 
-		std::string gpuMS = std::to_string(avarageGpuFrameDuration);
-		gpuMS.erase(gpuMS.begin() + 4, gpuMS.end());
+		std::string GPUMs = std::to_string(AvarageGpuFrameDuration);
+		GPUMs.erase(GPUMs.begin() + 4, GPUMs.end());
 
-		std::string frameMS = std::to_string(avarageCpuFrameDuration + avarageGpuFrameDuration);
-		frameMS.erase(frameMS.begin() + 4, frameMS.end());
+		std::string FrameMs = std::to_string(AvarageCpuFrameDuration + AvarageGpuFrameDuration);
+		FrameMs.erase(FrameMs.begin() + 4, FrameMs.end());
 
 		std::string caption = "CPU time : ";
-		caption += cpuMS;
+		caption += CPUMs;
 		caption += " ms";
 		caption += "  GPU time : ";
-		caption += gpuMS;
+		caption += GPUMs;
 		caption += " ms";
 		caption += "  Frame time : ";
-		caption += frameMS;
+		caption += FrameMs;
 		caption += " ms";
 
-		ENGINE.setWindowCaption(caption.c_str());
+		ENGINE.SetWindowCaption(caption.c_str());
 	}
 	
 	return 0;

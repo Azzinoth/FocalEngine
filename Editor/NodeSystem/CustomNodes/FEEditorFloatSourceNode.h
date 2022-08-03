@@ -4,20 +4,20 @@
 
 class FEEditorFloatSourceNode : public FEVisualNode
 {
-	float data = 0.0f;
+	float Data = 0.0f;
 
-	bool contextMenu = false;
-	bool openContextMenu();
+	bool ContextMenu = false;
+	bool OpenContextMenu();
 
-	bool canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser);
-	void socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType);
+	bool CanConnect(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* CandidateSocket, char** MsgToUser);
+	void SocketEvent(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* ConnectedSocket, FE_VISUAL_NODE_SOCKET_EVENT EventType);
 
-	void mouseClick(int mouseButton);
+	void MouseClick(int MouseButton);
 
-	Json::Value getInfoForSaving();
+	Json::Value GetInfoForSaving();
 public:
-	FEEditorFloatSourceNode(float initialData = 0.0f);
+	FEEditorFloatSourceNode(float InitialData = 0.0f);
 
-	void draw();
-	float getData();
+	void Draw();
+	float GetData() const;
 };

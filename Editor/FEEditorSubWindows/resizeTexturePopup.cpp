@@ -1,80 +1,77 @@
 #include "resizeTexturePopup.h"
 
-resizeTexturePopup* resizeTexturePopup::_instance = nullptr;
+resizeTexturePopup* resizeTexturePopup::Instance = nullptr;
 
 resizeTexturePopup::resizeTexturePopup()
 {
-	popupCaption = "Resize texture";
-	objToWorkWith = nullptr;
+	PopupCaption = "Resize texture";
+	ObjToWorkWith = nullptr;
 
-	cancelButton = new ImGuiButton("Cancel");
-	cancelButton->setDefaultColor(ImVec4(0.7f, 0.5f, 0.5f, 1.0f));
-	cancelButton->setHoveredColor(ImVec4(0.95f, 0.5f, 0.0f, 1.0f));
-	cancelButton->setActiveColor(ImVec4(0.1f, 1.0f, 0.1f, 1.0f));
+	CancelButton = new ImGuiButton("Cancel");
+	CancelButton->SetDefaultColor(ImVec4(0.7f, 0.5f, 0.5f, 1.0f));
+	CancelButton->SetHoveredColor(ImVec4(0.95f, 0.5f, 0.0f, 1.0f));
+	CancelButton->SetActiveColor(ImVec4(0.1f, 1.0f, 0.1f, 1.0f));
 
-	applyButton = new ImGuiButton("Apply");
+	ApplyButton = new ImGuiButton("Apply");
 }
 
 resizeTexturePopup::~resizeTexturePopup()
 {
-	if (cancelButton != nullptr)
-		delete cancelButton;
-
-	if (applyButton != nullptr)
-		delete applyButton;
+	delete CancelButton;
+	delete ApplyButton;
 }
 
-void resizeTexturePopup::show(FETexture* ObjToWorkWith)
+void resizeTexturePopup::Show(FETexture* ObjToWorkWith)
 {
 	if (ObjToWorkWith == nullptr)
 		return;
-	shouldOpen = true;
-	objToWorkWith = ObjToWorkWith;
+	bShouldOpen = true;
+	ObjToWorkWith = ObjToWorkWith;
 
-	newWidth = ObjToWorkWith->getWidth();
-	newHeight = ObjToWorkWith->getHeight();
+	NewWidth = ObjToWorkWith->GetWidth();
+	NewHeight = ObjToWorkWith->GetHeight();
 }
 
-void resizeTexturePopup::render()
+void resizeTexturePopup::Render()
 {
-	ImGuiModalPopup::render();
+	ImGuiModalPopup::Render();
 
-	ImGui::SetNextWindowSize(popupSize);
+	ImGui::SetNextWindowSize(PopupSize);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
+	if (ImGui::BeginPopupModal(PopupCaption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar))
 	{
-		if (objToWorkWith == nullptr)
+		if (ObjToWorkWith == nullptr)
 		{
 			ImGui::PopStyleVar();
 			ImGui::EndPopup();
 			return;
 		}
 
-		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
+		ImGui::SetWindowPos(ImVec2(ENGINE.GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.GetWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 
 		ImGui::SetCursorPos(ImVec2(20, 45));
 		ImGui::Text("Width:");
 		ImGui::SetCursorPos(ImVec2(85, 40));
 		ImGui::SetNextItemWidth(80);
-		ImGui::DragInt("##Width", &newWidth);
+		ImGui::DragInt("##Width", &NewWidth);
 
-		if (newWidth < 4)
-			newWidth = 4;
+		if (NewWidth < 4)
+			NewWidth = 4;
 
-		if (newWidth > 8196)
-			newWidth = 8196;
+		if (NewWidth > 8196)
+			NewWidth = 8196;
 
 		ImGui::SetCursorPos(ImVec2(190, 45));
 		ImGui::Text("Height:");
 		ImGui::SetCursorPos(ImVec2(265, 40));
 		ImGui::SetNextItemWidth(80);
-		ImGui::DragInt("##Height", &newHeight);
+		ImGui::DragInt("##Height", &NewHeight);
 
-		if (newHeight < 4)
-			newHeight = 4;
+		if (NewHeight < 4)
+			NewHeight = 4;
 
-		if (newHeight > 8196)
-			newHeight = 8196;
+		if (NewHeight > 8196)
+			NewHeight = 8196;
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 		ImGui::Text("Where to put resized texture data:");
@@ -82,7 +79,7 @@ void resizeTexturePopup::render()
 		static int mode = 0;
 		ImGui::RadioButton("Replace currect texture.", &mode, 0);
 		ImGui::RadioButton("Create new texture.", &mode, 1);
-		replaceTexture = mode == 0 ? true : false;
+		bReplaceTexture = mode == 0 ? true : false;
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 		ImGui::Text("Note: Only nearest-neighbor algorithm \navailable right now.");
@@ -98,35 +95,35 @@ void resizeTexturePopup::render()
 		if (filtration > 16)
 			filtration = 16;*/
 
-		applyButton->setPosition(ImVec2(popupSize.x / 4 - applyButton->getSize().x / 2, popupSize.y - 35));
-		applyButton->render();
-		if (applyButton->getWasClicked())
+		ApplyButton->SetPosition(ImVec2(PopupSize.x / 4 - ApplyButton->GetSize().x / 2, PopupSize.y - 35));
+		ApplyButton->Render();
+		if (ApplyButton->IsClicked())
 		{
-			if (replaceTexture)
+			if (bReplaceTexture)
 			{
-				RESOURCE_MANAGER.resizeTexture(objToWorkWith, newWidth, newHeight, 0/*filtration*/);
-				PROJECT_MANAGER.getCurrent()->addUnSavedObject(objToWorkWith);
+				RESOURCE_MANAGER.ResizeTexture(ObjToWorkWith, NewWidth, NewHeight, 0/*filtration*/);
+				PROJECT_MANAGER.GetCurrent()->AddUnSavedObject(ObjToWorkWith);
 			}
 			else
 			{
-				unsigned char* result = RESOURCE_MANAGER.resizeTextureRawData(objToWorkWith, newWidth, newHeight, 0/*filtration*/);
-				FETexture* newTexture = RESOURCE_MANAGER.rawDataToFETexture(result, newWidth, newHeight);
-				VIRTUAL_FILE_SYSTEM.createFile(newTexture, VIRTUAL_FILE_SYSTEM.getCurrentPath());
-				PROJECT_MANAGER.getCurrent()->addUnSavedObject(newTexture);
+				unsigned char* result = RESOURCE_MANAGER.ResizeTextureRawData(ObjToWorkWith, NewWidth, NewHeight, 0/*filtration*/);
+				FETexture* NewTexture = RESOURCE_MANAGER.RawDataToFETexture(result, NewWidth, NewHeight);
+				VIRTUAL_FILE_SYSTEM.CreateFile(NewTexture, VIRTUAL_FILE_SYSTEM.GetCurrentPath());
+				PROJECT_MANAGER.GetCurrent()->AddUnSavedObject(NewTexture);
 				delete[] result;
 			}
 
-			objToWorkWith = nullptr;
-			ImGuiModalPopup::close();
+			ObjToWorkWith = nullptr;
+			ImGuiModalPopup::Close();
 		}
 
 		ImGui::SetItemDefaultFocus();
-		cancelButton->setPosition(ImVec2(popupSize.x / 2 + popupSize.x / 4 - cancelButton->getSize().x / 2, popupSize.y - 35));
-		cancelButton->render();
-		if (cancelButton->getWasClicked())
+		CancelButton->SetPosition(ImVec2(PopupSize.x / 2 + PopupSize.x / 4 - CancelButton->GetSize().x / 2, PopupSize.y - 35));
+		CancelButton->Render();
+		if (CancelButton->IsClicked())
 		{
-			objToWorkWith = nullptr;
-			ImGuiModalPopup::close();
+			ObjToWorkWith = nullptr;
+			ImGuiModalPopup::Close();
 		}
 
 		ImGui::PopStyleVar();

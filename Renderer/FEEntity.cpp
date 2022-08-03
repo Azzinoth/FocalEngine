@@ -7,17 +7,17 @@ FEEntity::FEEntity() : FEObject(FE_ENTITY, "")
 
 FEEntity::FEEntity(FEPrefab* Prefab, std::string Name) : FEObject(FE_ENTITY, Name)
 {
-	prefab = Prefab;
-	setName(Name);
-	if (prefab != nullptr)
-		entityAABB = prefab->getAABB();
+	this->Prefab = Prefab;
+	SetName(Name);
+	if (Prefab != nullptr)
+		EntityAABB = Prefab->GetAABB();
 }
 
 FEEntity::~FEEntity()
 {
 }
 
-void FEEntity::render()
+void FEEntity::Render()
 {
 	//FE_GL_ERROR(glBindVertexArray(gameModel->mesh->getVaoID()));
 	//if ((gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -42,53 +42,63 @@ void FEEntity::render()
 	//FE_GL_ERROR(glBindVertexArray(0));
 }
 
-bool FEEntity::isVisible()
+bool FEEntity::IsVisible() const
 {
-	return visible;
+	return bVisible;
 }
 
-void FEEntity::setVisibility(bool isVisible)
+void FEEntity::SetVisibility(const bool NewValue)
 {
-	visible = isVisible;
+	bVisible = NewValue;
 }
 
-FEAABB FEEntity::getAABB()
+FEAABB FEEntity::GetAABB()
 {
-	if (transform.dirtyFlag)
+	if (Transform.bDirtyFlag)
 	{
-		entityAABB = prefab->getAABB().transform(transform.getTransformMatrix());
-		transform.dirtyFlag = false;
+		EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
+		Transform.bDirtyFlag = false;
 	}
 
-	return entityAABB;
+	return EntityAABB;
 }
 
-bool FEEntity::isCastShadows()
+bool FEEntity::IsCastShadows() const
 {
-	return castShadows;
+	return bCastShadows;
 }
 
-void FEEntity::setCastShadows(bool isCastShadows)
+void FEEntity::SetCastShadows(const bool NewValue)
 {
-	castShadows = isCastShadows;
+	bCastShadows = NewValue;
 }
 
-bool FEEntity::isReceivingShadows()
+bool FEEntity::IsReceivingShadows() const
 {
-	return receiveShadows;
+	return bReceiveShadows;
 }
 
-void FEEntity::setReceivingShadows(bool isReceivingShadows)
+void FEEntity::SetReceivingShadows(const bool NewValue)
 {
-	receiveShadows = isReceivingShadows;
+	bReceiveShadows = NewValue;
 }
 
-bool FEEntity::isPostprocessApplied()
+bool FEEntity::IsPostprocessApplied() const
 {
-	return applyPostprocess;
+	return bApplyPostprocess;
 }
 
-void FEEntity::setIsPostprocessApplied(bool isPostprocessApplied)
+void FEEntity::SetIsPostprocessApplied(const bool NewValue)
 {
-	applyPostprocess = isPostprocessApplied;
+	bApplyPostprocess = NewValue;
+}
+
+void FEEntity::SetWireframeMode(const bool NewValue)
+{
+	bWireframeMode = NewValue;
+}
+
+bool FEEntity::IsWireframeMode() const
+{
+	return bWireframeMode;
 }

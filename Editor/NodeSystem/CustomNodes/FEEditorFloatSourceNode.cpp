@@ -1,34 +1,34 @@
 #include "FEEditorFloatSourceNode.h"
 using namespace FocalEngine;
 
-FEEditorFloatSourceNode::FEEditorFloatSourceNode(float initialData) : FEVisualNode()
+FEEditorFloatSourceNode::FEEditorFloatSourceNode(const float InitialData) : FEVisualNode()
 {
-	type = "FEEditorFloatSourceNode";
+	Type = "FEEditorFloatSourceNode";
 
-	data = initialData;
+	Data = InitialData;
 
-	setSize(ImVec2(220, 78));
-	setName("Float");
+	SetSize(ImVec2(220, 78));
+	SetName("Float");
 
-	titleBackgroundColor = ImColor(31, 117, 208);
-	titleBackgroundColorHovered = ImColor(35, 145, 255);
+	TitleBackgroundColor = ImColor(31, 117, 208);
+	TitleBackgroundColorHovered = ImColor(35, 145, 255);
 	
-	addOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_FLOAT_CHANNEL_OUT, "out"));
+	AddOutputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_FLOAT_CHANNEL_OUT, "out"));
 }
 
-void FEEditorFloatSourceNode::draw()
+void FEEditorFloatSourceNode::Draw()
 {	
-	FEVisualNode::draw();
+	FEVisualNode::Draw();
 	ImGui::SetCursorScreenPos(ImVec2(ImGui::GetCursorScreenPos().x + 10.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 13.0f));
 	ImGui::SetNextItemWidth(140);
-	if (ImGui::InputFloat("##data", &data))
+	if (ImGui::InputFloat("##data", &Data))
 	{
-		parentArea->propagateUpdateToConnectedNodes(this);
+		ParentArea->PropagateUpdateToConnectedNodes(this);
 	}
 	
-	if (contextMenu)
+	if (ContextMenu)
 	{
-		contextMenu = false;
+		ContextMenu = false;
 		ImGui::OpenPopup("##context_menu");
 	}
 	
@@ -37,7 +37,7 @@ void FEEditorFloatSourceNode::draw()
 	{
 		if (ImGui::MenuItem("Remove float node"))
 		{
-			shouldBeDestroyed = true;
+			bShouldBeDestroyed = true;
 		}
 
 		ImGui::EndPopup();
@@ -46,31 +46,31 @@ void FEEditorFloatSourceNode::draw()
 	ImGui::PopStyleVar();
 }
 
-void FEEditorFloatSourceNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
+void FEEditorFloatSourceNode::SocketEvent(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* ConnectedSocket, const FE_VISUAL_NODE_SOCKET_EVENT EventType)
 {
-	FEVisualNode::socketEvent(ownSocket,  connectedSocket, eventType);
+	FEVisualNode::SocketEvent(OwnSocket,  ConnectedSocket, EventType);
 }
 
-float FEEditorFloatSourceNode::getData()
+float FEEditorFloatSourceNode::GetData() const
 {
-	return data;
+	return Data;
 }
 
-bool FEEditorFloatSourceNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorFloatSourceNode::CanConnect(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* CandidateSocket, char** MsgToUser)
 {
-	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::CanConnect(OwnSocket, CandidateSocket, nullptr))
 		return false;
 
 	return false;
 }
 
-bool FEEditorFloatSourceNode::openContextMenu()
+bool FEEditorFloatSourceNode::OpenContextMenu()
 {
-	contextMenu = true;
+	ContextMenu = true;
 	return true;
 }
 
-Json::Value FEEditorFloatSourceNode::getInfoForSaving()
+Json::Value FEEditorFloatSourceNode::GetInfoForSaving()
 {
 	return "";
 }

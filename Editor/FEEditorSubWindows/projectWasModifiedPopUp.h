@@ -4,13 +4,13 @@
 
 class projectWasModifiedPopUp : public ImGuiModalPopup
 {
-	FEProject* objToWorkWith;
-	bool shouldTerminate = false;
+	FEProject* ObjToWorkWith;
+	bool bShouldTerminate = false;
 public:
 	SINGLETON_PUBLIC_PART(projectWasModifiedPopUp)
 
-	void show(FEProject* project, bool fullyCloseApplication);
-	void render() override;
+	void Show(FEProject* Project, bool FullyCloseApplication);
+	void Render() override;
 
 private:
 	SINGLETON_PRIVATE_PART(projectWasModifiedPopUp)

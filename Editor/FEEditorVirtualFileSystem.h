@@ -7,12 +7,12 @@ class FEVFSDirectory;
 struct FEVFSFile
 {
 	FEVFSFile();
-	FEVFSFile(FEObject* data, FEVFSDirectory* inDirectory);
-	FEVFSDirectory* inDirectory;
-	FEObject* data;
-	bool readOnly = false;
-	bool isReadOnly();
-	void setReadOnly(bool newValue);
+	FEVFSFile(FEObject* Data, FEVFSDirectory* InDirectory);
+	FEVFSDirectory* InDirectory;
+	FEObject* Data;
+	bool bReadOnly = false;
+	bool IsReadOnly();
+	void SetReadOnly(bool NewValue);
 };
 
 class FEVirtualFileSystem;
@@ -23,22 +23,22 @@ class FEVFSDirectory : public FEObject
 	FEVFSDirectory();
 	~FEVFSDirectory();
 
-	FEVFSDirectory* parent;
-	std::vector<FEVFSDirectory*> subDirectories;
-	std::vector<FEVFSFile> files;
+	FEVFSDirectory* Parent;
+	std::vector<FEVFSDirectory*> SubDirectories;
+	std::vector<FEVFSFile> Files;
 
-	bool addFile(FEObject* file);
-	bool deleteFile(FEObject* file);
-	bool hasFile(FEObject* file);
+	bool AddFile(FEObject* File);
+	bool DeleteFile(const FEObject* File);
+	bool HasFile(const FEObject* File);
 
-	bool addSubDirectory(std::string name, std::string forceObjectID = "");
-	bool hasSubDirectory(std::string subDirectory);
-	FEVFSDirectory* getSubDirectory(std::string subDirectory);
-	void clear();
+	bool AddSubDirectory(std::string Name, std::string ForceObjectID = "");
+	bool HasSubDirectory(std::string SubDirectory);
+	FEVFSDirectory* GetSubDirectory(std::string SubDirectory);
+	void Clear();
 
-	bool readOnly = false;
-	bool isReadOnly();
-	void setReadOnly(bool newValue);
+	bool bReadOnly = false;
+	bool IsReadOnly();
+	void SetReadOnly(bool NewValue);
 };
 
 class FEVirtualFileSystem
@@ -46,45 +46,45 @@ class FEVirtualFileSystem
 public:
 	SINGLETON_PUBLIC_PART(FEVirtualFileSystem)
 
-	bool isPathCorrect(std::string path);
-	bool createFile(FEObject* data, std::string path);
-	bool moveFile(FEObject* data, std::string oldPath, std::string newPath);
-	bool deleteFile(FEObject* data, std::string path);
-	void setFileReadOnly(bool newValue, FEObject* data, std::string path);
+	bool IsPathCorrect(std::string Path);
+	bool CreateFile(FEObject* Data, std::string Path);
+	bool MoveFile(FEObject* Data, std::string OldPath, std::string NewPath);
+	bool DeleteFile(const FEObject* Data, std::string Path);
+	void SetFileReadOnly(bool NewValue, const FEObject* Data, std::string Path);
 
-	bool createDirectory(std::string name, std::string path);
-	std::string createDirectory(std::string path);
-	bool renameDirectory(std::string newName, std::string path);
-	bool moveDirectory(std::string directoryPath, std::string newPath);
-	bool deleteEmptyDirectory(std::string path);
-	int subDirectoriesCount(std::string path);
-	std::vector<FEObject*> getDirectoryContent(std::string path);
-	std::string getDirectoryParent(std::string path);
-	void setDirectoryReadOnly(bool newValue, std::string path);
+	bool CreateDirectory(std::string Name, std::string Path);
+	std::string CreateDirectory(std::string Path);
+	bool RenameDirectory(std::string NewName, std::string Path);
+	bool MoveDirectory(std::string DirectoryPath, std::string NewPath);
+	bool DeleteEmptyDirectory(std::string Path);
+	int SubDirectoriesCount(std::string Path);
+	std::vector<FEObject*> GetDirectoryContent(std::string Path);
+	std::string GetDirectoryParent(std::string Path);
+	void SetDirectoryReadOnly(bool NewValue, std::string Path);
 
-	void clear();
-	bool acceptableName(std::string name);
+	void Clear();
+	bool AcceptableName(std::string Name);
 
-	std::string getCurrentPath();
-	bool setCurrentPath(std::string path);
+	std::string GetCurrentPath();
+	bool SetCurrentPath(std::string Path);
 
-	void locateAndDeleteFile(FEObject* file);
+	void LocateAndDeleteFile(FEObject* File);
 
-	void saveState(std::string fileName);
-	void loadState(std::string fileName);
+	void SaveState(std::string FileName);
+	void LoadState(std::string FileName);
 
-	bool isReadOnly(FEObject* data, std::string path);
+	bool IsReadOnly(const FEObject* Data, std::string Path);
 private:
 	SINGLETON_PRIVATE_PART(FEVirtualFileSystem)
-	FEVFSDirectory* root;
-	FEVFSDirectory* pathToDirectory(std::string path);
-	std::string directoryToPath(FEVFSDirectory* directory);
-	void deleteDirectory(FEVFSDirectory* directory);
-	std::string currentPath = "/";
-	void locateAndDeleteFileRecursive(FEVFSDirectory* directory, FEObject* file);
+	FEVFSDirectory* Root;
+	FEVFSDirectory* PathToDirectory(std::string Path);
+	std::string DirectoryToPath(FEVFSDirectory* Directory);
+	void DeleteDirectory(FEVFSDirectory* Directory);
+	std::string CurrentPath = "/";
+	void LocateAndDeleteFileRecursive(FEVFSDirectory* Directory, FEObject* File);
 
-	void saveStateRecursive(Json::Value* localRoot, FEVFSDirectory* directory);
-	void loadStateRecursive(Json::Value* localRoot, FEVFSDirectory* parent, FEVFSDirectory* directory, std::string forceObjectID);
+	void SaveStateRecursive(Json::Value* LocalRoot, FEVFSDirectory* Directory);
+	void LoadStateRecursive(Json::Value* LocalRoot, FEVFSDirectory* Parent, FEVFSDirectory* Directory, std::string ForceObjectID);
 };
 
 #define VIRTUAL_FILE_SYSTEM_VERSION 0.01f

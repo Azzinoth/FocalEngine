@@ -3,94 +3,94 @@ using namespace FocalEngine;
 
 FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name) : FEObject(FE_MESH, Name)
 {
-	setName(Name);
-	vaoID = VaoID;
-	vertexCount = VertexCount;
-	vertexAttributes = VertexBuffersTypes;
+	SetName(Name);
+	this->VaoID = VaoID;
+	this->VertexCount = VertexCount;
+	VertexAttributes = VertexBuffersTypes;
 	this->AABB = AABB;
 }
 
 FEMesh::~FEMesh()
 {
-	FE_GL_ERROR(glDeleteVertexArrays(1, &vaoID));
+	FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
 }
 
-GLuint FEMesh::getVaoID() const
+GLuint FEMesh::GetVaoID() const
 {
-	return vaoID;
+	return VaoID;
 }
 
-GLuint FEMesh::getVertexCount() const
+GLuint FEMesh::GetVertexCount() const
 {
-	return vertexCount;
+	return VertexCount;
 }
 
-GLuint FEMesh::getIndicesBufferID() const
+GLuint FEMesh::GetIndicesBufferID() const
 {
-	return indicesBufferID;
+	return IndicesBufferID;
 }
 
-GLuint FEMesh::getIndicesCount() const
+GLuint FEMesh::GetIndicesCount() const
 {
-	return indicesCount;
+	return IndicesCount;
 }
 
-GLuint FEMesh::getPositionsBufferID() const
+GLuint FEMesh::GetPositionsBufferID() const
 {
-	return positionsBufferID;
+	return PositionsBufferID;
 }
 
-GLuint FEMesh::getPositionsCount() const
+GLuint FEMesh::GetPositionsCount() const
 {
-	return positionsCount;
+	return PositionsCount;
 }
 
-GLuint FEMesh::getNormalsBufferID() const
+GLuint FEMesh::GetNormalsBufferID() const
 {
-	return normalsBufferID;
+	return NormalsBufferID;
 }
 
-GLuint FEMesh::getNormalsCount() const
+GLuint FEMesh::GetNormalsCount() const
 {
-	return normalsCount;
+	return NormalsCount;
 }
 
-GLuint FEMesh::getTangentsBufferID() const
+GLuint FEMesh::GetTangentsBufferID() const
 {
-	return tangentsBufferID;
+	return TangentsBufferID;
 }
 
-GLuint FEMesh::getTangentsCount() const
+GLuint FEMesh::GetTangentsCount() const
 {
-	return tangentsCount;
+	return TangentsCount;
 }
 
-GLuint FEMesh::getUVBufferID() const
+GLuint FEMesh::GetUVBufferID() const
 {
 	return UVBufferID;
 }
 
-GLuint FEMesh::getUVCount() const
+GLuint FEMesh::GetUVCount() const
 {
 	return UVCount;
 }
 
-GLuint FEMesh::getMaterialsIndicesBufferID() const
+GLuint FEMesh::GetMaterialsIndicesBufferID() const
 {
-	return materialsIndicesBufferID;
+	return MaterialsIndicesBufferID;
 }
 
-GLuint FEMesh::getMaterialsIndicesCount() const
+GLuint FEMesh::GetMaterialsIndicesCount() const
 {
-	return materialsIndicesCount;
+	return MaterialsIndicesCount;
 }
 
-int FEMesh::getMaterialCount() const
+int FEMesh::GetMaterialCount() const
 {
-	return materialsCount;
+	return MaterialsCount;
 }
 
-FEAABB FEMesh::getAABB()
+FEAABB FEMesh::GetAABB()
 {
 	return AABB;
 }

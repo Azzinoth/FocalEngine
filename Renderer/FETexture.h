@@ -22,45 +22,45 @@ namespace FocalEngine
 		friend FEPostProcess;
 		friend FEFramebuffer;
 	public:
-		static void GPUAllocateTeture(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data);
-		static std::string textureInternalFormatToString(GLint internalFormat);
+		static void GPUAllocateTeture(GLenum Target, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLint Border, GLenum Format, GLenum Type, const void* Data);
+		static std::string TextureInternalFormatToString(GLint InternalFormat);
 
 		FETexture(std::string Name);
 		FETexture(int Width, int Height, std::string Name);
 		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name);
 		~FETexture();
 
-		GLuint getTextureID();
+		GLuint GetTextureID();
 
-		std::string getFileName();
+		std::string GetFileName();
 
-		virtual void bind(const unsigned int textureUnit = 0);
-		virtual void unBind();
+		virtual void Bind(const unsigned int TextureUnit = 0);
+		virtual void UnBind();
 
-		GLint getInternalFormat();
-		int getWidth();
-		int getHeight();
+		GLint GetInternalFormat();
+		int GetWidth();
+		int GetHeight();
 
-		unsigned char* getRawData(size_t* rawDataSize = nullptr);
-		void updateRawData(unsigned char* newRawData, size_t mipCount = 1);
+		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
+		void UpdateRawData(unsigned char* NewRawData, size_t MipCount = 1);
 	private:
-		GLuint textureID = -1;
-		void getNewGLTextureID();
-		std::string fileName = "";
-		bool hdr = false;
+		GLuint TextureID = -1;
+		void GetNewGlTextureID();
+		std::string FileName;
+		bool bHDR = false;
 
-		int width = 0;
-		int height = 0;
-		GLint internalFormat;
-		GLenum format;
-		GLuint defaultTextureUnit = -1;
+		int Width = 0;
+		int Height = 0;
+		GLint InternalFormat;
+		GLenum Format;
+		GLuint DefaultTextureUnit = -1;
 
-		FE_TEXTURE_MAG_FILTER magFilter = FE_LINEAR;
-		bool mipEnabled = true;
-		void addToOnDeleteCallBackList(std::string objectID);
-		void eraseFromOnDeleteCallBackList(std::string objectID);
+		FE_TEXTURE_MAG_FILTER MagFilter = FE_LINEAR;
+		bool MipEnabled = true;
+		void AddToOnDeleteCallBackList(std::string ObjectID);
+		void EraseFromOnDeleteCallBackList(std::string ObjectID);
 
-		static std::vector<GLuint> noDeletingList;
-		static void addToNoDeletingList(GLuint textureID);
+		static std::vector<GLuint> NoDeletingList;
+		static void AddToNoDeletingList(GLuint TextureID);
 	};
 }

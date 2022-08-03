@@ -2,34 +2,34 @@
 #include "FEResourceManager.h"
 using namespace FocalEngine;
 
-FEResourceManager* FEResourceManager::_instance = nullptr;
+FEResourceManager* FEResourceManager::Instance = nullptr;
 
-FETexture* FEResourceManager::createTexture(std::string Name, std::string forceObjectID)
+FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedTexture";
 
-	FETexture* newTexture = new FETexture(Name);
-	if (forceObjectID != "")
-		newTexture->setID(forceObjectID);
-	textures[newTexture->getObjectID()] = newTexture;
+	FETexture* NewTexture = new FETexture(Name);
+	if (!ForceObjectID.empty())
+		NewTexture->SetID(ForceObjectID);
+	Textures[NewTexture->GetObjectID()] = NewTexture;
 
-	return newTexture;
+	return NewTexture;
 }
 
-bool FEResourceManager::makeTextureStandard(FETexture* texture)
+bool FEResourceManager::MakeTextureStandard(FETexture* Texture)
 {
-	if (texture == nullptr)
+	if (Texture == nullptr)
 	{
-		LOG.add("texture is nullptr in function FEResourceManager::makeTextureStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("texture is nullptr in function FEResourceManager::makeTextureStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardTextures.find(texture->getObjectID()) == standardTextures.end())
+	if (StandardTextures.find(Texture->GetObjectID()) == StandardTextures.end())
 	{
-		if (textures.find(texture->getObjectID()) != textures.end())
-			textures.erase(texture->getObjectID());
-		standardTextures[texture->getObjectID()] = texture;
+		if (Textures.find(Texture->GetObjectID()) != Textures.end())
+			Textures.erase(Texture->GetObjectID());
+		StandardTextures[Texture->GetObjectID()] = Texture;
 
 		return true;
 	}
@@ -37,31 +37,31 @@ bool FEResourceManager::makeTextureStandard(FETexture* texture)
 	return false;
 }
 
-FEMesh* FEResourceManager::createMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name)
+FEMesh* FEResourceManager::CreateMesh(const GLuint VaoID, const unsigned int VertexCount, const int VertexBuffersTypes, const FEAABB AABB, std::string Name)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedMesh";
 
-	FEMesh* newMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB, Name);
-	newMesh->setName(Name);
-	meshes[newMesh->getObjectID()] = newMesh;
+	FEMesh* NewMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB, Name);
+	NewMesh->SetName(Name);
+	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
-	return newMesh;
+	return NewMesh;
 }
 
-bool FEResourceManager::makeMeshStandard(FEMesh* mesh)
+bool FEResourceManager::MakeMeshStandard(FEMesh* Mesh)
 {
-	if (mesh == nullptr)
+	if (Mesh == nullptr)
 	{
-		LOG.add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardMeshes.find(mesh->getObjectID()) == standardMeshes.end())
+	if (StandardMeshes.find(Mesh->GetObjectID()) == StandardMeshes.end())
 	{
-		if (meshes.find(mesh->getObjectID()) != meshes.end())
-			meshes.erase(mesh->getObjectID());
-		standardMeshes[mesh->getObjectID()] = mesh;
+		if (Meshes.find(Mesh->GetObjectID()) != Meshes.end())
+			Meshes.erase(Mesh->GetObjectID());
+		StandardMeshes[Mesh->GetObjectID()] = Mesh;
 
 		return true;
 	}
@@ -69,18 +69,18 @@ bool FEResourceManager::makeMeshStandard(FEMesh* mesh)
 	return false;
 }
 
-FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::string Name)
 {
-	std::vector<unsigned char> rawData;
-	unsigned uWidth, uHeight;
+	std::vector<unsigned char> RawData;
+	unsigned UWidth, UHeight;
 
-	lodepng::decode(rawData, uWidth, uHeight, fileName);
-	if (rawData.size() == 0)
+	lodepng::decode(RawData, UWidth, UHeight, FileName);
+	if (RawData.empty())
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadPNGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardTextures.size() > 0)
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadPNGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardTextures.empty())
 		{
-			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 		}
 		else
 		{
@@ -88,27 +88,27 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, std::string N
 		}
 	}
 
-	bool usingAlpha = false;
-	for (size_t i = 3; i < rawData.size(); i+=4)
+	bool bUsingAlpha = false;
+	for (size_t i = 3; i < RawData.size(); i+=4)
 	{
-		if (rawData[i] != 255)
+		if (RawData[i] != 255)
 		{
-			usingAlpha = true;
+			bUsingAlpha = true;
 			break;
 		}
 	}
 
-	FETexture* newTexture = createTexture(Name);
-	newTexture->width = uWidth;
-	newTexture->height = uHeight;
+	FETexture* NewTexture = CreateTexture(Name);
+	NewTexture->Width = UWidth;
+	NewTexture->Height = UHeight;
 
-	int internalFormat = usingAlpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+	const int InternalFormat = bUsingAlpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
-	newTexture->internalFormat = internalFormat;
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData.data());
+	NewTexture->InternalFormat = InternalFormat;
 
-	if (newTexture->mipEnabled)
+	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
@@ -116,7 +116,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, std::string N
 	}
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
+	if (NewTexture->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -124,152 +124,152 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* fileName, std::string N
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
-	newTexture->fileName = fileName;
+	NewTexture->FileName = FileName;
 
-	if (Name.size() == 0)
+	if (Name.empty())
 	{
-		std::string filePath = newTexture->fileName;
-		std::size_t index = filePath.find_last_of("/\\");
-		std::string newFileName = filePath.substr(index + 1);
-		index = newFileName.find_last_of(".");
-		std::string fileNameWithOutExtention = newFileName.substr(0, index);
-		newTexture->setName(fileNameWithOutExtention);
+		const std::string FilePath = NewTexture->FileName;
+		std::size_t index = FilePath.find_last_of("/\\");
+		const std::string NewFileName = FilePath.substr(index + 1);
+		index = NewFileName.find_last_of(".");
+		const std::string FileNameWithOutExtention = NewFileName.substr(0, index);
+		NewTexture->SetName(FileNameWithOutExtention);
 	}
 
-	return newTexture;
+	return NewTexture;
 }
 
-void FEResourceManager::saveFETexture(FETexture* texture, const char* fileName)
+void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 {
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, texture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Texture->TextureID));
 
-	GLint imgSize = 0;
+	GLint ImgSize = 0;
 	std::fstream file;
 
-	file.open(fileName, std::ios::out | std::ios::binary);
+	file.open(FileName, std::ios::out | std::ios::binary);
 	// version of FETexture file type
 	float version = FE_TEXTURE_VERSION;
 	file.write((char*)&version, sizeof(float));
 
-	int objectIDSize = int(texture->getObjectID().size() + 1);
-	file.write((char*)&objectIDSize, sizeof(int));
-	file.write((char*)texture->getObjectID().c_str(), sizeof(char) * objectIDSize);
+	int ObjectIDSize = static_cast<int>(Texture->GetObjectID().size() + 1);
+	file.write((char*)&ObjectIDSize, sizeof(int));
+	file.write((char*)Texture->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
 
-	file.write((char*)&texture->width, sizeof(int));
-	file.write((char*)&texture->height, sizeof(int));
-	file.write((char*)&texture->internalFormat, sizeof(int));
+	file.write((char*)&Texture->Width, sizeof(int));
+	file.write((char*)&Texture->Height, sizeof(int));
+	file.write((char*)&Texture->InternalFormat, sizeof(int));
 
-	int nameSize = int(texture->getName().size() + 1);
-	file.write((char*)&nameSize, sizeof(int));
+	int NameSize = static_cast<int>(Texture->GetName().size() + 1);
+	file.write((char*)&NameSize, sizeof(int));
 
-	char* textureName = new char[nameSize];
-	strcpy_s(textureName, nameSize, texture->getName().c_str());
-	file.write((char*)textureName, sizeof(char) * nameSize);
+	char* TextureName = new char[NameSize];
+	strcpy_s(TextureName, NameSize, Texture->GetName().c_str());
+	file.write((char*)TextureName, sizeof(char) * NameSize);
 
-	if (texture->internalFormat == GL_R16 || texture->internalFormat == GL_RED || texture->internalFormat == GL_RGBA)
+	if (Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
 	{
-		size_t dataSize = 0;
-		unsigned char* pixels = texture->getRawData(&dataSize);
+		size_t DataSize = 0;
+		unsigned char* Pixels = Texture->GetRawData(&DataSize);
 
-		file.write((char*)&dataSize, sizeof(int));
-		file.write((char*)pixels, sizeof(char) * dataSize);
+		file.write((char*)&DataSize, sizeof(int));
+		file.write((char*)Pixels, sizeof(char) * DataSize);
 		file.close();
 
-		delete[] pixels;
+		delete[] Pixels;
 		return;
 	}
 
-	int maxDimention = std::max(texture->width, texture->height);
-	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-	char** pixelData = new char*[mipCount];
+	const int MaxDimention = std::max(Texture->Width, Texture->Height);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	char** PixelData = new char*[MipCount];
 
-	for (size_t i = 0; i < mipCount; i++)
+	for (size_t i = 0; i < MipCount; i++)
 	{
-		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, GLint(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &imgSize));
+		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, static_cast<GLint>(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &ImgSize));
 
-		char* pixels = new char[imgSize * 2];
-		for (size_t i = 0; i < size_t(imgSize * 2); i++)
+		char* Pixels = new char[ImgSize * 2];
+		for (size_t j = 0; j < static_cast<size_t>(ImgSize * 2); j++)
 		{
-			pixels[i] = ' ';
+			Pixels[j] = ' ';
 		}
 
-		char* additionalTestPixels = new char[imgSize * 2];
-		for (size_t i = 0; i < size_t(imgSize * 2); i++)
+		char* AdditionalTestPixels = new char[ImgSize * 2];
+		for (size_t j = 0; j < static_cast<size_t>(ImgSize * 2); j++)
 		{
-			additionalTestPixels[i] = '1';
+			AdditionalTestPixels[j] = '1';
 		}
 
-		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), pixels));
-		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, GLint(i), additionalTestPixels));
+		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, static_cast<GLint>(i), Pixels));
+		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, static_cast<GLint>(i), AdditionalTestPixels));
 
-		int realSize = 0;
-		for (size_t i = imgSize * 2 - 1; i > 0 ; i--)
+		int RealSize = 0;
+		for (size_t j = ImgSize * 2 - 1; j > 0 ; j--)
 		{
-			if (pixels[i] != ' ')
+			if (Pixels[j] != ' ')
 			{
-				realSize = int(i + 1);
+				RealSize = static_cast<int>(j + 1);
 				break;
 			}
 		}
 
-		int additionalRealSize = 0;
-		for (size_t i = imgSize * 2 - 1; i > 0; i--)
+		int AdditionalRealSize = 0;
+		for (size_t j = ImgSize * 2 - 1; j > 0; j--)
 		{
-			if (additionalTestPixels[i] != '1')
+			if (AdditionalTestPixels[j] != '1')
 			{
-				additionalRealSize = int(i + 1);
+				AdditionalRealSize = static_cast<int>(j + 1);
 				break;
 			}
 		}
 
-		realSize = std::max(realSize, additionalRealSize);
+		RealSize = std::max(RealSize, AdditionalRealSize);
 
-		pixelData[i] = new char[realSize];
-		memcpy(pixelData[i], pixels, realSize);
-		delete[] pixels;
-		delete[] additionalTestPixels;
+		PixelData[i] = new char[RealSize];
+		memcpy(PixelData[i], Pixels, RealSize);
+		delete[] Pixels;
+		delete[] AdditionalTestPixels;
 
-		file.write((char*)&realSize, sizeof(int));
-		file.write((char*)pixelData[i], sizeof(char) * realSize);
+		file.write((char*)&RealSize, sizeof(int));
+		file.write((char*)PixelData[i], sizeof(char) * RealSize);
 	}
 
 	file.close();
 
-	for (size_t i = 0; i < mipCount; i++)
+	for (size_t i = 0; i < MipCount; i++)
 	{
-		delete[] pixelData[i];
+		delete[] PixelData[i];
 	}
-	delete[] pixelData;
+	delete[] PixelData;
 }
 
-FETexture* FEResourceManager::rawDataToFETexture(unsigned char* textureData, int width, int height, GLint internalformat, GLenum format, GLenum type)
+FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, const int Width, const int Height, GLint Internalformat, const GLenum Format, GLenum Type)
 {
-	FETexture* newTexture = createTexture();
-	newTexture->width = width;
-	newTexture->height = height;
+	FETexture* NewTexture = CreateTexture();
+	NewTexture->Width = Width;
+	NewTexture->Height = Height;
 
-	if (format == GL_RED)
+	if (Format == GL_RED)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		newTexture->internalFormat = GL_RED;
+		NewTexture->InternalFormat = GL_RED;
 	}
 	else
 	{
-		newTexture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		for (size_t i = 3; i < size_t(width * height * 4); i += 4)
+		NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+		for (size_t i = 3; i < static_cast<size_t>(Width * Height * 4); i += 4)
 		{
-			if (textureData[i] != 255)
+			if (TextureData[i] != 255)
 			{
-				newTexture->internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+				NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				break;
 			}
 		}
 	}
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, format, GL_UNSIGNED_BYTE, textureData);
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
 	
-	if (newTexture->mipEnabled)
+	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
@@ -277,7 +277,7 @@ FETexture* FEResourceManager::rawDataToFETexture(unsigned char* textureData, int
 	}
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
+	if (NewTexture->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -286,60 +286,143 @@ FETexture* FEResourceManager::rawDataToFETexture(unsigned char* textureData, int
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
-	if (format == GL_RED)
+	if (Format == GL_RED)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
 
-	return newTexture;
+	return NewTexture;
 }
 
-FETexture* FEResourceManager::LoadFETextureAsync(const char* fileName, std::string Name, FETexture* existingTexture, std::string forceObjectID)
+struct LoadTextureAsyncInfo
 {
-	FETexture* newTexture = createTexture(Name, forceObjectID);
-	FE_GL_ERROR(glDeleteTextures(1, &newTexture->textureID));
-	newTexture->textureID = noTexture->textureID;
-	newTexture->width = noTexture->width;
-	newTexture->height = noTexture->height;
-	newTexture->internalFormat = noTexture->internalFormat;
-	newTexture->fileName = noTexture->fileName;
+	std::string FileName;
+	FETexture* NewTexture;
+	char* FileData;
+};
 
-	JOB_MANAGER.loadTextureAsync(fileName, newTexture);
+void LoadTextureFileAsync(void* InputData, void* OutputData)
+{
+	const LoadTextureAsyncInfo* Input = reinterpret_cast<LoadTextureAsyncInfo*>(InputData);
+	std::fstream file;
+	file.open(Input->FileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = file.tellg();
+	if (FileSize <= 0)
+	{
+		LoadTextureAsyncInfo* Output = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
+		Output->FileData = nullptr;
+		Output->NewTexture = Input->NewTexture;
 
-	return newTexture;
+		delete InputData;
+		return;
+	}
+
+	file.seekg(0, std::ios::beg);
+	char* FileData = new char[static_cast<int>(FileSize)];
+	file.read(FileData, FileSize);
+	file.close();
+
+	LoadTextureAsyncInfo* Output = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
+	Output->FileData = FileData;
+	Output->NewTexture = Input->NewTexture;
+
+	delete InputData;
 }
 
-FETexture* FEResourceManager::LoadFETexture(const char* fileName, std::string Name, FETexture* existingTexture)
+void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
+{
+	const LoadTextureAsyncInfo* Input = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
+
+	// File was not found, or it can't be read.
+	if (Input->FileData == nullptr)
+	{
+		// Get info about problematic texture.
+		const FETexture* NotLoadedTexture = Input->NewTexture;
+		// We will spill out error into a log.
+		LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", FE_LOG_ERROR, FE_LOG_LOADING);
+		// And delete entry for that texture in a general list of textures.
+		// That will prevent it from saving in a scene file.
+		RESOURCE_MANAGER.DeleteFETexture(NotLoadedTexture);
+		//textures.erase(notLoadedTexture->getObjectID());
+	}
+	else
+	{
+		const FETexture* NewlyCreatedTexture = RESOURCE_MANAGER.LoadFETexture(Input->FileData, "", Input->NewTexture);
+
+		// If some material uses this texture we should set dirty flag.
+		// Game model will updated as a consequences.
+		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialList();
+
+		for (size_t p = 0; p < MaterialList.size(); p++)
+		{
+			FEMaterial* CurrentMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[p]);
+			if (CurrentMaterial->IsTextureInList(NewlyCreatedTexture))
+				CurrentMaterial->SetDirtyFlag(true);
+		}
+	}
+
+	delete Input->FileData;
+	delete Input;
+}
+
+FETexture* FEResourceManager::LoadFETextureAsync(const char* FileName, const std::string Name, FETexture* ExistingTexture, const std::string ForceObjectID)
+{
+	FETexture* NewTexture = CreateTexture(Name, ForceObjectID);
+	FE_GL_ERROR(glDeleteTextures(1, &NewTexture->TextureID));
+	NewTexture->TextureID = NoTexture->TextureID;
+	NewTexture->Width = NoTexture->Width;
+	NewTexture->Height = NoTexture->Height;
+	NewTexture->InternalFormat = NoTexture->InternalFormat;
+	NewTexture->FileName = NoTexture->FileName;
+
+#ifdef OLD_LOADING
+	JOB_MANAGER.LoadTextureAsync(FileName, NewTexture);
+#else
+	//std::pair<const char*, FETexture*>* Data = new std::make_pair(fileName, newTexture);
+	LoadTextureAsyncInfo* InputData = new LoadTextureAsyncInfo();
+	InputData->FileName = FileName;
+	InputData->NewTexture = NewTexture;
+
+	LoadTextureAsyncInfo* OutputData = new LoadTextureAsyncInfo();
+
+	THREAD_POOL.Execute(LoadTextureFileAsync, InputData, OutputData, &LoadTextureFileAsyncCallBack);
+	
+#endif // OLD_LOADING
+
+	return NewTexture;
+}
+
+FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::string Name, FETexture* ExistingTexture)
 {
 	std::fstream file;
-	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-	std::streamsize fileSize = file.tellg();
-	if (fileSize < 0)
+	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = file.tellg();
+	if (FileSize < 0)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
-		return this->noTexture;
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		return this->NoTexture;
 	}
 	
 	file.seekg(0, std::ios::beg);
-	char* fileData = new char[int(fileSize)];
-	file.read(fileData, fileSize);
+	char* FileData = new char[static_cast<int>(FileSize)];
+	file.read(FileData, FileSize);
 	file.close();
 
-	return LoadFETexture(fileData, Name, existingTexture);
+	return LoadFETexture(FileData, Name, ExistingTexture);
 }
 
-FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FETexture* existingTexture)
+FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FETexture* ExistingTexture)
 {
-	int currentShift = 0;
+	int CurrentShift = 0;
 	// version of FETexture file type
-	float version = *(float*)(&fileData[currentShift]);
-	currentShift += 4;
+	const float version = *(float*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardTextures.size() > 0)
+		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardTextures.empty())
 		{
-			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 		}
 		else
 		{
@@ -347,92 +430,90 @@ FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FE
 		}
 	}
 
-	int objectIDSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int ObjectIDSize = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	char* objectID = new char[objectIDSize];
-	strcpy_s(objectID, objectIDSize, (char*)(&fileData[currentShift]));
-	currentShift += objectIDSize;
+	char* ObjectID = new char[ObjectIDSize];
+	strcpy_s(ObjectID, ObjectIDSize, (char*)(&FileData[CurrentShift]));
+	CurrentShift += ObjectIDSize;
 
-	int width = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int height = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int internalFormat = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int width = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
+	const int height = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
+	const int InternalFormat = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	int nameSize = 0;
-	nameSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int NameSize = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	char* textureName = new char[nameSize];
-	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
-	currentShift += nameSize;
+	char* TextureName = new char[NameSize];
+	strcpy_s(TextureName, NameSize, (char*)(&FileData[CurrentShift]));
+	CurrentShift += NameSize;
 
-	FETexture* newTexture = nullptr;
-	if (existingTexture != nullptr)
+	FETexture* NewTexture = nullptr;
+	if (ExistingTexture != nullptr)
 	{
-		newTexture = existingTexture;
-		newTexture->setName(textureName);
-		FE_GL_ERROR(glGenTextures(1, &newTexture->textureID));
+		NewTexture = ExistingTexture;
+		NewTexture->SetName(TextureName);
+		FE_GL_ERROR(glGenTextures(1, &NewTexture->TextureID));
 	}
 	else
 	{
-		newTexture = createTexture(textureName);
+		NewTexture = CreateTexture(TextureName);
 	}
 
-	newTexture->width = width;
-	newTexture->height = height;
-	newTexture->internalFormat = internalFormat;
+	NewTexture->Width = width;
+	NewTexture->Height = height;
+	NewTexture->InternalFormat = InternalFormat;
 
 	// Height map should not be loaded by this function
-	if (newTexture->internalFormat == GL_R16)
+	if (NewTexture->InternalFormat == GL_R16)
 		return nullptr;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 
-	if (newTexture->internalFormat == GL_RED || newTexture->internalFormat == GL_RGBA)
+	if (NewTexture->InternalFormat == GL_RED || NewTexture->InternalFormat == GL_RGBA)
 	{
-		int size = *(int*)(&fileData[currentShift]);
-		currentShift += 4;
+		int size = *(int*)(&FileData[CurrentShift]);
+		CurrentShift += 4;
 		
-		newTexture->updateRawData((unsigned char*)(&fileData[currentShift]));
+		NewTexture->UpdateRawData((unsigned char*)(&FileData[CurrentShift]));
 	}
 	else
 	{
-		
-		int maxDimention = std::max(newTexture->width, newTexture->height);
-		size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, int(mipCount), newTexture->internalFormat, newTexture->width, newTexture->height));
+		const int MaxDimention = std::max(NewTexture->Width, NewTexture->Height);
+		const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height));
 
-		int mipW = newTexture->width / 2;
-		int mipH = newTexture->height / 2;
-		for (size_t i = 0; i < mipCount; i++)
+		int MipW = NewTexture->Width / 2;
+		int MipH = NewTexture->Height / 2;
+		for (size_t i = 0; i < MipCount; i++)
 		{
-			int size = *(int*)(&fileData[currentShift]);
-			currentShift += 4;
+			const int size = *(int*)(&FileData[CurrentShift]);
+			CurrentShift += 4;
 
 			if (i == 0)
 			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, newTexture->width, newTexture->height, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
+				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewTexture->Width, NewTexture->Height, NewTexture->InternalFormat, size, static_cast<void*>(&FileData[CurrentShift])));
 			}
 			else
 			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, int(i), 0, 0, mipW, mipH, newTexture->internalFormat, size, (void*)(&fileData[currentShift])));
+				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipW, MipH, NewTexture->InternalFormat, size, static_cast<void*>(&FileData[CurrentShift])));
 
-				mipW = mipW / 2;
-				mipH = mipH / 2;
+				MipW = MipW / 2;
+				MipH = MipH / 2;
 
-				if (mipW <= 0 || mipH <= 0)
+				if (MipW <= 0 || MipH <= 0)
 					break;
 			}
 
-			currentShift += size;
+			CurrentShift += size;
 		}
 	}
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
+	if (NewTexture->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -442,10 +523,10 @@ FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FE
 	}
 
 	// Height map should not be loaded by this function
-	if (newTexture->internalFormat == GL_R16)
+	if (NewTexture->InternalFormat == GL_R16)
 		return nullptr;
 
-	if (newTexture->mipEnabled)
+	if (NewTexture->MipEnabled)
 	{
 		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
@@ -453,51 +534,51 @@ FETexture* FEResourceManager::LoadFETexture(char* fileData, std::string Name, FE
 	}
 
 	// overwrite objectID with objectID from file.
-	if (objectID != nullptr)
+	if (ObjectID != nullptr)
 	{
-		std::string oldID = newTexture->getObjectID();
-		newTexture->setID(objectID);
+		const std::string OldID = NewTexture->GetObjectID();
+		NewTexture->SetID(ObjectID);
 
-		if (textures.find(oldID) != textures.end())
+		if (Textures.find(OldID) != Textures.end())
 		{
-			textures.erase(oldID);
-			textures[newTexture->getObjectID()] = newTexture;
+			Textures.erase(OldID);
+			Textures[NewTexture->GetObjectID()] = NewTexture;
 		}
 	}
 
-	delete[] objectID;
-	delete[] textureName;
+	delete[] ObjectID;
+	delete[] TextureName;
 
-	return newTexture;
+	return NewTexture;
 }
 
-FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* terrain, std::string Name)
+FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* Terrain, const std::string Name)
 {
 	std::fstream file;
-	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-	std::streamsize fileSize = file.tellg();
-	if (fileSize < 0)
+	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = file.tellg();
+	if (FileSize < 0)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
-		terrain->heightMap = this->noTexture;
-		return this->noTexture;
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		Terrain->HeightMap = this->NoTexture;
+		return this->NoTexture;
 	}
 
 	file.seekg(0, std::ios::beg);
-	char* fileData = new char[int(fileSize)];
-	file.read(fileData, fileSize);
+	char* FileData = new char[static_cast<int>(FileSize)];
+	file.read(FileData, FileSize);
 	file.close();
 
-	int currentShift = 0;
+	int CurrentShift = 0;
 	// version of FETexture file type
-	float version = *(float*)(&fileData[currentShift]);
-	currentShift += 4;
+	const float version = *(float*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardTextures.size() > 0)
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardTextures.empty())
 		{
-			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 		}
 		else
 		{
@@ -505,36 +586,35 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 		}
 	}
 
-	int objectIDSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int ObjectIDSize = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	char* objectID = new char[objectIDSize];
-	strcpy_s(objectID, objectIDSize, (char*)(&fileData[currentShift]));
-	currentShift += objectIDSize;
+	char* ObjectID = new char[ObjectIDSize];
+	strcpy_s(ObjectID, ObjectIDSize, (char*)(&FileData[CurrentShift]));
+	CurrentShift += ObjectIDSize;
 
-	int width = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int height = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
-	int internalFormat = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int width = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
+	const int height = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
+	const int InternalFormat = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	int nameSize = 0;
-	nameSize = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int NameSize = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
-	char* textureName = new char[nameSize];
-	strcpy_s(textureName, nameSize, (char*)(&fileData[currentShift]));
-	currentShift += nameSize;
+	char* TextureName = new char[NameSize];
+	strcpy_s(TextureName, NameSize, (char*)(&FileData[CurrentShift]));
+	CurrentShift += NameSize;
 
-	FETexture* newTexture = Name.size() != 0 ? createTexture(Name.c_str()) : createTexture(textureName);
-	newTexture->width = width;
-	newTexture->height = height;
-	newTexture->internalFormat = internalFormat;
-	newTexture->fileName = fileName;
+	FETexture* NewTexture = !Name.empty() ? CreateTexture(Name.c_str()) : CreateTexture(TextureName);
+	NewTexture->Width = width;
+	NewTexture->Height = height;
+	NewTexture->InternalFormat = InternalFormat;
+	NewTexture->FileName = FileName;
 
-	int size = *(int*)(&fileData[currentShift]);
-	currentShift += 4;
+	const int size = *(int*)(&FileData[CurrentShift]);
+	CurrentShift += 4;
 
 	// Reformating terrain from old saves.
 	/*for (size_t i = currentShift; i < currentShift + width * height * 2; i += 2)
@@ -542,32 +622,32 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 		*(unsigned short*)(&fileData[i]) += 0xffff * 0.5;
 	}*/
 
-	terrain->heightMapArray.resize(size / sizeof(unsigned short));
+	Terrain->HeightMapArray.resize(size / sizeof(unsigned short));
 	float max = FLT_MIN;
 	float min = FLT_MAX;
 	for (size_t i = 0; i < size / sizeof(unsigned short); i++)
 	{
-		unsigned short temp = *(unsigned short*)(&fileData[currentShift]);
-		terrain->heightMapArray[i] = temp / float(0xFFFF);
-		currentShift += sizeof(unsigned short);
+		const unsigned short temp = *(unsigned short*)(&FileData[CurrentShift]);
+		Terrain->HeightMapArray[i] = temp / static_cast<float>(0xFFFF);
+		CurrentShift += sizeof(unsigned short);
 
-		if (max < terrain->heightMapArray[i])
-			max = terrain->heightMapArray[i];
+		if (max < Terrain->HeightMapArray[i])
+			max = Terrain->HeightMapArray[i];
 
-		if (min > terrain->heightMapArray[i])
-			min = terrain->heightMapArray[i];
+		if (min > Terrain->HeightMapArray[i])
+			min = Terrain->HeightMapArray[i];
 	}
 
-	currentShift -= size;
-	glm::vec3 minPoint = glm::vec3(-1.0f, min, -1.0f);
-	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
-	terrain->AABB = FEAABB(minPoint, maxPoint);
+	CurrentShift -= size;
+	const glm::vec3 MinPoint = glm::vec3(-1.0f, min, -1.0f);
+	const glm::vec3 MaxPoint = glm::vec3(1.0f, max, 1.0f);
+	Terrain->AABB = FEAABB(MinPoint, MaxPoint);
 
-	newTexture->updateRawData((unsigned char*)(&fileData[currentShift]));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	NewTexture->UpdateRawData((unsigned char*)(&FileData[CurrentShift]));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
+	if (NewTexture->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -580,158 +660,158 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* fileName, FETerrain* t
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
 	// overwrite objectID with objectID from file.
-	if (objectID != nullptr)
+	if (ObjectID != nullptr)
 	{
-		std::string oldID = newTexture->getObjectID();
-		newTexture->setID(objectID);
+		const std::string OldID = NewTexture->GetObjectID();
+		NewTexture->SetID(ObjectID);
 
-		if (textures.find(oldID) != textures.end())
+		if (Textures.find(OldID) != Textures.end())
 		{
-			textures.erase(oldID);
-			textures[newTexture->getObjectID()] = newTexture;
+			Textures.erase(OldID);
+			Textures[NewTexture->GetObjectID()] = NewTexture;
 		}
 	}
 
-	delete[] objectID;
-	delete[] fileData;
-	delete[] textureName;
+	delete[] ObjectID;
+	delete[] FileData;
+	delete[] TextureName;
 
-	terrain->heightMap = newTexture;
-	initTerrainEditTools(terrain);
-	terrain->updateCPUHeightInfo();
-	return newTexture;
+	Terrain->HeightMap = NewTexture;
+	InitTerrainEditTools(Terrain);
+	Terrain->UpdateCpuHeightInfo();
+	return NewTexture;
 }
 
-FETexture* FEResourceManager::LoadFETextureUnmanaged(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadFETextureUnmanaged(const char* FileName, const std::string Name)
 {
-	FETexture* newTexture = LoadFETexture(fileName, Name);
-	textures.erase(newTexture->getObjectID());
-	return newTexture;
+	FETexture* NewTexture = LoadFETexture(FileName, Name);
+	Textures.erase(NewTexture->GetObjectID());
+	return NewTexture;
 }
 
-FEMesh* FEResourceManager::rawDataToMesh(std::vector<float>& positions, std::vector<float>& normals, std::vector<float>& tangents, std::vector<float>& UV, std::vector<int>& index, std::string Name)
+FEMesh* FEResourceManager::RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name)
 {
-	return rawDataToMesh(positions.data(), int(positions.size()), UV.data(), int(UV.size()), normals.data(), int(normals.size()), tangents.data(), int(tangents.size()), index.data(), int(index.size()), nullptr, 0, 0, Name);
+	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()), UV.data(), static_cast<int>(UV.size()), Normals.data(), static_cast<int>(Normals.size()), Tangents.data(), static_cast<int>(Tangents.size()), Index.data(), static_cast<int>(Index.size()), nullptr, 0, 0, Name);
 }
 
-FEMesh* FEResourceManager::rawDataToMesh(float* positions, int posSize,
-										 float* UV, int UVSize,
-										 float* normals, int normSize,
-										 float* tangents, int tanSize,
-										 int* indices, int indexSize,
-										 float* matIndexs, int matIndexsSize, int matCount,
-										 std::string Name)
+FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
+										 float* UV, const int UVSize,
+										 float* Normals, const int NormSize,
+										 float* Tangents, const int TanSize,
+										 int* Indices, const int IndexSize,
+										 float* MatIndexs, const int MatIndexsSize, const int MatCount,
+										 const std::string Name)
 {
-	int vertexType = FE_POSITION | FE_INDEX;
+	int VertexType = FE_POSITION | FE_INDEX;
 
-	GLuint vaoID;
-	FE_GL_ERROR(glGenVertexArrays(1, &vaoID));
-	FE_GL_ERROR(glBindVertexArray(vaoID));
+	GLuint VaoID;
+	FE_GL_ERROR(glGenVertexArrays(1, &VaoID));
+	FE_GL_ERROR(glBindVertexArray(VaoID));
 
-	GLuint indicesBufferID;
+	GLuint IndicesBufferID;
 	// index
-	FE_GL_ERROR(glGenBuffers(1, &indicesBufferID));
-	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indicesBufferID));
-	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * indexSize, indices, GL_STATIC_DRAW));
+	FE_GL_ERROR(glGenBuffers(1, &IndicesBufferID));
+	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndicesBufferID));
+	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * IndexSize, Indices, GL_STATIC_DRAW));
 
-	GLuint positionsBufferID;
+	GLuint PositionsBufferID;
 	// verCoords
-	FE_GL_ERROR(glGenBuffers(1, &positionsBufferID));
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, positionsBufferID));
-	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * posSize, positions, GL_STATIC_DRAW));
-	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glGenBuffers(1, &PositionsBufferID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PositionsBufferID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * PosSize, Positions, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	GLuint normalsBufferID = 0;
-	if (normals != nullptr)
+	GLuint NormalsBufferID = 0;
+	if (Normals != nullptr)
 	{
-		vertexType |= FE_NORMAL;
+		VertexType |= FE_NORMAL;
 		// normals
-		FE_GL_ERROR(glGenBuffers(1, &normalsBufferID));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, normalsBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * normSize, normals, GL_STATIC_DRAW));
-		FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, 0));
+		FE_GL_ERROR(glGenBuffers(1, &NormalsBufferID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NormalsBufferID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * NormSize, Normals, GL_STATIC_DRAW));
+		FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
-	GLuint tangentsBufferID = 0;
-	if (tangents != nullptr)
+	GLuint TangentsBufferID = 0;
+	if (Tangents != nullptr)
 	{
-		vertexType |= FE_TANGENTS;
+		VertexType |= FE_TANGENTS;
 		// tangents
-		FE_GL_ERROR(glGenBuffers(1, &tangentsBufferID));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, tangentsBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tanSize, tangents, GL_STATIC_DRAW));
-		FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, 0));
+		FE_GL_ERROR(glGenBuffers(1, &TangentsBufferID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, TangentsBufferID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * TanSize, Tangents, GL_STATIC_DRAW));
+		FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	GLuint UVBufferID = 0;
 	if (UV != nullptr)
 	{
-		vertexType |= FE_UV;
+		VertexType |= FE_UV;
 		// UV
 		FE_GL_ERROR(glGenBuffers(1, &UVBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, UVBufferID));
 		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UVSize, UV, GL_STATIC_DRAW));
-		FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, 0));
+		FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
-	GLuint materialsIndicesBufferID = -1;
-	if (matIndexs != nullptr && matIndexsSize > 1)
+	GLuint MaterialsIndicesBufferID = -1;
+	if (MatIndexs != nullptr && MatIndexsSize > 1)
 	{
 		// Material ID
-		FE_GL_ERROR(glGenBuffers(1, &materialsIndicesBufferID));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, materialsIndicesBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * matIndexsSize, matIndexs, GL_STATIC_DRAW));
-		FE_GL_ERROR(glVertexAttribPointer(5/*FE_MATINDEX*/, 1, GL_FLOAT, false, 0, 0));
+		FE_GL_ERROR(glGenBuffers(1, &MaterialsIndicesBufferID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, MaterialsIndicesBufferID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * MatIndexsSize, MatIndexs, GL_STATIC_DRAW));
+		FE_GL_ERROR(glVertexAttribPointer(5/*FE_MATINDEX*/, 1, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	//int vertexType = FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX;
-	if (matCount > 1)
+	if (MatCount > 1)
 	{
-		vertexType |= FE_MATINDEX;
+		VertexType |= FE_MATINDEX;
 	}
 
-	FEMesh* newMesh = createMesh(vaoID, indexSize, vertexType, FEAABB(positions, posSize), Name);
-	newMesh->indicesCount = indexSize;
-	newMesh->indicesBufferID = indicesBufferID;
+	FEMesh* NewMesh = CreateMesh(VaoID, IndexSize, VertexType, FEAABB(Positions, PosSize), Name);
+	NewMesh->IndicesCount = IndexSize;
+	NewMesh->IndicesBufferID = IndicesBufferID;
 
-	newMesh->positionsCount = posSize;
-	newMesh->positionsBufferID = positionsBufferID;
+	NewMesh->PositionsCount = PosSize;
+	NewMesh->PositionsBufferID = PositionsBufferID;
 
-	newMesh->normalsCount = normSize;
-	newMesh->normalsBufferID = normalsBufferID;
+	NewMesh->NormalsCount = NormSize;
+	NewMesh->NormalsBufferID = NormalsBufferID;
 
-	newMesh->tangentsCount = tanSize;
-	newMesh->tangentsBufferID = tangentsBufferID;
+	NewMesh->TangentsCount = TanSize;
+	NewMesh->TangentsBufferID = TangentsBufferID;
 
-	newMesh->UVCount = UVSize;
-	newMesh->UVBufferID = UVBufferID;
+	NewMesh->UVCount = UVSize;
+	NewMesh->UVBufferID = UVBufferID;
 
-	newMesh->materialsIndicesCount = matIndexsSize;
-	newMesh->materialsIndicesBufferID = materialsIndicesBufferID;
+	NewMesh->MaterialsIndicesCount = MatIndexsSize;
+	NewMesh->MaterialsIndicesBufferID = MaterialsIndicesBufferID;
 
-	newMesh->materialsCount = matCount;
+	NewMesh->MaterialsCount = MatCount;
 
-	return newMesh;
+	return NewMesh;
 }
 
-void FEResourceManager::loadStandardMeshes()
+void FEResourceManager::LoadStandardMeshes()
 {
-	if (meshes.find("84251E6E0D0801363579317R"/*"cube"*/) != meshes.end())
+	if (Meshes.find("84251E6E0D0801363579317R"/*"cube"*/) != Meshes.end())
 		return;
 
-	std::vector<int> cubeIndices = {
+	std::vector<int> CubeIndices = {
 		4, 2, 0, 9, 7, 3, 6, 5,	20,	21,	15,
 		22,	10,	12,	18,	8, 1, 19, 4, 17, 2,
 		9, 23, 7, 6, 13, 5, 24, 16, 15, 10,
 		14, 12, 8, 11, 1
 	};
 
-	std::vector<float> cubePositions = {
+	std::vector<float> CubePositions = {
 		1.0f, 1.0f, -1.0f, 1.0f, -1.0f, -1.0f,
 		1.0f, 1.0f, 1.0f, 1.0f, -1.0f, 1.0f,
 		-1.0f, 1.0f, -1.0f, -1.0f, -1.0f, -1.0f,
@@ -747,7 +827,7 @@ void FEResourceManager::loadStandardMeshes()
 		1.0f, -1.0f, -1.0f
 	};
 
-	std::vector<float> cubeNormals = {
+	std::vector<float> CubeNormals = {
 		0.0f, 1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
 		1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
 		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f, 0.0f,
@@ -761,7 +841,7 @@ void FEResourceManager::loadStandardMeshes()
 		0.0f, 1.0f, 0.0f, -1.0f, 0.0f
 	};
 
-	std::vector<float> cubeTangents = {
+	std::vector<float> CubeTangents = {
 		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
 		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
 		1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f,
@@ -777,7 +857,7 @@ void FEResourceManager::loadStandardMeshes()
 		-1.0f, 0.0f, 0.0f
 	};
 
-	std::vector<float> cubeUV = {
+	std::vector<float> CubeUV = {
 		0.375f, 1.0f, 0.625f, 0.25f, 0.375f, 0.75f,
 		0.375f, 0.75f, 0.625f, 1.0f, 0.375f, 0.25f,
 		0.625f, 0.5f, 0.375f, 0.5f, 0.875f, 0.5f,
@@ -789,101 +869,101 @@ void FEResourceManager::loadStandardMeshes()
 		0.625f, 0.25f
 	};
 
-	standardMeshes["84251E6E0D0801363579317R"] = rawDataToMesh(cubePositions, cubeNormals, cubeTangents, cubeUV, cubeIndices, "cube");
-	meshes.erase(standardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->getObjectID());
-	standardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->setID("84251E6E0D0801363579317R"/*"cube"*/);
+	StandardMeshes["84251E6E0D0801363579317R"] = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
+	Meshes.erase(StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->GetObjectID());
+	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetID("84251E6E0D0801363579317R"/*"cube"*/);
 
-	std::vector<int> planeIndices = {
+	std::vector<int> PlaneIndices = {
 		0, 1, 2, 3, 0, 2
 	};
 
-	std::vector<float> planePositions = {
+	std::vector<float> PlanePositions = {
 		-1.0f, 1.0f, 0.0f, -1.0f, -1.0f, 0.0f,
 		1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f
 	};
 
-	std::vector<float> planeNormals = {
+	std::vector<float> PlaneNormals = {
 		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f };
 
-	std::vector<float> planeTangents = {
+	std::vector<float> PlaneTangents = {
 		0.0f, -1.0f, 0.0f, 0.0f, -1.0f, 0.0f,
 		0.0f, -1.0f, 0.0f, 1.0f, -1.0f, 0.0f
 	};
 
-	std::vector<float> planeUV = {
+	std::vector<float> PlaneUV = {
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
 
-	standardMeshes["1Y251E6E6T78013635793156"] = rawDataToMesh(planePositions, planeNormals, planeTangents, planeUV, planeIndices, "plane");
-	meshes.erase(standardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->getObjectID());
-	standardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->setID("1Y251E6E6T78013635793156"/*"plane"*/);
+	StandardMeshes["1Y251E6E6T78013635793156"] = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
+	Meshes.erase(StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->GetObjectID());
+	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
 
-	standardMeshes["7F251E3E0D08013E3579315F"] = loadFEMesh((defaultResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
-	meshes.erase(standardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->getObjectID());
-	standardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->setID("7F251E3E0D08013E3579315F"/*"sphere"*/);
+	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((DefaultResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
+	Meshes.erase(StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->GetObjectID());
+	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
 }
 
 FEResourceManager::FEResourceManager()
 {
-	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxColorAttachments);
-	noTexture = LoadFETexture((defaultResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
-	makeTextureStandard(noTexture);
-	FETexture::addToNoDeletingList(noTexture->getTextureID());
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
+	NoTexture = LoadFETexture((DefaultResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
+	MakeTextureStandard(NoTexture);
+	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
-	loadStandardMaterial();
-	loadStandardMeshes();
-	loadStandardGameModels();
-	loadStandardPrefabs();
+	LoadStandardMaterial();
+	LoadStandardMeshes();
+	LoadStandardGameModels();
+	LoadStandardPrefabs();
 }
 
 FEResourceManager::~FEResourceManager()
 {
-	clear();
+	Clear();
 }
 
-std::vector<FEObject*> FEResourceManager::importOBJ(const char* fileName, bool forceOneMesh)
+std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const bool bForceOneMesh)
 {
-	FEObjLoader& objLoader = FEObjLoader::getInstance();
-	objLoader.forceOneMesh = forceOneMesh;
-	objLoader.readFile(fileName);
+	FEObjLoader& OBJLoader = FEObjLoader::getInstance();
+	OBJLoader.bForceOneMesh = bForceOneMesh;
+	OBJLoader.ReadFile(FileName);
 
 	std::vector<FEObject*> result;
-	for (size_t i = 0; i < objLoader.loadedObjects.size(); i++)
+	for (size_t i = 0; i < OBJLoader.LoadedObjects.size(); i++)
 	{
-		std::string name = getFileNameFromFilePath(fileName) + "_" + std::to_string(i);
+		const std::string name = GetFileNameFromFilePath(FileName) + "_" + std::to_string(i);
 
 
-		result.push_back(rawDataToMesh(objLoader.loadedObjects[i]->fVerC.data(), int(objLoader.loadedObjects[i]->fVerC.size()),
-									   objLoader.loadedObjects[i]->fTexC.data(), int(objLoader.loadedObjects[i]->fTexC.size()),
-									   objLoader.loadedObjects[i]->fNorC.data(), int(objLoader.loadedObjects[i]->fNorC.size()),
-									   objLoader.loadedObjects[i]->fTanC.data(), int(objLoader.loadedObjects[i]->fTanC.size()),
-								       objLoader.loadedObjects[i]->fInd.data(), int(objLoader.loadedObjects[i]->fInd.size()),
-									   objLoader.loadedObjects[i]->matIDs.data(), int(objLoader.loadedObjects[i]->matIDs.size()), int(objLoader.loadedObjects[i]->materialRecords.size()), name));
+		result.push_back(RawDataToMesh(OBJLoader.LoadedObjects[i]->FVerC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FVerC.size()),
+									   OBJLoader.LoadedObjects[i]->FTexC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTexC.size()),
+									   OBJLoader.LoadedObjects[i]->FNorC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FNorC.size()),
+									   OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
+								       OBJLoader.LoadedObjects[i]->FInd.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FInd.size()),
+									   OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
 	
 	
 		// in rawDataToMesh() hidden FEMesh allocation and it will go to hash table so we need to use setMeshName() not setName.
-		result.back()->setName(name);
-		meshes[result.back()->getObjectID()] = reinterpret_cast<FEMesh*>(result.back());
+		result.back()->SetName(name);
+		Meshes[result.back()->GetObjectID()] = reinterpret_cast<FEMesh*>(result.back());
 	}
 
-	createMaterialsFromOBJData(result);
+	CreateMaterialsFromOBJData(result);
 
 	return result;
 }
 
-FEMesh* FEResourceManager::loadFEMesh(const char* fileName, std::string Name)
+FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Name)
 {
-	std::fstream file;
+	std::fstream File;
 
-	file.open(fileName, std::ios::in | std::ios::binary);
-	std::streamsize fileSize = file.tellg();
-	if (fileSize < 0)
+	File.open(FileName, std::ios::in | std::ios::binary);
+	const std::streamsize FileSize = File.tellg();
+	if (FileSize < 0)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh.", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardMeshes.size() > 0)
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardMeshes.empty())
 		{
-			return getMesh("84251E6E0D0801363579317R"/*"cube"*/);
+			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 		}
 		else
 		{
@@ -891,17 +971,17 @@ FEMesh* FEResourceManager::loadFEMesh(const char* fileName, std::string Name)
 		}
 	}
 
-	char* buffer = new char[4];
+	char* Buffer = new char[4];
 
 	// version of FEMesh file type
-	file.read(buffer, 4);
-	float version = *(float*)buffer;
-	if (version != FE_MESH_VERSION)
+	File.read(Buffer, 4);
+	const float Version = *(float*)Buffer;
+	if (Version != FE_MESH_VERSION)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardMeshes.size() > 0)
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardMeshes.empty())
 		{
-			return getMesh("84251E6E0D0801363579317R"/*"cube"*/);
+			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 		}
 		else
 		{
@@ -909,177 +989,175 @@ FEMesh* FEResourceManager::loadFEMesh(const char* fileName, std::string Name)
 		}
 	}
 
-	int objectIDSize = 0;
-	file.read(buffer, 4);
-	objectIDSize = *(int*)buffer;
+	File.read(Buffer, 4);
+	const int ObjectIDSize = *(int*)Buffer;
 
-	char* objectID = new char[objectIDSize + 1];
-	file.read(objectID, objectIDSize);
-	objectID[objectIDSize] = '\0';
+	char* ObjectID = new char[ObjectIDSize + 1];
+	File.read(ObjectID, ObjectIDSize);
+	ObjectID[ObjectIDSize] = '\0';
 
-	int meshNameSize = 0;
-	file.read(buffer, 4);
-	meshNameSize = *(int*)buffer;
-	char* meshName = new char[meshNameSize + 1];
-	file.read(meshName, meshNameSize);
-	meshName[meshNameSize] = '\0';
+	File.read(Buffer, 4);
+	const int MeshNameSize = *(int*)Buffer;
+	char* MeshName = new char[MeshNameSize + 1];
+	File.read(MeshName, MeshNameSize);
+	MeshName[MeshNameSize] = '\0';
 	
-	file.read(buffer, 4);
-	int vertexCout = *(int*)buffer;
-	char* vertexBuffer = new char[vertexCout * 4];
-	file.read(vertexBuffer, vertexCout * 4);
+	File.read(Buffer, 4);
+	const int VertexCout = *(int*)Buffer;
+	char* VertexBuffer = new char[VertexCout * 4];
+	File.read(VertexBuffer, VertexCout * 4);
 
-	file.read(buffer, 4);
-	int texCout = *(int*)buffer;
-	char* texBuffer = new char[texCout * 4];
-	file.read(texBuffer, texCout * 4);
+	File.read(Buffer, 4);
+	const int TexCout = *(int*)Buffer;
+	char* TexBuffer = new char[TexCout * 4];
+	File.read(TexBuffer, TexCout * 4);
 
-	file.read(buffer, 4);
-	int normCout = *(int*)buffer;
-	char* normBuffer = new char[normCout * 4];
-	file.read(normBuffer, normCout * 4);
+	File.read(Buffer, 4);
+	const int NormCout = *(int*)Buffer;
+	char* NormBuffer = new char[NormCout * 4];
+	File.read(NormBuffer, NormCout * 4);
 
-	file.read(buffer, 4);
-	int tangCout = *(int*)buffer;
-	char* tangBuffer = new char[tangCout * 4];
-	file.read(tangBuffer, tangCout * 4);
+	File.read(Buffer, 4);
+	const int TangCout = *(int*)Buffer;
+	char* TangBuffer = new char[TangCout * 4];
+	File.read(TangBuffer, TangCout * 4);
 
-	file.read(buffer, 4);
-	int indexCout = *(int*)buffer;
-	char* indexBuffer = new char[indexCout * 4];
-	file.read(indexBuffer, indexCout * 4);
+	File.read(Buffer, 4);
+	const int IndexCout = *(int*)Buffer;
+	char* IndexBuffer = new char[IndexCout * 4];
+	File.read(IndexBuffer, IndexCout * 4);
 
-	int matIndexCout = 0;
-	char* matIndexBuffer = nullptr;
+	int MatIndexCout = 0;
+	char* MatIndexBuffer = nullptr;
 
-	file.read(buffer, 4);
-	int matCount = *(int*)buffer;
+	File.read(Buffer, 4);
+	const int MatCount = *(int*)Buffer;
 
-	if (matCount > 1)
+	if (MatCount > 1)
 	{
-		file.read(buffer, 4);
-		matIndexCout = *(int*)buffer;
-		matIndexBuffer = new char[matIndexCout * 4];
-		file.read(matIndexBuffer, matIndexCout * 4);
+		File.read(Buffer, 4);
+		MatIndexCout = *(int*)Buffer;
+		MatIndexBuffer = new char[MatIndexCout * 4];
+		File.read(MatIndexBuffer, MatIndexCout * 4);
 	}
 
-	FEAABB meshAABB;
+	FEAABB MeshAABB;
 	for (int i = 0; i <= 2; i++)
 	{
-		file.read(buffer, 4);
-		meshAABB.min[i] = *(float*)buffer;
+		File.read(Buffer, 4);
+		MeshAABB.Min[i] = *(float*)Buffer;
 	}
 
 	for (int i = 0; i <= 2; i++)
 	{
-		file.read(buffer, 4);
-		meshAABB.max[i] = *(float*)buffer;
+		File.read(Buffer, 4);
+		MeshAABB.Max[i] = *(float*)Buffer;
 	}
 
-	file.close();
+	File.close();
 
-	FEMesh* newMesh = rawDataToMesh((float*)vertexBuffer, vertexCout,
-									(float*)texBuffer, texCout,
-									(float*)normBuffer, normCout,
-									(float*)tangBuffer, tangCout,
-									(int*)indexBuffer, indexCout,
-									(float*)matIndexBuffer, matIndexCout, matCount,
+	FEMesh* NewMesh = RawDataToMesh((float*)VertexBuffer, VertexCout,
+									(float*)TexBuffer, TexCout,
+									(float*)NormBuffer, NormCout,
+									(float*)TangBuffer, TangCout,
+									(int*)IndexBuffer, IndexCout,
+									(float*)MatIndexBuffer, MatIndexCout, MatCount,
 									Name);
 
-	std::string oldID = newMesh->ID;
+	const std::string OldID = NewMesh->ID;
 	// overwrite objectID with objectID from file.
-	if (objectID != nullptr)
+	if (ObjectID != nullptr)
 	{
-		newMesh->setID(objectID);
+		NewMesh->SetID(ObjectID);
 	}
 
-	delete[] objectID;
+	delete[] ObjectID;
 
-	delete[] buffer;
-	delete[] vertexBuffer;
-	delete[] texBuffer;
-	delete[] normBuffer;
-	delete[] tangBuffer;
-	delete[] indexBuffer;
+	delete[] Buffer;
+	delete[] VertexBuffer;
+	delete[] TexBuffer;
+	delete[] NormBuffer;
+	delete[] TangBuffer;
+	delete[] IndexBuffer;
 
-	newMesh->AABB = meshAABB;
-	newMesh->setName(Name);
+	NewMesh->AABB = MeshAABB;
+	NewMesh->SetName(Name);
 	
-	meshes.erase(oldID);
-	meshes[newMesh->getObjectID()] = newMesh;
+	Meshes.erase(OldID);
+	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
-	return newMesh;
+	return NewMesh;
 }
 
-FEMaterial* FEResourceManager::createMaterial(std::string Name, std::string forceObjectID)
+FEMaterial* FEResourceManager::CreateMaterial(std::string Name, const std::string ForceObjectID)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedMaterial";
 
-	FEMaterial* newMaterial = new FEMaterial(Name);
-	if (forceObjectID != "")
-		newMaterial->setID(forceObjectID);
-	materials[newMaterial->getObjectID()] = newMaterial;
+	FEMaterial* NewMaterial = new FEMaterial(Name);
+	if (!ForceObjectID.empty())
+		NewMaterial->SetID(ForceObjectID);
+	Materials[NewMaterial->GetObjectID()] = NewMaterial;
 	
-	return materials[newMaterial->getObjectID()];
+	return Materials[NewMaterial->GetObjectID()];
 }
 
-FEEntity* FEResourceManager::createEntity(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+FEEntity* FEResourceManager::CreateEntity(FEGameModel* GameModel, const std::string Name, const std::string ForceObjectID)
 {
-	if (gameModel == nullptr)
-		gameModel = standardGameModels["67251E393508013ZV579315F"];
+	if (GameModel == nullptr)
+		GameModel = StandardGameModels["67251E393508013ZV579315F"];
 
-	FEPrefab* tempPrefab = createPrefab(gameModel, gameModel->getName());
-	FEEntity* newEntity = new FEEntity(tempPrefab, Name);
-	if (forceObjectID != "")
-		newEntity->setID(forceObjectID);
-	return newEntity;
+	FEPrefab* TempPrefab = CreatePrefab(GameModel, GameModel->GetName());
+	FEEntity* NewEntity = new FEEntity(TempPrefab, Name);
+	if (!ForceObjectID.empty())
+		NewEntity->SetID(ForceObjectID);
+	return NewEntity;
 }
 
-FEEntity* FEResourceManager::createEntity(FEPrefab* prefab, std::string Name, std::string forceObjectID)
+FEEntity* FEResourceManager::CreateEntity(FEPrefab* Prefab, const std::string Name, const std::string ForceObjectID)
 {
-	if (prefab == nullptr)
-		prefab = new FEPrefab(standardGameModels["67251E393508013ZV579315F"], Name);
+	if (Prefab == nullptr)
+		Prefab = new FEPrefab(StandardGameModels["67251E393508013ZV579315F"], Name);
 
-	FEEntity* newEntity = new FEEntity(prefab, Name);
-	if (forceObjectID != "")
-		newEntity->setID(forceObjectID);
-	return newEntity;
+	FEEntity* NewEntity = new FEEntity(Prefab, Name);
+	if (!ForceObjectID.empty())
+		NewEntity->SetID(ForceObjectID);
+	return NewEntity;
 }
 
-std::vector<std::string> FEResourceManager::getMaterialList()
+std::vector<std::string> FEResourceManager::GetMaterialList()
 {
-	FE_MAP_TO_STR_VECTOR(materials)
+	FE_MAP_TO_STR_VECTOR(Materials)
 }
 
-std::vector<std::string> FEResourceManager::getStandardMaterialList()
+std::vector<std::string> FEResourceManager::GetStandardMaterialList()
 {
-	FE_MAP_TO_STR_VECTOR(standardMaterials)
+	FE_MAP_TO_STR_VECTOR(StandardMaterials)
 }
 
-FEMaterial* FEResourceManager::getMaterial(std::string ID)
+FEMaterial* FEResourceManager::GetMaterial(const std::string ID)
 {
-	if (materials.find(ID) == materials.end())
+	if (Materials.find(ID) == Materials.end())
 	{
-		if (standardMaterials.find(ID) != standardMaterials.end())
+		if (StandardMaterials.find(ID) != StandardMaterials.end())
 		{
-			return standardMaterials[ID];
+			return StandardMaterials[ID];
 		}
 
 		return nullptr;
 	}
 
-	return materials[ID];
+	return Materials[ID];
 }
 
-std::vector<FEMaterial*> FEResourceManager::getMaterialByName(std::string Name)
+std::vector<FEMaterial*> FEResourceManager::GetMaterialByName(const std::string Name)
 {
 	std::vector<FEMaterial*> result;
 
-	auto it = materials.begin();
-	while (it != materials.end())
+	auto it = Materials.begin();
+	while (it != Materials.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -1087,10 +1165,10 @@ std::vector<FEMaterial*> FEResourceManager::getMaterialByName(std::string Name)
 		it++;
 	}
 
-	it = standardMaterials.begin();
-	while (it != standardMaterials.end())
+	it = StandardMaterials.begin();
+	while (it != StandardMaterials.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -1101,52 +1179,52 @@ std::vector<FEMaterial*> FEResourceManager::getMaterialByName(std::string Name)
 	return result;
 }
 
-std::string FEResourceManager::getFileNameFromFilePath(std::string filePath)
+std::string FEResourceManager::GetFileNameFromFilePath(const std::string FilePath)
 {
-	for (size_t i = filePath.size() - 1; i > 0; i--)
+	for (size_t i = FilePath.size() - 1; i > 0; i--)
 	{
-		if (filePath[i] == '\\' || filePath[i] == '/')
-			return filePath.substr(i + 1, filePath.size() - 1 - i);
+		if (FilePath[i] == '\\' || FilePath[i] == '/')
+			return FilePath.substr(i + 1, FilePath.size() - 1 - i);
 	}
 
 	return std::string("");
 }
 
-std::vector<std::string> FEResourceManager::getMeshList()
+std::vector<std::string> FEResourceManager::GetMeshList()
 {
-	FE_MAP_TO_STR_VECTOR(meshes)
+	FE_MAP_TO_STR_VECTOR(Meshes)
 }
 
-std::vector<std::string> FEResourceManager::getStandardMeshList()
+std::vector<std::string> FEResourceManager::GetStandardMeshList()
 {
-	FE_MAP_TO_STR_VECTOR(standardMeshes)
+	FE_MAP_TO_STR_VECTOR(StandardMeshes)
 }
 
-FEMesh* FEResourceManager::getMesh(std::string ID)
+FEMesh* FEResourceManager::GetMesh(const std::string ID)
 {
-	if (meshes.find(ID) == meshes.end())
+	if (Meshes.find(ID) == Meshes.end())
 	{
-		if (standardMeshes.find(ID) != standardMeshes.end())
+		if (StandardMeshes.find(ID) != StandardMeshes.end())
 		{
-			return standardMeshes[ID];
+			return StandardMeshes[ID];
 		}
 
 		return nullptr;
 	}
 	else
 	{
-		return meshes[ID];
+		return Meshes[ID];
 	}
 }
 
-std::vector<FEMesh*> FEResourceManager::getMeshByName(std::string Name)
+std::vector<FEMesh*> FEResourceManager::GetMeshByName(const std::string Name)
 {
 	std::vector<FEMesh*> result;
 
-	auto it = meshes.begin();
-	while (it != meshes.end())
+	auto it = Meshes.begin();
+	while (it != Meshes.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -1154,10 +1232,10 @@ std::vector<FEMesh*> FEResourceManager::getMeshByName(std::string Name)
 		it++;
 	}
 
-	it = standardMeshes.begin();
-	while (it != standardMeshes.end())
+	it = StandardMeshes.begin();
+	while (it != StandardMeshes.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -1168,19 +1246,19 @@ std::vector<FEMesh*> FEResourceManager::getMeshByName(std::string Name)
 	return result;
 }
 
-bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
+bool FEResourceManager::MakeMaterialStandard(FEMaterial* Material)
 {
-	if (material == nullptr)
+	if (Material == nullptr)
 	{
-		LOG.add("material is nullptr in function FEResourceManager::makeMaterialStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("material is nullptr in function FEResourceManager::makeMaterialStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardMaterials.find(material->getObjectID()) == standardMaterials.end())
+	if (StandardMaterials.find(Material->GetObjectID()) == StandardMaterials.end())
 	{
-		if (materials.find(material->getObjectID()) != materials.end())
-			materials.erase(material->getObjectID());
-		standardMaterials[material->getObjectID()] = material;
+		if (Materials.find(Material->GetObjectID()) != Materials.end())
+			Materials.erase(Material->GetObjectID());
+		StandardMaterials[Material->GetObjectID()] = Material;
 
 		return true;
 	}
@@ -1188,97 +1266,97 @@ bool FEResourceManager::makeMaterialStandard(FEMaterial* material)
 	return false;
 }
 
-void FEResourceManager::loadStandardMaterial()
+void FEResourceManager::LoadStandardMaterial()
 {
-	FEMaterial* newMaterial = createMaterial("SolidColorMaterial");
-	materials.erase(newMaterial->getObjectID());
-	newMaterial->setID("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
-	newMaterial->shader = createShader("FESolidColorShader", loadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str(),
-															 loadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str());
-	newMaterial->shader->setID("6917497A5E0C05454876186F");
+	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial");
+	Materials.erase(NewMaterial->GetObjectID());
+	NewMaterial->SetID("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str(),
+															 LoadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str());
+	NewMaterial->Shader->SetID("6917497A5E0C05454876186F");
 
-	makeShaderStandard(newMaterial->shader);
-	FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
-	newMaterial->addParameter(color);
-	makeMaterialStandard(newMaterial);
+	MakeShaderStandard(NewMaterial->Shader);
+	const FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
+	NewMaterial->AddParameter(color);
+	MakeMaterialStandard(NewMaterial);
 
-	FEShader* FEPhongShader = createShader("FEPhongShader", loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str(),
-															loadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str());
-	shaders.erase(FEPhongShader->getObjectID());
-	FEPhongShader->setID("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/);
-	shaders[FEPhongShader->getObjectID()] = FEPhongShader;
+	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str(),
+															LoadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str());
+	Shaders.erase(FEPhongShader->GetObjectID());
+	FEPhongShader->SetID("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/);
+	Shaders[FEPhongShader->GetObjectID()] = FEPhongShader;
 
-	makeShaderStandard(getShader("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/));
+	MakeShaderStandard(GetShader("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/));
 
 	// ****************************** PBR SHADER ******************************
 #ifdef USE_DEFERRED_RENDERER
-	FEShader* FEPBRShader = createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str(),
-														loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str(),
+														LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
 
-	FEShader* FEPBRShaderForward = createShader("FEPBRShaderForward", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
-																	  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+																	  LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 
-	shaders.erase(FEPBRShaderForward->getObjectID());
-	FEPBRShaderForward->setID("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-	shaders[FEPBRShaderForward->getObjectID()] = FEPBRShaderForward;
+	Shaders.erase(PBRShaderForward->GetObjectID());
+	PBRShaderForward->SetID("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+	Shaders[PBRShaderForward->GetObjectID()] = PBRShaderForward;
 
-	makeShaderStandard(getShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/));
+	MakeShaderStandard(GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/));
 
-	FEShader* FEPBRGBufferShader = createShader("FEPBRGBufferShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
-															          loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
+															          LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
 
-	shaders.erase(FEPBRGBufferShader->getObjectID());
-	FEPBRGBufferShader->setID("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/);
-	shaders[FEPBRGBufferShader->getObjectID()] = FEPBRGBufferShader;
+	Shaders.erase(PBRGBufferShader->GetObjectID());
+	PBRGBufferShader->SetID("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/);
+	Shaders[PBRGBufferShader->GetObjectID()] = PBRGBufferShader;
 
-	makeShaderStandard(getShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+	MakeShaderStandard(GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
 
 #else
 	FEShader* FEPBRShader = createShader("FEPBRShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
 														loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 #endif // USE_DEFERRED_RENDERER
-	shaders.erase(FEPBRShader->getObjectID());
-	FEPBRShader->setID("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-	shaders[FEPBRShader->getObjectID()] = FEPBRShader;
+	Shaders.erase(PBRShader->GetObjectID());
+	PBRShader->SetID("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	Shaders[PBRShader->GetObjectID()] = PBRShader;
 
-	makeShaderStandard(getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
+	MakeShaderStandard(GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
 
 #ifdef USE_DEFERRED_RENDERER
-	FEShader* FEPBRInstancedShader = createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
-																		  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
+																		  LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
 
-	FEShader* FEPBRInstancedGBufferShader = createShader("FEPBRInstancedGBufferShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
-																						loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
+																						LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
 
-	shaders.erase(FEPBRInstancedGBufferShader->getObjectID());
-	FEPBRInstancedGBufferShader->setID("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/);
-	shaders[FEPBRInstancedGBufferShader->getObjectID()] = FEPBRInstancedGBufferShader;
+	Shaders.erase(PBRInstancedGBufferShader->GetObjectID());
+	PBRInstancedGBufferShader->SetID("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/);
+	Shaders[PBRInstancedGBufferShader->GetObjectID()] = PBRInstancedGBufferShader;
 
-	makeShaderStandard(getShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/)); 
+	MakeShaderStandard(GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/)); 
 #else
 	FEShader* FEPBRInstancedShader = createShader("FEPBRInstancedShader", loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
 																		  loadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
 #endif // USE_DEFERRED_RENDERER
-	shaders.erase(FEPBRInstancedShader->getObjectID());
-	FEPBRInstancedShader->setID("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-	shaders[FEPBRInstancedShader->getObjectID()] = FEPBRInstancedShader;
+	Shaders.erase(PBRInstancedShader->GetObjectID());
+	PBRInstancedShader->SetID("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+	Shaders[PBRInstancedShader->GetObjectID()] = PBRInstancedShader;
 
-	makeShaderStandard(getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/));
+	MakeShaderStandard(GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/));
 
-	newMaterial = createMaterial("FEPBRBaseMaterial");
-	materials.erase(newMaterial->getObjectID());
-	newMaterial->setID("61649B9E0F08013Q3939316C"/*"FEPBRBaseMaterial"*/);
-	newMaterial->shader = getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-	newMaterial->setAlbedoMap(noTexture);
-	makeMaterialStandard(newMaterial);
+	NewMaterial = CreateMaterial("FEPBRBaseMaterial");
+	Materials.erase(NewMaterial->GetObjectID());
+	NewMaterial->SetID("61649B9E0F08013Q3939316C"/*"FEPBRBaseMaterial"*/);
+	NewMaterial->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	NewMaterial->SetAlbedoMap(NoTexture);
+	MakeMaterialStandard(NewMaterial);
 	// ****************************** PBR SHADER END ******************************
 
 #ifdef USE_DEFERRED_RENDERER
-	FEShader* FETerrainShader = createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
-																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_GBUFFER.glsl").c_str(),
-																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
-																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
-																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
+	FEShader* TerrainShader = CreateShader("FETerrainShader", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
+																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_GBUFFER.glsl").c_str(),
+																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
+																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
+																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
 #else
 	FEShader* FETerrainShader = createShader("FETerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
 																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS.glsl").c_str(),
@@ -1287,67 +1365,67 @@ void FEResourceManager::loadStandardMaterial()
 																loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
 #endif // USE_DEFERRED_RENDERER
 	// ****************************** TERRAIN ******************************
-	shaders.erase(FETerrainShader->getObjectID());
-	FETerrainShader->setID("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
-	shaders[FETerrainShader->getObjectID()] = FETerrainShader;
+	Shaders.erase(TerrainShader->GetObjectID());
+	TerrainShader->SetID("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+	Shaders[TerrainShader->GetObjectID()] = TerrainShader;
 
-	makeShaderStandard(getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/));
+	MakeShaderStandard(GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/));
 
-	FEShader* FESMTerrainShader = createShader("FESMTerrainShader", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str(),
-																	loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str(),
-																	loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TCS.glsl").c_str(),
-																	loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str());
-	shaders.erase(FESMTerrainShader->getObjectID());
-	FESMTerrainShader->setID("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
-	shaders[FESMTerrainShader->getObjectID()] = FESMTerrainShader;
+	FEShader* ShadowMapTerrainShader = CreateShader("FESMTerrainShader", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str(),
+																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str(),
+																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TCS.glsl").c_str(),
+																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str());
+	Shaders.erase(ShadowMapTerrainShader->GetObjectID());
+	ShadowMapTerrainShader->SetID("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
+	Shaders[ShadowMapTerrainShader->GetObjectID()] = ShadowMapTerrainShader;
 
-	FEShaderParam colorParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor");
-	getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/)->addParameter(colorParam);
+	const FEShaderParam ColorParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor");
+	GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/)->AddParameter(ColorParam);
 
-	makeShaderStandard(getShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/));
+	MakeShaderStandard(GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/));
 
-	FEShader* terrainBrushOutput = createShader("terrainBrushOutput", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
-		loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str());
-	shaders.erase(terrainBrushOutput->getObjectID());
-	terrainBrushOutput->setID("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
-	shaders[terrainBrushOutput->getObjectID()] = terrainBrushOutput;
-	makeShaderStandard(getShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/));
+	FEShader* TerrainBrushOutput = CreateShader("terrainBrushOutput", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
+																	  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str());
+	Shaders.erase(TerrainBrushOutput->GetObjectID());
+	TerrainBrushOutput->SetID("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
+	Shaders[TerrainBrushOutput->GetObjectID()] = TerrainBrushOutput;
+	MakeShaderStandard(GetShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/));
 
-	FEShader* terrainBrushVisual = createShader("terrainBrushVisual", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str(),
-		loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str());
-	shaders.erase(terrainBrushVisual->getObjectID());
-	terrainBrushVisual->setID("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/);
-	shaders[terrainBrushVisual->getObjectID()] = terrainBrushVisual;
-	makeShaderStandard(getShader("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/));
+	FEShader* TerrainBrushVisual = CreateShader("terrainBrushVisual", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str(),
+																	  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str());
+	Shaders.erase(TerrainBrushVisual->GetObjectID());
+	TerrainBrushVisual->SetID("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/);
+	Shaders[TerrainBrushVisual->GetObjectID()] = TerrainBrushVisual;
+	MakeShaderStandard(GetShader("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/));
 
-	FEShader* terrainLayersNormalize = createShader("terrainLayersNormalize", loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
-																			  loadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_LayersNormalize_FS.glsl").c_str());
-	shaders.erase(terrainLayersNormalize->getObjectID());
-	terrainLayersNormalize->setID("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
-	shaders[terrainLayersNormalize->getObjectID()] = terrainLayersNormalize;
-	makeShaderStandard(getShader("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/));
+	FEShader* TerrainLayersNormalize = CreateShader("terrainLayersNormalize", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
+																			  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_LayersNormalize_FS.glsl").c_str());
+	Shaders.erase(TerrainLayersNormalize->GetObjectID());
+	TerrainLayersNormalize->SetID("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
+	Shaders[TerrainLayersNormalize->GetObjectID()] = TerrainLayersNormalize;
+	MakeShaderStandard(GetShader("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/));
 	// ****************************** TERRAIN END ******************************
 
-	FEMaterial* skyDomeMaterial = createMaterial("skyDomeMaterial");
-	materials.erase(skyDomeMaterial->getObjectID());
-	skyDomeMaterial->setID("5A649B9E0F36073D4939313H");
-	skyDomeMaterial->shader = createShader("FESkyDome", loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
-														loadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
-	shaders.erase(skyDomeMaterial->shader->getObjectID());
-	skyDomeMaterial->shader->setID("3A69744E831A574E4857361B");
-	shaders[skyDomeMaterial->shader->getObjectID()] = skyDomeMaterial->shader;
+	FEMaterial* SkyDomeMaterial = CreateMaterial("skyDomeMaterial");
+	Materials.erase(SkyDomeMaterial->GetObjectID());
+	SkyDomeMaterial->SetID("5A649B9E0F36073D4939313H");
+	SkyDomeMaterial->Shader = CreateShader("FESkyDome", LoadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
+														LoadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
+	Shaders.erase(SkyDomeMaterial->Shader->GetObjectID());
+	SkyDomeMaterial->Shader->SetID("3A69744E831A574E4857361B");
+	Shaders[SkyDomeMaterial->Shader->GetObjectID()] = SkyDomeMaterial->Shader;
 
-	makeShaderStandard(skyDomeMaterial->shader);
-	makeMaterialStandard(skyDomeMaterial);
+	MakeShaderStandard(SkyDomeMaterial->Shader);
+	MakeMaterialStandard(SkyDomeMaterial);
 
 	// same as FERenderer::updateFogInShaders()
-	getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogDensity")->updateData(0.007f);
-	getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("fogGradient")->updateData(2.5f);
-	getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("shadowBlurFactor")->updateData(1.0f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogDensity")->UpdateData(0.007f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogGradient")->UpdateData(2.5f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("shadowBlurFactor")->UpdateData(1.0f);
 
-	getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogDensity")->updateData(0.007f);
-	getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("fogGradient")->updateData(2.5f);
-	getShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->getParameter("shadowBlurFactor")->updateData(1.0f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(0.007f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(2.5f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("shadowBlurFactor")->UpdateData(1.0f);
 
 #ifdef USE_DEFERRED_RENDERER
 	
@@ -1359,159 +1437,158 @@ void FEResourceManager::loadStandardMaterial()
 	
 }
 
-void FEResourceManager::loadStandardGameModels()
+void FEResourceManager::LoadStandardGameModels()
 {
-	FEGameModel* newGameModel = new FEGameModel(getMesh("7F251E3E0D08013E3579315F"/*"sphere"*/), getMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/), "standardGameModel");
-	newGameModel->setID("67251E393508013ZV579315F");
-	makeGameModelStandard(newGameModel);
+	FEGameModel* NewGameModel = new FEGameModel(GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/), GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/), "standardGameModel");
+	NewGameModel->SetID("67251E393508013ZV579315F");
+	MakeGameModelStandard(NewGameModel);
 
-	newGameModel = new FEGameModel(getMesh("7F251E3E0D08013E3579315F"), getMaterial("5A649B9E0F36073D4939313H"/*"skyDomeMaterial"*/), "skyDomeGameModel");
-	newGameModel->setID("17271E603508013IO77931TY");
-	makeGameModelStandard(newGameModel);
+	NewGameModel = new FEGameModel(GetMesh("7F251E3E0D08013E3579315F"), GetMaterial("5A649B9E0F36073D4939313H"/*"skyDomeMaterial"*/), "skyDomeGameModel");
+	NewGameModel->SetID("17271E603508013IO77931TY");
+	MakeGameModelStandard(NewGameModel);
 }
 
-void FEResourceManager::clear()
+void FEResourceManager::Clear()
 {
-	auto materialIt = materials.begin();
-	while (materialIt != materials.end())
+	auto MaterialIt = Materials.begin();
+	while (MaterialIt != Materials.end())
 	{
-		delete materialIt->second;
-		materialIt++;
+		delete MaterialIt->second;
+		MaterialIt++;
 	}
-	materials.clear();
+	Materials.clear();
 
-	auto meshIt = meshes.begin();
-	while (meshIt != meshes.end())
+	auto MeshIt = Meshes.begin();
+	while (MeshIt != Meshes.end())
 	{
-		delete meshIt->second;
-		meshIt++;
+		delete MeshIt->second;
+		MeshIt++;
 	}
-	meshes.clear();
+	Meshes.clear();
 
-	auto textureIt = textures.begin();
-	while (textureIt != textures.end())
+	auto TextureIt = Textures.begin();
+	while (TextureIt != Textures.end())
 	{
-		delete textureIt->second;
-		textureIt++;
+		delete TextureIt->second;
+		TextureIt++;
 	}
-	textures.clear();
+	Textures.clear();
 
-	auto gameModelIt = gameModels.begin();
-	while (gameModelIt != gameModels.end())
+	auto GameModelIt = GameModels.begin();
+	while (GameModelIt != GameModels.end())
 	{
-		delete gameModelIt->second;
-		gameModelIt++;
+		delete GameModelIt->second;
+		GameModelIt++;
 	}
-	gameModels.clear();
+	GameModels.clear();
 
-
-	auto prefabIt = prefabs.begin();
-	while (prefabIt != prefabs.end())
+	auto PrefabIt = Prefabs.begin();
+	while (PrefabIt != Prefabs.end())
 	{
-		delete prefabIt->second;
-		prefabIt++;
+		delete PrefabIt->second;
+		PrefabIt++;
 	}
-	prefabs.clear();
+	Prefabs.clear();
 }
 
-void FEResourceManager::saveFEMesh(FEMesh* Mesh, const char* fileName)
+void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 {
 	std::fstream file;
-	file.open(fileName, std::ios::out | std::ios::binary);
+	file.open(FileName, std::ios::out | std::ios::binary);
 
-	// version of FEMesh file type
+	// Version of FEMesh file type.
 	float version = FE_MESH_VERSION;
 	file.write((char*)&version, sizeof(float));
 
-	int objectIDSize = int(Mesh->getObjectID().size());
-	file.write((char*)&objectIDSize, sizeof(int));
-	file.write((char*)Mesh->getObjectID().c_str(), sizeof(char) * objectIDSize);
+	int ObjectIDSize = static_cast<int>(Mesh->GetObjectID().size());
+	file.write((char*)&ObjectIDSize, sizeof(int));
+	file.write((char*)Mesh->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
 
-	int nameSize = int(Mesh->getName().size());
-	file.write((char*)&nameSize, sizeof(int));
-	file.write((char*)Mesh->getName().c_str(), sizeof(char) * nameSize);
+	int NameSize = static_cast<int>(Mesh->GetName().size());
+	file.write((char*)&NameSize, sizeof(int));
+	file.write((char*)Mesh->GetName().c_str(), sizeof(char) * NameSize);
 
-	int count = Mesh->getPositionsCount();
-	float* positions = new float[count];
-	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getPositionsBufferID(), 0, sizeof(float) * count, positions));
-	file.write((char*)&count, sizeof(int));
-	file.write((char*)positions, sizeof(float) * count);
+	int Count = Mesh->GetPositionsCount();
+	float* Positions = new float[Count];
+	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetPositionsBufferID(), 0, sizeof(float) * Count, Positions));
+	file.write((char*)&Count, sizeof(int));
+	file.write((char*)Positions, sizeof(float) * Count);
 
-	count = Mesh->getUVCount();
-	float* UV = new float[count];
-	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getUVBufferID(), 0, sizeof(float) * count, UV));
-	file.write((char*)&count, sizeof(int));
-	file.write((char*)UV, sizeof(float) * count);
+	Count = Mesh->GetUVCount();
+	float* UV = new float[Count];
+	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetUVBufferID(), 0, sizeof(float) * Count, UV));
+	file.write((char*)&Count, sizeof(int));
+	file.write((char*)UV, sizeof(float) * Count);
 
-	count = Mesh->getNormalsCount();
-	float* normals = new float[count];
-	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getNormalsBufferID(), 0, sizeof(float) * count, normals));
-	file.write((char*)&count, sizeof(int));
-	file.write((char*)normals, sizeof(float) * count);
+	Count = Mesh->GetNormalsCount();
+	float* Normals = new float[Count];
+	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetNormalsBufferID(), 0, sizeof(float) * Count, Normals));
+	file.write((char*)&Count, sizeof(int));
+	file.write((char*)Normals, sizeof(float) * Count);
 	
-	count = Mesh->getTangentsCount();
-	float* tangents = new float[count];
-	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getTangentsBufferID(), 0, sizeof(float) * count, tangents));
-	file.write((char*)&count, sizeof(int));
-	file.write((char*)tangents, sizeof(float) * count);
+	Count = Mesh->GetTangentsCount();
+	float* Tangents = new float[Count];
+	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetTangentsBufferID(), 0, sizeof(float) * Count, Tangents));
+	file.write((char*)&Count, sizeof(int));
+	file.write((char*)Tangents, sizeof(float) * Count);
 
-	count = Mesh->getIndicesCount();
-	int* indices = new int[count];
-	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getIndicesBufferID(), 0, sizeof(int) * count, indices));
-	file.write((char*)&count, sizeof(int));
-	file.write((char*)indices, sizeof(int) * count);
+	Count = Mesh->GetIndicesCount();
+	int* Indices = new int[Count];
+	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetIndicesBufferID(), 0, sizeof(int) * Count, Indices));
+	file.write((char*)&Count, sizeof(int));
+	file.write((char*)Indices, sizeof(int) * Count);
 
-	int materialCount = Mesh->materialsCount;
-	file.write((char*)&materialCount, sizeof(int));
+	int MaterialCount = Mesh->MaterialsCount;
+	file.write((char*)&MaterialCount, sizeof(int));
 	
-	if (materialCount > 1)
+	if (MaterialCount > 1)
 	{
-		count = Mesh->getMaterialsIndicesCount();
-		float* matIndices = new float[count];
-		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->getMaterialsIndicesBufferID(), 0, sizeof(float) * count, matIndices));
-		file.write((char*)&count, sizeof(int));
-		file.write((char*)matIndices, sizeof(float) * count);
+		Count = Mesh->GetMaterialsIndicesCount();
+		float* MatIndices = new float[Count];
+		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetMaterialsIndicesBufferID(), 0, sizeof(float) * Count, MatIndices));
+		file.write((char*)&Count, sizeof(int));
+		file.write((char*)MatIndices, sizeof(float) * Count);
 	}
 
-	FEAABB tempAABB(positions, Mesh->getPositionsCount());
-	file.write((char*)&tempAABB.min[0], sizeof(float));
-	file.write((char*)&tempAABB.min[1], sizeof(float));
-	file.write((char*)&tempAABB.min[2], sizeof(float));
+	FEAABB TempAABB(Positions, Mesh->GetPositionsCount());
+	file.write((char*)&TempAABB.Min[0], sizeof(float));
+	file.write((char*)&TempAABB.Min[1], sizeof(float));
+	file.write((char*)&TempAABB.Min[2], sizeof(float));
 
-	file.write((char*)&tempAABB.max[0], sizeof(float));
-	file.write((char*)&tempAABB.max[1], sizeof(float));
-	file.write((char*)&tempAABB.max[2], sizeof(float));
+	file.write((char*)&TempAABB.Max[0], sizeof(float));
+	file.write((char*)&TempAABB.Max[1], sizeof(float));
+	file.write((char*)&TempAABB.Max[2], sizeof(float));
 
 	file.close();
 
-	delete[] positions;
+	delete[] Positions;
 	delete[] UV;
-	delete[] normals;
-	delete[] tangents;
-	delete[] indices;
+	delete[] Normals;
+	delete[] Tangents;
+	delete[] Indices;
 }
 
-std::vector<std::string> FEResourceManager::getTextureList()
+std::vector<std::string> FEResourceManager::GetTextureList()
 {
-	FE_MAP_TO_STR_VECTOR(textures)
+	FE_MAP_TO_STR_VECTOR(Textures)
 }
 
-FETexture* FEResourceManager::getTexture(std::string ID)
+FETexture* FEResourceManager::GetTexture(const std::string ID)
 {
-	if (textures.find(ID) == textures.end())
+	if (Textures.find(ID) == Textures.end())
 		return nullptr;
 
-	return textures[ID];
+	return Textures[ID];
 }
 
-std::vector<FETexture*> FEResourceManager::getTextureByName(std::string Name)
+std::vector<FETexture*> FEResourceManager::GetTextureByName(const std::string Name)
 {
 	std::vector<FETexture*> result;
 
-	auto it = textures.begin();
-	while (it != textures.end())
+	auto it = Textures.begin();
+	while (it != Textures.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -1522,155 +1599,155 @@ std::vector<FETexture*> FEResourceManager::getTextureByName(std::string Name)
 	return result;
 }
 
-void FEResourceManager::deleteFETexture(FETexture* texture)
+void FEResourceManager::DeleteFETexture(const FETexture* Texture)
 {
-	if (texture == noTexture)
+	if (Texture == NoTexture)
 	{
-		LOG.add(std::string("Attempt to delete noTexture texture in function FEResourceManager::deleteFETexture.", FE_LOG_WARNING, FE_LOG_GENERAL));
+		LOG.Add(std::string("Attempt to delete noTexture texture in function FEResourceManager::deleteFETexture.", FE_LOG_WARNING, FE_LOG_GENERAL));
 		return;
 	}
 
 	// looking if this texture is used in some materials
 	// to-do: should be done through list of pointers to materials that uses this texture.
-	auto materialIterator = materials.begin();
-	while (materialIterator != materials.end())
+	auto MaterialIterator = Materials.begin();
+	while (MaterialIterator != Materials.end())
 	{
-		for (size_t i = 0; i < materialIterator->second->textures.size(); i++)
+		for (size_t i = 0; i < MaterialIterator->second->Textures.size(); i++)
 		{
-			if (materialIterator->second->textures[i] == texture)
+			if (MaterialIterator->second->Textures[i] == Texture)
 			{
-				materialIterator->second->textures[i] = noTexture;
+				MaterialIterator->second->Textures[i] = NoTexture;
 				break;
 			}
 		}
 
-		materialIterator++;
+		MaterialIterator++;
 	}
 
-	// after we make sure that texture is no more referenced by any material, we can delete it
-	textures.erase(texture->getObjectID());
+	// After we make sure that texture is no more referenced by any material, we can delete it.
+	Textures.erase(Texture->GetObjectID());
 
-	delete texture;
+	delete Texture;
 }
 
-void FEResourceManager::deleteFEMesh(FEMesh* mesh)
+void FEResourceManager::DeleteFEMesh(const FEMesh* Mesh)
 {
 	// looking if this mesh is used in some gameModels
 	// to-do: should be done through list of pointers to gameModels that uses this mesh.
-	auto gameModelIterator = gameModels.begin();
-	while (gameModelIterator != gameModels.end())
+	auto GameModelIterator = GameModels.begin();
+	while (GameModelIterator != GameModels.end())
 	{
-		if (gameModelIterator->second->mesh == mesh)
+		if (GameModelIterator->second->Mesh == Mesh)
 		{
-			gameModelIterator->second->mesh = getMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
+			GameModelIterator->second->Mesh = GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
 		}
 
-		gameModelIterator++;
+		GameModelIterator++;
 	}
 
-	meshes.erase(mesh->getObjectID());
-	delete mesh;
+	Meshes.erase(Mesh->GetObjectID());
+	delete Mesh;
 }
 
-std::vector<std::string> FEResourceManager::getGameModelList()
+std::vector<std::string> FEResourceManager::GetGameModelList()
 {
-	FE_MAP_TO_STR_VECTOR(gameModels)
+	FE_MAP_TO_STR_VECTOR(GameModels)
 }
 
-std::vector<std::string> FEResourceManager::getStandardGameModelList()
+std::vector<std::string> FEResourceManager::GetStandardGameModelList()
 {
-	FE_MAP_TO_STR_VECTOR(standardGameModels)
+	FE_MAP_TO_STR_VECTOR(StandardGameModels)
 }
 
-FEGameModel* FEResourceManager::getGameModel(std::string ID)
+FEGameModel* FEResourceManager::GetGameModel(const std::string ID)
 {
-	if (gameModels.find(ID) == gameModels.end())
+	if (GameModels.find(ID) == GameModels.end())
 	{
-		if (standardGameModels.find(ID) != standardGameModels.end())
+		if (StandardGameModels.find(ID) != StandardGameModels.end())
 		{
-			return standardGameModels[ID];
+			return StandardGameModels[ID];
 		}
 
 		return nullptr;
 	}
 
-	return gameModels[ID];
+	return GameModels[ID];
 }
 
-std::vector<FEGameModel*> FEResourceManager::getGameModelByName(std::string Name)
+std::vector<FEGameModel*> FEResourceManager::GetGameModelByName(const std::string Name)
 {
-	std::vector<FEGameModel*> result;
+	std::vector<FEGameModel*> Result;
 
-	auto it = gameModels.begin();
-	while (it != gameModels.end())
+	auto it = GameModels.begin();
+	while (it != GameModels.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	it = standardGameModels.begin();
-	while (it != standardGameModels.end())
+	it = StandardGameModels.begin();
+	while (it != StandardGameModels.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	return result;
+	return Result;
 }
 
-FEGameModel* FEResourceManager::createGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name, std::string forceObjectID)
+FEGameModel* FEResourceManager::CreateGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name, const std::string ForceObjectID)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedGameModel";
 
 	if (Mesh == nullptr)
-		Mesh = getMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
+		Mesh = GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
 
 	if (Material == nullptr)
-		Material = getMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+		Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
 
-	FEGameModel* newGameModel = new FEGameModel(Mesh, Material, Name);
-	if (forceObjectID != "")
+	FEGameModel* NewGameModel = new FEGameModel(Mesh, Material, Name);
+	if (!ForceObjectID.empty())
 	{
-		gameModels[forceObjectID] = newGameModel;
-		gameModels[forceObjectID]->setID(forceObjectID);
+		GameModels[ForceObjectID] = NewGameModel;
+		GameModels[ForceObjectID]->SetID(ForceObjectID);
 	}
 	else
 	{
-		gameModels[newGameModel->ID] = newGameModel;
+		GameModels[NewGameModel->ID] = NewGameModel;
 	}
 	
-	gameModels[newGameModel->ID]->setName(Name);
-	return gameModels[newGameModel->ID];
+	GameModels[NewGameModel->ID]->SetName(Name);
+	return GameModels[NewGameModel->ID];
 }
 
-void FEResourceManager::deleteGameModel(FEGameModel* gameModel)
+void FEResourceManager::DeleteGameModel(const FEGameModel* GameModel)
 {
-	gameModels.erase(gameModel->getObjectID());
-	delete gameModel;
+	GameModels.erase(GameModel->GetObjectID());
+	delete GameModel;
 }
 
-bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
+bool FEResourceManager::MakeGameModelStandard(FEGameModel* GameModel)
 {
-	if (gameModel == nullptr)
+	if (GameModel == nullptr)
 	{
-		LOG.add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardGameModels.find(gameModel->getObjectID()) == standardGameModels.end())
+	if (StandardGameModels.find(GameModel->GetObjectID()) == StandardGameModels.end())
 	{
-		if (gameModels.find(gameModel->getObjectID()) != gameModels.end())
-			gameModels.erase(gameModel->getObjectID());
-		standardGameModels[gameModel->getObjectID()] = gameModel;
+		if (GameModels.find(GameModel->GetObjectID()) != GameModels.end())
+			GameModels.erase(GameModel->GetObjectID());
+		StandardGameModels[GameModel->GetObjectID()] = GameModel;
 
 		return true;
 	}
@@ -1678,41 +1755,41 @@ bool FEResourceManager::makeGameModelStandard(FEGameModel* gameModel)
 	return false;
 }
 
-FEShader* FEResourceManager::createShader(std::string shaderName, const char* vertexText, const char* fragmentText,
-										  const char* tessControlText, const char* tessEvalText,
-										  const char* geometryText, const char* computeText, std::string forceObjectID)
+FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
+										  const char* TessControlText, const char* TessEvalText,
+										  const char* GeometryText, const char* ComputeText, const std::string ForceObjectID)
 {
-	if (shaderName.size() == 0)
-		shaderName = "unnamedShader";
+	if (ShaderName.empty())
+		ShaderName = "unnamedShader";
 
 	// Shader with compute stage cannot contain any other stage.
-	if (computeText != nullptr && (vertexText != nullptr || fragmentText != nullptr ||
-								   tessControlText != nullptr || tessEvalText != nullptr ||
-								   geometryText != nullptr))
+	if (ComputeText != nullptr && (VertexText != nullptr || FragmentText != nullptr ||
+								   TessControlText != nullptr || TessEvalText != nullptr ||
+								   GeometryText != nullptr))
 	{
 		return nullptr;
 	}
 
-	FEShader* newShader = new FEShader(shaderName, vertexText, fragmentText, tessControlText, tessEvalText, geometryText, computeText);
-	if (forceObjectID != "")
-		newShader->setID(forceObjectID);
-	shaders[newShader->getObjectID()] = newShader;
-	return newShader;
+	FEShader* NewShader = new FEShader(ShaderName, VertexText, FragmentText, TessControlText, TessEvalText, GeometryText, ComputeText);
+	if (!ForceObjectID.empty())
+		NewShader->SetID(ForceObjectID);
+	Shaders[NewShader->GetObjectID()] = NewShader;
+	return NewShader;
 }
 
-bool FEResourceManager::makeShaderStandard(FEShader* shader)
+bool FEResourceManager::MakeShaderStandard(FEShader* Shader)
 {
-	if (shader == nullptr)
+	if (Shader == nullptr)
 	{
-		LOG.add("shader is nullptr in function FEResourceManager::makeShaderStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("shader is nullptr in function FEResourceManager::makeShaderStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardShaders.find(shader->getObjectID()) == standardShaders.end())
+	if (StandardShaders.find(Shader->GetObjectID()) == StandardShaders.end())
 	{
-		if (shaders.find(shader->getObjectID()) != shaders.end())
-			shaders.erase(shader->getObjectID());
-		standardShaders[shader->getObjectID()] = shader;
+		if (Shaders.find(Shader->GetObjectID()) != Shaders.end())
+			Shaders.erase(Shader->GetObjectID());
+		StandardShaders[Shader->GetObjectID()] = Shader;
 
 		return true;
 	}
@@ -1720,247 +1797,247 @@ bool FEResourceManager::makeShaderStandard(FEShader* shader)
 	return false;
 }
 
-FEShader* FEResourceManager::getShader(std::string shaderID)
+FEShader* FEResourceManager::GetShader(const std::string ShaderID)
 {
-	if (shaders.find(shaderID) == shaders.end())
+	if (Shaders.find(ShaderID) == Shaders.end())
 	{
-		if (standardShaders.find(shaderID) != standardShaders.end())
+		if (StandardShaders.find(ShaderID) != StandardShaders.end())
 		{
-			return standardShaders[shaderID];
+			return StandardShaders[ShaderID];
 		}
 
 		return nullptr;
 	}
 	else
 	{
-		return shaders[shaderID];
+		return Shaders[ShaderID];
 	}
 }
 
-std::vector<FEShader*> FEResourceManager::getShaderByName(std::string Name)
+std::vector<FEShader*> FEResourceManager::GetShaderByName(const std::string Name)
 {
-	std::vector<FEShader*> result;
+	std::vector<FEShader*> Result;
 
-	auto it = shaders.begin();
-	while (it != shaders.end())
+	auto it = Shaders.begin();
+	while (it != Shaders.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	it = standardShaders.begin();
-	while (it != standardShaders.end())
+	it = StandardShaders.begin();
+	while (it != StandardShaders.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	return result;
+	return Result;
 }
 
-std::vector<std::string> FEResourceManager::getShadersList()
+std::vector<std::string> FEResourceManager::GetShadersList()
 {
-	FE_MAP_TO_STR_VECTOR(shaders)
+	FE_MAP_TO_STR_VECTOR(Shaders)
 }
 
-std::vector<std::string> FEResourceManager::getStandardShadersList()
+std::vector<std::string> FEResourceManager::GetStandardShadersList()
 {
-	FE_MAP_TO_STR_VECTOR(standardShaders)
+	FE_MAP_TO_STR_VECTOR(StandardShaders)
 }
 
-void FEResourceManager::deleteShader(FEShader* shader)
+void FEResourceManager::DeleteShader(const FEShader* Shader)
 {
-	if (shader == nullptr)
+	if (Shader == nullptr)
 		return;
 
-	auto it = materials.begin();
-	while (it != materials.end())
+	auto it = Materials.begin();
+	while (it != Materials.end())
 	{
-		if (it->second->shader->getNameHash() == shader->getNameHash())
-			it->second->shader = getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
+		if (it->second->Shader->GetNameHash() == Shader->GetNameHash())
+			it->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 		
 		it++;
 	}
 
-	it = standardMaterials.begin();
-	while (it != standardMaterials.end())
+	it = StandardMaterials.begin();
+	while (it != StandardMaterials.end())
 	{
-		if (it->second->shader->getNameHash() == shader->getNameHash())
-			it->second->shader = getShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
+		if (it->second->Shader->GetNameHash() == Shader->GetNameHash())
+			it->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
 
 		it++;
 	}
 
-	shaders.erase(shader->getObjectID());
-	standardShaders.erase(shader->getObjectID());
-	delete shader;
+	Shaders.erase(Shader->GetObjectID());
+	StandardShaders.erase(Shader->GetObjectID());
+	delete Shader;
 }
 
-bool FEResourceManager::replaceShader(std::string oldShaderID, FEShader* newShader)
+bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* NewShader)
 {
-	FEShader* shaderToReplace = getShader(oldShaderID);
-	if (shaderToReplace == nullptr)
+	const FEShader* ShaderToReplace = GetShader(OldShaderID);
+	if (ShaderToReplace == nullptr)
 		return false;
 
-	if (newShader->getName().size() == 0)
+	if (NewShader->GetName().empty())
 		return false;
 
-	if (shaders.find(oldShaderID) != shaders.end())
+	if (Shaders.find(OldShaderID) != Shaders.end())
 	{
 		//*(shaders[oldShaderID]) = *newShader;
 		//newShader->setID(oldShaderID);
-		shaders[oldShaderID]->reCompile(newShader->getName(), newShader->getVertexShaderText(), newShader->getFragmentShaderText(),
-										newShader->getTessControlShaderText(), newShader->getTessEvalShaderText(),
-										newShader->getGeometryShaderText(), newShader->getComputeShaderText());
+		Shaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
+										NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
+										NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
 	}
-	else if (standardShaders.find(oldShaderID) != standardShaders.end())
+	else if (StandardShaders.find(OldShaderID) != StandardShaders.end())
 	{
 		//*(standardShaders[oldShaderID]) = *newShader;
 		//newShader->setID(oldShaderID);
 
-		standardShaders[oldShaderID]->reCompile(newShader->getName(), newShader->getVertexShaderText(), newShader->getFragmentShaderText(),
-												newShader->getTessControlShaderText(), newShader->getTessEvalShaderText(),
-												newShader->getGeometryShaderText(), newShader->getComputeShaderText());
+		StandardShaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
+												NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
+												NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
 	}
 
 	return true;
 }
 
-FETerrain* FEResourceManager::createTerrain(bool createHeightMap, std::string name, std::string forceObjectID)
+FETerrain* FEResourceManager::CreateTerrain(const bool bCreateHeightMap, const std::string Name, const std::string ForceObjectID)
 {
-	FETerrain* newTerrain = new FETerrain(name);
-	if (forceObjectID != "")
-		newTerrain->setID(forceObjectID);
+	FETerrain* NewTerrain = new FETerrain(Name);
+	if (!ForceObjectID.empty())
+		NewTerrain->SetID(ForceObjectID);
 
-	newTerrain->shader = getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
+	NewTerrain->Shader = GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 
-	if (createHeightMap)
+	if (bCreateHeightMap)
 	{
 		//creating blank heightMap
-		FETexture* newTexture = createTexture(name + "_heightMap");
-		newTexture->width = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
-		newTexture->height = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
-		newTexture->internalFormat = GL_R16;
-		newTexture->magFilter = FE_LINEAR;
-		newTexture->fileName = "NULL";
+		FETexture* NewTexture = CreateTexture(Name + "_heightMap");
+		NewTexture->Width = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
+		NewTexture->Height = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
+		NewTexture->InternalFormat = GL_R16;
+		NewTexture->MagFilter = FE_LINEAR;
+		NewTexture->FileName = "NULL";
 
-		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 
-		unsigned short* rawPixels = new unsigned short[newTexture->width * newTexture->height];
-		for (size_t i = 0; i < size_t(newTexture->width * newTexture->height); i++)
+		unsigned short* RawPixels = new unsigned short[NewTexture->Width * NewTexture->Height];
+		for (size_t i = 0; i < static_cast<size_t>(NewTexture->Width * NewTexture->Height); i++)
 		{
-			rawPixels[i] = unsigned short(0xffff * 0.5);
+			RawPixels[i] = static_cast<unsigned short>(0xffff * 0.5);
 		}
 
-		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)rawPixels);
-		delete[] rawPixels;
+		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
+		delete[] RawPixels;
 
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
-		newTerrain->heightMapArray.resize(newTexture->width * newTexture->height);
-		for (size_t i = 0; i < newTerrain->heightMapArray.size(); i++)
+		NewTerrain->HeightMapArray.resize(NewTexture->Width * NewTexture->Height);
+		for (size_t i = 0; i < NewTerrain->HeightMapArray.size(); i++)
 		{
-			newTerrain->heightMapArray[i] = 0.5f;
+			NewTerrain->HeightMapArray[i] = 0.5f;
 		}
 
-		glm::vec3 minPoint = glm::vec3(-1.0f, 0.5f, -1.0f);
-		glm::vec3 maxPoint = glm::vec3(1.0f, 0.5f, 1.0f);
-		newTerrain->AABB = FEAABB(minPoint, maxPoint);
-		newTerrain->heightMap = newTexture;
+		const glm::vec3 MinPoint = glm::vec3(-1.0f, 0.5f, -1.0f);
+		const glm::vec3 MaxPoint = glm::vec3(1.0f, 0.5f, 1.0f);
+		NewTerrain->AABB = FEAABB(MinPoint, MaxPoint);
+		NewTerrain->HeightMap = NewTexture;
 
-		initTerrainEditTools(newTerrain);
+		InitTerrainEditTools(NewTerrain);
 	}
 
-	return newTerrain;
+	return NewTerrain;
 }
 
-void FEResourceManager::initTerrainEditTools(FETerrain* terrain)
+void FEResourceManager::InitTerrainEditTools(FETerrain* Terrain)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("called FEResourceManager::initTerrainEditTools with nullptr terrain", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("called FEResourceManager::initTerrainEditTools with nullptr terrain", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->brushOutputFB != nullptr)
+	if (Terrain->BrushOutputFB != nullptr)
 	{
-		delete terrain->brushOutputFB;
-		terrain->brushOutputFB = nullptr;
+		delete Terrain->BrushOutputFB;
+		Terrain->BrushOutputFB = nullptr;
 	}
 
-	if (terrain->brushVisualFB != nullptr)
+	if (Terrain->BrushVisualFB != nullptr)
 	{
-		delete terrain->brushVisualFB;
-		terrain->brushVisualFB = nullptr;
+		delete Terrain->BrushVisualFB;
+		Terrain->BrushVisualFB = nullptr;
 	}
 	
-	terrain->brushOutputFB = createFramebuffer(FE_COLOR_ATTACHMENT, 32, 32);
-	delete terrain->brushOutputFB->getColorAttachment();
+	Terrain->BrushOutputFB = CreateFramebuffer(FE_COLOR_ATTACHMENT, 32, 32);
+	delete Terrain->BrushOutputFB->GetColorAttachment();
 	//terrain->brushOutputFB->setColorAttachment(new FETexture(GL_R16, GL_RED, terrain->heightMap->getWidth(), terrain->heightMap->getHeight()));
-	terrain->brushOutputFB->setColorAttachment(terrain->heightMap);
+	Terrain->BrushOutputFB->SetColorAttachment(Terrain->HeightMap);
 
-	terrain->brushVisualFB = createFramebuffer(FE_COLOR_ATTACHMENT, terrain->heightMap->getWidth(), terrain->heightMap->getHeight());
-	terrain->projectedMap = terrain->brushVisualFB->getColorAttachment();
+	Terrain->BrushVisualFB = CreateFramebuffer(FE_COLOR_ATTACHMENT, Terrain->HeightMap->GetWidth(), Terrain->HeightMap->GetHeight());
+	Terrain->ProjectedMap = Terrain->BrushVisualFB->GetColorAttachment();
 
-	terrain->brushOutputShader = getShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
-	terrain->layersNormalizeShader = getShader("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
-	terrain->brushVisualShader = getShader("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/);
+	Terrain->BrushOutputShader = GetShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
+	Terrain->LayersNormalizeShader = GetShader("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
+	Terrain->BrushVisualShader = GetShader("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/);
 
-	terrain->planeMesh = getMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+	Terrain->PlaneMesh = GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
 }
 
-FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* terrain, std::string Name)
+FETexture* FEResourceManager::LoadPNGHeightmap(const char* FileName, FETerrain* Terrain, std::string Name)
 {
-	FETexture* newTexture = createTexture(Name);
+	FETexture* NewTexture = CreateTexture(Name);
 
 	std::fstream file;
-	file.open(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-	std::streamsize fileSize = file.tellg();
+	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::streamsize FileSize = file.tellg();
 	file.seekg(0, std::ios::beg);
-	char* fileData = new char[int(fileSize)];
-	file.read(fileData, fileSize);
+	char* FileData = new char[static_cast<int>(FileSize)];
+	file.read(FileData, FileSize);
 	file.close();
 
-	unsigned uWidth, uHeight;
-	lodepng::State pngState;
-	pngState.info_raw.colortype = LCT_GREY;
-	pngState.info_raw.bitdepth = 16;
-	std::vector<unsigned char> rawData;
-	lodepng::decode(rawData, uWidth, uHeight, pngState, (unsigned char*)fileData, int(fileSize));
+	unsigned UWidth, UHeight;
+	lodepng::State PNGState;
+	PNGState.info_raw.colortype = LCT_GREY;
+	PNGState.info_raw.bitdepth = 16;
+	std::vector<unsigned char> RawData;
+	lodepng::decode(RawData, UWidth, UHeight, PNGState, (unsigned char*)FileData, static_cast<int>(FileSize));
 
-	if (pngState.info_png.color.colortype != LCT_GREY || pngState.info_png.color.bitdepth != 16)
+	if (PNGState.info_png.color.colortype != LCT_GREY || PNGState.info_png.color.bitdepth != 16)
 	{
-		delete newTexture;
-		LOG.add(std::string("File: ") + fileName + " in function FEResourceManager::LoadPNGHeightmap is not 16 bit gray scale png.", FE_LOG_ERROR, FE_LOG_LOADING);
-		return this->noTexture;
+		delete NewTexture;
+		LOG.Add(std::string("File: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap is not 16 bit gray scale png.", FE_LOG_ERROR, FE_LOG_LOADING);
+		return this->NoTexture;
 	}
 		
-	if (rawData.size() == 0)
+	if (RawData.empty())
 	{
-		delete newTexture;
-		LOG.add(std::string("can't read file: ") + fileName + " in function FEResourceManager::LoadPNGHeightmap.", FE_LOG_ERROR, FE_LOG_LOADING);
-		return this->noTexture;
+		delete NewTexture;
+		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap.", FE_LOG_ERROR, FE_LOG_LOADING);
+		return this->NoTexture;
 	}
 
-	newTexture->width = uWidth;
-	newTexture->height = uHeight;
-	newTexture->internalFormat = GL_R16;
-	newTexture->magFilter = FE_LINEAR;
-	newTexture->fileName = fileName;
+	NewTexture->Width = UWidth;
+	NewTexture->Height = UHeight;
+	NewTexture->InternalFormat = GL_R16;
+	NewTexture->MagFilter = FE_LINEAR;
+	NewTexture->FileName = FileName;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 	// lodepng returns data with different bytes order that openGL expects.
 	FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, newTexture->internalFormat, newTexture->width, newTexture->height, 0, GL_RED, GL_UNSIGNED_SHORT, rawData.data());
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, RawData.data());
 	FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 	
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -1969,572 +2046,565 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* fileName, FETerrain* 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
-	terrain->heightMapArray.resize(rawData.size() / sizeof(unsigned short));
-	float max = FLT_MIN;
-	float min = FLT_MAX;
-	int iterator = 0;
-	for (size_t i = 0; i < rawData.size(); i+=2)
+	Terrain->HeightMapArray.resize(RawData.size() / sizeof(unsigned short));
+	float Max = FLT_MIN;
+	float Min = FLT_MAX;
+	int Iterator = 0;
+	for (size_t i = 0; i < RawData.size(); i+=2)
 	{
-		unsigned short temp = *(unsigned short*)(&rawData[i]);
-		terrain->heightMapArray[iterator] = temp / float(0xFFFF);
+		unsigned short Temp = *(unsigned short*)(&RawData[i]);
+		Terrain->HeightMapArray[Iterator] = Temp / static_cast<float>(0xFFFF);
 
-		if (max < terrain->heightMapArray[iterator])
-			max = terrain->heightMapArray[iterator];
+		if (Max < Terrain->HeightMapArray[Iterator])
+			Max = Terrain->HeightMapArray[Iterator];
 
-		if (min > terrain->heightMapArray[iterator])
-			min = terrain->heightMapArray[iterator];
+		if (Min > Terrain->HeightMapArray[Iterator])
+			Min = Terrain->HeightMapArray[Iterator];
 
-		iterator++;
+		Iterator++;
 	}
 
-	glm::vec3 minPoint = glm::vec3(-1.0f, min, -1.0f);
-	glm::vec3 maxPoint = glm::vec3(1.0f, max, 1.0f);
-	terrain->AABB = FEAABB(minPoint, maxPoint);
+	glm::vec3 MinPoint = glm::vec3(-1.0f, Min, -1.0f);
+	glm::vec3 MaxPoint = glm::vec3(1.0f, Max, 1.0f);
+	Terrain->AABB = FEAABB(MinPoint, MaxPoint);
 
-	if (Name.size() == 0)
+	if (Name.empty())
 	{
-		std::string filePath = newTexture->fileName;
-		std::size_t index = filePath.find_last_of("/\\");
-		std::string newFileName = filePath.substr(index + 1);
-		index = newFileName.find_last_of(".");
-		std::string fileNameWithOutExtention = newFileName.substr(0, index);
-		newTexture->setName(fileNameWithOutExtention);
+		std::string FilePath = NewTexture->FileName;
+		std::size_t Index = FilePath.find_last_of("/\\");
+		std::string NewFileName = FilePath.substr(Index + 1);
+		Index = NewFileName.find_last_of(".");
+		std::string FileNameWithOutExtention = NewFileName.substr(0, Index);
+		NewTexture->SetName(FileNameWithOutExtention);
 	}
 
-	if (terrain->heightMap != nullptr)
-		deleteFETexture(terrain->heightMap);
+	if (Terrain->HeightMap != nullptr)
+		DeleteFETexture(Terrain->HeightMap);
 
-	terrain->heightMap = newTexture;
-	initTerrainEditTools(terrain);
-	terrain->updateCPUHeightInfo();
+	Terrain->HeightMap = NewTexture;
+	InitTerrainEditTools(Terrain);
+	Terrain->UpdateCpuHeightInfo();
 
-	return newTexture;
+	return NewTexture;
 }
 
-std::string FEResourceManager::loadGLSL(const char* fileName)
+std::string FEResourceManager::LoadGLSL(const char* FileName)
 {
-	std::string shaderData;
-	std::ifstream file(fileName);
-	std::string line;
-	
-	if (file.is_open())
+	std::string ShaderData;
+	std::ifstream File(FileName);
+
+	if (File.is_open())
 	{
-		while (getline(file, line))
+		std::string line;
+		while (getline(File, line))
 		{
-			shaderData += line;
-			shaderData += "\n";
+			ShaderData += line;
+			ShaderData += "\n";
 		}
-		file.close();
+		File.close();
 	}
 	else
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::loadGLSL.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::loadGLSL.", FE_LOG_ERROR, FE_LOG_LOADING);
 	}
 
-	return shaderData;
+	return ShaderData;
 }
 
-FETexture* FEResourceManager::createTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool unManaged, std::string Name)
+FETexture* FEResourceManager::CreateTexture(const GLint InternalFormat, const GLenum Format, const int Width, const int Height, const bool bUnManaged, std::string Name)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedTexture";
 
-	FETexture* newTexture = new FETexture(InternalFormat, Format, Width, Height, Name);
-	if (!unManaged)
-		textures[newTexture->getObjectID()] = newTexture;
+	FETexture* NewTexture = new FETexture(InternalFormat, Format, Width, Height, Name);
+	if (!bUnManaged)
+		Textures[NewTexture->GetObjectID()] = NewTexture;
 
-	return newTexture;
+	return NewTexture;
 }
 
-FEFramebuffer* FEResourceManager::createFramebuffer(int attachments, int Width, int Height, bool HDR)
+FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const int Width, const int Height, const bool bHDR)
 {
-	FEFramebuffer* newFramebuffer = new FEFramebuffer();
-	newFramebuffer->colorAttachments.resize(maxColorAttachments);
-	for (size_t i = 0; i < size_t(maxColorAttachments); i++)
+	FEFramebuffer* NewFramebuffer = new FEFramebuffer();
+	NewFramebuffer->ColorAttachments.resize(MaxColorAttachments);
+	for (size_t i = 0; i < static_cast<size_t>(MaxColorAttachments); i++)
 	{
-		newFramebuffer->colorAttachments[i] = nullptr;
+		NewFramebuffer->ColorAttachments[i] = nullptr;
 	}
 	
-	newFramebuffer->width = Width;
-	newFramebuffer->height = Height;
+	NewFramebuffer->Width = Width;
+	NewFramebuffer->Height = Height;
 
-	FE_GL_ERROR(glGenFramebuffers(1, &newFramebuffer->fbo));
-	newFramebuffer->bind();
+	FE_GL_ERROR(glGenFramebuffers(1, &NewFramebuffer->FBO));
+	NewFramebuffer->Bind();
 
-	if (attachments & FE_COLOR_ATTACHMENT)
+	if (Attachments & FE_COLOR_ATTACHMENT)
 	{
-		HDR ? newFramebuffer->setColorAttachment(createTexture(GL_RGBA16F, GL_RGBA, Width, Height)) : newFramebuffer->setColorAttachment(new FETexture(Width, Height, freeObjectName(FE_TEXTURE)));
+		bHDR ? NewFramebuffer->SetColorAttachment(CreateTexture(GL_RGBA16F, GL_RGBA, Width, Height)) : NewFramebuffer->SetColorAttachment(new FETexture(Width, Height, FreeObjectName(FE_TEXTURE)));
 	}
 
-	if (attachments & FE_DEPTH_ATTACHMENT)
+	if (Attachments & FE_DEPTH_ATTACHMENT)
 	{
-		newFramebuffer->setDepthAttachment(createTexture(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, Width, Height));
+		NewFramebuffer->SetDepthAttachment(CreateTexture(GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT, Width, Height));
 
 		// if only DEPTH_ATTACHMENT
-		if (!(attachments & FE_COLOR_ATTACHMENT))
+		if (!(Attachments & FE_COLOR_ATTACHMENT))
 		{
 			glDrawBuffer(GL_NONE);
 			glReadBuffer(GL_NONE);
 		}
 
-		newFramebuffer->getDepthAttachment()->bind();
+		NewFramebuffer->GetDepthAttachment()->Bind();
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
-		newFramebuffer->getDepthAttachment()->unBind();
+		NewFramebuffer->GetDepthAttachment()->UnBind();
 	}
 
-	if (attachments & FE_STENCIL_ATTACHMENT)
+	if (Attachments & FE_STENCIL_ATTACHMENT)
 	{
 		//to-do: make it correct
-		newFramebuffer->setStencilAttachment(new FETexture(Width, Height, freeObjectName(FE_TEXTURE)));
+		NewFramebuffer->SetStencilAttachment(new FETexture(Width, Height, FreeObjectName(FE_TEXTURE)));
 	}
 
-	newFramebuffer->unBind();
-	return newFramebuffer;
+	NewFramebuffer->UnBind();
+	return NewFramebuffer;
 }
 
-FEPostProcess* FEResourceManager::createPostProcess(int ScreenWidth, int ScreenHeight, std::string Name)
+FEPostProcess* FEResourceManager::CreatePostProcess(const int ScreenWidth, const int ScreenHeight, const std::string Name)
 {
-	FEPostProcess* newPostProcess = new FEPostProcess(Name);
+	FEPostProcess* NewPostProcess = new FEPostProcess(Name);
 
-	newPostProcess->screenWidth = ScreenWidth;
-	newPostProcess->screenHeight = ScreenHeight;
-	newPostProcess->screenQuad = getMesh("1Y251E6E6T78013635793156"/*"plane"*/);
-	newPostProcess->screenQuadShader = getShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
-	// currently postProcess is not using intermediateFramebuffer colorAttachment directly.
-	newPostProcess->intermediateFramebuffer = createFramebuffer(0, ScreenWidth, ScreenHeight);
+	NewPostProcess->ScreenWidth = ScreenWidth;
+	NewPostProcess->ScreenHeight = ScreenHeight;
+	NewPostProcess->ScreenQuad = GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+	NewPostProcess->ScreenQuadShader = GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+	// Currently postProcess is not using intermediateFramebuffer colorAttachment directly.
+	NewPostProcess->IntermediateFramebuffer = CreateFramebuffer(0, ScreenWidth, ScreenHeight);
 
-	return newPostProcess;
+	return NewPostProcess;
 }
 
-std::string FEResourceManager::freeObjectName(FEObjectType objectType)
+std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 {
-	std::string result = "NULL";
-	switch (objectType)
+	std::string Result = "NULL";
+	switch (ObjectType)
 	{
 		case FocalEngine::FE_NULL:
 		{
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_SHADER:
 		{
-			size_t nextID = shaders.size() > standardShaders.size() ? shaders.size() : standardShaders.size();
-			size_t index = 0;
-			result = "shader_" + std::to_string(nextID + index);
-			while (shaders.find(result) != shaders.end() || standardShaders.find(result) != standardShaders.end())
+			const size_t NextID = Shaders.size() > StandardShaders.size() ? Shaders.size() : StandardShaders.size();
+			size_t Index = 0;
+			Result = "shader_" + std::to_string(NextID + Index);
+			while (Shaders.find(Result) != Shaders.end() || StandardShaders.find(Result) != StandardShaders.end())
 			{
-				index++;
-				result = "shader_" + std::to_string(nextID + index);
+				Index++;
+				Result = "shader_" + std::to_string(NextID + Index);
 			}
 
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_TEXTURE:
 		{
-			size_t nextID = textures.size() > standardTextures.size() ? textures.size() : standardTextures.size();
+			const size_t NextID = Textures.size() > StandardTextures.size() ? Textures.size() : StandardTextures.size();
 			size_t index = 0;
-			result = "texture_" + std::to_string(nextID + index);
-			while (textures.find(result) != textures.end() || standardTextures.find(result) != standardTextures.end())
+			Result = "texture_" + std::to_string(NextID + index);
+			while (Textures.find(Result) != Textures.end() || StandardTextures.find(Result) != StandardTextures.end())
 			{
 				index++;
-				result = "texture_" + std::to_string(nextID + index);
+				Result = "texture_" + std::to_string(NextID + index);
 			}
 			
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_MESH:
 		{
-			size_t nextID = meshes.size() > standardMeshes.size() ? meshes.size() : standardMeshes.size();
+			const size_t NextID = Meshes.size() > StandardMeshes.size() ? Meshes.size() : StandardMeshes.size();
 			size_t index = 0;
-			result = "mesh_" + std::to_string(nextID + index);
-			while (meshes.find(result) != meshes.end() || standardMeshes.find(result) != standardMeshes.end())
+			Result = "mesh_" + std::to_string(NextID + index);
+			while (Meshes.find(Result) != Meshes.end() || StandardMeshes.find(Result) != StandardMeshes.end())
 			{
 				index++;
-				result = "mesh_" + std::to_string(nextID + index);
+				Result = "mesh_" + std::to_string(NextID + index);
 			}
 
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_MATERIAL:
 		{
-			size_t nextID = materials.size() > standardMaterials.size() ? materials.size() : standardMaterials.size();
+			const size_t NextID = Materials.size() > StandardMaterials.size() ? Materials.size() : StandardMaterials.size();
 			size_t index = 0;
-			result = "material_" + std::to_string(nextID + index);
-			while (materials.find(result) != materials.end() || standardMaterials.find(result) != standardMaterials.end())
+			Result = "material_" + std::to_string(NextID + index);
+			while (Materials.find(Result) != Materials.end() || StandardMaterials.find(Result) != StandardMaterials.end())
 			{
 				index++;
-				result = "material_" + std::to_string(nextID + index);
+				Result = "material_" + std::to_string(NextID + index);
 			}
 
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_GAMEMODEL:
 		{
-			size_t nextID = gameModels.size() > standardGameModels.size() ? gameModels.size() : standardGameModels.size();
+			const size_t NextID = GameModels.size() > StandardGameModels.size() ? GameModels.size() : StandardGameModels.size();
 			size_t index = 0;
-			result = "gameModel_" + std::to_string(nextID + index);
-			while (gameModels.find(result) != gameModels.end() || standardGameModels.find(result) != standardGameModels.end())
+			Result = "gameModel_" + std::to_string(NextID + index);
+			while (GameModels.find(Result) != GameModels.end() || StandardGameModels.find(Result) != StandardGameModels.end())
 			{
 				index++;
-				result = "gameModel_" + std::to_string(nextID + index);
+				Result = "gameModel_" + std::to_string(NextID + index);
 			}
 
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_ENTITY:
 		{
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_TERRAIN:
 		{
-			return result;
+			return Result;
 		}
 		case FocalEngine::FE_ENTITY_INSTANCED:
 		{
-			return result;
+			return Result;
 		}
 		default:
 		{
-			return result;
+			return Result;
 		}	
 	}
-
-	return result;
 }
 
-FETexture* FEResourceManager::createSameFormatTexture(FETexture* exampleTexture, int differentW, int differentH, bool unManaged, std::string Name)
+FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture, const int DifferentW, const int DifferentH, const bool bUnManaged, const std::string Name)
 {
-	if (exampleTexture == nullptr)
+	if (ExampleTexture == nullptr)
 	{
-		LOG.add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return nullptr;
 	}
 
-	if (differentW == 0 && differentH == 0)
-		return createTexture(exampleTexture->internalFormat, exampleTexture->format, exampleTexture->width, exampleTexture->height, unManaged, Name);
+	if (DifferentW == 0 && DifferentH == 0)
+		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, ExampleTexture->Height, bUnManaged, Name);
 	
-	if (differentW != 0 && differentH == 0)
-		return createTexture(exampleTexture->internalFormat, exampleTexture->format, differentW, exampleTexture->height, unManaged, Name);
+	if (DifferentW != 0 && DifferentH == 0)
+		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, ExampleTexture->Height, bUnManaged, Name);
 	
-	if (differentW == 0 && differentH != 0)
-		return createTexture(exampleTexture->internalFormat, exampleTexture->format, exampleTexture->width, differentH, unManaged, Name);
+	if (DifferentW == 0 && DifferentH != 0)
+		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, DifferentH, bUnManaged, Name);
 	
-	return createTexture(exampleTexture->internalFormat, exampleTexture->format, differentW, differentH, unManaged, Name);
+	return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
 }
 
-void FEResourceManager::reSaveStandardMeshes()
+void FEResourceManager::ReSaveStandardMeshes()
 {
-	std::vector<std::string> standardMeshes = getStandardMeshList();
-	for (size_t i = 0; i < standardMeshes.size(); i++)
+	const std::vector<std::string> StandardMeshes = GetStandardMeshList();
+	for (size_t i = 0; i < StandardMeshes.size(); i++)
 	{
-		FEMesh* currentMesh = getMesh(standardMeshes[i]);
-		saveFEMesh(currentMesh, (defaultResourcesFolder + currentMesh->getObjectID() + std::string(".model")).c_str());
+		FEMesh* CurrentMesh = GetMesh(StandardMeshes[i]);
+		SaveFEMesh(CurrentMesh, (DefaultResourcesFolder + CurrentMesh->GetObjectID() + std::string(".model")).c_str());
 	}
 }
 
-void FEResourceManager::reSaveStandardTextures()
+void FEResourceManager::ReSaveStandardTextures()
 {
-	auto it = standardTextures.begin();
-	while (it != standardTextures.end())
+	auto it = StandardTextures.begin();
+	while (it != StandardTextures.end())
 	{
-		saveFETexture(it->second, (defaultResourcesFolder + it->second->getObjectID() + std::string(".texture")).c_str());
+		SaveFETexture(it->second, (DefaultResourcesFolder + it->second->GetObjectID() + std::string(".texture")).c_str());
 		it++;
 	}
 }
 
-void FEResourceManager::deleteMaterial(FEMaterial* Material)
+void FEResourceManager::DeleteMaterial(const FEMaterial* Material)
 {
 	// looking if this mesh is used in some gameModels
 	// to-do: should be done through list of pointers to gameModels that uses this mesh.
-	auto gameModelIterator = gameModels.begin();
-	while (gameModelIterator != gameModels.end())
+	auto GameModelIterator = GameModels.begin();
+	while (GameModelIterator != GameModels.end())
 	{
-		if (gameModelIterator->second->material == Material)
-			gameModelIterator->second->material = getMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+		if (GameModelIterator->second->Material == Material)
+			GameModelIterator->second->Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
 
-		gameModelIterator++;
+		GameModelIterator++;
 	}
 
-	materials.erase(Material->getObjectID());
+	Materials.erase(Material->GetObjectID());
 	delete Material;
 }
 
-std::string FEResourceManager::getDefaultResourcesFolder()
+std::string FEResourceManager::GetDefaultResourcesFolder()
 {
-	return defaultResourcesFolder;
+	return DefaultResourcesFolder;
 }
 
-std::vector<FETexture*> FEResourceManager::channelsToFETextures(FETexture* sourceTexture)
+std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* SourceTexture)
 {
 	std::vector<FETexture*> result;
 
-	size_t textureDataLenght = 0;
-	unsigned char* pixels = sourceTexture->getRawData(&textureDataLenght);
+	size_t TextureDataLenght = 0;
+	const unsigned char* pixels = SourceTexture->GetRawData(&TextureDataLenght);
 
-	unsigned char* redChannel = new unsigned char[size_t(textureDataLenght / 4.0f)];
+	unsigned char* RedChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
 	int index = 0;
-	for (size_t i = 0; i < textureDataLenght; i += 4)
+	for (size_t i = 0; i < TextureDataLenght; i += 4)
 	{
-		redChannel[index++] = pixels[i];
+		RedChannel[index++] = pixels[i];
 	}
 
-	unsigned char* greenChannel = new unsigned char[size_t(textureDataLenght / 4.0f)];
+	unsigned char* GreenChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
 	index = 0;
-	for (size_t i = 1; i < textureDataLenght; i += 4)
+	for (size_t i = 1; i < TextureDataLenght; i += 4)
 	{
-		greenChannel[index++] = pixels[i];
+		GreenChannel[index++] = pixels[i];
 	}
 
-	unsigned char* blueChannel = new unsigned char[size_t(textureDataLenght / 4.0f)];
+	unsigned char* BlueChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
 	index = 0;
-	for (size_t i = 2; i < textureDataLenght; i += 4)
+	for (size_t i = 2; i < TextureDataLenght; i += 4)
 	{
-		blueChannel[index++] = pixels[i];
+		BlueChannel[index++] = pixels[i];
 	}
 
-	unsigned char* alphaChannel = new unsigned char[size_t(textureDataLenght / 4.0f)];
+	unsigned char* AlphaChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
 	index = 0;
-	for (size_t i = 3; i < textureDataLenght; i += 4)
+	for (size_t i = 3; i < TextureDataLenght; i += 4)
 	{
-		alphaChannel[index++] = pixels[i];
+		AlphaChannel[index++] = pixels[i];
 	}
 
-	result.push_back(rawDataToFETexture(redChannel, sourceTexture->getWidth(), sourceTexture->getHeight(), GL_RED, GL_RED));
-	result.back()->setName(sourceTexture->getName() + "_R");
+	result.push_back(RawDataToFETexture(RedChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	result.back()->SetName(SourceTexture->GetName() + "_R");
 
-	result.push_back(rawDataToFETexture(greenChannel, sourceTexture->getWidth(), sourceTexture->getHeight(), GL_RED, GL_RED));
-	result.back()->setName(sourceTexture->getName() + "_G");
+	result.push_back(RawDataToFETexture(GreenChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	result.back()->SetName(SourceTexture->GetName() + "_G");
 
-	result.push_back(rawDataToFETexture(blueChannel, sourceTexture->getWidth(), sourceTexture->getHeight(), GL_RED, GL_RED));
-	result.back()->setName(sourceTexture->getName() + "_B");
+	result.push_back(RawDataToFETexture(BlueChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	result.back()->SetName(SourceTexture->GetName() + "_B");
 
-	result.push_back(rawDataToFETexture(alphaChannel, sourceTexture->getWidth(), sourceTexture->getHeight(), GL_RED, GL_RED));
-	result.back()->setName(sourceTexture->getName() + "_A");
+	result.push_back(RawDataToFETexture(AlphaChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	result.back()->SetName(SourceTexture->GetName() + "_A");
 
 	delete[] pixels;
-	delete[] redChannel;
-	delete[] greenChannel;
-	delete[] blueChannel;
-	delete[] alphaChannel;
+	delete[] RedChannel;
+	delete[] GreenChannel;
+	delete[] BlueChannel;
+	delete[] AlphaChannel;
 
 	return result;
 }
 
-void FEResourceManager::updateAsyncLoadedResources()
+void FEResourceManager::UpdateAsyncLoadedResources()
 {
-	static int totalJobs = 0;
-	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
+#ifdef OLD_LOADING
+	static int TotalJobs = 0;
+	for (size_t i = 0; i < JOB_MANAGER.TextureLoadJobs.size(); i++)
 	{
-		size_t count = JOB_MANAGER.textureLoadJobs[i]->getReadyJobCount();
+		const size_t count = JOB_MANAGER.TextureLoadJobs[i]->GetReadyJobCount();
 		if (count == 0)
 			continue;
 
-		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
+		if (JOB_MANAGER.TextureLoadJobs[i]->BeginJobsUpdate())
 		{
-			totalJobs += int(count);
+			TotalJobs += static_cast<int>(count);
 			for (size_t j = 0; j < count; j++)
 			{
-				std::pair<char**, void*> jobInfo = JOB_MANAGER.textureLoadJobs[i]->getJobByIndex(j);
+				const std::pair<char**, void*> JobInfo = JOB_MANAGER.TextureLoadJobs[i]->GetJobByIndex(j);
 				// File was not found, or it can't be read.
-				if (*jobInfo.first == nullptr)
+				if (*JobInfo.first == nullptr)
 				{
 					// Get info about problematic texture.
-					FETexture* notLoadedTexture = reinterpret_cast<FETexture*>(jobInfo.second);
+					const FETexture* NotLoadedTexture = reinterpret_cast<FETexture*>(JobInfo.second);
 					// We will spill out error into a log.
-					LOG.add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + notLoadedTexture->getObjectID() + " was not loaded!", FE_LOG_ERROR, FE_LOG_LOADING);
+					LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", FE_LOG_ERROR, FE_LOG_LOADING);
 					// And delete entry for that texture in a general list of textures.
 					// That will prevent it from saving in a scene file.
-					deleteFETexture(notLoadedTexture);
+					DeleteFETexture(NotLoadedTexture);
 					//textures.erase(notLoadedTexture->getObjectID());
 				}
 				else
 				{
-					FETexture* newlyCreatedTexture = LoadFETexture(*jobInfo.first, "", reinterpret_cast<FETexture*>(jobInfo.second));
+					const FETexture* NewlyCreatedTexture = LoadFETexture(*JobInfo.first, "", reinterpret_cast<FETexture*>(JobInfo.second));
 
 					// If some material uses this texture we should set dirty flag.
 					// Game model will updated as a consequences.
-					std::vector<std::string> materialList = getMaterialList();
+					std::vector<std::string> MaterialList = GetMaterialList();
 
-					for (size_t i = 0; i < materialList.size(); i++)
+					for (size_t p = 0; p < MaterialList.size(); p++)
 					{
-						FEMaterial* currentMaterial = getMaterial(materialList[i]);
-						if (currentMaterial->isTextureInList(newlyCreatedTexture))
-							currentMaterial->setDirtyFlag(true);
+						FEMaterial* CurrentMaterial = GetMaterial(MaterialList[p]);
+						if (CurrentMaterial->IsTextureInList(NewlyCreatedTexture))
+							CurrentMaterial->SetDirtyFlag(true);
 					}
 				}
 			}
 
-			JOB_MANAGER.textureLoadJobs[i]->clearJobs();
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
+			JOB_MANAGER.TextureLoadJobs[i]->ClearJobs();
+			JOB_MANAGER.TextureLoadJobs[i]->EndJobsUpdate();
 		}
 
-		// a bit waste of time, after each batch of textures loads just set dirtyFlag to recreate all materials preview
-		std::vector<std::string> materialList = getMaterialList();
-		for (size_t i = 0; i < materialList.size(); i++)
+		// a bit waste of time, after each batch of textures loads just set bDirtyFlag to recreate all materials preview
+		std::vector<std::string> MaterialList = GetMaterialList();
+		for (size_t j = 0; j < MaterialList.size(); j++)
 		{
-			getMaterial(materialList[i])->setDirtyFlag(true);
+			GetMaterial(MaterialList[j])->SetDirtyFlag(true);
 		}
-	}
-
-	int jobsToHandle = int(JOB_MANAGER.textureListToLoad.size());
-	int freeThreadCount = JOB_MANAGER.getFreeTextureThreadCount();
-	if (freeThreadCount == 0 || jobsToHandle == 0)
-		return;
-
-	size_t jobsPerThread = jobsToHandle / freeThreadCount;
-
-	if (JOB_MANAGER.textureListToLoad.size() == 0)
-		return;
-
-	for (size_t i = 0; i < JOB_MANAGER.textureLoadJobs.size(); i++)
-	{
-		if (JOB_MANAGER.textureLoadJobs[i]->beginJobsUpdate())
-		{
-			size_t lastElement = jobsPerThread < JOB_MANAGER.textureListToLoad.size() ? jobsPerThread : JOB_MANAGER.textureListToLoad.size();
-			if (jobsPerThread == 0)
-				lastElement = JOB_MANAGER.textureListToLoad.size();
-			for (size_t j = 0; j < lastElement; j++)
-			{
-				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
-			}
-
-			std::vector<std::pair<std::string, void*>>& list = JOB_MANAGER.textureListToLoad;
-			JOB_MANAGER.textureListToLoad.erase(JOB_MANAGER.textureListToLoad.begin(), JOB_MANAGER.textureListToLoad.begin() + lastElement);
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
-
-			/*for (size_t j = 0; j < JOB_MANAGER.textureListToLoad.size(); j++)
-			{
-				JOB_MANAGER.textureLoadJobs[i]->addTextureToLoad(JOB_MANAGER.textureListToLoad[j]);
-			}
-			JOB_MANAGER.textureListToLoad.clear();
-			JOB_MANAGER.textureLoadJobs[i]->endJobsUpdate();
-
-			break;*/
-		}
-	}
 }
 
-void FEResourceManager::activateTerrainVacantLayerSlot(FETerrain* terrain, FEMaterial* material)
-{
-	if (terrain == nullptr)
+	const int JobsToHandle = static_cast<int>(JOB_MANAGER.TextureListToLoad.size());
+	const int FreeThreadCount = JOB_MANAGER.GetFreeTextureThreadCount();
+	if (FreeThreadCount == 0 || JobsToHandle == 0)
+		return;
+
+	const size_t JobsPerThread = JobsToHandle / FreeThreadCount;
+
+	if (JOB_MANAGER.TextureListToLoad.empty())
+		return;
+
+	for (size_t i = 0; i < JOB_MANAGER.TextureLoadJobs.size(); i++)
 	{
-		LOG.add("FEResourceManager::activateTerrainVacantLayerSlot with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		if (JOB_MANAGER.TextureLoadJobs[i]->BeginJobsUpdate())
+		{
+			size_t LastElement = JobsPerThread < JOB_MANAGER.TextureListToLoad.size() ? JobsPerThread : JOB_MANAGER.TextureListToLoad.size();
+			if (JobsPerThread == 0)
+				LastElement = JOB_MANAGER.TextureListToLoad.size();
+			for (size_t j = 0; j < LastElement; j++)
+			{
+				JOB_MANAGER.TextureLoadJobs[i]->AddTextureToLoad(JOB_MANAGER.TextureListToLoad[j]);
+			}
+
+			std::vector<std::pair<std::string, void*>>& list = JOB_MANAGER.TextureListToLoad;
+			JOB_MANAGER.TextureListToLoad.erase(JOB_MANAGER.TextureListToLoad.begin(), JOB_MANAGER.TextureListToLoad.begin() + LastElement);
+			JOB_MANAGER.TextureLoadJobs[i]->EndJobsUpdate();
+		}
+	}
+#else
+
+#endif // OLD_LOADING
+}
+
+void FEResourceManager::ActivateTerrainVacantLayerSlot(FETerrain* Terrain, FEMaterial* Material)
+{
+	if (Terrain == nullptr)
+	{
+		LOG.Add("FEResourceManager::activateTerrainVacantLayerSlot with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 	
 	// If this terrain does not have layerMaps we would create them.
-	if (terrain->layerMaps[0] == nullptr)
+	if (Terrain->LayerMaps[0] == nullptr)
 	{
-		FETexture* newTexture = createTexture();
-		newTexture->width = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
-		newTexture->height = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
-		newTexture->internalFormat = GL_RGBA;
+		FETexture* NewTexture = CreateTexture();
+		NewTexture->Width = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
+		NewTexture->Height = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
+		NewTexture->InternalFormat = GL_RGBA;
 
-		std::vector<unsigned char> rawData;
-		size_t dataLenght = newTexture->getWidth() * newTexture->getHeight() * 4;
-		rawData.resize(dataLenght);
-		for (size_t i = 0; i < dataLenght; i++)
+		std::vector<unsigned char> RawData;
+		const size_t DataLenght = NewTexture->GetWidth() * NewTexture->GetHeight() * 4;
+		RawData.resize(DataLenght);
+		for (size_t i = 0; i < DataLenght; i++)
 		{
-			rawData[i] = 0;
+			RawData[i] = 0;
 		}
 
-		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData.data());
 
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-		terrain->layerMaps[0] = newTexture;
+		Terrain->LayerMaps[0] = NewTexture;
 
-		newTexture = createTexture();
-		newTexture->width = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
-		newTexture->height = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
-		newTexture->internalFormat = GL_RGBA;
+		NewTexture = CreateTexture();
+		NewTexture->Width = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
+		NewTexture->Height = FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION;
+		NewTexture->InternalFormat = GL_RGBA;
 
-		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData.data());
 
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-		terrain->layerMaps[1] = newTexture;
+		Terrain->LayerMaps[1] = NewTexture;
 
-		FETerrainLayer* newlyCreatedLayer = terrain->activateVacantLayerSlot(material);
-		fillTerrainLayerMask(terrain, 0);
+		Terrain->ActivateVacantLayerSlot(Material);
+		FillTerrainLayerMask(Terrain, 0);
 		return;
 	}
 
-	FETerrainLayer* newlyCreatedLayer = terrain->activateVacantLayerSlot(material);
+	Terrain->ActivateVacantLayerSlot(Material);
 }
 
-void FEResourceManager::fillTerrainLayerMaskWithRawData(unsigned char* rawData, FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::FillTerrainLayerMaskWithRawData(const unsigned char* RawData, const FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (rawData == nullptr)
+	if (RawData == nullptr)
 	{
-		LOG.add("FEResourceManager::fillTerrainLayerMaskWithRawData with nullptr rawData", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with nullptr rawData", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::fillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	int index = 0;
-	size_t textureWidht = terrain->layerMaps[0]->getWidth();
-	size_t textureHeight = terrain->layerMaps[0]->getHeight();
+	int Index = 0;
+	const size_t TextureWidht = Terrain->LayerMaps[0]->GetWidth();
+	const size_t TextureHeight = Terrain->LayerMaps[0]->GetHeight();
 
-	std::vector<unsigned char*> layersPerTextureData;
-	layersPerTextureData.resize(2);
-	layersPerTextureData[0] = terrain->layerMaps[0]->getRawData();
-	layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
+	std::vector<unsigned char*> LayersPerTextureData;
+	LayersPerTextureData.resize(2);
+	LayersPerTextureData[0] = Terrain->LayerMaps[0]->GetRawData();
+	LayersPerTextureData[1] = Terrain->LayerMaps[1]->GetRawData();
 
-	std::vector<unsigned char*> layersPerChannelData;
-	layersPerChannelData.resize(FE_TERRAIN_MAX_LAYERS);
+	std::vector<unsigned char*> LayersPerChannelData;
+	LayersPerChannelData.resize(FE_TERRAIN_MAX_LAYERS);
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		layersPerChannelData[i] = new unsigned char[textureWidht * textureHeight];
+		LayersPerChannelData[i] = new unsigned char[TextureWidht * TextureHeight];
 	}
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		index = 0;
-		if (layerIndex == i)
+		Index = 0;
+		if (LayerIndex == i)
 		{
-			for (size_t j = 0; j < textureWidht * textureHeight; j++)
+			for (size_t j = 0; j < TextureWidht * TextureHeight; j++)
 			{
-				layersPerChannelData[i][index++] = rawData[j];
+				LayersPerChannelData[i][Index++] = RawData[j];
 			}
 		}
 		else
 		{
-			for (size_t j = i % FE_TERRAIN_LAYER_PER_TEXTURE; j < textureWidht * textureHeight * 4; j += 4)
+			for (size_t j = i % FE_TERRAIN_LAYER_PER_TEXTURE; j < TextureWidht * TextureHeight * 4; j += 4)
 			{
-				layersPerChannelData[i][index++] = layersPerTextureData[i / FE_TERRAIN_LAYER_PER_TEXTURE][j];
+				LayersPerChannelData[i][Index++] = LayersPerTextureData[i / FE_TERRAIN_LAYER_PER_TEXTURE][j];
 			}
 		}
 	}
 
-	std::vector<unsigned char*> finalTextureChannels;
-	finalTextureChannels.resize(2);
-	finalTextureChannels[0] = new unsigned char[textureWidht * textureHeight * 4];
-	finalTextureChannels[1] = new unsigned char[textureWidht * textureHeight * 4];
+	std::vector<unsigned char*> FinalTextureChannels;
+	FinalTextureChannels.resize(2);
+	FinalTextureChannels[0] = new unsigned char[TextureWidht * TextureHeight * 4];
+	FinalTextureChannels[1] = new unsigned char[TextureWidht * TextureHeight * 4];
 
-	index = 0;
+	Index = 0;
 
-	int* allChannelsPixels = new int[8];
+	int* AllChannelsPixels = new int[8];
 
-	for (size_t i = 0; i < textureWidht * textureHeight * 4; i += 4)
+	for (size_t i = 0; i < TextureWidht * TextureHeight * 4; i += 4)
 	{
 		float sum = 0.0f;
 		for (size_t j = 0; j < 8; j++)
 		{
-			allChannelsPixels[j] = layersPerChannelData[j][index];
+			AllChannelsPixels[j] = LayersPerChannelData[j][Index];
 		}
 
 		//int amountOfOverIntansity = sum - 255;
@@ -2560,486 +2630,486 @@ void FEResourceManager::fillTerrainLayerMaskWithRawData(unsigned char* rawData, 
 		//	allChannelsPixels[0] += int((1.0f - sum) * 255);
 		//}
 
-		finalTextureChannels[0][i] = unsigned char(allChannelsPixels[0]);
-		finalTextureChannels[0][i + 1] = unsigned char(allChannelsPixels[1]);
-		finalTextureChannels[0][i + 2] = unsigned char(allChannelsPixels[2]);
-		finalTextureChannels[0][i + 3] = unsigned char(allChannelsPixels[3]);
+		FinalTextureChannels[0][i] = static_cast<unsigned char>(AllChannelsPixels[0]);
+		FinalTextureChannels[0][i + 1] = static_cast<unsigned char>(AllChannelsPixels[1]);
+		FinalTextureChannels[0][i + 2] = static_cast<unsigned char>(AllChannelsPixels[2]);
+		FinalTextureChannels[0][i + 3] = static_cast<unsigned char>(AllChannelsPixels[3]);
 
-		finalTextureChannels[1][i] = unsigned char(allChannelsPixels[4]);
-		finalTextureChannels[1][i + 1] = unsigned char(allChannelsPixels[5]);
-		finalTextureChannels[1][i + 2] = unsigned char(allChannelsPixels[6]);
-		finalTextureChannels[1][i + 3] = unsigned char(allChannelsPixels[7]);
+		FinalTextureChannels[1][i] = static_cast<unsigned char>(AllChannelsPixels[4]);
+		FinalTextureChannels[1][i + 1] = static_cast<unsigned char>(AllChannelsPixels[5]);
+		FinalTextureChannels[1][i + 2] = static_cast<unsigned char>(AllChannelsPixels[6]);
+		FinalTextureChannels[1][i + 3] = static_cast<unsigned char>(AllChannelsPixels[7]);
 
-		index++;
+		Index++;
 	}
 
-	int maxDimention = std::max(int(textureWidht), int(textureHeight));
-	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	const int MaxDimention = std::max(static_cast<int>(TextureWidht), static_cast<int>(TextureHeight));
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
 
-	terrain->layerMaps[0]->updateRawData(finalTextureChannels[0], mipCount);
+	Terrain->LayerMaps[0]->UpdateRawData(FinalTextureChannels[0], MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	terrain->layerMaps[1]->updateRawData(finalTextureChannels[1], mipCount);
+	Terrain->LayerMaps[1]->UpdateRawData(FinalTextureChannels[1], MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	delete[] layersPerTextureData[0];
-	delete[] layersPerTextureData[1];
+	delete[] LayersPerTextureData[0];
+	delete[] LayersPerTextureData[1];
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		delete[]layersPerChannelData[i];
+		delete[]LayersPerChannelData[i];
 	}
 
-	delete[] finalTextureChannels[0];
-	delete[] finalTextureChannels[1];
-	delete[] allChannelsPixels;
+	delete[] FinalTextureChannels[0];
+	delete[] FinalTextureChannels[1];
+	delete[] AllChannelsPixels;
 }
 
-void FEResourceManager::loadTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->layers[layerIndex] == nullptr)
+	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
 	// Reading data from file.
-	std::vector<unsigned char> rawData;
-	unsigned uWidth, uHeight;
-	lodepng::decode(rawData, uWidth, uHeight, fileName);
+	std::vector<unsigned char> RawData;
+	unsigned UWidth, UHeight;
+	lodepng::decode(RawData, UWidth, UHeight, FileName);
 
-	if (rawData.size() == 0)
+	if (RawData.empty())
 	{
-		LOG.add(std::string("can't read file: ") + fileName + " in function FEResourceManager::loadTerrainLayerMask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return;
 	}
 
 	// It should be just ordinary png not gray scale.
-	if (rawData.size() != uWidth * uHeight * 4)
+	if (RawData.size() != UWidth * UHeight * 4)
 	{
-		LOG.add(std::string("can't use file: ") + fileName + " in function FEResourceManager::loadTerrainLayerMask as a mask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't use file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask as a mask.", FE_LOG_ERROR, FE_LOG_LOADING);
 		return;
 	}
 
 	// If new texture have different resolution.
-	FETexture* firstLayerMap = terrain->layerMaps[0];
-	if (uWidth != firstLayerMap->getWidth() || uHeight != firstLayerMap->getHeight())
+	FETexture* FirstLayerMap = Terrain->LayerMaps[0];
+	if (UWidth != FirstLayerMap->GetWidth() || UHeight != FirstLayerMap->GetHeight())
 	{
-		bool needToResizeMaskTexture = false;
+		bool bNeedToResizeMaskTexture = false;
 		// Firstly we check if current masks has any data.
-		std::vector<unsigned char*> layersPerTextureData;
-		layersPerTextureData.resize(2);
-		layersPerTextureData[0] = terrain->layerMaps[0]->getRawData();
-		layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
+		std::vector<unsigned char*> LayersPerTextureData;
+		LayersPerTextureData.resize(2);
+		LayersPerTextureData[0] = Terrain->LayerMaps[0]->GetRawData();
+		LayersPerTextureData[1] = Terrain->LayerMaps[1]->GetRawData();
 
 		// We fill first layer by default so we should check it differently
-		unsigned char firstValue = layersPerTextureData[0][0];
-		for (size_t i = 0; i < size_t(terrain->layerMaps[0]->getWidth() * terrain->layerMaps[0]->getHeight()); i+=4)
+		const unsigned char FirstValue = LayersPerTextureData[0][0];
+		for (size_t i = 0; i < static_cast<size_t>(Terrain->LayerMaps[0]->GetWidth() * Terrain->LayerMaps[0]->GetHeight()); i+=4)
 		{
-			if (layersPerTextureData[0][i] != firstValue || layersPerTextureData[0][i + 1] != 0 ||
-				layersPerTextureData[0][i + 2] != 0 || layersPerTextureData[0][i + 3] != 0 ||
-				layersPerTextureData[1][i] != 0 || layersPerTextureData[1][i + 1] != 0 ||
-				layersPerTextureData[1][i + 2] != 0 || layersPerTextureData[1][i + 3] != 0)
+			if (LayersPerTextureData[0][i] != FirstValue || LayersPerTextureData[0][i + 1] != 0 ||
+				LayersPerTextureData[0][i + 2] != 0 || LayersPerTextureData[0][i + 3] != 0 ||
+				LayersPerTextureData[1][i] != 0 || LayersPerTextureData[1][i + 1] != 0 ||
+				LayersPerTextureData[1][i + 2] != 0 || LayersPerTextureData[1][i + 3] != 0)
 			{
-				needToResizeMaskTexture = true;
+				bNeedToResizeMaskTexture = true;
 				break;
 			}
 		}
 
-		if (needToResizeMaskTexture)
+		if (bNeedToResizeMaskTexture)
 		{
-			LOG.add("FEResourceManager::loadTerrainLayerMask resizing loaded mask to match currently used one.", FE_LOG_WARNING, FE_LOG_LOADING);
-			unsigned char* newRawData = resizeTextureRawData(rawData.data(), uWidth, uHeight, firstLayerMap->getWidth(), firstLayerMap->getHeight(), GL_RGBA, 1);
-			if (newRawData == nullptr)
+			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask to match currently used one.", FE_LOG_WARNING, FE_LOG_LOADING);
+			const unsigned char* NewRawData = ResizeTextureRawData(RawData.data(), UWidth, UHeight, FirstLayerMap->GetWidth(), FirstLayerMap->GetHeight(), GL_RGBA, 1);
+			if (NewRawData == nullptr)
 			{
-				LOG.add("FEResourceManager::loadTerrainLayerMask resizing loaded mask failed.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask failed.", FE_LOG_ERROR, FE_LOG_LOADING);
 				return;
 			}
 
-			rawData.clear();
+			RawData.clear();
 
-			for (size_t i = 0; i < size_t(firstLayerMap->getWidth() * firstLayerMap->getHeight() * 4); i++)
+			for (size_t i = 0; i < static_cast<size_t>(FirstLayerMap->GetWidth() * FirstLayerMap->GetHeight() * 4); i++)
 			{
-				rawData.push_back(newRawData[i]);
+				RawData.push_back(NewRawData[i]);
 			}
 
-			delete[] newRawData;
+			delete[] NewRawData;
 		}
 		else
 		{
-			LOG.add("FEResourceManager::loadTerrainLayerMask resizing terrainLayerMap to match currently loaded one.", FE_LOG_WARNING, FE_LOG_LOADING);
+			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing terrainLayerMap to match currently loaded one.", FE_LOG_WARNING, FE_LOG_LOADING);
 
-			FETexture* newTexture = createTexture();
-			newTexture->width = uWidth;
-			newTexture->height = uHeight;
-			newTexture->internalFormat = GL_RGBA;
+			FETexture* NewTexture = CreateTexture();
+			NewTexture->Width = UWidth;
+			NewTexture->Height = UHeight;
+			NewTexture->InternalFormat = GL_RGBA;
 
-			std::vector<unsigned char> rawData;
-			size_t dataLenght = newTexture->getWidth() * newTexture->getHeight() * 4;
-			rawData.resize(dataLenght);
-			for (size_t i = 0; i < dataLenght; i++)
+			std::vector<unsigned char> RawData;
+			const size_t DataLenght = NewTexture->GetWidth() * NewTexture->GetHeight() * 4;
+			RawData.resize(DataLenght);
+			for (size_t i = 0; i < DataLenght; i++)
 			{
-				rawData[i] = 0;
+				RawData[i] = 0;
 			}
 
-			FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-			FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+			FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+			FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData.data());
 
 			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-			deleteFETexture(terrain->layerMaps[0]);
-			terrain->layerMaps[0] = newTexture;
-			firstLayerMap = terrain->layerMaps[0];
+			DeleteFETexture(Terrain->LayerMaps[0]);
+			Terrain->LayerMaps[0] = NewTexture;
+			FirstLayerMap = Terrain->LayerMaps[0];
 
-			newTexture = createTexture();
-			newTexture->width = uWidth;
-			newTexture->height = uHeight;
-			newTexture->internalFormat = GL_RGBA;
+			NewTexture = CreateTexture();
+			NewTexture->Width = UWidth;
+			NewTexture->Height = UHeight;
+			NewTexture->InternalFormat = GL_RGBA;
 
-			FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-			FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, newTexture->width, newTexture->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+			FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+			FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGBA, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData.data());
 
 			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-			deleteFETexture(terrain->layerMaps[1]);
-			terrain->layerMaps[1] = newTexture;
+			DeleteFETexture(Terrain->LayerMaps[1]);
+			Terrain->LayerMaps[1] = NewTexture;
 		}
 	}
 
-	unsigned char* filledChannel = new unsigned char[firstLayerMap->getWidth() * firstLayerMap->getHeight()];
-	int index = 0;
-	for (size_t i = 0; i < size_t(firstLayerMap->getWidth() * firstLayerMap->getHeight() * 4); i += 4)
+	unsigned char* FilledChannel = new unsigned char[FirstLayerMap->GetWidth() * FirstLayerMap->GetHeight()];
+	int Index = 0;
+	for (size_t i = 0; i < static_cast<size_t>(FirstLayerMap->GetWidth() * FirstLayerMap->GetHeight() * 4); i += 4)
 	{
-		filledChannel[index++] = rawData[i];
+		FilledChannel[Index++] = RawData[i];
 	}
 
-	fillTerrainLayerMaskWithRawData(filledChannel, terrain, layerIndex);
+	FillTerrainLayerMaskWithRawData(FilledChannel, Terrain, LayerIndex);
 }
 
-void FEResourceManager::saveTerrainLayerMask(const char* fileName, FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::SaveTerrainLayerMask(const char* FileName, const FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->layers[layerIndex] == nullptr)
+	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
 	// Reading data from current layer map texture.
-	size_t resultingTextureDataLenght = 0;
-	FETexture* correctLayer = terrain->layerMaps[layerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	unsigned char* rawData = correctLayer->getRawData(&resultingTextureDataLenght);
-	unsigned char* resultingData = new unsigned char[resultingTextureDataLenght];
+	size_t ResultingTextureDataLenght = 0;
+	FETexture* CorrectLayer = Terrain->LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
+	const unsigned char* RawData = CorrectLayer->GetRawData(&ResultingTextureDataLenght);
+	unsigned char* ResultingData = new unsigned char[ResultingTextureDataLenght];
 
-	for (size_t i = 0; i < resultingTextureDataLenght; i += 4)
+	for (size_t i = 0; i < ResultingTextureDataLenght; i += 4)
 	{
-		size_t index = i + layerIndex % FE_TERRAIN_LAYER_PER_TEXTURE;
-		resultingData[i] = rawData[index];
-		resultingData[i + 1] = rawData[index];
-		resultingData[i + 2] = rawData[index];
-		resultingData[i + 3] = 255;
+		const size_t index = i + LayerIndex % FE_TERRAIN_LAYER_PER_TEXTURE;
+		ResultingData[i] = RawData[index];
+		ResultingData[i + 1] = RawData[index];
+		ResultingData[i + 2] = RawData[index];
+		ResultingData[i + 3] = 255;
 	}
 
-	exportRawDataToPNG(fileName, resultingData, correctLayer->getWidth(), correctLayer->getHeight(), GL_RGBA);
+	ExportRawDataToPNG(FileName, ResultingData, CorrectLayer->GetWidth(), CorrectLayer->GetHeight(), GL_RGBA);
 }
 
-void FEResourceManager::fillTerrainLayerMask(FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::FillTerrainLayerMask(const FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("FEResourceManager::fillTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::fillTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->layers[layerIndex] == nullptr)
+	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.add("FEResourceManager::fillTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	FETexture* correctLayer = terrain->layerMaps[layerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	size_t textureWidht = correctLayer->getWidth();
-	size_t textureHeight = correctLayer->getHeight();
-	unsigned char* filledChannel = new unsigned char[textureWidht * textureHeight];
-	for (size_t i = 0; i < textureWidht * textureHeight; i++)
+	FETexture* CorrectLayer = Terrain->LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
+	const size_t TextureWidht = CorrectLayer->GetWidth();
+	const size_t TextureHeight = CorrectLayer->GetHeight();
+	unsigned char* FilledChannel = new unsigned char[TextureWidht * TextureHeight];
+	for (size_t i = 0; i < TextureWidht * TextureHeight; i++)
 	{
-		filledChannel[i] = 255;
+		FilledChannel[i] = 255;
 	}
 
-	fillTerrainLayerMaskWithRawData(filledChannel, terrain, layerIndex);
-	delete[] filledChannel;
+	FillTerrainLayerMaskWithRawData(FilledChannel, Terrain, LayerIndex);
+	delete[] FilledChannel;
 	
 }
 
-void FEResourceManager::clearTerrainLayerMask(FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::ClearTerrainLayerMask(const FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("FEResourceManager::clearTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::clearTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->layers[layerIndex] == nullptr)
+	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.add("FEResourceManager::clearTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	FETexture* correctLayer = terrain->layerMaps[layerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	size_t textureWidht = correctLayer->getWidth();
-	size_t textureHeight = correctLayer->getHeight();
-	unsigned char* filledChannel = new unsigned char[textureWidht * textureHeight];
-	for (size_t i = 0; i < textureWidht * textureHeight; i++)
+	FETexture* CorrectLayer = Terrain->LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
+	const size_t TextureWidht = CorrectLayer->GetWidth();
+	const size_t TextureHeight = CorrectLayer->GetHeight();
+	unsigned char* FilledChannel = new unsigned char[TextureWidht * TextureHeight];
+	for (size_t i = 0; i < TextureWidht * TextureHeight; i++)
 	{
-		filledChannel[i] = 0;
+		FilledChannel[i] = 0;
 	}
 
-	fillTerrainLayerMaskWithRawData(filledChannel, terrain, layerIndex);
-	delete[] filledChannel;
+	FillTerrainLayerMaskWithRawData(FilledChannel, Terrain, LayerIndex);
+	delete[] FilledChannel;
 }
 
-bool FEResourceManager::exportFETextureToPNG(FETexture* textureToExport, const char* fileName)
+bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName)
 {
-	if (textureToExport == nullptr)
+	if (TextureToExport == nullptr)
 	{
-		LOG.add("FEResourceManager::exportFETextureToPNG with nullptr textureToExport", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportFETextureToPNG with nullptr textureToExport", FE_LOG_ERROR, FE_LOG_SAVING);
 		return false;
 	}
 
-	if (textureToExport->internalFormat != GL_RGBA &&
-		textureToExport->internalFormat != GL_RED &&
-		textureToExport->internalFormat != GL_R16 &&
-		textureToExport->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		textureToExport->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	if (TextureToExport->InternalFormat != GL_RGBA &&
+		TextureToExport->InternalFormat != GL_RED &&
+		TextureToExport->InternalFormat != GL_R16 &&
+		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
+		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.add("FEResourceManager::exportFETextureToPNG internalFormat of textureToExport is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportFETextureToPNG internalFormat of textureToExport is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
 		return false;
 	}
 
-	std::vector<unsigned char> rawData;
-	if (textureToExport->internalFormat == GL_RED)
+	std::vector<unsigned char> RawData;
+	if (TextureToExport->InternalFormat == GL_RED)
 	{
-		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 4);
-		unsigned char* textreData = textureToExport->getRawData();
+		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
+		const unsigned char* TextreData = TextureToExport->GetRawData();
 
-		for (size_t i = 0; i < rawData.size(); i += 4)
+		for (size_t i = 0; i < RawData.size(); i += 4)
 		{
-			rawData[i] = textreData[i / 4];
-			rawData[i + 1] = textreData[i / 4];
-			rawData[i + 2] = textreData[i / 4];
-			rawData[i + 3] = 255;
+			RawData[i] = TextreData[i / 4];
+			RawData[i + 1] = TextreData[i / 4];
+			RawData[i + 2] = TextreData[i / 4];
+			RawData[i + 3] = 255;
 		}
 	}
-	else if (textureToExport->internalFormat == GL_R16)
+	else if (TextureToExport->InternalFormat == GL_R16)
 	{
-		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 2);
-		unsigned char* textreData = textureToExport->getRawData();
+		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 2);
+		const unsigned char* TextreData = TextureToExport->GetRawData();
 
-		for (size_t i = 0; i < rawData.size(); i++)
+		for (size_t i = 0; i < RawData.size(); i++)
 		{
-			rawData[i] = textreData[i];
+			RawData[i] = TextreData[i];
 		}
 
-		for (size_t i = 0; i < rawData.size(); i+=2)
+		for (size_t i = 0; i < RawData.size(); i+=2)
 		{
-			std::swap(rawData[i], rawData[i + 1]);
+			std::swap(RawData[i], RawData[i + 1]);
 		}
 	}
 	else
 	{
-		rawData.resize(textureToExport->getWidth() * textureToExport->getHeight() * 4);
-		unsigned char* textreData = textureToExport->getRawData();
+		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
+		const unsigned char* TextreData = TextureToExport->GetRawData();
 
-		for (size_t i = 0; i < rawData.size(); i++)
+		for (size_t i = 0; i < RawData.size(); i++)
 		{
-			rawData[i] = textreData[i];
+			RawData[i] = TextreData[i];
 		}
 	}
 
-	std::string filePath = fileName;
-	int error = 0;
-	if (textureToExport->internalFormat == GL_R16)
+	const std::string FilePath = FileName;
+	int Error = 0;
+	if (TextureToExport->InternalFormat == GL_R16)
 	{
-		error = lodepng::encode(filePath, rawData, textureToExport->getWidth(), textureToExport->getHeight(), LCT_GREY, 16);
+		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight(), LCT_GREY, 16);
 	}
 	else
 	{
-		error = lodepng::encode(filePath, rawData, textureToExport->getWidth(), textureToExport->getHeight());
+		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight());
 	}
 
-	return error == 0;
+	return Error == 0;
 }
 
-bool FEResourceManager::exportRawDataToPNG(const char* fileName, unsigned char* textureData, int width, int height, GLint internalformat)
+bool FEResourceManager::ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, const int Width, const int Height, const GLint Internalformat)
 {
-	if (internalformat != GL_RGBA &&
-		internalformat != GL_RED &&
-		internalformat != GL_R16 &&
-		internalformat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		internalformat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	if (Internalformat != GL_RGBA &&
+		Internalformat != GL_RED &&
+		Internalformat != GL_R16 &&
+		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
+		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.add("FEResourceManager::exportRawDataToPNG internalFormat is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportRawDataToPNG internalFormat is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
 		return false;
 	}
 
-	std::string filePath = fileName;
-	int error = 0;
-	if (internalformat == GL_R16)
+	const std::string FilePath = FileName;
+	int Error = 0;
+	if (Internalformat == GL_R16)
 	{
-		error = lodepng::encode(filePath, textureData, width, height, LCT_GREY, 16);
+		Error = lodepng::encode(FilePath, TextureData, Width, Height, LCT_GREY, 16);
 	}
 	else
 	{
-		error = lodepng::encode(filePath, textureData, width, height);
+		Error = lodepng::encode(FilePath, TextureData, Width, Height);
 	}
 
-	return error == 0;
+	return Error == 0;
 }
 
-unsigned char* FEResourceManager::resizeTextureRawData(FETexture* sourceTexture, size_t targetWidth, size_t targetHeight, int filtrationLevel)
+unsigned char* FEResourceManager::ResizeTextureRawData(FETexture* SourceTexture, const size_t TargetWidth, const size_t TargetHeight, int FiltrationLevel)
 {
-	if (sourceTexture == nullptr)
+	if (SourceTexture == nullptr)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (targetWidth <= 0 || targetHeight <= 0 || targetWidth > 8192 || targetHeight > 8192)
+	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (targetWidth == sourceTexture->getWidth() && targetHeight == sourceTexture->getHeight())
+	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (filtrationLevel < 0)
-		filtrationLevel = 0;
+	if (FiltrationLevel < 0)
+		FiltrationLevel = 0;
 
-	if (filtrationLevel > 16)
-		filtrationLevel = 16;
+	if (FiltrationLevel > 16)
+		FiltrationLevel = 16;
 
-	if (sourceTexture->internalFormat != GL_RGBA &&
-		sourceTexture->internalFormat != GL_RED &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	if (SourceTexture->InternalFormat != GL_RGBA &&
+		SourceTexture->InternalFormat != GL_RED &&
+		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
+		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
 		return nullptr;
 	}
 
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, sourceTexture->getTextureID()));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, SourceTexture->GetTextureID()));
 
-	unsigned char* currentData = sourceTexture->getRawData();
-	unsigned char* result = resizeTextureRawData(currentData, sourceTexture->getWidth(), sourceTexture->getHeight(), targetWidth, targetHeight, sourceTexture->internalFormat, filtrationLevel);
-	delete[] currentData;
+	unsigned char* CurrentData = SourceTexture->GetRawData();
+	unsigned char* Result = ResizeTextureRawData(CurrentData, SourceTexture->GetWidth(), SourceTexture->GetHeight(), TargetWidth, TargetHeight, SourceTexture->InternalFormat, FiltrationLevel);
+	delete[] CurrentData;
 
-	return result;
+	return Result;
 }
 
-unsigned char* FEResourceManager::resizeTextureRawData(unsigned char* textureData, size_t width, size_t height, size_t targetWidth, size_t targetHeight, GLint internalFormat, int filtrationLevel)
+unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* TextureData, const size_t Width, const size_t Height, const size_t TargetWidth, const size_t TargetHeight, const GLint InternalFormat, int FiltrationLevel)
 {
-	if (textureData == nullptr)
+	if (TextureData == nullptr)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData with nullptr textureData", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr textureData", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (width <= 0 || height <= 0 || width > 8192 || height > 8192)
+	if (Width <= 0 || Height <= 0 || Width > 8192 || Height > 8192)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData unsupported current resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported current resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (targetWidth == width && targetHeight == height)
+	if (TargetWidth == Width && TargetHeight == Height)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (targetWidth <= 0 || targetHeight <= 0 || targetWidth > 8192 || targetHeight > 8192)
+	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (internalFormat != GL_RGBA &&
-		internalFormat != GL_RED &&
-		internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	if (InternalFormat != GL_RGBA &&
+		InternalFormat != GL_RED &&
+		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
+		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.add("FEResourceManager::resizeTextureRawData internalFormat of textureData is not supported", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of textureData is not supported", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (filtrationLevel < 0)
-		filtrationLevel = 0;
+	if (FiltrationLevel < 0)
+		FiltrationLevel = 0;
 
-	if (filtrationLevel > 16)
-		filtrationLevel = 16;
+	if (FiltrationLevel > 16)
+		FiltrationLevel = 16;
 
-	size_t sourceByteCount = 4;
-	if (internalFormat == GL_RED)
-		sourceByteCount = 1;
+	size_t SourceByteCount = 4;
+	if (InternalFormat == GL_RED)
+		SourceByteCount = 1;
 
-	float resizeFactorX = float(width) / float(targetWidth);
-	float resizeFactorY = float(height) / float(targetHeight);
+	const float ResizeFactorX = static_cast<float>(Width) / static_cast<float>(TargetWidth);
+	const float ResizeFactorY = static_cast<float>(Height) / static_cast<float>(TargetHeight);
 
 	//int newPixel[4];
-	unsigned char* result = new unsigned char[targetWidth * targetHeight * 4];
-	for (size_t i = 0; i < targetHeight; i++)
+	unsigned char* Result = new unsigned char[TargetWidth * TargetHeight * 4];
+	for (size_t i = 0; i < TargetHeight; i++)
 	{
-		for (size_t j = 0; j < targetWidth; j++)
+		for (size_t j = 0; j < TargetWidth; j++)
 		{
-			size_t targetIndex = (i * targetWidth + j) * 4;
+			const size_t TargetIndex = (i * TargetWidth + j) * 4;
 
-			if (targetIndex + 3 >= targetWidth * targetHeight * 4)
+			if (TargetIndex + 3 >= TargetWidth * TargetHeight * 4)
 				continue;
 
 			/*newPixel[0] = 0;
@@ -3112,221 +3182,221 @@ unsigned char* FEResourceManager::resizeTextureRawData(unsigned char* textureDat
 			result[targetIndex + 2] = newPixel[2];
 			result[targetIndex + 3] = newPixel[3];*/
 
-			size_t scaledI = size_t(i * resizeFactorY);
-			size_t scaledJ = size_t(j * resizeFactorX);
-			size_t sourceIndex = (scaledI * width + scaledJ) * sourceByteCount;
+			const size_t ScaledI = static_cast<size_t>(i * ResizeFactorY);
+			const size_t ScaledJ = static_cast<size_t>(j * ResizeFactorX);
+			const size_t SourceIndex = (ScaledI * Width + ScaledJ) * SourceByteCount;
 
-			if (sourceByteCount == 4)
+			if (SourceByteCount == 4)
 			{
-				result[targetIndex] = textureData[sourceIndex];
-				result[targetIndex + 1] = textureData[sourceIndex + 1];
-				result[targetIndex + 2] = textureData[sourceIndex + 2];
-				result[targetIndex + 3] = textureData[sourceIndex + 3];
+				Result[TargetIndex] = TextureData[SourceIndex];
+				Result[TargetIndex + 1] = TextureData[SourceIndex + 1];
+				Result[TargetIndex + 2] = TextureData[SourceIndex + 2];
+				Result[TargetIndex + 3] = TextureData[SourceIndex + 3];
 			}
 			else
 			{
-				result[targetIndex] = textureData[sourceIndex];
-				result[targetIndex + 1] = textureData[sourceIndex];
-				result[targetIndex + 2] = textureData[sourceIndex];
-				result[targetIndex + 3] = 255;
+				Result[TargetIndex] = TextureData[SourceIndex];
+				Result[TargetIndex + 1] = TextureData[SourceIndex];
+				Result[TargetIndex + 2] = TextureData[SourceIndex];
+				Result[TargetIndex + 3] = 255;
 			}
 		}
 	}
 
-	return result;
+	return Result;
 }
 
-void FEResourceManager::resizeTexture(FETexture* sourceTexture, int targetWidth, int targetHeight, int filtrationLevel)
+void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int TargetWidth, const int TargetHeight, int FiltrationLevel)
 {
-	if (sourceTexture == nullptr)
+	if (SourceTexture == nullptr)
 	{
-		LOG.add("FEResourceManager::resizeTexture with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (targetWidth <= 0 || targetHeight <= 0 || targetWidth > 8192 || targetHeight > 8192)
+	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.add("FEResourceManager::resizeTexture unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (targetWidth == sourceTexture->getWidth() && targetHeight == sourceTexture->getHeight())
+	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.add("FEResourceManager::resizeTexture no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (sourceTexture->internalFormat != GL_RGBA &&
-		sourceTexture->internalFormat != GL_RED &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		sourceTexture->internalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	if (SourceTexture->InternalFormat != GL_RGBA &&
+		SourceTexture->InternalFormat != GL_RED &&
+		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
+		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.add("FEResourceManager::resizeTexture internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::resizeTexture internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
 		return;
 	}
 
-	if (filtrationLevel < 0)
-		filtrationLevel = 0;
+	if (FiltrationLevel < 0)
+		FiltrationLevel = 0;
 
-	if (filtrationLevel > 16)
-		filtrationLevel = 16;
+	if (FiltrationLevel > 16)
+		FiltrationLevel = 16;
 
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, sourceTexture->getTextureID()));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, SourceTexture->GetTextureID()));
 
-	unsigned char* currentData = sourceTexture->getRawData();
-	unsigned char* result = resizeTextureRawData(currentData, sourceTexture->getWidth(), sourceTexture->getHeight(), targetWidth, targetHeight, sourceTexture->internalFormat, filtrationLevel);
+	const unsigned char* CurrentData = SourceTexture->GetRawData();
+	unsigned char* result = ResizeTextureRawData(CurrentData, SourceTexture->GetWidth(), SourceTexture->GetHeight(), TargetWidth, TargetHeight, SourceTexture->InternalFormat, FiltrationLevel);
 
-	sourceTexture->width = targetWidth;
-	sourceTexture->height = targetHeight;
-	int maxDimention = std::max(sourceTexture->width, sourceTexture->height);
-	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	SourceTexture->Width = TargetWidth;
+	SourceTexture->Height = TargetHeight;
+	const int MaxDimention = std::max(SourceTexture->Width, SourceTexture->Height);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
 
-	if (sourceTexture->internalFormat == GL_RGBA)
+	if (SourceTexture->InternalFormat == GL_RGBA)
 	{
-		sourceTexture->updateRawData(result, mipCount);
+		SourceTexture->UpdateRawData(result, MipCount);
 	}
-	else if (sourceTexture->internalFormat == GL_RED)
+	else if (SourceTexture->InternalFormat == GL_RED)
 	{
 		// Function resizeTextureRawData will output RGBA data, we need to take only R channel.
-		std::vector<unsigned char> redChannel;
-		redChannel.resize(sourceTexture->getWidth() * sourceTexture->getHeight());
-		for (size_t i = 0; i < redChannel.size() * 4; i+=4)
+		std::vector<unsigned char> RedChannel;
+		RedChannel.resize(SourceTexture->GetWidth() * SourceTexture->GetHeight());
+		for (size_t i = 0; i < RedChannel.size() * 4; i+=4)
 		{
-			redChannel[i / 4] = result[i];
+			RedChannel[i / 4] = result[i];
 		}
 
-		sourceTexture->updateRawData(redChannel.data(), mipCount);
+		SourceTexture->UpdateRawData(RedChannel.data(), MipCount);
 	}
 	else
 	{
-		sourceTexture->updateRawData(result, mipCount);
+		SourceTexture->UpdateRawData(result, MipCount);
 	}
 
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	delete[] currentData;
+	delete[] CurrentData;
 	delete[] result;
 }
 
-void FEResourceManager::deleteTerrainLayerMask(FETerrain* terrain, size_t layerIndex)
+void FEResourceManager::DeleteTerrainLayerMask(FETerrain* Terrain, const size_t LayerIndex)
 {
-	if (terrain == nullptr)
+	if (Terrain == nullptr)
 	{
-		LOG.add("FEResourceManager::deleteTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
 		return;
 	}
 
-	if (layerIndex < 0 || layerIndex >= FE_TERRAIN_MAX_LAYERS)
+	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.add("FEResourceManager::deleteTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	if (terrain->layers[layerIndex] == nullptr)
+	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.add("FEResourceManager::deleteTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
 		return;
 	}
 
-	clearTerrainLayerMask(terrain, layerIndex);
+	ClearTerrainLayerMask(Terrain, LayerIndex);
 
-	std::vector<unsigned char*> layersPerTextureData;
-	layersPerTextureData.resize(2);
-	size_t rawDataSize = 0;
-	layersPerTextureData[0] = terrain->layerMaps[0]->getRawData(&rawDataSize);
-	layersPerTextureData[1] = terrain->layerMaps[1]->getRawData();
+	std::vector<unsigned char*> LayersPerTextureData;
+	LayersPerTextureData.resize(2);
+	size_t RawDataSize = 0;
+	LayersPerTextureData[0] = Terrain->LayerMaps[0]->GetRawData(&RawDataSize);
+	LayersPerTextureData[1] = Terrain->LayerMaps[1]->GetRawData();
 
-	std::vector<unsigned char*> allLayers;
-	allLayers.resize(8);
+	std::vector<unsigned char*> AllLayers;
+	AllLayers.resize(8);
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		allLayers[i] = new unsigned char[rawDataSize / 4];
+		AllLayers[i] = new unsigned char[RawDataSize / 4];
 	}
 
 	// Gathering channels from 2 textures.
-	int channelIndex = 0;
-	for (size_t i = 0; i < rawDataSize; i+=4)
+	int ChannelIndex = 0;
+	for (size_t i = 0; i < RawDataSize; i+=4)
 	{
-		allLayers[0][channelIndex] = layersPerTextureData[0][i];
-		allLayers[1][channelIndex] = layersPerTextureData[0][i + 1];
-		allLayers[2][channelIndex] = layersPerTextureData[0][i + 2];
-		allLayers[3][channelIndex] = layersPerTextureData[0][i + 3];
+		AllLayers[0][ChannelIndex] = LayersPerTextureData[0][i];
+		AllLayers[1][ChannelIndex] = LayersPerTextureData[0][i + 1];
+		AllLayers[2][ChannelIndex] = LayersPerTextureData[0][i + 2];
+		AllLayers[3][ChannelIndex] = LayersPerTextureData[0][i + 3];
 
-		allLayers[4][channelIndex] = layersPerTextureData[1][i];
-		allLayers[5][channelIndex] = layersPerTextureData[1][i + 1];
-		allLayers[6][channelIndex] = layersPerTextureData[1][i + 2];
-		allLayers[7][channelIndex] = layersPerTextureData[1][i + 3];
+		AllLayers[4][ChannelIndex] = LayersPerTextureData[1][i];
+		AllLayers[5][ChannelIndex] = LayersPerTextureData[1][i + 1];
+		AllLayers[6][ChannelIndex] = LayersPerTextureData[1][i + 2];
+		AllLayers[7][ChannelIndex] = LayersPerTextureData[1][i + 3];
 
-		channelIndex++;
+		ChannelIndex++;
 	}
 
 	// Shifting existing layers masks to place where was deleted mask.
-	for (size_t i = layerIndex; i < FE_TERRAIN_MAX_LAYERS - 1; i++)
+	for (size_t i = LayerIndex; i < FE_TERRAIN_MAX_LAYERS - 1; i++)
 	{
-		for (size_t j = 0; j < rawDataSize / 4; j++)
+		for (size_t j = 0; j < RawDataSize / 4; j++)
 		{
-			allLayers[i][j] = allLayers[i + 1][j];
+			AllLayers[i][j] = AllLayers[i + 1][j];
 		}
 	}
 
-	unsigned char* firstTextureData = new unsigned char[rawDataSize];
-	unsigned char* secondTextureData = new unsigned char[rawDataSize];
+	unsigned char* FirstTextureData = new unsigned char[RawDataSize];
+	unsigned char* SecondTextureData = new unsigned char[RawDataSize];
 
 	// Putting individual channels back to 2 distinct textures.
-	channelIndex = 0;
-	for (size_t i = 0; i < rawDataSize; i += 4)
+	ChannelIndex = 0;
+	for (size_t i = 0; i < RawDataSize; i += 4)
 	{
-		firstTextureData[i] = allLayers[0][channelIndex];
-		firstTextureData[i + 1] = allLayers[1][channelIndex];
-		firstTextureData[i + 2] = allLayers[2][channelIndex];
-		firstTextureData[i + 3] = allLayers[3][channelIndex];
+		FirstTextureData[i] = AllLayers[0][ChannelIndex];
+		FirstTextureData[i + 1] = AllLayers[1][ChannelIndex];
+		FirstTextureData[i + 2] = AllLayers[2][ChannelIndex];
+		FirstTextureData[i + 3] = AllLayers[3][ChannelIndex];
 
-		secondTextureData[i] = allLayers[4][channelIndex];
-		secondTextureData[i + 1] = allLayers[5][channelIndex];
-		secondTextureData[i + 2] = allLayers[6][channelIndex];
-		secondTextureData[i + 3] = allLayers[7][channelIndex];
+		SecondTextureData[i] = AllLayers[4][ChannelIndex];
+		SecondTextureData[i + 1] = AllLayers[5][ChannelIndex];
+		SecondTextureData[i + 2] = AllLayers[6][ChannelIndex];
+		SecondTextureData[i + 3] = AllLayers[7][ChannelIndex];
 
-		channelIndex++;
+		ChannelIndex++;
 	}
 
-	int maxDimention = std::max(terrain->layerMaps[0]->getWidth(), terrain->layerMaps[0]->getHeight());
-	size_t mipCount = size_t(floor(log2(maxDimention)) + 1);
+	const int MaxDimention = std::max(Terrain->LayerMaps[0]->GetWidth(), Terrain->LayerMaps[0]->GetHeight());
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
 
-	terrain->layerMaps[0]->updateRawData(firstTextureData, mipCount);
+	Terrain->LayerMaps[0]->UpdateRawData(FirstTextureData, MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	terrain->layerMaps[1]->updateRawData(secondTextureData, mipCount);
+	Terrain->LayerMaps[1]->UpdateRawData(SecondTextureData, MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		delete[] allLayers[i];
+		delete[] AllLayers[i];
 	}
 
-	delete[] firstTextureData;
-	delete[] secondTextureData;
+	delete[] FirstTextureData;
+	delete[] SecondTextureData;
 
-	terrain->deleteLayerInSlot(layerIndex);
+	Terrain->DeleteLayerInSlot(LayerIndex);
 }
 
-FETexture* FEResourceManager::LoadJPGTexture(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::string Name)
 {
-	int uWidth, uHeight, channels;
-	unsigned char* rawData = stbi_load(fileName, &uWidth, &uHeight, &channels, 0);
+	int UWidth, UHeight, Channels;
+	const unsigned char* RawData = stbi_load(FileName, &UWidth, &UHeight, &Channels, 0);
 
-	if (rawData == nullptr)
+	if (RawData == nullptr)
 	{
-		LOG.add(std::string("can't load file: ") + fileName + " in function FEResourceManager::LoadJPGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
-		if (standardTextures.size() > 0)
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadJPGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		if (!StandardTextures.empty())
 		{
-			return getTexture("48271F005A73241F5D7E7134"); // "noTexture"
+			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 		}
 		else
 		{
@@ -3334,18 +3404,18 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* fileName, std::string N
 		}
 	}
 
-	FETexture* newTexture = createTexture(Name);
-	newTexture->width = uWidth;
-	newTexture->height = uHeight;
+	FETexture* NewTexture = CreateTexture(Name);
+	NewTexture->Width = UWidth;
+	NewTexture->Height = UHeight;
 
-	int internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, newTexture->textureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, newTexture->width, newTexture->height, 0, GL_RGB, GL_UNSIGNED_BYTE, rawData);
-	delete rawData;
-	newTexture->internalFormat = internalFormat;
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
+	delete RawData;
+	NewTexture->InternalFormat = InternalFormat;
 
-	if (newTexture->mipEnabled)
+	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
@@ -3353,7 +3423,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* fileName, std::string N
 	}
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (newTexture->magFilter == FE_LINEAR)
+	if (NewTexture->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -3361,303 +3431,303 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* fileName, std::string N
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
-	newTexture->fileName = fileName;
+	NewTexture->FileName = FileName;
 
-	if (Name.size() == 0)
+	if (Name.empty())
 	{
-		std::string filePath = newTexture->fileName;
-		std::size_t index = filePath.find_last_of("/\\");
-		std::string newFileName = filePath.substr(index + 1);
-		index = newFileName.find_last_of(".");
-		std::string fileNameWithOutExtention = newFileName.substr(0, index);
-		newTexture->setName(fileNameWithOutExtention);
+		const std::string FilePath = NewTexture->FileName;
+		std::size_t Index = FilePath.find_last_of("/\\");
+		const std::string NewFileName = FilePath.substr(Index + 1);
+		Index = NewFileName.find_last_of(".");
+		const std::string FileNameWithOutExtention = NewFileName.substr(0, Index);
+		NewTexture->SetName(FileNameWithOutExtention);
 	}
 
-	return newTexture;
+	return NewTexture;
 }
 
-FETexture* FEResourceManager::LoadBMPTexture(const char* fileName, std::string Name)
+FETexture* FEResourceManager::LoadBMPTexture(const char* FileName, const std::string Name)
 {
-	return LoadJPGTexture(fileName, Name);
+	return LoadJPGTexture(FileName, Name);
 }
 
-void FEResourceManager::createMaterialsFromOBJData(std::vector<FEObject*>& resultArray)
+void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& ResultArray)
 {
-	std::unordered_map<std::string, bool> loadedTextures;
-	FEObjLoader& objLoader = FEObjLoader::getInstance();
+	std::unordered_map<std::string, bool> LoadedTextures;
+	const FEObjLoader& OBJLoader = FEObjLoader::getInstance();
 
-	for (size_t i = 0; i < objLoader.loadedObjects.size(); i++)
+	for (size_t i = 0; i < OBJLoader.LoadedObjects.size(); i++)
 	{
-		if (objLoader.loadedObjects[i]->materialRecords.size() == 0)
+		if (OBJLoader.LoadedObjects[i]->MaterialRecords.empty())
 			continue;
 
-		FEMaterial* material = nullptr;
-		std::string name = "";
-		FETexture* texture = nullptr;
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile != "")
+		FEMaterial* Material = nullptr;
+		std::string Name;
+		FETexture* Texture = nullptr;
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
-				material->setAlbedoMap(texture);
+				Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
+				Material->SetAlbedoMap(Texture);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].albedoMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].normalMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].normalMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].normalMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].normalMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].normalMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
-				material->setNormalMap(texture);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
+				Material->SetNormalMap(Texture);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].normalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].specularMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].specularMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].specularMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].specularMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].specularMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].specularMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].specularHighlightMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].alphaMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].displacementMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (loadedTextures.find(objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile) == loadedTextures.end() &&
-			objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile != "")
+		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile) == LoadedTextures.end() &&
+			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.empty())
 		{
-			std::vector<FEObject*> loadedObjects = importAsset(objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile.c_str());
-			if (loadedObjects.size() != 0 && loadedObjects[0] != nullptr)
+			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.c_str());
+			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
 			{
-				texture = reinterpret_cast<FETexture*>(loadedObjects[0]);
+				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
 
-				loadedTextures[objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile] = true;
-				name = FILE_SYSTEM.getFileName(objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile.c_str());
+				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile] = true;
+				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.c_str());
 
-				resultArray.push_back(texture);
-				resultArray.back()->setName(name);
+				ResultArray.push_back(Texture);
+				ResultArray.back()->SetName(Name);
 
-				if (material == nullptr)
-					material = createMaterial(objLoader.loadedObjects[i]->materialRecords[0].name);
+				if (Material == nullptr)
+					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
 			}
 			else
 			{
-				LOG.add(std::string("can't load texture: ") + objLoader.loadedObjects[i]->materialRecords[0].stencilDecalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
 			}
 		}
 
-		if (material != nullptr)
+		if (Material != nullptr)
 		{
-			material->shader = getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-			resultArray.push_back(material);
+			Material->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+			ResultArray.push_back(Material);
 
-			FEGameModel* gameModel = createGameModel(reinterpret_cast<FEMesh*>(resultArray[i]), material);
-			resultArray.push_back(gameModel);
+			FEGameModel* GameModel = CreateGameModel(reinterpret_cast<FEMesh*>(ResultArray[i]), Material);
+			ResultArray.push_back(GameModel);
 		}
 	}
 }
 
-std::vector<FEObject*> FEResourceManager::importAsset(const char* fileName)
+std::vector<FEObject*> FEResourceManager::ImportAsset(const char* FileName)
 {
-	std::vector<FEObject*> result; 
-	if (fileName == nullptr)
+	std::vector<FEObject*> Result; 
+	if (FileName == nullptr)
 	{
-		LOG.add("call of FEResourceManager::importAsset with nullptr fileName", FE_LOG_ERROR, FE_LOG_LOADING);
-		return result;
+		LOG.Add("call of FEResourceManager::importAsset with nullptr fileName", FE_LOG_ERROR, FE_LOG_LOADING);
+		return Result;
 	}
 
-	if (!FILE_SYSTEM.checkFile(fileName))
+	if (!FILE_SYSTEM.CheckFile(FileName))
 	{
-		LOG.add("Can't locate file: " + std::string(fileName) + " in FEResourceManager::importAsset", FE_LOG_ERROR, FE_LOG_LOADING);
-		return result;
+		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::importAsset", FE_LOG_ERROR, FE_LOG_LOADING);
+		return Result;
 	}
 
-	std::string fileExtention = FILE_SYSTEM.getFileExtension(fileName);
+	std::string FileExtention = FILE_SYSTEM.GetFileExtension(FileName);
 	// To lower case
-	std::transform(fileExtention.begin(), fileExtention.end(), fileExtention.begin(), [](unsigned char c) { return std::tolower(c); });
+	std::transform(FileExtention.begin(), FileExtention.end(), FileExtention.begin(), [](const unsigned char C) { return std::tolower(C); });
 
-	if (fileExtention == ".png")
+	if (FileExtention == ".png")
 	{
-		FETexture* tempTexture = LoadPNGTexture(fileName);
-		if (tempTexture != nullptr)
+		FETexture* TempTexture = LoadPNGTexture(FileName);
+		if (TempTexture != nullptr)
 		{
-			result.push_back(tempTexture);
-			return result;
+			Result.push_back(TempTexture);
+			return Result;
 		}
 	}
-	else if (fileExtention == ".jpg")
+	else if (FileExtention == ".jpg")
 	{
-		FETexture* tempTexture = LoadJPGTexture(fileName);
-		if (tempTexture != nullptr)
+		FETexture* TempTexture = LoadJPGTexture(FileName);
+		if (TempTexture != nullptr)
 		{
-			result.push_back(tempTexture);
-			return result;
+			Result.push_back(TempTexture);
+			return Result;
 		}
 	}
-	else if (fileExtention == ".bmp")
+	else if (FileExtention == ".bmp")
 	{
-		FETexture* tempTexture = LoadBMPTexture(fileName);
-		if (tempTexture != nullptr)
+		FETexture* TempTexture = LoadBMPTexture(FileName);
+		if (TempTexture != nullptr)
 		{
-			result.push_back(tempTexture);
-			return result;
+			Result.push_back(TempTexture);
+			return Result;
 		}
 	}
-	else if (fileExtention == ".obj")
+	else if (FileExtention == ".obj")
 	{
-		result = importOBJ(fileName);
-		return result;
+		Result = ImportOBJ(FileName,true);
+		return Result;
 	}
-	else if (fileExtention == ".gltf")
+	else if (FileExtention == ".gltf")
 	{
-		return LoadGLTF(fileName);
+		return LoadGLTF(FileName);
 	}
 
-	return result;
+	return Result;
 }
 
-FETexture* FEResourceManager::createTextureWithTransparency(FETexture* originalTexture, FETexture* maskTexture)
+FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalTexture, FETexture* MaskTexture)
 {
-	if (originalTexture == nullptr || maskTexture == nullptr)
+	if (OriginalTexture == nullptr || MaskTexture == nullptr)
 	{
-		LOG.add("call of FEResourceManager::createTextureWithTransparency with nullptr argument(s)", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("call of FEResourceManager::createTextureWithTransparency with nullptr argument(s)", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	if (originalTexture->getWidth() != maskTexture->getWidth() || originalTexture->getHeight() != maskTexture->getHeight())
+	if (OriginalTexture->GetWidth() != MaskTexture->GetWidth() || OriginalTexture->GetHeight() != MaskTexture->GetHeight())
 	{
-		LOG.add("originalTexture and maskTexture dimensions mismatch in FEResourceManager::createTextureWithTransparency", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("originalTexture and maskTexture dimensions mismatch in FEResourceManager::createTextureWithTransparency", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return nullptr;
 	}
 
-	FETexture* result = createTexture();
-	unsigned char* rawData = originalTexture->getRawData();
-	result->width = originalTexture->getWidth();
-	result->height = originalTexture->getHeight();
+	FETexture* Result = CreateTexture();
+	unsigned char* RawData = OriginalTexture->GetRawData();
+	Result->Width = OriginalTexture->GetWidth();
+	Result->Height = OriginalTexture->GetHeight();
 
-	unsigned char* maskRawData = maskTexture->getRawData();
-	for (size_t i = 4; i < size_t(result->width * result->height * 4); i += 4)
+	const unsigned char* MaskRawData = MaskTexture->GetRawData();
+	for (size_t i = 4; i < static_cast<size_t>(Result->Width * Result->Height * 4); i += 4)
 	{
-		rawData[-1 + i] = maskRawData[-4 + i];
+		RawData[-1 + i] = MaskRawData[-4 + i];
 	}
 
-	int internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, result->textureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, internalFormat, result->width, result->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData);
-	result->internalFormat = internalFormat;
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
+	Result->InternalFormat = InternalFormat;
 
-	if (result->mipEnabled)
+	if (Result->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
@@ -3665,7 +3735,7 @@ FETexture* FEResourceManager::createTextureWithTransparency(FETexture* originalT
 	}
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (result->magFilter == FE_LINEAR)
+	if (Result->MagFilter == FE_LINEAR)
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	}
@@ -3673,199 +3743,199 @@ FETexture* FEResourceManager::createTextureWithTransparency(FETexture* originalT
 	{
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
-	result->fileName = originalTexture->fileName;
+	Result->FileName = OriginalTexture->FileName;
 
-	std::string filePath = result->fileName;
-	std::size_t index = filePath.find_last_of("/\\");
-	std::string newFileName = filePath.substr(index + 1);
-	index = newFileName.find_last_of(".");
-	std::string fileNameWithOutExtention = newFileName.substr(0, index);
-	result->setName(fileNameWithOutExtention);
+	const std::string FilePath = Result->FileName;
+	std::size_t index = FilePath.find_last_of("/\\");
+	const std::string NewFileName = FilePath.substr(index + 1);
+	index = NewFileName.find_last_of(".");
+	const std::string FileNameWithOutExtention = NewFileName.substr(0, index);
+	Result->SetName(FileNameWithOutExtention);
 
-	delete[] rawData;
-	delete[] maskRawData;
+	delete[] RawData;
+	delete[] MaskRawData;
 
-	return result;
+	return Result;
 }
 
-std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* fileName)
+std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* FileName)
 {
-	std::vector<FEObject*> result;
-	if (!FILE_SYSTEM.checkFile(fileName))
+	std::vector<FEObject*> Result;
+	if (!FILE_SYSTEM.CheckFile(FileName))
 	{
-		LOG.add("call of FEResourceManager::LoadGLTF can't locate file: " + std::string(fileName), FE_LOG_ERROR, FE_LOG_LOADING);
-		return result;
+		LOG.Add("call of FEResourceManager::LoadGLTF can't locate file: " + std::string(FileName), FE_LOG_ERROR, FE_LOG_LOADING);
+		return Result;
 	}
 
-	FEglTFLoader& glTF = FEglTFLoader::getInstance();
-	glTF.load(fileName);
+	FEGLTFLoader& GLTF = FEGLTFLoader::getInstance();
+	GLTF.Load(FileName);
 
-	std::unordered_map<std::string, FETexture*> alreadyLoadedTextures;
-	std::unordered_map<int, FETexture*> textureMap;
-	for (size_t i = 0; i < glTF.textures.size(); i++)
+	std::unordered_map<std::string, FETexture*> AlreadyLoadedTextures;
+	std::unordered_map<int, FETexture*> TextureMap;
+	for (size_t i = 0; i < GLTF.Textures.size(); i++)
 	{
-		if (alreadyLoadedTextures.find(glTF.textures[i]) != alreadyLoadedTextures.end())
+		if (AlreadyLoadedTextures.find(GLTF.Textures[i]) != AlreadyLoadedTextures.end())
 		{
-			textureMap[int(textureMap.size())] = alreadyLoadedTextures[glTF.textures[i]];
+			TextureMap[static_cast<int>(TextureMap.size())] = AlreadyLoadedTextures[GLTF.Textures[i]];
 			continue;
 		}
 
-		if (!FILE_SYSTEM.checkFile(glTF.textures[i].c_str()))
+		if (!FILE_SYSTEM.CheckFile(GLTF.Textures[i].c_str()))
 		{
-			textureMap[int(textureMap.size())] = nullptr;
+			TextureMap[static_cast<int>(TextureMap.size())] = nullptr;
 			continue;
 		}
 
-		std::vector<FEObject*> tempResult = importAsset(glTF.textures[i].c_str());
-		if (tempResult.size() > 0)
+		std::vector<FEObject*> TempResult = ImportAsset(GLTF.Textures[i].c_str());
+		if (!TempResult.empty())
 		{
-			textureMap[int(textureMap.size())] = reinterpret_cast<FETexture*>(tempResult[0]);
-			alreadyLoadedTextures[glTF.textures[i]] = reinterpret_cast<FETexture*>(tempResult[0]);
-			result.push_back(tempResult[0]);
+			TextureMap[static_cast<int>(TextureMap.size())] = reinterpret_cast<FETexture*>(TempResult[0]);
+			AlreadyLoadedTextures[GLTF.Textures[i]] = reinterpret_cast<FETexture*>(TempResult[0]);
+			Result.push_back(TempResult[0]);
 		}
 	}
 
-	std::unordered_map<int, FEMaterial*> materialsMap;
-	for (size_t i = 0; i < glTF.materials.size(); i++)
+	std::unordered_map<int, FEMaterial*> MaterialsMap;
+	for (size_t i = 0; i < GLTF.Materials.size(); i++)
 	{
-		FEMaterial* newMaterial = createMaterial(glTF.materials[i].name);
-		materialsMap[int(i)] = newMaterial;
-		newMaterial->shader = getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+		FEMaterial* NewMaterial = CreateMaterial(GLTF.Materials[i].Name);
+		MaterialsMap[static_cast<int>(i)] = NewMaterial;
+		NewMaterial->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 
-		if (textureMap.find(glTF.materials[i].baseColorTexture.index) != textureMap.end() && textureMap[glTF.materials[i].baseColorTexture.index] != nullptr)
+		if (TextureMap.find(GLTF.Materials[i].BaseColorTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].BaseColorTexture.Index] != nullptr)
 		{
-			newMaterial->addTexture(textureMap[glTF.materials[i].baseColorTexture.index]);
-			newMaterial->setAlbedoMap(textureMap[glTF.materials[i].baseColorTexture.index]);
+			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].BaseColorTexture.Index]);
+			NewMaterial->SetAlbedoMap(TextureMap[GLTF.Materials[i].BaseColorTexture.Index]);
 		}
-		else if (glTF.materials[i].baseColor[0] != -1)
+		else if (GLTF.Materials[i].BaseColor[0] != -1)
 		{
-			newMaterial->baseColor = glTF.materials[i].baseColor;
+			NewMaterial->BaseColor = GLTF.Materials[i].BaseColor;
 		}
 
-		if (textureMap.find(glTF.materials[i].metallicRoughnessTexture.index) != textureMap.end() && textureMap[glTF.materials[i].metallicRoughnessTexture.index] != nullptr)
+		if (TextureMap.find(GLTF.Materials[i].MetallicRoughnessTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index] != nullptr)
 		{
 			/*
 				https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/Specification.adoc#reference-material
-				The textures for metalnessand roughness properties are packed together in a single texture called metallicRoughnessTexture.
+				The textures for metalness and roughness properties are packed together in a single texture called metallicRoughnessTexture.
 				Its green channel contains roughness values and its blue channel contains metalness values.
 			*/
-			newMaterial->addTexture(textureMap[glTF.materials[i].metallicRoughnessTexture.index]);
-			newMaterial->setRoughtnessMap(textureMap[glTF.materials[i].metallicRoughnessTexture.index], 1, 0);
-			newMaterial->setMetalnessMap(textureMap[glTF.materials[i].metallicRoughnessTexture.index], 2, 0);
+			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index]);
+			NewMaterial->SetRoughtnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 1, 0);
+			NewMaterial->SetMetalnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 2, 0);
 		}
 
-		if (textureMap.find(glTF.materials[i].normalTexture.index) != textureMap.end() && textureMap[glTF.materials[i].normalTexture.index] != nullptr)
+		if (TextureMap.find(GLTF.Materials[i].NormalTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].NormalTexture.Index] != nullptr)
 		{
-			newMaterial->addTexture(textureMap[glTF.materials[i].normalTexture.index]);
-			newMaterial->setNormalMap(textureMap[glTF.materials[i].normalTexture.index]);
+			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
+			NewMaterial->SetNormalMap(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
 		}
 
-		if (textureMap.find(glTF.materials[i].occlusionTexture.index) != textureMap.end() && textureMap[glTF.materials[i].occlusionTexture.index] != nullptr)
+		if (TextureMap.find(GLTF.Materials[i].OcclusionTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].OcclusionTexture.Index] != nullptr)
 		{
-			newMaterial->addTexture(textureMap[glTF.materials[i].occlusionTexture.index]);
-			newMaterial->setAOMap(textureMap[glTF.materials[i].occlusionTexture.index]);
+			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
+			NewMaterial->SetAOMap(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
 		}
 
-		result.push_back(newMaterial);
+		Result.push_back(NewMaterial);
 	}
 
-	std::unordered_map<int, FEGameModel*> gameModelMap;
-	for (size_t i = 0; i < glTF.primitives.size(); i++)
+	std::unordered_map<int, FEGameModel*> GameModelMap;
+	for (size_t i = 0; i < GLTF.Primitives.size(); i++)
 	{
-		gameModelMap[int(i)] = nullptr;
+		GameModelMap[static_cast<int>(i)] = nullptr;
 		
-		if (glTF.primitives[i].rawData.indices.size() != 0)
+		if (!GLTF.Primitives[i].RawData.Indices.empty())
 		{
-			int UVIndex = 0;
-			if (glTF.primitives[i].material != -1)
+			if (GLTF.Primitives[i].Material != -1)
 			{
-				UVIndex = glTF.materials[glTF.primitives[i].material].baseColorTexture.texCoord;
-				if (glTF.primitives[i].rawData.UVs.size() <= UVIndex)
+				int UVIndex = 0;
+				UVIndex = GLTF.Materials[GLTF.Primitives[i].Material].BaseColorTexture.TexCoord;
+				if (GLTF.Primitives[i].RawData.UVs.size() <= UVIndex)
 					UVIndex = 0;
 			}
 			
-			result.push_back(rawDataToMesh(glTF.primitives[i].rawData.positions,
-										   glTF.primitives[i].rawData.normals,
-										   glTF.primitives[i].rawData.tangents,
-										   glTF.primitives[i].rawData.UVs[0/*UVIndex*/],
-										   glTF.primitives[i].rawData.indices));
+			Result.push_back(RawDataToMesh(GLTF.Primitives[i].RawData.Positions,
+										   GLTF.Primitives[i].RawData.Normals,
+										   GLTF.Primitives[i].RawData.Tangents,
+										   GLTF.Primitives[i].RawData.UVs[0/*UVIndex*/],
+										   GLTF.Primitives[i].RawData.Indices));
 
-			if (glTF.primitives[i].material != -1)
+			if (GLTF.Primitives[i].Material != -1)
 			{
-				FEGameModel* newGameModel = createGameModel(reinterpret_cast<FEMesh*>(result.back()), materialsMap[glTF.primitives[i].material]);
+				FEGameModel* NewGameModel = CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Primitives[i].Material]);
 				//glTF.primitives[i].
 				//newGameModel->setName();
-				gameModelMap[int(i)] = newGameModel;
-				result.push_back(newGameModel);
+				GameModelMap[static_cast<int>(i)] = NewGameModel;
+				Result.push_back(NewGameModel);
 
-				FEPrefab* newPrefab = createPrefab(newGameModel);
-				result.push_back(newPrefab);
+				FEPrefab* NewPrefab = CreatePrefab(NewGameModel);
+				Result.push_back(NewPrefab);
 			}
 		}
 	}
 
-	for (size_t i = 0; i < glTF.entities.size(); i++)
+	for (size_t i = 0; i < GLTF.Entities.size(); i++)
 	{
-		int gameModelIndex = -1;
-		for (size_t j = 0; j < glTF.gameModels.size(); j++)
+		int GameModelIndex = -1;
+		for (size_t j = 0; j < GLTF.GameModels.size(); j++)
 		{
-			if (glTF.gameModels[j].meshParent == glTF.entities[i].mesh)
+			if (GLTF.GameModels[j].MeshParent == GLTF.Entities[i].Mesh)
 			{
-				gameModelIndex = int(j);
+				GameModelIndex = static_cast<int>(j);
 				break;
 			}
 		}
 
-		if (gameModelIndex != -1)
+		if (GameModelIndex != -1)
 		{
-			FEEntity* newEntity = createEntity(gameModelMap[gameModelIndex], glTF.entities[i].name);
-			if (gameModelMap[gameModelIndex] != nullptr)
-				gameModelMap[gameModelIndex]->setName(glTF.entities[i].name);
+			FEEntity* NewEntity = CreateEntity(GameModelMap[GameModelIndex], GLTF.Entities[i].Name);
+			if (GameModelMap[GameModelIndex] != nullptr)
+				GameModelMap[GameModelIndex]->SetName(GLTF.Entities[i].Name);
 
-			newEntity->transform.setPosition(glTF.entities[i].translation);
-			newEntity->transform.setScale(glTF.entities[i].scale);
-			newEntity->transform.setRotation(glTF.entities[i].rotation);
+			NewEntity->Transform.SetPosition(GLTF.Entities[i].Translation);
+			NewEntity->Transform.SetScale(GLTF.Entities[i].Scale);
+			NewEntity->Transform.SetRotation(GLTF.Entities[i].Rotation);
 
-			result.push_back(newEntity);
+			Result.push_back(NewEntity);
 		}
 	}
 
-	return result;
+	return Result;
 }
 
-std::vector<std::string> FEResourceManager::getPrefabList()
+std::vector<std::string> FEResourceManager::GetPrefabList()
 {
-	FE_MAP_TO_STR_VECTOR(prefabs)
+	FE_MAP_TO_STR_VECTOR(Prefabs)
 }
 
-std::vector<std::string> FEResourceManager::getStandardPrefabList()
+std::vector<std::string> FEResourceManager::GetStandardPrefabList()
 {
-	FE_MAP_TO_STR_VECTOR(standardPrefabs)
+	FE_MAP_TO_STR_VECTOR(StandardPrefabs)
 }
 
-FEPrefab* FEResourceManager::getPrefab(std::string ID)
+FEPrefab* FEResourceManager::GetPrefab(const std::string ID)
 {
-	if (prefabs.find(ID) == prefabs.end())
+	if (Prefabs.find(ID) == Prefabs.end())
 	{
-		if (standardPrefabs.find(ID) != standardPrefabs.end())
+		if (StandardPrefabs.find(ID) != StandardPrefabs.end())
 		{
-			return standardPrefabs[ID];
+			return StandardPrefabs[ID];
 		}
 
 		return nullptr;
 	}
 
-	return prefabs[ID];
+	return Prefabs[ID];
 }
 
-std::vector<FEPrefab*> FEResourceManager::getPrefabByName(std::string Name)
+std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name)
 {
 	std::vector<FEPrefab*> result;
 
-	auto it = prefabs.begin();
-	while (it != prefabs.end())
+	auto it = Prefabs.begin();
+	while (it != Prefabs.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -3873,10 +3943,10 @@ std::vector<FEPrefab*> FEResourceManager::getPrefabByName(std::string Name)
 		it++;
 	}
 
-	it = standardPrefabs.begin();
-	while (it != standardPrefabs.end())
+	it = StandardPrefabs.begin();
+	while (it != StandardPrefabs.end())
 	{
-		if (it->second->getName() == Name)
+		if (it->second->GetName() == Name)
 		{
 			result.push_back(it->second);
 		}
@@ -3887,45 +3957,45 @@ std::vector<FEPrefab*> FEResourceManager::getPrefabByName(std::string Name)
 	return result;
 }
 
-FEPrefab* FEResourceManager::createPrefab(FEGameModel* gameModel, std::string Name, std::string forceObjectID)
+FEPrefab* FEResourceManager::CreatePrefab(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
 {
-	if (Name.size() == 0)
+	if (Name.empty())
 		Name = "unnamedPrefab";
 
-	FEPrefab* newPrefab = new FEPrefab();
-	if (forceObjectID != "")
+	FEPrefab* NewPrefab = new FEPrefab();
+	if (!ForceObjectID.empty())
 	{
-		prefabs[forceObjectID] = newPrefab;
-		prefabs[forceObjectID]->setID(forceObjectID);
+		Prefabs[ForceObjectID] = NewPrefab;
+		Prefabs[ForceObjectID]->SetID(ForceObjectID);
 	}
 	else
 	{
-		prefabs[newPrefab->ID] = newPrefab;
+		Prefabs[NewPrefab->ID] = NewPrefab;
 	}
 
-	prefabs[newPrefab->ID]->setName(Name);
-	if (gameModel != nullptr)
+	Prefabs[NewPrefab->ID]->SetName(Name);
+	if (GameModel != nullptr)
 	{
-		prefabs[newPrefab->ID]->components.push_back(new FEPrefabComponent());
-		prefabs[newPrefab->ID]->components.back()->gameModel = gameModel;
+		Prefabs[NewPrefab->ID]->Components.push_back(new FEPrefabComponent());
+		Prefabs[NewPrefab->ID]->Components.back()->GameModel = GameModel;
 	}
 	
-	return prefabs[newPrefab->ID];
+	return Prefabs[NewPrefab->ID];
 }
 
-bool FEResourceManager::makePrefabStandard(FEPrefab* prefab)
+bool FEResourceManager::MakePrefabStandard(FEPrefab* Prefab)
 {
-	if (prefab == nullptr)
+	if (Prefab == nullptr)
 	{
-		LOG.add("prefab is nullptr in function FEResourceManager::makePrefabStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("prefab is nullptr in function FEResourceManager::makePrefabStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	if (standardPrefabs.find(prefab->getObjectID()) == standardPrefabs.end())
+	if (StandardPrefabs.find(Prefab->GetObjectID()) == StandardPrefabs.end())
 	{
-		if (prefabs.find(prefab->getObjectID()) != prefabs.end())
-			prefabs.erase(prefab->getObjectID());
-		standardPrefabs[prefab->getObjectID()] = prefab;
+		if (Prefabs.find(Prefab->GetObjectID()) != Prefabs.end())
+			Prefabs.erase(Prefab->GetObjectID());
+		StandardPrefabs[Prefab->GetObjectID()] = Prefab;
 
 		return true;
 	}
@@ -3933,15 +4003,15 @@ bool FEResourceManager::makePrefabStandard(FEPrefab* prefab)
 	return false;
 }
 
-void FEResourceManager::deletePrefab(FEPrefab* prefab)
+void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
 {
-	prefabs.erase(prefab->getObjectID());
-	delete prefab;
+	Prefabs.erase(Prefab->GetObjectID());
+	delete Prefab;
 }
 
-void FEResourceManager::loadStandardPrefabs()
+void FEResourceManager::LoadStandardPrefabs()
 {
-	FEPrefab* newPrefab = new FEPrefab(getGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
-	newPrefab->setID("4575527C773848040760656F");
-	makePrefabStandard(newPrefab);
+	FEPrefab* NewPrefab = new FEPrefab(GetGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
+	NewPrefab->SetID("4575527C773848040760656F");
+	MakePrefabStandard(NewPrefab);
 }

@@ -1,80 +1,80 @@
 #include "FEFileSystem.h"
 using namespace FocalEngine;
-FEFileSystem* FEFileSystem::_instance = nullptr;
+FEFileSystem* FEFileSystem::Instance = nullptr;
 FEFileSystem::FEFileSystem() {}
 FEFileSystem::~FEFileSystem() {}
 
-bool FEFileSystem::checkFile(const char* path)
+bool FEFileSystem::CheckFile(const char* Path)
 {
-	DWORD dwAttrib = GetFileAttributesA(path);
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-		!(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+	const DWORD DwAttrib = GetFileAttributesA(Path);
+	return (DwAttrib != INVALID_FILE_ATTRIBUTES &&
+		!(DwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-bool FEFileSystem::isFolder(const char* path)
+bool FEFileSystem::IsFolder(const char* Path)
 {
-	DWORD dwAttrib = GetFileAttributesA(path);
-	return (dwAttrib != INVALID_FILE_ATTRIBUTES &&
-		(dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+	const DWORD DwAttrib = GetFileAttributesA(Path);
+	return (DwAttrib != INVALID_FILE_ATTRIBUTES &&
+		(DwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-bool FEFileSystem::createFolder(const char* path)
+bool FEFileSystem::CreateFolder(const char* Path)
 {
-	return (_mkdir(path) != 0);
+	return (_mkdir(Path) != 0);
 }
 
-bool FEFileSystem::deleteFolder(const char* path)
+bool FEFileSystem::DeleteFolder(const char* Path)
 {
-	return (_rmdir(path) == 0);
+	return (_rmdir(Path) == 0);
 }
 
-bool FEFileSystem::changeFileName(const char* path, const char* newPath)
+bool FEFileSystem::ChangeFileName(const char* Path, const char* NewPath)
 {
-	int result = rename(path, newPath);
+	const int result = rename(Path, NewPath);
 	return result == 0 ? true : false;
 }
 
-bool FEFileSystem::deleteFile(const char* path)
+bool FEFileSystem::DeleteFile(const char* Path)
 {
-	int result = remove(path);
+	const int result = remove(Path);
 	return result == 0 ? true : false;
 }
 
-std::vector<std::string> FEFileSystem::getFolderList(const char* path)
+std::vector<std::string> FEFileSystem::GetFolderList(const char* Path)
 {
 	std::vector<std::string> result;
-	std::string pattern(path);
+	std::string pattern(Path);
 	pattern.append("\\*");
 	WIN32_FIND_DATAA data;
-	HANDLE hFind;
-	if ((hFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	HANDLE HFind;
+	if ((HFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if (isFolder((path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
+			if (IsFolder((Path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
 				result.push_back(data.cFileName);
-		} while (FindNextFileA(hFind, &data) != 0);
-		FindClose(hFind);
+		} while (FindNextFileA(HFind, &data) != 0);
+		FindClose(HFind);
 	}
 
 	return result;
 }
 
-std::vector<std::string> FEFileSystem::getFileList(const char* path)
+std::vector<std::string> FEFileSystem::GetFileList(const char* Path)
 {
 	std::vector<std::string> result;
-	std::string pattern(path);
+	std::string pattern(Path);
 	pattern.append("\\*");
 	WIN32_FIND_DATAA data;
-	HANDLE hFind;
-	if ((hFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	HANDLE HFind;
+	if ((HFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
-			if (!isFolder((path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
+			if (!IsFolder((Path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
 				result.push_back(data.cFileName);
-		} while (FindNextFileA(hFind, &data) != 0);
-		FindClose(hFind);
+		} while (FindNextFileA(HFind, &data) != 0);
+		FindClose(HFind);
 	}
 
 	return result;
@@ -82,173 +82,173 @@ std::vector<std::string> FEFileSystem::getFileList(const char* path)
 
 #ifdef FE_WIN_32
 // open dialog staff
-std::string FEFileSystem::PWSTRtoString(PWSTR wString)
+std::string FEFileSystem::PWSTRtoString(const PWSTR WString)
 {
-	std::wstring wFileName = wString;
-	char* szTo = new char[wFileName.length() + 1];
-	szTo[wFileName.size()] = '\0';
-	WideCharToMultiByte(CP_ACP, 0, wFileName.c_str(), -1, szTo, (int)wFileName.length(), NULL, NULL);
-	std::string result = szTo;
-	delete[] szTo;
+	const std::wstring WFileName = WString;
+	char* SzTo = new char[WFileName.length() + 1];
+	SzTo[WFileName.size()] = '\0';
+	WideCharToMultiByte(CP_ACP, 0, WFileName.c_str(), -1, SzTo, static_cast<int>(WFileName.length()), nullptr, nullptr);
+	std::string result = SzTo;
+	delete[] SzTo;
 
 	return result;
 }
 
-void FEFileSystem::showFileOpenDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
+void FEFileSystem::ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount)
 {
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
 	{
-		IFileOpenDialog* pFileOpen;
+		IFileOpenDialog* PFileOpen;
 		// Create the FileOpenDialog object.
-		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+		hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&PFileOpen));
 
 		if (SUCCEEDED(hr))
 		{
-			hr = pFileOpen->SetFileTypes(filterCount, filter);
+			hr = PFileOpen->SetFileTypes(FilterCount, Filter);
 			// Show the Open dialog box.
-			hr = pFileOpen->Show(NULL);
+			hr = PFileOpen->Show(nullptr);
 
 			// Get the file name from the dialog box.
 			if (SUCCEEDED(hr))
 			{
-				IShellItem* pItem;
-				hr = pFileOpen->GetResult(&pItem);
+				IShellItem* PItem;
+				hr = PFileOpen->GetResult(&PItem);
 				if (SUCCEEDED(hr))
 				{
-					PWSTR pszFilePath;
-					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					PWSTR PszFilePath;
+					hr = PItem->GetDisplayName(SIGDN_FILESYSPATH, &PszFilePath);
 
 					// Display the file name to the user.
 					if (SUCCEEDED(hr))
 					{
-						path = PWSTRtoString(pszFilePath);
-						CoTaskMemFree(pszFilePath);
+						Path = PWSTRtoString(PszFilePath);
+						CoTaskMemFree(PszFilePath);
 					}
-					pItem->Release();
+					PItem->Release();
 				}
 			}
-			pFileOpen->Release();
+			PFileOpen->Release();
 		}
 		CoUninitialize();
 	}
 }
 
-void FEFileSystem::showFileSaveDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount)
+void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount)
 {
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
 	{
-		IFileSaveDialog* pFileSave;
+		IFileSaveDialog* PFileSave;
 		// Create the FileSaveDialog object.
-		hr = CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_ALL, IID_IFileSaveDialog, reinterpret_cast<void**>(&pFileSave));
+		hr = CoCreateInstance(CLSID_FileSaveDialog, nullptr, CLSCTX_ALL, IID_IFileSaveDialog, reinterpret_cast<void**>(&PFileSave));
 
 		if (SUCCEEDED(hr))
 		{
-			hr = pFileSave->SetFileTypes(filterCount, filter);
+			hr = PFileSave->SetFileTypes(FilterCount, Filter);
 			// Show the Save dialog box.
-			hr = pFileSave->Show(NULL);
+			hr = PFileSave->Show(nullptr);
 
 			// Get the file name from the dialog box.
 			if (SUCCEEDED(hr))
 			{
-				IShellItem* pItem;
-				hr = pFileSave->GetResult(&pItem);
+				IShellItem* PItem;
+				hr = PFileSave->GetResult(&PItem);
 				if (SUCCEEDED(hr))
 				{
-					PWSTR pszFilePath;
-					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+					PWSTR PszFilePath;
+					hr = PItem->GetDisplayName(SIGDN_FILESYSPATH, &PszFilePath);
 
 					// Display the file name to the user.
 					if (SUCCEEDED(hr))
 					{
-						path = PWSTRtoString(pszFilePath);
-						CoTaskMemFree(pszFilePath);
+						Path = PWSTRtoString(PszFilePath);
+						CoTaskMemFree(PszFilePath);
 					}
-					pItem->Release();
+					PItem->Release();
 				}
 			}
-			pFileSave->Release();
+			PFileSave->Release();
 		}
 		CoUninitialize();
 	}
 }
 
-void FEFileSystem::showFolderOpenDialog(std::string& path)
+void FEFileSystem::ShowFolderOpenDialog(std::string& Path)
 {
-	HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
 	{
-		IFileDialog* pFolderOpen;
+		IFileDialog* PFolderOpen;
 		// Create the FileOpenDialog object.
-		hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFolderOpen));
+		hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&PFolderOpen));
 
 		if (SUCCEEDED(hr))
 		{
-			DWORD dwOptions;
-			if (SUCCEEDED(pFolderOpen->GetOptions(&dwOptions)))
-				pFolderOpen->SetOptions(dwOptions | FOS_PICKFOLDERS);
+			DWORD DwOptions;
+			if (SUCCEEDED(PFolderOpen->GetOptions(&DwOptions)))
+				PFolderOpen->SetOptions(DwOptions | FOS_PICKFOLDERS);
 
-			hr = pFolderOpen->SetFileTypes(0, nullptr);
+			hr = PFolderOpen->SetFileTypes(0, nullptr);
 			// Show the Open dialog box.
-			hr = pFolderOpen->Show(NULL);
+			hr = PFolderOpen->Show(nullptr);
 
 			// Get the file name from the dialog box.
 			if (SUCCEEDED(hr))
 			{
-				IShellItem* pItem;
-				hr = pFolderOpen->GetResult(&pItem);
+				IShellItem* PItem;
+				hr = PFolderOpen->GetResult(&PItem);
 				if (SUCCEEDED(hr))
 				{
-					PWSTR pszFolderPath;
-					hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFolderPath);
+					PWSTR PszFolderPath;
+					hr = PItem->GetDisplayName(SIGDN_FILESYSPATH, &PszFolderPath);
 
 					// Display the file name to the user.
 					if (SUCCEEDED(hr))
 					{
-						path = PWSTRtoString(pszFolderPath);
-						CoTaskMemFree(pszFolderPath);
+						Path = PWSTRtoString(PszFolderPath);
+						CoTaskMemFree(PszFolderPath);
 					}
-					pItem->Release();
+					PItem->Release();
 				}
 			}
-			pFolderOpen->Release();
+			PFolderOpen->Release();
 		}
 		CoUninitialize();
 	}
 }
 
-std::string FEFileSystem::getFileExtension(const char* path)
+std::string FEFileSystem::GetFileExtension(const char* Path)
 {
 	// Should I use _splitpath_s ?
-	if (!checkFile(path))
+	if (!CheckFile(Path))
 		return "";
 
-	LPSTR extension = PathFindExtensionA(path);
+	const LPSTR extension = PathFindExtensionA(Path);
 	return std::string(extension);
 }
 
-std::string FEFileSystem::getApplicationPath()
+std::string FEFileSystem::GetApplicationPath()
 {
 	char buffer[MAX_PATH] = { 0 };
-	GetModuleFileNameA(NULL, buffer, MAX_PATH);
+	GetModuleFileNameA(nullptr, buffer, MAX_PATH);
 	return buffer;
 }
 
 #endif
 
-char* FEFileSystem::getDirectoryPath(const char* fullPath)
+char* FEFileSystem::GetDirectoryPath(const char* FullPath)
 {
 	char* result = new char[1024];
-	_splitpath_s(fullPath, nullptr, 0, result, 1024, nullptr, 0, nullptr, 0);
+	_splitpath_s(FullPath, nullptr, 0, result, 1024, nullptr, 0, nullptr, 0);
 
 	return result;
 }
 
-char* FEFileSystem::getFileName(const char* fullPath)
+char* FEFileSystem::GetFileName(const char* FullPath)
 {
 	char* result = new char[1024];
-	_splitpath_s(fullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
+	_splitpath_s(FullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
 
 	return result;
 }

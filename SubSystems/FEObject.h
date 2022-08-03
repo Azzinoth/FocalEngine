@@ -7,7 +7,7 @@
 
 namespace FocalEngine
 {
-	enum FEObjectType
+	enum FE_OBJECT_TYPE
 	{
 		FE_NULL = 0,
 		FE_SHADER = 1,
@@ -43,97 +43,80 @@ namespace FocalEngine
 		friend FEScene;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
-		FEObject* getFEObject(std::string ID);
+		FEObject* GetFEObject(std::string ID);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjectManager)
-		std::unordered_map<std::string, FEObject*> allObjects;
-		std::vector<std::unordered_map<std::string, FEObject*>> objectsByType;
+		std::unordered_map<std::string, FEObject*> AllObjects;
+		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
 	};
 
-	static std::string FEObjectTypeToString(FEObjectType type)
+	static std::string FEObjectTypeToString(const FE_OBJECT_TYPE Type)
 	{
-		switch (type)
+		switch (Type)
 		{
 			case FocalEngine::FE_NULL:
 			{
 				return "FE_NULL";
-				break;
 			}
 			case FocalEngine::FE_SHADER:
 			{
 				return "FE_SHADER";
-				break;
 			}
 			case FocalEngine::FE_TEXTURE:
 			{
 				return "FE_TEXTURE";
-				break;
 			}
 			case FocalEngine::FE_MESH:
 			{
 				return "FE_MESH";
-				break;
 			}
 			case FocalEngine::FE_MATERIAL:
 			{
 				return "FE_MATERIAL";
-				break;
 			}
 			case FocalEngine::FE_GAMEMODEL:
 			{
 				return "FE_GAMEMODEL";
-				break;
 			}
 			case FocalEngine::FE_ENTITY:
 			{
 				return "FE_ENTITY";
-				break;
 			}
-			
 			case FocalEngine::FE_TERRAIN:
 			{
 				return "FE_TERRAIN";
-				break;
 			}
 			case FocalEngine::FE_ENTITY_INSTANCED:
 			{
 				return "FE_ENTITY_INSTANCED";
-				break;
 			}
 			case FocalEngine::FE_DIRECTIONAL_LIGHT:
 			{
 				return "FE_DIRECTIONAL_LIGHT";
-				break;
 			}
 			case FocalEngine::FE_POINT_LIGHT:
 			{
 				return "FE_POINT_LIGHT";
-				break;
 			}
 			case FocalEngine::FE_SPOT_LIGHT:
 			{
 				return "FE_SPOT_LIGHT";
-				break;
 			}
 			case FocalEngine::FE_CAMERA:
 			{
 				return "FE_CAMERA";
-				break;
 			}
 			case FocalEngine::FE_FRAME_BUFFER:
 			{
 				return "FE_FRAME_BUFFER";
-				break;
 			}
 			case FocalEngine::FE_POST_PROCESS:
 			{
 				return "FE_POST_PROCESS";
-				break;
 			}
 			case FocalEngine::FE_PREFAB:
 			{
 				return "FE_PREFAB";
-				break;
 			}
 			default:
 				break;
@@ -166,32 +149,32 @@ namespace FocalEngine
 		friend FEResourceManager;
 		friend FEScene;
 	public:
-		FEObject(FEObjectType objectType, std::string objectName);
+		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();
 
-		std::string getObjectID() const;
-		FEObjectType getType() const;
+		std::string GetObjectID() const;
+		FE_OBJECT_TYPE GetType() const;
 
-		bool getDirtyFlag();
-		void setDirtyFlag(bool newDirtyFlag);
+		bool IsDirty() const;
+		void SetDirtyFlag(bool NewValue);
 
-		std::string getName();
-		void setName(std::string newName);
-		int getNameHash();
+		std::string GetName();
+		void SetName(std::string NewValue);
+		int GetNameHash() const;
 
-		void setIDOfUnTyped(std::string newID);
+		void SetIDOfUnTyped(std::string NewValue);
 	private:
-		std::string ID = "";
-		FEObjectType type = FE_NULL;
-		bool dirtyFlag = false;
+		std::string ID;
+		FE_OBJECT_TYPE Type = FE_NULL;
+		bool bDirtyFlag = false;
 
-		std::string name;
-		int nameHash = 0;
-		void setID(std::string newID);
-		void setType(FEObjectType newType);
+		std::string Name;
+		int NameHash = 0;
+		void SetID(std::string NewValue);
+		void SetType(FE_OBJECT_TYPE NewValue);
 	protected:
-		std::vector<std::string> callListOnDeleteFEObject;
-		virtual void processOnDeleteCallbacks(std::string deletingFEObject);
+		std::vector<std::string> CallListOnDeleteFEObject;
+		virtual void ProcessOnDeleteCallbacks(std::string DeletingFEObject);
 	};
 
 	#define OBJECT_MANAGER FEObjectManager::getInstance()

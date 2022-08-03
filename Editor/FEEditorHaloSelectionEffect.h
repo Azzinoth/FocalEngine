@@ -14,12 +14,12 @@ private:
 	SINGLETON_PUBLIC_PART(FEEditorHaloSelectionEffect)
 	SINGLETON_PRIVATE_PART(FEEditorHaloSelectionEffect)
 
-	void initializeResources();
-	void reInitializeResources();
+	void InitializeResources();
+	void ReInitializeResources();
 
-	FEFramebuffer* haloObjectsFB = nullptr;
-	FEMaterial* haloMaterial = nullptr;
-	FEPostProcess* postProcess = nullptr;
+	FEFramebuffer* HaloObjectsFb = nullptr;
+	FEMaterial* HaloMaterial = nullptr;
+	FEPostProcess* PostProcess = nullptr;
 
 	FEShader* HaloDrawInstancedObjectShader = nullptr;
 	FEShader* HaloDrawObjectShader = nullptr;

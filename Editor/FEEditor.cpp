@@ -1,17 +1,17 @@
 #include "../Editor/FEEditor.h"
 
-FEEditor* FEEditor::_instance = nullptr;
-ImGuiWindow* FEEditor::sceneWindow = nullptr;
-FEEntity* FEEditor::entityToModify = nullptr;
+FEEditor* FEEditor::Instance = nullptr;
+ImGuiWindow* FEEditor::SceneWindow = nullptr;
+FEEntity* FEEditor::EntityToModify = nullptr;
 
-bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
+bool SceneWindowDragAndDropCallBack(FEObject* Object, void** UserData)
 {
-	if (object->getType() == FE_PREFAB)
+	if (Object->GetType() == FE_PREFAB)
 	{
-		FEEntity* newEntity = SCENE.addEntity(RESOURCE_MANAGER.getPrefab(object->getObjectID()));
-		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-		SELECTED.setSelected(newEntity);
-		PROJECT_MANAGER.getCurrent()->setModified(true);
+		FEEntity* NewEntity = SCENE.AddEntity(RESOURCE_MANAGER.GetPrefab(Object->GetObjectID()));
+		NewEntity->Transform.SetPosition(ENGINE.GetCamera()->GetPosition() + ENGINE.GetCamera()->GetForward() * 10.0f);
+		SELECTED.SetSelected(NewEntity);
+		PROJECT_MANAGER.GetCurrent()->SetModified(true);
 
 		return true;
 	}
@@ -19,334 +19,337 @@ bool sceneWindowDragAndDropCallBack(FEObject* object, void** userDat)
 	return false;
 }
 
-static void createNewInstancedEntityCallBack(std::vector<FEObject*> selectionsResult)
+static void CreateNewInstancedEntityCallBack(const std::vector<FEObject*> SelectionsResult)
 {
-	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	if (SelectionsResult.size() == 1 && SelectionsResult[0]->GetType() == FE_PREFAB)
 	{
-		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
-		if (selectedPrefab == nullptr)
+		FEPrefab* SelectedPrefab = RESOURCE_MANAGER.GetPrefab(SelectionsResult[0]->GetObjectID());
+		if (SelectedPrefab == nullptr)
 			return;
 
-		FEEntityInstanced* newEntity = SCENE.addEntityInstanced(selectedPrefab);
-		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-		SELECTED.setSelected(newEntity);
+		FEEntityInstanced* NewEntity = SCENE.AddEntityInstanced(SelectedPrefab);
+		NewEntity->Transform.SetPosition(ENGINE.GetCamera()->GetPosition() + ENGINE.GetCamera()->GetForward() * 10.0f);
+		SELECTED.SetSelected(NewEntity);
 		
-		PROJECT_MANAGER.getCurrent()->setModified(true);
+		PROJECT_MANAGER.GetCurrent()->SetModified(true);
 	}
 }
 
-static void createNewEntityCallBack(std::vector<FEObject*> selectionsResult)
+static void CreateNewEntityCallBack(const std::vector<FEObject*> SelectionsResult)
 {
-	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	if (SelectionsResult.size() == 1 && SelectionsResult[0]->GetType() == FE_PREFAB)
 	{
-		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
-		if (selectedPrefab == nullptr)
+		FEPrefab* SelectedPrefab = RESOURCE_MANAGER.GetPrefab(SelectionsResult[0]->GetObjectID());
+		if (SelectedPrefab == nullptr)
 			return;
 
-		FEEntity* newEntity = SCENE.addEntity(selectedPrefab);
-		newEntity->transform.setPosition(ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-		SELECTED.setSelected(newEntity);
+		FEEntity* NewEntity = SCENE.AddEntity(SelectedPrefab);
+		NewEntity->Transform.SetPosition(ENGINE.GetCamera()->GetPosition() + ENGINE.GetCamera()->GetForward() * 10.0f);
+		SELECTED.SetSelected(NewEntity);
 
-		PROJECT_MANAGER.getCurrent()->setModified(true);
+		PROJECT_MANAGER.GetCurrent()->SetModified(true);
 	}
 }
 
-void FEEditor::changePrefabOfEntityCallBack(std::vector<FEObject*> selectionsResult)
+void FEEditor::ChangePrefabOfEntityCallBack(const std::vector<FEObject*> SelectionsResult)
 {
-	if (FEEditor::entityToModify == nullptr)
+	if (EntityToModify == nullptr)
 		return;
 
-	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_PREFAB)
+	if (SelectionsResult.size() == 1 && SelectionsResult[0]->GetType() == FE_PREFAB)
 	{
-		FEPrefab* selectedPrefab = RESOURCE_MANAGER.getPrefab(selectionsResult[0]->getObjectID());
-		if (selectedPrefab == nullptr)
+		FEPrefab* SelectedPrefab = RESOURCE_MANAGER.GetPrefab(SelectionsResult[0]->GetObjectID());
+		if (SelectedPrefab == nullptr)
 			return;
 
-		FEEditor::entityToModify->prefab = selectedPrefab;
+		EntityToModify->Prefab = SelectedPrefab;
 	}
 }
 
 FEEditor::FEEditor()
 {
-	ENGINE.setRenderTargetMode(FE_CUSTOM_MODE);
+	ENGINE.SetRenderTargetMode(FE_CUSTOM_MODE);
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+	ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 
-	strcpy_s(filterForResourcesContentBrowser, "");
-	strcpy_s(filterForSceneEntities, "");
+	strcpy_s(FilterForResourcesContentBrowser, "");
+	strcpy_s(FilterForSceneEntities, "");
 }
 
 FEEditor::~FEEditor() {}
 
-double FEEditor::getLastMouseX()
+double FEEditor::GetLastMouseX() const
 {
-	return lastMouseX;
+	return LastMouseX;
 }
 
-double FEEditor::getLastMouseY()
+double FEEditor::GetLastMouseY() const
 {
-	return lastMouseY;
+	return LastMouseY;
 }
 
-double FEEditor::getMouseX()
+double FEEditor::GetMouseX() const
 {
-	return mouseX;
+	return MouseX;
 }
 
-double FEEditor::getMouseY()
+double FEEditor::GetMouseY() const
 {
-	return mouseY;
+	return MouseY;
 }
 
-void FEEditor::setLastMouseX(double newValue)
+void FEEditor::SetLastMouseX(const double NewValue)
 {
-	lastMouseX = newValue;
+	LastMouseX = NewValue;
 }
 
-void FEEditor::setLastMouseY(double newValue)
+void FEEditor::SetLastMouseY(const double NewValue)
 {
-	lastMouseY = newValue;
+	LastMouseY = NewValue;
 }
 
-void FEEditor::setMouseX(double newValue)
+void FEEditor::SetMouseX(const double NewValue)
 {
-	mouseX = newValue;
+	MouseX = NewValue;
 }
 
-void FEEditor::setMouseY(double newValue)
+void FEEditor::SetMouseY(const double NewValue)
 {
-	mouseY = newValue;
+	MouseY = NewValue;
 }
 
-std::string FEEditor::getObjectNameInClipboard()
+std::string FEEditor::GetObjectNameInClipboard()
 {
-	return objectNameInClipboard;
+	return ObjectNameInClipboard;
 }
 
-void FEEditor::setObjectNameInClipboard(std::string newValue)
+void FEEditor::SetObjectNameInClipboard(const std::string NewValue)
 {
-	objectNameInClipboard = newValue;
+	ObjectNameInClipboard = NewValue;
 }
 
-void FEEditor::mouseButtonCallback(int button, int action, int mods)
+void FEEditor::MouseButtonCallback(const int Button, const int Action, int Mods)
 {
-	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr && FEEditor::sceneWindow != nullptr)
+	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr && FEEditor::SceneWindow != nullptr)
 	{
-		EDITOR.sceneWindowHovered = ImGui::GetCurrentContext()->HoveredWindow->Name == EDITOR.sceneWindow->Name;
+		EDITOR.bSceneWindowHovered = ImGui::GetCurrentContext()->HoveredWindow->Name == EDITOR.SceneWindow->Name;
 	}
 	else
 	{
-		EDITOR.sceneWindowHovered = false;
+		EDITOR.bSceneWindowHovered = false;
 	}
 	
-	if (FEEditor::sceneWindow == nullptr || !FEEditor::sceneWindow->Active)
-		EDITOR.sceneWindowHovered = false;
+	if (FEEditor::SceneWindow == nullptr || !FEEditor::SceneWindow->Active)
+		EDITOR.bSceneWindowHovered = false;
 
-	if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
-		DRAG_AND_DROP_MANAGER.dropAction();
+	if (Button == GLFW_MOUSE_BUTTON_1 && Action == GLFW_RELEASE)
+		DRAG_AND_DROP_MANAGER.DropAction();
 
-	if (ImGui::GetIO().WantCaptureMouse && !EDITOR.sceneWindowHovered)
+	if (ImGui::GetIO().WantCaptureMouse && !EDITOR.bSceneWindowHovered)
 	{
-		EDITOR.isCameraInputActive = false;
-		ENGINE.getCamera()->setIsInputActive(false);
+		EDITOR.bIsCameraInputActive = false;
+		ENGINE.GetCamera()->SetIsInputActive(false);
 
 		return;
 	}
 
-	if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS)
+	if (Button == GLFW_MOUSE_BUTTON_1 && Action == GLFW_PRESS)
 	{
-		bool editingTerrain = false;
-		if (SELECTED.getTerrain() != nullptr)
+		bool bEditingTerrain = false;
+		if (SELECTED.GetTerrain() != nullptr)
 		{
-			editingTerrain = SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE;
+			bEditingTerrain = SELECTED.GetTerrain()->GetBrushMode() != FE_TERRAIN_BRUSH_NONE;
 		}
 		
-		if (!editingTerrain)
+		if (!bEditingTerrain)
 		{
-			SELECTED.determineEntityUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
-			SELECTED.checkForSelectionisNeeded = true;
+			SELECTED.DetermineEntityUnderMouse(EDITOR.GetMouseX(), EDITOR.GetMouseY());
+			SELECTED.CheckForSelectionisNeeded = true;
 		}
 		
-		EDITOR.leftMousePressed = true;
+		EDITOR.bLeftMousePressed = true;
 	}
-	else if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE)
+	else if (Button == GLFW_MOUSE_BUTTON_1 && Action == GLFW_RELEASE)
 	{
-		EDITOR.leftMousePressed = false;
-		GIZMO_MANAGER.deactivateAllGizmo();
+		EDITOR.bLeftMousePressed = false;
+		GIZMO_MANAGER.DeactivateAllGizmo();
 	}
 
-	if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS)
+	if (Button == GLFW_MOUSE_BUTTON_2 && Action == GLFW_PRESS)
 	{
-		EDITOR.isCameraInputActive = true;
-		ENGINE.getCamera()->setIsInputActive(true);
+		EDITOR.bIsCameraInputActive = true;
+		ENGINE.GetCamera()->SetIsInputActive(true);
 	}
-	else if (button == GLFW_MOUSE_BUTTON_2 && action == GLFW_RELEASE)
+	else if (Button == GLFW_MOUSE_BUTTON_2 && Action == GLFW_RELEASE)
 	{
-		EDITOR.isCameraInputActive = false;
-		ENGINE.getCamera()->setIsInputActive(false);
+		EDITOR.bIsCameraInputActive = false;
+		ENGINE.GetCamera()->SetIsInputActive(false);
 	}
 }
 
-void FEEditor::keyButtonCallback(int key, int scancode, int action, int mods)
+void FEEditor::KeyButtonCallback(int Key, int Scancode, int Action, int Mods)
 {
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+	if (Key == GLFW_KEY_ESCAPE && Action == GLFW_PRESS)
 	{
-		if (FEEditor::getInstance().isInGameMode())
+		if (FEEditor::getInstance().IsInGameMode())
 		{
-			FEEditor::getInstance().setGameMode(false);
+			FEEditor::getInstance().SetGameMode(false);
 		}
 		else
 		{
-			if (PROJECT_MANAGER.getCurrent() == nullptr)
-				ENGINE.terminate();
-			projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), true);
+			if (PROJECT_MANAGER.GetCurrent() == nullptr)
+				ENGINE.Terminate();
+			projectWasModifiedPopUp::getInstance().Show(PROJECT_MANAGER.GetCurrent(), true);
 		}
 	}
 
-	if (!ImGui::GetIO().WantCaptureKeyboard && key == GLFW_KEY_DELETE)
+	if (!ImGui::GetIO().WantCaptureKeyboard && Key == GLFW_KEY_DELETE)
 	{
-		if (SELECTED.getSelected() != nullptr && SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED)
+		if (SELECTED.GetSelected() != nullptr && SELECTED.GetSelected()->GetType() == FE_ENTITY_INSTANCED)
 		{
-			if (SELECTED.instancedSubObjectIndexSelected != -1)
+			if (SELECTED.InstancedSubObjectIndexSelected != -1)
 			{
-				FEEntityInstanced* selectedEntityInstanced = SCENE.getEntityInstanced(SELECTED.getSelected()->getObjectID());
-				selectedEntityInstanced->deleteInstance(SELECTED.instancedSubObjectIndexSelected);
-				SELECTED.clear();
-				PROJECT_MANAGER.getCurrent()->setModified(true);
+				FEEntityInstanced* SelectedEntityInstanced = SCENE.GetEntityInstanced(SELECTED.GetSelected()->GetObjectID());
+				SelectedEntityInstanced->DeleteInstance(SELECTED.InstancedSubObjectIndexSelected);
+				SELECTED.Clear();
+				PROJECT_MANAGER.GetCurrent()->SetModified(true);
 			}
 		}
 
-		if (SELECTED.getEntity() != nullptr)
+		if (SELECTED.GetEntity() != nullptr)
 		{
-			SCENE.deleteEntity(SELECTED.getEntity()->getObjectID());
-			SELECTED.clear();
-			PROJECT_MANAGER.getCurrent()->setModified(true);
+			SCENE.DeleteEntity(SELECTED.GetEntity()->GetObjectID());
+			SELECTED.Clear();
+			PROJECT_MANAGER.GetCurrent()->SetModified(true);
 		}
-		else if (SELECTED.getTerrain() != nullptr)
+		else if (SELECTED.GetTerrain() != nullptr)
 		{
-			SCENE.deleteTerrain(SELECTED.getTerrain()->getObjectID());
-			SELECTED.clear();
-			PROJECT_MANAGER.getCurrent()->setModified(true);
-		}
-	}
-
-	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_C && action == GLFW_RELEASE)
-	{
-		if (SELECTED.getEntity() != nullptr)
-			EDITOR.setObjectNameInClipboard(SELECTED.getEntity()->getObjectID());
-	}
-
-	if (!ImGui::GetIO().WantCaptureKeyboard && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_V && action == GLFW_RELEASE)
-	{
-		if (EDITOR.getObjectNameInClipboard() != "")
-		{
-			FEEntity* newEntity = SCENE.addEntity(SCENE.getEntity(EDITOR.getObjectNameInClipboard())->prefab, "");
-			newEntity->transform = SCENE.getEntity(EDITOR.getObjectNameInClipboard())->transform;
-			newEntity->transform.setPosition(newEntity->transform.getPosition() * 1.1f);
-			SELECTED.setSelected(newEntity);
+			SCENE.DeleteTerrain(SELECTED.GetTerrain()->GetObjectID());
+			SELECTED.Clear();
+			PROJECT_MANAGER.GetCurrent()->SetModified(true);
 		}
 	}
 
-	if (!ImGui::GetIO().WantCaptureKeyboard && (key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE)
+	if (!ImGui::GetIO().WantCaptureKeyboard && Mods == GLFW_MOD_CONTROL && Key == GLFW_KEY_C && Action == GLFW_RELEASE)
 	{
-		int newState = GIZMO_MANAGER.gizmosState + 1;
-		if (newState > 2)
-			newState = 0;
-		GIZMO_MANAGER.updateGizmoState(newState);
+		if (SELECTED.GetEntity() != nullptr)
+			EDITOR.SetObjectNameInClipboard(SELECTED.GetEntity()->GetObjectID());
 	}
 
-	if (!ImGui::GetIO().WantCaptureKeyboard && (key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_RELEASE)
+	if (!ImGui::GetIO().WantCaptureKeyboard && Mods == GLFW_MOD_CONTROL && Key == GLFW_KEY_V && Action == GLFW_RELEASE)
 	{
-		EDITOR.shiftPressed = false;
+		if (!EDITOR.GetObjectNameInClipboard().empty())
+		{
+			FEEntity* NewEntity = SCENE.AddEntity(SCENE.GetEntity(EDITOR.GetObjectNameInClipboard())->Prefab, "");
+			NewEntity->Transform = SCENE.GetEntity(EDITOR.GetObjectNameInClipboard())->Transform;
+			NewEntity->Transform.SetPosition(NewEntity->Transform.GetPosition() * 1.1f);
+			SELECTED.SetSelected(NewEntity);
+		}
 	}
-	else if (!ImGui::GetIO().WantCaptureKeyboard && (key == GLFW_KEY_RIGHT_SHIFT || key == GLFW_KEY_LEFT_SHIFT) && action == GLFW_PRESS)
+
+	if (!ImGui::GetIO().WantCaptureKeyboard && (Key == GLFW_KEY_RIGHT_SHIFT || Key == GLFW_KEY_LEFT_SHIFT) && Action == GLFW_RELEASE)
 	{
-		EDITOR.shiftPressed = true;
+		int NewState = GIZMO_MANAGER.GizmosState + 1;
+		if (NewState > 2)
+			NewState = 0;
+		GIZMO_MANAGER.UpdateGizmoState(NewState);
+	}
+
+	if (!ImGui::GetIO().WantCaptureKeyboard && (Key == GLFW_KEY_RIGHT_SHIFT || Key == GLFW_KEY_LEFT_SHIFT) && Action == GLFW_RELEASE)
+	{
+		EDITOR.bShiftPressed = false;
+	}
+	else if (!ImGui::GetIO().WantCaptureKeyboard && (Key == GLFW_KEY_RIGHT_SHIFT || Key == GLFW_KEY_LEFT_SHIFT) && Action == GLFW_PRESS)
+	{
+		EDITOR.bShiftPressed = true;
 	}
 }
 
-void FEEditor::showTransformConfiguration(FEObject* object, FETransformComponent* transform)
+void FEEditor::ShowTransformConfiguration(FEObject* Object, FETransformComponent* Transform) const
 {
 	// ********************* POSITION *********************
-	glm::vec3 position = transform->getPosition();
+	glm::vec3 position = Transform->GetPosition();
 	ImGui::Text("Position : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X pos : ") + object->getName()).c_str(), &position[0], 0.1f);
-	showToolTip("X position");
+	ImGui::DragFloat((std::string("##X pos : ") + Object->GetName()).c_str(), &position[0], 0.1f);
+	ShowToolTip("X position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y pos : ") + object->getName()).c_str(), &position[1], 0.1f);
-	showToolTip("Y position");
+	ImGui::DragFloat((std::string("##Y pos : ") + Object->GetName()).c_str(), &position[1], 0.1f);
+	ShowToolTip("Y position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z pos : ") + object->getName()).c_str(), &position[2], 0.1f);
-	showToolTip("Z position");
-	transform->setPosition(position);
+	ImGui::DragFloat((std::string("##Z pos : ") + Object->GetName()).c_str(), &position[2], 0.1f);
+	ShowToolTip("Z position");
+	Transform->SetPosition(position);
 
 	// ********************* ROTATION *********************
-	glm::vec3 rotation = transform->getRotation();
+	glm::vec3 rotation = Transform->GetRotation();
 	ImGui::Text("Rotation : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X rot : ") + object->getName()).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
-	showToolTip("X rotation");
+	ImGui::DragFloat((std::string("##X rot : ") + Object->GetName()).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("X rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y rot : ") + object->getName()).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
-	showToolTip("Y rotation");
+	ImGui::DragFloat((std::string("##Y rot : ") + Object->GetName()).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Y rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z rot : ") + object->getName()).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
-	showToolTip("Z rotation");
-	transform->setRotation(rotation);
+	ImGui::DragFloat((std::string("##Z rot : ") + Object->GetName()).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Z rotation");
+	Transform->SetRotation(rotation);
 
 	// ********************* SCALE *********************
-	ImGui::Checkbox("Uniform scaling", &transform->uniformScaling);
-	glm::vec3 scale = transform->getScale();
+	bool bUniformScaling = Transform->IsUniformScalingSet();
+	ImGui::Checkbox("Uniform scaling", &bUniformScaling);
+	Transform->SetUniformScaling(bUniformScaling);
+
+	glm::vec3 scale = Transform->GetScale();
 	ImGui::Text("Scale : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X scale : ") + object->getName()).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
-	showToolTip("X scale");
+	ImGui::DragFloat((std::string("##X scale : ") + Object->GetName()).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("X scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y scale : ") + object->getName()).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Y scale");
+	ImGui::DragFloat((std::string("##Y scale : ") + Object->GetName()).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Y scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z scale : ") + object->getName()).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Z scale");
+	ImGui::DragFloat((std::string("##Z scale : ") + Object->GetName()).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Z scale");
 
-	glm::vec3 oldScale = transform->getScale();
-	transform->changeXScaleBy(scale[0] - oldScale[0]);
-	transform->changeYScaleBy(scale[1] - oldScale[1]);
-	transform->changeZScaleBy(scale[2] - oldScale[2]);
+	glm::vec3 OldScale = Transform->GetScale();
+	Transform->ChangeXScaleBy(scale[0] - OldScale[0]);
+	Transform->ChangeYScaleBy(scale[1] - OldScale[1]);
+	Transform->ChangeZScaleBy(scale[2] - OldScale[2]);
 
 	// ********************* REAL WORLD COMPARISON SCALE *********************
-	if (object->getType() == FE_ENTITY || object->getType() == FE_ENTITY_INSTANCED)
+	if (Object->GetType() == FE_ENTITY || Object->GetType() == FE_ENTITY_INSTANCED)
 	{
-		FEEntity* entity = SCENE.getEntity(object->getObjectID());
+		FEEntity* entity = SCENE.GetEntity(Object->GetObjectID());
 
-		FEAABB realAABB = entity->getAABB();
-		glm::vec3 min = realAABB.getMin();
-		glm::vec3 max = realAABB.getMax();
+		FEAABB RealAabb = entity->GetAABB();
+		const glm::vec3 min = RealAabb.GetMin();
+		const glm::vec3 max = RealAabb.GetMax();
 
-		float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-		float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-		float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+		const float XSize = sqrt((max.x - min.x) * (max.x - min.x));
+		const float YSize = sqrt((max.y - min.y) * (max.y - min.y));
+		const float ZSize = sqrt((max.z - min.z) * (max.z - min.z));
 
-		std::string sizeInM = "Approximate object size: ";
-		sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
-		sizeInM += " m";
+		std::string SizeInM = "Approximate object size: ";
+		SizeInM += std::to_string(std::max(XSize, std::max(YSize, ZSize)));
+		SizeInM += " m";
 
 		/*std::string dementionsInM = "Xlength: ";
 		dementionsInM += std::to_string(xSize);
@@ -356,116 +359,119 @@ void FEEditor::showTransformConfiguration(FEObject* object, FETransformComponent
 		dementionsInM += std::to_string(zSize);
 		dementionsInM += " m";*/
 
-		ImGui::Text(sizeInM.c_str());
+		ImGui::Text(SizeInM.c_str());
 	}
 }
 
-void FEEditor::showTransformConfiguration(std::string name, FETransformComponent* transform)
+void FEEditor::ShowTransformConfiguration(const std::string Name, FETransformComponent* Transform) const
 {
 	// ********************* POSITION *********************
-	glm::vec3 position = transform->getPosition();
+	glm::vec3 position = Transform->GetPosition();
 	ImGui::Text("Position : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X pos : ") + name).c_str(), &position[0], 0.1f);
-	showToolTip("X position");
+	ImGui::DragFloat((std::string("##X pos : ") + Name).c_str(), &position[0], 0.1f);
+	ShowToolTip("X position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y pos : ") + name).c_str(), &position[1], 0.1f);
-	showToolTip("Y position");
+	ImGui::DragFloat((std::string("##Y pos : ") + Name).c_str(), &position[1], 0.1f);
+	ShowToolTip("Y position");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z pos : ") + name).c_str(), &position[2], 0.1f);
-	showToolTip("Z position");
-	transform->setPosition(position);
+	ImGui::DragFloat((std::string("##Z pos : ") + Name).c_str(), &position[2], 0.1f);
+	ShowToolTip("Z position");
+	Transform->SetPosition(position);
 
 	// ********************* ROTATION *********************
-	glm::vec3 rotation = transform->getRotation();
+	glm::vec3 rotation = Transform->GetRotation();
 	ImGui::Text("Rotation : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X rot : ") + name).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
-	showToolTip("X rotation");
+	ImGui::DragFloat((std::string("##X rot : ") + Name).c_str(), &rotation[0], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("X rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y rot : ") + name).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
-	showToolTip("Y rotation");
+	ImGui::DragFloat((std::string("##Y rot : ") + Name).c_str(), &rotation[1], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Y rotation");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z rot : ") + name).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
-	showToolTip("Z rotation");
-	transform->setRotation(rotation);
+	ImGui::DragFloat((std::string("##Z rot : ") + Name).c_str(), &rotation[2], 0.1f, -360.0f, 360.0f);
+	ShowToolTip("Z rotation");
+	Transform->SetRotation(rotation);
 
 	// ********************* SCALE *********************
-	ImGui::Checkbox("Uniform scaling", &transform->uniformScaling);
-	glm::vec3 scale = transform->getScale();
+	bool bUniformScaling = Transform->IsUniformScalingSet();
+	ImGui::Checkbox("Uniform scaling", &bUniformScaling);
+	Transform->SetUniformScaling(bUniformScaling);
+
+	glm::vec3 scale = Transform->GetScale();
 	ImGui::Text("Scale : ");
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##X scale : ") + name).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
-	showToolTip("X scale");
+	ImGui::DragFloat((std::string("##X scale : ") + Name).c_str(), &scale[0], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("X scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Y scale : ") + name).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Y scale");
+	ImGui::DragFloat((std::string("##Y scale : ") + Name).c_str(), &scale[1], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Y scale");
 
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat((std::string("##Z scale : ") + name).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
-	showToolTip("Z scale");
+	ImGui::DragFloat((std::string("##Z scale : ") + Name).c_str(), &scale[2], 0.01f, 0.01f, 1000.0f);
+	ShowToolTip("Z scale");
 
-	glm::vec3 oldScale = transform->getScale();
-	transform->changeXScaleBy(scale[0] - oldScale[0]);
-	transform->changeYScaleBy(scale[1] - oldScale[1]);
-	transform->changeZScaleBy(scale[2] - oldScale[2]);
+	glm::vec3 OldScale = Transform->GetScale();
+	Transform->ChangeXScaleBy(scale[0] - OldScale[0]);
+	Transform->ChangeYScaleBy(scale[1] - OldScale[1]);
+	Transform->ChangeZScaleBy(scale[2] - OldScale[2]);
 }
 
-void FEEditor::displayMaterialParameter(FEShaderParam* param)
+void FEEditor::DisplayMaterialParameter(FEShaderParam* Param) const
 {
-	switch (param->type)
+	switch (Param->Type)
 	{
 		case FE_INT_SCALAR_UNIFORM:
 		{
-			int iData = *(int*)param->data;
-			ImGui::SliderInt(param->name.c_str(), &iData, 0, 10);
-			param->updateData(iData);
+			int IData = *(int*)Param->Data;
+			ImGui::SliderInt(Param->Name.c_str(), &IData, 0, 10);
+			Param->UpdateData(IData);
 			break;
 		}
 
 		case FE_FLOAT_SCALAR_UNIFORM:
 		{
-			float fData = *(float*)param->data;
-			ImGui::DragFloat(param->name.c_str(), &fData, 0.1f, 0.0f, 100.0f);
-			param->updateData(fData);
+			float FData = *(float*)Param->Data;
+			ImGui::DragFloat(Param->Name.c_str(), &FData, 0.1f, 0.0f, 100.0f);
+			Param->UpdateData(FData);
 			break;
 		}
 
 		case FE_VECTOR2_UNIFORM:
 		{
-			glm::vec2 color = *(glm::vec2*)param->data;
-			ImGui::ColorEdit3(param->name.c_str(), &color.x);
-			param->updateData(color);
+			glm::vec2 color = *(glm::vec2*)Param->Data;
+			ImGui::ColorEdit3(Param->Name.c_str(), &color.x);
+			Param->UpdateData(color);
 			break;
 		}
 
 		case FE_VECTOR3_UNIFORM:
 		{
-			glm::vec3 color = *(glm::vec3*)param->data;
-			ImGui::ColorEdit3(param->name.c_str(), &color.x);
-			param->updateData(color);
+			glm::vec3 color = *(glm::vec3*)Param->Data;
+			ImGui::ColorEdit3(Param->Name.c_str(), &color.x);
+			Param->UpdateData(color);
 			break;
 		}
 
 		case FE_VECTOR4_UNIFORM:
 		{
-			glm::vec4 color = *(glm::vec4*)param->data;
-			ImGui::ColorEdit3(param->name.c_str(), &color.x);
-			param->updateData(color);
+			glm::vec4 color = *(glm::vec4*)Param->Data;
+			ImGui::ColorEdit3(Param->Name.c_str(), &color.x);
+			Param->UpdateData(color);
 			break;
 		}
 
@@ -480,195 +486,195 @@ void FEEditor::displayMaterialParameter(FEShaderParam* param)
 	}
 }
 
-void FEEditor::displayLightProperties(FELight* light)
+void FEEditor::DisplayLightProperties(FELight* Light) const
 {
-	showTransformConfiguration(light, &light->transform);
+	ShowTransformConfiguration(Light, &Light->Transform);
 
-	if (light->getType() == FE_DIRECTIONAL_LIGHT)
+	if (Light->GetType() == FE_DIRECTIONAL_LIGHT)
 	{
-		FEDirectionalLight* directionalLight = reinterpret_cast<FEDirectionalLight*>(light);
+		FEDirectionalLight* DirectionalLight = reinterpret_cast<FEDirectionalLight*>(Light);
 		ImGui::Separator();
 		ImGui::Text("-------------Shadow settings--------------");
 
 		ImGui::Text("Cast shadows:");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		bool castShadows = directionalLight->isCastShadows();
-		ImGui::Checkbox("##Cast shadows", &castShadows);
-		directionalLight->setCastShadows(castShadows);
-		showToolTip("Will this light cast shadows.");
+		bool bCastShadows = DirectionalLight->IsCastShadows();
+		ImGui::Checkbox("##Cast shadows", &bCastShadows);
+		DirectionalLight->SetCastShadows(bCastShadows);
+		ShowToolTip("Will this light cast shadows.");
 
-		if (!directionalLight->isCastShadows())
+		if (!DirectionalLight->IsCastShadows())
 			ImGui::BeginDisabled();
 		
 		ImGui::Text("Number of cascades :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		int cascades = directionalLight->getActiveCascades();
+		int cascades = DirectionalLight->GetActiveCascades();
 		ImGui::SliderInt("##cascades", &cascades, 1, 4);
-		directionalLight->setActiveCascades(cascades);
-		showToolTip("How much steps of shadow quality will be used.");
+		DirectionalLight->SetActiveCascades(cascades);
+		ShowToolTip("How much steps of shadow quality will be used.");
 
 		ImGui::Text("Shadow coverage in M :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		float firstCascadeSize = directionalLight->getShadowCoverage();
-		ImGui::DragFloat("##shadowCoverage", &firstCascadeSize, 0.1f, 0.1f, 500.0f);
-		directionalLight->setShadowCoverage(firstCascadeSize);
-		showToolTip("Distance from camera at which shadows would be present.");
+		float FirstCascadeSize = DirectionalLight->GetShadowCoverage();
+		ImGui::DragFloat("##shadowCoverage", &FirstCascadeSize, 0.1f, 0.1f, 500.0f);
+		DirectionalLight->SetShadowCoverage(FirstCascadeSize);
+		ShowToolTip("Distance from camera at which shadows would be present.");
 
 		ImGui::Text("Z depth of shadow map :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		float CSMZDepth = directionalLight->getCSMZDepth();
+		float CSMZDepth = DirectionalLight->GetCSMZDepth();
 		ImGui::DragFloat("##CSMZDepth", &CSMZDepth, 0.01f, 0.1f, 100.0f);
-		directionalLight->setCSMZDepth(CSMZDepth);
-		showToolTip("If you have problems with shadow disapearing when camera is at close distance to shadow reciver, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
+		DirectionalLight->SetCSMZDepth(CSMZDepth);
+		ShowToolTip("If you have problems with shadow disapearing when camera is at close distance to shadow reciver, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
 
 		ImGui::Text("XY depth of shadow map :");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200);
-		float CSMXYDepth = directionalLight->getCSMXYDepth();
+		float CSMXYDepth = DirectionalLight->GetCSMXYDepth();
 		ImGui::DragFloat("##CSMXYDepth", &CSMXYDepth, 0.01f, 0.0f, 100.0f);
-		directionalLight->setCSMXYDepth(CSMXYDepth);
-		showToolTip("If you have problems with shadow on edges of screen, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
+		DirectionalLight->SetCSMXYDepth(CSMXYDepth);
+		ShowToolTip("If you have problems with shadow on edges of screen, tweaking this parameter could help. Otherwise this parameter should be as small as possible.");
 
 		ImGui::Text("Shadows blur factor:");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(200.0f);
-		float shadowsBlurFactor = directionalLight->getShadowBlurFactor();
-		ImGui::DragFloat("##Shadows blur factor", &shadowsBlurFactor, 0.001f, 0.0f, 10.0f);
-		directionalLight->setShadowBlurFactor(shadowsBlurFactor);
+		float ShadowsBlurFactor = DirectionalLight->GetShadowBlurFactor();
+		ImGui::DragFloat("##Shadows blur factor", &ShadowsBlurFactor, 0.001f, 0.0f, 10.0f);
+		DirectionalLight->SetShadowBlurFactor(ShadowsBlurFactor);
 	
-		bool staticShadowBias = directionalLight->isStaticShadowBias();
-		ImGui::Checkbox("Static shadow bias :", &staticShadowBias);
-		directionalLight->setIsStaticShadowBias(staticShadowBias);
+		bool bStaticShadowBias = DirectionalLight->IsStaticShadowBias();
+		ImGui::Checkbox("Static shadow bias :", &bStaticShadowBias);
+		DirectionalLight->SetIsStaticShadowBias(bStaticShadowBias);
 
-		if (directionalLight->isStaticShadowBias())
+		if (DirectionalLight->IsStaticShadowBias())
 		{
 			ImGui::Text("Static shadow bias value :");
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(200);
-			float shadowBias = directionalLight->getShadowBias();
-			ImGui::DragFloat("##shadowBias", &shadowBias, 0.0001f, 0.00001f, 0.1f);
-			directionalLight->setShadowBias(shadowBias);
+			float ShadowBias = DirectionalLight->GetShadowBias();
+			ImGui::DragFloat("##shadowBias", &ShadowBias, 0.0001f, 0.00001f, 0.1f);
+			DirectionalLight->SetShadowBias(ShadowBias);
 		}
 		else
 		{
 			ImGui::Text("Intensity of variable shadow bias :");
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(200);
-			float shadowBiasIntensity = directionalLight->getShadowBiasVariableIntensity();
-			ImGui::DragFloat("##shadowBiasIntensity", &shadowBiasIntensity, 0.01f, 0.01f, 10.0f);
-			directionalLight->setShadowBiasVariableIntensity(shadowBiasIntensity);
+			float ShadowBiasIntensity = DirectionalLight->GetShadowBiasVariableIntensity();
+			ImGui::DragFloat("##shadowBiasIntensity", &ShadowBiasIntensity, 0.01f, 0.01f, 10.0f);
+			DirectionalLight->SetShadowBiasVariableIntensity(ShadowBiasIntensity);
 		}
 
-		if (!directionalLight->isCastShadows())
+		if (!DirectionalLight->IsCastShadows())
 			ImGui::EndDisabled();
 	}
-	else if (light->getType() == FE_POINT_LIGHT)
+	else if (Light->GetType() == FE_POINT_LIGHT)
 	{
 	}
-	else if (light->getType() == FE_SPOT_LIGHT)
+	else if (Light->GetType() == FE_SPOT_LIGHT)
 	{
-		FESpotLight* spotLight = reinterpret_cast<FESpotLight*>(light);
-		glm::vec3 direction = spotLight->getDirection();
+		FESpotLight* SpotLight = reinterpret_cast<FESpotLight*>(Light);
+		glm::vec3 direction = SpotLight->GetDirection();
 		ImGui::DragFloat("##x", &direction[0], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##y", &direction[1], 0.01f, 0.0f, 1.0f);
 		ImGui::DragFloat("##z", &direction[2], 0.01f, 0.0f, 1.0f);
 
-		float spotAngle = spotLight->getSpotAngle();
-		ImGui::SliderFloat((std::string("Inner angle##") + spotLight->getName()).c_str(), &spotAngle, 0.0f, 90.0f);
-		spotLight->setSpotAngle(spotAngle);
+		float SpotAngle = SpotLight->GetSpotAngle();
+		ImGui::SliderFloat((std::string("Inner angle##") + SpotLight->GetName()).c_str(), &SpotAngle, 0.0f, 90.0f);
+		SpotLight->SetSpotAngle(SpotAngle);
 
-		float spotAngleOuter = spotLight->getSpotAngleOuter();
-		ImGui::SliderFloat((std::string("Outer angle ##") + spotLight->getName()).c_str(), &spotAngleOuter, 0.0f, 90.0f);
-		spotLight->setSpotAngleOuter(spotAngleOuter);
+		float SpotAngleOuter = SpotLight->GetSpotAngleOuter();
+		ImGui::SliderFloat((std::string("Outer angle ##") + SpotLight->GetName()).c_str(), &SpotAngleOuter, 0.0f, 90.0f);
+		SpotLight->SetSpotAngleOuter(SpotAngleOuter);
 	}
 
-	glm::vec3 color = light->getColor();
-	ImGui::ColorEdit3((std::string("Color##") + light->getName()).c_str(), &color.x);
-	light->setColor(color);
+	glm::vec3 color = Light->GetColor();
+	ImGui::ColorEdit3((std::string("Color##") + Light->GetName()).c_str(), &color.x);
+	Light->SetColor(color);
 
-	float intensity = light->getIntensity();
-	ImGui::SliderFloat((std::string("Intensity##") + light->getName()).c_str(), &intensity, 0.0f, 100.0f);
-	light->setIntensity(intensity);
+	float intensity = Light->GetIntensity();
+	ImGui::SliderFloat((std::string("Intensity##") + Light->GetName()).c_str(), &intensity, 0.0f, 100.0f);
+	Light->SetIntensity(intensity);
 }
 
-void FEEditor::displayLightsProperties()
+void FEEditor::DisplayLightsProperties() const
 {
-	std::vector<std::string> lightList = SCENE.getLightsList();
+	const std::vector<std::string> LightList = SCENE.GetLightsList();
 
-	for (size_t i = 0; i < lightList.size(); i++)
+	for (size_t i = 0; i < LightList.size(); i++)
 	{
-		if (ImGui::TreeNode(lightList[i].c_str()))
+		if (ImGui::TreeNode(LightList[i].c_str()))
 		{
-			displayLightProperties(SCENE.getLight(lightList[i]));
+			DisplayLightProperties(SCENE.GetLight(LightList[i]));
 			ImGui::TreePop();
 		}
 	}
 }
 
-void FEEditor::drawCorrectSceneBrowserIcon(FEObject* sceneObject)
+void FEEditor::DrawCorrectSceneBrowserIcon(const FEObject* SceneObject) const
 {
 	ImGui::SetCursorPosX(20);
 
-	if (sceneObject->getType() == FE_ENTITY || sceneObject->getType() == FE_ENTITY_INSTANCED)
+	if (SceneObject->GetType() == FE_ENTITY || SceneObject->GetType() == FE_ENTITY_INSTANCED)
 	{
-		FEEntity* entity = SCENE.getEntity(sceneObject->getObjectID());
+		const FEEntity* entity = SCENE.GetEntity(SceneObject->GetObjectID());
 
-		if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(entity))
+		if (EDITOR_INTERNAL_RESOURCES.IsInInternalEditorList(entity))
 			return;
 
-		if (entity->getType() == FE_ENTITY_INSTANCED)
+		if (entity->GetType() == FE_ENTITY_INSTANCED)
 		{
 				
-			ImGui::Image((void*)(intptr_t)instancedEntitySceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+			ImGui::Image((void*)(intptr_t)InstancedEntitySceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		}
 		else
 		{
-			ImGui::Image((void*)(intptr_t)entitySceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+			ImGui::Image((void*)(intptr_t)EntitySceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		}
 	}
 
-	if (sceneObject->getType() == FE_DIRECTIONAL_LIGHT)
+	if (SceneObject->GetType() == FE_DIRECTIONAL_LIGHT)
 	{
-		ImGui::Image((void*)(intptr_t)directionalLightSceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)DirectionalLightSceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		
 	}
 
-	if (sceneObject->getType() == FE_SPOT_LIGHT)
+	if (SceneObject->GetType() == FE_SPOT_LIGHT)
 	{
-		ImGui::Image((void*)(intptr_t)spotLightSceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)SpotLightSceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		
 	}
 
-	if (sceneObject->getType() == FE_POINT_LIGHT)
+	if (SceneObject->GetType() == FE_POINT_LIGHT)
 	{
-		ImGui::Image((void*)(intptr_t)pointLightSceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)PointLightSceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 		
 	}
 
-	if (sceneObject->getType() == FE_TERRAIN)
+	if (SceneObject->GetType() == FE_TERRAIN)
 	{
-		ImGui::Image((void*)(intptr_t)terrainSceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)TerrainSceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 	}
 
-	if (sceneObject->getType() == FE_CAMERA)
+	if (SceneObject->GetType() == FE_CAMERA)
 	{
-		ImGui::Image((void*)(intptr_t)cameraSceneBrowserIcon->getTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)CameraSceneBrowserIcon->GetTextureID(), ImVec2(16, 16), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 	}
 
 	ImGui::SameLine();
 	return;
 }
 
-void FEEditor::displaySceneBrowser()
+void FEEditor::DisplaySceneBrowser()
 {
-	if (!sceneBrowserVisible)
+	if (!bSceneBrowserVisible)
 		return;
 
-	static int sceneObjectHoveredIndex = -1;
+	static int SceneObjectHoveredIndex = -1;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Scene Entities", nullptr, ImGuiWindowFlags_None);
@@ -679,33 +685,35 @@ void FEEditor::displaySceneBrowser()
 
 	if (ImGui::Button("Enter game mode", ImVec2(220, 0)))
 	{
-		FEEditor::getInstance().setGameMode(true);
+		FEEditor::getInstance().SetGameMode(true);
 	}
 
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 
-	std::vector<std::string> entityList = SCENE.getEntityList();
-	std::vector<std::string> sceneObjectsList;
-	for (size_t i = 0; i < entityList.size(); i++)
+	const std::vector<std::string> EntityList = SCENE.GetEntityList();
+	std::vector<std::string> SceneObjectsList;
+	for (size_t i = 0; i < EntityList.size(); i++)
 	{
-		if (EDITOR_INTERNAL_RESOURCES.isInInternalEditorList(SCENE.getEntity(entityList[i])))
+		if (EDITOR_INTERNAL_RESOURCES.IsInInternalEditorList(SCENE.GetEntity(EntityList[i])))
 			continue;
-		sceneObjectsList.push_back(entityList[i]);
-	}
-	std::vector<std::string> lightList = SCENE.getLightsList();
-	for (size_t i = 0; i < lightList.size(); i++)
-	{
-		sceneObjectsList.push_back(lightList[i]);
-	}
-	std::vector<std::string> terrainList = SCENE.getTerrainList();
-	for (size_t i = 0; i < terrainList.size(); i++)
-	{
-		sceneObjectsList.push_back(terrainList[i]);
+		SceneObjectsList.push_back(EntityList[i]);
 	}
 
-	sceneObjectsList.push_back(ENGINE.getCamera()->getObjectID());
+	const std::vector<std::string> LightList = SCENE.GetLightsList();
+	for (size_t i = 0; i < LightList.size(); i++)
+	{
+		SceneObjectsList.push_back(LightList[i]);
+	}
+
+	const std::vector<std::string> TerrainList = SCENE.GetTerrainList();
+	for (size_t i = 0; i < TerrainList.size(); i++)
+	{
+		SceneObjectsList.push_back(TerrainList[i]);
+	}
+
+	SceneObjectsList.push_back(ENGINE.GetCamera()->GetObjectID());
 
 	// Filtering.
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
@@ -713,54 +721,54 @@ void FEEditor::displaySceneBrowser()
 	ImGui::SameLine();
 
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5.0f);
-	ImGui::InputText("##selectFEObjectPopUpFilter", filterForSceneEntities, IM_ARRAYSIZE(filterForSceneEntities));
+	ImGui::InputText("##selectFEObjectPopUpFilter", FilterForSceneEntities, IM_ARRAYSIZE(FilterForSceneEntities));
 
-	std::vector<std::string> filteredSceneObjectsList;
-	if (strlen(filterForSceneEntities) == 0)
+	std::vector<std::string> FilteredSceneObjectsList;
+	if (strlen(FilterForSceneEntities) == 0)
 	{
-		filteredSceneObjectsList = sceneObjectsList;
+		FilteredSceneObjectsList = SceneObjectsList;
 	}
 	else
 	{
-		filteredSceneObjectsList.clear();
-		for (size_t i = 0; i < sceneObjectsList.size(); i++)
+		FilteredSceneObjectsList.clear();
+		for (size_t i = 0; i < SceneObjectsList.size(); i++)
 		{
-			if (OBJECT_MANAGER.getFEObject(sceneObjectsList[i])->getName().find(filterForSceneEntities) != -1)
+			if (OBJECT_MANAGER.GetFEObject(SceneObjectsList[i])->GetName().find(FilterForSceneEntities) != -1)
 			{
-				filteredSceneObjectsList.push_back(sceneObjectsList[i]);
+				FilteredSceneObjectsList.push_back(SceneObjectsList[i]);
 			}
 		}
 	}
 
-	if (!isOpenContextMenuInSceneEntities)
-		sceneObjectHoveredIndex = -1;
+	if (!bShouldOpenContextMenuInSceneEntities)
+		SceneObjectHoveredIndex = -1;
 	
-	for (size_t i = 0; i < filteredSceneObjectsList.size(); i++)
+	for (size_t i = 0; i < FilteredSceneObjectsList.size(); i++)
 	{
-		drawCorrectSceneBrowserIcon(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
+		DrawCorrectSceneBrowserIcon(OBJECT_MANAGER.GetFEObject(FilteredSceneObjectsList[i]));
 
 		ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-		if (SELECTED.getSelected() != nullptr)
+		if (SELECTED.GetSelected() != nullptr)
 		{
-			if (SELECTED.getSelected()->getObjectID() == filteredSceneObjectsList[i])
+			if (SELECTED.GetSelected()->GetObjectID() == FilteredSceneObjectsList[i])
 			{
 				node_flags |= ImGuiTreeNodeFlags_Selected;
 			}
 		}
 
-		setCorrectSceneBrowserColor(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
-		ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i])->getName().c_str(), i);
-		popCorrectSceneBrowserColor(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
+		SetCorrectSceneBrowserColor(OBJECT_MANAGER.GetFEObject(FilteredSceneObjectsList[i]));
+		ImGui::TreeNodeEx((void*)(intptr_t)i, node_flags, OBJECT_MANAGER.GetFEObject(FilteredSceneObjectsList[i])->GetName().c_str(), i);
+		PopCorrectSceneBrowserColor(OBJECT_MANAGER.GetFEObject(FilteredSceneObjectsList[i]));
 
 		if (ImGui::IsItemClicked())
 		{
-			SELECTED.setSelected(OBJECT_MANAGER.getFEObject(filteredSceneObjectsList[i]));
-			SELECTED.setDirtyFlag(false);
+			SELECTED.SetSelected(OBJECT_MANAGER.GetFEObject(FilteredSceneObjectsList[i]));
+			SELECTED.SetDirtyFlag(false);
 		}
 
 		if (ImGui::IsItemHovered())
 		{
-			sceneObjectHoveredIndex = int(i);
+			SceneObjectHoveredIndex = int(i);
 		}
 	}
 
@@ -771,75 +779,75 @@ void FEEditor::displaySceneBrowser()
 	if (open_context_menu)
 		ImGui::OpenPopup("##context_menu");
 
-	isOpenContextMenuInSceneEntities = false;
+	bShouldOpenContextMenuInSceneEntities = false;
 
 	if (ImGui::BeginPopup("##context_menu"))
 	{
-		isOpenContextMenuInSceneEntities = true;
+		bShouldOpenContextMenuInSceneEntities = true;
 
-		if (sceneObjectHoveredIndex == -1)
+		if (SceneObjectHoveredIndex == -1)
 		{
 			if (ImGui::BeginMenu("Add"))
 			{
 				if (ImGui::MenuItem("Entity"))
 				{
-					selectFEObjectPopUp::getInstance().show(FE_PREFAB, createNewEntityCallBack);
+					SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, CreateNewEntityCallBack);
 					//selectGameModelPopUp::getInstance().show(nullptr, true);
 				}
 
 				if (ImGui::MenuItem("Instanced entity"))
 				{
-					selectFEObjectPopUp::getInstance().show(FE_PREFAB, createNewInstancedEntityCallBack);
+					SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, CreateNewInstancedEntityCallBack);
 					//selectGameModelPopUp::getInstance().show(nullptr, true, true);
 				}
 
 				if (ImGui::MenuItem("Terrain"))
 				{
-					std::vector<std::string> terrainList = SCENE.getTerrainList();
-					size_t nextID = terrainList.size();
+					const std::vector<std::string> TerrainList = SCENE.GetTerrainList();
+					const size_t NextId = TerrainList.size();
 					size_t index = 0;
-					std::string newName = "terrain_" + std::to_string(nextID + index);
+					std::string NewName = "terrain_" + std::to_string(NextId + index);
 
 					while (true)
 					{
-						bool correctName = true;
-						for (size_t i = 0; i < terrainList.size(); i++)
+						bool bCorrectName = true;
+						for (size_t i = 0; i < TerrainList.size(); i++)
 						{
-							if (terrainList[i] == newName)
+							if (TerrainList[i] == NewName)
 							{
-								correctName = false;
+								bCorrectName = false;
 								break;
 							}
 						}
 
-						if (correctName)
+						if (bCorrectName)
 							break;
 
 						index++;
-						newName = "terrain_" + std::to_string(nextID + index);
+						NewName = "terrain_" + std::to_string(NextId + index);
 					}
 
-					FETerrain* newTerrain = RESOURCE_MANAGER.createTerrain(true, newName);
-					SCENE.addTerrain(newTerrain);
-					newTerrain->heightMap->setDirtyFlag(true);
-					PROJECT_MANAGER.getCurrent()->setModified(true);
+					FETerrain* NewTerrain = RESOURCE_MANAGER.CreateTerrain(true, NewName);
+					SCENE.AddTerrain(NewTerrain);
+					NewTerrain->HeightMap->SetDirtyFlag(true);
+					PROJECT_MANAGER.GetCurrent()->SetModified(true);
 				}
 
 				if (ImGui::BeginMenu("Light"))
 				{
 					if (ImGui::MenuItem("Directional"))
 					{
-						SCENE.addLight(FE_DIRECTIONAL_LIGHT, "");
+						SCENE.AddLight(FE_DIRECTIONAL_LIGHT, "");
 					}
 
 					if (ImGui::MenuItem("Spot"))
 					{
-						SCENE.addLight(FE_SPOT_LIGHT, "");
+						SCENE.AddLight(FE_SPOT_LIGHT, "");
 					}
 
 					if (ImGui::MenuItem("Point"))
 					{
-						SCENE.addLight(FE_POINT_LIGHT, "");
+						SCENE.AddLight(FE_POINT_LIGHT, "");
 					}
 
 					ImGui::EndMenu();
@@ -852,46 +860,46 @@ void FEEditor::displaySceneBrowser()
 		{
 			if (ImGui::MenuItem("Rename"))
 			{
-				if (SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				if (SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().Show(SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]));
 				}
-				else if (SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().Show(SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]));
 				}
-				else if (SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					renamePopUp::getInstance().show(SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]));
+					renamePopUp::getInstance().Show(SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]));
 					//renameLightWindow.show(SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]));
 				}
 			}
 
 			if (ImGui::MenuItem("Delete"))
 			{
-				if (SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				if (SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					FEEntity* entity = SCENE.getEntity(filteredSceneObjectsList[sceneObjectHoveredIndex]);
-					if (SELECTED.getEntity() == entity)
-						SELECTED.clear();
+					const FEEntity* entity = SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetEntity() == entity)
+						SELECTED.Clear();
 
-					SCENE.deleteEntity(entity->getObjectID());
+					SCENE.DeleteEntity(entity->GetObjectID());
 				}
-				else if (SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					FETerrain* terrain = SCENE.getTerrain(filteredSceneObjectsList[sceneObjectHoveredIndex]);
-					if (SELECTED.getTerrain() == terrain)
-						SELECTED.clear();
+					const FETerrain* terrain = SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetTerrain() == terrain)
+						SELECTED.Clear();
 
-					SCENE.deleteTerrain(terrain->getObjectID());
+					SCENE.DeleteTerrain(terrain->GetObjectID());
 				}
-				else if (SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]) != nullptr)
+				else if (SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					FELight* light = SCENE.getLight(filteredSceneObjectsList[sceneObjectHoveredIndex]);
-					if (SELECTED.getLight() == light)
-						SELECTED.clear();
+					const FELight* light = SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetLight() == light)
+						SELECTED.Clear();
 
-					SCENE.deleteLight(light->getObjectID());
+					SCENE.DeleteLight(light->GetObjectID());
 				}
 			}
 		}
@@ -899,20 +907,20 @@ void FEEditor::displaySceneBrowser()
 		ImGui::EndPopup();
 	}
 
-	static bool displayGrid = true;
-	ImGui::Checkbox("Display grid", &displayGrid);
+	static bool bDisplayGrid = true;
+	ImGui::Checkbox("Display grid", &bDisplayGrid);
 
 	static glm::vec3 color = glm::vec3(0.2f, 0.3f, 0.4f);
 
-	float basicW = 0.1f;
-	float width = basicW * 4.0f;
-	if (displayGrid)
+	const float BasicW = 0.1f;
+	float width = BasicW * 4.0f;
+	if (bDisplayGrid)
 	{
-		int gridSize = 200;
-		for (int i = -gridSize / 2; i < gridSize / 2; i++)
+		const int GridSize = 200;
+		for (int i = -GridSize / 2; i < GridSize / 2; i++)
 		{
 			color = glm::vec3(0.4f, 0.65f, 0.73f);
-			width = basicW * 4.0f;
+			width = BasicW * 4.0f;
 			if (i % 2 != 0 && i != 0)
 			{
 				color = color / 4.0f;
@@ -921,73 +929,73 @@ void FEEditor::displaySceneBrowser()
 			else if (i == 0)
 			{
 				color = glm::vec3(0.9f, 0.9f, 0.9f);
-				width = basicW * 4.0f;
+				width = BasicW * 4.0f;
 			}
 
-			RENDERER.drawLine(glm::vec3(i, 0.0f, -gridSize / 2), glm::vec3(i, 0.0f, gridSize / 2), color, width);
-			RENDERER.drawLine(glm::vec3(-gridSize / 2, 0.0f, i), glm::vec3(gridSize / 2, 0.0f, i), color, width);
+			RENDERER.DrawLine(glm::vec3(i, 0.0f, -GridSize / 2), glm::vec3(i, 0.0f, GridSize / 2), color, width);
+			RENDERER.DrawLine(glm::vec3(-GridSize / 2, 0.0f, i), glm::vec3(GridSize / 2, 0.0f, i), color, width);
 		}
 	}
 
-	static float favgTime = 0.0f;
-	static std::vector<float> avgTime;
+	static float FavgTime = 0.0f;
+	static std::vector<float> AvgTime;
 	static int counter = 0;
 
-	ImGui::Text((std::string("Time : ") + std::to_string(RENDERER.lastTestTime)).c_str());
+	ImGui::Text((std::string("Time : ") + std::to_string(RENDERER.LastTestTime)).c_str());
 
-	if (avgTime.size() < 100)
+	if (AvgTime.size() < 100)
 	{
-		avgTime.push_back(RENDERER.lastTestTime);
+		AvgTime.push_back(RENDERER.LastTestTime);
 	}
-	else if (avgTime.size() >= 100)
+	else if (AvgTime.size() >= 100)
 	{
-		avgTime[counter++ % 100] = RENDERER.lastTestTime;
+		AvgTime[counter++ % 100] = RENDERER.LastTestTime;
 	}
 
-	for (size_t i = 0; i < avgTime.size(); i++)
+	for (size_t i = 0; i < AvgTime.size(); i++)
 	{
-		favgTime += avgTime[i];
+		FavgTime += AvgTime[i];
 	}
-	favgTime /= avgTime.size();
+	FavgTime /= AvgTime.size();
 
 
 	if (counter > 1000000)
 		counter = 0;
 
-	ImGui::Text((std::string("avg Time : ") + std::to_string(favgTime)).c_str());
+	ImGui::Text((std::string("avg Time : ") + std::to_string(FavgTime)).c_str());
 
-	bool freezeCulling = RENDERER.freezeCulling;
-	ImGui::Checkbox("freezeCulling", &freezeCulling);
-	RENDERER.freezeCulling = freezeCulling;
+	bool bFreezeCulling = RENDERER.bFreezeCulling;
+	ImGui::Checkbox("bFreezeCulling", &bFreezeCulling);
+	RENDERER.bFreezeCulling = bFreezeCulling;
 
-	bool freezeOccusionCulling = !RENDERER.isOccusionCullingEnabled();
-	ImGui::Checkbox("freezeOccusionCulling", &freezeOccusionCulling);
-	RENDERER.setOccusionCullingEnabled(!freezeOccusionCulling);
+	bool bFreezeOccusionCulling = !RENDERER.IsOccusionCullingEnabled();
+	ImGui::Checkbox("freezeOccusionCulling", &bFreezeOccusionCulling);
+	RENDERER.SetOccusionCullingEnabled(!bFreezeOccusionCulling);
 
-	static bool displaySelectedObjAABB = false;
-	ImGui::Checkbox("Display AABB of selected object", &displaySelectedObjAABB);
+	static bool bDisplaySelectedObjAABB = false;
+	ImGui::Checkbox("Display AABB of selected object", &bDisplaySelectedObjAABB);
 
 	// draw AABB
-	if (SELECTED.getSelected() != nullptr &&
-		(SELECTED.getSelected()->getType() == FE_ENTITY || SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED || SELECTED.getSelected()->getType() == FE_TERRAIN) &&
-		displaySelectedObjAABB)
+	if (SELECTED.GetSelected() != nullptr &&
+		(SELECTED.GetSelected()->GetType() == FE_ENTITY || SELECTED.GetSelected()->GetType() == FE_ENTITY_INSTANCED || SELECTED.GetSelected()->GetType() == FE_TERRAIN) &&
+		bDisplaySelectedObjAABB)
 	{
-		FEAABB selectedAABB = SELECTED.getEntity() != nullptr ? SELECTED.getEntity()->getAABB() : SELECTED.getTerrain()->getAABB();
-		RENDERER.drawAABB(selectedAABB);
+		const FEAABB SelectedAabb = SELECTED.GetEntity() != nullptr ? SELECTED.GetEntity()->GetAABB() : SELECTED.GetTerrain()->GetAABB();
+		RENDERER.DrawAABB(SelectedAabb);
 
-		if (SELECTED.getSelected()->getType() == FE_ENTITY_INSTANCED)
+		if (SELECTED.GetSelected()->GetType() == FE_ENTITY_INSTANCED)
 		{
-			static bool displaySubObjAABB = false;
-			ImGui::Checkbox("Display AABB of instanced entity subobjects", &displaySubObjAABB);
+			static bool bDisplaySubObjAABB = false;
+			ImGui::Checkbox("Display AABB of instanced entity subobjects", &bDisplaySubObjAABB);
 
-			if (displaySubObjAABB)
+			if (bDisplaySubObjAABB)
 			{
-				FEEntityInstanced* entityInstanced = reinterpret_cast<FEEntityInstanced*> (SELECTED.getSelected());
-				int maxIterations = entityInstanced->instancedAABB.size() * 8 >= FE_MAX_LINES ? FE_MAX_LINES : int(entityInstanced->instancedAABB.size());
+				const FEEntityInstanced* EntityInstanced = reinterpret_cast<FEEntityInstanced*> (SELECTED.GetSelected());
+				const int MaxIterations = EntityInstanced->InstancedAABB.size() * 8 >= FE_MAX_LINES ? FE_MAX_LINES : int(EntityInstanced->InstancedAABB.size());
 
-				for (size_t j = 0; j < maxIterations; j++)
+				for (size_t j = 0; j < MaxIterations; j++)
 				{
-					RENDERER.drawAABB(entityInstanced->instancedAABB[j]);
+					RENDERER.DrawAABB(EntityInstanced->InstancedAABB[j]);
 				}
 			}
 		}
@@ -997,192 +1005,192 @@ void FEEditor::displaySceneBrowser()
 	ImGui::End();
 }
 
-void FEEditor::initializeResources()
+void FEEditor::InitializeResources()
 {
-	ENGINE.addKeyCallback(keyButtonCallback);
-	ENGINE.addMouseButtonCallback(mouseButtonCallback);
-	ENGINE.addMouseMoveCallback(mouseMoveCallback);
-	ENGINE.addRenderTargetResizeCallback(renderTargetResizeCallback);
-	ENGINE.addDropCallback(dropCallback);
+	ENGINE.AddKeyCallback(KeyButtonCallback);
+	ENGINE.AddMouseButtonCallback(MouseButtonCallback);
+	ENGINE.AddMouseMoveCallback(MouseMoveCallback);
+	ENGINE.AddRenderTargetResizeCallback(RenderTargetResizeCallback);
+	ENGINE.AddDropCallback(DropCallback);
 	
-	SELECTED.initializeResources();
-	ENGINE.getCamera()->setIsInputActive(isCameraInputActive);
-	PROJECT_MANAGER.initializeResources();
-	PREVIEW_MANAGER.initializeResources();
-	DRAG_AND_DROP_MANAGER.initializeResources();
-	sceneWindowTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_PREFAB, sceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
+	SELECTED.InitializeResources();
+	ENGINE.GetCamera()->SetIsInputActive(bIsCameraInputActive);
+	PROJECT_MANAGER.InitializeResources();
+	PREVIEW_MANAGER.InitializeResources();
+	DRAG_AND_DROP_MANAGER.InitializeResources();
+	SceneWindowTarget = DRAG_AND_DROP_MANAGER.AddTarget(FE_PREFAB, SceneWindowDragAndDropCallBack, nullptr, "Drop to add to scene");
 	
 	// **************************** Gizmos ****************************
-	GIZMO_MANAGER.initializeResources();
+	GIZMO_MANAGER.InitializeResources();
 
 	// hide all resources for gizmos from content browser
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(RESOURCE_MANAGER.getMesh("45191B6F172E3B531978692E"/*"transformationGizmoMesh"*/));
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(RESOURCE_MANAGER.getMesh("637C784B2E5E5C6548190E1B"/*"scaleGizmoMesh"*/));
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(RESOURCE_MANAGER.getMesh("19622421516E5B317E1B5360"/*"rotateGizmoMesh"*/));
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(RESOURCE_MANAGER.GetMesh("45191B6F172E3B531978692E"/*"transformationGizmoMesh"*/));
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(RESOURCE_MANAGER.GetMesh("637C784B2E5E5C6548190E1B"/*"scaleGizmoMesh"*/));
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(RESOURCE_MANAGER.GetMesh("19622421516E5B317E1B5360"/*"rotateGizmoMesh"*/));
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationZGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationYZGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.transformationXZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationYGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationZGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXyGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXyGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationYzGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationYzGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXzGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.TransformationXzGizmoEntity);
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.scaleZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleXGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleYGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleZGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.ScaleZGizmoEntity);
 
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateXGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateYGizmoEntity);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity->prefab->getComponent(0)->gameModel);
-	EDITOR_INTERNAL_RESOURCES.addResourceToInternalEditorList(GIZMO_MANAGER.rotateZGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateXGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateXGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateYGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateYGizmoEntity);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateZGizmoEntity->Prefab->GetComponent(0)->GameModel);
+	EDITOR_INTERNAL_RESOURCES.AddResourceToInternalEditorList(GIZMO_MANAGER.RotateZGizmoEntity);
 
-	mouseCursorIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/mouseCursorIcon.png", "mouseCursorIcon");
-	RESOURCE_MANAGER.makeTextureStandard(mouseCursorIcon);
-	arrowToGroundIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/arrowToGroundIcon.png", "arrowToGroundIcon");
-	RESOURCE_MANAGER.makeTextureStandard(arrowToGroundIcon);
+	MouseCursorIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/mouseCursorIcon.png", "mouseCursorIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(MouseCursorIcon);
+	ArrowToGroundIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/arrowToGroundIcon.png", "arrowToGroundIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(ArrowToGroundIcon);
 
-	entitySceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/entitySceneBrowserIcon.png", "entitySceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(entitySceneBrowserIcon);
-	instancedEntitySceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/instancedEntitySceneBrowserIcon.png", "instancedEntitySceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(instancedEntitySceneBrowserIcon);
+	EntitySceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/entitySceneBrowserIcon.png", "entitySceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(EntitySceneBrowserIcon);
+	InstancedEntitySceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/instancedEntitySceneBrowserIcon.png", "instancedEntitySceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(InstancedEntitySceneBrowserIcon);
 
-	directionalLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/directionalLightSceneBrowserIcon.png", "directionalLightSceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(directionalLightSceneBrowserIcon);
-	spotLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/spotLightSceneBrowserIcon.png", "spotLightSceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(spotLightSceneBrowserIcon);
-	pointLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/pointLightSceneBrowserIcon.png", "pointLightSceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(pointLightSceneBrowserIcon);
+	DirectionalLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/directionalLightSceneBrowserIcon.png", "directionalLightSceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(DirectionalLightSceneBrowserIcon);
+	SpotLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/spotLightSceneBrowserIcon.png", "spotLightSceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(SpotLightSceneBrowserIcon);
+	PointLightSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/pointLightSceneBrowserIcon.png", "pointLightSceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(PointLightSceneBrowserIcon);
 
-	terrainSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/terrainSceneBrowserIcon.png", "terrainSceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(terrainSceneBrowserIcon);
+	TerrainSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/terrainSceneBrowserIcon.png", "terrainSceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(TerrainSceneBrowserIcon);
 
-	cameraSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/cameraSceneBrowserIcon.png", "cameraSceneBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(cameraSceneBrowserIcon);
+	CameraSceneBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/cameraSceneBrowserIcon.png", "cameraSceneBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(CameraSceneBrowserIcon);
 
-	folderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/folderIcon.png", "folderIcon");
-	RESOURCE_MANAGER.makeTextureStandard(folderIcon);
+	FolderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/folderIcon.png", "folderIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(FolderIcon);
 
-	shaderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/shaderIcon.png", "shaderIcon");
-	RESOURCE_MANAGER.makeTextureStandard(shaderIcon);
+	ShaderIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/shaderIcon.png", "shaderIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(ShaderIcon);
 
 	VFSBackIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/VFSBackIcon.png", "VFSBackIcon");
-	RESOURCE_MANAGER.makeTextureStandard(VFSBackIcon);
+	RESOURCE_MANAGER.MakeTextureStandard(VFSBackIcon);
 
-	textureContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/textureContentBrowserIcon.png", "textureContentBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(textureContentBrowserIcon);
+	TextureContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/textureContentBrowserIcon.png", "textureContentBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(TextureContentBrowserIcon);
 
-	meshContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/meshContentBrowserIcon.png", "meshContentBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(meshContentBrowserIcon);
+	MeshContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/meshContentBrowserIcon.png", "meshContentBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(MeshContentBrowserIcon);
 
-	materialContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/materialContentBrowserIcon.png", "materialContentBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(materialContentBrowserIcon);
+	MaterialContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/materialContentBrowserIcon.png", "materialContentBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(MaterialContentBrowserIcon);
 
-	gameModelContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/gameModelContentBrowserIcon.png", "gameModelContentBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(gameModelContentBrowserIcon);
+	GameModelContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/gameModelContentBrowserIcon.png", "gameModelContentBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(GameModelContentBrowserIcon);
 
-	prefabContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/prefabContentBrowserIcon.png", "prefabContentBrowserIcon");
-	RESOURCE_MANAGER.makeTextureStandard(prefabContentBrowserIcon);
+	PrefabContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/prefabContentBrowserIcon.png", "prefabContentBrowserIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(PrefabContentBrowserIcon);
 
 	// ************** Terrain Settings **************
-	exportHeightMapButton = new ImGuiButton("Export HeightMap");
-	exportHeightMapButton->setSize(ImVec2(200, 0));
+	ExportHeightMapButton = new ImGuiButton("Export HeightMap");
+	ExportHeightMapButton->SetSize(ImVec2(200, 0));
 
-	importHeightMapButton = new ImGuiButton("Import HeightMap");
-	importHeightMapButton->setSize(ImVec2(200, 0));
+	ImportHeightMapButton = new ImGuiButton("Import HeightMap");
+	ImportHeightMapButton->SetSize(ImVec2(200, 0));
 
-	sculptBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/sculptBrush.png", "sculptBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(sculptBrushIcon);
-	sculptBrushButton = new ImGuiImageButton(sculptBrushIcon);
-	sculptBrushButton->setSize(ImVec2(24, 24));
+	SculptBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/sculptBrush.png", "sculptBrushIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(SculptBrushIcon);
+	SculptBrushButton = new ImGuiImageButton(SculptBrushIcon);
+	SculptBrushButton->SetSize(ImVec2(24, 24));
 
-	levelBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/levelBrush.png", "levelBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(levelBrushIcon);
-	levelBrushButton = new ImGuiImageButton(levelBrushIcon);
-	levelBrushButton->setSize(ImVec2(24, 24));
+	LevelBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/levelBrush.png", "levelBrushIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(LevelBrushIcon);
+	LevelBrushButton = new ImGuiImageButton(LevelBrushIcon);
+	LevelBrushButton->SetSize(ImVec2(24, 24));
 
-	smoothBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/smoothBrush.png", "smoothBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(smoothBrushIcon);
-	smoothBrushButton = new ImGuiImageButton(smoothBrushIcon);
-	smoothBrushButton->setSize(ImVec2(24, 24));
+	SmoothBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/smoothBrush.png", "smoothBrushIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(SmoothBrushIcon);
+	SmoothBrushButton = new ImGuiImageButton(SmoothBrushIcon);
+	SmoothBrushButton->SetSize(ImVec2(24, 24));
 
-	drawBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/paintbrush.png", "drawBrushIcon");
-	RESOURCE_MANAGER.makeTextureStandard(drawBrushIcon);
-	layerBrushButton = new ImGuiImageButton(drawBrushIcon);
-	layerBrushButton->setSize(ImVec2(48, 48));
+	DrawBrushIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/paintbrush.png", "drawBrushIcon");
+	RESOURCE_MANAGER.MakeTextureStandard(DrawBrushIcon);
+	LayerBrushButton = new ImGuiImageButton(DrawBrushIcon);
+	LayerBrushButton->SetSize(ImVec2(48, 48));
 
-	entityChangePrefabTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_PREFAB, entityChangePrefabTargetCallBack, nullptr, "Drop to assign prefab");
+	EntityChangePrefabTarget = DRAG_AND_DROP_MANAGER.AddTarget(FE_PREFAB, EntityChangePrefabTargetCallBack, nullptr, "Drop to assign prefab");
 	// ************** Terrain Settings END **************
 
-	allContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/allContentBrowserIcon.png", "allIcon");
-	filterAllTypesButton = new ImGuiImageButton(allContentBrowserIcon);
-	RESOURCE_MANAGER.makeTextureStandard(allContentBrowserIcon);
-	filterAllTypesButton->setSize(ImVec2(32, 32));
+	AllContentBrowserIcon = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/allContentBrowserIcon.png", "allIcon");
+	FilterAllTypesButton = new ImGuiImageButton(AllContentBrowserIcon);
+	RESOURCE_MANAGER.MakeTextureStandard(AllContentBrowserIcon);
+	FilterAllTypesButton->SetSize(ImVec2(32, 32));
 
-	filterTextureTypeButton = new ImGuiImageButton(textureContentBrowserIcon);
-	filterTextureTypeButton->setSize(ImVec2(32, 32));
+	FilterTextureTypeButton = new ImGuiImageButton(TextureContentBrowserIcon);
+	FilterTextureTypeButton->SetSize(ImVec2(32, 32));
 
-	filterMeshTypeButton = new ImGuiImageButton(meshContentBrowserIcon);
-	filterMeshTypeButton->setSize(ImVec2(32, 32));
+	FilterMeshTypeButton = new ImGuiImageButton(MeshContentBrowserIcon);
+	FilterMeshTypeButton->SetSize(ImVec2(32, 32));
 
-	filterMaterialTypeButton = new ImGuiImageButton(materialContentBrowserIcon);
-	filterMaterialTypeButton->setSize(ImVec2(32, 32));
+	FilterMaterialTypeButton = new ImGuiImageButton(MaterialContentBrowserIcon);
+	FilterMaterialTypeButton->SetSize(ImVec2(32, 32));
 
-	filterGameModelTypeButton = new ImGuiImageButton(gameModelContentBrowserIcon);
-	filterGameModelTypeButton->setSize(ImVec2(32, 32));
+	FilterGameModelTypeButton = new ImGuiImageButton(GameModelContentBrowserIcon);
+	FilterGameModelTypeButton->SetSize(ImVec2(32, 32));
 
-	filterPrefabTypeButton = new ImGuiImageButton(prefabContentBrowserIcon);
-	filterPrefabTypeButton->setSize(ImVec2(32, 32));
+	FilterPrefabTypeButton = new ImGuiImageButton(PrefabContentBrowserIcon);
+	FilterPrefabTypeButton->SetSize(ImVec2(32, 32));
 	
-	ENGINE.getCamera()->setOnUpdate(onCameraUpdate);
-	ENGINE.addWindowCloseCallback(closeWindowCallBack);
+	ENGINE.GetCamera()->SetOnUpdate(OnCameraUpdate);
+	ENGINE.AddWindowCloseCallback(CloseWindowCallBack);
 }
 
-void FEEditor::mouseMoveCallback(double xpos, double ypos)
+void FEEditor::MouseMoveCallback(double Xpos, double Ypos)
 {
-	EDITOR.setLastMouseX(EDITOR.getMouseX());
-	EDITOR.setLastMouseY(EDITOR.getMouseY());
+	EDITOR.SetLastMouseX(EDITOR.GetMouseX());
+	EDITOR.SetLastMouseY(EDITOR.GetMouseY());
 
-	EDITOR.setMouseX(xpos);
-	EDITOR.setMouseY(ypos);
+	EDITOR.SetMouseX(Xpos);
+	EDITOR.SetMouseY(Ypos);
 
-	DRAG_AND_DROP_MANAGER.mouseMove();
+	DRAG_AND_DROP_MANAGER.MouseMove();
 
-	if (SELECTED.getSelected() != nullptr)
+	if (SELECTED.GetSelected() != nullptr)
 	{
-		if (SELECTED.getTerrain() != nullptr)
+		if (SELECTED.GetTerrain() != nullptr)
 		{
-			if (SELECTED.getTerrain()->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
+			if (SELECTED.GetTerrain()->GetBrushMode() != FE_TERRAIN_BRUSH_NONE)
 				return;
 		}
 
-		GIZMO_MANAGER.mouseMove(EDITOR.getLastMouseX(), EDITOR.getLastMouseY(), EDITOR.getMouseX(), EDITOR.getMouseY());
+		GIZMO_MANAGER.MouseMove(EDITOR.GetLastMouseX(), EDITOR.GetLastMouseY(), EDITOR.GetMouseX(), EDITOR.GetMouseY());
 	}
 }
 
-void FEEditor::onCameraUpdate(FEBasicCamera* camera)
+void FEEditor::OnCameraUpdate(FEBasicCamera* Camera)
 {
-	SELECTED.onCameraUpdate();
-	GIZMO_MANAGER.render();
+	SELECTED.OnCameraUpdate();
+	GIZMO_MANAGER.Render();
 }
 
-void FEEditor::render()
+void FEEditor::Render()
 {
-	DRAG_AND_DROP_MANAGER.render();
+	DRAG_AND_DROP_MANAGER.Render();
 
-	if (PROJECT_MANAGER.getCurrent())
+	if (PROJECT_MANAGER.GetCurrent())
 	{
-		if (gameMode)
+		if (bGameMode)
 			return;
 
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
@@ -1194,31 +1202,31 @@ void FEEditor::render()
 			{
 				if (ImGui::MenuItem("Save project"))
 				{
-					PROJECT_MANAGER.getCurrent()->saveScene();
-					ENGINE.takeScreenshot((PROJECT_MANAGER.getCurrent()->getProjectFolder() + "projectScreenShot.texture").c_str());
+					PROJECT_MANAGER.GetCurrent()->SaveScene();
+					ENGINE.TakeScreenshot((PROJECT_MANAGER.GetCurrent()->GetProjectFolder() + "projectScreenShot.texture").c_str());
 				}
 
 				if (ImGui::MenuItem("Save project as..."))
 				{
-					std::string path = "";
-					FILE_SYSTEM.showFolderOpenDialog(path);
-					if (path != "")
+					std::string path;
+					FILE_SYSTEM.ShowFolderOpenDialog(path);
+					if (!path.empty())
 					{
-						PROJECT_MANAGER.getCurrent()->saveSceneTo(path + "\\");
+						PROJECT_MANAGER.GetCurrent()->SaveSceneTo(path + "\\");
 					}
 				}
 
 				if (ImGui::MenuItem("Close project"))
 				{
-					if (PROJECT_MANAGER.getCurrent()->isModified())
+					if (PROJECT_MANAGER.GetCurrent()->IsModified())
 					{
-						projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), false);
+						projectWasModifiedPopUp::getInstance().Show(PROJECT_MANAGER.GetCurrent(), false);
 					}
 					else
 					{
-						PROJECT_MANAGER.closeCurrentProject();
-						strcpy_s(filterForResourcesContentBrowser, "");
-						strcpy_s(filterForSceneEntities, "");
+						PROJECT_MANAGER.CloseCurrentProject();
+						strcpy_s(FilterForResourcesContentBrowser, "");
+						strcpy_s(FilterForSceneEntities, "");
 
 						ImGui::PopStyleVar();
 						ImGui::EndMenu();
@@ -1230,7 +1238,7 @@ void FEEditor::render()
 
 				if (ImGui::MenuItem("Exit"))
 				{
-					ENGINE.terminate();
+					ENGINE.Terminate();
 				}
 				
 				ImGui::EndMenu();
@@ -1238,66 +1246,66 @@ void FEEditor::render()
 
 			if (ImGui::BeginMenu("Window"))
 			{
-				if (ImGui::MenuItem("Scene Entities", NULL, sceneBrowserVisible))
+				if (ImGui::MenuItem("Scene Entities", nullptr, bSceneBrowserVisible))
 				{
-					sceneBrowserVisible = !sceneBrowserVisible;
+					bSceneBrowserVisible = !bSceneBrowserVisible;
 				}
 
-				if (ImGui::MenuItem("Inspector", NULL, inspectorVisible))
+				if (ImGui::MenuItem("Inspector", nullptr, bInspectorVisible))
 				{
-					inspectorVisible = !inspectorVisible;
+					bInspectorVisible = !bInspectorVisible;
 				}
 
-				if (ImGui::MenuItem("Content Browser", NULL, contentBrowserVisible))
+				if (ImGui::MenuItem("Content Browser", nullptr, bContentBrowserVisible))
 				{
-					contentBrowserVisible = !contentBrowserVisible;
+					bContentBrowserVisible = !bContentBrowserVisible;
 				}
 
-				if (ImGui::MenuItem("Effects", NULL, effectsWindowVisible))
+				if (ImGui::MenuItem("Effects", nullptr, bEffectsWindowVisible))
 				{
-					effectsWindowVisible = !effectsWindowVisible;
+					bEffectsWindowVisible = !bEffectsWindowVisible;
 				}
 
-				if (ImGui::MenuItem("Log", NULL, logWindowVisible))
+				if (ImGui::MenuItem("Log", nullptr, bLogWindowVisible))
 				{
-					logWindowVisible = !logWindowVisible;
+					bLogWindowVisible = !bLogWindowVisible;
 				}
 
 				if (ImGui::BeginMenu("Debug"))
 				{
-					auto possibleWindows = RENDERER.getDebugOutputTextures();
+					auto PossibleWindows = RENDERER.GetDebugOutputTextures();
 
-					auto iterator = possibleWindows.begin();
-					while (iterator != possibleWindows.end())
+					auto iterator = PossibleWindows.begin();
+					while (iterator != PossibleWindows.end())
 					{
 						if (iterator->second != nullptr)
 						{
-							FEImGuiWindow* currentWindow = IMGUI_WINDOW_MANAGER.getWindowByCaption(iterator->first.c_str());
-							bool isVisible = false;
-							if (currentWindow != nullptr)
-								isVisible = currentWindow->isVisible();
+							FEImGuiWindow* CurrentWindow = FE_IMGUI_WINDOW_MANAGER.GetWindowByCaption(iterator->first.c_str());
+							bool bVisible = false;
+							if (CurrentWindow != nullptr)
+								bVisible = CurrentWindow->IsVisible();
 							
-							if (ImGui::MenuItem(iterator->first.c_str(), NULL, isVisible))
+							if (ImGui::MenuItem(iterator->first.c_str(), nullptr, bVisible))
 							{
-								isVisible = !isVisible;
+								bVisible = !bVisible;
 
-								if (isVisible)
+								if (bVisible)
 								{
-									if (currentWindow == nullptr)
+									if (CurrentWindow == nullptr)
 									{
-										currentWindow = new debugTextureViewWindow(iterator->second);
-										currentWindow->setCaption(iterator->first);
-										currentWindow->show();
+										CurrentWindow = new debugTextureViewWindow(iterator->second);
+										CurrentWindow->SetCaption(iterator->first);
+										CurrentWindow->Show();
 									}
 									else
 									{
-										currentWindow->show();
+										CurrentWindow->Show();
 									}
 								}
 								else
 								{
-									if (currentWindow != nullptr)
-										currentWindow->setVisible(false);
+									if (CurrentWindow != nullptr)
+										CurrentWindow->SetVisible(false);
 								}
 							}
 						}
@@ -1317,27 +1325,27 @@ void FEEditor::render()
 
 		ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_None | ImGuiWindowFlags_NoScrollbar);
 		
-		sceneWindow = ImGui::GetCurrentWindow();
-		sceneWindowTarget->stickToCurrentWindow();
+		SceneWindow = ImGui::GetCurrentWindow();
+		SceneWindowTarget->StickToCurrentWindow();
 		
-		ENGINE.setRenderTargetSize((size_t)sceneWindow->ContentRegionRect.GetWidth(), (size_t)sceneWindow->ContentRegionRect.GetHeight());
+		ENGINE.SetRenderTargetSize((size_t)SceneWindow->ContentRegionRect.GetWidth(), (size_t)SceneWindow->ContentRegionRect.GetHeight());
 
-		ENGINE.setRenderTargetXShift((int)sceneWindow->ContentRegionRect.GetTL().x);
-		ENGINE.setRenderTargetYShift((int)sceneWindow->ContentRegionRect.GetTL().y);
+		ENGINE.SetRenderTargetXShift((int)SceneWindow->ContentRegionRect.GetTL().x);
+		ENGINE.SetRenderTargetYShift((int)SceneWindow->ContentRegionRect.GetTL().y);
 
-		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.WindowBorderSize = 0.0f;
 		style.WindowPadding = ImVec2(0.0f, 0.0f);
 
-		if (RENDERER.finalScene != nullptr)
+		if (RENDERER.FinalScene != nullptr)
 		{
-			ImGui::Image((void*)(intptr_t)RENDERER.finalScene->getTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.FinalScene->GetTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		}
-		else if (RENDERER.sceneToTextureFB->getColorAttachment() != nullptr)
+		else if (RENDERER.SceneToTextureFB->GetColorAttachment() != nullptr)
 		{
-			ImGui::Image((void*)(intptr_t)RENDERER.sceneToTextureFB->getColorAttachment()->getTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+			ImGui::Image((void*)(intptr_t)RENDERER.SceneToTextureFB->GetColorAttachment()->GetTextureID(), ImVec2(ImGui::GetCurrentWindow()->ContentRegionRect.GetWidth(), ImGui::GetCurrentWindow()->ContentRegionRect.GetHeight()), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 		}
 		// Something went terribly wrong!
 		else
@@ -1347,86 +1355,86 @@ void FEEditor::render()
 
 		ImGui::End();
 
-		displaySceneBrowser();
-		displayContentBrowser();
-		displayInspector();
-		displayEffectsWindow();
-		displayLogWindow();
-		if (!gyzmosSettingsWindowObject.isVisible())
-			gyzmosSettingsWindowObject.show();
-		gyzmosSettingsWindowObject.render();
+		DisplaySceneBrowser();
+		DisplayContentBrowser();
+		DisplayInspector();
+		DisplayEffectsWindow();
+		DisplayLogWindow();
+		if (!GyzmosSettingsWindowObject.IsVisible())
+			GyzmosSettingsWindowObject.Show();
+		GyzmosSettingsWindowObject.Render();
 
-		int index = SELECTED.getIndexOfObjectUnderMouse(EDITOR.getMouseX(), EDITOR.getMouseY());
+		const int index = SELECTED.GetIndexOfObjectUnderMouse(EDITOR.GetMouseX(), EDITOR.GetMouseY());
 		if (index >= 0)
 		{
-			if (!GIZMO_MANAGER.wasSelected(index))
+			if (!GIZMO_MANAGER.WasSelected(index))
 			{
-				SELECTED.setSelectedByIndex(index);
+				SELECTED.SetSelectedByIndex(index);
 			}
 		}
 
-		renderAllSubWindows();
+		RenderAllSubWindows();
 	}
 	else
 	{
-		PROJECT_MANAGER.displayProjectSelection();
+		PROJECT_MANAGER.DisplayProjectSelection();
 	}
 }
 
-void FEEditor::closeWindowCallBack()
+void FEEditor::CloseWindowCallBack()
 {
-	if (PROJECT_MANAGER.getCurrent() == nullptr)
+	if (PROJECT_MANAGER.GetCurrent() == nullptr)
 	{
-		ENGINE.terminate();
+		ENGINE.Terminate();
 		return;
 	}
 
-	if (PROJECT_MANAGER.getCurrent()->isModified())
+	if (PROJECT_MANAGER.GetCurrent()->IsModified())
 	{
-		projectWasModifiedPopUp::getInstance().show(PROJECT_MANAGER.getCurrent(), true);
+		projectWasModifiedPopUp::getInstance().Show(PROJECT_MANAGER.GetCurrent(), true);
 	}
 	else
 	{
-		PROJECT_MANAGER.closeCurrentProject();
-		ENGINE.terminate();
+		PROJECT_MANAGER.CloseCurrentProject();
+		ENGINE.Terminate();
 		return;
 	}
 }
 
-void FEEditor::renderTargetResizeCallback(int newW, int newH)
+void FEEditor::RenderTargetResizeCallback(int NewW, int NewH)
 {
-	ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
-	SELECTED.reInitializeResources();
+	ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+	SELECTED.ReInitializeResources();
 }
 
-void FEEditor::dropCallback(int count, const char** paths)
+void FEEditor::DropCallback(const int Count, const char** Paths)
 {
-	for (size_t i = 0; i < size_t(count); i++)
+	for (size_t i = 0; i < size_t(Count); i++)
 	{
-		if (FILE_SYSTEM.isFolder(paths[i]) && count == 1)
+		if (FILE_SYSTEM.IsFolder(Paths[i]) && Count == 1)
 		{
-			if (PROJECT_MANAGER.getCurrent() == nullptr)
+			if (PROJECT_MANAGER.GetCurrent() == nullptr)
 			{
-				PROJECT_MANAGER.setProjectsFolder(paths[i]);
+				PROJECT_MANAGER.SetProjectsFolder(Paths[i]);
 			}
 		}
 
-		if (PROJECT_MANAGER.getCurrent() != nullptr)
+		if (PROJECT_MANAGER.GetCurrent() != nullptr)
 		{
-			std::vector<FEObject*> loadedObjects = RESOURCE_MANAGER.importAsset(paths[i]);
-			for (size_t i = 0; i < loadedObjects.size(); i++)
+			std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportAsset(Paths[i]);
+			for (size_t j = 0; j < LoadedObjects.size(); j++)
 			{
-				if (loadedObjects[i] != nullptr)
+				if (LoadedObjects[j] != nullptr)
 				{
-					if (loadedObjects[i]->getType() == FE_ENTITY)
+					if (LoadedObjects[j]->GetType() == FE_ENTITY)
 					{
 						//SCENE.addEntity(reinterpret_cast<FEEntity*>(loadedObjects[i]));
 					}
 					else
 					{
-						VIRTUAL_FILE_SYSTEM.createFile(loadedObjects[i], VIRTUAL_FILE_SYSTEM.getCurrentPath());
-						PROJECT_MANAGER.getCurrent()->setModified(true);
-						PROJECT_MANAGER.getCurrent()->addUnSavedObject(loadedObjects[i]);
+						VIRTUAL_FILE_SYSTEM.CreateFile(LoadedObjects[j], VIRTUAL_FILE_SYSTEM.GetCurrentPath());
+						PROJECT_MANAGER.GetCurrent()->SetModified(true);
+						PROJECT_MANAGER.GetCurrent()->AddUnSavedObject(LoadedObjects[j]);
 					}
 				}
 			}
@@ -1434,121 +1442,125 @@ void FEEditor::dropCallback(int count, const char** paths)
 	}
 }
 
-bool FEEditor::isInGameMode()
+bool FEEditor::IsInGameMode() const
 {
-	return gameMode;
+	return bGameMode;
 }
 
-void FEEditor::setGameMode(bool gameMode)
+void FEEditor::SetGameMode(const bool GameMode)
 {
-	this->gameMode = gameMode;
-	if (this->gameMode)
+	this->bGameMode = GameMode;
+	if (this->bGameMode)
 	{
-		ENGINE.setRenderTargetMode(FE_GLFW_MODE);
-		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+		ENGINE.SetRenderTargetMode(FE_GLFW_MODE);
+		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 	}
 	else
 	{
-		ENGINE.setRenderTargetMode(FE_CUSTOM_MODE);
-		ENGINE.renderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera()));
+		ENGINE.SetRenderTargetMode(FE_CUSTOM_MODE);
+		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 	}
 }
 
-bool FEEditor::entityChangePrefabTargetCallBack(FEObject* object, void** entityPointer)
+bool FEEditor::EntityChangePrefabTargetCallBack(FEObject* Object, void** EntityPointer)
 {
-	FEEntity* entity = SELECTED.getEntity();
+	FEEntity* entity = SELECTED.GetEntity();
 	if (entity == nullptr)
 		return false;
 
-	entity->prefab = (RESOURCE_MANAGER.getPrefab(object->getObjectID()));
+	entity->Prefab = (RESOURCE_MANAGER.GetPrefab(Object->GetObjectID()));
 	return true;
 }
 
-bool FEEditor::terrainChangeMaterialTargetCallBack(FEObject* object, void** layerIndex)
+bool FEEditor::TerrainChangeMaterialTargetCallBack(FEObject* Object, void** LayerIndex)
 {
-	FETerrain* terrain = SELECTED.getTerrain();
+	FETerrain* terrain = SELECTED.GetTerrain();
 	if (terrain == nullptr)
 		return false;
 
-	FEMaterial* materialToAssign = RESOURCE_MANAGER.getMaterial(object->getObjectID());
-	if (!materialToAssign->isCompackPacking())
+	FEMaterial* MaterialToAssign = RESOURCE_MANAGER.GetMaterial(Object->GetObjectID());
+	if (!MaterialToAssign->IsCompackPacking())
 		return false;
 
-	int tempLayerIndex = *(int*)layerIndex;
-	if (tempLayerIndex >= 0 && tempLayerIndex < FE_TERRAIN_MAX_LAYERS)
-		terrain->getLayerInSlot(tempLayerIndex)->setMaterial(materialToAssign);
+	const int TempLayerIndex = *(int*)LayerIndex;
+	if (TempLayerIndex >= 0 && TempLayerIndex < FE_TERRAIN_MAX_LAYERS)
+		terrain->GetLayerInSlot(TempLayerIndex)->SetMaterial(MaterialToAssign);
 
 	return true;
 }
 
-void FEEditor::displayInspector()
+void FEEditor::DisplayInspector()
 {
-	if (!inspectorVisible)
+	if (!bInspectorVisible)
 		return;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Inspector", nullptr, ImGuiWindowFlags_None);
 	
-	if (SELECTED.getSelected() == nullptr)
+	if (SELECTED.GetSelected() == nullptr)
 	{
 		ImGui::PopStyleVar();
 		ImGui::End();
 		return;
 	}
 
-	if (SELECTED.getEntity() != nullptr)
+	if (SELECTED.GetEntity() != nullptr)
 	{
-		FEEntity* entity = SELECTED.getEntity();
+		FEEntity* entity = SELECTED.GetEntity();
 
-		if (entity->getType() == FE_ENTITY)
+		if (entity->GetType() == FE_ENTITY)
 		{
-			showTransformConfiguration(entity, &entity->transform);
+			ShowTransformConfiguration(entity, &entity->Transform);
 
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
 
+			bool bActive = entity->IsWireframeMode();
+			ImGui::Checkbox("WireframeMode", &bActive);
+			entity->SetWireframeMode(bActive);
+
 			ImGui::Separator();
 			ImGui::Text("Prefab : ");
-			FETexture* previewTexture = PREVIEW_MANAGER.getPrefabPreview(entity->prefab->getObjectID());
+			FETexture* PreviewTexture = PREVIEW_MANAGER.GetPrefabPreview(entity->Prefab->GetObjectID());
 			
-			if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+			if (ImGui::ImageButton((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 			{
-				entityToModify = entity;
-				selectFEObjectPopUp::getInstance().show(FE_PREFAB, changePrefabOfEntityCallBack, entity->prefab);
+				EntityToModify = entity;
+				SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, ChangePrefabOfEntityCallBack, entity->Prefab);
 			}
-			entityChangePrefabTarget->stickToItem();
+			EntityChangePrefabTarget->StickToItem();
 			ImGui::Separator();
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 		}
-		else if (entity->getType() == FE_ENTITY_INSTANCED)
+		else if (entity->GetType() == FE_ENTITY_INSTANCED)
 		{
-			FEEntityInstanced* instancedEntity = reinterpret_cast<FEEntityInstanced*>(entity);
+			FEEntityInstanced* InstancedEntity = reinterpret_cast<FEEntityInstanced*>(entity);
 
-			if (SELECTED.instancedSubObjectIndexSelected != -1)
+			if (SELECTED.InstancedSubObjectIndexSelected != -1)
 			{
-				std::string instancedSubObjectInfo = "index: ";
+				std::string InstancedSubObjectInfo = "index: ";
 
 				ImGui::Text("Selected instance info:");
-				instancedSubObjectInfo = "index: " + std::to_string(SELECTED.instancedSubObjectIndexSelected);
-				ImGui::Text(instancedSubObjectInfo.c_str());
+				InstancedSubObjectInfo = "index: " + std::to_string(SELECTED.InstancedSubObjectIndexSelected);
+				ImGui::Text(InstancedSubObjectInfo.c_str());
 
-				FETransformComponent tempTransform = FETransformComponent(instancedEntity->getTransformedInstancedMatrix(SELECTED.instancedSubObjectIndexSelected));
-				showTransformConfiguration("selected instance", &tempTransform);
-				instancedEntity->modifyInstance(SELECTED.instancedSubObjectIndexSelected, tempTransform.getTransformMatrix());
+				FETransformComponent TempTransform = FETransformComponent(InstancedEntity->GetTransformedInstancedMatrix(SELECTED.InstancedSubObjectIndexSelected));
+				ShowTransformConfiguration("selected instance", &TempTransform);
+				InstancedEntity->ModifyInstance(SELECTED.InstancedSubObjectIndexSelected, TempTransform.GetTransformMatrix());
 
 				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.55f, 0.55f, 0.95f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.75f, 0.75f, 0.95f));
 
-				if (ImGui::ImageButton((void*)(intptr_t)arrowToGroundIcon->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				if (ImGui::ImageButton((void*)(intptr_t)ArrowToGroundIcon->GetTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
-					instancedEntity->tryToSnapInstance(SELECTED.instancedSubObjectIndexSelected);
+					InstancedEntity->TryToSnapInstance(SELECTED.InstancedSubObjectIndexSelected);
 				}
-				showToolTip("Selected instance will attempt to snap to the terrain.");
+				ShowToolTip("Selected instance will attempt to snap to the terrain.");
 
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
@@ -1556,7 +1568,7 @@ void FEEditor::displayInspector()
 			}
 			else
 			{
-				showTransformConfiguration(entity, &entity->transform);
+				ShowTransformConfiguration(entity, &entity->Transform);
 
 				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
@@ -1565,13 +1577,13 @@ void FEEditor::displayInspector()
 				ImGui::Separator();
 
 				ImGui::Text("Prefab : ");
-				FETexture* previewTexture = PREVIEW_MANAGER.getPrefabPreview(entity->prefab->getObjectID());
-				if (ImGui::ImageButton((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				FETexture* PreviewTexture = PREVIEW_MANAGER.GetPrefabPreview(entity->Prefab->GetObjectID());
+				if (ImGui::ImageButton((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(128, 128), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
-					entityToModify = entity;
-					selectFEObjectPopUp::getInstance().show(FE_PREFAB, changePrefabOfEntityCallBack, entity->prefab);
+					EntityToModify = entity;
+					SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, ChangePrefabOfEntityCallBack, entity->Prefab);
 				}
-				entityChangePrefabTarget->stickToItem();
+				EntityChangePrefabTarget->StickToItem();
 				ImGui::Separator();
 
 				ImGui::PopStyleColor();
@@ -1581,37 +1593,37 @@ void FEEditor::displayInspector()
 				ImGui::Text("Snapped to: ");
 				ImGui::SameLine();
 
-				std::vector<std::string> terrainList = SCENE.getTerrainList();
-				static std::string currentTerrain = "none";
+				const std::vector<std::string> TerrainList = SCENE.GetTerrainList();
+				static std::string CurrentTerrain = "none";
 
-				if (instancedEntity->getSnappedToTerrain() == nullptr)
+				if (InstancedEntity->GetSnappedToTerrain() == nullptr)
 				{
-					currentTerrain = "none";
+					CurrentTerrain = "none";
 				}
 				else
 				{
-					currentTerrain = instancedEntity->getSnappedToTerrain()->getName();
+					CurrentTerrain = InstancedEntity->GetSnappedToTerrain()->GetName();
 				}
 
 				ImGui::SetNextItemWidth(220);
-				if (ImGui::BeginCombo("##Terrain", currentTerrain.c_str(), ImGuiWindowFlags_None))
+				if (ImGui::BeginCombo("##Terrain", CurrentTerrain.c_str(), ImGuiWindowFlags_None))
 				{
-					bool is_selected = (currentTerrain == "none");
+					const bool is_selected = (CurrentTerrain == "none");
 					if (ImGui::Selectable("none", is_selected))
 					{
-						if (instancedEntity->getSnappedToTerrain() != nullptr)
-							instancedEntity->getSnappedToTerrain()->unSnapInstancedEntity(instancedEntity);
+						if (InstancedEntity->GetSnappedToTerrain() != nullptr)
+							InstancedEntity->GetSnappedToTerrain()->UnSnapInstancedEntity(InstancedEntity);
 					}
 
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
 
-					for (size_t i = 0; i < terrainList.size(); i++)
+					for (size_t i = 0; i < TerrainList.size(); i++)
 					{
-						bool is_selected = (currentTerrain == terrainList[i]);
-						if (ImGui::Selectable(SCENE.getTerrain(terrainList[i])->getName().c_str(), is_selected))
+						const bool is_selected = (CurrentTerrain == TerrainList[i]);
+						if (ImGui::Selectable(SCENE.GetTerrain(TerrainList[i])->GetName().c_str(), is_selected))
 						{
-							SCENE.getTerrain(terrainList[i])->snapInstancedEntity(instancedEntity);
+							SCENE.GetTerrain(TerrainList[i])->SnapInstancedEntity(InstancedEntity);
 						}
 
 						if (is_selected)
@@ -1620,28 +1632,28 @@ void FEEditor::displayInspector()
 					ImGui::EndCombo();
 				}
 
-				if (instancedEntity->getSnappedToTerrain() != nullptr)
+				if (InstancedEntity->GetSnappedToTerrain() != nullptr)
 				{
 					ImGui::Text("Terrain layer: ");
 					ImGui::SameLine();
 
-					int currentLayer = instancedEntity->getTerrainLayer();
-					FETerrain* currentTerrain = instancedEntity->getSnappedToTerrain();
+					const int CurrentLayer = InstancedEntity->GetTerrainLayer();
+					FETerrain* CurrentTerrain = InstancedEntity->GetSnappedToTerrain();
 
 					std::string caption = "none";
-					auto layer = currentTerrain->getLayerInSlot(currentLayer);
+					const auto layer = CurrentTerrain->GetLayerInSlot(CurrentLayer);
 					if (layer != nullptr)
-						caption = layer->getName();
+						caption = layer->GetName();
 					
 					ImGui::SetNextItemWidth(220);
 					if (ImGui::BeginCombo("##TerrainLayers", caption.c_str(), ImGuiWindowFlags_None))
 					{
-						bool is_selected = (currentLayer == -1);
+						const bool is_selected = (CurrentLayer == -1);
 						ImGui::PushID("none_TerrainLayers_entity");
 						if (ImGui::Selectable("none", is_selected))
 						{
-							if (currentTerrain != nullptr)
-								currentTerrain->unConnectInstancedEntityFromLayer(instancedEntity);
+							if (CurrentTerrain != nullptr)
+								CurrentTerrain->UnConnectInstancedEntityFromLayer(InstancedEntity);
 						}
 						ImGui::PopID();
 
@@ -1650,15 +1662,15 @@ void FEEditor::displayInspector()
 
 						for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 						{
-							FETerrainLayer* layer = currentTerrain->getLayerInSlot(i);
+							FETerrainLayer* layer = CurrentTerrain->GetLayerInSlot(i);
 							if (layer == nullptr)
 								break;
 
-							bool is_selected = (currentLayer == i);
-							ImGui::PushID(layer->getObjectID().c_str());
-							if (ImGui::Selectable(layer->getName().c_str(), is_selected))
+							const bool is_selected = (CurrentLayer == i);
+							ImGui::PushID(layer->GetObjectID().c_str());
+							if (ImGui::Selectable(layer->GetName().c_str(), is_selected))
 							{
-								currentTerrain->connectInstancedEntityToLayer(instancedEntity, int(i));
+								CurrentTerrain->ConnectInstancedEntityToLayer(InstancedEntity, int(i));
 							}
 							ImGui::PopID();
 
@@ -1668,43 +1680,43 @@ void FEEditor::displayInspector()
 						ImGui::EndCombo();
 					}
 
-					if (currentLayer != -1)
+					if (CurrentLayer != -1)
 					{
 						ImGui::Text("Minimal layer intensity:");
-						float minLevel = instancedEntity->getMinimalLayerIntensity();
+						float MinLevel = InstancedEntity->GetMinimalLayerIntensity();
 						ImGui::SameLine();
 						ImGui::SetNextItemWidth(80);
-						ImGui::DragFloat("##minLevel", &minLevel);
-						instancedEntity->setMinimalLayerIntensity(minLevel);
+						ImGui::DragFloat("##minLevel", &MinLevel);
+						InstancedEntity->SetMinimalLayerIntensity(MinLevel);
 					}
 				}
 
 				ImGui::Separator();
 
 				ImGui::Text("Seed:");
-				int seed = instancedEntity->spawnInfo.seed;
+				int seed = InstancedEntity->SpawnInfo.Seed;
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(200);
 				ImGui::DragInt("##Seed", &seed);
-				instancedEntity->spawnInfo.seed = seed;
+				InstancedEntity->SpawnInfo.Seed = seed;
 
 				ImGui::Text("Object count:");
-				int objectCount = instancedEntity->spawnInfo.objectCount;
+				int ObjectCount = InstancedEntity->SpawnInfo.ObjectCount;
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(200);
-				ImGui::DragInt("##Object count", &objectCount);
-				if (objectCount <= 0)
-					objectCount = 1;
-				instancedEntity->spawnInfo.objectCount = objectCount;
+				ImGui::DragInt("##Object count", &ObjectCount);
+				if (ObjectCount <= 0)
+					ObjectCount = 1;
+				InstancedEntity->SpawnInfo.ObjectCount = ObjectCount;
 
 				ImGui::Text("Radius:");
-				float radius = instancedEntity->spawnInfo.radius;
+				float radius = InstancedEntity->SpawnInfo.Radius;
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(200);
 				ImGui::DragFloat("##Radius", &radius);
 				if (radius < 0.0f)
 					radius = 0.1f;
-				instancedEntity->spawnInfo.radius = radius;
+				InstancedEntity->SpawnInfo.Radius = radius;
 
 				// Scale deviation.
 				ImGui::Text("Scale: ");
@@ -1714,66 +1726,66 @@ void FEEditor::displayInspector()
 
 				ImGui::SameLine();
 				ImGui::SetNextItemWidth(100);
-				float minScale = instancedEntity->spawnInfo.getMinScale();
-				ImGui::DragFloat("##minScale", &minScale, 0.01f);
-				instancedEntity->spawnInfo.setMinScale(minScale);
+				float MinScale = InstancedEntity->SpawnInfo.GetMinScale();
+				ImGui::DragFloat("##minScale", &MinScale, 0.01f);
+				InstancedEntity->SpawnInfo.SetMinScale(MinScale);
 
 				ImGui::SameLine();
 				ImGui::Text("max ");
 
 				ImGui::SameLine();
-				float maxScale = instancedEntity->spawnInfo.getMaxScale();
+				float MaxScale = InstancedEntity->SpawnInfo.GetMaxScale();
 				ImGui::SetNextItemWidth(100);
-				ImGui::DragFloat("##maxScale", &maxScale, 0.01f);
-				instancedEntity->spawnInfo.setMaxScale(maxScale);
+				ImGui::DragFloat("##maxScale", &MaxScale, 0.01f);
+				InstancedEntity->SpawnInfo.SetMaxScale(MaxScale);
 				
 				ImGui::Text("Rotation deviation:");
-				float rotationDeviationX = instancedEntity->spawnInfo.rotationDeviation.x;
+				float RotationDeviationX = InstancedEntity->SpawnInfo.RotationDeviation.x;
 				ImGui::Text("X:");
 				ImGui::SameLine();
-				ImGui::DragFloat("##Rotation deviation X", &rotationDeviationX, 0.01f);
-				if (rotationDeviationX < 0.01f)
-					rotationDeviationX = 0.01f;
-				if (rotationDeviationX > 1.0f)
-					rotationDeviationX = 1.0f;
-				instancedEntity->spawnInfo.rotationDeviation.x = rotationDeviationX;
+				ImGui::DragFloat("##Rotation deviation X", &RotationDeviationX, 0.01f);
+				if (RotationDeviationX < 0.01f)
+					RotationDeviationX = 0.01f;
+				if (RotationDeviationX > 1.0f)
+					RotationDeviationX = 1.0f;
+				InstancedEntity->SpawnInfo.RotationDeviation.x = RotationDeviationX;
 
-				float rotationDeviationY = instancedEntity->spawnInfo.rotationDeviation.y;
+				float RotationDeviationY = InstancedEntity->SpawnInfo.RotationDeviation.y;
 				ImGui::Text("Y:");
 				ImGui::SameLine();
-				ImGui::DragFloat("##Rotation deviation Y", &rotationDeviationY, 0.01f);
-				if (rotationDeviationY < 0.01f)
-					rotationDeviationY = 0.01f;
-				if (rotationDeviationY > 1.0f)
-					rotationDeviationY = 1.0f;
-				instancedEntity->spawnInfo.rotationDeviation.y = rotationDeviationY;
+				ImGui::DragFloat("##Rotation deviation Y", &RotationDeviationY, 0.01f);
+				if (RotationDeviationY < 0.01f)
+					RotationDeviationY = 0.01f;
+				if (RotationDeviationY > 1.0f)
+					RotationDeviationY = 1.0f;
+				InstancedEntity->SpawnInfo.RotationDeviation.y = RotationDeviationY;
 
-				float rotationDeviationZ = instancedEntity->spawnInfo.rotationDeviation.z;
+				float RotationDeviationZ = InstancedEntity->SpawnInfo.RotationDeviation.z;
 				ImGui::Text("Z:");
 				ImGui::SameLine();
-				ImGui::DragFloat("##Rotation deviation z", &rotationDeviationZ, 0.01f);
-				if (rotationDeviationZ < 0.01f)
-					rotationDeviationZ = 0.01f;
-				if (rotationDeviationZ > 1.0f)
-					rotationDeviationZ = 1.0f;
-				instancedEntity->spawnInfo.rotationDeviation.z = rotationDeviationZ;
+				ImGui::DragFloat("##Rotation deviation z", &RotationDeviationZ, 0.01f);
+				if (RotationDeviationZ < 0.01f)
+					RotationDeviationZ = 0.01f;
+				if (RotationDeviationZ > 1.0f)
+					RotationDeviationZ = 1.0f;
+				InstancedEntity->SpawnInfo.RotationDeviation.z = RotationDeviationZ;
 
 				if (ImGui::Button("Spawn/Re-Spawn"))
 				{
-					instancedEntity->clear();
-					instancedEntity->populate(instancedEntity->spawnInfo);
+					InstancedEntity->Clear();
+					InstancedEntity->Populate(InstancedEntity->SpawnInfo);
 				}
 
 				if (ImGui::Button("Add instance"))
 				{
-					glm::mat4 newInstanceMatrix = glm::identity<glm::mat4>();
-					newInstanceMatrix = glm::translate(newInstanceMatrix, ENGINE.getCamera()->getPosition() + ENGINE.getCamera()->getForward() * 10.0f);
-					instancedEntity->addInstance(newInstanceMatrix);
+					glm::mat4 NewInstanceMatrix = glm::identity<glm::mat4>();
+					NewInstanceMatrix = glm::translate(NewInstanceMatrix, ENGINE.GetCamera()->GetPosition() + ENGINE.GetCamera()->GetForward() * 10.0f);
+					InstancedEntity->AddInstance(NewInstanceMatrix);
 
-					PROJECT_MANAGER.getCurrent()->setModified(true);
+					PROJECT_MANAGER.GetCurrent()->SetModified(true);
 				}
 
-				if (instancedEntity->isSelectMode())
+				if (InstancedEntity->IsSelectMode())
 				{
 					ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.0f, 0.75f, 0.0f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.0f, 1.0f, 0.0f));
@@ -1787,16 +1799,16 @@ void FEEditor::displayInspector()
 				}
 
 				ImGui::Separator();
-				if (ImGui::ImageButton((void*)(intptr_t)mouseCursorIcon->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
+				if (ImGui::ImageButton((void*)(intptr_t)MouseCursorIcon->GetTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f)))
 				{
-					SCENE.setSelectMode(instancedEntity, !instancedEntity->isSelectMode());
-					if (!instancedEntity->isSelectMode())
+					SCENE.SetSelectMode(InstancedEntity, !InstancedEntity->IsSelectMode());
+					if (!InstancedEntity->IsSelectMode())
 					{
-						SELECTED.clear();
-						SELECTED.setSelected(instancedEntity);
+						SELECTED.Clear();
+						SELECTED.SetSelected(InstancedEntity);
 					}
 				}
-				showToolTip("Individual selection mode - Used to select individual instances.");
+				ShowToolTip("Individual selection mode - Used to select individual instances.");
 
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
@@ -1804,33 +1816,33 @@ void FEEditor::displayInspector()
 			}
 		}
 	}
-	else if (SELECTED.getTerrain() != nullptr)
+	else if (SELECTED.GetTerrain() != nullptr)
 	{
-		FETerrain* currentTerrain = SELECTED.getTerrain();
-		displayTerrainSettings(currentTerrain);
+		FETerrain* CurrentTerrain = SELECTED.GetTerrain();
+		DisplayTerrainSettings(CurrentTerrain);
 
-		if (currentTerrain->getBrushMode() != FE_TERRAIN_BRUSH_NONE)
+		if (CurrentTerrain->GetBrushMode() != FE_TERRAIN_BRUSH_NONE)
 		{
 			// to hide gizmos
-			if (SELECTED.getTerrain() != nullptr)
-				SELECTED.setSelected(SELECTED.getTerrain());
+			if (SELECTED.GetTerrain() != nullptr)
+				SELECTED.SetSelected(SELECTED.GetTerrain());
 
-			currentTerrain->setBrushActive(EDITOR.leftMousePressed);
+			CurrentTerrain->SetBrushActive(EDITOR.bLeftMousePressed);
 
-			if (EDITOR.shiftPressed)
+			if (EDITOR.bShiftPressed)
 			{
-				if (currentTerrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW)
-					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED);
+				if (CurrentTerrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW)
+					CurrentTerrain->SetBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED);
 			}
 			else
 			{
-				if (currentTerrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
-					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
+				if (CurrentTerrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+					CurrentTerrain->SetBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
 			}
 
-			/*if (EDITOR.leftMousePressed)
+			/*if (EDITOR.bLeftMousePressed)
 			{
-				if (EDITOR.shiftPressed)
+				if (EDITOR.bShiftPressed)
 				{
 					currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED);
 				}
@@ -1844,128 +1856,128 @@ void FEEditor::displayInspector()
 				currentTerrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
 			}*/
 
-			//currentTerrain->setBrushActive(EDITOR.leftMousePressed);
-			//currentTerrain->setBrushInversed(EDITOR.shiftPressed);
+			//currentTerrain->setBrushActive(EDITOR.bLeftMousePressed);
+			//currentTerrain->setBrushInversed(EDITOR.bShiftPressed);
 		}
 		else
 		{
 			// to show gizmos
-			if (SELECTED.getTerrain() != nullptr)
-				SELECTED.setSelected(SELECTED.getTerrain());
+			if (SELECTED.GetTerrain() != nullptr)
+				SELECTED.SetSelected(SELECTED.GetTerrain());
 		}
 	}
-	else if (SELECTED.getLight() != nullptr)
+	else if (SELECTED.GetLight() != nullptr)
 	{
-		displayLightProperties(SELECTED.getLight());
+		DisplayLightProperties(SELECTED.GetLight());
 	}
-	else if (SELECTED.getSelected()->getType() == FE_CAMERA)
+	else if (SELECTED.GetSelected()->GetType() == FE_CAMERA)
 	{
-		FEFreeCamera* camera = reinterpret_cast<FEFreeCamera*>(ENGINE.getCamera());
+		FEFreeCamera* camera = reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera());
 		// ********* POSITION *********
-		glm::vec3 cameraPosition = camera->getPosition();
+		glm::vec3 CameraPosition = camera->GetPosition();
 		
 		ImGui::Text("Position : ");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##X pos", &cameraPosition[0], 0.1f);
-		showToolTip("X position");
+		ImGui::DragFloat("##X pos", &CameraPosition[0], 0.1f);
+		ShowToolTip("X position");
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##Y pos", &cameraPosition[1], 0.1f);
-		showToolTip("Y position");
+		ImGui::DragFloat("##Y pos", &CameraPosition[1], 0.1f);
+		ShowToolTip("Y position");
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##Z pos", &cameraPosition[2], 0.1f);
-		showToolTip("Z position");
+		ImGui::DragFloat("##Z pos", &CameraPosition[2], 0.1f);
+		ShowToolTip("Z position");
 
-		camera->setPosition(cameraPosition);
+		camera->SetPosition(CameraPosition);
 
 		// ********* ROTATION *********
-		glm::vec3 cameraRotation = glm::vec3(camera->getYaw(), camera->getPitch(), camera->getRoll());
+		glm::vec3 CameraRotation = glm::vec3(camera->GetYaw(), camera->GetPitch(), camera->GetRoll());
 
 		ImGui::Text("Rotation : ");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##X rot", &cameraRotation[0], 0.1f);
-		showToolTip("X rotation");
+		ImGui::DragFloat("##X rot", &CameraRotation[0], 0.1f);
+		ShowToolTip("X rotation");
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##Y rot", &cameraRotation[1], 0.1f);
-		showToolTip("Y rotation");
+		ImGui::DragFloat("##Y rot", &CameraRotation[1], 0.1f);
+		ShowToolTip("Y rotation");
 
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
-		ImGui::DragFloat("##Z rot", &cameraRotation[2], 0.1f);
-		showToolTip("Z rotation");
+		ImGui::DragFloat("##Z rot", &CameraRotation[2], 0.1f);
+		ShowToolTip("Z rotation");
 
-		camera->setYaw(cameraRotation[0]);
-		camera->setPitch(cameraRotation[1]);
-		camera->setRoll(cameraRotation[2]);
+		camera->SetYaw(CameraRotation[0]);
+		camera->SetPitch(CameraRotation[1]);
+		camera->SetRoll(CameraRotation[2]);
 
-		float cameraSpeed = camera->getMovementSpeed();
+		float CameraSpeed = camera->GetMovementSpeed();
 		ImGui::Text("Camera speed in m/s : ");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(70);
-		ImGui::DragFloat("##Camera_speed", &cameraSpeed, 0.01f, 0.01f, 100.0f);
-		camera->setMovementSpeed(cameraSpeed);
+		ImGui::DragFloat("##Camera_speed", &CameraSpeed, 0.01f, 0.01f, 100.0f);
+		camera->SetMovementSpeed(CameraSpeed);
 	}
 
 	ImGui::PopStyleVar();
 	ImGui::End();
 }
 
-void FEEditor::displayEffectsWindow()
+void FEEditor::DisplayEffectsWindow() const
 {
-	if (!effectsWindowVisible)
+	if (!bEffectsWindowVisible)
 		return;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Effects settings", nullptr, ImGuiWindowFlags_None);
 
 	int GUIID = 0;
-	static float buttonWidth = 80.0f;
-	static float fieldWidth = 250.0f;
+	static float ButtonWidth = 80.0f;
+	static float FieldWidth = 250.0f;
 
-	static ImGuiButton* resetButton = new ImGuiButton("Reset");
-	static bool firstCall = true;
-	if (firstCall)
+	static ImGuiButton* ResetButton = new ImGuiButton("Reset");
+	static bool bFirstCall = true;
+	if (bFirstCall)
 	{
-		resetButton->setSize(ImVec2(buttonWidth, 28.0f));
-		firstCall = false;
+		ResetButton->SetSize(ImVec2(ButtonWidth, 28.0f));
+		bFirstCall = false;
 	}
 
 	if (ImGui::CollapsingHeader("Gamma Correction & Exposure", 0))
 	{
 		ImGui::Text("Gamma Correction:");
-		float FEGamma = ENGINE.getCamera()->getGamma();
-		ImGui::SetNextItemWidth(fieldWidth);
-		ImGui::DragFloat("##Gamma Correction", &FEGamma, 0.01f, 0.001f, 10.0f);
-		ENGINE.getCamera()->setGamma(FEGamma);
+		float Gamma = ENGINE.GetCamera()->GetGamma();
+		ImGui::SetNextItemWidth(FieldWidth);
+		ImGui::DragFloat("##Gamma Correction", &Gamma, 0.01f, 0.001f, 10.0f);
+		ENGINE.GetCamera()->SetGamma(Gamma);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			ENGINE.getCamera()->setGamma(2.2f);
+			ENGINE.GetCamera()->SetGamma(2.2f);
 		}
 		ImGui::PopID();
 
 		ImGui::Text("Exposure:");
-		float FEExposure = ENGINE.getCamera()->getExposure();
-		ImGui::SetNextItemWidth(fieldWidth);
-		ImGui::DragFloat("##Exposure", &FEExposure, 0.01f, 0.001f, 100.0f);
-		ENGINE.getCamera()->setExposure(FEExposure);
+		float Exposure = ENGINE.GetCamera()->GetExposure();
+		ImGui::SetNextItemWidth(FieldWidth);
+		ImGui::DragFloat("##Exposure", &Exposure, 0.01f, 0.001f, 100.0f);
+		ENGINE.GetCamera()->SetExposure(Exposure);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			ENGINE.getCamera()->setExposure(1.0f);
+			ENGINE.GetCamera()->SetExposure(1.0f);
 		}
 		ImGui::PopID();
 	}
@@ -1973,85 +1985,85 @@ void FEEditor::displayEffectsWindow()
 	if (ImGui::CollapsingHeader("Anti-Aliasing(FXAA)", 0))
 	{
 		static const char* options[5] = { "none", "1x", "2x", "4x", "8x" };
-		static std::string selectedOption = "1x";
+		static std::string SelectedOption = "1x";
 		//FEPostProcess* PPEffect = RENDERER.getPostProcessEffect("FE_FXAA");
 
-		static bool firstLook = true;
-		if (firstLook)
+		static bool bFirstLook = true;
+		if (bFirstLook)
 		{
-			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			const float FXAASpanMax = RENDERER.GetFXAASpanMax();
 			if (FXAASpanMax == 0.0f)
 			{
-				selectedOption = options[0];
+				SelectedOption = options[0];
 			}
 			else if (FXAASpanMax > 0.1f && FXAASpanMax < 1.1f)
 			{
-				selectedOption = options[1];
+				SelectedOption = options[1];
 			}
 			else if (FXAASpanMax > 1.1f && FXAASpanMax < 2.1f)
 			{
-				selectedOption = options[2];
+				SelectedOption = options[2];
 			}
 			else if (FXAASpanMax > 2.1f && FXAASpanMax < 4.1f)
 			{
-				selectedOption = options[3];
+				SelectedOption = options[3];
 			}
 			else if (FXAASpanMax > 4.1f && FXAASpanMax < 8.1f)
 			{
-				selectedOption = options[4];
+				SelectedOption = options[4];
 			}
 			else
 			{
-				selectedOption = options[5];
+				SelectedOption = options[5];
 			}
 
-			firstLook = false;
+			bFirstLook = false;
 		}
 
-		static bool debugSettings = false;
-		if (ImGui::Checkbox("debug view", &debugSettings))
+		static bool bDebugSettings = false;
+		if (ImGui::Checkbox("debug view", &bDebugSettings))
 		{
-			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			const float FXAASpanMax = RENDERER.GetFXAASpanMax();
 			if (FXAASpanMax == 0.0f)
 			{
-				selectedOption = options[0];
+				SelectedOption = options[0];
 			}
 			else if (FXAASpanMax > 0.1f && FXAASpanMax < 1.1f)
 			{
-				selectedOption = options[1];
+				SelectedOption = options[1];
 			}
 			else if (FXAASpanMax > 1.1f && FXAASpanMax < 2.1f)
 			{
-				selectedOption = options[2];
+				SelectedOption = options[2];
 			}
 			else if (FXAASpanMax > 2.1f && FXAASpanMax < 4.1f)
 			{
-				selectedOption = options[3];
+				SelectedOption = options[3];
 			}
 			else if (FXAASpanMax > 4.1f && FXAASpanMax < 8.1f)
 			{
-				selectedOption = options[4];
+				SelectedOption = options[4];
 			}
 			else
 			{
-				selectedOption = options[5];
+				SelectedOption = options[5];
 			}
 		}
 
-		if (!debugSettings)
+		if (!bDebugSettings)
 		{
 			ImGui::Text("Anti Aliasing Strength:");
-			if (ImGui::BeginCombo("##Anti Aliasing Strength", selectedOption.c_str(), ImGuiWindowFlags_None))
+			if (ImGui::BeginCombo("##Anti Aliasing Strength", SelectedOption.c_str(), ImGuiWindowFlags_None))
 			{
 				for (size_t i = 0; i < 5; i++)
 				{
-					bool is_selected = (selectedOption == options[i]);
+					const bool is_selected = (SelectedOption == options[i]);
 					if (ImGui::Selectable(options[i], is_selected))
 					{
-						RENDERER.setFXAASpanMax(float(pow(2.0, (i - 1))));
+						RENDERER.SetFXAASpanMax(float(pow(2.0, (i - 1))));
 						if (i == 0)
-							RENDERER.setFXAASpanMax(0.0f);
-						selectedOption = options[i];
+							RENDERER.SetFXAASpanMax(0.0f);
+						SelectedOption = options[i];
 					}
 
 					if (is_selected)
@@ -2063,47 +2075,47 @@ void FEEditor::displayEffectsWindow()
 		else
 		{
 			ImGui::Text("FXAASpanMax:");
-			ImGui::SetNextItemWidth(fieldWidth);
-			float FXAASpanMax = RENDERER.getFXAASpanMax();
+			ImGui::SetNextItemWidth(FieldWidth);
+			float FXAASpanMax = RENDERER.GetFXAASpanMax();
 			ImGui::DragFloat("##FXAASpanMax", &FXAASpanMax, 0.0f, 0.001f, 32.0f);
-			RENDERER.setFXAASpanMax(FXAASpanMax);
+			RENDERER.SetFXAASpanMax(FXAASpanMax);
 
 			ImGui::PushID(GUIID++);
 			ImGui::SameLine();
-			resetButton->render();
-			if (resetButton->getWasClicked())
+			ResetButton->Render();
+			if (ResetButton->IsClicked())
 			{
-				RENDERER.setFXAASpanMax(8.0f);
+				RENDERER.SetFXAASpanMax(8.0f);
 			}
 			ImGui::PopID();
 
 			ImGui::Text("FXAAReduceMin:");
-			ImGui::SetNextItemWidth(fieldWidth);
-			float FXAAReduceMin = RENDERER.getFXAAReduceMin();
+			ImGui::SetNextItemWidth(FieldWidth);
+			float FXAAReduceMin = RENDERER.GetFXAAReduceMin();
 			ImGui::DragFloat("##FXAAReduceMin", &FXAAReduceMin, 0.01f, 0.001f, 100.0f);
-			RENDERER.setFXAAReduceMin(FXAAReduceMin);
+			RENDERER.SetFXAAReduceMin(FXAAReduceMin);
 
 			ImGui::PushID(GUIID++);
 			ImGui::SameLine();
-			resetButton->render();
-			if (resetButton->getWasClicked())
+			ResetButton->Render();
+			if (ResetButton->IsClicked())
 			{
-				RENDERER.setFXAAReduceMin(0.008f);
+				RENDERER.SetFXAAReduceMin(0.008f);
 			}
 			ImGui::PopID();
 
 			ImGui::Text("FXAAReduceMul:");
-			ImGui::SetNextItemWidth(fieldWidth);
-			float FXAAReduceMul = RENDERER.getFXAAReduceMul();
+			ImGui::SetNextItemWidth(FieldWidth);
+			float FXAAReduceMul = RENDERER.GetFXAAReduceMul();
 			ImGui::DragFloat("##FXAAReduceMul", &FXAAReduceMul, 0.01f, 0.001f, 100.0f);
-			RENDERER.setFXAAReduceMul(FXAAReduceMul);
+			RENDERER.SetFXAAReduceMul(FXAAReduceMul);
 
 			ImGui::PushID(GUIID++);
 			ImGui::SameLine();
-			resetButton->render();
-			if (resetButton->getWasClicked())
+			ResetButton->Render();
+			if (ResetButton->IsClicked())
 			{
-				RENDERER.setFXAAReduceMul(0.400f);
+				RENDERER.SetFXAAReduceMul(0.400f);
 			}
 			ImGui::PopID();
 		}
@@ -2112,32 +2124,32 @@ void FEEditor::displayEffectsWindow()
 	if (ImGui::CollapsingHeader("Bloom", 0))
 	{
 		ImGui::Text("Threshold:");
-		float Threshold = RENDERER.getBloomThreshold();
-		ImGui::SetNextItemWidth(fieldWidth);
+		float Threshold = RENDERER.GetBloomThreshold();
+		ImGui::SetNextItemWidth(FieldWidth);
 		ImGui::DragFloat("##Threshold", &Threshold, 0.01f, 0.001f, 30.0f);
-		RENDERER.setBloomThreshold(Threshold);
+		RENDERER.SetBloomThreshold(Threshold);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			RENDERER.setBloomThreshold(1.5f);
+			RENDERER.SetBloomThreshold(1.5f);
 		}
 		ImGui::PopID();
 
 		ImGui::Text("Size:");
-		float Size = RENDERER.getBloomSize();
-		ImGui::SetNextItemWidth(fieldWidth);
+		float Size = RENDERER.GetBloomSize();
+		ImGui::SetNextItemWidth(FieldWidth);
 		ImGui::DragFloat("##BloomSize", &Size, 0.01f, 0.001f, 100.0f);
-		RENDERER.setBloomSize(Size);
+		RENDERER.SetBloomSize(Size);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			RENDERER.setBloomSize(5.0f);
+			RENDERER.SetBloomSize(5.0f);
 		}
 		ImGui::PopID();
 	}
@@ -2145,67 +2157,67 @@ void FEEditor::displayEffectsWindow()
 	if (ImGui::CollapsingHeader("Depth of Field", 0))
 	{
 		ImGui::Text("Near distance:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float depthThreshold = RENDERER.getDOFNearDistance();
-		ImGui::DragFloat("##depthThreshold", &depthThreshold, 0.0f, 0.001f, 100.0f);
-		RENDERER.setDOFNearDistance(depthThreshold);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float DepthThreshold = RENDERER.GetDOFNearDistance();
+		ImGui::DragFloat("##depthThreshold", &DepthThreshold, 0.0f, 0.001f, 100.0f);
+		RENDERER.SetDOFNearDistance(DepthThreshold);
 
 		ImGui::Text("Far distance:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float depthThresholdFar = RENDERER.getDOFFarDistance();
-		ImGui::DragFloat("##depthThresholdFar", &depthThresholdFar, 0.0f, 0.001f, 100.0f);
-		RENDERER.setDOFFarDistance(depthThresholdFar);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float DepthThresholdFar = RENDERER.GetDOFFarDistance();
+		ImGui::DragFloat("##depthThresholdFar", &DepthThresholdFar, 0.0f, 0.001f, 100.0f);
+		RENDERER.SetDOFFarDistance(DepthThresholdFar);
 
 		ImGui::Text("Strength:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float Strength = RENDERER.getDOFStrength();
+		ImGui::SetNextItemWidth(FieldWidth);
+		float Strength = RENDERER.GetDOFStrength();
 		ImGui::DragFloat("##Strength", &Strength, 0.0f, 0.001f, 10.0f);
-		RENDERER.setDOFStrength(Strength);
+		RENDERER.SetDOFStrength(Strength);
 
 		ImGui::Text("Distance dependent strength:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float intMult = RENDERER.getDOFDistanceDependentStrength();
-		ImGui::DragFloat("##Distance dependent strength", &intMult, 0.0f, 0.001f, 100.0f);
-		RENDERER.setDOFDistanceDependentStrength(intMult);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float IntMult = RENDERER.GetDOFDistanceDependentStrength();
+		ImGui::DragFloat("##Distance dependent strength", &IntMult, 0.0f, 0.001f, 100.0f);
+		RENDERER.SetDOFDistanceDependentStrength(IntMult);
 	}
 
 	if (ImGui::CollapsingHeader("Distance fog", 0))
 	{
-		bool enabledFog = RENDERER.isDistanceFogEnabled();
-		if (ImGui::Checkbox("Enable fog", &enabledFog))
+		bool bEnabledFog = RENDERER.IsDistanceFogEnabled();
+		if (ImGui::Checkbox("Enable fog", &bEnabledFog))
 		{
-			RENDERER.setDistanceFogEnabled(enabledFog);
+			RENDERER.SetDistanceFogEnabled(bEnabledFog);
 		}
 
-		if (enabledFog)
+		if (bEnabledFog)
 		{
 			ImGui::Text("Density:");
-			ImGui::SetNextItemWidth(fieldWidth);
-			float fogDensity = RENDERER.getDistanceFogDensity();
-			ImGui::DragFloat("##fogDensity", &fogDensity, 0.0001f, 0.0f, 5.0f);
-			RENDERER.setDistanceFogDensity(fogDensity);
+			ImGui::SetNextItemWidth(FieldWidth);
+			float FogDensity = RENDERER.GetDistanceFogDensity();
+			ImGui::DragFloat("##fogDensity", &FogDensity, 0.0001f, 0.0f, 5.0f);
+			RENDERER.SetDistanceFogDensity(FogDensity);
 
 			ImGui::PushID(GUIID++);
 			ImGui::SameLine();
-			resetButton->render();
-			if (resetButton->getWasClicked())
+			ResetButton->Render();
+			if (ResetButton->IsClicked())
 			{
-				RENDERER.setDistanceFogDensity(0.007f);
+				RENDERER.SetDistanceFogDensity(0.007f);
 			}
 			ImGui::PopID();
 
 			ImGui::Text("Gradient:");
-			ImGui::SetNextItemWidth(fieldWidth);
-			float fogGradient = RENDERER.getDistanceFogGradient();
-			ImGui::DragFloat("##fogGradient", &fogGradient, 0.001f, 0.0f, 5.0f);
-			RENDERER.setDistanceFogGradient(fogGradient);
+			ImGui::SetNextItemWidth(FieldWidth);
+			float FogGradient = RENDERER.GetDistanceFogGradient();
+			ImGui::DragFloat("##fogGradient", &FogGradient, 0.001f, 0.0f, 5.0f);
+			RENDERER.SetDistanceFogGradient(FogGradient);
 
 			ImGui::PushID(GUIID++);
 			ImGui::SameLine();
-			resetButton->render();
-			if (resetButton->getWasClicked())
+			ResetButton->Render();
+			if (ResetButton->IsClicked())
 			{
-				RENDERER.setDistanceFogGradient(2.5f);
+				RENDERER.SetDistanceFogGradient(2.5f);
 			}
 			ImGui::PopID();
 		}
@@ -2214,41 +2226,41 @@ void FEEditor::displayEffectsWindow()
 	if (ImGui::CollapsingHeader("Chromatic Aberration", 0))
 	{
 		ImGui::Text("Shift strength:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float intensity = RENDERER.getChromaticAberrationIntensity();
+		ImGui::SetNextItemWidth(FieldWidth);
+		float intensity = RENDERER.GetChromaticAberrationIntensity();
 		ImGui::DragFloat("##intensity", &intensity, 0.01f, 0.0f, 30.0f);
-		RENDERER.setChromaticAberrationIntensity(intensity);
+		RENDERER.SetChromaticAberrationIntensity(intensity);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			RENDERER.setChromaticAberrationIntensity(1.0f);
+			RENDERER.SetChromaticAberrationIntensity(1.0f);
 		}
 		ImGui::PopID();
 	}
 
 	if (ImGui::CollapsingHeader("Sky", 0))
 	{
-		bool enabledSky = RENDERER.isSkyEnabled();
-		if (ImGui::Checkbox("enable sky", &enabledSky))
+		bool bEnabledSky = RENDERER.IsSkyEnabled();
+		if (ImGui::Checkbox("enable sky", &bEnabledSky))
 		{
-			RENDERER.setSkyEnabld(enabledSky);
+			RENDERER.SetSkyEnabld(bEnabledSky);
 		}
 
 		ImGui::Text("Sphere size:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float size = RENDERER.getDistanceToSky();
+		ImGui::SetNextItemWidth(FieldWidth);
+		float size = RENDERER.GetDistanceToSky();
 		ImGui::DragFloat("##Sphere size", &size, 0.01f, 0.0f, 200.0f);
-		RENDERER.setDistanceToSky(size);
+		RENDERER.SetDistanceToSky(size);
 
 		ImGui::PushID(GUIID++);
 		ImGui::SameLine();
-		resetButton->render();
-		if (resetButton->getWasClicked())
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
 		{
-			RENDERER.setDistanceToSky(50.0f);
+			RENDERER.SetDistanceToSky(50.0f);
 		}
 		ImGui::PopID();
 	}
@@ -2257,32 +2269,32 @@ void FEEditor::displayEffectsWindow()
 	ImGui::End();
 }
 
-void FEEditor::displayLogWindow()
+void FEEditor::DisplayLogWindow() const
 {
-	if (!logWindowVisible)
+	if (!bLogWindowVisible)
 		return;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Log", nullptr, ImGuiWindowFlags_None);
 
-	static int selectedChannel = FE_LOG_GENERAL;
+	static int SelectedChannel = FE_LOG_GENERAL;
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
 	ImGui::Text("Channel:");
 	ImGui::SameLine();
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
-	if (ImGui::BeginCombo("##Channel", selectedChannel == -1 ? "ALL" : LOG.channelTypeToString(LOG_CHANNEL(selectedChannel)).c_str(), ImGuiWindowFlags_None))
+	if (ImGui::BeginCombo("##Channel", SelectedChannel == -1 ? "ALL" : LOG.ChannelTypeToString(LOG_CHANNEL(SelectedChannel)).c_str(), ImGuiWindowFlags_None))
 	{
-		for (int i = -1; i < LOG.channelCount; i++)
+		for (int i = -1; i < LOG.ChannelCount; i++)
 		{
 			ImGui::PushID(i);
 
 			if (i == -1)
 			{
-				bool is_selected = (selectedChannel == -1);
+				const bool is_selected = (SelectedChannel == -1);
 
 				if (ImGui::Selectable("ALL", is_selected))
 				{
-					selectedChannel = -1;
+					SelectedChannel = -1;
 				}
 
 				if (is_selected)
@@ -2290,10 +2302,10 @@ void FEEditor::displayLogWindow()
 			}
 			else
 			{
-				bool is_selected = (selectedChannel == LOG_CHANNEL(i));
-				if (ImGui::Selectable(LOG.channelTypeToString(LOG_CHANNEL(i)).c_str(), is_selected))
+				const bool is_selected = (SelectedChannel == LOG_CHANNEL(i));
+				if (ImGui::Selectable(LOG.ChannelTypeToString(LOG_CHANNEL(i)).c_str(), is_selected))
 				{
-					selectedChannel = LOG_CHANNEL(i);
+					SelectedChannel = LOG_CHANNEL(i);
 				}
 
 				if (is_selected)
@@ -2305,119 +2317,119 @@ void FEEditor::displayLogWindow()
 		ImGui::EndCombo();
 	}
 
-	std::string logMessages;
-	std::vector<LogItem> logItems;
+	std::string LogMessages;
+	std::vector<LogItem> LogItems;
 
-	if (selectedChannel == -1)
+	if (SelectedChannel == -1)
 	{
-		std::vector<LogItem> tempItems;
-		for (int i = 0; i < LOG.channelCount; i++)
+		std::vector<LogItem> TempItems;
+		for (int i = 0; i < LOG.ChannelCount; i++)
 		{
-			tempItems = LOG.getLogItems(LOG_CHANNEL(i));
-			for (size_t j = 0; j < tempItems.size(); j++)
+			TempItems = LOG.GetLogItems(LOG_CHANNEL(i));
+			for (size_t j = 0; j < TempItems.size(); j++)
 			{
-				logItems.push_back(tempItems[j]);
+				LogItems.push_back(TempItems[j]);
 			}
 		}
 	}
 	else
 	{
-		logItems = LOG.getLogItems(LOG_CHANNEL(selectedChannel));
+		LogItems = LOG.GetLogItems(LOG_CHANNEL(SelectedChannel));
 	}
 
-	std::sort(logItems.begin(), logItems.end(),
-	[](const LogItem& a, const LogItem& b) -> bool
+	std::sort(LogItems.begin(), LogItems.end(),
+	[](const LogItem& A, const LogItem& B) -> bool
 	{
-		return a.timeStamp < b.timeStamp;
+		return A.TimeStamp < B.TimeStamp;
 	});
 
-	for (size_t i = 0; i < logItems.size(); i++)
+	for (size_t i = 0; i < LogItems.size(); i++)
 	{
-		logMessages += logItems[i].text;
+		LogMessages += LogItems[i].Text;
 
-		if (logItems[i].count < 1000)
+		if (LogItems[i].Count < 1000)
 		{
-			logMessages += " | COUNT: " + std::to_string(logItems[i].count);
+			LogMessages += " | COUNT: " + std::to_string(LogItems[i].Count);
 		}
 		else
 		{
-			logMessages += " | COUNT: 1000+(Suppressed)";
+			LogMessages += " | COUNT: 1000+(Suppressed)";
 		}
 
-		logMessages += " | SEVERITY: " + LOG.severityLevelToString(logItems[i].severity);
+		LogMessages += " | SEVERITY: " + LOG.SeverityLevelToString(LogItems[i].Severity);
 
-		if (selectedChannel == -1)
+		if (SelectedChannel == -1)
 		{
-			logMessages += " | CHANNEL: " + LOG.channelTypeToString(logItems[i].channel);
+			LogMessages += " | CHANNEL: " + LOG.ChannelTypeToString(LogItems[i].Channel);
 		}
 
-		if (i < logItems.size() - 1)
-			logMessages += "\n";
+		if (i < LogItems.size() - 1)
+			LogMessages += "\n";
 	}
 
-	static TextEditor logEditor;
-	logEditor.SetReadOnly(true);
-	logEditor.SetShowWhitespaces(false);
-	logEditor.SetText(logMessages);
-	logEditor.Render("Log messages");
+	static TextEditor LogEditor;
+	LogEditor.SetReadOnly(true);
+	LogEditor.SetShowWhitespaces(false);
+	LogEditor.SetText(LogMessages);
+	LogEditor.Render("Log messages");
 
 	ImGui::PopStyleVar();
 	ImGui::End();
 }
 
 //static FEMaterial* tempMaterial = nullptr;
-static FETerrain* terrainToWorkWith = nullptr;
-static void createNewTerrainLayerWithMaterialCallBack(std::vector<FEObject*> selectionsResult)
+static FETerrain* TerrainToWorkWith = nullptr;
+static void CreateNewTerrainLayerWithMaterialCallBack(std::vector<FEObject*> SelectionsResult)
 {
-	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	if (SelectionsResult.size() == 1 && SelectionsResult[0]->GetType() == FE_MATERIAL)
 	{
-		if (terrainToWorkWith == nullptr)
+		if (TerrainToWorkWith == nullptr)
 			return;
 
-		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
-		if (selectedMaterial == nullptr)
+		FEMaterial* SelectedMaterial = RESOURCE_MANAGER.GetMaterial(SelectionsResult[0]->GetObjectID());
+		if (SelectedMaterial == nullptr)
 			return;
 
-		RESOURCE_MANAGER.activateTerrainVacantLayerSlot(terrainToWorkWith, selectedMaterial);
+		RESOURCE_MANAGER.ActivateTerrainVacantLayerSlot(TerrainToWorkWith, SelectedMaterial);
 	}
 
-	terrainToWorkWith = nullptr;
+	TerrainToWorkWith = nullptr;
 }
 
-static size_t tempLayerIndex = -1;
-static void changeMaterialInTerrainLayerCallBack(std::vector<FEObject*> selectionsResult)
+static size_t TempLayerIndex = -1;
+static void ChangeMaterialInTerrainLayerCallBack(std::vector<FEObject*> SelectionsResult)
 {
-	if (selectionsResult.size() == 1 && selectionsResult[0]->getType() == FE_MATERIAL)
+	if (SelectionsResult.size() == 1 && SelectionsResult[0]->GetType() == FE_MATERIAL)
 	{
-		if (tempLayerIndex == -1)
+		if (TempLayerIndex == -1)
 			return;
 
-		FEMaterial* selectedMaterial = RESOURCE_MANAGER.getMaterial(selectionsResult[0]->getObjectID());
-		if (selectedMaterial == nullptr)
+		FEMaterial* SelectedMaterial = RESOURCE_MANAGER.GetMaterial(SelectionsResult[0]->GetObjectID());
+		if (SelectedMaterial == nullptr)
 			return;
 
-		terrainToWorkWith->getLayerInSlot(tempLayerIndex)->setMaterial(selectedMaterial);
+		TerrainToWorkWith->GetLayerInSlot(TempLayerIndex)->SetMaterial(SelectedMaterial);
 	}
 
-	terrainToWorkWith = nullptr;
-	tempLayerIndex = -1;
+	TerrainToWorkWith = nullptr;
+	TempLayerIndex = -1;
 }
 
-void FEEditor::displayTerrainSettings(FETerrain* terrain)
+void FEEditor::DisplayTerrainSettings(FETerrain* Terrain)
 {
-	if (terrainChangeLayerMaterialTargets.size() != terrain->layersUsed())
+	if (TerrainChangeLayerMaterialTargets.size() != Terrain->LayersUsed())
 	{
-		for (size_t i = 0; i < terrainChangeLayerMaterialTargets.size(); i++)
+		for (size_t i = 0; i < TerrainChangeLayerMaterialTargets.size(); i++)
 		{
-			delete terrainChangeLayerMaterialTargets[i];
+			delete TerrainChangeLayerMaterialTargets[i];
 		}
 
-		terrainChangeLayerMaterialTargets.resize(terrain->layersUsed());
-		terrainChangeMaterialIndecies.resize(terrain->layersUsed());
-		for (size_t i = 0; i < size_t(terrain->layersUsed()); i++)
+		TerrainChangeLayerMaterialTargets.resize(Terrain->LayersUsed());
+		TerrainChangeMaterialIndecies.resize(Terrain->LayersUsed());
+		for (size_t i = 0; i < size_t(Terrain->LayersUsed()); i++)
 		{
-			terrainChangeMaterialIndecies[i] = int(i);
-			terrainChangeLayerMaterialTargets[i] = DRAG_AND_DROP_MANAGER.addTarget(FE_MATERIAL, terrainChangeMaterialTargetCallBack, (void**)&terrainChangeMaterialIndecies[i], "Drop to assing material to " + terrain->getLayerInSlot(i)->getName());
+			TerrainChangeMaterialIndecies[i] = int(i);
+			TerrainChangeLayerMaterialTargets[i] = DRAG_AND_DROP_MANAGER.AddTarget(FE_MATERIAL, TerrainChangeMaterialTargetCallBack, (void**)&TerrainChangeMaterialIndecies[i], "Drop to assing material to " + Terrain->GetLayerInSlot(i)->GetName());
 		}
 	}
 
@@ -2425,159 +2437,159 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 	{
 		if (ImGui::BeginTabItem("General"))
 		{
-			bool isActive = terrain->isWireframeMode();
-			ImGui::Checkbox("WireframeMode", &isActive);
-			terrain->setWireframeMode(isActive);
+			bool bActive = Terrain->IsWireframeMode();
+			ImGui::Checkbox("WireframeMode", &bActive);
+			Terrain->SetWireframeMode(bActive);
 
 #ifdef USE_DEFERRED_RENDERER
-			int iData = *(int*)RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->data;
-			ImGui::SliderInt("debugFlag", &iData, 0, 10);
-			RESOURCE_MANAGER.getShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->getParameter("debugFlag")->updateData(iData);
+			int IData = *(int*)RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("debugFlag")->Data;
+			ImGui::SliderInt("debugFlag", &IData, 0, 10);
+			RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("debugFlag")->UpdateData(IData);
 #else
 			int iData = *(int*)terrain->shader->getParameter("debugFlag")->data;
 			ImGui::SliderInt("debugFlag", &iData, 0, 10);
 			terrain->shader->getParameter("debugFlag")->updateData(iData);
 #endif // USE_DEFERRED_RENDERER
 
-			float displacementScale = terrain->getDisplacementScale();
-			ImGui::DragFloat("displacementScale", &displacementScale, 0.02f, -10.0f, 10.0f);
-			terrain->setDisplacementScale(displacementScale);
+			float DisplacementScale = Terrain->GetDisplacementScale();
+			ImGui::DragFloat("displacementScale", &DisplacementScale, 0.02f, -10.0f, 10.0f);
+			Terrain->SetDisplacementScale(DisplacementScale);
 
-			float LODlevel = terrain->getLODlevel();
-			ImGui::DragFloat("LODlevel", &LODlevel, 2.0f, 2.0f, 128.0f);
-			terrain->setLODlevel(LODlevel);
-			showToolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
+			float LODLevel = Terrain->GetLODLevel();
+			ImGui::DragFloat("LODlevel", &LODLevel, 2.0f, 2.0f, 128.0f);
+			Terrain->SetLODLevel(LODLevel);
+			ShowToolTip("Bigger LODlevel more details terraine will have and less performance you will get.");
 
-			float chunkPerSide = terrain->getChunkPerSide();
-			ImGui::DragFloat("chunkPerSide", &chunkPerSide, 2.0f, 1.0f, 16.0f);
-			terrain->setChunkPerSide(chunkPerSide);
+			float ChunkPerSide = Terrain->GetChunkPerSide();
+			ImGui::DragFloat("chunkPerSide", &ChunkPerSide, 2.0f, 1.0f, 16.0f);
+			Terrain->SetChunkPerSide(ChunkPerSide);
 
 			// ********************* REAL WORLD COMPARISON SCALE *********************
-			FEAABB realAABB = terrain->getAABB();
-			glm::vec3 min = realAABB.getMin();
-			glm::vec3 max = realAABB.getMax();
+			FEAABB RealAABB = Terrain->GetAABB();
+			glm::vec3 min = RealAABB.GetMin();
+			glm::vec3 max = RealAABB.GetMax();
 
-			float xSize = sqrt((max.x - min.x) * (max.x - min.x));
-			float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-			float zSize = sqrt((max.z - min.z) * (max.z - min.z));
+			float XSize = sqrt((max.x - min.x) * (max.x - min.x));
+			float YSize = sqrt((max.y - min.y) * (max.y - min.y));
+			float ZSize = sqrt((max.z - min.z) * (max.z - min.z));
 
-			std::string sizeInM = "Approximate terrain size: ";
-			sizeInM += std::to_string(std::max(xSize, std::max(ySize, zSize)));
-			sizeInM += " m";
-			ImGui::Text(sizeInM.c_str());
+			std::string SizeInM = "Approximate terrain size: ";
+			SizeInM += std::to_string(std::max(XSize, std::max(YSize, ZSize)));
+			SizeInM += " m";
+			ImGui::Text(SizeInM.c_str());
 			// ********************* REAL WORLD COMPARISON SCALE END *********************
 
-			showTransformConfiguration(terrain, &terrain->transform);
+			ShowTransformConfiguration(Terrain, &Terrain->Transform);
 
 			ImGui::EndTabItem();
 		}
 		if (ImGui::BeginTabItem("Sculpt"))
 		{
-			exportHeightMapButton->render();
-			if (exportHeightMapButton->getWasClicked())
+			ExportHeightMapButton->Render();
+			if (ExportHeightMapButton->IsClicked())
 			{
 				std::string filePath = "";
-				FILE_SYSTEM.showFileSaveDialog(filePath, textureLoadFilter, 1);
+				FILE_SYSTEM.ShowFileSaveDialog(filePath, TEXTURE_LOAD_FILTER, 1);
 
-				if (filePath != "")
+				if (!filePath.empty())
 				{
 					filePath += ".png";
-					bool result = RESOURCE_MANAGER.exportFETextureToPNG(terrain->heightMap, filePath.c_str());
+					RESOURCE_MANAGER.ExportFETextureToPNG(Terrain->HeightMap, filePath.c_str());
 				}
 			}
 
 			ImGui::SameLine();
-			importHeightMapButton->render();
-			if (importHeightMapButton->getWasClicked())
+			ImportHeightMapButton->Render();
+			if (ImportHeightMapButton->IsClicked())
 			{
-				std::string filePath = "";
-				FILE_SYSTEM.showFileOpenDialog(filePath, textureLoadFilter, 1);
+				std::string FilePath;
+				FILE_SYSTEM.ShowFileOpenDialog(FilePath, TEXTURE_LOAD_FILTER, 1);
 
-				if (filePath != "")
+				if (!FilePath.empty())
 				{
-					FETexture* loadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(filePath.c_str(), terrain);
-					if (loadedTexture == RESOURCE_MANAGER.noTexture)
+					FETexture* LoadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(FilePath.c_str(), Terrain);
+					if (LoadedTexture == RESOURCE_MANAGER.NoTexture)
 					{
-						LOG.add(std::string("can't load height map: ") + filePath, FE_LOG_ERROR, FE_LOG_LOADING);
+						LOG.Add(std::string("can't load height map: ") + FilePath, FE_LOG_ERROR, FE_LOG_LOADING);
 					}
 					else
 					{
-						loadedTexture->setDirtyFlag(true);
-						PROJECT_MANAGER.getCurrent()->setModified(true);
+						LoadedTexture->SetDirtyFlag(true);
+						PROJECT_MANAGER.GetCurrent()->SetModified(true);
 					}
 				}
 			}
 
-			float highScale = terrain->getHightScale();
-			ImGui::DragFloat("hight range in m", &highScale);
-			terrain->setHightScale(highScale);
+			float HighScale = Terrain->GetHightScale();
+			ImGui::DragFloat("hight range in m", &HighScale);
+			Terrain->SetHightScale(HighScale);
 
-			float currentBrushSize = terrain->getBrushSize();
-			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
-			terrain->setBrushSize(currentBrushSize);
+			float CurrentBrushSize = Terrain->GetBrushSize();
+			ImGui::DragFloat("brushSize", &CurrentBrushSize, 0.1f, 0.01f, 100.0f);
+			Terrain->SetBrushSize(CurrentBrushSize);
 
-			float currentBrushIntensity = terrain->getBrushIntensity();
-			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
-			terrain->setBrushIntensity(currentBrushIntensity);
+			float CurrentBrushIntensity = Terrain->GetBrushIntensity();
+			ImGui::DragFloat("brushIntensity", &CurrentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
+			Terrain->SetBrushIntensity(CurrentBrushIntensity);
 
-			setDefaultStyle(sculptBrushButton);
-			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW || 
-				terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
-				setSelectedStyle(sculptBrushButton);
+			SetDefaultStyle(SculptBrushButton);
+			if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW || 
+				Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+				SetSelectedStyle(SculptBrushButton);
 			 
-			sculptBrushButton->render();
-			showToolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
+			SculptBrushButton->Render();
+			ShowToolTip("Sculpt Brush. Left mouse to increase height, hold shift to decrease height.");
 
-			if (sculptBrushButton->getWasClicked())
+			if (SculptBrushButton->IsClicked())
 			{
-				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW ||
-					terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
+				if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW ||
+					Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_DRAW_INVERSED)
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_NONE);
 				}
 				else
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_SCULPT_DRAW);
 				}
 			}
 
-			setDefaultStyle(levelBrushButton);
-			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
-				setSelectedStyle(levelBrushButton);
+			SetDefaultStyle(LevelBrushButton);
+			if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
+				SetSelectedStyle(LevelBrushButton);
 
 			ImGui::SameLine();
-			levelBrushButton->render();
-			showToolTip("Level Brush.");
+			LevelBrushButton->Render();
+			ShowToolTip("Level Brush.");
 
-			if (levelBrushButton->getWasClicked())
+			if (LevelBrushButton->IsClicked())
 			{
-				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
+				if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_LEVEL)
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_NONE);
 				}
 				else
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_LEVEL);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_SCULPT_LEVEL);
 				}
 			}
 
-			setDefaultStyle(smoothBrushButton);
-			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
-				setSelectedStyle(smoothBrushButton);
+			SetDefaultStyle(SmoothBrushButton);
+			if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
+				SetSelectedStyle(SmoothBrushButton);
 
 			ImGui::SameLine();
-			smoothBrushButton->render();
-			showToolTip("Smooth Brush.");
+			SmoothBrushButton->Render();
+			ShowToolTip("Smooth Brush.");
 
-			if (smoothBrushButton->getWasClicked())
+			if (SmoothBrushButton->IsClicked())
 			{
-				if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
+				if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_SCULPT_SMOOTH)
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_NONE);
 				}
 				else
 				{
-					terrain->setBrushMode(FE_TERRAIN_BRUSH_SCULPT_SMOOTH);
+					Terrain->SetBrushMode(FE_TERRAIN_BRUSH_SCULPT_SMOOTH);
 				}
 			}
 
@@ -2585,60 +2597,60 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 		}
 		if (ImGui::BeginTabItem("Paint"))
 		{
-			glm::vec2 tileMult = terrain->getTileMult();
-			ImGui::DragFloat2("all layers tile factors", &tileMult[0], 0.1f, 1.0f, 100.0f);
-			terrain->setTileMult(tileMult);
+			glm::vec2 TileMult = Terrain->GetTileMult();
+			ImGui::DragFloat2("all layers tile factors", &TileMult[0], 0.1f, 1.0f, 100.0f);
+			Terrain->SetTileMult(TileMult);
 
-			float currentBrushSize = terrain->getBrushSize();
-			ImGui::DragFloat("brushSize", &currentBrushSize, 0.1f, 0.01f, 100.0f);
-			terrain->setBrushSize(currentBrushSize);
+			float CurrentBrushSize = Terrain->GetBrushSize();
+			ImGui::DragFloat("brushSize", &CurrentBrushSize, 0.1f, 0.01f, 100.0f);
+			Terrain->SetBrushSize(CurrentBrushSize);
 
-			float currentBrushIntensity = terrain->getBrushIntensity();
-			ImGui::DragFloat("brushIntensity", &currentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
-			terrain->setBrushIntensity(currentBrushIntensity);
+			float CurrentBrushIntensity = Terrain->GetBrushIntensity();
+			ImGui::DragFloat("brushIntensity", &CurrentBrushIntensity, 0.0001f, 0.0001f, 10.0f);
+			Terrain->SetBrushIntensity(CurrentBrushIntensity);
 
-			setDefaultStyle(layerBrushButton);
-			if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
-				setSelectedStyle(layerBrushButton);
+			SetDefaultStyle(LayerBrushButton);
+			if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
+				SetSelectedStyle(LayerBrushButton);
 
-			layerBrushButton->render();
-			showToolTip("Layer draw brush. Left mouse to paint currently selected layer, hold shift to decrease layer influence.");
-			static int selectedLayer = -1;
-			if (selectedLayer != -1 && terrain->getLayerInSlot(selectedLayer) == nullptr)
-				selectedLayer = -1;
+			LayerBrushButton->Render();
+			ShowToolTip("Layer draw brush. Left mouse to paint currently selected layer, hold shift to decrease layer influence.");
+			static int SelectedLayer = -1;
+			if (SelectedLayer != -1 && Terrain->GetLayerInSlot(SelectedLayer) == nullptr)
+				SelectedLayer = -1;
 
-			if (layerBrushButton->getWasClicked())
+			if (LayerBrushButton->IsClicked())
 			{
-				if (selectedLayer != -1)
+				if (SelectedLayer != -1)
 				{
-					if (terrain->getBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
+					if (Terrain->GetBrushMode() == FE_TERRAIN_BRUSH_LAYER_DRAW)
 					{
-						terrain->setBrushMode(FE_TERRAIN_BRUSH_NONE);
+						Terrain->SetBrushMode(FE_TERRAIN_BRUSH_NONE);
 					}
 					else
 					{
-						terrain->setBrushMode(FE_TERRAIN_BRUSH_LAYER_DRAW);
+						Terrain->SetBrushMode(FE_TERRAIN_BRUSH_LAYER_DRAW);
 					}
 				}
 				
 			}
 
 			ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
-			static bool contextMenuOpened = false;
+			static bool bContextMenuOpened = false;
 
 			ImGui::Text("Layers:");
 
 			ImGui::BeginChildFrame(ImGui::GetID("Layers ListBox Child"), ImVec2(ImGui::GetWindowContentRegionWidth() - 10.0f, 500.0f), ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
-			bool isListBoxHovered = false;
+			bool bListBoxHovered = false;
 			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
-				isListBoxHovered = true;
+				bListBoxHovered = true;
 
-			static bool openContextMenu = false;
+			static bool bShouldOpenContextMenu = false;
 			if (ImGui::IsMouseClicked(1))
 			{
-				if (isListBoxHovered)
+				if (bListBoxHovered)
 				{
-					openContextMenu = true;
+					bShouldOpenContextMenu = true;
 				}
 			}
 
@@ -2646,58 +2658,58 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 
 			for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 			{
-				FETerrainLayer* layer = terrain->getLayerInSlot(i);
+				FETerrainLayer* layer = Terrain->GetLayerInSlot(i);
 				if (layer == nullptr)
 					break;
 
-				ImVec2 postionBeforeDraw = ImGui::GetCursorPos();
+				ImVec2 PostionBeforeDraw = ImGui::GetCursorPos();
 
-				ImVec2 textSize = ImGui::CalcTextSize(layer->getName().c_str());
-				ImGui::SetCursorPos(postionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - textSize.x / 2.0f, 16));
+				ImVec2 TextSize = ImGui::CalcTextSize(layer->GetName().c_str());
+				ImGui::SetCursorPos(PostionBeforeDraw + ImVec2(ImGui::GetWindowContentRegionWidth() / 2.0f - TextSize.x / 2.0f, 16));
 				
-				if (terrainLayerRenameIndex == i)
+				if (TerrainLayerRenameIndex == i)
 				{
-					if (!lastFrameTerrainLayerRenameEditWasVisiable)
+					if (!bLastFrameTerrainLayerRenameEditWasVisiable)
 					{
 						ImGui::SetKeyboardFocusHere(0);
 						ImGui::SetFocusID(ImGui::GetID("##newNameTerrainLayerEditor"), ImGui::GetCurrentWindow());
 						ImGui::SetItemDefaultFocus();
-						lastFrameTerrainLayerRenameEditWasVisiable = true;
+						bLastFrameTerrainLayerRenameEditWasVisiable = true;
 					}
 
 					ImGui::SetNextItemWidth(350.0f);
-					ImGui::SetCursorPos(ImVec2(postionBeforeDraw.x + 64.0f + (ImGui::GetWindowContentRegionWidth()- 64.0f) / 2.0f - 350.0f / 2.0f, postionBeforeDraw.y + 12));
-					if (ImGui::InputText("##newNameTerrainLayerEditor", terrainLayerRename, IM_ARRAYSIZE(terrainLayerRename), ImGuiInputTextFlags_EnterReturnsTrue) ||
+					ImGui::SetCursorPos(ImVec2(PostionBeforeDraw.x + 64.0f + (ImGui::GetWindowContentRegionWidth()- 64.0f) / 2.0f - 350.0f / 2.0f, PostionBeforeDraw.y + 12));
+					if (ImGui::InputText("##newNameTerrainLayerEditor", TerrainLayerRename, IM_ARRAYSIZE(TerrainLayerRename), ImGuiInputTextFlags_EnterReturnsTrue) ||
 						ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered() || ImGui::GetFocusID() != ImGui::GetID("##newNameTerrainLayerEditor"))
 					{
-						PROJECT_MANAGER.getCurrent()->setModified(true);
-						layer->setName(terrainLayerRename);
+						PROJECT_MANAGER.GetCurrent()->SetModified(true);
+						layer->SetName(TerrainLayerRename);
 						
-						terrainLayerRenameIndex = -1;
+						TerrainLayerRenameIndex = -1;
 					}
 				}
 				else
 				{
-					ImGui::Text(layer->getName().c_str());
+					ImGui::Text(layer->GetName().c_str());
 				}
-				ImGui::SetCursorPos(postionBeforeDraw);
+				ImGui::SetCursorPos(PostionBeforeDraw);
 
 				ImGui::PushID(int(i));
-				if (ImGui::Selectable("##item", selectedLayer == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
+				if (ImGui::Selectable("##item", SelectedLayer == i ? true : false, ImGuiSelectableFlags_None, ImVec2(ImGui::GetWindowContentRegionWidth() - 0, 64)))
 				{
-					selectedLayer = int(i);
-					terrain->setBrushLayerIndex(selectedLayer);
+					SelectedLayer = int(i);
+					Terrain->SetBrushLayerIndex(SelectedLayer);
 				}
-				terrainChangeLayerMaterialTargets[i]->stickToItem();
+				TerrainChangeLayerMaterialTargets[i]->StickToItem();
 				ImGui::PopID();
 
 				if (ImGui::IsItemHovered())
-					hoveredTerrainLayerItem = int(i);
+					HoveredTerrainLayerItem = int(i);
 
-				ImGui::SetCursorPos(postionBeforeDraw);
-				ImColor imageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
-				FETexture* previewTexture = PREVIEW_MANAGER.getMaterialPreview(layer->getMaterial()->getObjectID());
-				ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), imageTint);
+				ImGui::SetCursorPos(PostionBeforeDraw);
+				ImColor ImageTint = ImGui::IsItemHovered() ? ImColor(1.0f, 1.0f, 1.0f, 0.5f) : ImColor(1.0f, 1.0f, 1.0f, 1.0f);
+				FETexture* PreviewTexture = PREVIEW_MANAGER.GetMaterialPreview(layer->GetMaterial()->GetObjectID());
+				ImGui::Image((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(64, 64), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f), ImageTint);
 			}
 
 			ImGui::EndListBox();
@@ -2706,124 +2718,124 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 			ImGui::EndChildFrame();
 			ImGui::EndTabItem();
 
-			if (openContextMenu)
+			if (bShouldOpenContextMenu)
 			{
-				openContextMenu = false;
+				bShouldOpenContextMenu = false;
 				ImGui::OpenPopup("##layers_listBox_context_menu");
 			}
 
 			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 			if (ImGui::BeginPopup("##layers_listBox_context_menu"))
 			{
-				contextMenuOpened = true;
+				bContextMenuOpened = true;
 
-				if (terrain->getLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
+				if (Terrain->GetLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
 					ImGui::BeginDisabled();
 
 				if (ImGui::MenuItem("Add layer..."))
 				{
-					std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
-					std::vector<FEObject*> finalMaterialList;
-					for (size_t i = 0; i < tempMaterialList.size(); i++)
+					std::vector<std::string> TempMaterialList = RESOURCE_MANAGER.GetMaterialList();
+					std::vector<FEObject*> FinalMaterialList;
+					for (size_t i = 0; i < TempMaterialList.size(); i++)
 					{
-						if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
+						if (RESOURCE_MANAGER.GetMaterial(TempMaterialList[i])->IsCompackPacking())
 						{
-							finalMaterialList.push_back(RESOURCE_MANAGER.getMaterial(tempMaterialList[i]));
+							FinalMaterialList.push_back(RESOURCE_MANAGER.GetMaterial(TempMaterialList[i]));
 						}
 					}
 
-					if (finalMaterialList.size() == 0)
+					if (FinalMaterialList.empty())
 					{
-						messagePopUp::getInstance().show("No suitable material", "There are no materials with compack packing.");
+						MessagePopUp::getInstance().Show("No suitable material", "There are no materials with compack packing.");
 					}
 					else
 					{
-						terrainToWorkWith = terrain;
-						selectFEObjectPopUp::getInstance().show(FE_MATERIAL, createNewTerrainLayerWithMaterialCallBack, nullptr, finalMaterialList);
+						TerrainToWorkWith = Terrain;
+						SelectFeObjectPopUp::getInstance().Show(FE_MATERIAL, CreateNewTerrainLayerWithMaterialCallBack, nullptr, FinalMaterialList);
 					}
 				}
 
-				if (terrain->getLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
+				if (Terrain->GetLayerInSlot(FE_TERRAIN_MAX_LAYERS - 1) != nullptr)
 					ImGui::EndDisabled();
 
-				if (hoveredTerrainLayerItem != -1)
+				if (HoveredTerrainLayerItem != -1)
 				{
-					FETerrainLayer* layer = terrain->getLayerInSlot(hoveredTerrainLayerItem);
+					FETerrainLayer* layer = Terrain->GetLayerInSlot(HoveredTerrainLayerItem);
 					if (layer != nullptr)
 					{
 						ImGui::Separator();
-						std::string layerName = layer->getName();
-						ImGui::Text((std::string("Actions with ") + layerName).c_str());
+						std::string LayerName = layer->GetName();
+						ImGui::Text((std::string("Actions with ") + LayerName).c_str());
 						ImGui::Separator();
 
 						if (ImGui::MenuItem("Rename"))
 						{
-							terrainLayerRenameIndex = hoveredTerrainLayerItem;
+							TerrainLayerRenameIndex = HoveredTerrainLayerItem;
 
-							strcpy_s(terrainLayerRename, layer->getName().size() + 1, layer->getName().c_str());
-							lastFrameTerrainLayerRenameEditWasVisiable = false;
+							strcpy_s(TerrainLayerRename, layer->GetName().size() + 1, layer->GetName().c_str());
+							bLastFrameTerrainLayerRenameEditWasVisiable = false;
 						}
 
 						if (ImGui::MenuItem("Fill"))
 						{
-							RESOURCE_MANAGER.fillTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+							RESOURCE_MANAGER.FillTerrainLayerMask(Terrain, HoveredTerrainLayerItem);
 						}
 
 						if (ImGui::MenuItem("Clear"))
 						{
-							RESOURCE_MANAGER.clearTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+							RESOURCE_MANAGER.ClearTerrainLayerMask(Terrain, HoveredTerrainLayerItem);
 						}
 
 						if (ImGui::MenuItem("Delete"))
 						{
-							RESOURCE_MANAGER.deleteTerrainLayerMask(terrain, hoveredTerrainLayerItem);
+							RESOURCE_MANAGER.DeleteTerrainLayerMask(Terrain, HoveredTerrainLayerItem);
 						}
 
 						ImGui::Separator();
 
 						if (ImGui::MenuItem("Change material..."))
 						{
-							std::vector<std::string> tempMaterialList = RESOURCE_MANAGER.getMaterialList();
-							std::vector<FEObject*> finalMaterialList;
-							for (size_t i = 0; i < tempMaterialList.size(); i++)
+							std::vector<std::string> TempMaterialList = RESOURCE_MANAGER.GetMaterialList();
+							std::vector<FEObject*> FinalMaterialList;
+							for (size_t i = 0; i < TempMaterialList.size(); i++)
 							{
-								if (RESOURCE_MANAGER.getMaterial(tempMaterialList[i])->isCompackPacking())
+								if (RESOURCE_MANAGER.GetMaterial(TempMaterialList[i])->IsCompackPacking())
 								{
-									finalMaterialList.push_back(RESOURCE_MANAGER.getMaterial(tempMaterialList[i]));
+									FinalMaterialList.push_back(RESOURCE_MANAGER.GetMaterial(TempMaterialList[i]));
 								}
 							}
 
-							if (finalMaterialList.size() == 0)
+							if (FinalMaterialList.empty())
 							{
-								messagePopUp::getInstance().show("No suitable material", "There are no materials with compack packing.");
+								MessagePopUp::getInstance().Show("No suitable material", "There are no materials with compack packing.");
 							}
 							else
 							{
-								terrainToWorkWith = terrain;
-								tempLayerIndex = hoveredTerrainLayerItem;
-								selectFEObjectPopUp::getInstance().show(FE_MATERIAL, changeMaterialInTerrainLayerCallBack, terrain->getLayerInSlot(hoveredTerrainLayerItem)->getMaterial(), finalMaterialList);
+								TerrainToWorkWith = Terrain;
+								TempLayerIndex = HoveredTerrainLayerItem;
+								SelectFeObjectPopUp::getInstance().Show(FE_MATERIAL, ChangeMaterialInTerrainLayerCallBack, Terrain->GetLayerInSlot(HoveredTerrainLayerItem)->GetMaterial(), FinalMaterialList);
 							}
 						}
 
 						if (ImGui::MenuItem("Export mask..."))
 						{
 							std::string filePath = "";
-							FILE_SYSTEM.showFileSaveDialog(filePath, textureLoadFilter, 1);
-							if (filePath != "")
+							FILE_SYSTEM.ShowFileSaveDialog(filePath, TEXTURE_LOAD_FILTER, 1);
+							if (!filePath.empty())
 							{
 								filePath += ".png";
-								RESOURCE_MANAGER.saveTerrainLayerMask(filePath.c_str(), terrain, hoveredTerrainLayerItem);
+								RESOURCE_MANAGER.SaveTerrainLayerMask(filePath.c_str(), Terrain, HoveredTerrainLayerItem);
 							}
 						}
 
 						if (ImGui::MenuItem("Import mask..."))
 						{
 							std::string filePath = "";
-							FILE_SYSTEM.showFileOpenDialog(filePath, textureLoadFilter, 1);
-							if (filePath != "")
+							FILE_SYSTEM.ShowFileOpenDialog(filePath, TEXTURE_LOAD_FILTER, 1);
+							if (!filePath.empty())
 							{
-								RESOURCE_MANAGER.loadTerrainLayerMask(filePath.c_str(), terrain, hoveredTerrainLayerItem);
-								PROJECT_MANAGER.getCurrent()->setModified(true);
+								RESOURCE_MANAGER.LoadTerrainLayerMask(filePath.c_str(), Terrain, HoveredTerrainLayerItem);
+								PROJECT_MANAGER.GetCurrent()->SetModified(true);
 							}
 						}
 					}
@@ -2833,73 +2845,73 @@ void FEEditor::displayTerrainSettings(FETerrain* terrain)
 			}
 			ImGui::PopStyleVar();
 
-			if (!contextMenuOpened)
-				hoveredTerrainLayerItem = -1;
+			if (!bContextMenuOpened)
+				HoveredTerrainLayerItem = -1;
 
-			contextMenuOpened = false;
+			bContextMenuOpened = false;
 		}
 		ImGui::EndTabBar();
 	}
 }
 
-void FEEditor::renderAllSubWindows()
+void FEEditor::RenderAllSubWindows()
 {
-	selectFEObjectPopUp::getInstance().render();
+	SelectFeObjectPopUp::getInstance().Render();
 
-	deleteTexturePopup::getInstance().render();
-	deleteMeshPopup::getInstance().render();
-	deleteGameModelPopup::getInstance().render();
-	deleteMaterialPopup::getInstance().render();
-	deletePrefabPopup::getInstance().render();
-	deleteDirectoryPopup::getInstance().render();
+	DeleteTexturePopup::getInstance().Render();
+	DeleteMeshPopup::getInstance().Render();
+	DeleteGameModelPopup::getInstance().Render();
+	DeleteMaterialPopup::getInstance().Render();
+	DeletePrefabPopup::getInstance().Render();
+	DeleteDirectoryPopup::getInstance().Render();
 
-	resizeTexturePopup::getInstance().render();
-	justTextWindowObj.render();
+	resizeTexturePopup::getInstance().Render();
+	JustTextWindowObj.Render();
 
-	renamePopUp::getInstance().render();
-	renameFailedPopUp::getInstance().render();
-	messagePopUp::getInstance().render();
+	renamePopUp::getInstance().Render();
+	renameFailedPopUp::getInstance().Render();
+	MessagePopUp::getInstance().Render();
 	
-	projectWasModifiedPopUp::getInstance().render();
+	projectWasModifiedPopUp::getInstance().Render();
 
-	IMGUI_WINDOW_MANAGER.renderAllWindows();
+	FE_IMGUI_WINDOW_MANAGER.RenderAllWindows();
 }
 
-void FEEditor::setCorrectSceneBrowserColor(FEObject* sceneObject)
+void FEEditor::SetCorrectSceneBrowserColor(FEObject* SceneObject) const
 {
-	if (sceneObject->getType() == FE_DIRECTIONAL_LIGHT ||
-		sceneObject->getType() == FE_SPOT_LIGHT ||
-		sceneObject->getType() == FE_POINT_LIGHT)
+	if (SceneObject->GetType() == FE_DIRECTIONAL_LIGHT ||
+		SceneObject->GetType() == FE_SPOT_LIGHT ||
+		SceneObject->GetType() == FE_POINT_LIGHT)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, lightColorSceneBrowser);
+		ImGui::PushStyleColor(ImGuiCol_Text, LightColorSceneBrowser);
 	}
-	else if (sceneObject->getType() == FE_CAMERA)
+	else if (SceneObject->GetType() == FE_CAMERA)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, cameraColorSceneBrowser);
+		ImGui::PushStyleColor(ImGuiCol_Text, CameraColorSceneBrowser);
 	}
-	else if (sceneObject->getType() == FE_TERRAIN)
+	else if (SceneObject->GetType() == FE_TERRAIN)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, terrainColorSceneBrowser);
+		ImGui::PushStyleColor(ImGuiCol_Text, TerrainColorSceneBrowser);
 	}
-	else if (sceneObject->getType() == FE_ENTITY)
+	else if (SceneObject->GetType() == FE_ENTITY)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, entityColorSceneBrowser);
+		ImGui::PushStyleColor(ImGuiCol_Text, EntityColorSceneBrowser);
 	}
-	else if (sceneObject->getType() == FE_ENTITY_INSTANCED)
+	else if (SceneObject->GetType() == FE_ENTITY_INSTANCED)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Text, instancedEntityColorSceneBrowser);
+		ImGui::PushStyleColor(ImGuiCol_Text, InstancedEntityColorSceneBrowser);
 	}
 }
 
-void FEEditor::popCorrectSceneBrowserColor(FEObject* sceneObject)
+void FEEditor::PopCorrectSceneBrowserColor(FEObject* SceneObject)
 {
-	if (sceneObject->getType() == FE_DIRECTIONAL_LIGHT ||
-		sceneObject->getType() == FE_SPOT_LIGHT ||
-		sceneObject->getType() == FE_POINT_LIGHT ||
-		sceneObject->getType() == FE_CAMERA ||
-		sceneObject->getType() == FE_TERRAIN ||
-		sceneObject->getType() == FE_ENTITY ||
-		sceneObject->getType() == FE_ENTITY_INSTANCED)
+	if (SceneObject->GetType() == FE_DIRECTIONAL_LIGHT ||
+		SceneObject->GetType() == FE_SPOT_LIGHT ||
+		SceneObject->GetType() == FE_POINT_LIGHT ||
+		SceneObject->GetType() == FE_CAMERA ||
+		SceneObject->GetType() == FE_TERRAIN ||
+		SceneObject->GetType() == FE_ENTITY ||
+		SceneObject->GetType() == FE_ENTITY_INSTANCED)
 	{
 		ImGui::PopStyleColor();
 	}

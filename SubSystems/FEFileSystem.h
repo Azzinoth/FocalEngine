@@ -16,31 +16,31 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEFileSystem)
 
-		bool checkFile(const char* path);
-		std::string getFileExtension(const char* path);
-		bool isFolder(const char* path);
-		bool createFolder(const char* path);
-		bool deleteFolder(const char* path);
-		std::vector<std::string> getFolderList(const char* path);
-		std::vector<std::string> getFileList(const char* path);
-		bool changeFileName(const char* path, const char* newPath);
-		bool deleteFile(const char* path);
+		bool CheckFile(const char* Path);
+		std::string GetFileExtension(const char* Path);
+		bool IsFolder(const char* Path);
+		bool CreateFolder(const char* Path);
+		bool DeleteFolder(const char* Path);
+		std::vector<std::string> GetFolderList(const char* Path);
+		std::vector<std::string> GetFileList(const char* Path);
+		bool ChangeFileName(const char* Path, const char* NewPath);
+		bool DeleteFile(const char* Path);
 
-		char* getDirectoryPath(const char* fullPath);
-		char* getFileName(const char* fullPath);
+		char* GetDirectoryPath(const char* FullPath);
+		char* GetFileName(const char* FullPath);
 
 #ifdef FE_WIN_32
-		void showFileOpenDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
-		void showFolderOpenDialog(std::string& path);
+		void ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
+		void ShowFolderOpenDialog(std::string& Path);
 
-		void showFileSaveDialog(std::string& path, const COMDLG_FILTERSPEC* filter, int filterCount = 1);
-		std::string getApplicationPath();
+		void ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
+		std::string GetApplicationPath();
 #endif
 
 	private:
 		SINGLETON_PRIVATE_PART(FEFileSystem)
 #ifdef FE_WIN_32
-		std::string PWSTRtoString(PWSTR wString);
+		std::string PWSTRtoString(PWSTR WString);
 #endif
 	};
 

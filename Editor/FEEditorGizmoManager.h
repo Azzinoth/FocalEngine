@@ -5,97 +5,94 @@
 using namespace FocalEngine;
 
 class FEEditor;
-struct selectedObject;
+struct SelectedObject;
 
-namespace FEGizmoManager
+const int TRANSFORM_GIZMOS = 0;
+const int SCALE_GIZMOS = 1;
+const int ROTATE_GIZMOS = 2;
+
+class GizmoManager
 {
-	const int TRANSFORM_GIZMOS = 0;
-	const int SCALE_GIZMOS = 1;
-	const int ROTATE_GIZMOS = 2;
+	friend FEEditor;
+	friend SelectedObject;
+public:
+	SINGLETON_PUBLIC_PART(GizmoManager)
 
-	class GizmoManager
-	{
-		friend FEEditor;
-		friend selectedObject;
-	public:
-		SINGLETON_PUBLIC_PART(GizmoManager)
+	float GizmosScale = 0.00175f;
+	int GizmosState = TRANSFORM_GIZMOS;
 
-		float gizmosScale = 0.00175f;
-		int gizmosState = TRANSFORM_GIZMOS;
+	FEEntity* TransformationXGizmoEntity = nullptr;
+	FEEntity* TransformationYGizmoEntity = nullptr;
+	FEEntity* TransformationZGizmoEntity = nullptr;
 
-		FEEntity* transformationXGizmoEntity = nullptr;
-		FEEntity* transformationYGizmoEntity = nullptr;
-		FEEntity* transformationZGizmoEntity = nullptr;
+	bool bTransformationXGizmoActive = false;
+	bool bTransformationYGizmoActive = false;
+	bool bTransformationZGizmoActive = false;
 
-		bool transformationXGizmoActive = false;
-		bool transformationYGizmoActive = false;
-		bool transformationZGizmoActive = false;
+	FEEntity* TransformationXyGizmoEntity = nullptr;
+	FEEntity* TransformationYzGizmoEntity = nullptr;
+	FEEntity* TransformationXzGizmoEntity = nullptr;
 
-		FEEntity* transformationXYGizmoEntity = nullptr;
-		FEEntity* transformationYZGizmoEntity = nullptr;
-		FEEntity* transformationXZGizmoEntity = nullptr;
+	bool bTransformationXYGizmoActive = false;
+	bool bTransformationYZGizmoActive = false;
+	bool bTransformationXZGizmoActive = false;
 
-		bool transformationXYGizmoActive = false;
-		bool transformationYZGizmoActive = false;
-		bool transformationXZGizmoActive = false;
+	// scale part
+	FEEntity* ScaleXGizmoEntity = nullptr;
+	FEEntity* ScaleYGizmoEntity = nullptr;
+	FEEntity* ScaleZGizmoEntity = nullptr;
 
-		// scale part
-		FEEntity* scaleXGizmoEntity = nullptr;
-		FEEntity* scaleYGizmoEntity = nullptr;
-		FEEntity* scaleZGizmoEntity = nullptr;
+	bool bScaleXGizmoActive = false;
+	bool bScaleYGizmoActive = false;
+	bool bScaleZGizmoActive = false;
 
-		bool scaleXGizmoActive = false;
-		bool scaleYGizmoActive = false;
-		bool scaleZGizmoActive = false;
+	// rotate part
+	FEEntity* RotateXGizmoEntity = nullptr;
+	FEEntity* RotateYGizmoEntity = nullptr;
+	FEEntity* RotateZGizmoEntity = nullptr;
 
-		// rotate part
-		FEEntity* rotateXGizmoEntity = nullptr;
-		FEEntity* rotateYGizmoEntity = nullptr;
-		FEEntity* rotateZGizmoEntity = nullptr;
+	bool bRotateXGizmoActive = false;
+	bool bRotateYGizmoActive = false;
+	bool bRotateZGizmoActive = false;
 
-		bool rotateXGizmoActive = false;
-		bool rotateYGizmoActive = false;
-		bool rotateZGizmoActive = false;
+	glm::vec3 RotateXStandardRotation = glm::vec3(0.0f, 0.0f, -90.0f);
+	glm::vec3 RotateYStandardRotation = glm::vec3(0.0f);
+	glm::vec3 RotateZStandardRotation = glm::vec3(90.0f, 0.0f, 90.0f);
 
-		glm::vec3 rotateXStandardRotation = glm::vec3(0.0f, 0.0f, -90.0f);
-		glm::vec3 rotateYStandardRotation = glm::vec3(0.0f);
-		glm::vec3 rotateZStandardRotation = glm::vec3(90.0f, 0.0f, 90.0f);
+	FETexture* TransformationGizmoIcon = nullptr;
+	FETexture* ScaleGizmoIcon = nullptr;
+	FETexture* RotateGizmoIcon = nullptr;
 
-		FETexture* transformationGizmoIcon = nullptr;
-		FETexture* scaleGizmoIcon = nullptr;
-		FETexture* rotateGizmoIcon = nullptr;
+	void InitializeResources();
+	void ReInitializeEntities();
 
-		void initializeResources();
-		void reInitializeEntities();
+	void DeactivateAllGizmo();
+	void HideAllGizmo();
+	void UpdateGizmoState(int NewState);
+	void Render();
+	bool WasSelected(int Index);
 
-		void deactivateAllGizmo();
-		void hideAllGizmo();
-		void updateGizmoState(int newState);
-		void render();
-		bool wasSelected(int index);
+	void MouseMove(double LastMouseX, double LastMouseY, double MouseX, double MouseY);
 
-		void mouseMove(double lastMouseX, double lastMouseY, double mouseX, double mouseY);
+private:
+	SINGLETON_PRIVATE_PART(GizmoManager)
 
-	private:
-		SINGLETON_PRIVATE_PART(GizmoManager)
+	double LastMouseX = 0, LastMouseY = 0, MouseX = 0, MouseY = 0;
 
-		double lastMouseX = 0, lastMouseY = 0, mouseX = 0, mouseY = 0;
+	glm::vec3 GetMousePositionDifferenceOnPlane(glm::vec3 PlaneNormal);
+	glm::vec3 GetMousePositionDifferenceOnPlane(glm::vec3 PlaneNormal, glm::vec3& LastMousePointOnPlane);
+	bool RaysIntersection(const glm::vec3& FRayOrigin, const glm::vec3& FRayDirection,
+	                      const glm::vec3& SRayOrigin, const glm::vec3& SRayDirection,
+	                      float& Ft, float& St) const;
 
-		glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal);
-		glm::vec3 getMousePositionDifferenceOnPlane(glm::vec3 planeNormal, glm::vec3& lastMousePointOnPlane);
-		bool raysIntersection(glm::vec3& fRayOrigin, glm::vec3& fRayDirection,
-							  glm::vec3& sRayOrigin, glm::vec3& sRayDirection,
-							  float& fT, float& sT);
+	void MouseMoveTransformationGizmos();
+	void MouseMoveScaleGizmos();
+	void MouseMoveRotateGizmos();
 
-		void mouseMoveTransformationGizmos();
-		void mouseMoveScaleGizmos();
-		void mouseMoveRotateGizmos();
+	static void OnSelectedObjectUpdate();
 
-		static void onSelectedObjectUpdate();
+	FETransformComponent GetTransformComponentOfSelectedObject();
+	void ApplyChangesToSelectedObject(FETransformComponent Changes);
+};
 
-		FETransformComponent getTransformComponentOfSelectedObject();
-		void applyChangesToSelectedObject(FETransformComponent changes);
-	};
-}
-
-#define GIZMO_MANAGER FEGizmoManager::GizmoManager::getInstance()
+#define GIZMO_MANAGER GizmoManager::getInstance()

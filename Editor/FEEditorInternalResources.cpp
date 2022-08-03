@@ -1,42 +1,42 @@
 #include "FEEditorInternalResources.h"
 using namespace FocalEngine;
 
-FEEditorInternalResources* FEEditorInternalResources::_instance = nullptr;
+FEEditorInternalResources* FEEditorInternalResources::Instance = nullptr;
 FEEditorInternalResources::FEEditorInternalResources() {}
 FEEditorInternalResources::~FEEditorInternalResources() {}
 
-void FEEditorInternalResources::addResourceToInternalEditorList(FEObject* object)
+void FEEditorInternalResources::AddResourceToInternalEditorList(FEObject* Object)
 {
-	if (object == nullptr)
+	if (Object == nullptr)
 	{
-		LOG.add("object is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("object is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return;
 	}
 
-	internalEditorObjects[object->getObjectID()] = object;
+	InternalEditorObjects[Object->GetObjectID()] = Object;
 }
 
-bool FEEditorInternalResources::isInInternalEditorList(FEObject* object)
+bool FEEditorInternalResources::IsInInternalEditorList(const FEObject* Object)
 {
-	if (object == nullptr)
+	if (Object == nullptr)
 	{
-		LOG.add("object is nullptr in function FEEditorInternalResources::isInInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("object is nullptr in function FEEditorInternalResources::isInInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
 		return false;
 	}
 
-	return !(internalEditorObjects.find(object->getObjectID()) == internalEditorObjects.end());
+	return !(InternalEditorObjects.find(Object->GetObjectID()) == InternalEditorObjects.end());
 }
 
-void FEEditorInternalResources::clearListByType(FEObjectType type)
+void FEEditorInternalResources::ClearListByType(const FE_OBJECT_TYPE Type)
 {
-	auto it = internalEditorObjects.begin();
-	while (it != internalEditorObjects.end())
+	auto it = InternalEditorObjects.begin();
+	while (it != InternalEditorObjects.end())
 	{
-		if (it->second->getType() == type)
+		if (it->second->GetType() == Type)
 		{
 			auto temp = it->second;
 			it++;
-			internalEditorObjects.erase(temp->getObjectID());
+			InternalEditorObjects.erase(temp->GetObjectID());
 		}
 		else
 		{

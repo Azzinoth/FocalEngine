@@ -7,151 +7,151 @@ FEFramebuffer::FEFramebuffer() : FEObject(FE_FRAME_BUFFER, "unnamedFrameBuffer")
 
 FEFramebuffer::~FEFramebuffer()
 {
-	FE_GL_ERROR(glDeleteFramebuffers(1, &fbo));
-	for (size_t i = 0; i < colorAttachments.size(); i++)
+	FE_GL_ERROR(glDeleteFramebuffers(1, &FBO));
+	for (size_t i = 0; i < ColorAttachments.size(); i++)
 	{
-		delete colorAttachments[i];
-		colorAttachments[i] = nullptr;
+		delete ColorAttachments[i];
+		ColorAttachments[i] = nullptr;
 	}
 	
-	delete depthAttachment;
-	depthAttachment = nullptr;
-	delete stencilAttachment;
-	stencilAttachment = nullptr;
+	delete DepthAttachment;
+	DepthAttachment = nullptr;
+	delete StencilAttachment;
+	StencilAttachment = nullptr;
 }
 
-void FEFramebuffer::bind()
+void FEFramebuffer::Bind()
 {
-	FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, fbo));
-	binded = true;
+	FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, FBO));
+	bBinded = true;
 }
 
-void FEFramebuffer::unBind()
+void FEFramebuffer::UnBind()
 {
 	FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
-	binded = false;
+	bBinded = false;
 }
 
-FETexture* FEFramebuffer::getColorAttachment(size_t index)
+FETexture* FEFramebuffer::GetColorAttachment(const size_t Index)
 {
-	if (index >= colorAttachments.size())
+	if (Index >= ColorAttachments.size())
 		return nullptr;
 
-	return colorAttachments[index];
+	return ColorAttachments[Index];
 }
 
-FETexture* FEFramebuffer::getDepthAttachment()
+FETexture* FEFramebuffer::GetDepthAttachment()
 {
-	return depthAttachment;
+	return DepthAttachment;
 }
 
-FETexture* FEFramebuffer::getStencilAttachment()
+FETexture* FEFramebuffer::GetStencilAttachment()
 {
-	return stencilAttachment;
+	return StencilAttachment;
 }
 
-void FEFramebuffer::attachTexture(GLenum attachment, GLenum textarget, FETexture* texture)
+void FEFramebuffer::AttachTexture(const GLenum Attachment, const GLenum Textarget, FETexture* Texture)
 {
-	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, textarget, texture->getTextureID(), 0));
+	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, Attachment, Textarget, Texture->GetTextureID(), 0));
 }
 
-void FEFramebuffer::setColorAttachment(FETexture* newTexture, size_t index)
+void FEFramebuffer::SetColorAttachment(FETexture* NewTexture, const size_t Index)
 {
-	if (colorAttachments[index] != nullptr)
-		colorAttachments[index]->eraseFromOnDeleteCallBackList(getObjectID());
+	if (ColorAttachments[Index] != nullptr)
+		ColorAttachments[Index]->EraseFromOnDeleteCallBackList(GetObjectID());
 
 	// This check was added because of postProcesses and how they "manage" colorAttachment of FB.
-	if (newTexture == nullptr)
+	if (NewTexture == nullptr)
 	{
-		colorAttachments[index] = nullptr;
+		ColorAttachments[Index] = nullptr;
 		return;
 	}
 
-	bool wasBind = binded;
-	if (!wasBind) bind();
-	colorAttachments[index] = newTexture;
-	attachTexture(GL_COLOR_ATTACHMENT0 + int(index), GL_TEXTURE_2D, newTexture);
-	if (!wasBind) unBind();
+	const bool bWasBind = bBinded;
+	if (!bWasBind) Bind();
+	ColorAttachments[Index] = NewTexture;
+	AttachTexture(GL_COLOR_ATTACHMENT0 + static_cast<int>(Index), GL_TEXTURE_2D, NewTexture);
+	if (!bWasBind) UnBind();
 
-	newTexture->addToOnDeleteCallBackList(getObjectID());
+	NewTexture->AddToOnDeleteCallBackList(GetObjectID());
 }
 
-void FEFramebuffer::setDepthAttachment(FETexture* newTexture)
+void FEFramebuffer::SetDepthAttachment(FETexture* NewTexture)
 {
-	bool wasBind = binded;
-	if (!wasBind) bind();
-		depthAttachment = newTexture;
-	attachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthAttachment);
-	if (!wasBind) unBind();
+	const bool bWasBind = bBinded;
+	if (!bWasBind) Bind();
+		DepthAttachment = NewTexture;
+	AttachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthAttachment);
+	if (!bWasBind) UnBind();
 }
 
-void FEFramebuffer::setStencilAttachment(FETexture* newTexture)
+void FEFramebuffer::SetStencilAttachment(FETexture* NewTexture)
 {
-	bool wasBind = binded;
-	if (!wasBind) bind();
-		stencilAttachment = newTexture;
-	attachTexture(GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilAttachment);
-	if (!wasBind) unBind();
+	const bool bWasBind = bBinded;
+	if (!bWasBind) Bind();
+		StencilAttachment = NewTexture;
+	AttachTexture(GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, StencilAttachment);
+	if (!bWasBind) UnBind();
 }
 
-int FEFramebuffer::getWidth()
+int FEFramebuffer::GetWidth()
 {
-	return width;
+	return Width;
 }
 
-int FEFramebuffer::getHeight()
+int FEFramebuffer::GetHeight()
 {
-	return height;
+	return Height;
 }
 
-void FEFramebuffer::processOnDeleteCallbacks(std::string deletingFEObject)
+void FEFramebuffer::ProcessOnDeleteCallbacks(const std::string DeletingFEObject)
 {
-	FEObject* object = OBJECT_MANAGER.getFEObject(deletingFEObject);
-	if (object != nullptr && object->getType() == FE_TEXTURE)
+	const FEObject* object = OBJECT_MANAGER.GetFEObject(DeletingFEObject);
+	if (object != nullptr && object->GetType() == FE_TEXTURE)
 	{
-		for (size_t i = 0; i < colorAttachments.size(); i++)
+		for (size_t i = 0; i < ColorAttachments.size(); i++)
 		{
-			if (colorAttachments[i] == nullptr)
+			if (ColorAttachments[i] == nullptr)
 				continue;
 
-			if (colorAttachments[i]->getObjectID() == deletingFEObject)
+			if (ColorAttachments[i]->GetObjectID() == DeletingFEObject)
 			{
-				colorAttachments[i] = nullptr;
+				ColorAttachments[i] = nullptr;
 				return;
 			}
 		}
 	}
 }
 
-bool FEFramebuffer::hasTexture(std::string objectID)
+bool FEFramebuffer::HasTexture(const std::string ObjectID)
 {
-	for (size_t i = 0; i < colorAttachments.size(); i++)
+	for (size_t i = 0; i < ColorAttachments.size(); i++)
 	{
-		if (colorAttachments[i] != nullptr && colorAttachments[i]->getObjectID() == objectID)
+		if (ColorAttachments[i] != nullptr && ColorAttachments[i]->GetObjectID() == ObjectID)
 			return true;
 	}
 
-	if (depthAttachment != nullptr && depthAttachment->getObjectID() == objectID)
+	if (DepthAttachment != nullptr && DepthAttachment->GetObjectID() == ObjectID)
 		return true;
 
-	if (stencilAttachment != nullptr && stencilAttachment->getObjectID() == objectID)
+	if (StencilAttachment != nullptr && StencilAttachment->GetObjectID() == ObjectID)
 		return true;
 
 	return false;
 }
 
-bool FEFramebuffer::hasTexture(GLuint textureID)
+bool FEFramebuffer::HasTexture(const GLuint TextureID)
 {
-	for (size_t i = 0; i < colorAttachments.size(); i++)
+	for (size_t i = 0; i < ColorAttachments.size(); i++)
 	{
-		if (colorAttachments[i] != nullptr && colorAttachments[i]->getTextureID() == textureID)
+		if (ColorAttachments[i] != nullptr && ColorAttachments[i]->GetTextureID() == TextureID)
 			return true;
 	}
 
-	if (depthAttachment != nullptr && depthAttachment->getTextureID() == textureID)
+	if (DepthAttachment != nullptr && DepthAttachment->GetTextureID() == TextureID)
 		return true;
 
-	if (stencilAttachment != nullptr && stencilAttachment->getTextureID() == textureID)
+	if (StencilAttachment != nullptr && StencilAttachment->GetTextureID() == TextureID)
 		return true;
 
 	return false;

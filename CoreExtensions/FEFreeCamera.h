@@ -7,45 +7,45 @@ namespace FocalEngine
 	class FEFreeCamera : public FEBasicCamera
 	{
 	public:
-		FEFreeCamera(std::string name);
+		FEFreeCamera(std::string Name);
 		~FEFreeCamera();
 
-		float currentMouseXAngle = 0;
-		float currentMouseYAngle = 0;
+		float CurrentMouseXAngle = 0;
+		float CurrentMouseYAngle = 0;
 		
-		void setYaw(float newYaw);
-		void setPitch(float newPitch);
+		void SetYaw(float NewYaw) override;
+		void SetPitch(float NewPitch) override;
 
-		void setIsInputActive(bool isActive) final;
+		void SetIsInputActive(bool bIsActive) final;
 
-		void keyboardInput(int key, int scancode, int action, int mods) final;
-		void mouseMoveInput(double xpos, double ypos) final;
-		void move(float deltaTime = 0.0f);
+		void KeyboardInput(int Key, int Scancode, int Action, int Mods) final;
+		void MouseMoveInput(double Xpos, double Ypos) final;
+		void Move(float DeltaTime = 0.0f) override;
 
-		void reset() override;
+		void Reset() override;
 
-		void setRenderTargetCenterX(int newRenderTargetCenterX);
-		void setRenderTargetCenterY(int newRenderTargetCenterY);
+		void SetRenderTargetCenterX(int NewRenderTargetCenterX);
+		void SetRenderTargetCenterY(int NewRenderTargetCenterY);
 
-		void setRenderTargetShiftX(int newRenderTargetShiftX);
-		void setRenderTargetShiftY(int newRenderTargetShiftY);
+		void SetRenderTargetShiftX(int NewRenderTargetShiftX);
+		void SetRenderTargetShiftY(int NewRenderTargetShiftY);
 	private:
-		int lastMouseX = 0;
-		int lastMouseY = 0;
+		int LastMouseX = 0;
+		int LastMouseY = 0;
 
-		int renderTargetCenterX = 0;
-		int renderTargetCenterY = 0;
+		int RenderTargetCenterX = 0;
+		int RenderTargetCenterY = 0;
 
-		int renderTargetShiftX = 0;
-		int renderTargetShiftY = 0;
+		int RenderTargetShiftX = 0;
+		int RenderTargetShiftY = 0;
 
-		bool leftKeyPressed = false;
-		bool upKeyPressed = false;
-		bool rightKeyPressed = false;
-		bool downKeyPressed = false;
+		bool bLeftKeyPressed = false;
+		bool bUpKeyPressed = false;
+		bool bRightKeyPressed = false;
+		bool bDownKeyPressed = false;
 
-		const int correctionToSensitivity = 3;
+		const int CorrectionToSensitivity = 3;
 
-		void setCursorToCenter();
+		void SetCursorToCenter();
 	};
 }

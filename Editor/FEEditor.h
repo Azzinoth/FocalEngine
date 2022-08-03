@@ -2,21 +2,20 @@
 
 #include "../Editor/FEEditorSubWindows/projectWasModifiedPopUp.h"
 #include <functional>
-using namespace FEGizmoManager;
 using namespace FocalEngine;
 
 #ifdef FE_WIN_32
-const COMDLG_FILTERSPEC OBJLoadFilter[] =
+const COMDLG_FILTERSPEC OBJ_LOAD_FILTER[] =
 {
 	{ L"Wavefront OBJ files (*.obj)", L"*.obj" }
 };
 
-const COMDLG_FILTERSPEC textureLoadFilter[] =
+const COMDLG_FILTERSPEC TEXTURE_LOAD_FILTER[] =
 {
 	{ L"Image files (*.png; *.jpg; *.bmp)", L"*.png;*.jpg;*.bmp" }
 };
 
-const COMDLG_FILTERSPEC allImportLoadFilter[] =
+const COMDLG_FILTERSPEC ALL_IMPORT_LOAD_FILTER[] =
 {
 	{ L"All files (*.png; *.jpg; *.bmp; *.obj)", L"*.png;*.jpg;*.bmp;*.obj" },
 	{ L"Image files (*.png; *.jpg; *.bmp)", L"*.png;*.jpg;*.bmp" },
@@ -30,199 +29,199 @@ class FEEditor
 public:
 	SINGLETON_PUBLIC_PART(FEEditor)
 
-	void initializeResources();
+	void InitializeResources();
 
-	double getLastMouseX();
-	void setLastMouseX(double newValue);
-	double getLastMouseY();
-	void setLastMouseY(double newValue);
+	double GetLastMouseX() const;
+	void SetLastMouseX(double NewValue);
+	double GetLastMouseY() const;
+	void SetLastMouseY(double NewValue);
 
-	double getMouseX();
-	void setMouseX(double newValue);
-	double getMouseY();
-	void setMouseY(double newValue);
+	double GetMouseX() const;
+	void SetMouseX(double NewValue);
+	double GetMouseY() const;
+	void SetMouseY(double NewValue);
 
-	std::string getObjectNameInClipboard();
-	void setObjectNameInClipboard(std::string newValue);
+	std::string GetObjectNameInClipboard();
+	void SetObjectNameInClipboard(std::string NewValue);
 
-	void render();
-	bool leftMousePressed = false;
-	bool shiftPressed = false;
+	void Render();
+	bool bLeftMousePressed = false;
+	bool bShiftPressed = false;
 private:
 	SINGLETON_PRIVATE_PART(FEEditor)
 
-	double lastMouseX, lastMouseY;
-	double mouseX, mouseY;
-	std::string objectNameInClipboard = "";
-	static ImGuiWindow* sceneWindow;
-	bool sceneWindowHovered;
+	double LastMouseX, LastMouseY;
+	double MouseX, MouseY;
+	std::string ObjectNameInClipboard;
+	static ImGuiWindow* SceneWindow;
+	bool bSceneWindowHovered;
 
-	bool isCameraInputActive = false;
+	bool bIsCameraInputActive = false;
 
-	FETexture* sculptBrushIcon = nullptr;
-	FETexture* levelBrushIcon = nullptr;
-	FETexture* smoothBrushIcon = nullptr;
-	FETexture* mouseCursorIcon = nullptr;
-	FETexture* arrowToGroundIcon = nullptr;
-	FETexture* drawBrushIcon = nullptr;
+	FETexture* SculptBrushIcon = nullptr;
+	FETexture* LevelBrushIcon = nullptr;
+	FETexture* SmoothBrushIcon = nullptr;
+	FETexture* MouseCursorIcon = nullptr;
+	FETexture* ArrowToGroundIcon = nullptr;
+	FETexture* DrawBrushIcon = nullptr;
 
-	void setCorrectSceneBrowserColor(FEObject* sceneObject);
-	void popCorrectSceneBrowserColor(FEObject* sceneObject);
-	ImVec4 terrainColorSceneBrowser = ImVec4(67.0f / 255.0f, 155.0f / 255.0f, 60.0f / 255.0f, 1.0f);
-	ImVec4 entityColorSceneBrowser = ImVec4(141.0f / 255.0f, 141.0f / 255.0f, 233.0f / 255.0f, 1.0f);
-	ImVec4 instancedEntityColorSceneBrowser = ImVec4(80.0f / 255.0f, 72.0f / 255.0f, 255.0f / 255.0f, 1.0f);
-	ImVec4 cameraColorSceneBrowser = ImVec4(0.0f, 215.0f / 255.0f, 201.0f / 255.0f, 1.0f);
-	ImVec4 lightColorSceneBrowser = ImVec4(243.0f / 255.0f, 230.0f / 255.0f, 31.0f / 255.0f, 1.0f);
+	void SetCorrectSceneBrowserColor(FEObject* SceneObject) const;
+	void PopCorrectSceneBrowserColor(FEObject* SceneObject);
+	ImVec4 TerrainColorSceneBrowser = ImVec4(67.0f / 255.0f, 155.0f / 255.0f, 60.0f / 255.0f, 1.0f);
+	ImVec4 EntityColorSceneBrowser = ImVec4(141.0f / 255.0f, 141.0f / 255.0f, 233.0f / 255.0f, 1.0f);
+	ImVec4 InstancedEntityColorSceneBrowser = ImVec4(80.0f / 255.0f, 72.0f / 255.0f, 1.0f, 1.0f);
+	ImVec4 CameraColorSceneBrowser = ImVec4(0.0f, 215.0f / 255.0f, 201.0f / 255.0f, 1.0f);
+	ImVec4 LightColorSceneBrowser = ImVec4(243.0f / 255.0f, 230.0f / 255.0f, 31.0f / 255.0f, 1.0f);
 
-	void drawCorrectSceneBrowserIcon(FEObject* sceneObject);
-	FETexture* entitySceneBrowserIcon = nullptr;
-	FETexture* instancedEntitySceneBrowserIcon = nullptr;
-	FETexture* directionalLightSceneBrowserIcon = nullptr;
-	FETexture* spotLightSceneBrowserIcon = nullptr;
-	FETexture* pointLightSceneBrowserIcon = nullptr;
-	FETexture* terrainSceneBrowserIcon = nullptr;
-	FETexture* cameraSceneBrowserIcon = nullptr;
+	void DrawCorrectSceneBrowserIcon(const FEObject* SceneObject) const;
+	FETexture* EntitySceneBrowserIcon = nullptr;
+	FETexture* InstancedEntitySceneBrowserIcon = nullptr;
+	FETexture* DirectionalLightSceneBrowserIcon = nullptr;
+	FETexture* SpotLightSceneBrowserIcon = nullptr;
+	FETexture* PointLightSceneBrowserIcon = nullptr;
+	FETexture* TerrainSceneBrowserIcon = nullptr;
+	FETexture* CameraSceneBrowserIcon = nullptr;
 
-	DragAndDropTarget* sceneWindowTarget = nullptr;
+	DragAndDropTarget* SceneWindowTarget = nullptr;
 
-	static void onCameraUpdate(FEBasicCamera* camera);
-	static void mouseButtonCallback(int button, int action, int mods);
-	static void mouseMoveCallback(double xpos, double ypos);
-	static void keyButtonCallback(int key, int scancode, int action, int mods);
-	static void renderTargetResizeCallback(int newW, int newH);
-	static void dropCallback(int count, const char** paths);
+	static void OnCameraUpdate(FEBasicCamera* Camera);
+	static void MouseButtonCallback(int Button, int Action, int Mods);
+	static void MouseMoveCallback(double Xpos, double Ypos);
+	static void KeyButtonCallback(int Key, int Scancode, int Action, int Mods);
+	static void RenderTargetResizeCallback(int NewW, int NewH);
+	static void DropCallback(int Count, const char** Paths);
 
-	void displaySceneBrowser();
-	bool sceneBrowserVisible = true;
-	void displayInspector();
-	bool inspectorVisible = true;
-	bool effectsWindowVisible = true;
-	void displayEffectsWindow();
-	bool logWindowVisible = true;
-	void displayLogWindow();
+	void DisplaySceneBrowser();
+	bool bSceneBrowserVisible = true;
+	void DisplayInspector();
+	bool bInspectorVisible = true;
+	bool bEffectsWindowVisible = true;
+	void DisplayEffectsWindow() const;
+	bool bLogWindowVisible = true;
+	void DisplayLogWindow() const;
 
-	static void closeWindowCallBack();
+	static void CloseWindowCallBack();
 
-	void showTransformConfiguration(FEObject* object, FETransformComponent* transform);
-	void showTransformConfiguration(std::string name, FETransformComponent* transform);
+	void ShowTransformConfiguration(FEObject* Object, FETransformComponent* Transform) const;
+	void ShowTransformConfiguration(std::string Name, FETransformComponent* Transform) const;
 
-	void displayMaterialParameter(FEShaderParam* param);
-	void displayLightProperties(FELight* light);
-	void displayLightsProperties();
+	void DisplayMaterialParameter(FEShaderParam* Param) const;
+	void DisplayLightProperties(FELight* Light) const;
+	void DisplayLightsProperties() const;
 
 	// ************** Terrain Settings **************
-	ImGuiButton* exportHeightMapButton = nullptr;
-	ImGuiButton* importHeightMapButton = nullptr;
-	ImGuiImageButton* sculptBrushButton = nullptr;
-	ImGuiImageButton* levelBrushButton = nullptr;
-	ImGuiImageButton* smoothBrushButton = nullptr;
+	ImGuiButton* ExportHeightMapButton = nullptr;
+	ImGuiButton* ImportHeightMapButton = nullptr;
+	ImGuiImageButton* SculptBrushButton = nullptr;
+	ImGuiImageButton* LevelBrushButton = nullptr;
+	ImGuiImageButton* SmoothBrushButton = nullptr;
 
-	ImGuiImageButton* layerBrushButton = nullptr;
+	ImGuiImageButton* LayerBrushButton = nullptr;
 
-	static bool entityChangePrefabTargetCallBack(FEObject* object, void** entityPointer);
-	static bool terrainChangeMaterialTargetCallBack(FEObject* object, void** layerIndex);
+	static bool EntityChangePrefabTargetCallBack(FEObject* Object, void** EntityPointer);
+	static bool TerrainChangeMaterialTargetCallBack(FEObject* Object, void** LayerIndex);
 
-	static FEEntity* entityToModify;
-	static void changePrefabOfEntityCallBack(std::vector<FEObject*> selectionsResult);
+	static FEEntity* EntityToModify;
+	static void ChangePrefabOfEntityCallBack(std::vector<FEObject*> SelectionsResult);
 
-	DragAndDropTarget* entityChangePrefabTarget = nullptr;
-	std::vector<int> terrainChangeMaterialIndecies;
-	std::vector<DragAndDropTarget*> terrainChangeLayerMaterialTargets;
+	DragAndDropTarget* EntityChangePrefabTarget = nullptr;
+	std::vector<int> TerrainChangeMaterialIndecies;
+	std::vector<DragAndDropTarget*> TerrainChangeLayerMaterialTargets;
 
-	int hoveredTerrainLayerItem = -1;
-	void displayTerrainSettings(FETerrain* terrain);
+	int HoveredTerrainLayerItem = -1;
+	void DisplayTerrainSettings(FETerrain* Terrain);
 
-	int terrainLayerRenameIndex = -1;
-	char terrainLayerRename[1024];
-	bool lastFrameTerrainLayerRenameEditWasVisiable = false;
+	int TerrainLayerRenameIndex = -1;
+	char TerrainLayerRename[1024];
+	bool bLastFrameTerrainLayerRenameEditWasVisiable = false;
 	// ************** Terrain Settings END **************
 	// 
 	// ************** Content Browser **************
 
-	FETexture* folderIcon = nullptr;
-	FETexture* shaderIcon = nullptr;
+	FETexture* FolderIcon = nullptr;
+	FETexture* ShaderIcon = nullptr;
 	FETexture* VFSBackIcon = nullptr;
 
-	FETexture* textureContentBrowserIcon = nullptr;
-	FETexture* meshContentBrowserIcon = nullptr;
-	FETexture* materialContentBrowserIcon = nullptr;
-	FETexture* gameModelContentBrowserIcon = nullptr;
-	FETexture* prefabContentBrowserIcon = nullptr;
+	FETexture* TextureContentBrowserIcon = nullptr;
+	FETexture* MeshContentBrowserIcon = nullptr;
+	FETexture* MaterialContentBrowserIcon = nullptr;
+	FETexture* GameModelContentBrowserIcon = nullptr;
+	FETexture* PrefabContentBrowserIcon = nullptr;
 
-	void displayContentBrowser();
-	bool contentBrowserVisible = true;
-	void displayContentBrowserItems();
+	void DisplayContentBrowser();
+	bool bContentBrowserVisible = true;
+	void DisplayContentBrowserItems();
 
-	int contentBrowserItemUnderMouse = -1;
-	int contentBrowserRenameIndex = -1;
-	char contentBrowserRename[1024];
-	bool lastFrameRenameEditWasVisiable = false;
+	int ContentBrowserItemUnderMouse = -1;
+	int ContentBrowserRenameIndex = -1;
+	char ContentBrowserRename[1024];
+	bool bLastFrameRenameEditWasVisiable = false;
 
-	std::vector<FEObject*> allResourcesContentBrowser;
-	std::vector<FEObject*> filteredResourcesContentBrowser;
-	char filterForResourcesContentBrowser[512];
-	std::string objTypeFilterForResourcesContentBrowser;
-	void updateFilterForResourcesContentBrowser();
-	FETexture* allContentBrowserIcon = nullptr;
-	ImGuiImageButton* filterAllTypesButton = nullptr;
-	ImGuiImageButton* filterTextureTypeButton = nullptr;
-	ImGuiImageButton* filterMeshTypeButton = nullptr;
-	ImGuiImageButton* filterMaterialTypeButton = nullptr;
-	ImGuiImageButton* filterGameModelTypeButton = nullptr;
-	ImGuiImageButton* filterPrefabTypeButton = nullptr;
+	std::vector<FEObject*> AllResourcesContentBrowser;
+	std::vector<FEObject*> FilteredResourcesContentBrowser;
+	char FilterForResourcesContentBrowser[512];
+	std::string ObjTypeFilterForResourcesContentBrowser;
+	void UpdateFilterForResourcesContentBrowser();
+	FETexture* AllContentBrowserIcon = nullptr;
+	ImGuiImageButton* FilterAllTypesButton = nullptr;
+	ImGuiImageButton* FilterTextureTypeButton = nullptr;
+	ImGuiImageButton* FilterMeshTypeButton = nullptr;
+	ImGuiImageButton* FilterMaterialTypeButton = nullptr;
+	ImGuiImageButton* FilterGameModelTypeButton = nullptr;
+	ImGuiImageButton* FilterPrefabTypeButton = nullptr;
 
-	char filterForSceneEntities[512];
-	bool isOpenContextMenuInContentBrowser = false;
-	bool isOpenContextMenuInSceneEntities = false;
-	int activeTabContentBrowser = 0;
+	char FilterForSceneEntities[512];
+	bool bShouldOpenContextMenuInContentBrowser = false;
+	bool bShouldOpenContextMenuInSceneEntities = false;
+	int ActiveTabContentBrowser = 0;
 
 	// ************** Drag&Drop **************
-	struct directoryDragAndDropCallbackInfo
+	struct DirectoryDragAndDropCallbackInfo
 	{
-		std::string directoryPath;
+		std::string DirectoryPath;
 	};
-	std::vector <directoryDragAndDropCallbackInfo> directoryDragAndDropInfo;
-	std::vector<DragAndDropTarget*> contentBrowserDirectoriesTargets;
+	std::vector <DirectoryDragAndDropCallbackInfo> DirectoryDragAndDropInfo;
+	std::vector<DragAndDropTarget*> ContentBrowserDirectoriesTargets;
 	DragAndDropTarget* VFSBackButtonTarget = nullptr;
-	directoryDragAndDropCallbackInfo VFSBackButtoninfo;
+	DirectoryDragAndDropCallbackInfo VFSBackButtoninfo;
 
-	static bool directoryDragAndDropCallback(FEObject* object, void** directory)
+	static bool DirectoryDragAndDropCallback(FEObject* Object, void** Directory)
 	{
-		directoryDragAndDropCallbackInfo* info = reinterpret_cast<directoryDragAndDropCallbackInfo*>(directory);
-		if (object->getType() == FE_NULL)
+		const DirectoryDragAndDropCallbackInfo* info = reinterpret_cast<DirectoryDragAndDropCallbackInfo*>(Directory);
+		if (Object->GetType() == FE_NULL)
 		{
-			std::string oldPath = VIRTUAL_FILE_SYSTEM.getCurrentPath();
-			if (oldPath.back() != '/')
-				oldPath += "/";
+			std::string OldPath = VIRTUAL_FILE_SYSTEM.GetCurrentPath();
+			if (OldPath.back() != '/')
+				OldPath += "/";
 
-			VIRTUAL_FILE_SYSTEM.moveDirectory(oldPath + object->getName(), info->directoryPath);
+			VIRTUAL_FILE_SYSTEM.MoveDirectory(OldPath + Object->GetName(), info->DirectoryPath);
 		}
 		else
 		{
-			VIRTUAL_FILE_SYSTEM.moveFile(object, VIRTUAL_FILE_SYSTEM.getCurrentPath(), info->directoryPath);
+			VIRTUAL_FILE_SYSTEM.MoveFile(Object, VIRTUAL_FILE_SYSTEM.GetCurrentPath(), info->DirectoryPath);
 		}
 
 		return true;
 	}
 	
-	void updateDirectoryDragAndDropTargets();
+	void UpdateDirectoryDragAndDropTargets();
 
 	// ************** Drag&Drop END **************
 	
 	// ************** Content Browser END **************
 
-	int textureUnderMouse = -1;
-	int meshUnderMouse = -1;
-	std::string shaderIDUnderMouse = "";
-	int materialUnderMouse = -1;
-	int gameModelUnderMouse = -1;
-	int entityUnderMouse = -1;
+	int TextureUnderMouse = -1;
+	int MeshUnderMouse = -1;
+	std::string ShaderIdUnderMouse;
+	int MaterialUnderMouse = -1;
+	int GameModelUnderMouse = -1;
+	int EntityUnderMouse = -1;
 
-	bool gameMode = false;
-	bool isInGameMode();
-	void setGameMode(bool gameMode);
+	bool bGameMode = false;
+	bool IsInGameMode() const;
+	void SetGameMode(bool GameMode);
 
-	void renderAllSubWindows();
+	void RenderAllSubWindows();
 };
 
 #define EDITOR FEEditor::getInstance()

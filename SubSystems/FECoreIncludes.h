@@ -24,10 +24,6 @@
 
 #include <xmmintrin.h>
 #include <stdlib.h>
-
-#include <thread>
-#include <atomic>
-#include <functional>
 #include <random>
 
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
@@ -60,19 +56,6 @@ while (iterator != map.end())              \
                                            \
 return result;
 
-static double FENextPowerOfTwo(double currentNumber)
-{
-	double next = 0.0;
-	int iteration = 0;
-	while (currentNumber >= next)
-	{
-		next = pow(2.0, iteration);
-		iteration++;
-	}                         
-
-	return next;
-}
-
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 28
 #define FE_WIN_32
@@ -96,3 +79,5 @@ static double FENextPowerOfTwo(double currentNumber)
 #else
 	#define FE_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
 #endif // USE_DEFERRED_RENDERER
+
+//#define OLD_LOADING

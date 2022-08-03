@@ -2,36 +2,37 @@
 
 #include "../Editor/FEEditorSubWindows/selectPopups.h"
 
-class editGameModelPopup : public FEImGuiWindow
+class EditGameModelPopup : public FEImGuiWindow
 {
-	SINGLETON_PRIVATE_PART(editGameModelPopup)
+	SINGLETON_PRIVATE_PART(EditGameModelPopup)
 
-	enum mode
+	enum EDIT_GAME_MODEL_LOD_MODE
 	{
 		NO_LOD_MODE = 0,
 		HAS_LOD_MODE = 1,
 	};
-	FEGameModel* objToWorkWith;
-	FEGameModel* tempModel = nullptr;
-	FETexture* tempPreview = nullptr;
 
-	FEMaterial* updatedMaterial;
-	static FEMaterial** materialToModify;
-	FEMaterial* updatedBillboardMaterial;
-	static FEMaterial** billboardMaterialToModify;
+	FEGameModel* ObjToWorkWith;
+	FEGameModel* TempModel = nullptr;
+	FETexture* TempPreview = nullptr;
 
-	std::vector<FEMesh*> updatedLODMeshs;
+	FEMaterial* UpdatedMaterial;
+	static FEMaterial** MaterialToModify;
+	FEMaterial* UpdatedBillboardMaterial;
+	static FEMaterial** BillboardMaterialToModify;
 
-	ImGuiButton* cancelButton;
-	ImGuiButton* applyButton;
-	ImGuiButton* changeMaterialButton;
-	ImGuiButton* changeBillboardMaterialButton;
-	ImGuiButton* addBillboard;
+	std::vector<FEMesh*> UpdatedLODMeshs;
 
-	std::vector<ImGuiButton*> changeLODMeshButton;
-	ImGuiButton* deleteLODMeshButton;
+	ImGuiButton* CancelButton;
+	ImGuiButton* ApplyButton;
+	ImGuiButton* ChangeMaterialButton;
+	ImGuiButton* ChangeBillboardMaterialButton;
+	ImGuiButton* AddBillboard;
 
-	int currentMode = NO_LOD_MODE;
+	std::vector<ImGuiButton*> ChangeLODMeshButton;
+	ImGuiButton* DeleteLODMeshButton;
+
+	int CurrentMode = NO_LOD_MODE;
 
 	FERangeConfigurator* LODGroups;
 	RECT LOD0RangeVisualization;
@@ -39,112 +40,112 @@ class editGameModelPopup : public FEImGuiWindow
 	std::vector<ImColor> LODColors;
 
 	// ************** Drag&Drop **************
-	struct meshTargetCallbackInfo
+	struct MeshTargetCallbackInfo
 	{
 		int LODLevel;
-		editGameModelPopup* window;
+		EditGameModelPopup* Window;
 	};
-	std::vector<meshTargetCallbackInfo> LODsMeshCallbackInfo;
-	std::vector<DragAndDropTarget*> LODsMeshTarget;
+	std::vector<MeshTargetCallbackInfo> LODMeshCallbackInfo;
+	std::vector<DragAndDropTarget*> LODMeshTarget;
 
-	struct materialTargetCallbackInfo
+	struct MaterialTargetCallbackInfo
 	{
-		bool billboardMaterial;
-		editGameModelPopup* window;
+		bool bBillboardMaterial;
+		EditGameModelPopup* Window;
 	};
-	materialTargetCallbackInfo materialCallbackInfo;
-	materialTargetCallbackInfo billboardMaterialCallbackInfo;
-	DragAndDropTarget* materialTarget;
-	DragAndDropTarget* billboardMaterialTarget;
+	MaterialTargetCallbackInfo MaterialCallbackInfo;
+	MaterialTargetCallbackInfo BillboardMaterialCallbackInfo;
+	DragAndDropTarget* MaterialTarget;
+	DragAndDropTarget* BillboardMaterialTarget;
 
-	static bool dragAndDropLODMeshCallback(FEObject* object, void** callbackInfo);
-	static bool dragAndDropMaterialCallback(FEObject* object, void** callbackInfo);
+	static bool DragAndDropLODMeshCallback(FEObject* Object, void** CallbackInfo);
+	static bool DragAndDropMaterialCallback(FEObject* Object, void** CallbackInfo);
 	// ************** Drag&Drop END **************
 
-	bool isLastSetupLOD(size_t LODindex);
+	bool IsLastSetupLOD(size_t LODIndex);
 
 	const float NO_LOD_WINDOW_WIDTH = 460.0f;
 	const float NO_LOD_WINDOW_HEIGHT = 520.0f;
 
-	static FEMesh** meshToModify;
-	static void changeMeshCallBack(std::vector<FEObject*> selectionsResult);
-	static void changeMaterialCallBack(std::vector<FEObject*> selectionsResult);
-	static void changeBillboardMaterialCallBack(std::vector<FEObject*> selectionsResult);
+	static FEMesh** MeshToModify;
+	static void ChangeMeshCallBack(std::vector<FEObject*> SelectionsResult);
+	static void ChangeMaterialCallBack(std::vector<FEObject*> SelectionsResult);
+	static void ChangeBillboardMaterialCallBack(std::vector<FEObject*> SelectionsResult);
 public:
-	SINGLETON_PUBLIC_PART(editGameModelPopup)
+	SINGLETON_PUBLIC_PART(EditGameModelPopup)
 
-	void show(FEGameModel* GameModel);
-	void switchMode(int toMode);
-	void displayLODGroups();
-	void render() override;
-	void close();
+	void Show(FEGameModel* GameModel);
+	void SwitchMode(int ToMode);
+	void DisplayLODGroups();
+	void Render() override;
+	void Close();
 };
 
 #define USE_NODES
 
-class editMaterialPopup : public FEImGuiWindow
+class EditMaterialPopup : public FEImGuiWindow
 {
-	SINGLETON_PRIVATE_PART(editMaterialPopup)
+	SINGLETON_PRIVATE_PART(EditMaterialPopup)
 
-	ImGuiButton* cancelButton;
-	ImGuiImageButton* iconButton = nullptr;
-	int textureCount = 0;
+	ImGuiButton* CancelButton;
+	ImGuiImageButton* IconButton = nullptr;
+	int TextureCount = 0;
 
-	std::vector<std::string> channels = { "r", "g", "b", "a" };
-	int textureFromListUnderMouse = -1;
-	FETexture* tempContainer = nullptr;
-	int textureDestination = -1;
+	std::vector<std::string> Channels = { "r", "g", "b", "a" };
+	int TextureFromListUnderMouse = -1;
+	FETexture* TempContainer = nullptr;
+	int TextureDestination = -1;
 
 #ifdef USE_NODES
-	static FEMaterial* objToWorkWith;
+	static FEMaterial* ObjToWorkWith;
 
 	// ************** Node area **************
-	static FEVisualNodeArea* materialNodeArea;
+	static FEVisualNodeArea* MaterialNodeArea;
 
-	static ImVec2 windowPosition;
-	static ImVec2 nodeGridRelativePosition;
-	static ImVec2 mousePositionWhenContextMenuWasOpened;
+	static ImVec2 WindowPosition;
+	static ImVec2 NodeGridRelativePosition;
+	static ImVec2 MousePositionWhenContextMenuWasOpened;
 
-	static FETexture* textureForNewNode;
-	static void nodeSystemMainContextMenu();
-	static void textureNodeCreationCallback(std::vector<FEObject*> selectionsResult);
-	static void textureNodeCallback(FEVisualNode* node, FE_VISUAL_NODE_EVENT eventWithNode);
+	static FETexture* TextureForNewNode;
+	static void NodeSystemMainContextMenu();
+	static void TextureNodeCreationCallback(std::vector<FEObject*> SelectionsResult);
+	static void TextureNodeCallback(FEVisualNode* Node, FE_VISUAL_NODE_EVENT EventWithNode);
 	// ************** Node area END **************
 	
 	// ************** Drag&Drop **************
-	struct nodeAreaTargetCallbackInfo
+	struct NodeAreaTargetCallbackInfo
 	{
-		FETexture* texture;
+		FETexture* Texture;
 	};
-	nodeAreaTargetCallbackInfo dragAndDropCallbackInfo;
-	DragAndDropTarget* nodeAreaTarget;
+	NodeAreaTargetCallbackInfo DragAndDropCallbackInfo;
+	DragAndDropTarget* NodeAreaTarget;
 
-	FEEditorTextureCreatingNode* textureNode = nullptr;
+	FEEditorTextureCreatingNode* TextureNode = nullptr;
 
-	static bool dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo);
+	static bool DragAndDropnodeAreaTargetCallback(FEObject* Object, void** CallbackInfo);
 	// ************** Drag&Drop END **************
 #else
-	FEMaterial* objToWorkWith;
+	FEMaterial* ObjToWorkWith;
 
 	// ************** Drag&Drop **************
-	struct materialBindingCallbackInfo
+	struct MaterialBindingCallbackInfo
 	{
-		void** material;
-		int textureBinding;
+		void** Material;
+		int TextureBinding;
 	};
-	std::vector<materialBindingCallbackInfo> materialBindingInfo;
-	std::vector<DragAndDropTarget*> materialBindingtargets;
-	DragAndDropTarget* texturesListTarget;
+	std::vector<MaterialBindingCallbackInfo> MaterialBindingInfo;
+	std::vector<DragAndDropTarget*> MaterialBindingtargets;
+	DragAndDropTarget* TexturesListTarget;
 
-	static bool dragAndDropCallback(FEObject* object, void** oldTexture);
-	static bool dragAndDropTexturesListCallback(FEObject* object, void** material);
-	static bool dragAndDropMaterialBindingsCallback(FEObject* object, void** callbackInfoPointer);
+	static bool DragAndDropCallback(FEObject* Object, void** OldTexture);
+	static bool DragAndDropTexturesListCallback(FEObject* Object, void** Material);
+	static bool DragAndDropMaterialBindingsCallback(FEObject* Object, void** CallbackInfoPointer);
 	// ************** Drag&Drop END **************
 #endif // USE_NODES
 public:
-	SINGLETON_PUBLIC_PART(editMaterialPopup)
+	SINGLETON_PUBLIC_PART(EditMaterialPopup)
 
-	void show(FEMaterial* material);
-	void render() override;
-	void close();
+	void Show(FEMaterial* Material);
+	void Render() override;
+	void Close();
 };

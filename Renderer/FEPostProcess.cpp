@@ -1,86 +1,86 @@
 #include "FEPostProcess.h"
 using namespace FocalEngine;
 
-FEPostProcessStage::FEPostProcessStage(int InTextureSource, FEShader* Shader)
+FEPostProcessStage::FEPostProcessStage(const int InTextureSource, FEShader* Shader)
 {
-	inTextureSource.push_back(InTextureSource);
-	shader = Shader;
+	this->InTextureSource.push_back(InTextureSource);
+	this->Shader = Shader;
 }
 
 FEPostProcessStage::FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader)
 {
-	inTextureSource = std::move(InTextureSource);
-	shader = Shader;
+	this->InTextureSource = std::move(InTextureSource);
+	this->Shader = Shader;
 }
 
-FEPostProcess::FEPostProcess(std::string Name) : FEObject(FE_POST_PROCESS, Name)
+FEPostProcess::FEPostProcess(const std::string Name) : FEObject(FE_POST_PROCESS, Name)
 {
 }
 
 FEPostProcess::~FEPostProcess()
 {
-	for (size_t i = 0; i < texturesToDelete.size(); i++)
+	for (size_t i = 0; i < TexturesToDelete.size(); i++)
 	{
-		delete texturesToDelete[i];
+		delete TexturesToDelete[i];
 	}
 
-	delete intermediateFramebuffer;
+	delete IntermediateFramebuffer;
 }
 
-void FocalEngine::FEPostProcess::renderResult()
+void FocalEngine::FEPostProcess::RenderResult()
 {
-	screenQuadShader->start();
-	screenQuadShader->loadDataToGPU();
-	stages.back()->outTexture->bind(0);
+	ScreenQuadShader->Start();
+	ScreenQuadShader->LoadDataToGPU();
+	Stages.back()->OutTexture->Bind(0);
 
-	FE_GL_ERROR(glBindVertexArray(screenQuad->getVaoID()));
+	FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, screenQuad->getVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, ScreenQuad->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	stages.back()->outTexture->unBind();
-	screenQuadShader->stop();
+	Stages.back()->OutTexture->UnBind();
+	ScreenQuadShader->Stop();
 }
 
-FETexture* FEPostProcess::getInTexture()
+FETexture* FEPostProcess::GetInTexture()
 {
-	return finalTexture;
+	return FinalTexture;
 }
 
-void FEPostProcess::addStage(FEPostProcessStage* newStage)
+void FEPostProcess::AddStage(FEPostProcessStage* NewStage)
 {
-	if (!newStage->outTexture)
-		newStage->outTexture = finalTexture;
-	stages.push_back(newStage);
+	if (!NewStage->OutTexture)
+		NewStage->OutTexture = FinalTexture;
+	Stages.push_back(NewStage);
 }
 
-bool FEPostProcess::replaceOutTexture(size_t stageIndex, FETexture* newTexture, bool deleteOldTexture)
+bool FEPostProcess::ReplaceOutTexture(const size_t StageIndex, FETexture* NewTexture, const bool bDeleteOldTexture)
 {
-	if (stageIndex >= stages.size())
+	if (StageIndex >= Stages.size())
 	{
+		LOG.Add("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!", FE_LOG_ERROR, FE_LOG_RENDERING);
 		return false;
-		LOG.add("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!", FE_LOG_ERROR, FE_LOG_RENDERING);
 	}
 
 	// Delete old texture from the delete list of FEPostProcess.
-	if (stages[stageIndex]->outTexture != nullptr)
+	if (Stages[StageIndex]->OutTexture != nullptr)
 	{
-		for (size_t i = 0; i < texturesToDelete.size(); i++)
+		for (size_t i = 0; i < TexturesToDelete.size(); i++)
 		{
-			if (texturesToDelete[i]->getObjectID() == stages[stageIndex]->outTexture->getObjectID())
+			if (TexturesToDelete[i]->GetObjectID() == Stages[StageIndex]->OutTexture->GetObjectID())
 			{
-				if (deleteOldTexture)
-					delete stages[stageIndex]->outTexture;
+				if (bDeleteOldTexture)
+					delete Stages[StageIndex]->OutTexture;
 
-				texturesToDelete.erase(texturesToDelete.begin() + i);
+				TexturesToDelete.erase(TexturesToDelete.begin() + i);
 				break;
 			}
 		}
 	}
 	
-	stages[stageIndex]->outTexture = newTexture;
-	texturesToDelete.push_back(newTexture);
+	Stages[StageIndex]->OutTexture = NewTexture;
+	TexturesToDelete.push_back(NewTexture);
 
 	return true;
 }

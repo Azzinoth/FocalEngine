@@ -1,148 +1,146 @@
 #include "FEEditorDragAndDropManager.h"
 using namespace FocalEngine;
 
-DragAndDropManager* DragAndDropManager::_instance = nullptr;
+DragAndDropManager* DragAndDropManager::Instance = nullptr;
 DragAndDropManager::DragAndDropManager() {}
 DragAndDropManager::~DragAndDropManager() {}
 
-void DragAndDropManager::initializeResources()
+void DragAndDropManager::InitializeResources()
 {
-	handCursor = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/handCursor.png", "handCursor");
-	RESOURCE_MANAGER.makeTextureStandard(handCursor);
+	HandCursor = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/handCursor.png", "handCursor");
+	RESOURCE_MANAGER.MakeTextureStandard(HandCursor);
 
-	handCursorUnavailable = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/handCursorUnavailable.png", "handCursorUnavailable");
-	RESOURCE_MANAGER.makeTextureStandard(handCursorUnavailable);
+	HandCursorUnavailable = RESOURCE_MANAGER.LoadPNGTexture("Editor/Images/handCursorUnavailable.png", "handCursorUnavailable");
+	RESOURCE_MANAGER.MakeTextureStandard(HandCursorUnavailable);
 }
 
-DragAndDropTarget* DragAndDropManager::addTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData, std::string toolTipText)
+DragAndDropTarget* DragAndDropManager::AddTarget(const FE_OBJECT_TYPE AcceptedType, bool (*Callback)(FEObject*, void**), void** UserData, const std::string ToolTipText)
 {
-	targets.push_back(new DragAndDropTarget(acceptedType, callback, userData, toolTipText));
-	return targets.back();
+	Targets.push_back(new DragAndDropTarget(AcceptedType, Callback, UserData, ToolTipText));
+	return Targets.back();
 }
 
-DragAndDropTarget* DragAndDropManager::addTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts)
+DragAndDropTarget* DragAndDropManager::AddTarget(std::vector<FE_OBJECT_TYPE>& AcceptedTypes, bool (*Callback)(FEObject*, void**), void** UserData, std::vector<std::string>& ToolTipTexts)
 {
-	targets.push_back(new DragAndDropTarget(acceptedTypes, callback, userData, toolTipTexts));
-	return targets.back();
+	Targets.push_back(new DragAndDropTarget(AcceptedTypes, Callback, UserData, ToolTipTexts));
+	return Targets.back();
 }
 
-DragAndDropTarget* DragAndDropManager::addTarget(DragAndDropTarget* newTarget)
+DragAndDropTarget* DragAndDropManager::AddTarget(DragAndDropTarget* NewTarget)
 {
-	targets.push_back(newTarget);
-	return targets.back();
+	Targets.push_back(NewTarget);
+	return Targets.back();
 }
 
-void DragAndDropManager::drawToolTip()
+void DragAndDropManager::DrawToolTip() const
 {
-	ImGui::Begin("dragAndDrop info", NULL, ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar);
+	ImGui::Begin("dragAndDrop info", nullptr, ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar);
 
-	std::string actionText = getToolTipText();
+	const std::string ActionText = GetToolTipText();
 
-	ImGui::Text(actionText.c_str());
-	ImGui::TextUnformatted(("Name: " + object->getName() + "\nType: " + FEObjectTypeToString(object->getType())).c_str());
-	if (previewTexture != nullptr)
-		ImGui::Image((void*)(intptr_t)previewTexture->getTextureID(), ImVec2(128, 128), uv0, uv1);
+	ImGui::Text(ActionText.c_str());
+	ImGui::TextUnformatted(("Name: " + Object->GetName() + "\nType: " + FEObjectTypeToString(Object->GetType())).c_str());
+	if (PreviewTexture != nullptr)
+		ImGui::Image((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(128, 128), UV0, UV1);
 
 	ImGui::End();
 }
 
-std::string DragAndDropManager::getToolTipText()
+std::string DragAndDropManager::GetToolTipText() const
 {
-	std::string result = "No action available";
-	if (object == nullptr)
-		return result;
+	std::string Result = "No action available";
+	if (Object == nullptr)
+		return Result;
 
-	for (size_t i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < Targets.size(); i++)
 	{
-		if (targets[i]->getActive())
+		if (Targets[i]->GetActive())
 		{
-			for (size_t j = 0; j < targets[i]->acceptedTypes.size(); j++)
+			for (size_t j = 0; j < Targets[i]->AcceptedTypes.size(); j++)
 			{
-				if (targets[i]->acceptedTypes[j] == object->getType())
+				if (Targets[i]->AcceptedTypes[j] == Object->GetType())
 				{
-					result = targets[i]->toolTipTexts[j];
+					Result = Targets[i]->ToolTipTexts[j];
 					break;
 				}
 			}
 		}
 
-		if (result != "No action available")
+		if (Result != "No action available")
 			break;
 	}
 
-	return result;
+	return Result;
 }
 
-void DragAndDropManager::render()
+void DragAndDropManager::Render() const
 {
-	if (object == nullptr)
+	if (Object == nullptr)
 		return;
 
 	ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 
-	auto cursor = ImGui::GetCurrentContext()->IO.MousePos;
-	const auto offset = ImGui::GetItemRectMin();
-	const auto center = ImVec2(0, 0);
+	const auto Cursor = ImGui::GetCurrentContext()->IO.MousePos;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-	ImGui::SetNextWindowPos(cursor);
-	auto oldImGuiCol_PopupBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
+	ImGui::SetNextWindowPos(Cursor);
+	const auto OldImGuiColPopupBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
 	ImGui::GetStyle().Colors[ImGuiCol_PopupBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-	auto oldImGuiCol_Border = ImGui::GetStyle().Colors[ImGuiCol_Border];
+	const auto OldImGuiColBorder = ImGui::GetStyle().Colors[ImGuiCol_Border];
 	ImGui::GetStyle().Colors[ImGuiCol_Border] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
 
 	ImGui::BeginTooltip();
 
-	if (objectCanBeDroped())
+	if (ObjectCanBeDroped())
 	{
-		ImGui::Image((void*)(intptr_t)handCursor->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)HandCursor->GetTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 	}
 	else
 	{
-		ImGui::Image((void*)(intptr_t)handCursorUnavailable->getTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
+		ImGui::Image((void*)(intptr_t)HandCursorUnavailable->GetTextureID(), ImVec2(32, 32), ImVec2(0.0f, 0.0f), ImVec2(1.0f, 1.0f));
 	}
 	ImGui::End();
 
-	ImGui::GetStyle().Colors[ImGuiCol_PopupBg] = oldImGuiCol_PopupBg;
-	ImGui::GetStyle().Colors[ImGuiCol_Border] = oldImGuiCol_Border;
+	ImGui::GetStyle().Colors[ImGuiCol_PopupBg] = OldImGuiColPopupBg;
+	ImGui::GetStyle().Colors[ImGuiCol_Border] = OldImGuiColBorder;
 	ImGui::PopStyleVar();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8, 8));
-	ImVec2 newPosition = cursor;
-	newPosition.x += 0;
-	newPosition.y += 48;
-	ImGui::SetNextWindowPos(newPosition);
+	ImVec2 NewPosition = Cursor;
+	NewPosition.x += 0;
+	NewPosition.y += 48;
+	ImGui::SetNextWindowPos(NewPosition);
 
-	drawToolTip();
+	DrawToolTip();
 
-	for (size_t i = 0; i < targets.size(); i++)
-		targets[i]->active = false;
+	for (size_t i = 0; i < Targets.size(); i++)
+		Targets[i]->bActive = false;
 
 	ImGui::PopStyleVar();
 }
 
-void DragAndDropManager::dropAction()
+void DragAndDropManager::DropAction()
 {
-	if (object == nullptr)
+	if (Object == nullptr)
 		return;
 
-	for (size_t i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < Targets.size(); i++)
 	{
-		if (targets[i]->active && targets[i]->accept(object))
+		if (Targets[i]->bActive && Targets[i]->Accept(Object))
 		{
-			targets[i]->callback(object, targets[i]->userData);
+			Targets[i]->Callback(Object, Targets[i]->UserData);
 			break;
 		}
 	}
 
-	object = nullptr;
+	Object = nullptr;
 }
 
-bool DragAndDropManager::objectCanBeDroped()
+bool DragAndDropManager::ObjectCanBeDroped() const
 {
-	for (size_t i = 0; i < targets.size(); i++)
+	for (size_t i = 0; i < Targets.size(); i++)
 	{
-		if (targets[i]->active && targets[i]->accept(object))
+		if (Targets[i]->bActive && Targets[i]->Accept(Object))
 		{
 			return true;
 		}
@@ -151,112 +149,112 @@ bool DragAndDropManager::objectCanBeDroped()
 	return false;
 }
 
-void DragAndDropManager::mouseMove()
+void DragAndDropManager::MouseMove()
 {
-	drawDragAndDropHasAction = false;
-	if (object)
+	bDrawDragAndDropHasAction = false;
+	if (Object)
 	{
-		for (size_t i = 0; i < targets.size(); i++)
+		for (size_t i = 0; i < Targets.size(); i++)
 		{
-			if (targets[i]->getActive() && targets[i]->accept(object))
+			if (Targets[i]->GetActive() && Targets[i]->Accept(Object))
 			{
-				drawDragAndDropHasAction = true;
+				bDrawDragAndDropHasAction = true;
 				return;
 			}
 		}
 	}
 }
 
-void DragAndDropManager::setObject(FEObject* obj, FETexture* texture, ImVec2 uv0, ImVec2 uv1)
+void DragAndDropManager::SetObject(FEObject* Obj, FETexture* Texture, ImVec2 UV0, ImVec2 UV1)
 {
-	object = obj;
-	previewTexture = texture;
-	this->uv0 = uv0;
-	this->uv1 = uv1;
+	Object = Obj;
+	PreviewTexture = Texture;
+	this->UV0 = UV0;
+	this->UV1 = UV1;
 }
 
-FETexture* DragAndDropManager::getToolTipTexture()
+FETexture* DragAndDropManager::GetToolTipTexture() const
 {
-	return previewTexture;
+	return PreviewTexture;
 }
 
-bool DragAndDropManager::objectIsDraged()
+bool DragAndDropManager::ObjectIsDraged() const
 {
-	return object != nullptr;
+	return Object != nullptr;
 }
 
 DragAndDropTarget::DragAndDropTarget()
 {
-	this->callback = nullptr;
+	this->Callback = nullptr;
 }
 
-DragAndDropTarget::DragAndDropTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData, std::string toolTipText)
+DragAndDropTarget::DragAndDropTarget(const FE_OBJECT_TYPE AcceptedType, bool (*Callback)(FEObject*, void**), void** UserData, const std::string ToolTipText)
 {
-	acceptedTypes.push_back(acceptedType);
-	this->callback = callback;
-	this->userData = userData;
-	toolTipTexts.push_back(toolTipText);
+	AcceptedTypes.push_back(AcceptedType);
+	this->Callback = Callback;
+	this->UserData = UserData;
+	ToolTipTexts.push_back(ToolTipText);
 }
 
-DragAndDropTarget::DragAndDropTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts)
+DragAndDropTarget::DragAndDropTarget(std::vector<FE_OBJECT_TYPE>& AcceptedTypes, bool (*Callback)(FEObject*, void**), void** UserData, std::vector<std::string>& ToolTipTexts)
 {
-	this->acceptedTypes = acceptedTypes;
-	this->callback = callback;
-	this->userData = userData;
-	this->toolTipTexts = toolTipTexts;
+	this->AcceptedTypes = AcceptedTypes;
+	this->Callback = Callback;
+	this->UserData = UserData;
+	this->ToolTipTexts = ToolTipTexts;
 }
 
 DragAndDropTarget::~DragAndDropTarget()
 {
-	for (size_t i = 0; i < DRAG_AND_DROP_MANAGER.targets.size(); i++)
+	for (size_t i = 0; i < DRAG_AND_DROP_MANAGER.Targets.size(); i++)
 	{
-		if (DRAG_AND_DROP_MANAGER.targets[i] == this)
+		if (DRAG_AND_DROP_MANAGER.Targets[i] == this)
 		{
-			DRAG_AND_DROP_MANAGER.targets.erase(DRAG_AND_DROP_MANAGER.targets.begin() + i);
+			DRAG_AND_DROP_MANAGER.Targets.erase(DRAG_AND_DROP_MANAGER.Targets.begin() + i);
 			return;
 		}
 	}
 }
 
-void DragAndDropTarget::setActive(bool active)
+void DragAndDropTarget::SetActive(const bool Active)
 {
-	this->active = active;
+	this->bActive = Active;
 }
 
-bool DragAndDropTarget::getActive()
+bool DragAndDropTarget::GetActive() const
 {
-	return this->active;
+	return this->bActive;
 }
 
-bool DragAndDropTarget::accept(FEObject* object)
+bool DragAndDropTarget::Accept(const FEObject* Object) const
 {
-	for (size_t i = 0; i < acceptedTypes.size(); i++)
+	for (size_t i = 0; i < AcceptedTypes.size(); i++)
 	{
-		if (acceptedTypes[i] == object->getType())
+		if (AcceptedTypes[i] == Object->GetType())
 			return true;
 	}
 
 	return false;
 }
 
-void** DragAndDropTarget::getUserData()
+void** DragAndDropTarget::GetUserData() const
 {
-	return userData;
+	return UserData;
 }
 
-void DragAndDropTarget::setNewUserData(void** newUserData)
+void DragAndDropTarget::SetNewUserData(void** NewUserData)
 {
-	userData = newUserData;
+	UserData = NewUserData;
 }
 
-void DragAndDropTarget::stickToItem()
+void DragAndDropTarget::StickToItem()
 {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
-		setActive(true);
+		SetActive(true);
 }
 
-void DragAndDropTarget::stickToCurrentWindow()
+void DragAndDropTarget::StickToCurrentWindow()
 {
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
-		setActive(true);
+		SetActive(true);
 }

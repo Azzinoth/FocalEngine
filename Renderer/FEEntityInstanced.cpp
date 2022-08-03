@@ -2,80 +2,78 @@
 
 using namespace FocalEngine;
 
-float FESpawnInfo::getMinScale()
+float FESpawnInfo::GetMinScale()
 {
-	return minScale;
+	return MinScale;
 }
 
-void FESpawnInfo::setMinScale(float newValue)
+void FESpawnInfo::SetMinScale(const float NewValue)
 {
-	if (newValue >= maxScale)
+	if (NewValue >= MaxScale)
 		return;
 
-	minScale = newValue;
+	MinScale = NewValue;
 }
 
-float FESpawnInfo::getMaxScale()
+float FESpawnInfo::GetMaxScale()
 {
-	return maxScale;
+	return MaxScale;
 }
 
-void FESpawnInfo::setMaxScale(float newValue)
+void FESpawnInfo::SetMaxScale(const float NewValue)
 {
-	if (newValue <= minScale)
+	if (NewValue <= MinScale)
 		return;
 
-	maxScale = newValue;
+	MaxScale = NewValue;
 }
 
-float FESpawnInfo::getPositionDeviation()
+float FESpawnInfo::GetPositionDeviation()
 {
-	int integerPart = rand() % int(radius);
-	float fractionalPart = float((rand() % 100) / 100.0f);
-	float result = float(integerPart) + fractionalPart;
+	const int IntegerPart = rand() % static_cast<int>(Radius);
+	const float FractionalPart = static_cast<float>((rand() % 100) / 100.0f);
+	float result = static_cast<float>(IntegerPart) + FractionalPart;
 
-	result -= radius / 2.0f;
+	result -= Radius / 2.0f;
 
 	return result;
 	//return (rand() % int(radius * 100)) / 100.0f - radius / 2.0f;
 }
 
-float FESpawnInfo::getScaleDeviation()
+float FESpawnInfo::GetScaleDeviation()
 {
 	//float finalDeviation = ((float(rand() % int(scaleDeviation * 10000)) / 10000.0f) - scaleDeviation / 2.0f);
 
 	//float minScale = 0.5f;
 	//float maxScale = 1.5f;
-	float finalDeviation = minScale + ((float(rand() % int((maxScale - minScale) * 10000)) / 10000.0f));
+	const float FinalDeviation = MinScale + ((static_cast<float>(rand() % static_cast<int>((MaxScale - MinScale) * 10000)) / 10000.0f));
 
-	return finalDeviation;
+	return FinalDeviation;
 }
 
-int FESpawnInfo::getRotaionDeviation(glm::vec3 axis)
+int FESpawnInfo::GetRotaionDeviation(const glm::vec3 Axis)
 {
-	if (axis.x > 0.0f)
+	if (Axis.x > 0.0f)
 	{
-		int rot = int(360 * rotationDeviation.x);
+		const int rot = static_cast<int>(360 * RotationDeviation.x);
 		if (rot == 0)
 			return 0;
 		return rand() % rot;
 	}
-	else if (axis.y > 0.0f)
+	else if (Axis.y > 0.0f)
 	{
-		int rot = int(360 * rotationDeviation.y);
+		const int rot = static_cast<int>(360 * RotationDeviation.y);
 		if (rot == 0)
 			return 0;
 		return rand() % rot;
 	}
 	else
 	{
-		int rot = int(360 * rotationDeviation.z);
+		const int rot = static_cast<int>(360 * RotationDeviation.z);
 		if (rot == 0)
 			return 0;
 		return rand() % rot;
 	}
-	
-	return 0;
 }
 
 FEInstanceModification::FEInstanceModification()
@@ -83,92 +81,92 @@ FEInstanceModification::FEInstanceModification()
 
 }
 
-FEEntityInstanced::FEEntityInstanced(FEPrefab* prefab, std::string Name) : FEEntity(prefab, Name)
+FEEntityInstanced::FEEntityInstanced(FEPrefab* Prefab, const std::string Name) : FEEntity(Prefab, Name)
 {
-	setType(FE_ENTITY_INSTANCED);
+	SetType(FE_ENTITY_INSTANCED);
 
-	renderers.resize(prefab->components.size());
-	for (int i = 0; i < prefab->components.size(); i++)
+	Renderers.resize(Prefab->Components.size());
+	for (int i = 0; i < Prefab->Components.size(); i++)
 	{
-		initRender(i);
+		InitRender(i);
 	}
 
-	transform.setScale(glm::vec3(1.0f));
+	Transform.SetScale(glm::vec3(1.0f));
 }
 
-void FEEntityInstanced::initRender(int index)
+void FEEntityInstanced::InitRender(const int Index)
 {
-	renderers[index] = new FEGameModelInstancedRenderer;
-	renderers[index]->LODCounts = new int[prefab->components[index]->gameModel->getMaxLODCount()];
+	Renderers[Index] = new FEGameModelInstancedRenderer;
+	Renderers[Index]->LODCounts = new int[Prefab->Components[Index]->GameModel->GetMaxLODCount()];
 
-	renderers[index]->LODBuffers = new GLenum[prefab->components[index]->gameModel->getMaxLODCount()];
-	for (size_t j = 0; j < prefab->components[index]->gameModel->getMaxLODCount(); j++)
+	Renderers[Index]->LODBuffers = new GLenum[Prefab->Components[Index]->GameModel->GetMaxLODCount()];
+	for (size_t j = 0; j < Prefab->Components[Index]->GameModel->GetMaxLODCount(); j++)
 	{
-		FE_GL_ERROR(glGenBuffers(1, &renderers[index]->LODBuffers[j]));
+		FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->LODBuffers[j]));
 	}
 
-	FE_GL_ERROR(glGenBuffers(1, &renderers[index]->sourceDataBuffer));
-	FE_GL_ERROR(glGenBuffers(1, &renderers[index]->positionsBuffer));
-	FE_GL_ERROR(glGenBuffers(1, &renderers[index]->AABBSizesBuffer));
-	FE_GL_ERROR(glGenBuffers(1, &renderers[index]->LODInfoBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->SourceDataBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->PositionsBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->AABBSizesBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->LODInfoBuffer));
 
-	renderers[index]->indirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
-	for (size_t j = 0; j < prefab->components[index]->gameModel->getMaxLODCount(); j++)
+	Renderers[Index]->IndirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
+	for (size_t j = 0; j < Prefab->Components[Index]->GameModel->GetMaxLODCount(); j++)
 	{
-		renderers[index]->indirectDrawsInfo[j].count = prefab->components[index]->gameModel->getLODMesh(j) == nullptr ? 0 : prefab->components[index]->gameModel->getLODMesh(j)->getVertexCount();
-		renderers[index]->indirectDrawsInfo[j].baseInstance = 0;
-		renderers[index]->indirectDrawsInfo[j].baseVertex = 0;
-		renderers[index]->indirectDrawsInfo[j].firstIndex = 0;
-		renderers[index]->indirectDrawsInfo[j].primCount = 0;
+		Renderers[Index]->IndirectDrawsInfo[j].Count = Prefab->Components[Index]->GameModel->GetLODMesh(j) == nullptr ? 0 : Prefab->Components[Index]->GameModel->GetLODMesh(j)->GetVertexCount();
+		Renderers[Index]->IndirectDrawsInfo[j].BaseInstance = 0;
+		Renderers[Index]->IndirectDrawsInfo[j].BaseVertex = 0;
+		Renderers[Index]->IndirectDrawsInfo[j].FirstIndex = 0;
+		Renderers[Index]->IndirectDrawsInfo[j].PrimCount = 0;
 	}
 
-	FE_GL_ERROR(glGenBuffers(1, &renderers[index]->indirectDrawInfoBuffer));
-	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderers[index]->indirectDrawInfoBuffer));
-	FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, renderers[index]->indirectDrawsInfo, GL_MAP_READ_BIT));
+	FE_GL_ERROR(glGenBuffers(1, &Renderers[Index]->IndirectDrawInfoBuffer));
+	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, Renderers[Index]->IndirectDrawInfoBuffer));
+	FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, Renderers[Index]->IndirectDrawsInfo, GL_MAP_READ_BIT));
 	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
 
-	renderers[index]->instancedMatricesLOD.resize(prefab->components[index]->gameModel->getMaxLODCount());
+	Renderers[Index]->InstancedMatricesLOD.resize(Prefab->Components[Index]->GameModel->GetMaxLODCount());
 }
 
 FEEntityInstanced::~FEEntityInstanced()
 {
-	delete[] renderers.back()->LODCounts;
-	delete[] renderers.back()->indirectDrawsInfo;
+	delete[] Renderers.back()->LODCounts;
+	delete[] Renderers.back()->IndirectDrawsInfo;
 }
 
-void FEEntityInstanced::render(int subGameModel)
+void FEEntityInstanced::Render(const int SubGameModel)
 {
-	if (instanceCount == 0)
+	if (InstanceCount == 0)
 		return;
 
-	if (renderers.size() <= subGameModel || prefab->components.size() <= subGameModel)
+	if (Renderers.size() <= SubGameModel || Prefab->Components.size() <= SubGameModel)
 		return;
 
-	checkDirtyFlag(subGameModel);
+	CheckDirtyFlag(SubGameModel);
 
-	for (size_t i = 0; i < prefab->components[subGameModel]->gameModel->getMaxLODCount(); i++)
+	for (size_t i = 0; i < Prefab->Components[SubGameModel]->GameModel->GetMaxLODCount(); i++)
 	{
-		if (prefab->components[subGameModel]->gameModel->isLODBillboard(i))
+		if (Prefab->Components[SubGameModel]->GameModel->IsLODBillboard(i))
 			break;
 
-		if (prefab->components[subGameModel]->gameModel->getLODMesh(i) != nullptr)
+		if (Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i) != nullptr)
 		{
-			if (renderers[subGameModel]->LODBuffers[i] == 0)
+			if (Renderers[SubGameModel]->LODBuffers[i] == 0)
 				break;
 
-			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, renderers[subGameModel]->LODBuffers[i]));
+			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, Renderers[SubGameModel]->LODBuffers[i]));
 
-			FE_GL_ERROR(glBindVertexArray(prefab->components[subGameModel]->gameModel->getLODMesh(i)->getVaoID()));
+			FE_GL_ERROR(glBindVertexArray(Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->GetVaoID()));
 
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-			if ((prefab->components[subGameModel]->gameModel->getLODMesh(i)->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+			if ((Prefab->Components[SubGameModel]->GameModel->GetLODMesh(i)->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
 			FE_GL_ERROR(glEnableVertexAttribArray(6));
-			FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0));
+			FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(0)));
 			FE_GL_ERROR(glEnableVertexAttribArray(7));
 			FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 			FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -176,7 +174,7 @@ void FEEntityInstanced::render(int subGameModel)
 			FE_GL_ERROR(glEnableVertexAttribArray(9));
 			FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
-			FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderers[subGameModel]->indirectDrawInfoBuffer));
+			FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, Renderers[SubGameModel]->IndirectDrawInfoBuffer));
 			FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(i * sizeof(FEDrawElementsIndirectCommand))));
 			
 			FE_GL_ERROR(glBindVertexArray(0));
@@ -184,18 +182,18 @@ void FEEntityInstanced::render(int subGameModel)
 		}
 	}
 
-	if (cullingType == FE_CULLING_NONE)
+	if (CullingType == FE_CULLING_NONE)
 	{
-		FE_GL_ERROR(glBindVertexArray(prefab->components[subGameModel]->gameModel->mesh->getVaoID()));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-		if ((prefab->components[subGameModel]->gameModel->mesh->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+		FE_GL_ERROR(glBindVertexArray(Prefab->Components[SubGameModel]->GameModel->Mesh->GetVaoID()));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+		if ((Prefab->Components[SubGameModel]->GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
 		FE_GL_ERROR(glEnableVertexAttribArray(6));
-		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0));
+		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(nullptr)));
 		FE_GL_ERROR(glEnableVertexAttribArray(7));
 		FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 		FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -203,36 +201,36 @@ void FEEntityInstanced::render(int subGameModel)
 		FE_GL_ERROR(glEnableVertexAttribArray(9));
 		FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
-		FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, prefab->components[subGameModel]->gameModel->mesh->getVertexCount(), GL_UNSIGNED_INT, 0, int(instanceCount)));
+		FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, Prefab->Components[SubGameModel]->GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, nullptr, static_cast<int>(InstanceCount)));
 
 		FE_GL_ERROR(glBindVertexArray(0));
 	}
 }
 
-void FEEntityInstanced::renderOnlyBillbords(glm::vec3 cameraPosition)
+void FEEntityInstanced::RenderOnlyBillbords(glm::vec3 CameraPosition)
 {
-	for (size_t i = 0; i < renderers.size(); i++)
+	for (size_t i = 0; i < Renderers.size(); i++)
 	{
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			if (prefab->components[i]->gameModel->isLODBillboard(j) && prefab->components[i]->gameModel->getLODMesh(j) != nullptr)
+			if (Prefab->Components[i]->GameModel->IsLODBillboard(j) && Prefab->Components[i]->GameModel->GetLODMesh(j) != nullptr)
 			{
-				if (renderers[i]->LODBuffers[j] == 0)
+				if (Renderers[i]->LODBuffers[j] == 0)
 					break;
 
-				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, renderers[i]->LODBuffers[j]));
+				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, Renderers[i]->LODBuffers[j]));
 
-				FE_GL_ERROR(glBindVertexArray(prefab->components[i]->gameModel->getLODMesh(j)->getVaoID()));
+				FE_GL_ERROR(glBindVertexArray(Prefab->Components[i]->GameModel->GetLODMesh(j)->GetVaoID()));
 
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-				if ((prefab->components[i]->gameModel->getLODMesh(j)->vertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+				if ((Prefab->Components[i]->GameModel->GetLODMesh(j)->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
 				FE_GL_ERROR(glEnableVertexAttribArray(6));
-				FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0));
+				FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(nullptr)));
 				FE_GL_ERROR(glEnableVertexAttribArray(7));
 				FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 				FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -240,7 +238,7 @@ void FEEntityInstanced::renderOnlyBillbords(glm::vec3 cameraPosition)
 				FE_GL_ERROR(glEnableVertexAttribArray(9));
 				FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
-				FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderers[i]->indirectDrawInfoBuffer));
+				FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, Renderers[i]->IndirectDrawInfoBuffer));
 				FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(j * sizeof(FEDrawElementsIndirectCommand))));
 
 				FE_GL_ERROR(glBindVertexArray(0));
@@ -252,24 +250,24 @@ void FEEntityInstanced::renderOnlyBillbords(glm::vec3 cameraPosition)
 	}
 }
 
-void FEEntityInstanced::updateBuffers()
+void FEEntityInstanced::UpdateBuffers()
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
+	for (size_t i = 0; i < Prefab->Components.size(); i++)
 	{
-		if (renderers[i]->instancedBuffer != 0)
+		if (Renderers[i]->InstancedBuffer != 0)
 		{
-			glDeleteBuffers(1, &renderers[i]->instancedBuffer);
+			glDeleteBuffers(1, &Renderers[i]->InstancedBuffer);
 		}
 
-		FE_GL_ERROR(glGenBuffers(1, &renderers[i]->instancedBuffer));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, renderers[i]->instancedBuffer));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, instanceCount * sizeof(glm::mat4), renderers[i]->instancedMatrices.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->InstancedBuffer));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, Renderers[i]->InstancedBuffer));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, InstanceCount * sizeof(glm::mat4), Renderers[i]->InstancedMatrices.data(), GL_DYNAMIC_DRAW));
 
-		unsigned int VAO = prefab->components[i]->gameModel->mesh->getVaoID();
+		const unsigned int VAO = Prefab->Components[i]->GameModel->Mesh->GetVaoID();
 		FE_GL_ERROR(glBindVertexArray(VAO));
 		// set attribute pointers for matrix (4 times vec4)
 		FE_GL_ERROR(glEnableVertexAttribArray(6));
-		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0));
+		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(nullptr)));
 		FE_GL_ERROR(glEnableVertexAttribArray(7));
 		FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 		FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -284,15 +282,15 @@ void FEEntityInstanced::updateBuffers()
 
 		FE_GL_ERROR(glBindVertexArray(0));
 
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			if (prefab->components[i]->gameModel->getLODMesh(j) != nullptr)
+			if (Prefab->Components[i]->GameModel->GetLODMesh(j) != nullptr)
 			{
-				unsigned int VAO = prefab->components[i]->gameModel->getLODMesh(j)->getVaoID();
+				const unsigned int VAO = Prefab->Components[i]->GameModel->GetLODMesh(j)->GetVaoID();
 				FE_GL_ERROR(glBindVertexArray(VAO));
 				// set attribute pointers for matrix (4 times vec4)
 				FE_GL_ERROR(glEnableVertexAttribArray(6));
-				FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0));
+				FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(nullptr)));
 				FE_GL_ERROR(glEnableVertexAttribArray(7));
 				FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 				FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -311,609 +309,609 @@ void FEEntityInstanced::updateBuffers()
 
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-		renderers[i]->allInstancesAABB = FEAABB();
-		for (size_t j = 0; j < instanceCount; j++)
+		Renderers[i]->AllInstancesAABB = FEAABB();
+		for (size_t j = 0; j < InstanceCount; j++)
 		{
-			glm::mat4 matWithoutTranslate = renderers[i]->transformedInstancedMatrices[j];
-			matWithoutTranslate[3][0] -= transform.position.x;
-			matWithoutTranslate[3][1] -= transform.position.y;
-			matWithoutTranslate[3][2] -= transform.position.z;
+			glm::mat4 MatWithoutTranslate = Renderers[i]->TransformedInstancedMatrices[j];
+			MatWithoutTranslate[3][0] -= Transform.Position.x;
+			MatWithoutTranslate[3][1] -= Transform.Position.y;
+			MatWithoutTranslate[3][2] -= Transform.Position.z;
 
-			renderers[i]->allInstancesAABB = renderers[i]->allInstancesAABB.merge(prefab->components[i]->gameModel->mesh->AABB.transform(matWithoutTranslate));
+			Renderers[i]->AllInstancesAABB = Renderers[i]->AllInstancesAABB.Merge(Prefab->Components[i]->GameModel->Mesh->AABB.Transform(MatWithoutTranslate));
 		}
 	}
 
-	transform.dirtyFlag = true;
-	getAABB();
+	Transform.bDirtyFlag = true;
+	GetAABB();
 }
 
-void FEEntityInstanced::clear()
+void FEEntityInstanced::Clear()
 {
-	instanceCount = 0;
+	InstanceCount = 0;
 
-	for (size_t i = 0; i < renderers.size(); i++)
+	for (size_t i = 0; i < Renderers.size(); i++)
 	{
-		delete[] renderers[i]->LODCounts;
+		delete[] Renderers[i]->LODCounts;
 
-		renderers[i]->instancedAABBSizes.resize(0);
-		renderers[i]->instancedMatrices.resize(0);
-		renderers[i]->transformedInstancedMatrices.resize(0);
-		renderers[i]->instancePositions.resize(0);
+		Renderers[i]->InstancedAABBSizes.resize(0);
+		Renderers[i]->InstancedMatrices.resize(0);
+		Renderers[i]->TransformedInstancedMatrices.resize(0);
+		Renderers[i]->InstancePositions.resize(0);
 		
-		renderers[i]->LODCounts = new int[prefab->components[i]->gameModel->getMaxLODCount()];
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		Renderers[i]->LODCounts = new int[Prefab->Components[i]->GameModel->GetMaxLODCount()];
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			renderers[i]->LODCounts[j] = 0;
+			Renderers[i]->LODCounts[j] = 0;
 		}
 
-		renderers[i]->instancedMatricesLOD.resize(prefab->components[i]->gameModel->getMaxLODCount());
+		Renderers[i]->InstancedMatricesLOD.resize(Prefab->Components[i]->GameModel->GetMaxLODCount());
 	}
 	
-	transform.setScale(glm::vec3(1.0f));
-	modifications.clear();
+	Transform.SetScale(glm::vec3(1.0f));
+	Modifications.clear();
 }
 
-void FEEntityInstanced::addInstanceInternal(glm::mat4 instanceMatrix)
+void FEEntityInstanced::AddInstanceInternal(const glm::mat4 InstanceMatrix)
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
+	for (size_t i = 0; i < Prefab->Components.size(); i++)
 	{
-		renderers[i]->instancedAABBSizes.push_back(-FEAABB(prefab->components[i]->gameModel->getMesh()->getAABB(), instanceMatrix).size);
-		renderers[i]->instancedMatrices.push_back(instanceMatrix);
-		renderers[i]->transformedInstancedMatrices.push_back(transform.transformMatrix * instanceMatrix);
-		renderers[i]->instancePositions.push_back(renderers[i]->transformedInstancedMatrices.back()[3]);
+		Renderers[i]->InstancedAABBSizes.push_back(-FEAABB(Prefab->Components[i]->GameModel->GetMesh()->GetAABB(), InstanceMatrix).Size);
+		Renderers[i]->InstancedMatrices.push_back(InstanceMatrix);
+		Renderers[i]->TransformedInstancedMatrices.push_back(Transform.TransformMatrix * InstanceMatrix);
+		Renderers[i]->InstancePositions.push_back(Renderers[i]->TransformedInstancedMatrices.back()[3]);
 
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			renderers[i]->instancedMatricesLOD[j].resize(instanceCount);
+			Renderers[i]->InstancedMatricesLOD[j].resize(InstanceCount);
 		}
 	}
 
-	instanceCount++;
-	setDirtyFlag(true);
+	InstanceCount++;
+	SetDirtyFlag(true);
 }
 
-void FEEntityInstanced::addInstances(glm::mat4* instanceMatrix, size_t count)
+void FEEntityInstanced::AddInstances(const glm::mat4* InstanceMatrix, const size_t Count)
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
+	for (size_t i = 0; i < Prefab->Components.size(); i++)
 	{
-		size_t startIndex = renderers[i]->instancedAABBSizes.size();
+		const size_t StartIndex = Renderers[i]->InstancedAABBSizes.size();
 
-		renderers[i]->instancedAABBSizes.resize(renderers[i]->instancedAABBSizes.size() + count);
-		FEAABB originalAABB = prefab->components[i]->gameModel->getMesh()->getAABB();
-		renderers[i]->instancedMatrices.resize(renderers[i]->instancedMatrices.size() + count);
-		renderers[i]->transformedInstancedMatrices.resize(renderers[i]->transformedInstancedMatrices.size() + count);
-		renderers[i]->instancePositions.resize(renderers[i]->instancePositions.size() + count);
+		Renderers[i]->InstancedAABBSizes.resize(Renderers[i]->InstancedAABBSizes.size() + Count);
+		const FEAABB OriginalAABB = Prefab->Components[i]->GameModel->GetMesh()->GetAABB();
+		Renderers[i]->InstancedMatrices.resize(Renderers[i]->InstancedMatrices.size() + Count);
+		Renderers[i]->TransformedInstancedMatrices.resize(Renderers[i]->TransformedInstancedMatrices.size() + Count);
+		Renderers[i]->InstancePositions.resize(Renderers[i]->InstancePositions.size() + Count);
 
-		for (size_t j = startIndex; j < count; j++)
+		for (size_t j = StartIndex; j < Count; j++)
 		{
-			renderers[i]->instancedAABBSizes[j] = -FEAABB(originalAABB, instanceMatrix[j]).size;
-			renderers[i]->instancedMatrices[j] = instanceMatrix[j];
-			renderers[i]->transformedInstancedMatrices[j] = transform.transformMatrix * instanceMatrix[j];
+			Renderers[i]->InstancedAABBSizes[j] = -FEAABB(OriginalAABB, InstanceMatrix[j]).Size;
+			Renderers[i]->InstancedMatrices[j] = InstanceMatrix[j];
+			Renderers[i]->TransformedInstancedMatrices[j] = Transform.TransformMatrix * InstanceMatrix[j];
 
-			renderers[i]->instancePositions[j] = renderers[i]->transformedInstancedMatrices[j][3];
+			Renderers[i]->InstancePositions[j] = Renderers[i]->TransformedInstancedMatrices[j][3];
 			if (i == 0)
-				instanceCount++;
+				InstanceCount++;
 		}
 
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			renderers[i]->instancedMatricesLOD[j].resize(instanceCount);
+			Renderers[i]->InstancedMatricesLOD[j].resize(InstanceCount);
 		}
 	}
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-FEAABB FEEntityInstanced::getAABB()
+FEAABB FEEntityInstanced::GetAABB()
 {
-	if (transform.dirtyFlag)
+	if (Transform.bDirtyFlag)
 	{
-		if (prefab != nullptr)
+		if (Prefab != nullptr)
 		{
-			if (renderers.size() > 0)
+			if (!Renderers.empty())
 			{
-				entityAABB = renderers[0]->allInstancesAABB.transform(transform.getTransformMatrix());
-				for (size_t i = 1; i < renderers.size(); i++)
+				EntityAABB = Renderers[0]->AllInstancesAABB.Transform(Transform.GetTransformMatrix());
+				for (size_t i = 1; i < Renderers.size(); i++)
 				{
-					entityAABB = entityAABB.merge(renderers[i]->allInstancesAABB.transform(transform.getTransformMatrix()));
+					EntityAABB = EntityAABB.Merge(Renderers[i]->AllInstancesAABB.Transform(Transform.GetTransformMatrix()));
 				}
 			}
 			else
 			{
-				entityAABB = FEAABB();
+				EntityAABB = FEAABB();
 			}
 		}
 
-		updateMatrices();
-		transform.dirtyFlag = false;
+		UpdateMatrices();
+		Transform.bDirtyFlag = false;
 	}
 
-	return entityAABB;
+	return EntityAABB;
 }
 
-int FEEntityInstanced::getInstanceCount()
+int FEEntityInstanced::GetInstanceCount()
 {
-	return int(instanceCount);
+	return static_cast<int>(InstanceCount);
 }
 
-void FEEntityInstanced::updateMatrices()
+void FEEntityInstanced::UpdateMatrices()
 {
-	for (size_t i = 0; i < renderers.size(); i++)
+	for (size_t i = 0; i < Renderers.size(); i++)
 	{
-		if (renderers[i]->instancedMatrices.size() != renderers[i]->transformedInstancedMatrices.size())
+		if (Renderers[i]->InstancedMatrices.size() != Renderers[i]->TransformedInstancedMatrices.size())
 		{
-			LOG.add("instancedMatrices size and transformedInstancedMatrices size is not equal!", FE_LOG_ERROR, FE_LOG_RENDERING);
+			LOG.Add("instancedMatrices size and transformedInstancedMatrices size is not equal!", FE_LOG_ERROR, FE_LOG_RENDERING);
 			return;
 		}
 
-		for (size_t j = 0; j < renderers[i]->instancedMatrices.size(); j++)
+		for (size_t j = 0; j < Renderers[i]->InstancedMatrices.size(); j++)
 		{
-			renderers[i]->transformedInstancedMatrices[j] = transform.transformMatrix * renderers[i]->instancedMatrices[j];
-			renderers[i]->instancePositions[j] = renderers[i]->transformedInstancedMatrices[j][3];
+			Renderers[i]->TransformedInstancedMatrices[j] = Transform.TransformMatrix * Renderers[i]->InstancedMatrices[j];
+			Renderers[i]->InstancePositions[j] = Renderers[i]->TransformedInstancedMatrices[j][3];
 		}
 
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderers[i]->sourceDataBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), renderers[i]->transformedInstancedMatrices.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Renderers[i]->SourceDataBuffer));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), Renderers[i]->TransformedInstancedMatrices.data(), GL_DYNAMIC_DRAW));
 
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, renderers[i]->positionsBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(float) * 3, renderers[i]->instancePositions.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Renderers[i]->PositionsBuffer));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(float) * 3, Renderers[i]->InstancePositions.data(), GL_DYNAMIC_DRAW));
 	}
 
 	//initializeGPUCulling();
 }
 
-bool FEEntityInstanced::populate(FESpawnInfo spawnInfo)
+bool FEEntityInstanced::Populate(FESpawnInfo SpawnInfo)
 {
-	if (spawnInfo.radius <= 0.0f || spawnInfo.objectCount < 1 || spawnInfo.objectCount > 1000000 || prefab == nullptr)
+	if (SpawnInfo.Radius <= 0.0f || SpawnInfo.ObjectCount < 1 || SpawnInfo.ObjectCount > 1000000 || Prefab == nullptr)
 		return false;
 
-	this->spawnInfo = spawnInfo;
-	srand(spawnInfo.seed);
+	this->SpawnInfo = SpawnInfo;
+	srand(SpawnInfo.Seed);
 
-	glm::vec3 min = prefab->getAABB().getMin();
-	glm::vec3 max = prefab->getAABB().getMax();
+	const glm::vec3 Min = Prefab->GetAABB().GetMin();
+	const glm::vec3 Max = Prefab->GetAABB().GetMax();
 
-	float ySize = sqrt((max.y - min.y) * (max.y - min.y));
-	ySize *= prefab->components[0]->gameModel->getScaleFactor();
+	float YSize = sqrt((Max.y - Min.y) * (Max.y - Min.y));
+	YSize *= Prefab->Components[0]->GameModel->GetScaleFactor();
 
-	std::vector<glm::mat4> newMats;
-	newMats.resize(spawnInfo.objectCount);
+	std::vector<glm::mat4> NewMats;
+	NewMats.resize(SpawnInfo.ObjectCount);
 
-	for (size_t i = 0; i < newMats.size(); i++)
+	for (size_t i = 0; i < NewMats.size(); i++)
 	{
-		glm::mat4 newMat = glm::mat4(1.0);
+		glm::mat4 NewMat = glm::mat4(1.0);
 		// spawner transformation would be taken in account later so consider center in 0
-		float x = spawnInfo.getPositionDeviation();
-		float z = spawnInfo.getPositionDeviation();
-		float y = spawnInfo.getPositionDeviation();
+		float x = SpawnInfo.GetPositionDeviation();
+		float z = SpawnInfo.GetPositionDeviation();
+		float y = SpawnInfo.GetPositionDeviation();
 
-		if (terrainToSnap != nullptr)
+		if (TerrainToSnap != nullptr)
 		{
-			y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+			y = std::invoke(GetTerrainY, TerrainToSnap, glm::vec2(Transform.Position.x + x, Transform.Position.z + z));
 
-			if (terrainLayer != -1 && y != -FLT_MAX)
+			if (TerrainLayer != -1 && y != -FLT_MAX)
 			{
-				float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z), terrainLayer);
-				if (layerIntensity < minLayerIntensity)
+				const float LayerIntensity = std::invoke(GetTerrainLayerIntensity, TerrainToSnap, glm::vec2(Transform.Position.x + x, Transform.Position.z + z), TerrainLayer);
+				if (LayerIntensity < MinLayerIntensity)
 					y = -FLT_MAX;
 			}
 
-			int countOfTries = 0;
+			int CountOfTries = 0;
 			while (y == -FLT_MAX)
 			{
-				x = spawnInfo.getPositionDeviation();
-				z = spawnInfo.getPositionDeviation();
-				y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z));
+				x = SpawnInfo.GetPositionDeviation();
+				z = SpawnInfo.GetPositionDeviation();
+				y = std::invoke(GetTerrainY, TerrainToSnap, glm::vec2(Transform.Position.x + x, Transform.Position.z + z));
 
-				if (terrainLayer != -1 && y != -FLT_MAX)
+				if (TerrainLayer != -1 && y != -FLT_MAX)
 				{
-					float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(transform.position.x + x, transform.position.z + z), terrainLayer);
-					if (layerIntensity < minLayerIntensity)
+					const float LayerIntensity = std::invoke(GetTerrainLayerIntensity, TerrainToSnap, glm::vec2(Transform.Position.x + x, Transform.Position.z + z), TerrainLayer);
+					if (LayerIntensity < MinLayerIntensity)
 						y = -FLT_MAX;
 				}
 
-				countOfTries++;
-				if (countOfTries > 300)
+				CountOfTries++;
+				if (CountOfTries > 300)
 					break;
 			}
 
-			if (countOfTries > 300)
+			if (CountOfTries > 300)
 			{
-				y = transform.position.y + spawnInfo.getPositionDeviation();
+				y = Transform.Position.y + SpawnInfo.GetPositionDeviation();
 			}
 		}
 
-		newMat = glm::translate(newMat, glm::vec3(x, y, z));
+		NewMat = glm::translate(NewMat, glm::vec3(x, y, z));
 
-		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-		newMat = glm::rotate(newMat, spawnInfo.getRotaionDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
-		float finalScale = prefab->components[0]->gameModel->getScaleFactor() + prefab->components[0]->gameModel->getScaleFactor() * spawnInfo.getScaleDeviation();
-		if (finalScale < 0.0f)
-			finalScale = 0.01f;
-		newMat = glm::scale(newMat, glm::vec3(finalScale));
+		float FinalScale = Prefab->Components[0]->GameModel->GetScaleFactor() + Prefab->Components[0]->GameModel->GetScaleFactor() * SpawnInfo.GetScaleDeviation();
+		if (FinalScale < 0.0f)
+			FinalScale = 0.01f;
+		NewMat = glm::scale(NewMat, glm::vec3(FinalScale));
 
-		newMats[i] = newMat;
+		NewMats[i] = NewMat;
 	}
-	addInstances(newMats.data(), newMats.size());
+	AddInstances(NewMats.data(), NewMats.size());
 
-	if (terrainToSnap != nullptr)
+	if (TerrainToSnap != nullptr)
 	{
 		// terrain.y could be not 0.0f but here we should indicate 0.0f as Y.
-		transform.setPosition(glm::vec3(transform.position.x, 0.0f, transform.position.z));
+		Transform.SetPosition(glm::vec3(Transform.Position.x, 0.0f, Transform.Position.z));
 	}
 
-	srand(unsigned int(time(NULL)));
+	srand(static_cast<unsigned>(time(nullptr)));
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 	return true;
 }
 
-FETerrain* FEEntityInstanced::getSnappedToTerrain()
+FETerrain* FEEntityInstanced::GetSnappedToTerrain()
 {
-	return terrainToSnap;
+	return TerrainToSnap;
 }
 
-void FEEntityInstanced::updateSelectModeAABBData()
+void FEEntityInstanced::UpdateSelectModeAABBData()
 {
-	instancedAABB.clear();
-	instancedAABB.resize(instanceCount);
+	InstancedAABB.clear();
+	InstancedAABB.resize(InstanceCount);
 
-	for (size_t i = 0; i < instanceCount; i++)
+	for (size_t i = 0; i < InstanceCount; i++)
 	{
-		instancedAABB[i] = FEAABB(prefab->getAABB(), renderers[0]->transformedInstancedMatrices[i]);
+		InstancedAABB[i] = FEAABB(Prefab->GetAABB(), Renderers[0]->TransformedInstancedMatrices[i]);
 	}
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-bool FEEntityInstanced::isSelectMode()
+bool FEEntityInstanced::IsSelectMode()
 {
-	return selectionMode;
+	return bSelectionMode;
 }
 
-void FEEntityInstanced::setSelectMode(bool newValue)
+void FEEntityInstanced::SetSelectMode(const bool NewValue)
 {
-	if (newValue)
-		updateSelectModeAABBData();
+	if (NewValue)
+		UpdateSelectModeAABBData();
 	
-	selectionMode = newValue;
+	bSelectionMode = NewValue;
 }
 
-void FEEntityInstanced::deleteInstance(size_t instanceIndex)
+void FEEntityInstanced::DeleteInstance(const size_t InstanceIndex)
 {
-	if (instanceIndex < 0 || instanceIndex >= renderers[0]->instancedMatrices.size())
+	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->InstancedMatrices.size())
 		return;
 
-	modifications.push_back(FEInstanceModification(CHANGE_DELETED, int(instanceIndex), glm::mat4()));
+	Modifications.push_back(FEInstanceModification(FE_CHANGE_DELETED, static_cast<int>(InstanceIndex), glm::mat4()));
 
-	instanceCount--;
-	for (size_t i = 0; i < renderers.size(); i++)
+	InstanceCount--;
+	for (size_t i = 0; i < Renderers.size(); i++)
 	{
-		renderers[i]->instancedAABBSizes.erase(renderers[i]->instancedAABBSizes.begin() + instanceIndex);
-		renderers[i]->instancedMatrices.erase(renderers[i]->instancedMatrices.begin() + instanceIndex);
-		renderers[i]->transformedInstancedMatrices.erase(renderers[i]->transformedInstancedMatrices.begin() + instanceIndex);
-		renderers[i]->instancePositions.erase(renderers[i]->instancePositions.begin() + instanceIndex);
+		Renderers[i]->InstancedAABBSizes.erase(Renderers[i]->InstancedAABBSizes.begin() + InstanceIndex);
+		Renderers[i]->InstancedMatrices.erase(Renderers[i]->InstancedMatrices.begin() + InstanceIndex);
+		Renderers[i]->TransformedInstancedMatrices.erase(Renderers[i]->TransformedInstancedMatrices.begin() + InstanceIndex);
+		Renderers[i]->InstancePositions.erase(Renderers[i]->InstancePositions.begin() + InstanceIndex);
 
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			renderers[i]->instancedMatricesLOD[j].resize(instanceCount);
+			Renderers[i]->InstancedMatricesLOD[j].resize(InstanceCount);
 		}
 	}
 
-	if (instancedAABB.size() == 0)
+	if (InstancedAABB.empty())
 	{
-		updateSelectModeAABBData();
+		UpdateSelectModeAABBData();
 	}
 	else
 	{
-		instancedAABB.erase(instancedAABB.begin() + instanceIndex);
+		InstancedAABB.erase(InstancedAABB.begin() + InstanceIndex);
 	}
 	
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-glm::mat4 FEEntityInstanced::getTransformedInstancedMatrix(size_t instanceIndex)
+glm::mat4 FEEntityInstanced::GetTransformedInstancedMatrix(const size_t InstanceIndex)
 {
-	if (instanceIndex < 0 || instanceIndex >= renderers[0]->transformedInstancedMatrices.size())
+	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size())
 		return glm::identity<glm::mat4>();
 
-	return renderers[0]->transformedInstancedMatrices[instanceIndex];
+	return Renderers[0]->TransformedInstancedMatrices[InstanceIndex];
 }
 
-void FEEntityInstanced::modifyInstance(size_t instanceIndex, glm::mat4 newMatrix)
+void FEEntityInstanced::ModifyInstance(const size_t InstanceIndex, glm::mat4 NewMatrix)
 {
-	if (instanceIndex < 0 || instanceIndex >= renderers[0]->transformedInstancedMatrices.size())
+	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size())
 		return;
 
-	if (glm::all(glm::epsilonEqual(renderers[0]->transformedInstancedMatrices[instanceIndex][0], newMatrix[0], 0.001f)) &&
-		glm::all(glm::epsilonEqual(renderers[0]->transformedInstancedMatrices[instanceIndex][1], newMatrix[1], 0.001f)) &&
-		glm::all(glm::epsilonEqual(renderers[0]->transformedInstancedMatrices[instanceIndex][2], newMatrix[2], 0.001f)) &&
-		glm::all(glm::epsilonEqual(renderers[0]->transformedInstancedMatrices[instanceIndex][3], newMatrix[3], 0.001f)))
+	if (glm::all(glm::epsilonEqual(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][0], NewMatrix[0], 0.001f)) &&
+		glm::all(glm::epsilonEqual(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][1], NewMatrix[1], 0.001f)) &&
+		glm::all(glm::epsilonEqual(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][2], NewMatrix[2], 0.001f)) &&
+		glm::all(glm::epsilonEqual(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3], NewMatrix[3], 0.001f)))
 		return;
 
-	if (modifications.size() > 0 && modifications.back().index == instanceIndex && modifications.back().type == CHANGE_MODIFIED)
+	if (!Modifications.empty() && Modifications.back().Index == InstanceIndex && Modifications.back().Type == FE_CHANGE_MODIFIED)
 	{
-		modifications.back().modification = newMatrix;
+		Modifications.back().Modification = NewMatrix;
 	}
 	else
 	{
-		modifications.push_back(FEInstanceModification(CHANGE_MODIFIED, int(instanceIndex), newMatrix));
+		Modifications.push_back(FEInstanceModification(FE_CHANGE_MODIFIED, static_cast<int>(InstanceIndex), NewMatrix));
 	}
 	
-	for (size_t i = 0; i < renderers.size(); i++)
+	for (size_t i = 0; i < Renderers.size(); i++)
 	{
-		renderers[i]->transformedInstancedMatrices[instanceIndex] = newMatrix;
-		renderers[i]->instancedMatrices[instanceIndex] = glm::inverse(transform.getTransformMatrix()) * newMatrix;
+		Renderers[i]->TransformedInstancedMatrices[InstanceIndex] = NewMatrix;
+		Renderers[i]->InstancedMatrices[InstanceIndex] = glm::inverse(Transform.GetTransformMatrix()) * NewMatrix;
 
-		if (instancedAABB.size() > instanceIndex)
-			instancedAABB[instanceIndex] = FEAABB(prefab->getAABB(), newMatrix);
-		renderers[i]->instancedAABBSizes[instanceIndex] = -FEAABB(prefab->getAABB(), newMatrix).size;
+		if (InstancedAABB.size() > InstanceIndex)
+			InstancedAABB[InstanceIndex] = FEAABB(Prefab->GetAABB(), NewMatrix);
+		Renderers[i]->InstancedAABBSizes[InstanceIndex] = -FEAABB(Prefab->GetAABB(), NewMatrix).Size;
 	}
 
-	setDirtyFlag(true);
+	SetDirtyFlag(true);
 }
 
-int FEEntityInstanced::getSpawnModificationCount()
+int FEEntityInstanced::GetSpawnModificationCount()
 {
-	return int(modifications.size());
+	return static_cast<int>(Modifications.size());
 }
 
-std::vector<FEInstanceModification> FEEntityInstanced::getSpawnModifications()
+std::vector<FEInstanceModification> FEEntityInstanced::GetSpawnModifications()
 {
-	return modifications;
+	return Modifications;
 }
 
-void FEEntityInstanced::addInstance(glm::mat4 instanceMatrix)
+void FEEntityInstanced::AddInstance(const glm::mat4 InstanceMatrix)
 {
-	addInstanceInternal(glm::inverse(transform.transformMatrix) * instanceMatrix);
+	AddInstanceInternal(glm::inverse(Transform.TransformMatrix) * InstanceMatrix);
 
-	if (instancedAABB.size() == 0)
+	if (InstancedAABB.empty())
 	{
-		updateSelectModeAABBData();
+		UpdateSelectModeAABBData();
 	}
 	else
 	{
-		instancedAABB.push_back(FEAABB(prefab->getAABB(), renderers[0]->transformedInstancedMatrices.back()));
+		InstancedAABB.push_back(FEAABB(Prefab->GetAABB(), Renderers[0]->TransformedInstancedMatrices.back()));
 	}
 
-	modifications.push_back(FEInstanceModification(CHANGE_ADDED, int(instanceCount), instanceMatrix));
-	setDirtyFlag(true);
+	Modifications.push_back(FEInstanceModification(FE_CHANGE_ADDED, static_cast<int>(InstanceCount), InstanceMatrix));
+	SetDirtyFlag(true);
 }
 
-bool FEEntityInstanced::tryToSnapInstance(size_t instanceIndex)
+bool FEEntityInstanced::TryToSnapInstance(const size_t InstanceIndex)
 {
-	if (instanceIndex < 0 || instanceIndex >= renderers[0]->transformedInstancedMatrices.size() || terrainToSnap == nullptr)
+	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size() || TerrainToSnap == nullptr)
 		return false;
 
-	if (!isSelectMode())
+	if (!IsSelectMode())
 		return false;
 
-	float y = std::invoke(getTerrainY, terrainToSnap, glm::vec2(renderers[0]->transformedInstancedMatrices[instanceIndex][3][0], renderers[0]->transformedInstancedMatrices[instanceIndex][3][2]));
+	const float y = std::invoke(GetTerrainY, TerrainToSnap, glm::vec2(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3][0], Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3][2]));
 	if (y == -FLT_MAX)
 		return false;
 
-	float layerIntensity = std::invoke(getTerrainLayerIntensity, terrainToSnap, glm::vec2(renderers[0]->transformedInstancedMatrices[instanceIndex][3][0], renderers[0]->transformedInstancedMatrices[instanceIndex][3][2]), terrainLayer);
-	if (layerIntensity < minLayerIntensity)
+	const float LayerIntensity = std::invoke(GetTerrainLayerIntensity, TerrainToSnap, glm::vec2(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3][0], Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3][2]), TerrainLayer);
+	if (LayerIntensity < MinLayerIntensity)
 		return false;
 
-	if (abs(renderers[0]->transformedInstancedMatrices[instanceIndex][3][1] - y) < 0.01f)
+	if (abs(Renderers[0]->TransformedInstancedMatrices[InstanceIndex][3][1] - y) < 0.01f)
 		return true;
 
-	glm::mat4 copy = renderers[0]->transformedInstancedMatrices[instanceIndex];
-	copy[3][1] = y;
-	modifyInstance(instanceIndex, copy);
-	setDirtyFlag(true);
+	glm::mat4 Copy = Renderers[0]->TransformedInstancedMatrices[InstanceIndex];
+	Copy[3][1] = y;
+	ModifyInstance(InstanceIndex, Copy);
+	SetDirtyFlag(true);
 	return true;
 }
 
-void FEEntityInstanced::initializeGPUCulling()
+void FEEntityInstanced::InitializeGPUCulling()
 {
-	for (size_t i = 0; i < prefab->components.size(); i++)
+	for (size_t i = 0; i < Prefab->Components.size(); i++)
 	{
-		if (renderers[i]->sourceDataBuffer != 0)
+		if (Renderers[i]->SourceDataBuffer != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->sourceDataBuffer));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->sourceDataBuffer));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->SourceDataBuffer));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->SourceDataBuffer));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, renderers[i]->sourceDataBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), renderers[i]->transformedInstancedMatrices.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Renderers[i]->SourceDataBuffer));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), Renderers[i]->TransformedInstancedMatrices.data(), GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->positionsBuffer != 0)
+		if (Renderers[i]->PositionsBuffer != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->positionsBuffer));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->positionsBuffer));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->PositionsBuffer));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->PositionsBuffer));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, renderers[i]->positionsBuffer));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Renderers[i]->PositionsBuffer));
 
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(float) * 3, renderers[i]->instancePositions.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(float) * 3, Renderers[i]->InstancePositions.data(), GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->LODBuffers[0] != 0)
+		if (Renderers[i]->LODBuffers[0] != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->LODBuffers[0]));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->LODBuffers[0]));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->LODBuffers[0]));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->LODBuffers[0]));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, renderers[i]->LODBuffers[0]));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Renderers[i]->LODBuffers[0]));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->LODBuffers[1] != 0)
+		if (Renderers[i]->LODBuffers[1] != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->LODBuffers[1]));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->LODBuffers[1]));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->LODBuffers[1]));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->LODBuffers[1]));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, renderers[i]->LODBuffers[1]));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, Renderers[i]->LODBuffers[1]));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->LODBuffers[2] != 0)
+		if (Renderers[i]->LODBuffers[2] != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->LODBuffers[2]));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->LODBuffers[2]));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->LODBuffers[2]));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->LODBuffers[2]));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, renderers[i]->LODBuffers[2]));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, Renderers[i]->LODBuffers[2]));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->LODBuffers[3] != 0)
+		if (Renderers[i]->LODBuffers[3] != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->LODBuffers[3]));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->LODBuffers[3]));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->LODBuffers[3]));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->LODBuffers[3]));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, renderers[i]->LODBuffers[3]));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, Renderers[i]->LODBuffers[3]));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(glm::mat4), nullptr, GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->AABBSizesBuffer != 0)
+		if (Renderers[i]->AABBSizesBuffer != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->AABBSizesBuffer));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->AABBSizesBuffer));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->AABBSizesBuffer));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->AABBSizesBuffer));
 		}
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, renderers[i]->AABBSizesBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, instanceCount * sizeof(float), renderers[i]->instancedAABBSizes.data(), GL_DYNAMIC_DRAW));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Renderers[i]->AABBSizesBuffer));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(float), Renderers[i]->InstancedAABBSizes.data(), GL_DYNAMIC_DRAW));
 
 		std::vector<float> LODInfoData;
-		LODInfoData.push_back(prefab->components[i]->gameModel->getCullDistance());
-		LODInfoData.push_back(prefab->components[i]->gameModel->getLODMaxDrawDistance(0));
-		LODInfoData.push_back(prefab->components[i]->gameModel->getLODMaxDrawDistance(1));
-		LODInfoData.push_back(prefab->components[i]->gameModel->getLODMaxDrawDistance(2));
+		LODInfoData.push_back(Prefab->Components[i]->GameModel->GetCullDistance());
+		LODInfoData.push_back(Prefab->Components[i]->GameModel->GetLODMaxDrawDistance(0));
+		LODInfoData.push_back(Prefab->Components[i]->GameModel->GetLODMaxDrawDistance(1));
+		LODInfoData.push_back(Prefab->Components[i]->GameModel->GetLODMaxDrawDistance(2));
 
 		// does it have billboard ?
-		unsigned int billboardIndex = 5;
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		unsigned int BillboardIndex = 5;
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			if (prefab->components[i]->gameModel->isLODBillboard(j) && prefab->components[i]->gameModel->getLODMesh(j) != nullptr)
+			if (Prefab->Components[i]->GameModel->IsLODBillboard(j) && Prefab->Components[i]->GameModel->GetLODMesh(j) != nullptr)
 			{
-				billboardIndex = int(j);
+				BillboardIndex = static_cast<int>(j);
 			}
 		}
 
-		LODInfoData.push_back(float(billboardIndex));
+		LODInfoData.push_back(static_cast<float>(BillboardIndex));
 		// this should not be here, instead normal of plane should align with vector to camera
-		LODInfoData.push_back(1.5708f * 3.0f + prefab->components[i]->gameModel->getBillboardZeroRotaion() * ANGLE_TORADIANS_COF);
-		LODInfoData.push_back(float(instanceCount));
+		LODInfoData.push_back(1.5708f * 3.0f + Prefab->Components[i]->GameModel->GetBillboardZeroRotaion() * ANGLE_TORADIANS_COF);
+		LODInfoData.push_back(static_cast<float>(InstanceCount));
 
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, renderers[i]->LODInfoBuffer));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, Renderers[i]->LODInfoBuffer));
 		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, 7 * sizeof(float), LODInfoData.data(), GL_DYNAMIC_DRAW));
 
-		if (renderers[i]->indirectDrawsInfo == nullptr)
-			renderers[i]->indirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
-		for (size_t j = 0; j < prefab->components[i]->gameModel->getMaxLODCount(); j++)
+		if (Renderers[i]->IndirectDrawsInfo == nullptr)
+			Renderers[i]->IndirectDrawsInfo = new FEDrawElementsIndirectCommand[4];
+		for (size_t j = 0; j < Prefab->Components[i]->GameModel->GetMaxLODCount(); j++)
 		{
-			renderers[i]->indirectDrawsInfo[j].count = prefab->components[i]->gameModel->getLODMesh(j) == nullptr ? 0 : prefab->components[i]->gameModel->getLODMesh(j)->getVertexCount();
-			renderers[i]->indirectDrawsInfo[j].baseInstance = 0;
-			renderers[i]->indirectDrawsInfo[j].baseVertex = 0;
-			renderers[i]->indirectDrawsInfo[j].firstIndex = 0;
-			renderers[i]->indirectDrawsInfo[j].primCount = 0;
+			Renderers[i]->IndirectDrawsInfo[j].Count = Prefab->Components[i]->GameModel->GetLODMesh(j) == nullptr ? 0 : Prefab->Components[i]->GameModel->GetLODMesh(j)->GetVertexCount();
+			Renderers[i]->IndirectDrawsInfo[j].BaseInstance = 0;
+			Renderers[i]->IndirectDrawsInfo[j].BaseVertex = 0;
+			Renderers[i]->IndirectDrawsInfo[j].FirstIndex = 0;
+			Renderers[i]->IndirectDrawsInfo[j].PrimCount = 0;
 		}
 
-		if (renderers[i]->indirectDrawInfoBuffer != 0)
+		if (Renderers[i]->IndirectDrawInfoBuffer != 0)
 		{
-			FE_GL_ERROR(glDeleteBuffers(1, &renderers[i]->indirectDrawInfoBuffer));
-			FE_GL_ERROR(glGenBuffers(1, &renderers[i]->indirectDrawInfoBuffer));
+			FE_GL_ERROR(glDeleteBuffers(1, &Renderers[i]->IndirectDrawInfoBuffer));
+			FE_GL_ERROR(glGenBuffers(1, &Renderers[i]->IndirectDrawInfoBuffer));
 		}
 
-		FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, renderers[i]->indirectDrawInfoBuffer));
-		FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, renderers[i]->indirectDrawsInfo, GL_MAP_READ_BIT));
+		FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, Renderers[i]->IndirectDrawInfoBuffer));
+		FE_GL_ERROR(glBufferStorage(GL_DRAW_INDIRECT_BUFFER, sizeof(FEDrawElementsIndirectCommand) * 4, Renderers[i]->IndirectDrawsInfo, GL_MAP_READ_BIT));
 		FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
 	}
 }
 
-void FEEntityInstanced::snapToTerrain(FETerrain* terrain, float(FETerrain::* getTerrainY)(glm::vec2))
+void FEEntityInstanced::SnapToTerrain(FETerrain* Terrain, float(FETerrain::* GetTerrainY)(glm::vec2))
 {
-	terrainToSnap = terrain;
-	this->getTerrainY = getTerrainY;
+	TerrainToSnap = Terrain;
+	this->GetTerrainY = GetTerrainY;
 }
 
-void FEEntityInstanced::unSnapFromTerrain()
+void FEEntityInstanced::UnSnapFromTerrain()
 {
-	terrainToSnap = nullptr;
+	TerrainToSnap = nullptr;
 }
 
-void FEEntityInstanced::clearRenderers()
+void FEEntityInstanced::ClearRenderers()
 {
-	if (prefab->components.size() > renderers.size())
+	if (Prefab->Components.size() > Renderers.size())
 	{
-		int countBefore = int(renderers.size());
-		renderers.resize(prefab->components.size());
-		for (int i = countBefore; i < renderers.size(); i++)
+		const int CountBefore = static_cast<int>(Renderers.size());
+		Renderers.resize(Prefab->Components.size());
+		for (int i = CountBefore; i < Renderers.size(); i++)
 		{
-			initRender(i);
+			InitRender(i);
 
-			renderers[i]->instancedMatrices = renderers[0]->instancedMatrices;
-			renderers[i]->transformedInstancedMatrices = renderers[0]->transformedInstancedMatrices;
-			renderers[i]->instancePositions = renderers[0]->instancePositions;
+			Renderers[i]->InstancedMatrices = Renderers[0]->InstancedMatrices;
+			Renderers[i]->TransformedInstancedMatrices = Renderers[0]->TransformedInstancedMatrices;
+			Renderers[i]->InstancePositions = Renderers[0]->InstancePositions;
 		}
 	}
-	else if (prefab->components.size() < renderers.size())
+	else if (Prefab->Components.size() < Renderers.size())
 	{
-		renderers.erase(renderers.begin() + renderers.size() - 1, renderers.end());
+		Renderers.erase(Renderers.begin() + Renderers.size() - 1, Renderers.end());
 	}
 }
 
-void FEEntityInstanced::checkDirtyFlag(int subGameModel)
+void FEEntityInstanced::CheckDirtyFlag(const int SubGameModel)
 {
-	if (renderers[subGameModel]->lastFramePrefab != prefab || prefab->getDirtyFlag())
+	if (Renderers[SubGameModel]->LastFramePrefab != Prefab || Prefab->IsDirty())
 	{
-		setDirtyFlag(true);
-		renderers[subGameModel]->lastFramePrefab = prefab;
+		SetDirtyFlag(true);
+		Renderers[SubGameModel]->LastFramePrefab = Prefab;
 	}
 
-	for (int i = 0; i < prefab->componentsCount(); i++)
+	for (int i = 0; i < Prefab->ComponentsCount(); i++)
 	{
-		if (prefab->getComponent(i)->gameModel->getDirtyFlag() || prefab->getComponent(i)->transform.getDirtyFlag())
+		if (Prefab->GetComponent(i)->GameModel->IsDirty() || Prefab->GetComponent(i)->Transform.IsDirty())
 		{
-			setDirtyFlag(true);
+			SetDirtyFlag(true);
 			break;
 		}
 	}
 
-	if (getDirtyFlag())
+	if (IsDirty())
 	{
-		clearRenderers();
-		updateBuffers();
-		setDirtyFlag(false);
-		initializeGPUCulling();
-		//prefab->components[subGameModel]->gameModel->dirtyFlag = false;
-		prefab->setDirtyFlag(false);
-		for (int i = 0; i < prefab->componentsCount(); i++)
+		ClearRenderers();
+		UpdateBuffers();
+		SetDirtyFlag(false);
+		InitializeGPUCulling();
+		//prefab->components[subGameModel]->gameModel->bDirtyFlag = false;
+		Prefab->SetDirtyFlag(false);
+		for (int i = 0; i < Prefab->ComponentsCount(); i++)
 		{
-			prefab->getComponent(i)->gameModel->dirtyFlag = false;
-			prefab->getComponent(i)->transform.setDirtyFlag(false);
+			Prefab->GetComponent(i)->GameModel->SetDirtyFlag(false);
+			Prefab->GetComponent(i)->Transform.SetDirtyFlag(false);
 		}
 	}
 
-	if (transform.dirtyFlag)
+	if (Transform.bDirtyFlag)
 	{
-		updateMatrices();
+		UpdateMatrices();
 	}
 }
 
-void FEEntityInstanced::connectToTerrainLayer(FETerrain* terrain, int layerIndex, float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int))
+void FEEntityInstanced::ConnectToTerrainLayer(FETerrain* Terrain, const int LayerIndex, float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int))
 {
-	this->getTerrainLayerIntensity = getTerrainLayerIntensity;
-	terrainLayer = layerIndex;
+	this->GetTerrainLayerIntensity = GetTerrainLayerIntensity;
+	TerrainLayer = LayerIndex;
 }
 
-int FEEntityInstanced::getTerrainLayer()
+int FEEntityInstanced::GetTerrainLayer()
 {
-	return terrainLayer;
+	return TerrainLayer;
 }
 
-void FEEntityInstanced::unConnectFromTerrainLayer()
+void FEEntityInstanced::UnConnectFromTerrainLayer()
 {
-	terrainLayer = -1;
+	TerrainLayer = -1;
 }
 
-float FEEntityInstanced::getMinimalLayerIntensity()
+float FEEntityInstanced::GetMinimalLayerIntensity()
 {
-	return minLayerIntensity;
+	return MinLayerIntensity;
 }
 
-void FEEntityInstanced::setMinimalLayerIntensity(float newValue)
+void FEEntityInstanced::SetMinimalLayerIntensity(float NewValue)
 {
-	if (newValue < 0.0001f)
-		newValue = 0.0001f;
+	if (NewValue < 0.0001f)
+		NewValue = 0.0001f;
 
-	if (newValue > 1.0f)
-		newValue = 1.0f;
+	if (NewValue > 1.0f)
+		NewValue = 1.0f;
 
-	minLayerIntensity = newValue;
+	MinLayerIntensity = NewValue;
 }

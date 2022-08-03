@@ -7,7 +7,7 @@
 
 namespace FocalEngine
 {
-	#define FE_MAX_LINES 100000
+	#define FE_MAX_LINES 200000
 
 	class FEngine;
 #ifdef USE_DEFERRED_RENDERER
@@ -17,19 +17,19 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 
-		void initializeResources(FEFramebuffer* mainFrameBuffer);
+		void InitializeResources(FEFramebuffer* MainFrameBuffer);
 	public:
-		FEGBuffer(FEFramebuffer* mainFrameBuffer);
+		FEGBuffer(FEFramebuffer* MainFrameBuffer);
 		
 		FEFramebuffer* GFrameBuffer = nullptr;
 
-		FETexture* positions = nullptr;
-		FETexture* normals = nullptr;
-		FETexture* albedo = nullptr;
-		FETexture* materialProperties = nullptr;
-		FETexture* shaderProperties = nullptr;
+		FETexture* Positions = nullptr;
+		FETexture* Normals = nullptr;
+		FETexture* Albedo = nullptr;
+		FETexture* MaterialProperties = nullptr;
+		FETexture* ShaderProperties = nullptr;
 
-		void renderTargetResize(FEFramebuffer* mainFrameBuffer);
+		void RenderTargetResize(FEFramebuffer* MainFrameBuffer);
 	};
 	
 #endif // USE_DEFERRED_RENDERER
@@ -40,105 +40,105 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FERenderer)
 
-		void render(FEBasicCamera* currentCamera);
-		void renderEntity(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false, int componentIndex = -1);
-		void renderEntityForward(FEEntity* entity, FEBasicCamera* currentCamera, bool reloadUniformBlocks = false);
-		void renderEntityInstanced(FEEntityInstanced* entityInstanced, FEBasicCamera* currentCamera, float** frustum, bool shadowMap = false, bool reloadUniformBlocks = false, int componentIndex = -1);
-		void renderTerrain(FETerrain* terrain, FEBasicCamera* currentCamera);
-		void addPostProcess(FEPostProcess* newPostProcess, bool noProcessing = false);
+		void Render(FEBasicCamera* CurrentCamera);
+		void RenderEntity(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
+		void RenderEntityForward(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
+		void RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
+		void RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentCamera);
+		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
 
-		std::vector<std::string> getPostProcessList();
-		FEPostProcess* getPostProcessEffect(std::string ID);
+		std::vector<std::string> GetPostProcessList();
+		FEPostProcess* GetPostProcessEffect(std::string ID);
 
 		//#fix postProcess
-		FEFramebuffer* sceneToTextureFB = nullptr;
-		FETexture* finalScene = nullptr;
-		std::vector<FEPostProcess*> postProcessEffects;
+		FEFramebuffer* SceneToTextureFB = nullptr;
+		FETexture* FinalScene = nullptr;
+		std::vector<FEPostProcess*> PostProcessEffects;
 
-		void drawLine(glm::vec3 beginPoint, glm::vec3 endPoint, glm::vec3 color = glm::vec3(1.0f), float width = 0.1f);
+		void DrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
 		// *********** Anti-Aliasing(FXAA) ***********
-		float getFXAASpanMax();
-		void setFXAASpanMax(float newValue);
+		float GetFXAASpanMax();
+		void SetFXAASpanMax(float NewValue);
 
-		float getFXAAReduceMin();
-		void setFXAAReduceMin(float newValue);
+		float GetFXAAReduceMin();
+		void SetFXAAReduceMin(float NewValue);
 
-		float getFXAAReduceMul();
-		void setFXAAReduceMul(float newValue);
+		float GetFXAAReduceMul();
+		void SetFXAAReduceMul(float NewValue);
 
 		// *********** Bloom ***********
-		float getBloomThreshold();
-		void setBloomThreshold(float newValue);
+		float GetBloomThreshold();
+		void SetBloomThreshold(float NewValue);
 
-		float getBloomSize();
-		void setBloomSize(float newValue);
+		float GetBloomSize();
+		void SetBloomSize(float NewValue);
 
 		// *********** Depth of Field ***********
-		float getDOFNearDistance();
-		void setDOFNearDistance(float newValue);
+		float GetDOFNearDistance();
+		void SetDOFNearDistance(float NewValue);
 
-		float getDOFFarDistance();
-		void setDOFFarDistance(float newValue);
+		float GetDOFFarDistance();
+		void SetDOFFarDistance(float NewValue);
 
-		float getDOFStrength();
-		void setDOFStrength(float newValue);
+		float GetDOFStrength();
+		void SetDOFStrength(float NewValue);
 
-		float getDOFDistanceDependentStrength();
-		void setDOFDistanceDependentStrength(float newValue);
+		float GetDOFDistanceDependentStrength();
+		void SetDOFDistanceDependentStrength(float NewValue);
 
 		// *********** Chromatic Aberration ***********
-		float getChromaticAberrationIntensity();
-		void setChromaticAberrationIntensity(float newValue);
+		float GetChromaticAberrationIntensity();
+		void SetChromaticAberrationIntensity(float NewValue);
 
 		// *********** Distance fog ***********
-		bool isDistanceFogEnabled();
-		void setDistanceFogEnabled(bool newValue);
+		bool IsDistanceFogEnabled();
+		void SetDistanceFogEnabled(bool NewValue);
 
-		float getDistanceFogDensity();
-		void setDistanceFogDensity(float newValue);
+		float GetDistanceFogDensity();
+		void SetDistanceFogDensity(float NewValue);
 
-		float getDistanceFogGradient();
-		void setDistanceFogGradient(float newValue);
+		float GetDistanceFogGradient();
+		void SetDistanceFogGradient(float NewValue);
 
 		// *********** Sky ***********
-		bool isSkyEnabled();
-		void setSkyEnabld(bool newValue);
+		bool IsSkyEnabled();
+		void SetSkyEnabld(bool NewValue);
 
-		float getDistanceToSky();
-		void setDistanceToSky(float newValue);
+		float GetDistanceToSky();
+		void SetDistanceToSky(float NewValue);
 
-		float testTime = 0.0f;
-		float lastTestTime = 0.0f;
+		float TestTime = 0.0f;
+		float LastTestTime = 0.0f;
 
-		bool freezeCulling = false;
-		void drawAABB(FEAABB AABB, glm::vec3 color = glm::vec3(0.1f, 0.6f, 0.1f), float lineWidth = 0.2f);
+		bool bFreezeCulling = false;
+		void DrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
 
-		bool isOccusionCullingEnabled();
-		void setOccusionCullingEnabled(bool newValue);
+		bool IsOccusionCullingEnabled();
+		void SetOccusionCullingEnabled(bool NewValue);
 
 #ifdef USE_DEFERRED_RENDERER
 		FEGBuffer* GBuffer = nullptr;
 		FEFramebuffer* SSAOFB = nullptr;
 #endif // USE_DEFERRED_RENDERER
 
-		std::unordered_map<std::string, std::function<FETexture* ()>> getDebugOutputTextures();
+		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
-		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, FEMaterial* material, FETransformComponent* transform, bool isReceivingShadows = false);
-		void loadStandardParams(FEShader* shader, FEBasicCamera* currentCamera, bool isReceivingShadows);
-		void loadUniformBlocks();
+		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false);
+		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows);
+		void LoadUniformBlocks();
 
-		void standardFBInit(int windowWidth, int windowHeight);
-		void takeScreenshot(const char* fileName, int width, int height);
+		void StandardFBInit(int WindowWidth, int WindowHeight);
+		void TakeScreenshot(const char* FileName, int Width, int Height);
 
-		FEMaterial* shadowMapMaterial;
-		FEMaterial* shadowMapMaterialInstanced;
+		FEMaterial* ShadowMapMaterial;
+		FEMaterial* ShadowMapMaterialInstanced;
 
-		int uniformBufferCount = 0;
+		int UniformBufferCount = 0;
 		const int UBufferForLightSize = 128;
-		GLuint uniformBufferForLights;
+		GLuint UniformBufferForLights;
 		const int UBufferForDirectionalLightSize = 384;
-		GLuint uniformBufferForDirectionalLight;
+		GLuint UniformBufferForDirectionalLight;
 
 		// in current version only shadows from one directional light is supported.
 		FETexture* CSM0 = nullptr;
@@ -147,46 +147,45 @@ namespace FocalEngine
 		FETexture* CSM3 = nullptr;
 
 		// Instanced lines
-		FEShader* instancedLineShader = nullptr;
-		std::vector<FELine> linesBuffer;
-		int lineCounter = 0;
-		GLuint instancedLineVAO = 0;
-		GLenum instancedLineBuffer = 0;
+		FEShader* InstancedLineShader = nullptr;
+		std::vector<FELine> LinesBuffer;
+		int LineCounter = 0;
+		GLuint InstancedLineVAO = 0;
+		GLenum InstancedLineBuffer = 0;
 
-		FEBasicCamera* engineMainCamera = nullptr;
-		glm::dvec3 mouseRay = glm::dvec3(0.0);
+		FEBasicCamera* EngineMainCamera = nullptr;
+		glm::dvec3 MouseRay = glm::dvec3(0.0);
 
-		void updateTerrainBrush(FETerrain* terrain);
+		void UpdateTerrainBrush(FETerrain* Terrain);
 
-		FEEntity* skyDome = nullptr;
+		FEEntity* SkyDome = nullptr;
 
-		float distanceFogDensity = 0.007f;
-		float distanceFogGradient = 2.5f;
-		bool distanceFogEnabled = false;
-		void updateFogInShaders();
+		float DistanceFogDensity = 0.007f;
+		float DistanceFogGradient = 2.5f;
+		bool bDistanceFogEnabled = false;
+		void UpdateFogInShaders();
 
-		FEShader* shaderToForce = nullptr;
-		void forceShader(FEShader* shader);
+		FEShader* ShaderToForce = nullptr;
+		void ForceShader(FEShader* Shader);
 
 		// *********** GPU Culling ***********
-		FEShader* FE_FrustumCullingShader = nullptr;
-		FEShader* FE_ComputeTextureCopy = nullptr;
-		FEShader* FE_ComputeDepthPyramidDownSample = nullptr;
+		FEShader* FrustumCullingShader = nullptr;
+		FEShader* ComputeTextureCopy = nullptr;
+		FEShader* ComputeDepthPyramidDownSample = nullptr;
 
-		GLuint frustumInfoBuffer = 0;
-		GLuint cullingLODCountersBuffer = 0;
+		GLuint FrustumInfoBuffer = 0;
+		GLuint CullingLODCountersBuffer = 0;
 
-		void updateGPUCullingFrustum(float** frustum, glm::vec3 cameraPosition);
-		void GPUCulling(FEEntityInstanced* entity, int subGameModel, FEBasicCamera* currentCamera);
+		void UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPosition);
+		void GPUCulling(FEEntityInstanced* Entity, int SubGameModel, const FEBasicCamera* CurrentCamera);
 
-		FETexture* depthPyramid = nullptr;
-		bool useOccusionCulling = true;
+		FETexture* DepthPyramid = nullptr;
+		bool bUseOccusionCulling = true;
 		// *********** GPU Culling END ***********
 
-		std::unordered_map<std::string, std::function<FETexture* ()>> debugOutputTextures;
+		std::unordered_map<std::string, std::function<FETexture* ()>> DebugOutputTextures;
 
-		void renderTargetResize(int newWidth, int newHeight);
-		
+		void RenderTargetResize(int NewWidth, int NewHeight);
 	};
 
 	#define RENDERER FERenderer::getInstance()

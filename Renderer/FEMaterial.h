@@ -18,123 +18,123 @@ namespace FocalEngine
 		FEMaterial(std::string Name);
 		~FEMaterial();
 
-		FEShader* shader;
+		FEShader* Shader;
 		
-		virtual void bind();
-		virtual void unBind();
+		virtual void Bind();
+		virtual void UnBind();
 
-		void setParam(std::string name, int newData);
-		void setParam(std::string name, float newData);
-		void setParam(std::string name, glm::vec2 newData);
-		void setParam(std::string name, glm::vec3 newData);
-		void setParam(std::string name, glm::vec4 newData);
-		void setParam(std::string name, glm::mat4 newData);
+		void SetParam(std::string Name, int NewData) const;
+		void SetParam(std::string Name, float NewData) const;
+		void SetParam(std::string Name, glm::vec2 NewData) const;
+		void SetParam(std::string Name, glm::vec3 NewData) const;
+		void SetParam(std::string Name, glm::vec4 NewData) const;
+		void SetParam(std::string Name, glm::mat4 NewData) const;
 
-		std::vector<FETexture*> textures;
-		std::vector<int> textureBindings;
-		std::vector<int> textureChannels;
+		std::vector<FETexture*> Textures;
+		std::vector<int> TextureBindings;
+		std::vector<int> TextureChannels;
 
-		void addParameter(FEShaderParam newParameter);
-		std::vector<std::string> getParameterList();
-		FEShaderParam* getParameter(std::string name);
+		void AddParameter(FEShaderParam NewParameter) const;
+		std::vector<std::string> GetParameterList() const;
+		FEShaderParam* GetParameter(std::string Name) const;
 
-		glm::vec3 getBaseColor();
-		// Only infuence color of object if shader with such uniform is applied.
-		void setBaseColor(glm::vec3 newValue);
+		glm::vec3 GetBaseColor() const;
+		// Only influence color of object if shader with such uniform is applied.
+		void SetBaseColor(glm::vec3 NewValue);
 
-		float getMetalness();
-		void setMetalness(float newValue);
+		float GetMetalness() const;
+		void SetMetalness(float NewValue);
 
-		float getRoughtness();
-		void setRoughtness(float newValue);
+		float GetRoughtness() const;
+		void SetRoughtness(float NewValue);
 
-		float getRoughtnessMapIntensity();
-		void setRoughtnessMapIntensity(float newValue);
+		float GetRoughtnessMapIntensity() const;
+		void SetRoughtnessMapIntensity(float NewValue);
 
-		float getMetalnessMapIntensity();
-		void setMetalnessMapIntensity(float newValue);
+		float GetMetalnessMapIntensity() const;
+		void SetMetalnessMapIntensity(float NewValue);
 
-		float getNormalMapIntensity();
-		void setNormalMapIntensity(float newValue);
+		float GetNormalMapIntensity() const;
+		void SetNormalMapIntensity(float NewValue);
 
-		float getAmbientOcclusionIntensity();
-		void setAmbientOcclusionIntensity(float newValue);
+		float GetAmbientOcclusionIntensity() const;
+		void SetAmbientOcclusionIntensity(float NewValue);
 
-		float getAmbientOcclusionMapIntensity();
-		void setAmbientOcclusionMapIntensity(float newValue);
+		float GetAmbientOcclusionMapIntensity() const;
+		void SetAmbientOcclusionMapIntensity(float NewValue);
 
-		float getDisplacementMapIntensity();
-		void setDisplacementMapIntensity(float newValue);
+		float GetDisplacementMapIntensity() const;
+		void SetDisplacementMapIntensity(float NewValue);
 
-		void setAlbedoMap(FETexture* texture, int subMaterial = 0);
-		void setAlbedoMap(int textureIndex, int subMaterial = 0);
-		FETexture* getAlbedoMap(int subMaterial = 0);
+		void SetAlbedoMap(FETexture* Texture, int SubMaterial = 0);
+		void SetAlbedoMap(int TextureIndex, int SubMaterial = 0);
+		FETexture* GetAlbedoMap(int SubMaterial = 0);
 
-		void setNormalMap(FETexture* texture, int subMaterial = 0);
-		void setNormalMap(int textureIndex, int subMaterial = 0);
-		FETexture* getNormalMap(int subMaterial = 0);
+		void SetNormalMap(FETexture* Texture, int SubMaterial = 0);
+		void SetNormalMap(int TextureIndex, int SubMaterial = 0);
+		FETexture* GetNormalMap(int SubMaterial = 0);
 
-		void setAOMap(FETexture* texture, int channel = 0, int subMaterial = 0);
-		void setAOMap(int textureIndex, int channel = 0, int subMaterial = 0);
-		FETexture* getAOMap(int subMaterial = 0);
-		int getAOMapChannel(int subMaterial = 0);
+		void SetAOMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
+		void SetAOMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
+		FETexture* GetAOMap(int SubMaterial = 0);
+		int GetAOMapChannel(int SubMaterial = 0) const;
 
-		void setRoughtnessMap(FETexture* texture, int channel = 0, int subMaterial = 0);
-		void setRoughtnessMap(int textureIndex, int channel = 0, int subMaterial = 0);
-		FETexture* getRoughtnessMap(int subMaterial = 0);
-		int getRoughtnessMapChannel(int subMaterial = 0);
+		void SetRoughtnessMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
+		void SetRoughtnessMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
+		FETexture* GetRoughtnessMap(int SubMaterial = 0);
+		int GetRoughtnessMapChannel(int SubMaterial = 0) const;
 
-		void setMetalnessMap(FETexture* texture, int channel = 0, int subMaterial = 0);
-		void setMetalnessMap(int textureIndex, int channel = 0, int subMaterial = 0);
-		FETexture* getMetalnessMap(int subMaterial = 0);
-		int getMetalnessMapChannel(int subMaterial = 0);
+		void SetMetalnessMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
+		void SetMetalnessMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
+		FETexture* GetMetalnessMap(int SubMaterial = 0);
+		int GetMetalnessMapChannel(int SubMaterial = 0) const;
 
-		void setDisplacementMap(FETexture* texture, int channel = 0, int subMaterial = 0);
-		void setDisplacementMap(int textureIndex, int channel = 0, int subMaterial = 0);
-		FETexture* getDisplacementMap(int subMaterial = 0);
-		int getDisplacementMapChannel(int subMaterial = 0);
+		void SetDisplacementMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
+		void SetDisplacementMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
+		FETexture* GetDisplacementMap(int SubMaterial = 0);
+		int GetDisplacementMapChannel(int SubMaterial = 0) const;
 
-		bool addTexture(FETexture* texture);
-		bool isTextureInList(FETexture* texture);
-		void removeTexture(FETexture* texture);
-		void removeTexture(int textureIndex);
-		void clearAllTexturesInfo();
-		int getUsedTexturesCount();
+		bool AddTexture(FETexture* Texture);
+		bool IsTextureInList(const FETexture* Texture) const;
+		void RemoveTexture(FETexture* Texture);
+		void RemoveTexture(int TextureIndex);
+		void ClearAllTexturesInfo();
+		int GetUsedTexturesCount() const;
 
-		bool isCompackPacking();
-		void setCompackPacking(bool newValue);
+		bool IsCompackPacking();
+		void SetCompackPacking(bool NewValue);
 
-		bool isCompackPackingPossible();
+		bool IsCompackPackingPossible();
 
-		float getTiling();
-		void setTiling(float newValue);
+		float GetTiling() const;
+		void SetTiling(float NewValue);
 	private:
-		glm::vec3 diffuseColor;
-		glm::vec3 baseColor;
+		glm::vec3 DiffuseColor;
+		glm::vec3 BaseColor;
 
-		int placeTextureInList(FETexture* texture);
-		void setTextureBinding(int index, int textureIndex, int subMaterial, int channel = -2);
-		void clearTextureBinding(int index, int subMaterial, int channel = -2);
+		int PlaceTextureInList(FETexture* Texture);
+		void SetTextureBinding(int Index, int TextureIndex, int SubMaterial, int Channel = -2);
+		void ClearTextureBinding(int Index, int SubMaterial, int Channel = -2);
 
-		const int albedoBindingIndex = 0;
-		const int normalBindingIndex = 1;
+		const int AlbedoBindingIndex = 0;
+		const int NormalBindingIndex = 1;
 		const int AOBindingIndex = 2;
-		const int roughtnessBindingIndex = 3;
-		const int metalnessBindingIndex = 4;
-		const int displacementBindingIndex = 5;
+		const int RoughtnessBindingIndex = 3;
+		const int MetalnessBindingIndex = 4;
+		const int DisplacementBindingIndex = 5;
 
-		float normalMapIntensity = 1.0f;
-		float metalness = 0.01f;
-		float metalnessMapIntensity = 1.0f;
-		float roughtness = 0.8f;
-		float roughtnessMapIntensity = 1.0f;
-		float ambientOcclusionMapIntensity = 1.0f;
-		float ambientOcclusionIntensity = 1.0f;
-		float displacementMapIntensity = 1.0f;
-		float tiling = 1.0f;
-		bool compackPacking = false;
+		float NormalMapIntensity = 1.0f;
+		float Metalness = 0.01f;
+		float MetalnessMapIntensity = 1.0f;
+		float Roughtness = 0.8f;
+		float RoughtnessMapIntensity = 1.0f;
+		float AmbientOcclusionMapIntensity = 1.0f;
+		float AmbientOcclusionIntensity = 1.0f;
+		float DisplacementMapIntensity = 1.0f;
+		float Tiling = 1.0f;
+		bool bCompackPacking = false;
 
-		FETexture* getSpecifiedMap(int bindingIndex, int subMaterial = 0);
+		FETexture* GetSpecifiedMap(int BindingIndex, int SubMaterial = 0);
 	};
 }
 

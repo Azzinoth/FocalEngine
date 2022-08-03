@@ -20,43 +20,43 @@ namespace FocalEngine
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
 		~FEMesh();
 
-		GLuint getVaoID() const;
-		GLuint getVertexCount() const;
-		GLuint getIndicesBufferID() const;
-		GLuint getIndicesCount() const;
-		GLuint getPositionsBufferID() const;
-		GLuint getPositionsCount() const;
-		GLuint getNormalsBufferID() const;
-		GLuint getNormalsCount() const;
-		GLuint getTangentsBufferID() const;
-		GLuint getTangentsCount() const;
-		GLuint getUVBufferID() const;
-		GLuint getUVCount() const;
-		GLuint getMaterialsIndicesBufferID() const;
-		GLuint getMaterialsIndicesCount() const;
+		GLuint GetVaoID() const;
+		GLuint GetVertexCount() const;
+		GLuint GetIndicesBufferID() const;
+		GLuint GetIndicesCount() const;
+		GLuint GetPositionsBufferID() const;
+		GLuint GetPositionsCount() const;
+		GLuint GetNormalsBufferID() const;
+		GLuint GetNormalsCount() const;
+		GLuint GetTangentsBufferID() const;
+		GLuint GetTangentsCount() const;
+		GLuint GetUVBufferID() const;
+		GLuint GetUVCount() const;
+		GLuint GetMaterialsIndicesBufferID() const;
+		GLuint GetMaterialsIndicesCount() const;
 
-		int FEMesh::getMaterialCount() const;
+		int GetMaterialCount() const;
 
-		FEAABB getAABB();
+		FEAABB GetAABB();
 	private:
-		GLuint vaoID = -1;
-		GLuint indicesBufferID = -1;
-		unsigned int indicesCount = -1;
-		GLuint positionsBufferID = -1;
-		unsigned int positionsCount = -1;
-		GLuint normalsBufferID = -1;
-		unsigned int normalsCount = -1;
-		GLuint tangentsBufferID = -1;
-		unsigned int tangentsCount = -1;
+		GLuint VaoID = -1;
+		GLuint IndicesBufferID = -1;
+		unsigned int IndicesCount = -1;
+		GLuint PositionsBufferID = -1;
+		unsigned int PositionsCount = -1;
+		GLuint NormalsBufferID = -1;
+		unsigned int NormalsCount = -1;
+		GLuint TangentsBufferID = -1;
+		unsigned int TangentsCount = -1;
 		GLuint UVBufferID = -1;
 		unsigned int UVCount = -1;
-		GLuint materialsIndicesBufferID = -1;
-		unsigned int materialsIndicesCount = -1;
+		GLuint MaterialsIndicesBufferID = -1;
+		unsigned int MaterialsIndicesCount = -1;
 
-		unsigned int vertexCount;
-		unsigned int materialsCount;
+		unsigned int VertexCount;
+		unsigned int MaterialsCount;
 
-		int vertexAttributes = 1;
+		int VertexAttributes = 1;
 		FEAABB AABB;
 	};
 }

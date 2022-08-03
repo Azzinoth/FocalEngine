@@ -23,18 +23,18 @@ namespace FocalEngine
 
 	struct LogItem
 	{
-		std::string text;
-		LOG_SEVERITY severity;
-		int count;
-		LOG_CHANNEL channel;
-		long timeStamp;
+		std::string Text;
+		LOG_SEVERITY Severity;
+		int Count;
+		LOG_CHANNEL Channel;
+		long TimeStamp;
 
 		LogItem();
 		~LogItem();
 
-		bool operator==(const LogItem& other) const
+		bool operator==(const LogItem& Other) const
 		{
-			return (text == other.text && severity == other.severity);
+			return (Text == Other.Text && Severity == Other.Severity);
 		}
 	};
 
@@ -43,18 +43,18 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FELOG)
 
-		void add(std::string text, LOG_SEVERITY severity = FE_LOG_INFO, LOG_CHANNEL channel = FE_LOG_GENERAL);
-		std::vector<LogItem> getLogItems(LOG_CHANNEL channel);
+		void Add(std::string Text, LOG_SEVERITY Severity = FE_LOG_INFO, LOG_CHANNEL Channel = FE_LOG_GENERAL);
+		std::vector<LogItem> GetLogItems(LOG_CHANNEL Channel);
 
-		const int severityLevelsCount = 5;
-		const int channelCount = 4;
+		const int SeverityLevelsCount = 5;
+		const int ChannelCount = 4;
 
-		std::string severityLevelToString(LOG_SEVERITY severity);
-		std::string channelTypeToString(LOG_CHANNEL channel);
+		std::string SeverityLevelToString(LOG_SEVERITY Severity);
+		std::string ChannelTypeToString(LOG_CHANNEL Channel);
 	private:
 		SINGLETON_PRIVATE_PART(FELOG)
 
-		std::vector<std::unordered_map<int, LogItem>> channels;
+		std::vector<std::unordered_map<int, LogItem>> Channels;
 	};
 
 	#define LOG FELOG::getInstance()
@@ -64,9 +64,9 @@ namespace std
 {
 	template <> struct std::hash<FocalEngine::LogItem>
 	{
-		size_t operator()(const FocalEngine::LogItem& object) const
+		size_t operator()(const FocalEngine::LogItem& Object) const
 		{
-			return ((std::hash<std::string>()(object.text) ^ (object.severity << 1)) >> 1);
+			return ((std::hash<std::string>()(Object.Text) ^ (Object.Severity << 1)) >> 1);
 		}
 	};
 }

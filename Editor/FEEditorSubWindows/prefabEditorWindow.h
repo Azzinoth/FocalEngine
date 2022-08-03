@@ -2,26 +2,26 @@
 
 #include "combineChannelsToTexturePopUp.h"
 
-class prefabEditorWindow : public FEImGuiWindow
+class PrefabEditorWindow : public FEImGuiWindow
 {
-	SINGLETON_PRIVATE_PART(prefabEditorWindow)
+	SINGLETON_PRIVATE_PART(PrefabEditorWindow)
 
 	// ************** Drag&Drop **************
-	DragAndDropTarget* addGameModelTarget = nullptr;
-	static bool addGameModelTargetCallBack(FEObject* object, void** entityPointer);
+	DragAndDropTarget* AddGameModelTarget = nullptr;
+	static bool AddGameModelTargetCallBack(FEObject* Object, void** EntityPointer);
 	// ************** Drag&Drop END **************
 
-	ImGuiButton* closeButton = nullptr;
+	ImGuiButton* CloseButton = nullptr;
 
-	static FEPrefab* objToWorkWith;
-	int hoveredGameModelItem = -1;
-	int selectedGameModel = -1;
+	static FEPrefab* ObjToWorkWith;
+	int HoveredGameModelItem = -1;
+	int SelectedGameModel = -1;
 
-	void showTransformConfiguration(FETransformComponent* transform, int index);
-	static void addNewGameModelCallBack(std::vector<FEObject*> selectionsResult);
+	void ShowTransformConfiguration(FETransformComponent* Transform, int Index);
+	static void AddNewGameModelCallBack(std::vector<FEObject*> SelectionsResult);
 public:
-	SINGLETON_PUBLIC_PART(prefabEditorWindow)
+	SINGLETON_PUBLIC_PART(PrefabEditorWindow)
 
-	void show(FEPrefab* Prefab);
-	void render() override;
+	void Show(FEPrefab* Prefab);
+	void Render() override;
 };

@@ -10,85 +10,85 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 	public:
-		FEBasicCamera(std::string name);
+		FEBasicCamera(std::string Name);
 		~FEBasicCamera();
 
-		float getFov();
-		void setFov(float newFov);
-		float getNearPlane();
-		void setNearPlane(float newNearPlane);
-		float getFarPlane();
-		void setFarPlane(float newFarPlane);
+		float GetFov() const;
+		void SetFov(float NewFov);
+		float GetNearPlane() const;
+		void SetNearPlane(float NewNearPlane);
+		float GetFarPlane() const;
+		void SetFarPlane(float NewFarPlane);
 
-		virtual float getYaw();
-		virtual void setYaw(float newYaw);
-		virtual float getPitch();
-		virtual void setPitch(float newPitch);
-		virtual float getRoll();
-		virtual void setRoll(float newRoll);
-		glm::vec3 getPosition();
-		void setPosition(glm::vec3 newPosition);
-		virtual glm::vec3 getUp();
-		virtual glm::vec3 getForward();
-		virtual glm::vec3 getRight();
+		virtual float GetYaw();
+		virtual void SetYaw(float NewYaw);
+		virtual float GetPitch();
+		virtual void SetPitch(float NewPitch);
+		virtual float GetRoll();
+		virtual void SetRoll(float NewRoll);
+		glm::vec3 GetPosition() const;
+		void SetPosition(glm::vec3 NewPosition);
+		virtual glm::vec3 GetUp();
+		virtual glm::vec3 GetForward();
+		virtual glm::vec3 GetRight();
 
-		virtual void setLookAt(glm::vec3 lookAt);
+		virtual void SetLookAt(glm::vec3 LookAt);
 
-		float getAspectRatio();
-		void setAspectRatio(float newAspectRatio);
+		float GetAspectRatio() const;
+		void SetAspectRatio(float NewAspectRatio);
 
-		float getGamma();
-		void setGamma(float newGamma);
-		float getExposure();
-		void setExposure(float newExposure);
+		float GetGamma() const;
+		void SetGamma(float NewGamma);
+		float GetExposure() const;
+		void SetExposure(float NewExposure);
 
-		glm::mat4 getViewMatrix();
-		virtual void updateViewMatrix();
-		glm::mat4 getProjectionMatrix();
-		virtual void updateProjectionMatrix();
+		glm::mat4 GetViewMatrix() const;
+		virtual void UpdateViewMatrix();
+		glm::mat4 GetProjectionMatrix() const;
+		virtual void UpdateProjectionMatrix();
 
-		virtual void updateAll();
+		virtual void UpdateAll();
 
-		virtual void move(float deltaTime = 0.0f) {};
+		virtual void Move(float DeltaTime = 0.0f) {};
 
-		virtual bool getIsInputActive();
-		virtual void setIsInputActive(bool isActive);
+		virtual bool GetIsInputActive();
+		virtual void SetIsInputActive(bool bIsActive);
 
-		virtual void keyboardInput(int key, int scancode, int action, int mods) {};
-		virtual void mouseMoveInput(double xpos, double ypos) {};
+		virtual void KeyboardInput(int Key, int Scancode, int Action, int Mods) {};
+		virtual void MouseMoveInput(double Xpos, double Ypos) {};
 
-		virtual void reset();
+		virtual void Reset();
 
-		virtual void setOnUpdate(void(*func)(FEBasicCamera*));
+		virtual void SetOnUpdate(void(*Func)(FEBasicCamera*));
 
-		virtual void updateFrustumPlanes();
-		virtual float** getFrustumPlanes();
+		virtual void UpdateFrustumPlanes();
+		virtual float** GetFrustumPlanes();
 
-		virtual float getMovementSpeed();
-		virtual void setMovementSpeed(float newValue);
+		virtual float GetMovementSpeed();
+		virtual void SetMovementSpeed(float NewValue);
 	protected:
-		bool isInputActive = true;
+		bool bIsInputActive = true;
 
-		float fov = 70.0f;
-		float nearPlane = 0.1f;
-		float farPlane = 15000.0f;
-		float aspectRatio = 1.0f;
+		float Fov = 70.0f;
+		float NearPlane = 0.1f;
+		float FarPlane = 15000.0f;
+		float AspectRatio = 1.0f;
 
-		float yaw = 0.0f;
-		float pitch = 0.0f;
-		float roll = 0.0f;
+		float Yaw = 0.0f;
+		float Pitch = 0.0f;
+		float Roll = 0.0f;
 
-		float gamma = 2.2f;
-		float exposure = 1.0f;
+		float Gamma = 2.2f;
+		float Exposure = 1.0f;
 
-		float movementSpeed = 10.0f;
+		float MovementSpeed = 10.0f;
 
-		glm::vec3 position = glm::vec3(0.0f);
-		glm::mat4 viewMatrix;
-		glm::mat4 projectionMatrix;
+		glm::vec3 Position = glm::vec3(0.0f);
+		glm::mat4 ViewMatrix;
+		glm::mat4 ProjectionMatrix;
 
-		void(*clientOnUpdateImpl)(FEBasicCamera*) = nullptr;
+		void(*ClientOnUpdateImpl)(FEBasicCamera*) = nullptr;
 
-		float** frustum;
+		float** Frustum;
 	};
 }

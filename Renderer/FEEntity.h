@@ -19,31 +19,35 @@ namespace FocalEngine
 		FEEntity(FEPrefab* Prefab, std::string Name);
 		~FEEntity();
 
-		FEPrefab* prefab = nullptr;
-		FETransformComponent transform;
+		FEPrefab* Prefab = nullptr;
+		FETransformComponent Transform;
 
-		virtual void render();
+		virtual void Render();
 
-		bool isVisible();
-		void setVisibility(bool isVisible);
+		bool IsVisible() const;
+		void SetVisibility(bool NewValue);
 
-		virtual FEAABB getAABB();
+		virtual FEAABB GetAABB();
 
-		bool isCastShadows();
-		void setCastShadows(bool isCastShadows);
+		bool IsCastShadows() const;
+		void SetCastShadows(bool NewValue);
 
-		bool isReceivingShadows();
-		void setReceivingShadows(bool isReceivingShadows);
+		bool IsReceivingShadows() const;
+		void SetReceivingShadows(bool NewValue);
 
-		bool isPostprocessApplied();
-		void setIsPostprocessApplied(bool isPostprocessApplied);
+		bool IsPostprocessApplied() const;
+		void SetIsPostprocessApplied(bool NewValue);
+
+		bool IsWireframeMode() const;
+		void SetWireframeMode(bool NewValue);
 	protected:
-		bool visible = true;
-		bool castShadows = true;
-		bool receiveShadows = true;
-		bool applyPostprocess = true;
+		bool bVisible = true;
+		bool bCastShadows = true;
+		bool bReceiveShadows = true;
+		bool bApplyPostprocess = true;
+		bool bWireframeMode = false;
 
-		FEAABB entityAABB;
+		FEAABB EntityAABB;
 	};
 }
 

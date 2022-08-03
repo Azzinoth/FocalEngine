@@ -1,166 +1,166 @@
 #include "FEEditorMaterialNode.h"
 using namespace FocalEngine;
 
-FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* material) : FEVisualNode()
+FEEditorMaterialNode::FEEditorMaterialNode(FEMaterial* Material) : FEVisualNode()
 {
-	type = "FEEditorMaterialNode";
+	Type = "FEEditorMaterialNode";
 
-	data = material;
+	Data = Material;
 
-	setSize(ImVec2(380, 500));
-	setName(data->getName());
+	SetSize(ImVec2(380, 500));
+	SetName(Data->GetName());
 
-	titleBackgroundColor = ImColor(200, 50, 200);
-	titleBackgroundColorHovered = ImColor(245, 50, 245);
+	TitleBackgroundColor = ImColor(200, 50, 200);
+	TitleBackgroundColorHovered = ImColor(245, 50, 245);
 	
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement"));
 
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo_1"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal_1"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO_1"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness_1"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness_1"));
-	addInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "albedo_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_IN, "normal_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "AO_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Roughtness_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Metalness_1"));
+	AddInputSocket(new FEVisualNodeSocket(this, FE_NODE_SOCKET_COLOR_CHANNEL_IN, "Displacement_1"));
 }
 
-void FEEditorMaterialNode::draw()
+void FEEditorMaterialNode::Draw()
 {	
-	FEVisualNode::draw();
+	FEVisualNode::Draw();
 
-	ImVec2 currentPosition = ImVec2(ImGui::GetCursorScreenPos().x + 180.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 13.0f);
-	ImGui::SetCursorScreenPos(currentPosition);
-	float fieldWidth = 160.0f;
-	float fieldStep = 30.0f;
+	ImVec2 CurrentPosition = ImVec2(ImGui::GetCursorScreenPos().x + 180.0f, ImGui::GetCursorScreenPos().y + NODE_TITLE_HEIGHT + 13.0f);
+	ImGui::SetCursorScreenPos(CurrentPosition);
+	const float FieldWidth = 160.0f;
+	const float FieldStep = 30.0f;
 
-	bool compactFlag = data->isCompackPacking();
-	ImGui::Checkbox("##Compact flag", &compactFlag);
+	bool bCompactFlag = Data->IsCompackPacking();
+	ImGui::Checkbox("##Compact flag", &bCompactFlag);
 	ImGui::SameLine();
 	ImGui::Text("Compact packing");
-	data->setCompackPacking(compactFlag);
+	Data->SetCompackPacking(bCompactFlag);
 
-	FEShaderParam* debugFlag = data->getParameter("debugFlag");
-	if (debugFlag != nullptr)
+	FEShaderParam* DebugFlag = Data->GetParameter("debugFlag");
+	if (DebugFlag != nullptr)
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("Debug flag:");
-		int iData = *(int*)debugFlag->data;
+		int IData = *static_cast<int*>(DebugFlag->Data);
 
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
-		ImGui::SetNextItemWidth(fieldWidth);
-		ImGui::SliderInt("##Debug flag", &iData, 0, 10);
-		debugFlag->updateData(iData);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		ImGui::SliderInt("##Debug flag", &IData, 0, 10);
+		DebugFlag->UpdateData(IData);
 	}
 
 	// ************* Normal *************
-	currentPosition.y += fieldStep;
-	ImGui::SetCursorScreenPos(currentPosition);
+	CurrentPosition.y += FieldStep;
+	ImGui::SetCursorScreenPos(CurrentPosition);
 	ImGui::Text("Normal map \nintensity:");
 	
-	float normalMapIntensity = data->getNormalMapIntensity();
-	currentPosition.y += fieldStep * 1.5f;
-	ImGui::SetCursorScreenPos(currentPosition);
-	ImGui::SetNextItemWidth(fieldWidth);
-	ImGui::DragFloat("##Normal map intensity", &normalMapIntensity, 0.01f, 0.0f, 1.0f);
-	data->setNormalMapIntensity(normalMapIntensity);
+	float NormalMapIntensity = Data->GetNormalMapIntensity();
+	CurrentPosition.y += FieldStep * 1.5f;
+	ImGui::SetCursorScreenPos(CurrentPosition);
+	ImGui::SetNextItemWidth(FieldWidth);
+	ImGui::DragFloat("##Normal map intensity", &NormalMapIntensity, 0.01f, 0.0f, 1.0f);
+	Data->SetNormalMapIntensity(NormalMapIntensity);
 
 	// ************* AO *************
-	if (data->getAOMap() == nullptr)
+	if (Data->GetAOMap() == nullptr)
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("AO intensity:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float ambientOcclusionIntensity = data->getAmbientOcclusionIntensity();
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
-		ImGui::DragFloat("##AO intensity", &ambientOcclusionIntensity, 0.01f, 0.0f, 10.0f);
-		data->setAmbientOcclusionIntensity(ambientOcclusionIntensity);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float AmbientOcclusionIntensity = Data->GetAmbientOcclusionIntensity();
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
+		ImGui::DragFloat("##AO intensity", &AmbientOcclusionIntensity, 0.01f, 0.0f, 10.0f);
+		Data->SetAmbientOcclusionIntensity(AmbientOcclusionIntensity);
 	}
 	else
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("AO map \nintensity:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float AOMapIntensity = data->getAmbientOcclusionMapIntensity();
-		currentPosition.y += fieldStep * 1.5f;
-		ImGui::SetCursorScreenPos(currentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float AOMapIntensity = Data->GetAmbientOcclusionMapIntensity();
+		CurrentPosition.y += FieldStep * 1.5f;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::DragFloat("##AO map intensity", &AOMapIntensity, 0.01f, 0.0f, 10.0f);
-		data->setAmbientOcclusionMapIntensity(AOMapIntensity);
+		Data->SetAmbientOcclusionMapIntensity(AOMapIntensity);
 	}
 
 	// ************* Roughtness *************
-	if (data->getRoughtnessMap() == nullptr)
+	if (Data->GetRoughtnessMap() == nullptr)
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("Roughtness:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float roughtness = data->getRoughtness();
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float roughtness = Data->GetRoughtness();
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::DragFloat("##Roughtness", &roughtness, 0.01f, 0.0f, 1.0f);
-		data->setRoughtness(roughtness);
+		Data->SetRoughtness(roughtness);
 	}
 	else
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("Roughtness map \nintensity:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float roughtness = data->getRoughtnessMapIntensity();
-		currentPosition.y += fieldStep * 1.5f;
-		ImGui::SetCursorScreenPos(currentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float roughtness = Data->GetRoughtnessMapIntensity();
+		CurrentPosition.y += FieldStep * 1.5f;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::DragFloat("##Roughtness map intensity", &roughtness, 0.01f, 0.0f, 10.0f);
-		data->setRoughtnessMapIntensity(roughtness);
+		Data->SetRoughtnessMapIntensity(roughtness);
 	}
 
 	// ************* Metalness *************
-	if (data->getMetalnessMap() == nullptr)
+	if (Data->GetMetalnessMap() == nullptr)
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("Metalness:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float metalness = data->getMetalness();
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float metalness = Data->GetMetalness();
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::DragFloat("##Metalness", &metalness, 0.01f, 0.0f, 1.0f);
-		data->setMetalness(metalness);
+		Data->SetMetalness(metalness);
 	}
 	else
 	{
-		currentPosition.y += fieldStep;
-		ImGui::SetCursorScreenPos(currentPosition);
+		CurrentPosition.y += FieldStep;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::Text("Metalness map \nintensity:");
-		ImGui::SetNextItemWidth(fieldWidth);
-		float metalness = data->getMetalnessMapIntensity();
-		currentPosition.y += fieldStep * 1.5f;
-		ImGui::SetCursorScreenPos(currentPosition);
+		ImGui::SetNextItemWidth(FieldWidth);
+		float metalness = Data->GetMetalnessMapIntensity();
+		CurrentPosition.y += FieldStep * 1.5f;
+		ImGui::SetCursorScreenPos(CurrentPosition);
 		ImGui::DragFloat("##Metalness map intensity", &metalness, 0.01f, 0.0f, 10.0f);
-		data->setMetalnessMapIntensity(metalness);
+		Data->SetMetalnessMapIntensity(metalness);
 	}
 
-	currentPosition.y += fieldStep;
-	ImGui::SetCursorScreenPos(currentPosition);
+	CurrentPosition.y += FieldStep;
+	ImGui::SetCursorScreenPos(CurrentPosition);
 	ImGui::Text("Tiling :");
-	ImGui::SetNextItemWidth(fieldWidth);
-	float tiling = data->getTiling();
-	currentPosition.y += fieldStep;
-	ImGui::SetCursorScreenPos(currentPosition);
+	ImGui::SetNextItemWidth(FieldWidth);
+	float tiling = Data->GetTiling();
+	CurrentPosition.y += FieldStep;
+	ImGui::SetCursorScreenPos(CurrentPosition);
 	ImGui::DragFloat("##Tiling", &tiling, 0.01f, 0.0f, 64.0f);
-	data->setTiling(tiling);
+	Data->SetTiling(tiling);
 	
-	if (contextMenu)
+	if (bContextMenu)
 	{
-		contextMenu = false;
+		bContextMenu = false;
 		ImGui::OpenPopup("##context_menu");
 	}
 	
@@ -169,7 +169,7 @@ void FEEditorMaterialNode::draw()
 	//{
 	//	/*if (ImGui::MenuItem("Remove float node"))
 	//	{
-	//		shouldBeDestroyed = true;
+	//		bShouldBeDestroyed = true;
 	//	}*/
 
 	//	ImGui::EndPopup();
@@ -178,134 +178,134 @@ void FEEditorMaterialNode::draw()
 	ImGui::PopStyleVar();
 }
 
-void FEEditorMaterialNode::socketEvent(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* connectedSocket, FE_VISUAL_NODE_SOCKET_EVENT eventType)
+void FEEditorMaterialNode::SocketEvent(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* ConnectedSocket, const FE_VISUAL_NODE_SOCKET_EVENT EventType)
 {
-	FEVisualNode::socketEvent(ownSocket,  connectedSocket, eventType);
+	FEVisualNode::SocketEvent(OwnSocket,  ConnectedSocket, EventType);
 
-	if (eventType == FE_VISUAL_NODE_SOCKET_DESTRUCTION)
+	if (EventType == FE_VISUAL_NODE_SOCKET_DESTRUCTION)
 		return;
 
-	FETexture* texure = reinterpret_cast<FEEditorTextureSourceNode*>(connectedSocket->getParent())->getTexture();
-	if (eventType == FE_VISUAL_NODE_SOCKET_DISCONNECTED)
-		texure = nullptr;
+	FETexture* Texture = reinterpret_cast<FEEditorTextureSourceNode*>(ConnectedSocket->GetParent())->GetTexture();
+	if (EventType == FE_VISUAL_NODE_SOCKET_DISCONNECTED)
+		Texture = nullptr;
 
-	size_t socketIndex = 0; // "r"
-	if (connectedSocket->getName() == "g")
+	size_t SocketIndex = 0; // "r"
+	if (ConnectedSocket->GetName() == "g")
 	{
-		socketIndex = 1;
+		SocketIndex = 1;
 	}
-	else if (connectedSocket->getName() == "b")
+	else if (ConnectedSocket->GetName() == "b")
 	{
-		socketIndex = 2;
+		SocketIndex = 2;
 	}
-	else if (connectedSocket->getName() == "a")
+	else if (ConnectedSocket->GetName() == "a")
 	{
-		socketIndex = 3;
+		SocketIndex = 3;
 	}
 
-	if (ownSocket->getName() == "albedo")
+	if (OwnSocket->GetName() == "albedo")
 	{
-		data->setAlbedoMap(texure, 0);
+		Data->SetAlbedoMap(Texture, 0);
 	} 
-	else if (ownSocket->getName() == "albedo_1")
+	else if (OwnSocket->GetName() == "albedo_1")
 	{
-		data->setAlbedoMap(texure, 1);
+		Data->SetAlbedoMap(Texture, 1);
 	}
 
-	if (ownSocket->getName() == "normal")
+	if (OwnSocket->GetName() == "normal")
 	{
-		data->setNormalMap(texure, 0);
+		Data->SetNormalMap(Texture, 0);
 	}
-	else if (ownSocket->getName() == "normal_1")
+	else if (OwnSocket->GetName() == "normal_1")
 	{
-		data->setNormalMap(texure, 1);
-	}
-
-	if (ownSocket->getName() == "AO")
-	{
-		data->setAOMap(texure, int(socketIndex), 0);
-	}
-	else if (ownSocket->getName() == "AO_1")
-	{
-		data->setAOMap(texure, int(socketIndex), 1);
+		Data->SetNormalMap(Texture, 1);
 	}
 
-	if (ownSocket->getName() == "Roughtness")
+	if (OwnSocket->GetName() == "AO")
 	{
-		data->setRoughtnessMap(texure, int(socketIndex), 0);
+		Data->SetAOMap(Texture, static_cast<int>(SocketIndex), 0);
 	}
-	else if (ownSocket->getName() == "Roughtness_1")
+	else if (OwnSocket->GetName() == "AO_1")
 	{
-		data->setRoughtnessMap(texure, int(socketIndex), 1);
-	}
-
-	if (ownSocket->getName() == "Metalness")
-	{
-		data->setMetalnessMap(texure, int(socketIndex), 0);
-	}
-	else if (ownSocket->getName() == "Metalness_1")
-	{
-		data->setMetalnessMap(texure, int(socketIndex), 1);
+		Data->SetAOMap(Texture, static_cast<int>(SocketIndex), 1);
 	}
 
-	if (ownSocket->getName() == "Displacement")
+	if (OwnSocket->GetName() == "Roughtness")
 	{
-		data->setDisplacementMap(texure, int(socketIndex), 0);
+		Data->SetRoughtnessMap(Texture, static_cast<int>(SocketIndex), 0);
 	}
-	else if (ownSocket->getName() == "Displacement_1")
+	else if (OwnSocket->GetName() == "Roughtness_1")
 	{
-		data->setDisplacementMap(texure, int(socketIndex), 1);
+		Data->SetRoughtnessMap(Texture, static_cast<int>(SocketIndex), 1);
+	}
+
+	if (OwnSocket->GetName() == "Metalness")
+	{
+		Data->SetMetalnessMap(Texture, static_cast<int>(SocketIndex), 0);
+	}
+	else if (OwnSocket->GetName() == "Metalness_1")
+	{
+		Data->SetMetalnessMap(Texture, static_cast<int>(SocketIndex), 1);
+	}
+
+	if (OwnSocket->GetName() == "Displacement")
+	{
+		Data->SetDisplacementMap(Texture, static_cast<int>(SocketIndex), 0);
+	}
+	else if (OwnSocket->GetName() == "Displacement_1")
+	{
+		Data->SetDisplacementMap(Texture, static_cast<int>(SocketIndex), 1);
 	}
 }
 
-FEMaterial* FEEditorMaterialNode::getData()
+FEMaterial* FEEditorMaterialNode::GetData() const
 {
-	return data;
+	return Data;
 }
 
-bool FEEditorMaterialNode::canConnect(FEVisualNodeSocket* ownSocket, FEVisualNodeSocket* candidateSocket, char** msgToUser)
+bool FEEditorMaterialNode::CanConnect(FEVisualNodeSocket* OwnSocket, FEVisualNodeSocket* CandidateSocket, char** MsgToUser)
 {
-	if (!FEVisualNode::canConnect(ownSocket, candidateSocket, nullptr))
+	if (!FEVisualNode::CanConnect(OwnSocket, CandidateSocket, nullptr))
 		return false;
 
 	// For now it is unsupported type.
-	if (candidateSocket->getType() == FE_NODE_SOCKET_FLOAT_CHANNEL_OUT)
+	if (CandidateSocket->GetType() == FE_NODE_SOCKET_FLOAT_CHANNEL_OUT)
 	{
-		*msgToUser = incompatibleTypesMsg;
+		*MsgToUser = IncompatibleTypesMsg;
 		return false;
 	}
 
-	if ((ownSocket->getName() == "albedo" || ownSocket->getName() == "albedo_1" || ownSocket->getName() == "normal" || ownSocket->getName() == "normal_1") && (candidateSocket->getType() != FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT))
+	if ((OwnSocket->GetName() == "albedo" || OwnSocket->GetName() == "albedo_1" || OwnSocket->GetName() == "normal" || OwnSocket->GetName() == "normal_1") && (CandidateSocket->GetType() != FE_NODE_SOCKET_COLOR_RGBA_CHANNEL_OUT))
 	{
-		*msgToUser = incompatibleTypesMsg;
+		*MsgToUser = IncompatibleTypesMsg;
 		return false;
 	}
 
-	if ((ownSocket->getName() == "AO" || ownSocket->getName() == "AO_1" ||
-		ownSocket->getName() == "Roughtness" || ownSocket->getName() == "Roughtness_1" ||
-		ownSocket->getName() == "Metalness" || ownSocket->getName() == "Metalness_1" ||
-		ownSocket->getName() == "Displacement" || ownSocket->getName() == "Displacement_1") && (candidateSocket->getType() != FE_NODE_SOCKET_COLOR_CHANNEL_OUT && candidateSocket->getType() != FE_NODE_SOCKET_FLOAT_CHANNEL_OUT))
+	if ((OwnSocket->GetName() == "AO" || OwnSocket->GetName() == "AO_1" ||
+		OwnSocket->GetName() == "Roughtness" || OwnSocket->GetName() == "Roughtness_1" ||
+		OwnSocket->GetName() == "Metalness" || OwnSocket->GetName() == "Metalness_1" ||
+		OwnSocket->GetName() == "Displacement" || OwnSocket->GetName() == "Displacement_1") && (CandidateSocket->GetType() != FE_NODE_SOCKET_COLOR_CHANNEL_OUT && CandidateSocket->GetType() != FE_NODE_SOCKET_FLOAT_CHANNEL_OUT))
 	{
-		*msgToUser = incompatibleTypesMsg;
+		*MsgToUser = IncompatibleTypesMsg;
 		return false;
 	}
 
-	if (ownSocket->getConnections().size() > 0)
+	if (!OwnSocket->GetConnections().empty())
 	{
-		*msgToUser = tooManyConnectionsMsg;
+		*MsgToUser = TooManyConnectionsMsg;
 		return false;
 	}
 
 	return true;
 }
 
-bool FEEditorMaterialNode::openContextMenu()
+bool FEEditorMaterialNode::OpenContextMenu()
 {
-	contextMenu = true;
+	bContextMenu = true;
 	return true;
 }
 
-Json::Value FEEditorMaterialNode::getInfoForSaving()
+Json::Value FEEditorMaterialNode::GetInfoForSaving()
 {
 	return "";
 }

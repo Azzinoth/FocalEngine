@@ -4,23 +4,23 @@
 
 class renameFailedPopUp : public ImGuiModalPopup
 {
-	ImGuiButton* okButton = nullptr;
+	ImGuiButton* OkButton = nullptr;
 public:
 	SINGLETON_PUBLIC_PART(renameFailedPopUp)
-	void render() override;
+	void Render() override;
 private:
 	SINGLETON_PRIVATE_PART(renameFailedPopUp)
 };
 
 class renamePopUp : public ImGuiModalPopup
 {
-	FEObject* objToWorkWith;
-	char newName[512];
+	FEObject* ObjToWorkWith;
+	char NewName[512];
 public:
 	SINGLETON_PUBLIC_PART(renamePopUp)
 
-	void show(FEObject* ObjToWorkWith);
-	void render() override;
+	void Show(FEObject* ObjToWorkWith);
+	void Render() override;
 private:
 	SINGLETON_PRIVATE_PART(renamePopUp)
 };

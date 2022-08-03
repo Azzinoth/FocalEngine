@@ -11,8 +11,8 @@ namespace FocalEngine
 	struct FEPrefabComponent
 	{
 		// Later it should be FEObject because we could use not only FEGameModel but something like FEAnimation or other classes as components.
-		FEGameModel* gameModel = nullptr;
-		FETransformComponent transform;
+		FEGameModel* GameModel = nullptr;
+		FETransformComponent Transform;
 	};
 
 	class FEPrefab : public FEObject
@@ -22,26 +22,26 @@ namespace FocalEngine
 		friend FEEntity;
 		friend FEEntityInstanced;
 
-		std::vector<FEPrefabComponent*> components;
+		std::vector<FEPrefabComponent*> Components;
 
 		FEAABB AABB;
-		void updateAABB();
+		void UpdateAABB();
 		
 		FEPrefab();
 	public:
-		FEPrefab(FEGameModel* gameModel, std::string Name = "");
+		FEPrefab(FEGameModel* GameModel, std::string Name = "");
 		~FEPrefab();
 
-		int componentsCount();
-		void addComponent(FEGameModel* gameModel, FETransformComponent transform = FETransformComponent());
-		FEPrefabComponent* getComponent(int index);
-		void removeComponent(FEGameModel* gameModel);
-		void removeComponent(int index);
+		int ComponentsCount() const;
+		void AddComponent(FEGameModel* GameModel, FETransformComponent Transform = FETransformComponent());
+		FEPrefabComponent* GetComponent(int Index) const;
+		void RemoveComponent(const FEGameModel* GameModel);
+		void RemoveComponent(int Index);
 
-		FEAABB getAABB();
+		FEAABB GetAABB();
 
-		bool usesMaterial(std::string materialID);
-		bool usesGameModel(std::string gameModelID);
+		bool UsesMaterial(std::string MaterialID) const;
+		bool UsesGameModel(std::string GameModelID) const;
 	};
 }
 

@@ -9,28 +9,28 @@ class DragAndDropTarget
 {
 	friend DragAndDropManager;
 private:
-	std::vector<FEObjectType> acceptedTypes;
-	std::vector<std::string> toolTipTexts;
-	bool (*callback)(FEObject*, void**);
-	void** userData = nullptr;
-	bool active = false;
+	std::vector<FE_OBJECT_TYPE> AcceptedTypes;
+	std::vector<std::string> ToolTipTexts;
+	bool (*Callback)(FEObject*, void**);
+	void** UserData = nullptr;
+	bool bActive = false;
 public:
 	DragAndDropTarget();
-	DragAndDropTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData = nullptr, std::string toolTipText = "");
-	DragAndDropTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts);
+	DragAndDropTarget(FE_OBJECT_TYPE AcceptedType, bool (*Callback)(FEObject*, void**), void** UserData = nullptr, std::string ToolTipText = "");
+	DragAndDropTarget(std::vector<FE_OBJECT_TYPE>& AcceptedTypes, bool (*Callback)(FEObject*, void**), void** UserData, std::vector<std::string>& ToolTipTexts);
 
 	~DragAndDropTarget();
 
-	void setActive(bool active);
-	bool getActive();
+	void SetActive(bool Active);
+	bool GetActive() const;
 
-	bool accept(FEObject* object);
+	bool Accept(const FEObject* Object) const;
 
-	void** getUserData();
-	void setNewUserData(void** newUserData);
+	void** GetUserData() const;
+	void SetNewUserData(void** NewUserData);
 
-	void stickToItem();
-	void stickToCurrentWindow();
+	void StickToItem();
+	void StickToCurrentWindow();
 };
 
 class DragAndDropManager
@@ -39,36 +39,36 @@ class DragAndDropManager
 public:
 	SINGLETON_PUBLIC_PART(DragAndDropManager)
 
-	void initializeResources();
-	DragAndDropTarget* addTarget(FEObjectType acceptedType, bool (*callback)(FEObject*, void**), void** userData = nullptr, std::string toolTipText = "");
-	DragAndDropTarget* addTarget(std::vector<FEObjectType>& acceptedTypes, bool (*callback)(FEObject*, void**), void** userData, std::vector<std::string>& toolTipTexts);
-	DragAndDropTarget* addTarget(DragAndDropTarget* newTarget);
+	void InitializeResources();
+	DragAndDropTarget* AddTarget(FE_OBJECT_TYPE AcceptedType, bool (*Callback)(FEObject*, void**), void** UserData = nullptr, std::string ToolTipText = "");
+	DragAndDropTarget* AddTarget(std::vector<FE_OBJECT_TYPE>& AcceptedTypes, bool (*Callback)(FEObject*, void**), void** UserData, std::vector<std::string>& ToolTipTexts);
+	DragAndDropTarget* AddTarget(DragAndDropTarget* NewTarget);
 
-	void render();
-	void dropAction();
-	void mouseMove();
+	void Render() const;
+	void DropAction();
+	void MouseMove();
 
-	void setObject(FEObject* obj, FETexture* texture = nullptr, ImVec2 uv0 = ImVec2(0.0f, 1.0f), ImVec2 uv1 = ImVec2(0.0f, 1.0f));
-	bool objectIsDraged();
+	void SetObject(FEObject* Obj, FETexture* Texture = nullptr, ImVec2 UV0 = ImVec2(0.0f, 1.0f), ImVec2 UV1 = ImVec2(0.0f, 1.0f));
+	bool ObjectIsDraged() const;
 
-	FETexture* getToolTipTexture();
+	FETexture* GetToolTipTexture() const;
 private:
 	SINGLETON_PRIVATE_PART(DragAndDropManager)
 
-	std::vector<DragAndDropTarget*> targets;
+	std::vector<DragAndDropTarget*> Targets;
 
-	FEObject* object = nullptr;
-	FETexture* previewTexture = nullptr;
-	ImVec2 uv0;
-	ImVec2 uv1;
+	FEObject* Object = nullptr;
+	FETexture* PreviewTexture = nullptr;
+	ImVec2 UV0;
+	ImVec2 UV1;
 
-	FETexture* handCursor = nullptr;
-	FETexture* handCursorUnavailable = nullptr;
-	void drawToolTip();
-	bool drawDragAndDropHasAction = false;
+	FETexture* HandCursor = nullptr;
+	FETexture* HandCursorUnavailable = nullptr;
+	void DrawToolTip() const;
+	bool bDrawDragAndDropHasAction = false;
 
-	std::string getToolTipText();
-	bool objectCanBeDroped();
+	std::string GetToolTipText() const;
+	bool ObjectCanBeDroped() const;
 };
 
 #define DRAG_AND_DROP_MANAGER DragAndDropManager::getInstance()

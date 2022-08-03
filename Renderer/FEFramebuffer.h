@@ -22,36 +22,36 @@ namespace FocalEngine
 	public:
 		~FEFramebuffer();
 
-		void bind();
-		void unBind();
+		void Bind();
+		void UnBind();
 
-		FETexture* getColorAttachment(size_t index = 0);
-		FETexture* getDepthAttachment();
-		FETexture* getStencilAttachment();
+		FETexture* GetColorAttachment(size_t Index = 0);
+		FETexture* GetDepthAttachment();
+		FETexture* GetStencilAttachment();
 
-		void setColorAttachment(FETexture* newTexture, size_t index = 0);
-		void setDepthAttachment(FETexture* newTexture);
-		void setStencilAttachment(FETexture* newTexture);
+		void SetColorAttachment(FETexture* NewTexture, size_t Index = 0);
+		void SetDepthAttachment(FETexture* NewTexture);
+		void SetStencilAttachment(FETexture* NewTexture);
 
-		int getWidth();
-		int getHeight();
+		int GetWidth();
+		int GetHeight();
 
-		bool hasTexture(std::string objectID);
-		bool hasTexture(GLuint textureID);
+		bool HasTexture(std::string ObjectID);
+		bool HasTexture(GLuint TextureID);
 	private:
 		FEFramebuffer();
 
-		GLuint fbo = -1;
-		bool binded = false;
+		GLuint FBO = -1;
+		bool bBinded = false;
 
-		int width = 0;
-		int height = 0;
+		int Width = 0;
+		int Height = 0;
 		
-		std::vector<FETexture*> colorAttachments;
-		FETexture* depthAttachment = nullptr;
-		FETexture* stencilAttachment = nullptr;
+		std::vector<FETexture*> ColorAttachments;
+		FETexture* DepthAttachment = nullptr;
+		FETexture* StencilAttachment = nullptr;
 
-		void attachTexture(GLenum attachment, GLenum textarget, FETexture* texture);
-		void processOnDeleteCallbacks(std::string deletingFEObject);
+		void AttachTexture(GLenum Attachment, GLenum Textarget, FETexture* Texture);
+		void ProcessOnDeleteCallbacks(std::string DeletingFEObject);
 	};
 }

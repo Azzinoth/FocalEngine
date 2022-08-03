@@ -7,54 +7,54 @@
 
 namespace FocalEngine
 {
-	enum FEChangesType
+	enum FE_INSTANCED_ENTITY_CHANGES_TYPE
 	{
-		CHANGE_NONE = 0,
-		CHANGE_DELETED = 1,
-		CHANGE_MODIFIED = 2,
-		CHANGE_ADDED = 3
+		FE_CHANGE_NONE = 0,
+		FE_CHANGE_DELETED = 1,
+		FE_CHANGE_MODIFIED = 2,
+		FE_CHANGE_ADDED = 3
 	};
 
 	struct FEInstanceModification
 	{
-		FEChangesType type = CHANGE_NONE;
-		int index = -1;
-		glm::mat4 modification;
+		FE_INSTANCED_ENTITY_CHANGES_TYPE Type = FE_CHANGE_NONE;
+		int Index = -1;
+		glm::mat4 Modification;
 
 		FEInstanceModification();
-		FEInstanceModification(FEChangesType type, int index, glm::mat4 modification) : type(type), index(index), modification(modification) {};
+		FEInstanceModification(const FE_INSTANCED_ENTITY_CHANGES_TYPE Type, const int Index, const glm::mat4 Modification) : Type(Type), Index(Index), Modification(Modification) {};
 	};
 
 	struct FESpawnInfo
 	{
-		int seed = 0;
-		int objectCount = 1;
-		float radius = 1.0f;
+		int Seed = 0;
+		int ObjectCount = 1;
+		float Radius = 1.0f;
 
-		float getMinScale();
-		void setMinScale(float newValue);
+		float GetMinScale();
+		void SetMinScale(float NewValue);
 
-		float getMaxScale();
-		void setMaxScale(float newValue);
+		float GetMaxScale();
+		void SetMaxScale(float NewValue);
 
-		glm::vec3 rotationDeviation = glm::vec3(0.02f, 1.0f, 0.02f);
+		glm::vec3 RotationDeviation = glm::vec3(0.02f, 1.0f, 0.02f);
 
-		float getPositionDeviation();
-		float getScaleDeviation();
-		int getRotaionDeviation(glm::vec3 axis);
+		float GetPositionDeviation();
+		float GetScaleDeviation();
+		int GetRotaionDeviation(glm::vec3 Axis);
 
 	private:
-		float minScale = 1.0f;
-		float maxScale = 1.5f;
+		float MinScale = 1.0f;
+		float MaxScale = 1.5f;
 	};
 
 	struct FEDrawElementsIndirectCommand
 	{
-		unsigned int count;
-		unsigned int primCount;
-		unsigned int firstIndex;
-		unsigned int baseVertex;
-		unsigned int baseInstance;
+		unsigned int Count;
+		unsigned int PrimCount;
+		unsigned int FirstIndex;
+		unsigned int BaseVertex;
+		unsigned int BaseInstance;
 	};
 
 	class FEEntityInstanced;
@@ -63,29 +63,29 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEEntityInstanced;
 
-		std::vector<std::vector<glm::mat4>> instancedMatricesLOD;
+		std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
 
-		std::vector<glm::vec3> instancePositions;
+		std::vector<glm::vec3> InstancePositions;
 		int* LODCounts;
 
 		// GPU Culling
-		GLenum instancedBuffer = 0;
+		GLenum InstancedBuffer = 0;
 		GLenum* LODBuffers = nullptr;
 
-		GLuint sourceDataBuffer = 0;
-		GLuint positionsBuffer = 0;
+		GLuint SourceDataBuffer = 0;
+		GLuint PositionsBuffer = 0;
 		GLuint AABBSizesBuffer = 0;
 		GLuint LODInfoBuffer = 0;
 
-		FEDrawElementsIndirectCommand* indirectDrawsInfo;
-		GLuint indirectDrawInfoBuffer = 0;
+		FEDrawElementsIndirectCommand* IndirectDrawsInfo;
+		GLuint IndirectDrawInfoBuffer = 0;
 
-		FEAABB allInstancesAABB;
-		FEPrefab* lastFramePrefab = nullptr;
+		FEAABB AllInstancesAABB;
+		FEPrefab* LastFramePrefab = nullptr;
 
-		std::vector<glm::mat4> instancedMatrices;
-		std::vector<glm::mat4> transformedInstancedMatrices;
-		std::vector<float> instancedAABBSizes;
+		std::vector<glm::mat4> InstancedMatrices;
+		std::vector<glm::mat4> TransformedInstancedMatrices;
+		std::vector<float> InstancedAABBSizes;
 	};
 
 	class FEEntityInstanced : public FEEntity
@@ -94,77 +94,77 @@ namespace FocalEngine
 		friend FETerrain;
 		friend FEScene;
 	public:
-		FEEntityInstanced(FEPrefab* prefab, std::string Name);
+		FEEntityInstanced(FEPrefab* Prefab, std::string Name);
 		~FEEntityInstanced();
 
-		bool populate(FESpawnInfo spawnInfo);
-		void render(int subGameModel);
-		void renderOnlyBillbords(glm::vec3 cameraPosition);
+		bool Populate(FESpawnInfo SpawnInfo);
+		void Render(int SubGameModel);
+		void RenderOnlyBillbords(glm::vec3 CameraPosition);
 
-		FEAABB getAABB() final;
-		void clear();
+		FEAABB GetAABB() final;
+		void Clear();
 
-		size_t instanceCount = 0;
+		size_t InstanceCount = 0;
 
-		int getInstanceCount();
+		int GetInstanceCount();
 
-		FETerrain* getSnappedToTerrain();
-		int getTerrainLayer();
+		FETerrain* GetSnappedToTerrain();
+		int GetTerrainLayer();
 
-		float getMinimalLayerIntensity();
-		void setMinimalLayerIntensity(float newValue);
+		float GetMinimalLayerIntensity();
+		void SetMinimalLayerIntensity(float NewValue);
 
-		FESpawnInfo spawnInfo;
+		FESpawnInfo SpawnInfo;
 
-		void updateSelectModeAABBData();
+		void UpdateSelectModeAABBData();
 
 		// used only in editor select mode
-		std::vector<FEAABB> instancedAABB;
-		bool isSelectMode();
-		void setSelectMode(bool newValue);
+		std::vector<FEAABB> InstancedAABB;
+		bool IsSelectMode();
+		void SetSelectMode(bool NewValue);
 
-		void deleteInstance(size_t instanceIndex);
-		glm::mat4 getTransformedInstancedMatrix(size_t instanceIndex);
-		void modifyInstance(size_t instanceIndex, glm::mat4 newMatrix);
-		void addInstance(glm::mat4 instanceMatrix);
+		void DeleteInstance(size_t InstanceIndex);
+		glm::mat4 GetTransformedInstancedMatrix(size_t InstanceIndex);
+		void ModifyInstance(size_t InstanceIndex, glm::mat4 NewMatrix);
+		void AddInstance(glm::mat4 InstanceMatrix);
 
-		bool tryToSnapInstance(size_t instanceIndex);
+		bool TryToSnapInstance(size_t InstanceIndex);
 
-		int getSpawnModificationCount();
-		std::vector<FEInstanceModification> getSpawnModifications();
+		int GetSpawnModificationCount();
+		std::vector<FEInstanceModification> GetSpawnModifications();
 
-		std::vector<FEInstanceModification> modifications;
+		std::vector<FEInstanceModification> Modifications;
 	private:
-		std::vector<FEGameModelInstancedRenderer*> renderers;
+		std::vector<FEGameModelInstancedRenderer*> Renderers;
 
-		bool selectionMode = false;
+		bool bSelectionMode = false;
 
-		int cullingType = FE_CULLING_LODS;
+		int CullingType = FE_CULLING_LODS;
 
-		FETerrain* terrainToSnap = nullptr;
-		int terrainLayer = -1;
-		float minLayerIntensity = 0.4f;
-		float(FETerrain::* getTerrainY)(glm::vec2);
-		float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int);
+		FETerrain* TerrainToSnap = nullptr;
+		int TerrainLayer = -1;
+		float MinLayerIntensity = 0.4f;
+		float(FETerrain::* GetTerrainY)(glm::vec2);
+		float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int);
 
-		void addInstanceInternal(glm::mat4 instanceMatrix);
-		void addInstances(glm::mat4* instanceMatrix, size_t count);
+		void AddInstanceInternal(glm::mat4 InstanceMatrix);
+		void AddInstances(const glm::mat4* InstanceMatrix, size_t Count);
 
-		void clearRenderers();
-		void initRender(int index);
+		void ClearRenderers();
+		void InitRender(int Index);
 
-		void updateBuffers();
-		void updateMatrices();
+		void UpdateBuffers();
+		void UpdateMatrices();
 
-		void initializeGPUCulling();
+		void InitializeGPUCulling();
 
-		void snapToTerrain(FETerrain* terrain, float(FETerrain::* getTerrainY)(glm::vec2));
-		void unSnapFromTerrain();
+		void SnapToTerrain(FETerrain* Terrain, float(FETerrain::* GetTerrainY)(glm::vec2));
+		void UnSnapFromTerrain();
 
-		void connectToTerrainLayer(FETerrain* terrain, int layerIndex, float(FETerrain::* getTerrainLayerIntensity)(glm::vec2, int));
-		void unConnectFromTerrainLayer();
+		void ConnectToTerrainLayer(FETerrain* Terrain, int LayerIndex, float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int));
+		void UnConnectFromTerrainLayer();
 
-		void checkDirtyFlag(int subGameModel);
+		void CheckDirtyFlag(int SubGameModel);
 	};
 }
 

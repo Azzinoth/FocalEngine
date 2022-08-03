@@ -13,216 +13,216 @@ class WindowsManager
 public:
 	SINGLETON_PUBLIC_PART(WindowsManager)
 
-	void registerWindow(FEImGuiWindow* window);
-	void registerPopup(ImGuiModalPopup* popup);
+	void RegisterWindow(FEImGuiWindow* Window);
+	void RegisterPopup(ImGuiModalPopup* Popup);
 
-	bool isRegisteredWindowWithCaption(std::string caption);
-	FEImGuiWindow* getWindowByCaption(std::string caption);
+	bool IsRegisteredWindowWithCaption(std::string Caption) const;
+	FEImGuiWindow* GetWindowByCaption(std::string Caption) const;
 
-	void closeAllPopups();
-	void closeAllWindows();
+	void CloseAllPopups() const;
+	void CloseAllWindows() const;
 
-	void renderAllWindows();
+	void RenderAllWindows() const;
 private:
 	SINGLETON_PRIVATE_PART(WindowsManager)
 
-	std::vector<ImGuiModalPopup*> popUps;
-	std::vector<FEImGuiWindow*> windows;
+	std::vector<ImGuiModalPopup*> PopUps;
+	std::vector<FEImGuiWindow*> Windows;
 };
 
-#define IMGUI_WINDOW_MANAGER WindowsManager::getInstance()
+#define FE_IMGUI_WINDOW_MANAGER WindowsManager::getInstance()
 
 class ImGuiModalPopup
 {
 	friend WindowsManager;
 protected:
-	bool shouldOpen;
-	bool opened;
-	std::string popupCaption;
+	bool bShouldOpen;
+	bool bOpened;
+	std::string PopupCaption;
 	ImGuiModalPopup();
 public:
-	virtual void show();
-	virtual void close();
-	virtual void render();
-	bool isOpened();
+	virtual void Show();
+	virtual void Close();
+	virtual void Render();
+	bool IsOpened() const;
 };
 
 class ImGuiButton
 {
 	static const int BUTTON_CAPTION_SIZE = 512;
 protected:
-	char caption[BUTTON_CAPTION_SIZE];
-	ImVec2 position = ImVec2(-1.0f, -1.0f);
-	ImVec2 size = ImVec2(120.0f, 0.0f);
+	char Caption[BUTTON_CAPTION_SIZE];
+	ImVec2 Position = ImVec2(-1.0f, -1.0f);
+	ImVec2 Size = ImVec2(120.0f, 0.0f);
 
-	ImVec4 defaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-	ImVec4 hoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
-	ImVec4 activeColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+	ImVec4 DefaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+	ImVec4 HoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
+	ImVec4 ActiveColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
 
-	bool hovered = false;
-	bool wasClicked = false;
-	void renderBegin();
-	void renderEnd();
+	bool bHovered = false;
+	bool bWasClicked = false;
+	void RenderBegin();
+	void RenderEnd();
 public:
-	ImGuiButton(std::string caption);
-	void render();
+	ImGuiButton(std::string Caption);
+	void Render();
 
-	void setCaption(std::string newCaption);
+	void SetCaption(std::string NewCaption);
 
-	ImVec4 getDefaultColor();
-	void setDefaultColor(ImVec4 newDefaultColor);
+	ImVec4 GetDefaultColor() const;
+	void SetDefaultColor(ImVec4 NewDefaultColor);
 
-	ImVec4 getHoveredColor();
-	void setHoveredColor(ImVec4 newHoveredColor);
+	ImVec4 GetHoveredColor() const;
+	void SetHoveredColor(ImVec4 NewHoveredColor);
 
-	ImVec4 getActiveColor();
-	void setActiveColor(ImVec4 newActiveColor);
+	ImVec4 GetActiveColor() const;
+	void SetActiveColor(ImVec4 NewActiveColor);
 
-	ImVec2 getPosition();
-	void setPosition(ImVec2 newPosition);
+	ImVec2 GetPosition() const;
+	void SetPosition(ImVec2 NewPosition);
 
-	ImVec2 getSize();
-	void setSize(ImVec2 newSize);
+	ImVec2 GetSize() const;
+	void SetSize(ImVec2 NewSize);
 
-	bool getWasClicked();
+	bool IsClicked() const;
 };
 
 class ImGuiImageButton
 {
 protected:
-	ImVec2 position = ImVec2(-1.0f, -1.0f);
-	ImVec2 size = ImVec2(32.0f, 32.0f);
-	ImVec2 uv0 = ImVec2(0.0f, 0.0f);
-	ImVec2 uv1 = ImVec2(1.0f, 1.0f);
-	int framePadding = 4;
-	ImVec4 backgroundColor = ImColor(0.0f, 0.0f, 0.0f, 0.0f);
-	ImVec4 tintColor = ImColor(1.0f, 1.0f, 1.0f, 1.0f);
+	ImVec2 Position = ImVec2(-1.0f, -1.0f);
+	ImVec2 Size = ImVec2(32.0f, 32.0f);
+	ImVec2 UV0 = ImVec2(0.0f, 0.0f);
+	ImVec2 UV1 = ImVec2(1.0f, 1.0f);
+	int FramePadding = 4;
+	ImVec4 BackgroundColor = ImColor(0.0f, 0.0f, 0.0f, 0.0f);
+	ImVec4 TintColor = ImColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	ImVec4 defaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-	ImVec4 hoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
-	ImVec4 activeColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+	ImVec4 DefaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+	ImVec4 HoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
+	ImVec4 ActiveColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
 
-	FETexture* texture = nullptr;
+	FETexture* Texture = nullptr;
 
-	bool hovered = false;
-	bool wasClicked = false;
-	void renderBegin();
-	void renderEnd();
+	bool bHovered = false;
+	bool bWasClicked = false;
+	void RenderBegin();
+	void RenderEnd();
 public:
-	ImGuiImageButton(FETexture* texture);
-	void render();
+	ImGuiImageButton(FETexture* Texture);
+	void Render();
 
-	ImVec4 getDefaultColor();
-	void setDefaultColor(ImVec4 newDefaultColor);
+	ImVec4 GetDefaultColor() const;
+	void SetDefaultColor(ImVec4 NewDefaultColor);
 
-	ImVec4 getHoveredColor();
-	void setHoveredColor(ImVec4 newHoveredColor);
+	ImVec4 GetHoveredColor() const;
+	void SetHoveredColor(ImVec4 NewHoveredColor);
 
-	ImVec4 getActiveColor();
-	void setActiveColor(ImVec4 newActiveColor);
+	ImVec4 GetActiveColor() const;
+	void SetActiveColor(ImVec4 NewActiveColor);
 
-	ImVec2 getPosition();
-	void setPosition(ImVec2 newPosition);
+	ImVec2 GetPosition() const;
+	void SetPosition(ImVec2 NewPosition);
 
-	ImVec2 getSize();
-	void setSize(ImVec2 newSize);
+	ImVec2 GetSize() const;
+	void SetSize(ImVec2 NewSize);
 
-	ImVec2 getUV0();
-	void setUV0(ImVec2 newUV0);
+	ImVec2 GetUV0() const;
+	void SetUV0(ImVec2 NewValue);
 
-	ImVec2 getUV1();
-	void setUV1(ImVec2 newUV1);
+	ImVec2 GetUV1() const;
+	void SetUV1(ImVec2 NewValue);
 	
-	int getFramePadding();
-	void setFramePadding(int newFramePadding);
+	int GetFramePadding() const;
+	void SetFramePadding(int NewFramePadding);
 
-	ImVec4 getBackgroundColor();
-	void setBackgroundColor(ImVec4 newBackgroundColor);
+	ImVec4 GetBackgroundColor() const;
+	void SetBackgroundColor(ImVec4 NewBackgroundColor);
 
-	ImVec4 getTintColor();
-	void setTintColor(ImVec4 newTintColor);
+	ImVec4 GetTintColor() const;
+	void SetTintColor(ImVec4 NewTintColor);
 
-	FETexture* getTexture();
-	void setTexture(FETexture* newTexture);
+	FETexture* GetTexture() const;
+	void SetTexture(FETexture* NewTexture);
 
-	bool isHovered();
+	bool IsHovered() const;
 
-	bool getWasClicked();
+	bool IsClicked() const;
 };
 
 class FEImGuiWindow
 {
 	friend WindowsManager;
 protected:
-	bool visible;
-	char caption[512];
-	ImVec2 position;
-	ImVec2 size;
-	int flags = ImGuiWindowFlags_None;
-	bool wasClosedLastFrame = false;
+	bool bVisible;
+	char Caption[512];
+	ImVec2 Position;
+	ImVec2 Size;
+	int Flags = ImGuiWindowFlags_None;
+	bool bWasClosedLastFrame = false;
 	FEImGuiWindow();
-	ImGuiWindow* window = nullptr;
+	ImGuiWindow* Window = nullptr;
 public:
 	virtual ~FEImGuiWindow();
-	virtual void show();
-	virtual void close();
-	virtual void render();
-	virtual void onRenderEnd();
+	virtual void Show();
+	virtual void Close();
+	virtual void Render();
+	virtual void OnRenderEnd();
 
-	bool isVisible();
-	void setVisible(bool newValue);
+	bool IsVisible() const;
+	void SetVisible(bool NewValue);
 
-	bool isMouseHovered();
+	bool IsMouseHovered() const;
 
-	virtual void setCaption(std::string newCaption);
+	virtual void SetCaption(std::string NewCaption);
 };
 
 class FEArrowScroller
 {
-	bool horizontal;
+	bool bHorizontal;
 
-	ImVec2 position;
-	bool selected;
-	bool mouseHover;
+	ImVec2 Position;
+	bool bSelected;
+	bool bMouseHover;
 
-	bool windowFlagWasAdded;
-	int originalWindowFlags;
+	bool bWindowFlagWasAdded;
+	int OriginalWindowFlags;
 
-	RECT area;
-	float size;
+	RECT Area;
+	float Size;
 
-	ImColor color;
-	ImColor selectedColor;
+	ImColor Color;
+	ImColor SelectedColor;
 
-	float lastFrameMouseX;
-	float lastFrameMouseY;
-	float lastFrameDelta;
+	float LastFrameMouseX;
+	float LastFrameMouseY;
+	float LastFrameDelta;
 
-	ImVec2 availableRange;
+	ImVec2 AvailableRange;
 public:
 	FEArrowScroller(bool Horizontal = true);
 
-	ImVec2 getPosition();
-	void setPosition(ImVec2 newPosition);
+	ImVec2 GetPosition() const;
+	void SetPosition(ImVec2 NewPosition);
 
-	float getSize();
-	void setSize(float newValue);
+	float GetSize() const;
+	void SetSize(float NewValue);
 
-	bool isSelected();
-	void setSelected(bool newValue);
+	bool IsSelected() const;
+	void SetSelected(bool NewValue);
 
-	ImColor getColor();
-	void setColor(ImColor newValue);
+	ImColor GetColor() const;
+	void SetColor(ImColor NewValue);
 
-	ImColor getSelectedColor();
-	void setSelectedColor(ImColor newValue);
+	ImColor GetSelectedColor() const;
+	void SetSelectedColor(ImColor NewValue);
 
-	float getLastFrameDelta();
+	float GetLastFrameDelta() const;
 
-	void render();
+	void Render();
 
-	void setAvailableRange(ImVec2 newValue);
-	void liftRangeRestrictions();
+	void SetAvailableRange(ImVec2 NewValue);
+	void LiftRangeRestrictions();
 };
 
 class FERangeConfigurator;
@@ -230,130 +230,129 @@ struct FERangeRecord
 {
 	friend FERangeConfigurator;
 private:
-	float rangeSpan;
-	std::string caption;
-	std::string toolTipText;
-	ImColor color;
+	float RangeSpan;
+	std::string Caption;
+	std::string ToolTipText;
+	ImColor Color;
 
-	RECT rect;
-	RECT scrollRect;
+	RECT Rect;
+	RECT ScrollRect;
 
-	FEArrowScroller scroller;
+	FEArrowScroller Scroller;
 public:
-	float getRangeSpan();
+	float GetRangeSpan() const;
 
-	std::string getCaption();
-	void setCaption(std::string newValue);
+	std::string GetCaption();
+	void SetCaption(std::string NewValue);
 
-	std::string getToolTipText();
-	void setToolTipText(std::string newValue);
+	std::string GetToolTipText();
+	void SetToolTipText(std::string NewValue);
 
-	ImColor getColor();
-	void setColor(ImColor newValue);
+	ImColor GetColor() const;
+	void SetColor(ImColor NewValue);
 };
 
 class FERangeConfigurator
 {
-	bool visible;
-	ImVec2 position;
-	ImVec2 size;
-	RECT rect;
+	bool bVisible;
+	ImVec2 Position;
+	ImVec2 Size;
+	RECT Rect;
 
-	std::vector<FERangeRecord> ranges;
-	float screenX, screenY;
+	std::vector<FERangeRecord> Ranges;
+	float ScreenX, ScreenY;
 
-	void recalculateRangeInfo();
-	void normalizeRanges();
-	void inputCalculations();
+	void RecalculateRangeInfo();
+	void NormalizeRanges();
+	void InputCalculations();
 public:
 	FERangeConfigurator();
 
-	ImVec2 getPosition();
-	void setPosition(ImVec2 newPosition);
+	ImVec2 GetPosition() const;
+	void SetPosition(ImVec2 NewPosition);
 
-	ImVec2 getSize();
-	void setSize(ImVec2 newSize);
+	ImVec2 GetSize() const;
+	void SetSize(ImVec2 NewSize);
 
-	bool isVisible();
-	void render();
+	bool IsVisible() const;
+	void Render();
 
-	int getRangesCount();
+	int GetRangesCount() const;
 
-	bool addRange(float rangeSpan, std::string caption, std::string toolTipText, ImColor color);
-	void deleteRange(size_t index);
+	bool AddRange(float RangeSpan, std::string Caption, std::string ToolTipText, ImColor Color);
+	void DeleteRange(size_t Index);
 
-	std::vector<FERangeRecord> getRangesRecordsCopy();
-	FERangeRecord* getRangesRecord(size_t index);
+	std::vector<FERangeRecord> GetRangesRecordsCopy();
+	FERangeRecord* GetRangesRecord(size_t Index);
 
-	void clear();
+	void Clear();
 };
 
-void showToolTip(const char* text);
-static ImVec4 defaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
-static ImVec4 hoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
-static ImVec4 activeColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
-static ImVec4 selectedStyle = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
-void setSelectedStyle(ImGuiImageButton* button);
-void setDefaultStyle(ImGuiImageButton* button);
+void ShowToolTip(const char* Text);
+static ImVec4 DefaultColor = ImVec4(0.5f, 0.5f, 0.5f, 1.0f);
+static ImVec4 HoveredColor = ImVec4(0.95f, 0.90f, 0.0f, 1.0f);
+static ImVec4 ActiveColor = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+static ImVec4 SelectedStyle = ImVec4(0.1f, 1.0f, 0.1f, 1.0f);
+void SetSelectedStyle(ImGuiImageButton* Button);
+void SetDefaultStyle(ImGuiImageButton* Button);
 
-class justTextWindow : public FEImGuiWindow
+class JustTextWindow : public FEImGuiWindow
 {
-	TextEditor editor;
-	ImGuiButton* okButton = nullptr;
+	TextEditor Editor;
+	ImGuiButton* OkButton = nullptr;
 public:
-	justTextWindow()
+	JustTextWindow()
 	{
-		flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
-		editor.SetShowWhitespaces(false);
-		editor.SetReadOnly(true);
-		size = ImVec2(800, 600);
-		okButton = new ImGuiButton("OK");
-		editor.SetPalette(TextEditor::GetLightPalette());
+		Flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar;
+		Editor.SetShowWhitespaces(false);
+		Editor.SetReadOnly(true);
+		Size = ImVec2(800, 600);
+		OkButton = new ImGuiButton("OK");
+		Editor.SetPalette(TextEditor::GetLightPalette());
 	}
 
-	~justTextWindow()
+	~JustTextWindow()
 	{
-		if (okButton != nullptr)
-			delete okButton;
+		delete OkButton;
 	}
 
-	void show(std::string text, std::string caption)
+	void Show(const std::string Text, std::string Caption)
 	{
-		editor.SetText(text);
+		Editor.SetText(Text);
 
-		if (caption.size() == 0)
-			caption = "Text view";
+		if (Caption.empty())
+			Caption = "Text view";
 
-		strcpy_s(this->caption, caption.size() + 1, caption.c_str());
-		FEImGuiWindow::show();
+		strcpy_s(this->Caption, Caption.size() + 1, Caption.c_str());
+		FEImGuiWindow::Show();
 	}
 
-	void render() override
+	void Render() override
 	{
-		FEImGuiWindow::render();
+		FEImGuiWindow::Render();
 
-		if (!isVisible())
+		if (!IsVisible())
 			return;
 
-		okButton->render();
-		if (okButton->getWasClicked())
+		OkButton->Render();
+		if (OkButton->IsClicked())
 		{
-			FEImGuiWindow::close();
+			FEImGuiWindow::Close();
 		}
 
-		editor.Render("TextEditor");
-		FEImGuiWindow::onRenderEnd();
+		Editor.Render("TextEditor");
+		FEImGuiWindow::OnRenderEnd();
 	}
 };
-static justTextWindow justTextWindowObj;
+static JustTextWindow JustTextWindowObj;
 
-class messagePopUp : public ImGuiModalPopup
+class MessagePopUp : public ImGuiModalPopup
 {
-	SINGLETON_PRIVATE_PART(messagePopUp)
-	std::string message;
+	SINGLETON_PRIVATE_PART(MessagePopUp)
+	std::string Message;
 public:
-	SINGLETON_PUBLIC_PART(messagePopUp)
+	SINGLETON_PUBLIC_PART(MessagePopUp)
 
-	void show(std::string newWindowCaption, std::string messageToShow);
-	void render() override;
+	void Show(std::string NewWindowCaption, std::string MessageToShow);
+	void Render() override;
 };

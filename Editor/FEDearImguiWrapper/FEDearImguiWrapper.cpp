@@ -1,773 +1,773 @@
 #include "FEDearImguiWrapper.h"
 
-WindowsManager* WindowsManager::_instance = nullptr;
+WindowsManager* WindowsManager::Instance = nullptr;
 
 ImGuiModalPopup::ImGuiModalPopup()
 {
-	popupCaption = "";
-	shouldOpen = false;
-	opened = false;
-	WindowsManager::getInstance().registerPopup(this);
+	PopupCaption = "";
+	bShouldOpen = false;
+	bOpened = false;
+	WindowsManager::getInstance().RegisterPopup(this);
 }
 
-void ImGuiModalPopup::show()
+void ImGuiModalPopup::Show()
 {
-	shouldOpen = true;
-	opened = true;
+	bShouldOpen = true;
+	bOpened = true;
 }
 
-void ImGuiModalPopup::render()
+void ImGuiModalPopup::Render()
 {
-	if (shouldOpen)
+	if (bShouldOpen)
 	{
-		ImGui::OpenPopup(popupCaption.c_str());
-		shouldOpen = false;
+		ImGui::OpenPopup(PopupCaption.c_str());
+		bShouldOpen = false;
 	}
 }
 
-bool ImGuiModalPopup::isOpened()
+bool ImGuiModalPopup::IsOpened() const
 {
-	return opened;
+	return bOpened;
 }
 
-void ImGuiModalPopup::close()
+void ImGuiModalPopup::Close()
 {
-	opened = false;
+	bOpened = false;
 	ImGui::CloseCurrentPopup();
 }
 
-ImGuiButton::ImGuiButton(std::string caption)
+ImGuiButton::ImGuiButton(std::string Caption)
 {
-	if (caption.size() + 1 > BUTTON_CAPTION_SIZE)
-		caption.erase(caption.begin() + BUTTON_CAPTION_SIZE - 1, caption.end() - (BUTTON_CAPTION_SIZE + 1));
+	if (Caption.size() + 1 > BUTTON_CAPTION_SIZE)
+		Caption.erase(Caption.begin() + BUTTON_CAPTION_SIZE - 1, Caption.end() - (BUTTON_CAPTION_SIZE + 1));
 	
-	strcpy_s(this->caption, caption.size() + 1, caption.c_str());
+	strcpy_s(this->Caption, Caption.size() + 1, Caption.c_str());
 }
 
-void ImGuiButton::setCaption(std::string newCaption)
+void ImGuiButton::SetCaption(std::string NewCaption)
 {
-	if (newCaption.size() + 1 > BUTTON_CAPTION_SIZE)
-		newCaption.erase(newCaption.begin() + BUTTON_CAPTION_SIZE - 1, newCaption.end() - (BUTTON_CAPTION_SIZE + 1));
+	if (NewCaption.size() + 1 > BUTTON_CAPTION_SIZE)
+		NewCaption.erase(NewCaption.begin() + BUTTON_CAPTION_SIZE - 1, NewCaption.end() - (BUTTON_CAPTION_SIZE + 1));
 
-	strcpy_s(this->caption, newCaption.size() + 1, newCaption.c_str());
+	strcpy_s(this->Caption, NewCaption.size() + 1, NewCaption.c_str());
 }
 
-ImVec2 ImGuiButton::getPosition()
+ImVec2 ImGuiButton::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-void ImGuiButton::setPosition(ImVec2 newPosition)
+void ImGuiButton::SetPosition(const ImVec2 NewPosition)
 {
-	position = newPosition;
+	Position = NewPosition;
 }
 
-ImVec2 ImGuiButton::getSize()
+ImVec2 ImGuiButton::GetSize() const
 {
-	return size;
+	return Size;
 }
 
-void ImGuiButton::setSize(ImVec2 newSize)
+void ImGuiButton::SetSize(const ImVec2 NewSize)
 {
-	size = newSize;
+	Size = NewSize;
 }
 
-ImVec4 ImGuiButton::getDefaultColor()
+ImVec4 ImGuiButton::GetDefaultColor() const
 {
-	return defaultColor;
+	return DefaultColor;
 }
 
-void ImGuiButton::setDefaultColor(ImVec4 newDefaultColor)
+void ImGuiButton::SetDefaultColor(const ImVec4 NewDefaultColor)
 {
-	defaultColor = newDefaultColor;
+	DefaultColor = NewDefaultColor;
 }
 
-ImVec4 ImGuiButton::getHoveredColor()
+ImVec4 ImGuiButton::GetHoveredColor() const
 {
-	return hoveredColor;
+	return HoveredColor;
 }
 
-void ImGuiButton::setHoveredColor(ImVec4 newHoveredColor)
+void ImGuiButton::SetHoveredColor(const ImVec4 NewHoveredColor)
 {
-	hoveredColor = newHoveredColor;
+	HoveredColor = NewHoveredColor;
 }
 
-ImVec4 ImGuiButton::getActiveColor()
+ImVec4 ImGuiButton::GetActiveColor() const
 {
-	return activeColor;
+	return ActiveColor;
 }
 
-void ImGuiButton::setActiveColor(ImVec4 newActiveColor)
+void ImGuiButton::SetActiveColor(ImVec4 NewActiveColor)
 {
-	activeColor = newActiveColor;
+	ActiveColor = NewActiveColor;
 }
 
-void ImGuiButton::renderBegin()
+void ImGuiButton::RenderBegin()
 {
-	wasClicked = false;
+	bWasClicked = false;
 
-	ImGui::PushStyleColor(ImGuiCol_Button, defaultColor);
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+	ImGui::PushStyleColor(ImGuiCol_Button, DefaultColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoveredColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
 
-	if (position.x != -1.0f)
-		ImGui::SetCursorPosX(position.x);
+	if (Position.x != -1.0f)
+		ImGui::SetCursorPosX(Position.x);
 	
-	if (position.y != -1.0f)
-		ImGui::SetCursorPosY(position.y);
+	if (Position.y != -1.0f)
+		ImGui::SetCursorPosY(Position.y);
 	
-	hovered = false;
+	bHovered = false;
 	
-	ImGui::Button(caption, size);
+	ImGui::Button(Caption, Size);
 
 	// flag important for drag and drop functionality
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
-		hovered = true;
+		bHovered = true;
 
-	if (ImGui::IsMouseClicked(0) && hovered)
-		wasClicked = true;
+	if (ImGui::IsMouseClicked(0) && bHovered)
+		bWasClicked = true;
 }
 
-bool ImGuiButton::getWasClicked()
+bool ImGuiButton::IsClicked() const
 {
-	return wasClicked;
+	return bWasClicked;
 }
 
-void ImGuiButton::renderEnd()
+void ImGuiButton::RenderEnd()
 {
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 }
 
-void ImGuiButton::render()
+void ImGuiButton::Render()
 {
-	renderBegin();
-	renderEnd();
+	RenderBegin();
+	RenderEnd();
 }
 
-ImGuiImageButton::ImGuiImageButton(FETexture* texture)
+ImGuiImageButton::ImGuiImageButton(FETexture* Texture)
 {
-	this->texture = texture;
+	this->Texture = Texture;
 }
 
-ImVec2 ImGuiImageButton::getPosition()
+ImVec2 ImGuiImageButton::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-void ImGuiImageButton::setPosition(ImVec2 newPosition)
+void ImGuiImageButton::SetPosition(const ImVec2 NewPosition)
 {
-	position = newPosition;
+	Position = NewPosition;
 }
 
-ImVec2 ImGuiImageButton::getSize()
+ImVec2 ImGuiImageButton::GetSize() const
 {
-	return size;
+	return Size;
 }
 
-void ImGuiImageButton::setSize(ImVec2 newSize)
+void ImGuiImageButton::SetSize(const ImVec2 NewSize)
 {
-	size = newSize;
+	Size = NewSize;
 }
 
-ImVec4 ImGuiImageButton::getDefaultColor()
+ImVec4 ImGuiImageButton::GetDefaultColor() const
 {
-	return defaultColor;
+	return DefaultColor;
 }
 
-void ImGuiImageButton::setDefaultColor(ImVec4 newDefaultColor)
+void ImGuiImageButton::SetDefaultColor(const ImVec4 NewDefaultColor)
 {
-	defaultColor = newDefaultColor;
+	DefaultColor = NewDefaultColor;
 }
 
-ImVec4 ImGuiImageButton::getHoveredColor()
+ImVec4 ImGuiImageButton::GetHoveredColor() const
 {
-	return hoveredColor;
+	return HoveredColor;
 }
 
-void ImGuiImageButton::setHoveredColor(ImVec4 newHoveredColor)
+void ImGuiImageButton::SetHoveredColor(const ImVec4 NewHoveredColor)
 {
-	hoveredColor = newHoveredColor;
+	HoveredColor = NewHoveredColor;
 }
 
-ImVec4 ImGuiImageButton::getActiveColor()
+ImVec4 ImGuiImageButton::GetActiveColor() const
 {
-	return activeColor;
+	return ActiveColor;
 }
 
-void ImGuiImageButton::setActiveColor(ImVec4 newActiveColor)
+void ImGuiImageButton::SetActiveColor(const ImVec4 NewActiveColor)
 {
-	activeColor = newActiveColor;
+	ActiveColor = NewActiveColor;
 }
 
-ImVec2 ImGuiImageButton::getUV0()
+ImVec2 ImGuiImageButton::GetUV0() const
 {
-	return uv0;
+	return UV0;
 }
 
-void ImGuiImageButton::setUV0(ImVec2 newUV0)
+void ImGuiImageButton::SetUV0(const ImVec2 NewValue)
 {
-	uv0 = newUV0;
+	UV0 = NewValue;
 }
 
-ImVec2 ImGuiImageButton::getUV1()
+ImVec2 ImGuiImageButton::GetUV1() const
 {
-	return uv1;
+	return UV1;
 }
 
-void ImGuiImageButton::setUV1(ImVec2 newUV1)
+void ImGuiImageButton::SetUV1(const ImVec2 NewValue)
 {
-	uv1 = newUV1;
+	UV1 = NewValue;
 }
 
-int ImGuiImageButton::getFramePadding()
+int ImGuiImageButton::GetFramePadding() const
 {
-	return framePadding;
+	return FramePadding;
 }
 
-void ImGuiImageButton::setFramePadding(int newFramePadding)
+void ImGuiImageButton::SetFramePadding(int NewFramePadding)
 {
-	if (newFramePadding < 0)
-		newFramePadding = 0;
-	framePadding = newFramePadding;
+	if (NewFramePadding < 0)
+		NewFramePadding = 0;
+	FramePadding = NewFramePadding;
 }
 
-ImVec4 ImGuiImageButton::getBackgroundColor()
+ImVec4 ImGuiImageButton::GetBackgroundColor() const
 {
-	return backgroundColor;
+	return BackgroundColor;
 }
 
-void ImGuiImageButton::setBackgroundColor(ImVec4 newBackgroundColor)
+void ImGuiImageButton::SetBackgroundColor(const ImVec4 NewBackgroundColor)
 {
-	backgroundColor = newBackgroundColor;
+	BackgroundColor = NewBackgroundColor;
 }
 
-ImVec4 ImGuiImageButton::getTintColor()
+ImVec4 ImGuiImageButton::GetTintColor() const
 {
-	return tintColor;
+	return TintColor;
 }
 
-void ImGuiImageButton::setTintColor(ImVec4 newTintColor)
+void ImGuiImageButton::SetTintColor(const ImVec4 NewTintColor)
 {
-	tintColor = newTintColor;
+	TintColor = NewTintColor;
 }
 
-FETexture* ImGuiImageButton::getTexture()
+FETexture* ImGuiImageButton::GetTexture() const
 {
-	return texture;
+	return Texture;
 }
 
-void ImGuiImageButton::setTexture(FETexture* newTexture)
+void ImGuiImageButton::SetTexture(FETexture* NewTexture)
 {
-	texture = newTexture;
+	Texture = NewTexture;
 }
 
-bool ImGuiImageButton::isHovered()
+bool ImGuiImageButton::IsHovered() const
 {
-	return hovered;
+	return bHovered;
 }
 
-void ImGuiImageButton::renderBegin()
+void ImGuiImageButton::RenderBegin()
 {
-	wasClicked = false;
+	bWasClicked = false;
 
-	ImGui::PushStyleColor(ImGuiCol_Button, defaultColor);
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hoveredColor);
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, activeColor);
+	ImGui::PushStyleColor(ImGuiCol_Button, DefaultColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, HoveredColor);
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ActiveColor);
 
-	if (position.x != -1.0f)
-		ImGui::SetCursorPosX(position.x);
+	if (Position.x != -1.0f)
+		ImGui::SetCursorPosX(Position.x);
 
-	if (position.y != -1.0f)
-		ImGui::SetCursorPosY(position.y);
+	if (Position.y != -1.0f)
+		ImGui::SetCursorPosY(Position.y);
 
-	hovered = false;
+	bHovered = false;
 
-	ImGui::ImageButton((void*)(intptr_t)texture->getTextureID(), size, uv0, uv1, framePadding, backgroundColor, tintColor);
+	ImGui::ImageButton((void*)static_cast<intptr_t>(Texture->GetTextureID()), Size, UV0, UV1, FramePadding, BackgroundColor, TintColor);
 
 	// flag important for drag and drop functionality
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
-		hovered = true;
+		bHovered = true;
 
-	if (ImGui::IsMouseClicked(0) && hovered)
-		wasClicked = true;
+	if (ImGui::IsMouseClicked(0) && bHovered)
+		bWasClicked = true;
 }
 
-bool ImGuiImageButton::getWasClicked()
+bool ImGuiImageButton::IsClicked() const
 {
-	return wasClicked;
+	return bWasClicked;
 }
 
-void ImGuiImageButton::renderEnd()
+void ImGuiImageButton::RenderEnd()
 {
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleColor();
 }
 
-void ImGuiImageButton::render()
+void ImGuiImageButton::Render()
 {
-	renderBegin();
-	renderEnd();
+	RenderBegin();
+	RenderEnd();
 }
 
 FEImGuiWindow::FEImGuiWindow()
 {
-	position = ImVec2(0.0f, 0.0f);
-	size = ImVec2(100.0f, 100.0f);
-	visible = false;
-	WindowsManager::getInstance().registerWindow(this);
+	Position = ImVec2(0.0f, 0.0f);
+	Size = ImVec2(100.0f, 100.0f);
+	bVisible = false;
+	WindowsManager::getInstance().RegisterWindow(this);
 }
 
 FEImGuiWindow::~FEImGuiWindow()
 {
 }
 
-void FEImGuiWindow::show()
+void FEImGuiWindow::Show()
 {
-	visible = true;
-	wasClosedLastFrame = true;
+	bVisible = true;
+	bWasClosedLastFrame = true;
 }
 
-bool FEImGuiWindow::isMouseHovered()
+bool FEImGuiWindow::IsMouseHovered() const
 {
-	if (window == nullptr)
+	if (Window == nullptr)
 		return false;
 
 	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr &&
-		ImGui::GetCurrentContext()->HoveredWindow == window)
+		ImGui::GetCurrentContext()->HoveredWindow == Window)
 		return true;
 
 	return false;
 }
 
-void FEImGuiWindow::render()
+void FEImGuiWindow::Render()
 {
-	if (visible)
+	if (bVisible)
 	{
-		if (wasClosedLastFrame)
+		if (bWasClosedLastFrame)
 		{
-			ImGui::SetNextWindowPos(position);
+			ImGui::SetNextWindowPos(Position);
 		}
-		ImGui::SetNextWindowSize(size);
+		ImGui::SetNextWindowSize(Size);
 
-		wasClosedLastFrame = false;
+		bWasClosedLastFrame = false;
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2);
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-		ImGui::Begin(caption, nullptr, flags);
-		window = ImGui::GetCurrentWindow();
+		ImGui::Begin(Caption, nullptr, Flags);
+		Window = ImGui::GetCurrentWindow();
 	}
 }
 
-void FEImGuiWindow::onRenderEnd()
+void FEImGuiWindow::OnRenderEnd()
 {
-	if (visible)
+	if (bVisible)
 	{
-		if (!window->Collapsed)
-			size = ImGui::GetWindowSize();
+		if (!Window->Collapsed)
+			Size = ImGui::GetWindowSize();
 		ImGui::PopStyleVar();
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 }
 
-bool FEImGuiWindow::isVisible()
+bool FEImGuiWindow::IsVisible() const
 {
-	return visible;
+	return bVisible;
 }
 
-void FEImGuiWindow::close()
+void FEImGuiWindow::Close()
 {
-	if (visible)
+	if (bVisible)
 	{
-		visible = false;
+		bVisible = false;
 		ImGui::PopStyleVar();
 		ImGui::PopStyleVar();
 		ImGui::End();
 	}
 }
 
-void FEImGuiWindow::setCaption(std::string newCaption)
+void FEImGuiWindow::SetCaption(const std::string NewCaption)
 {
-	strcpy_s(caption, newCaption.size() + 1, newCaption.c_str());
+	strcpy_s(Caption, NewCaption.size() + 1, NewCaption.c_str());
 }
 
-void FEImGuiWindow::setVisible(bool newValue)
+void FEImGuiWindow::SetVisible(bool NewValue)
 {
-	visible = newValue;
+	bVisible = NewValue;
 }
 
 WindowsManager::WindowsManager()
 {
 }
 
-void WindowsManager::registerWindow(FEImGuiWindow* window)
+void WindowsManager::RegisterWindow(FEImGuiWindow* Window)
 {
-	windows.push_back(window);
+	Windows.push_back(Window);
 }
 
-void WindowsManager::registerPopup(ImGuiModalPopup* popup)
+void WindowsManager::RegisterPopup(ImGuiModalPopup* Popup)
 {
-	popUps.push_back(popup);
+	PopUps.push_back(Popup);
 }
 
-void WindowsManager::closeAllPopups()
+void WindowsManager::CloseAllPopups() const
 {
-	for (size_t i = 0; i < popUps.size(); i++)
+	for (size_t i = 0; i < PopUps.size(); i++)
 	{
-		popUps[i]->close();
+		PopUps[i]->Close();
 	}
 }
 
-void WindowsManager::closeAllWindows()
+void WindowsManager::CloseAllWindows() const
 {
-	for (size_t i = 0; i < windows.size(); i++)
+	for (size_t i = 0; i < Windows.size(); i++)
 	{
-		windows[i]->visible = false;
+		Windows[i]->bVisible = false;
 	}
 }
 
-void WindowsManager::renderAllWindows()
+void WindowsManager::RenderAllWindows() const
 {
-	for (size_t i = 0; i < windows.size(); i++)
+	for (size_t i = 0; i < Windows.size(); i++)
 	{
-		windows[i]->render();
+		Windows[i]->Render();
 	}
 }
 
-bool WindowsManager::isRegisteredWindowWithCaption(std::string caption)
+bool WindowsManager::IsRegisteredWindowWithCaption(const std::string Caption) const
 {
-	for (size_t i = 0; i < windows.size(); i++)
+	for (size_t i = 0; i < Windows.size(); i++)
 	{
-		if (windows[i]->caption == caption)
+		if (Windows[i]->Caption == Caption)
 			return true;
 	}
 
 	return false;
 }
 
-FEImGuiWindow* WindowsManager::getWindowByCaption(std::string caption)
+FEImGuiWindow* WindowsManager::GetWindowByCaption(const std::string Caption) const
 {
-	for (size_t i = 0; i < windows.size(); i++)
+	for (size_t i = 0; i < Windows.size(); i++)
 	{
-		if (windows[i]->caption == caption)
-			return windows[i];
+		if (Windows[i]->Caption == Caption)
+			return Windows[i];
 	}
 
 	return nullptr;
 }
 
-void showToolTip(const char* text)
+void ShowToolTip(const char* Text)
 {
 	if (ImGui::IsItemHovered())
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		ImGui::TextUnformatted(text);
+		ImGui::TextUnformatted(Text);
 		ImGui::PopTextWrapPos();
 		ImGui::EndTooltip();
 	}
 }
 
-void setSelectedStyle(ImGuiImageButton* button)
+void SetSelectedStyle(ImGuiImageButton* Button)
 {
-	button->setDefaultColor(selectedStyle);
-	button->setHoveredColor(selectedStyle);
-	button->setActiveColor(selectedStyle);
+	Button->SetDefaultColor(SelectedStyle);
+	Button->SetHoveredColor(SelectedStyle);
+	Button->SetActiveColor(SelectedStyle);
 }
 
-void setDefaultStyle(ImGuiImageButton* button)
+void SetDefaultStyle(ImGuiImageButton* Button)
 {
-	button->setDefaultColor(defaultColor);
-	button->setHoveredColor(hoveredColor);
-	button->setActiveColor(activeColor);
+	Button->SetDefaultColor(DefaultColor);
+	Button->SetHoveredColor(HoveredColor);
+	Button->SetActiveColor(ActiveColor);
 }
 
-float FERangeRecord::getRangeSpan()
+float FERangeRecord::GetRangeSpan() const
 {
-	return rangeSpan;
+	return RangeSpan;
 }
 
-std::string FERangeRecord::getCaption()
+std::string FERangeRecord::GetCaption()
 {
-	return caption;
+	return Caption;
 }
 
-void FERangeRecord::setCaption(std::string newValue)
+void FERangeRecord::SetCaption(const std::string NewValue)
 {
-	caption = newValue;
+	Caption = NewValue;
 }
 
-std::string FERangeRecord::getToolTipText()
+std::string FERangeRecord::GetToolTipText()
 {
-	return toolTipText;
+	return ToolTipText;
 }
 
-void FERangeRecord::setToolTipText(std::string newValue)
+void FERangeRecord::SetToolTipText(const std::string NewValue)
 {
-	toolTipText = newValue;
+	ToolTipText = NewValue;
 }
 
-ImColor FERangeRecord::getColor()
+ImColor FERangeRecord::GetColor() const
 {
-	return color;
+	return Color;
 }
 
-void FERangeRecord::setColor(ImColor newValue)
+void FERangeRecord::SetColor(const ImColor NewValue)
 {
-	color = newValue;
+	Color = NewValue;
 }
 
 FERangeConfigurator::FERangeConfigurator()
 {
 }
 
-ImVec2 FERangeConfigurator::getPosition()
+ImVec2 FERangeConfigurator::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-void FERangeConfigurator::setPosition(ImVec2 newPosition)
+void FERangeConfigurator::SetPosition(const ImVec2 NewPosition)
 {
-	position = newPosition;
+	Position = NewPosition;
 }
 
-ImVec2 FERangeConfigurator::getSize()
+ImVec2 FERangeConfigurator::GetSize() const
 {
-	return size;
+	return Size;
 }
 
-void FERangeConfigurator::setSize(ImVec2 newSize)
+void FERangeConfigurator::SetSize(ImVec2 NewSize)
 {
-	if (newSize.x < 100)
-		newSize.x = 100;
-	size = newSize;
+	if (NewSize.x < 100)
+		NewSize.x = 100;
+	Size = NewSize;
 }
 
-bool FERangeConfigurator::isVisible()
+bool FERangeConfigurator::IsVisible() const
 {
-	return visible;
+	return bVisible;
 }
 
-void FERangeConfigurator::recalculateRangeInfo()
+void FERangeConfigurator::RecalculateRangeInfo()
 {
-	for (size_t i = 0; i < ranges.size(); i++)
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
 		if (i == 0)
 		{
-			ranges[i].rect.left = LONG(position.x);
+			Ranges[i].Rect.left = static_cast<LONG>(Position.x);
 		}
 		else
 		{
-			ranges[i].rect.left = LONG(ranges[i - 1].rect.right);
+			Ranges[i].Rect.left = static_cast<LONG>(Ranges[i - 1].Rect.right);
 		}
 
-		ranges[i].rect.right = LONG(ranges[i].rect.left + size.x * ranges[i].rangeSpan);
-		ranges[i].rect.top = LONG(position.y);
-		ranges[i].rect.bottom = LONG(ranges[i].rect.top + size.y);
+		Ranges[i].Rect.right = static_cast<LONG>(Ranges[i].Rect.left + Size.x * Ranges[i].RangeSpan);
+		Ranges[i].Rect.top = static_cast<LONG>(Position.y);
+		Ranges[i].Rect.bottom = static_cast<LONG>(Ranges[i].Rect.top + Size.y);
 	}
 }
 
-bool FERangeConfigurator::addRange(float rangeSpan, std::string caption, std::string toolTipText, ImColor color)
+bool FERangeConfigurator::AddRange(float RangeSpan, std::string Caption, std::string ToolTipText, ImColor Color)
 {
-	if (ranges.size() >= 100)
+	if (Ranges.size() >= 100)
 		return false;
 
-	FERangeRecord newRange;
-	newRange.rangeSpan = rangeSpan;
+	FERangeRecord NewRange;
+	NewRange.RangeSpan = RangeSpan;
 
-	newRange.caption = caption;
-	newRange.toolTipText = toolTipText;
-	newRange.color = color;
+	NewRange.Caption = Caption;
+	NewRange.ToolTipText = ToolTipText;
+	NewRange.Color = Color;
 
-	ranges.push_back(newRange);	
-	recalculateRangeInfo();
+	Ranges.push_back(NewRange);	
+	RecalculateRangeInfo();
 
-	for (size_t i = 0; i < ranges.size(); i++)
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		ranges[i].scroller.setPosition(ImVec2(float(ranges[i].rect.right), float(ranges[i].rect.top)));
+		Ranges[i].Scroller.SetPosition(ImVec2(static_cast<float>(Ranges[i].Rect.right), static_cast<float>(Ranges[i].Rect.top)));
 	}
 
 	return true;
 }
 
-void FERangeConfigurator::normalizeRanges()
+void FERangeConfigurator::NormalizeRanges()
 {
-	float coverage = 0.0f;
-	for (size_t i = 0; i < ranges.size(); i++)
+	float Coverage = 0.0f;
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		coverage += ranges[i].rangeSpan;
+		Coverage += Ranges[i].RangeSpan;
 	}
 
-	float scale = 1.0f / coverage;
-	if (abs(1.0f - coverage) > 0.01f)
+	const float Scale = 1.0f / Coverage;
+	if (abs(1.0f - Coverage) > 0.01f)
 	{
-		for (size_t i = 0; i < ranges.size(); i++)
+		for (size_t i = 0; i < Ranges.size(); i++)
 		{
-			ranges[i].rangeSpan *= scale;
+			Ranges[i].RangeSpan *= Scale;
 		}
 
-		recalculateRangeInfo();
+		RecalculateRangeInfo();
 
-		for (size_t i = 0; i < ranges.size(); i++)
+		for (size_t i = 0; i < Ranges.size(); i++)
 		{
-			ranges[i].scroller.setPosition(ImVec2(float(ranges[i].rect.right), float(ranges[i].rect.top)));
+			Ranges[i].Scroller.SetPosition(ImVec2(static_cast<float>(Ranges[i].Rect.right), static_cast<float>(Ranges[i].Rect.top)));
 		}
 	}
 }
 
-void FERangeConfigurator::inputCalculations()
+void FERangeConfigurator::InputCalculations()
 {
-	float mouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
-	float mouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
+	const float MouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
+	const float MouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
 
-	for (size_t i = 0; i < ranges.size(); i++)
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		if (mouseXWindows >= ranges[i].rect.left && mouseXWindows < ranges[i].rect.right &&
-			mouseYWindows >= ranges[i].rect.top && mouseYWindows < ranges[i].rect.bottom)
+		if (MouseXWindows >= Ranges[i].Rect.left && MouseXWindows < Ranges[i].Rect.right &&
+			MouseYWindows >= Ranges[i].Rect.top && MouseYWindows < Ranges[i].Rect.bottom)
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(ranges[i].toolTipText.c_str());
+			ImGui::TextUnformatted(Ranges[i].ToolTipText.c_str());
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
 
-		if (i == ranges.size() - 1)
+		if (i == Ranges.size() - 1)
 			break;
 	}
 
 	ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_None;
-	for (size_t i = 0; i < ranges.size(); i++)
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		float needToAdd = ranges[i].scroller.getLastFrameDelta() / size.x;
-		if (needToAdd != 0.0f)
+		const float NeedToAdd = Ranges[i].Scroller.GetLastFrameDelta() / Size.x;
+		if (NeedToAdd != 0.0f)
 		{
 			ImGui::GetCurrentWindow()->Flags = ImGuiWindowFlags_NoMove;
-			if (ranges[i + 1].rangeSpan - needToAdd < 0.001f || ranges[i].rangeSpan + needToAdd < 0.001f)
+			if (Ranges[i + 1].RangeSpan - NeedToAdd < 0.001f || Ranges[i].RangeSpan + NeedToAdd < 0.001f)
 				break;
 			
-			ranges[i + 1].rangeSpan -= needToAdd;
-			ranges[i].rangeSpan += needToAdd;
-			recalculateRangeInfo();
+			Ranges[i + 1].RangeSpan -= NeedToAdd;
+			Ranges[i].RangeSpan += NeedToAdd;
+			RecalculateRangeInfo();
 			
 			break;
 		}
 	}
 }
 
-void FERangeConfigurator::render()
+void FERangeConfigurator::Render()
 {
-	normalizeRanges();
-	inputCalculations();
+	NormalizeRanges();
+	InputCalculations();
 
-	screenX = ImGui::GetCurrentWindow()->Pos.x + position.x;
-	screenY = ImGui::GetCurrentWindow()->Pos.y + position.y;
+	ScreenX = ImGui::GetCurrentWindow()->Pos.x + Position.x;
+	ScreenY = ImGui::GetCurrentWindow()->Pos.y + Position.y;
 
-	float beginX = screenX;
-	for (size_t i = 0; i < ranges.size(); i++)
+	float BeginX = ScreenX;
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenX + (ranges[i].rect.left - position.x), screenY), ImVec2(beginX + (ranges[i].rect.right - ranges[i].rect.left), screenY + size.y), ranges[i].color);
-		ImVec2 textSize = ImGui::CalcTextSize(ranges[i].caption.c_str());
-		ImGui::SetCursorPosX(ranges[i].rect.left + (ranges[i].rect.right - ranges[i].rect.left) / 2.0f - textSize.x / 2.0f);
-		ImGui::SetCursorPosY(position.y + size.y / 2.0f - textSize.y / 2.0f);
-		ImGui::Text(ranges[i].caption.c_str());
+		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(ScreenX + (Ranges[i].Rect.left - Position.x), ScreenY), ImVec2(BeginX + (Ranges[i].Rect.right - Ranges[i].Rect.left), ScreenY + Size.y), Ranges[i].Color);
+		const ImVec2 TextSize = ImGui::CalcTextSize(Ranges[i].Caption.c_str());
+		ImGui::SetCursorPosX(Ranges[i].Rect.left + (Ranges[i].Rect.right - Ranges[i].Rect.left) / 2.0f - TextSize.x / 2.0f);
+		ImGui::SetCursorPosY(Position.y + Size.y / 2.0f - TextSize.y / 2.0f);
+		ImGui::Text(Ranges[i].Caption.c_str());
 
-		if (i == ranges.size() - 1)
+		if (i == Ranges.size() - 1)
 			break;
 
-		ranges[i].scroller.render();
-		if (ranges[i].scroller.isSelected())
+		Ranges[i].Scroller.Render();
+		if (Ranges[i].Scroller.IsSelected())
 		{
-			ImGui::GetWindowDrawList()->AddRect(ImVec2(screenX + (ranges[i].rect.left - position.x), screenY), ImVec2(beginX + (ranges[i].rect.right - ranges[i].rect.left), screenY + size.y), ImColor(10, 10, 10, 255), 0.0f, 0, 3.0f);
+			ImGui::GetWindowDrawList()->AddRect(ImVec2(ScreenX + (Ranges[i].Rect.left - Position.x), ScreenY), ImVec2(BeginX + (Ranges[i].Rect.right - Ranges[i].Rect.left), ScreenY + Size.y), ImColor(10, 10, 10, 255), 0.0f, 0, 3.0f);
 
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(ranges[i].toolTipText.c_str());
+			ImGui::TextUnformatted(Ranges[i].ToolTipText.c_str());
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
 
-		beginX += ranges[i].rect.right - ranges[i].rect.left;
+		BeginX += Ranges[i].Rect.right - Ranges[i].Rect.left;
 	}
 
 	// Only one scroller should be selected at a time.
-	int selectedCount = 0;
-	for (size_t i = 0; i < ranges.size(); i++)
+	int SelectedCount = 0;
+	for (size_t i = 0; i < Ranges.size(); i++)
 	{
-		if (ranges[i].scroller.isSelected())
-			selectedCount++;
+		if (Ranges[i].Scroller.IsSelected())
+			SelectedCount++;
 		
-		if (selectedCount > 1)
-			ranges[i].scroller.setSelected(false);
+		if (SelectedCount > 1)
+			Ranges[i].Scroller.SetSelected(false);
 	}
 
-	if (ranges.size() == 0)
+	if (Ranges.empty())
 	{
-		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(screenX, screenY), ImVec2(screenX + size.x, screenY + size.y), ImColor(125, 125, 125, 255));
-		ImVec2 textSize = ImGui::CalcTextSize("No ranges");
-		ImGui::SetCursorPosX(position.x + size.x / 2.0f - textSize.x / 2.0f);
-		ImGui::SetCursorPosY(position.y + size.y / 2.0f - textSize.y / 2.0f);
+		ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(ScreenX, ScreenY), ImVec2(ScreenX + Size.x, ScreenY + Size.y), ImColor(125, 125, 125, 255));
+		const ImVec2 TextSize = ImGui::CalcTextSize("No ranges");
+		ImGui::SetCursorPosX(Position.x + Size.x / 2.0f - TextSize.x / 2.0f);
+		ImGui::SetCursorPosY(Position.y + Size.y / 2.0f - TextSize.y / 2.0f);
 		ImGui::Text("No ranges");
 	}
 }
 
-void FERangeConfigurator::deleteRange(size_t index)
+void FERangeConfigurator::DeleteRange(const size_t Index)
 {
-	if (index >= ranges.size())
+	if (Index >= Ranges.size())
 		return;
 
-	ranges.erase(ranges.begin() + index);
+	Ranges.erase(Ranges.begin() + Index);
 }
 
-std::vector<FERangeRecord> FERangeConfigurator::getRangesRecordsCopy()
+std::vector<FERangeRecord> FERangeConfigurator::GetRangesRecordsCopy()
 {
-	return ranges;
+	return Ranges;
 }
 
-FERangeRecord* FERangeConfigurator::getRangesRecord(size_t index)
+FERangeRecord* FERangeConfigurator::GetRangesRecord(const size_t Index)
 {
-	if (index >= ranges.size())
+	if (Index >= Ranges.size())
 		return nullptr;
 
-	return &ranges[index];
+	return &Ranges[Index];
 }
 
-int FERangeConfigurator::getRangesCount()
+int FERangeConfigurator::GetRangesCount() const
 {
-	return int(ranges.size());
+	return static_cast<int>(Ranges.size());
 }
 
-void FERangeConfigurator::clear()
+void FERangeConfigurator::Clear()
 {
-	ranges.clear();
+	Ranges.clear();
 }
 
-messagePopUp* messagePopUp::_instance = nullptr;
+MessagePopUp* MessagePopUp::Instance = nullptr;
 
-messagePopUp::messagePopUp() {};
+MessagePopUp::MessagePopUp() {};
 
-void messagePopUp::show(std::string newWindowCaption, std::string messageToShow)
+void MessagePopUp::Show(const std::string NewWindowCaption, const std::string MessageToShow)
 {
-	shouldOpen = true;
-	message = messageToShow;
-	popupCaption = newWindowCaption;
+	bShouldOpen = true;
+	Message = MessageToShow;
+	PopupCaption = NewWindowCaption;
 }
 
-void messagePopUp::render()
+void MessagePopUp::Render()
 {
-	ImGuiModalPopup::render();
+	ImGuiModalPopup::Render();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-	if (ImGui::BeginPopupModal(popupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize))
+	if (ImGui::BeginPopupModal(PopupCaption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ImGui::SetWindowPos(ImVec2(ENGINE.getWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.getWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
-		ImGui::Text(message.c_str());
+		ImGui::SetWindowPos(ImVec2(ENGINE.GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.GetWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
+		ImGui::Text(Message.c_str());
 		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - 120.0f / 2.0f);
 		if (ImGui::Button("Ok", ImVec2(120, 0)))
 		{
-			ImGuiModalPopup::close();
+			ImGuiModalPopup::Close();
 		}
 
 		ImGui::PopStyleVar();
@@ -779,192 +779,192 @@ void messagePopUp::render()
 	}
 }
 
-FEArrowScroller::FEArrowScroller(bool Horizontal)
+FEArrowScroller::FEArrowScroller(const bool Horizontal)
 {
-	horizontal = Horizontal;
+	bHorizontal = Horizontal;
 
-	selected = false;
-	mouseHover = false;
+	bSelected = false;
+	bMouseHover = false;
 
-	windowFlagWasAdded = false;
-	originalWindowFlags = 0;
+	bWindowFlagWasAdded = false;
+	OriginalWindowFlags = 0;
 
-	lastFrameDelta = 0;
-	size = 20.0f;
+	LastFrameDelta = 0;
+	Size = 20.0f;
 
-	color = ImColor(10, 10, 40, 255);
-	selectedColor = ImColor(115, 115, 255, 255);
+	Color = ImColor(10, 10, 40, 255);
+	SelectedColor = ImColor(115, 115, 255, 255);
 
-	availableRange = ImVec2(-FLT_MAX, FLT_MAX);
+	AvailableRange = ImVec2(-FLT_MAX, FLT_MAX);
 }
 
-ImVec2 FEArrowScroller::getPosition()
+ImVec2 FEArrowScroller::GetPosition() const
 {
-	return position;
+	return Position;
 }
 
-void FEArrowScroller::setPosition(ImVec2 newPosition)
+void FEArrowScroller::SetPosition(const ImVec2 NewPosition)
 {
-	position = newPosition;
+	Position = NewPosition;
 
-	if (horizontal)
+	if (bHorizontal)
 	{
-		area.left = LONG(position.x - size / 2.0f);
-		area.right = LONG(position.x + size / 2.0f);
-		area.top = LONG(position.y - size);
-		area.bottom = LONG(position.y);
+		Area.left = static_cast<LONG>(Position.x - Size / 2.0f);
+		Area.right = static_cast<LONG>(Position.x + Size / 2.0f);
+		Area.top = static_cast<LONG>(Position.y - Size);
+		Area.bottom = static_cast<LONG>(Position.y);
 	}
 	else
 	{
-		area.left = LONG(position.x - size);
-		area.right = LONG(position.x);
-		area.top = LONG(position.y - size / 2.0f);
-		area.bottom = LONG(position.y + size / 2.0f);
+		Area.left = static_cast<LONG>(Position.x - Size);
+		Area.right = static_cast<LONG>(Position.x);
+		Area.top = static_cast<LONG>(Position.y - Size / 2.0f);
+		Area.bottom = static_cast<LONG>(Position.y + Size / 2.0f);
 	}
 }
 
-bool FEArrowScroller::isSelected()
+bool FEArrowScroller::IsSelected() const
 {
-	return selected;
+	return bSelected;
 }
 
-void FEArrowScroller::setSelected(bool newValue)
+void FEArrowScroller::SetSelected(const bool NewValue)
 {
-	selected = newValue;
+	bSelected = NewValue;
 }
 
-void FEArrowScroller::render()
+void FEArrowScroller::Render()
 {
-	float mouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
-	float mouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
+	const float MouseXWindows = ImGui::GetIO().MousePos.x - ImGui::GetCurrentWindow()->Pos.x;
+	const float MouseYWindows = ImGui::GetIO().MousePos.y - ImGui::GetCurrentWindow()->Pos.y;
 
-	mouseHover = false;
-	if (mouseXWindows >= area.left && mouseXWindows < area.right &&
-		mouseYWindows >= area.top && mouseYWindows < area.bottom)
+	bMouseHover = false;
+	if (MouseXWindows >= Area.left && MouseXWindows < Area.right &&
+		MouseYWindows >= Area.top && MouseYWindows < Area.bottom)
 	{
-		mouseHover = true;
+		bMouseHover = true;
 	}
 
-	if (!mouseHover && windowFlagWasAdded)
+	if (!bMouseHover && bWindowFlagWasAdded)
 	{
-		windowFlagWasAdded = false;
-		ImGui::GetCurrentWindow()->Flags = originalWindowFlags;
+		bWindowFlagWasAdded = false;
+		ImGui::GetCurrentWindow()->Flags = OriginalWindowFlags;
 	}
 
-	if (!(ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_NoMove) && mouseHover)
+	if (!(ImGui::GetCurrentWindow()->Flags & ImGuiWindowFlags_NoMove) && bMouseHover)
 	{
-		windowFlagWasAdded = true;
-		originalWindowFlags = ImGui::GetCurrentWindow()->Flags;
+		bWindowFlagWasAdded = true;
+		OriginalWindowFlags = ImGui::GetCurrentWindow()->Flags;
 		ImGui::GetCurrentWindow()->Flags |= ImGuiWindowFlags_NoMove;
 	}
 
 	if (ImGui::GetIO().MouseClicked[0])
 	{
-		mouseHover ? setSelected(true) : setSelected(false);
+		bMouseHover ? SetSelected(true) : SetSelected(false);
 	}
 
 	if (ImGui::GetIO().MouseReleased[0])
-		setSelected(false);
+		SetSelected(false);
 
-	lastFrameDelta = 0;
-	if (isSelected())
+	LastFrameDelta = 0;
+	if (IsSelected())
 	{
-		lastFrameDelta = horizontal ? mouseXWindows - lastFrameMouseX : mouseYWindows - lastFrameMouseY;
+		LastFrameDelta = bHorizontal ? MouseXWindows - LastFrameMouseX : MouseYWindows - LastFrameMouseY;
 
-		if (horizontal)
+		if (bHorizontal)
 		{
-			if (getPosition().x + lastFrameDelta <= availableRange.y && getPosition().x + lastFrameDelta >= availableRange.x)
+			if (GetPosition().x + LastFrameDelta <= AvailableRange.y && GetPosition().x + LastFrameDelta >= AvailableRange.x)
 			{
-				setPosition(ImVec2(getPosition().x + lastFrameDelta, getPosition().y));
+				SetPosition(ImVec2(GetPosition().x + LastFrameDelta, GetPosition().y));
 			}
 		}
 		else
 		{
-			if (getPosition().y + lastFrameDelta <= availableRange.y && getPosition().y + lastFrameDelta >= availableRange.x)
+			if (GetPosition().y + LastFrameDelta <= AvailableRange.y && GetPosition().y + LastFrameDelta >= AvailableRange.x)
 			{
-				setPosition(ImVec2(getPosition().x, getPosition().y + lastFrameDelta));
+				SetPosition(ImVec2(GetPosition().x, GetPosition().y + LastFrameDelta));
 			}
 		}
 	}
 
-	lastFrameMouseX = mouseXWindows;
-	lastFrameMouseY = mouseYWindows;
+	LastFrameMouseX = MouseXWindows;
+	LastFrameMouseY = MouseYWindows;
 
 	ImVec2 P1;
 	ImVec2 P2;
 	ImVec2 P3;
 
-	if (horizontal)
+	if (bHorizontal)
 	{
-		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
-			ImGui::GetCurrentWindow()->Pos.y + area.top);
-		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.right,
-			ImGui::GetCurrentWindow()->Pos.y + area.top);
-		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left + (area.right - area.left) / 2.0f,
-			ImGui::GetCurrentWindow()->Pos.y + area.bottom);
+		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.left,
+			ImGui::GetCurrentWindow()->Pos.y + Area.top);
+		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.right,
+			ImGui::GetCurrentWindow()->Pos.y + Area.top);
+		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.left + (Area.right - Area.left) / 2.0f,
+			ImGui::GetCurrentWindow()->Pos.y + Area.bottom);
 	}
 	else
 	{
-		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
-			ImGui::GetCurrentWindow()->Pos.y + area.top);
-		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.left,
-			ImGui::GetCurrentWindow()->Pos.y + area.bottom);
-		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + area.right,
-			ImGui::GetCurrentWindow()->Pos.y + area.top + (area.right - area.left) / 2.0f);
+		P1 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.left,
+			ImGui::GetCurrentWindow()->Pos.y + Area.top);
+		P2 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.left,
+			ImGui::GetCurrentWindow()->Pos.y + Area.bottom);
+		P3 = ImVec2(ImGui::GetCurrentWindow()->Pos.x + Area.right,
+			ImGui::GetCurrentWindow()->Pos.y + Area.top + (Area.right - Area.left) / 2.0f);
 	}
 
-	if (isSelected())
+	if (IsSelected())
 	{
-		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, selectedColor);
+		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, SelectedColor);
 	}
 	else
 	{
-		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, color);
+		ImGui::GetWindowDrawList()->AddTriangleFilled(P1, P2, P3, Color);
 	}
 }
 
-float FEArrowScroller::getLastFrameDelta()
+float FEArrowScroller::GetLastFrameDelta() const
 {
-	return lastFrameDelta;
+	return LastFrameDelta;
 }
 
-float FEArrowScroller::getSize()
+float FEArrowScroller::GetSize() const
 {
-	return size;
+	return Size;
 }
 
-void FEArrowScroller::setSize(float newValue)
+void FEArrowScroller::SetSize(const float NewValue)
 {
-	if (newValue > 1.0f)
-		size = newValue;
+	if (NewValue > 1.0f)
+		Size = NewValue;
 }
 
-ImColor FEArrowScroller::getColor()
+ImColor FEArrowScroller::GetColor() const
 {
-	return color;
+	return Color;
 }
 
-void FEArrowScroller::setColor(ImColor newValue)
+void FEArrowScroller::SetColor(const ImColor NewValue)
 {
-	color = newValue;
+	Color = NewValue;
 }
 
-ImColor FEArrowScroller::getSelectedColor()
+ImColor FEArrowScroller::GetSelectedColor() const
 {
-	return selectedColor;
+	return SelectedColor;
 }
 
-void FEArrowScroller::setSelectedColor(ImColor newValue)
+void FEArrowScroller::SetSelectedColor(const ImColor NewValue)
 {
-	selectedColor = newValue;
+	SelectedColor = NewValue;
 }
 
-void FEArrowScroller::setAvailableRange(ImVec2 newValue)
+void FEArrowScroller::SetAvailableRange(const ImVec2 NewValue)
 {
-	availableRange = newValue;
+	AvailableRange = NewValue;
 }
 
-void FEArrowScroller::liftRangeRestrictions()
+void FEArrowScroller::LiftRangeRestrictions()
 {
-	availableRange = ImVec2(-FLT_MAX, FLT_MAX);
+	AvailableRange = ImVec2(-FLT_MAX, FLT_MAX);
 }

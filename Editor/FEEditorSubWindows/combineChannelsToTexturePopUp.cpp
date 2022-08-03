@@ -1,85 +1,85 @@
 #include "combineChannelsToTexturePopUp.h"
 
-CombineChannelsToTexturePopUp* CombineChannelsToTexturePopUp::_instance = nullptr;
-ImVec2 CombineChannelsToTexturePopUp::nodeGridRelativePosition = ImVec2(5, 30);
-ImVec2 CombineChannelsToTexturePopUp::windowPosition = ImVec2(0, 0);
-ImVec2 CombineChannelsToTexturePopUp::mousePositionWhenContextMenuWasOpened = ImVec2(0, 0);
-FETexture* CombineChannelsToTexturePopUp::textureForNewNode = nullptr;
-FEVisualNodeArea* CombineChannelsToTexturePopUp::currentNodeArea = nullptr;
+CombineChannelsToTexturePopUp* CombineChannelsToTexturePopUp::Instance = nullptr;
+ImVec2 CombineChannelsToTexturePopUp::NodeGridRelativePosition = ImVec2(5, 30);
+ImVec2 CombineChannelsToTexturePopUp::WindowPosition = ImVec2(0, 0);
+ImVec2 CombineChannelsToTexturePopUp::MousePositionWhenContextMenuWasOpened = ImVec2(0, 0);
+FETexture* CombineChannelsToTexturePopUp::TextureForNewNode = nullptr;
+FEVisualNodeArea* CombineChannelsToTexturePopUp::CurrentNodeArea = nullptr;
 
 CombineChannelsToTexturePopUp::CombineChannelsToTexturePopUp()
 {
-	std::string tempCaption = "Choose what channels/textures to combine";
-	strcpy_s(caption, tempCaption.size() + 1, tempCaption.c_str());
+	const std::string TempCaption = "Choose what channels/textures to combine";
+	strcpy_s(Caption, TempCaption.size() + 1, TempCaption.c_str());
 
-	nodeAreaTarget = DRAG_AND_DROP_MANAGER.addTarget(FE_TEXTURE, dragAndDropnodeAreaTargetCallback, reinterpret_cast<void**>(&dragAndDropCallbackInfo), "Drop to add texture");
+	NodeAreaTarget = DRAG_AND_DROP_MANAGER.AddTarget(FE_TEXTURE, DragAndDropnodeAreaTargetCallback, reinterpret_cast<void**>(&DragAndDropCallbackInfo), "Drop to add texture");
 }
 
 CombineChannelsToTexturePopUp::~CombineChannelsToTexturePopUp()
 {
 }
 
-void CombineChannelsToTexturePopUp::show(std::string FilePath)
+void CombineChannelsToTexturePopUp::Show()
 {
-	size = ImVec2(800, 800);
-	position = ImVec2(FEngine::getInstance().getWindowWidth() / 2 - size.x / 2, FEngine::getInstance().getWindowHeight() / 2 - size.y / 2);
+	Size = ImVec2(800, 800);
+	Position = ImVec2(FEngine::getInstance().GetWindowWidth() / 2 - Size.x / 2, FEngine::getInstance().GetWindowHeight() / 2 - Size.y / 2);
 
-	flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
+	Flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
 
-	textureNode = new FEEditorTextureCreatingNode();
-	textureNode->setName("New Texture");
+	TextureNode = new FEEditorTextureCreatingNode();
+	TextureNode->SetName("New Texture");
 
-	ImVec2 positionOnCanvas;
-	positionOnCanvas.x = nodeGridRelativePosition.x + size.x / 2 - textureNode->getSize().x / 2.0f;
-	positionOnCanvas.y = nodeGridRelativePosition.y + size.y / 2 - textureNode->getSize().y / 2.0f;
+	ImVec2 PositionOnCanvas;
+	PositionOnCanvas.x = NodeGridRelativePosition.x + Size.x / 2 - TextureNode->GetSize().x / 2.0f;
+	PositionOnCanvas.y = NodeGridRelativePosition.y + Size.y / 2 - TextureNode->GetSize().y / 2.0f;
 
-	textureNode->setPosition(positionOnCanvas);
-	currentNodeArea = NODE_SYSTEM.createNodeArea();
-	currentNodeArea->addNode(textureNode);
-	currentNodeArea->setMainContextMenuFunc(nodeSystemMainContextMenu);
+	TextureNode->SetPosition(PositionOnCanvas);
+	CurrentNodeArea = NODE_SYSTEM.CreateNodeArea();
+	CurrentNodeArea->AddNode(TextureNode);
+	CurrentNodeArea->SetMainContextMenuFunc(NodeSystemMainContextMenu);
 	
-	FEImGuiWindow::show();
+	FEImGuiWindow::Show();
 }
 
-void CombineChannelsToTexturePopUp::render()
+void CombineChannelsToTexturePopUp::Render()
 {
-	FEImGuiWindow::render();
+	FEImGuiWindow::Render();
 
-	if (!isVisible())
+	if (!IsVisible())
 		return;
 
-	windowPosition = ImGui::GetWindowPos();
+	WindowPosition = ImGui::GetWindowPos();
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	
-	currentNodeArea->setAreaPosition(nodeGridRelativePosition);
-	currentNodeArea->setAreaSize(ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 67));
-	currentNodeArea->update();
+	CurrentNodeArea->SetAreaPosition(NodeGridRelativePosition);
+	CurrentNodeArea->SetAreaSize(ImVec2(ImGui::GetWindowWidth(), ImGui::GetWindowHeight() - 67));
+	CurrentNodeArea->Update();
 
 	if (ImGui::GetIO().MouseReleased[1])
-		mousePositionWhenContextMenuWasOpened = ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y);
+		MousePositionWhenContextMenuWasOpened = ImVec2(ImGui::GetMousePos().x, ImGui::GetMousePos().y);
 	
-	nodeAreaTarget->stickToItem();
+	NodeAreaTarget->StickToItem();
 
-	float yPosition = ImGui::GetCursorPosY();
+	const float YPosition = ImGui::GetCursorPosY();
 	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
 	if (ImGui::Button("Combine", ImVec2(120, 0)))
 	{
-		if (textureNode->getTexture() != RESOURCE_MANAGER.noTexture)
+		if (TextureNode->GetTexture() != RESOURCE_MANAGER.NoTexture)
 		{
-			textureNode->getTexture()->setDirtyFlag(true);
-			PROJECT_MANAGER.getCurrent()->addUnSavedObject(textureNode->getTexture());
-			VIRTUAL_FILE_SYSTEM.createFile(textureNode->getTexture(), VIRTUAL_FILE_SYSTEM.getCurrentPath());
-			NODE_SYSTEM.deleteNodeArea(currentNodeArea);
+			TextureNode->GetTexture()->SetDirtyFlag(true);
+			PROJECT_MANAGER.GetCurrent()->AddUnSavedObject(TextureNode->GetTexture());
+			VIRTUAL_FILE_SYSTEM.CreateFile(TextureNode->GetTexture(), VIRTUAL_FILE_SYSTEM.GetCurrentPath());
+			NODE_SYSTEM.DeleteNodeArea(CurrentNodeArea);
 		}
 
-		FEImGuiWindow::close();
+		FEImGuiWindow::Close();
 	}
 
-	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::ImColor(0.6f, 0.24f, 0.24f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.7f, 0.21f, 0.21f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.8f, 0.16f, 0.16f));
+	ImGui::PushStyleColor(ImGuiCol_Button, static_cast<ImVec4>(ImColor::ImColor(0.6f, 0.24f, 0.24f)));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, static_cast<ImVec4>(ImColor::ImColor(0.7f, 0.21f, 0.21f)));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, static_cast<ImVec4>(ImColor::ImColor(0.8f, 0.16f, 0.16f)));
 
-	ImGui::SetCursorPosY(yPosition);
+	ImGui::SetCursorPosY(YPosition);
 	ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2.0f + ImGui::GetWindowWidth() / 8.0f - 120.0f / 2.0f);
 	if (ImGui::Button("Cancel", ImVec2(120, 0)))
 	{
@@ -89,7 +89,7 @@ void CombineChannelsToTexturePopUp::render()
 
 		ImGui::PopStyleVar();
 
-		FEImGuiWindow::close();
+		FEImGuiWindow::Close();
 		return;
 	}
 
@@ -98,62 +98,62 @@ void CombineChannelsToTexturePopUp::render()
 	ImGui::PopStyleColor();
 
 	ImGui::PopStyleVar();
-	FEImGuiWindow::onRenderEnd();
+	FEImGuiWindow::OnRenderEnd();
 }
 
-bool CombineChannelsToTexturePopUp::dragAndDropnodeAreaTargetCallback(FEObject* object, void** callbackInfo)
+bool CombineChannelsToTexturePopUp::DragAndDropnodeAreaTargetCallback(FEObject* Object, void** CallbackInfo)
 {
-	FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(RESOURCE_MANAGER.getTexture(object->getObjectID()));
+	FEEditorTextureSourceNode* NewNode = new FEEditorTextureSourceNode(RESOURCE_MANAGER.GetTexture(Object->GetObjectID()));
 	
-	ImVec2 positionOnCanvas;
-	positionOnCanvas.x = ImGui::GetMousePos().x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-	positionOnCanvas.y = ImGui::GetMousePos().y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+	ImVec2 PositionOnCanvas;
+	PositionOnCanvas.x = ImGui::GetMousePos().x - (WindowPosition.x + NodeGridRelativePosition.x) - NewNode->GetSize().x / 2.0f;
+	PositionOnCanvas.y = ImGui::GetMousePos().y - (WindowPosition.y + NodeGridRelativePosition.y) - NewNode->GetSize().y / 2.0f;
 
-	newNode->setPosition(positionOnCanvas);
-	currentNodeArea->addNode(newNode);
+	NewNode->SetPosition(PositionOnCanvas);
+	CurrentNodeArea->AddNode(NewNode);
 	return true;
 }
 
-void CombineChannelsToTexturePopUp::nodeSystemMainContextMenu()
+void CombineChannelsToTexturePopUp::NodeSystemMainContextMenu()
 {
 	if (ImGui::BeginMenu("Add"))
 	{
 		if (ImGui::MenuItem("Texture node"))
 		{
-			textureForNewNode = RESOURCE_MANAGER.noTexture;
-			selectFEObjectPopUp::getInstance().show(FE_TEXTURE, textureNodeCreationCallback);
+			TextureForNewNode = RESOURCE_MANAGER.NoTexture;
+			SelectFeObjectPopUp::getInstance().Show(FE_TEXTURE, TextureNodeCreationCallback);
 		}
 
 		if (ImGui::MenuItem("Float node"))
 		{
-			FEEditorFloatSourceNode* newNode = new FEEditorFloatSourceNode();
+			FEEditorFloatSourceNode* NewNode = new FEEditorFloatSourceNode();
 
-			ImVec2 positionOnCanvas;
-			positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-			positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+			ImVec2 PositionOnCanvas;
+			PositionOnCanvas.x = MousePositionWhenContextMenuWasOpened.x - (WindowPosition.x + NodeGridRelativePosition.x) - NewNode->GetSize().x / 2.0f;
+			PositionOnCanvas.y = MousePositionWhenContextMenuWasOpened.y - (WindowPosition.y + NodeGridRelativePosition.y) - NewNode->GetSize().y / 2.0f;
 
-			newNode->setPosition(positionOnCanvas);
-			currentNodeArea->addNode(newNode);
+			NewNode->SetPosition(PositionOnCanvas);
+			CurrentNodeArea->AddNode(NewNode);
 		}
 
 		ImGui::EndMenu();
 	}
 }
 
-void CombineChannelsToTexturePopUp::textureNodeCreationCallback(std::vector<FEObject*> selectionsResult)
+void CombineChannelsToTexturePopUp::TextureNodeCreationCallback(const std::vector<FEObject*> SelectionsResult)
 {
-	if (selectionsResult.size() != 1 && selectionsResult[0]->getType() != FE_TEXTURE)
+	if (SelectionsResult.size() != 1 && SelectionsResult[0]->GetType() != FE_TEXTURE)
 		return;
 
-	if (selectionsResult[0] != nullptr && selectionsResult[0] != RESOURCE_MANAGER.noTexture)
+	if (SelectionsResult[0] != nullptr && SelectionsResult[0] != RESOURCE_MANAGER.NoTexture)
 	{
-		FEEditorTextureSourceNode* newNode = new FEEditorTextureSourceNode(reinterpret_cast<FETexture*>(selectionsResult[0]));
+		FEEditorTextureSourceNode* NewNode = new FEEditorTextureSourceNode(reinterpret_cast<FETexture*>(SelectionsResult[0]));
 
-		ImVec2 positionOnCanvas;
-		positionOnCanvas.x = mousePositionWhenContextMenuWasOpened.x - (windowPosition.x + nodeGridRelativePosition.x) - newNode->getSize().x / 2.0f;
-		positionOnCanvas.y = mousePositionWhenContextMenuWasOpened.y - (windowPosition.y + nodeGridRelativePosition.y) - newNode->getSize().y / 2.0f;
+		ImVec2 PositionOnCanvas;
+		PositionOnCanvas.x = MousePositionWhenContextMenuWasOpened.x - (WindowPosition.x + NodeGridRelativePosition.x) - NewNode->GetSize().x / 2.0f;
+		PositionOnCanvas.y = MousePositionWhenContextMenuWasOpened.y - (WindowPosition.y + NodeGridRelativePosition.y) - NewNode->GetSize().y / 2.0f;
 
-		newNode->setPosition(positionOnCanvas);
-		currentNodeArea->addNode(newNode);
+		NewNode->SetPosition(PositionOnCanvas);
+		CurrentNodeArea->AddNode(NewNode);
 	}
 }
