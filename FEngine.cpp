@@ -33,8 +33,8 @@ void FEngine::BeginFrame(const bool InternalCall)
 	APPLICATION.BeginFrame();
 
 #ifdef FE_DEBUG_ENABLED
-	std::vector<std::string> ShaderList = RESOURCE_MANAGER.getShadersList();
-	const std::vector<std::string> TempList = RESOURCE_MANAGER.getStandardShadersList();
+	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShadersList();
+	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetStandardShadersList();
 	for (size_t i = 0; i < TempList.size(); i++)
 	{
 		ShaderList.push_back(TempList[i]);
@@ -42,9 +42,9 @@ void FEngine::BeginFrame(const bool InternalCall)
 
 	for (size_t i = 0; i < ShaderList.size(); i++)
 	{
-		if (RESOURCE_MANAGER.getShader(ShaderList[i])->IsDebugRequest())
+		if (RESOURCE_MANAGER.GetShader(ShaderList[i])->IsDebugRequest())
 		{
-			RESOURCE_MANAGER.getShader(ShaderList[i])->ThisFrameDebugBind = 0;
+			RESOURCE_MANAGER.GetShader(ShaderList[i])->ThisFrameDebugBind = 0;
 		}
 	}
 #endif
