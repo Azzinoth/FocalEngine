@@ -59,7 +59,7 @@ bool FEPostProcess::ReplaceOutTexture(const size_t StageIndex, FETexture* NewTex
 {
 	if (StageIndex >= Stages.size())
 	{
-		LOG.Add("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("Trying to replace texture in FEPostProcess::replaceOutTexture but stageIndex is out of bound!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
 	}
 

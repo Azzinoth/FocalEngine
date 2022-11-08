@@ -21,7 +21,7 @@ bool FEResourceManager::MakeTextureStandard(FETexture* Texture)
 {
 	if (Texture == nullptr)
 	{
-		LOG.Add("texture is nullptr in function FEResourceManager::makeTextureStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("texture is nullptr in function FEResourceManager::makeTextureStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -53,7 +53,7 @@ bool FEResourceManager::MakeMeshStandard(FEMesh* Mesh)
 {
 	if (Mesh == nullptr)
 	{
-		LOG.Add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -77,7 +77,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	lodepng::decode(RawData, UWidth, UHeight, FileName);
 	if (RawData.empty())
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadPNGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardTextures.empty())
 		{
 			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -339,7 +339,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		// Get info about problematic texture.
 		const FETexture* NotLoadedTexture = Input->NewTexture;
 		// We will spill out error into a log.
-		LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		// And delete entry for that texture in a general list of textures.
 		// That will prevent it from saving in a scene file.
 		RESOURCE_MANAGER.DeleteFETexture(NotLoadedTexture);
@@ -375,19 +375,12 @@ FETexture* FEResourceManager::LoadFETextureAsync(const char* FileName, const std
 	NewTexture->InternalFormat = NoTexture->InternalFormat;
 	NewTexture->FileName = NoTexture->FileName;
 
-#ifdef OLD_LOADING
-	JOB_MANAGER.LoadTextureAsync(FileName, NewTexture);
-#else
-	//std::pair<const char*, FETexture*>* Data = new std::make_pair(fileName, newTexture);
 	LoadTextureAsyncInfo* InputData = new LoadTextureAsyncInfo();
 	InputData->FileName = FileName;
 	InputData->NewTexture = NewTexture;
-
 	LoadTextureAsyncInfo* OutputData = new LoadTextureAsyncInfo();
 
 	THREAD_POOL.Execute(LoadTextureFileAsync, InputData, OutputData, &LoadTextureFileAsyncCallBack);
-	
-#endif // OLD_LOADING
 
 	return NewTexture;
 }
@@ -399,7 +392,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::str
 	const std::streamsize FileSize = file.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 	
@@ -419,7 +412,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	CurrentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardTextures.empty())
 		{
 			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -559,7 +552,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 	const std::streamsize FileSize = file.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		Terrain->HeightMap = this->NoTexture;
 		return this->NoTexture;
 	}
@@ -575,7 +568,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 	CurrentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardTextures.empty())
 		{
 			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -960,7 +953,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardMeshes.empty())
 		{
 			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
@@ -978,7 +971,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	const float Version = *(float*)Buffer;
 	if (Version != FE_MESH_VERSION)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardMeshes.empty())
 		{
 			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
@@ -1250,7 +1243,7 @@ bool FEResourceManager::MakeMaterialStandard(FEMaterial* Material)
 {
 	if (Material == nullptr)
 	{
-		LOG.Add("material is nullptr in function FEResourceManager::makeMaterialStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("material is nullptr in function FEResourceManager::makeMaterialStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -1603,7 +1596,7 @@ void FEResourceManager::DeleteFETexture(const FETexture* Texture)
 {
 	if (Texture == NoTexture)
 	{
-		LOG.Add(std::string("Attempt to delete noTexture texture in function FEResourceManager::deleteFETexture.", FE_LOG_WARNING, FE_LOG_GENERAL));
+		LOG.Add("Attempt to delete noTexture texture in function FEResourceManager::deleteFETexture.", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -1739,7 +1732,7 @@ bool FEResourceManager::MakeGameModelStandard(FEGameModel* GameModel)
 {
 	if (GameModel == nullptr)
 	{
-		LOG.Add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -1781,7 +1774,7 @@ bool FEResourceManager::MakeShaderStandard(FEShader* Shader)
 {
 	if (Shader == nullptr)
 	{
-		LOG.Add("shader is nullptr in function FEResourceManager::makeShaderStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("shader is nullptr in function FEResourceManager::makeShaderStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -1964,7 +1957,7 @@ void FEResourceManager::InitTerrainEditTools(FETerrain* Terrain)
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("called FEResourceManager::initTerrainEditTools with nullptr terrain", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("called FEResourceManager::initTerrainEditTools with nullptr terrain", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -2017,14 +2010,14 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* FileName, FETerrain* 
 	if (PNGState.info_png.color.colortype != LCT_GREY || PNGState.info_png.color.bitdepth != 16)
 	{
 		delete NewTexture;
-		LOG.Add(std::string("File: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap is not 16 bit gray scale png.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("File: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap is not 16 bit gray scale png.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 		
 	if (RawData.empty())
 	{
 		delete NewTexture;
-		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::LoadPNGHeightmap.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 
@@ -2105,7 +2098,7 @@ std::string FEResourceManager::LoadGLSL(const char* FileName)
 	}
 	else
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::loadGLSL.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::loadGLSL.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 
 	return ShaderData;
@@ -2283,7 +2276,7 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture,
 {
 	if (ExampleTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2397,100 +2390,11 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	return result;
 }
 
-void FEResourceManager::UpdateAsyncLoadedResources()
-{
-#ifdef OLD_LOADING
-	static int TotalJobs = 0;
-	for (size_t i = 0; i < JOB_MANAGER.TextureLoadJobs.size(); i++)
-	{
-		const size_t count = JOB_MANAGER.TextureLoadJobs[i]->GetReadyJobCount();
-		if (count == 0)
-			continue;
-
-		if (JOB_MANAGER.TextureLoadJobs[i]->BeginJobsUpdate())
-		{
-			TotalJobs += static_cast<int>(count);
-			for (size_t j = 0; j < count; j++)
-			{
-				const std::pair<char**, void*> JobInfo = JOB_MANAGER.TextureLoadJobs[i]->GetJobByIndex(j);
-				// File was not found, or it can't be read.
-				if (*JobInfo.first == nullptr)
-				{
-					// Get info about problematic texture.
-					const FETexture* NotLoadedTexture = reinterpret_cast<FETexture*>(JobInfo.second);
-					// We will spill out error into a log.
-					LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", FE_LOG_ERROR, FE_LOG_LOADING);
-					// And delete entry for that texture in a general list of textures.
-					// That will prevent it from saving in a scene file.
-					DeleteFETexture(NotLoadedTexture);
-					//textures.erase(notLoadedTexture->getObjectID());
-				}
-				else
-				{
-					const FETexture* NewlyCreatedTexture = LoadFETexture(*JobInfo.first, "", reinterpret_cast<FETexture*>(JobInfo.second));
-
-					// If some material uses this texture we should set dirty flag.
-					// Game model will updated as a consequences.
-					std::vector<std::string> MaterialList = GetMaterialList();
-
-					for (size_t p = 0; p < MaterialList.size(); p++)
-					{
-						FEMaterial* CurrentMaterial = GetMaterial(MaterialList[p]);
-						if (CurrentMaterial->IsTextureInList(NewlyCreatedTexture))
-							CurrentMaterial->SetDirtyFlag(true);
-					}
-				}
-			}
-
-			JOB_MANAGER.TextureLoadJobs[i]->ClearJobs();
-			JOB_MANAGER.TextureLoadJobs[i]->EndJobsUpdate();
-		}
-
-		// a bit waste of time, after each batch of textures loads just set bDirtyFlag to recreate all materials preview
-		std::vector<std::string> MaterialList = GetMaterialList();
-		for (size_t j = 0; j < MaterialList.size(); j++)
-		{
-			GetMaterial(MaterialList[j])->SetDirtyFlag(true);
-		}
-}
-
-	const int JobsToHandle = static_cast<int>(JOB_MANAGER.TextureListToLoad.size());
-	const int FreeThreadCount = JOB_MANAGER.GetFreeTextureThreadCount();
-	if (FreeThreadCount == 0 || JobsToHandle == 0)
-		return;
-
-	const size_t JobsPerThread = JobsToHandle / FreeThreadCount;
-
-	if (JOB_MANAGER.TextureListToLoad.empty())
-		return;
-
-	for (size_t i = 0; i < JOB_MANAGER.TextureLoadJobs.size(); i++)
-	{
-		if (JOB_MANAGER.TextureLoadJobs[i]->BeginJobsUpdate())
-		{
-			size_t LastElement = JobsPerThread < JOB_MANAGER.TextureListToLoad.size() ? JobsPerThread : JOB_MANAGER.TextureListToLoad.size();
-			if (JobsPerThread == 0)
-				LastElement = JOB_MANAGER.TextureListToLoad.size();
-			for (size_t j = 0; j < LastElement; j++)
-			{
-				JOB_MANAGER.TextureLoadJobs[i]->AddTextureToLoad(JOB_MANAGER.TextureListToLoad[j]);
-			}
-
-			std::vector<std::pair<std::string, void*>>& list = JOB_MANAGER.TextureListToLoad;
-			JOB_MANAGER.TextureListToLoad.erase(JOB_MANAGER.TextureListToLoad.begin(), JOB_MANAGER.TextureListToLoad.begin() + LastElement);
-			JOB_MANAGER.TextureLoadJobs[i]->EndJobsUpdate();
-		}
-	}
-#else
-
-#endif // OLD_LOADING
-}
-
 void FEResourceManager::ActivateTerrainVacantLayerSlot(FETerrain* Terrain, FEMaterial* Material)
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::activateTerrainVacantLayerSlot with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::activateTerrainVacantLayerSlot with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	
@@ -2545,13 +2449,13 @@ void FEResourceManager::FillTerrainLayerMaskWithRawData(const unsigned char* Raw
 {
 	if (RawData == nullptr)
 	{
-		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with nullptr rawData", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with nullptr rawData", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -2672,19 +2576,19 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -2695,14 +2599,14 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 
 	if (RawData.empty())
 	{
-		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't read file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
 	}
 
 	// It should be just ordinary png not gray scale.
 	if (RawData.size() != UWidth * UHeight * 4)
 	{
-		LOG.Add(std::string("can't use file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask as a mask.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't use file: ") + FileName + " in function FEResourceManager::loadTerrainLayerMask as a mask.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -2733,11 +2637,11 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 
 		if (bNeedToResizeMaskTexture)
 		{
-			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask to match currently used one.", FE_LOG_WARNING, FE_LOG_LOADING);
+			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask to match currently used one.", "FE_LOG_LOADING", FE_LOG_WARNING);
 			const unsigned char* NewRawData = ResizeTextureRawData(RawData.data(), UWidth, UHeight, FirstLayerMap->GetWidth(), FirstLayerMap->GetHeight(), GL_RGBA, 1);
 			if (NewRawData == nullptr)
 			{
-				LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask failed.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add("FEResourceManager::loadTerrainLayerMask resizing loaded mask failed.", "FE_LOG_LOADING", FE_LOG_ERROR);
 				return;
 			}
 
@@ -2752,7 +2656,7 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 		}
 		else
 		{
-			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing terrainLayerMap to match currently loaded one.", FE_LOG_WARNING, FE_LOG_LOADING);
+			LOG.Add("FEResourceManager::loadTerrainLayerMask resizing terrainLayerMap to match currently loaded one.", "FE_LOG_LOADING", FE_LOG_WARNING);
 
 			FETexture* NewTexture = CreateTexture();
 			NewTexture->Width = UWidth;
@@ -2809,19 +2713,19 @@ void FEResourceManager::SaveTerrainLayerMask(const char* FileName, const FETerra
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::loadTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -2847,19 +2751,19 @@ void FEResourceManager::FillTerrainLayerMask(const FETerrain* Terrain, const siz
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::fillTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::fillTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::fillTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::fillTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -2881,19 +2785,19 @@ void FEResourceManager::ClearTerrainLayerMask(const FETerrain* Terrain, const si
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::clearTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::clearTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::clearTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::clearTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -2914,7 +2818,7 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 {
 	if (TextureToExport == nullptr)
 	{
-		LOG.Add("FEResourceManager::exportFETextureToPNG with nullptr textureToExport", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportFETextureToPNG with nullptr textureToExport", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -2924,7 +2828,7 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::exportFETextureToPNG internalFormat of textureToExport is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportFETextureToPNG internalFormat of textureToExport is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -2990,7 +2894,7 @@ bool FEResourceManager::ExportRawDataToPNG(const char* FileName, const unsigned 
 		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::exportRawDataToPNG internalFormat is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::exportRawDataToPNG internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -3012,19 +2916,19 @@ unsigned char* FEResourceManager::ResizeTextureRawData(FETexture* SourceTexture,
 {
 	if (SourceTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -3039,7 +2943,7 @@ unsigned char* FEResourceManager::ResizeTextureRawData(FETexture* SourceTexture,
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -3057,25 +2961,25 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 {
 	if (TextureData == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr textureData", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr textureData", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (Width <= 0 || Height <= 0 || Width > 8192 || Height > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported current resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported current resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth == Width && TargetHeight == Height)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -3084,7 +2988,7 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of textureData is not supported", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of textureData is not supported", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -3210,19 +3114,19 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 {
 	if (SourceTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTexture with nullptr sourceTexture", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTexture unsupported target resolution", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
 	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.Add("FEResourceManager::resizeTexture no operation needed", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::resizeTexture no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -3231,7 +3135,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTexture internalFormat of sourceTexture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FEResourceManager::resizeTexture internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -3285,19 +3189,19 @@ void FEResourceManager::DeleteTerrainLayerMask(FETerrain* Terrain, const size_t 
 {
 	if (Terrain == nullptr)
 	{
-		LOG.Add("FEResourceManager::deleteTerrainLayerMask with nullptr terrain", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask with nullptr terrain", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::deleteTerrainLayerMask with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Terrain->Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::deleteTerrainLayerMask on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEResourceManager::deleteTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -3393,7 +3297,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 
 	if (RawData == nullptr)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadJPGTexture.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadJPGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardTextures.empty())
 		{
 			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -3483,7 +3387,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3507,7 +3411,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3530,7 +3434,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3553,7 +3457,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3576,7 +3480,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3599,7 +3503,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3622,7 +3526,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3642,13 +3546,13 @@ std::vector<FEObject*> FEResourceManager::ImportAsset(const char* FileName)
 	std::vector<FEObject*> Result; 
 	if (FileName == nullptr)
 	{
-		LOG.Add("call of FEResourceManager::importAsset with nullptr fileName", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("call of FEResourceManager::importAsset with nullptr fileName", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
 
 	if (!FILE_SYSTEM.CheckFile(FileName))
 	{
-		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::importAsset", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::importAsset", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
 
@@ -3700,13 +3604,13 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 {
 	if (OriginalTexture == nullptr || MaskTexture == nullptr)
 	{
-		LOG.Add("call of FEResourceManager::createTextureWithTransparency with nullptr argument(s)", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("call of FEResourceManager::createTextureWithTransparency with nullptr argument(s)", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (OriginalTexture->GetWidth() != MaskTexture->GetWidth() || OriginalTexture->GetHeight() != MaskTexture->GetHeight())
 	{
-		LOG.Add("originalTexture and maskTexture dimensions mismatch in FEResourceManager::createTextureWithTransparency", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("originalTexture and maskTexture dimensions mismatch in FEResourceManager::createTextureWithTransparency", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -3763,7 +3667,7 @@ std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* FileName)
 	std::vector<FEObject*> Result;
 	if (!FILE_SYSTEM.CheckFile(FileName))
 	{
-		LOG.Add("call of FEResourceManager::LoadGLTF can't locate file: " + std::string(FileName), FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("call of FEResourceManager::LoadGLTF can't locate file: " + std::string(FileName), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
 
@@ -3987,7 +3891,7 @@ bool FEResourceManager::MakePrefabStandard(FEPrefab* Prefab)
 {
 	if (Prefab == nullptr)
 	{
-		LOG.Add("prefab is nullptr in function FEResourceManager::makePrefabStandard.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("prefab is nullptr in function FEResourceManager::makePrefabStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 

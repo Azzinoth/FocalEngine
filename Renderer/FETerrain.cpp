@@ -597,31 +597,31 @@ FETerrainLayer* FETerrain::ActivateVacantLayerSlot(FEMaterial* Material)
 	size_t LayerIndex = 0;
 	if (!GetNextEmptyLayerSlot(LayerIndex))
 	{
-		LOG.Add("FETerrain::activateLayerSlot was not able to acquire vacant layer index", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::activateLayerSlot was not able to acquire vacant layer index", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (Material == nullptr)
 	{
-		LOG.Add("FETerrain::activateLayerSlot material is nullptr", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::activateLayerSlot material is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (!Material->IsCompackPacking())
 	{
-		LOG.Add("FETerrain::activateLayerSlot material is not compactly packed", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::activateLayerSlot material is not compactly packed", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrain::activateLayerSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::activateLayerSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (Layers[LayerIndex] != nullptr)
 	{
-		LOG.Add("FETerrain::activateLayerSlot on indicated layer slot layer is already active", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::activateLayerSlot on indicated layer slot layer is already active", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
@@ -638,7 +638,7 @@ FETerrainLayer* FETerrain::GetLayerInSlot(const size_t LayerIndex)
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrain::getLayerInSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::getLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
@@ -649,13 +649,13 @@ void FETerrain::DeleteLayerInSlot(const size_t LayerIndex)
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrain::deleteLayerInSlot with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::deleteLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FETerrain::deleteLayerInSlot on indicated layer slot layer is already inactive", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FETerrain::deleteLayerInSlot on indicated layer slot layer is already inactive", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -805,13 +805,13 @@ float FETerrain::GetLayerIntensityAt(glm::vec2 XZWorldPosition, const int LayerI
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrain::getLayerIntensityAt with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FETerrain::getLayerIntensityAt with out of bound \"layerIndex\"", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return 0.0f;
 	}
 
 	if (Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FETerrain::getLayerIntensityAt on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FETerrain::getLayerIntensityAt on indicated layer slot layer is nullptr", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return 0.0f;
 	}
 
@@ -850,13 +850,13 @@ void FETerrain::ConnectInstancedEntityToLayer(FEEntityInstanced* Entity, const i
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrain::connectInstancedEntityToLayer with out of bound \"layerIndex\"", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FETerrain::connectInstancedEntityToLayer with out of bound \"layerIndex\"", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FETerrain::connectInstancedEntityToLayer on indicated layer slot layer is nullptr", FE_LOG_WARNING, FE_LOG_GENERAL);
+		LOG.Add("FETerrain::connectInstancedEntityToLayer on indicated layer slot layer is nullptr", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 

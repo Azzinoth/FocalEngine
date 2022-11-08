@@ -23,10 +23,7 @@ bool FEngine::IsWindowOpened()
 void FEngine::BeginFrame(const bool InternalCall)
 {
 	if (!InternalCall)
-	{
 		TIME.BeginTimeStamp();
-		RESOURCE_MANAGER.UpdateAsyncLoadedResources();
-	}
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 

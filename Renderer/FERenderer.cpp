@@ -1442,7 +1442,7 @@ void FERenderer::DrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, 
 {
 	if (LineCounter >= FE_MAX_LINES)
 	{
-		LOG.Add("Tring to draw more than maxLines", FE_LOG_ERROR, FE_LOG_RENDERING);
+		LOG.Add("Tring to draw more than maxLines", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 

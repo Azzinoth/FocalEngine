@@ -173,7 +173,7 @@ void FEGLTFLoader::Load(const char* FileName)
 			File.open(Directory + "\\" + CurrentBuffer.Uri, std::ios::in | std::ios::binary | std::ios::ate);
 			std::streamsize FileSize = File.tellg();
 			if (FileSize < 0)
-				LOG.Add(std::string("can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::load.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add(std::string("can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 
 			File.seekg(0, std::ios::beg);
 			CurrentBuffer.RawData = new char[static_cast<int>(FileSize)];
@@ -184,7 +184,7 @@ void FEGLTFLoader::Load(const char* FileName)
 				CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();
 
 			if (CurrentBuffer.ByteLength != FileSize)
-				LOG.Add("byteLength and fileSize is not equal in function FEGLTFLoader::load.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add("byteLength and fileSize is not equal in function FEGLTFLoader::load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 
 			Buffers.push_back(CurrentBuffer);
 		}
@@ -429,7 +429,7 @@ bool FEGLTFLoader::LoadPositions(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["POSITION"])
 	{
-		LOG.Add("primitive.attributes[\"POSITION\"] is out of bounds of accessors.size() function FEGLTFLoader::loadPositions.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes[\"POSITION\"] is out of bounds of accessors.size() function FEGLTFLoader::loadPositions.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -440,7 +440,7 @@ bool FEGLTFLoader::LoadPositions(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType != 5126)
 	{
-		LOG.Add("componentType is not float in function FEGLTFLoader::loadPositions.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("componentType is not float in function FEGLTFLoader::loadPositions.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -459,7 +459,7 @@ bool FEGLTFLoader::LoadNomals(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["NORMAL"])
 	{
-		LOG.Add("primitive.attributes[\"NORMAL\"] is out of bounds of accessors.size() function FEGLTFLoader::loadNomals.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes[\"NORMAL\"] is out of bounds of accessors.size() function FEGLTFLoader::loadNomals.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -470,7 +470,7 @@ bool FEGLTFLoader::LoadNomals(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType != 5126)
 	{
-		LOG.Add("componentType is not float in function FEGLTFLoader::loadNomals.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("componentType is not float in function FEGLTFLoader::loadNomals.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -489,7 +489,7 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["TANGENT"])
 	{
-		LOG.Add("primitive.attributes[\"TANGENT\"] is out of bounds of accessors.size() function FEGLTFLoader::loadTangents.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes[\"TANGENT\"] is out of bounds of accessors.size() function FEGLTFLoader::loadTangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -500,7 +500,7 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType != 5126)
 	{
-		LOG.Add("componentType is not float in function FEGLTFLoader::loadTangents.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("componentType is not float in function FEGLTFLoader::loadTangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -548,7 +548,7 @@ bool FEGLTFLoader::LoadUV(GLTFPrimitive& Primitive)
 		{
 			if (Accessors.size() <= Primitive.Attributes[AttributeName])
 			{
-				LOG.Add("primitive.attributes[" + AttributeName + "] is out of bounds of accessors.size() function FEGLTFLoader::loadUV.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add("primitive.attributes[" + AttributeName + "] is out of bounds of accessors.size() function FEGLTFLoader::loadUV.", "FE_LOG_LOADING", FE_LOG_ERROR);
 				//return false;
 			}
 
@@ -559,7 +559,7 @@ bool FEGLTFLoader::LoadUV(GLTFPrimitive& Primitive)
 
 			if (CurrentAccessor.ComponentType != 5126)
 			{
-				LOG.Add("componentType is not float in function FEGLTFLoader::loadUV.", FE_LOG_ERROR, FE_LOG_LOADING);
+				LOG.Add("componentType is not float in function FEGLTFLoader::loadUV.", "FE_LOG_LOADING", FE_LOG_ERROR);
 				//return false;
 			}
 
@@ -581,7 +581,7 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Indices)
 	{
-		LOG.Add("primitive.indices is out of bounds of accessors.size() function FEGLTFLoader::loadIndices.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.indices is out of bounds of accessors.size() function FEGLTFLoader::loadIndices.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -592,7 +592,7 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType != 5123)
 	{
-		LOG.Add("componentType is not unsigned short in function FEGLTFLoader::loadIndices.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("componentType is not unsigned short in function FEGLTFLoader::loadIndices.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -616,31 +616,31 @@ bool FEGLTFLoader::LoadMeshRawData(GLTFPrimitive& Primitive)
 {
 	if (Primitive.Attributes.find("POSITION") == Primitive.Attributes.end())
 	{
-		LOG.Add("primitive.attributes does not contain \"POSITION\" in function FEGLTFLoader::loadMeshRawData.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes does not contain \"POSITION\" in function FEGLTFLoader::loadMeshRawData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Primitive.Attributes.find("NORMAL") == Primitive.Attributes.end())
 	{
-		LOG.Add("primitive.attributes does not contain \"NORMAL\" in function FEGLTFLoader::loadMeshRawData.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes does not contain \"NORMAL\" in function FEGLTFLoader::loadMeshRawData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Primitive.Attributes.find("TANGENT") == Primitive.Attributes.end())
 	{
-		LOG.Add("primitive.attributes does not contain \"TANGENT\" in function FEGLTFLoader::loadMeshRawData.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes does not contain \"TANGENT\" in function FEGLTFLoader::loadMeshRawData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Primitive.Attributes.find("TEXCOORD_0") == Primitive.Attributes.end())
 	{
-		LOG.Add("primitive.attributes does not contain \"TEXCOORD_0\" in function FEGLTFLoader::loadMeshRawData.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.attributes does not contain \"TEXCOORD_0\" in function FEGLTFLoader::loadMeshRawData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Primitive.Indices == -1)
 	{
-		LOG.Add("primitive.indices is -1 in function FEGLTFLoader::loadMeshRawData.", FE_LOG_ERROR, FE_LOG_LOADING);
+		LOG.Add("primitive.indices is -1 in function FEGLTFLoader::loadMeshRawData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 

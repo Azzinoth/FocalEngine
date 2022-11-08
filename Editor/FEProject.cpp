@@ -836,8 +836,8 @@ void FEProject::LoadScene()
 	{
 		if (ProjectVersion == 0.0f)
 		{
-			LOG.Add("Can't find version in scene file of project from " + ProjectFolder, FE_LOG_WARNING, FE_LOG_LOADING);
-			LOG.Add("Trying to load project with old version of loader.", FE_LOG_WARNING, FE_LOG_LOADING);
+			LOG.Add("Can't find version in scene file of project from " + ProjectFolder, "FE_LOG_LOADING", FE_LOG_WARNING);
+			LOG.Add("Trying to load project with old version of loader.", "FE_LOG_LOADING", FE_LOG_WARNING);
 			LoadSceneVer0();
 			return;
 		}
@@ -1283,7 +1283,7 @@ void FEProject::LoadScene()
 	}
 	else
 	{
-		LOG.Add("Can't find VIRTUAL_FILE_SYSTEM file in project folder. Creating basic VIRTUAL_FILE_SYSTEM layout.", FE_LOG_WARNING, FE_LOG_LOADING);
+		LOG.Add("Can't find VIRTUAL_FILE_SYSTEM file in project folder. Creating basic VIRTUAL_FILE_SYSTEM layout.", "FE_LOG_LOADING", FE_LOG_WARNING);
 		VIRTUAL_FILE_SYSTEM.CreateDirectory("Shaders", "/");
 
 		std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShadersList();

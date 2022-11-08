@@ -440,7 +440,7 @@ void FEEntityInstanced::UpdateMatrices()
 	{
 		if (Renderers[i]->InstancedMatrices.size() != Renderers[i]->TransformedInstancedMatrices.size())
 		{
-			LOG.Add("instancedMatrices size and transformedInstancedMatrices size is not equal!", FE_LOG_ERROR, FE_LOG_RENDERING);
+			LOG.Add("instancedMatrices size and transformedInstancedMatrices size is not equal!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 			return;
 		}
 

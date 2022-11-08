@@ -45,17 +45,6 @@
 	}
 #endif // FE_GL_ERROR
 
-#define FE_MAP_TO_STR_VECTOR(map)          \
-std::vector<std::string> result;           \
-auto iterator = map.begin();               \
-while (iterator != map.end())              \
-{                                          \
-	result.push_back(iterator->first);     \
-	iterator++;                            \
-}                                          \
-                                           \
-return result;
-
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 28
 #define FE_WIN_32
@@ -79,5 +68,3 @@ return result;
 #else
 	#define FE_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
 #endif // USE_DEFERRED_RENDERER
-
-//#define OLD_LOADING

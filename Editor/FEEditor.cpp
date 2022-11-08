@@ -2274,27 +2274,29 @@ void FEEditor::DisplayLogWindow() const
 	if (!bLogWindowVisible)
 		return;
 
+	auto TopicList = LOG.GetTopicList();
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Log", nullptr, ImGuiWindowFlags_None);
 
-	static int SelectedChannel = FE_LOG_GENERAL;
+	static std::string SelectedChannel = "FE_LOG_GENERAL";
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 3);
 	ImGui::Text("Channel:");
 	ImGui::SameLine();
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 5);
-	if (ImGui::BeginCombo("##Channel", SelectedChannel == -1 ? "ALL" : LOG.ChannelTypeToString(LOG_CHANNEL(SelectedChannel)).c_str(), ImGuiWindowFlags_None))
+	if (ImGui::BeginCombo("##Channel", (SelectedChannel == "" ? "ALL" : SelectedChannel).c_str(), ImGuiWindowFlags_None))
 	{
-		for (int i = -1; i < LOG.ChannelCount; i++)
+		for (int i = -1; i < int(TopicList.size()); i++)
 		{
 			ImGui::PushID(i);
 
 			if (i == -1)
 			{
-				const bool is_selected = (SelectedChannel == -1);
+				const bool is_selected = (SelectedChannel == "");
 
 				if (ImGui::Selectable("ALL", is_selected))
 				{
-					SelectedChannel = -1;
+					SelectedChannel = "";
 				}
 
 				if (is_selected)
@@ -2302,10 +2304,10 @@ void FEEditor::DisplayLogWindow() const
 			}
 			else
 			{
-				const bool is_selected = (SelectedChannel == LOG_CHANNEL(i));
-				if (ImGui::Selectable(LOG.ChannelTypeToString(LOG_CHANNEL(i)).c_str(), is_selected))
+				const bool is_selected = (SelectedChannel == TopicList[i]);
+				if (ImGui::Selectable(TopicList[i].c_str(), is_selected))
 				{
-					SelectedChannel = LOG_CHANNEL(i);
+					SelectedChannel = TopicList[i];
 				}
 
 				if (is_selected)
@@ -2320,12 +2322,12 @@ void FEEditor::DisplayLogWindow() const
 	std::string LogMessages;
 	std::vector<LogItem> LogItems;
 
-	if (SelectedChannel == -1)
+	if (SelectedChannel == "")
 	{
 		std::vector<LogItem> TempItems;
-		for (int i = 0; i < LOG.ChannelCount; i++)
+		for (int i = 0; i < int(TopicList.size()); i++)
 		{
-			TempItems = LOG.GetLogItems(LOG_CHANNEL(i));
+			TempItems = LOG.GetLogItems(TopicList[i]);
 			for (size_t j = 0; j < TempItems.size(); j++)
 			{
 				LogItems.push_back(TempItems[j]);
@@ -2334,7 +2336,7 @@ void FEEditor::DisplayLogWindow() const
 	}
 	else
 	{
-		LogItems = LOG.GetLogItems(LOG_CHANNEL(SelectedChannel));
+		LogItems = LOG.GetLogItems(SelectedChannel);
 	}
 
 	std::sort(LogItems.begin(), LogItems.end(),
@@ -2358,9 +2360,9 @@ void FEEditor::DisplayLogWindow() const
 
 		LogMessages += " | SEVERITY: " + LOG.SeverityLevelToString(LogItems[i].Severity);
 
-		if (SelectedChannel == -1)
+		if (SelectedChannel == "")
 		{
-			LogMessages += " | CHANNEL: " + LOG.ChannelTypeToString(LogItems[i].Channel);
+			LogMessages += " | CHANNEL: " + LogItems[i].Topic;
 		}
 
 		if (i < LogItems.size() - 1)
@@ -2510,7 +2512,7 @@ void FEEditor::DisplayTerrainSettings(FETerrain* Terrain)
 					FETexture* LoadedTexture = RESOURCE_MANAGER.LoadPNGHeightmap(FilePath.c_str(), Terrain);
 					if (LoadedTexture == RESOURCE_MANAGER.NoTexture)
 					{
-						LOG.Add(std::string("can't load height map: ") + FilePath, FE_LOG_ERROR, FE_LOG_LOADING);
+						LOG.Add(std::string("can't load height map: ") + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
 					}
 					else
 					{

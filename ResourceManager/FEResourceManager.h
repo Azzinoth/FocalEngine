@@ -3,7 +3,6 @@
 #include "../Renderer/FEPostProcess.h"
 #include "../Renderer/FETerrain.h"
 #include "../ThirdParty/lodepng/lodepng.h"
-#include "../SubSystems/FEJobManager.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
 
@@ -61,7 +60,6 @@ namespace FocalEngine
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
-		void UpdateAsyncLoadedResources();
 
 		FEMesh* RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name = "");
 		FEMesh* RawDataToMesh(float* Positions, int PosSize,

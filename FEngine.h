@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Renderer\FERenderer.h"
-#include "SubSystems\FELog.h"
 
 namespace FocalEngine
 {

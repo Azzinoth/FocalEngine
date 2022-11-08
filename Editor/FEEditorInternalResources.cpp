@@ -9,7 +9,7 @@ void FEEditorInternalResources::AddResourceToInternalEditorList(FEObject* Object
 {
 	if (Object == nullptr)
 	{
-		LOG.Add("object is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("object is nullptr in function FEEditorInternalResources::addResourceToInternalEditorList.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -20,7 +20,7 @@ bool FEEditorInternalResources::IsInInternalEditorList(const FEObject* Object)
 {
 	if (Object == nullptr)
 	{
-		LOG.Add("object is nullptr in function FEEditorInternalResources::isInInternalEditorList.", FE_LOG_ERROR, FE_LOG_GENERAL);
+		LOG.Add("object is nullptr in function FEEditorInternalResources::isInInternalEditorList.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 

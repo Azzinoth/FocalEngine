@@ -542,20 +542,20 @@ void FEMaterial::SetTextureBinding(const int Index, const int TextureIndex, cons
 {
 	if (SubMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
 	{
-		LOG.Add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (TextureIndex < 0 || TextureIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
 	{
-		LOG.Add("FEMaterial::setTextureBinding with out of bound \"textureIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEMaterial::setTextureBinding with out of bound \"textureIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	const int FinalIndex = Index + SubMaterial * 6;
 	if (FinalIndex < 0 || FinalIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
 	{
-		LOG.Add("FEMaterial::setTextureBinding with out of bound \"finalIndex\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEMaterial::setTextureBinding with out of bound \"finalIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -572,14 +572,14 @@ void FEMaterial::ClearTextureBinding(const int Index, const int SubMaterial, con
 {
 	if (SubMaterial >= FE_MAX_SUBMATERIALS_PER_MATERIAL)
 	{
-		LOG.Add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEMaterial::setTextureBinding with out of bound \"subMaterial\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	const int FinalIndex = Index + SubMaterial * 6;
 	if (FinalIndex < 0 || FinalIndex >= FE_MAX_TEXTURES_PER_MATERIAL)
 	{
-		LOG.Add("FEMaterial::clearTextureBinding with out of bound \"index\"", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add("FEMaterial::clearTextureBinding with out of bound \"index\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 

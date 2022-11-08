@@ -168,7 +168,7 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FETexture::getRawData internalFormat is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FETexture::getRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return result;
 	}
 
@@ -212,7 +212,7 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FETexture::updateRawData internalFormat of texture is not supported", FE_LOG_ERROR, FE_LOG_SAVING);
+		LOG.Add("FETexture::updateRawData internalFormat of texture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return;
 	}
 

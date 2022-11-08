@@ -128,7 +128,7 @@ void FEShaderParam::UpdateData(bool Data)
 {
 	if (Type != FE_BOOL_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -139,7 +139,7 @@ void FEShaderParam::UpdateData(int Data)
 {
 	if (Type != FE_INT_SCALAR_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 		
@@ -150,7 +150,7 @@ void FEShaderParam::UpdateData(float Data)
 {
 	if (Type != FE_FLOAT_SCALAR_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -161,7 +161,7 @@ void FEShaderParam::UpdateData(glm::vec2 Data)
 {
 	if (Type != FE_VECTOR2_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -172,7 +172,7 @@ void FEShaderParam::UpdateData(glm::vec3 Data)
 {
 	if (Type != FE_VECTOR3_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -183,7 +183,7 @@ void FEShaderParam::UpdateData(glm::vec4 Data)
 {
 	if (Type != FE_VECTOR4_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -194,7 +194,7 @@ void FEShaderParam::UpdateData(glm::mat4 Data)
 {
 	if (Type != FE_MAT4_UNIFORM)
 	{
-		LOG.Add(std::string("updateData() incorrect type", FE_LOG_ERROR, FE_LOG_RENDERING));
+		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -1138,7 +1138,7 @@ FEShaderParam* FEShader::GetParameter(const std::string Name)
 {
 	if (Parameters.find(Name) == Parameters.end())
 	{
-		LOG.Add(std::string("getParameter can't find : ") + Name + " in function FEShader::getParameter", FE_LOG_WARNING, FE_LOG_RENDERING);
+		LOG.Add(std::string("getParameter can't find : ") + Name + " in function FEShader::getParameter", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 

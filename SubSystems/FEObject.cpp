@@ -96,7 +96,7 @@ void FEObject::SetID(std::string NewValue)
 {
 	if (ID == NewValue)
 	{
-		LOG.Add("FEObject::setID newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
+		LOG.Add("FEObject::setID newID is the same as current ID, redundant call", "FE_LOG_LOADING", FE_LOG_INFO);
 		return;
 	}
 
@@ -138,13 +138,13 @@ void FEObject::SetIDOfUnTyped(const std::string NewValue)
 {
 	if (Type != FE_NULL)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", FE_LOG_WARNING, FE_LOG_LOADING);
+		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", "FE_LOG_LOADING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (ID == NewValue)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", FE_LOG_INFO, FE_LOG_LOADING);
+		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", "FE_LOG_LOADING", FE_LOG_INFO);
 		return;
 	}
 
