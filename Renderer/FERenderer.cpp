@@ -1758,6 +1758,39 @@ void FERenderer::UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPositi
 
 void FERenderer::GPUCulling(FEEntityInstanced* Entity, const int SubGameModel, const FEBasicCamera* CurrentCamera)
 {
+	if (CullingInfo.find(Entity->GetObjectID()) == CullingInfo.end())
+	{
+		DebugCullingInfo NewRecord;
+		NewRecord.EntityID = Entity->GetObjectID();
+		NewRecord.SubGameModel = SubGameModel;
+		NewRecord.TotalCount = int(Entity->Renderers[SubGameModel]->InstancePositions.size());
+
+		CullingInfo[Entity->GetObjectID()].push_back(NewRecord);
+	}
+	else
+	{
+		bool WasFound = false;
+		for (size_t i = 0; i < CullingInfo[Entity->GetObjectID()].size(); i++)
+		{
+			if (CullingInfo[Entity->GetObjectID()][i].SubGameModel == SubGameModel &&
+				CullingInfo[Entity->GetObjectID()][i].TotalCount == Entity->Renderers[SubGameModel]->InstancePositions.size())
+			{
+				WasFound = true;
+				break;
+			}
+		}
+
+		if (!WasFound)
+		{
+			DebugCullingInfo NewRecord;
+			NewRecord.EntityID = Entity->GetObjectID();
+			NewRecord.SubGameModel = SubGameModel;
+			NewRecord.TotalCount = int(Entity->Renderers[SubGameModel]->InstancePositions.size());
+
+			CullingInfo[Entity->GetObjectID()].push_back(NewRecord);
+		}
+	}
+
 	if (bFreezeCulling)
 		return;
 

@@ -124,6 +124,8 @@ file(GLOB ComputeShaders_SRC
 file(GLOB CoreExtensions_SRC
 	"CoreExtensions/FEFreeCamera.cpp"
 	"CoreExtensions/FEFreeCamera.h"
+	"CoreExtensions/FEModelViewCamera.cpp"
+	"CoreExtensions/FEModelViewCamera.h"
 )
 
 # *************** EDITOR ***************

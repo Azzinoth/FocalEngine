@@ -68,6 +68,7 @@ public:
 	std::string GetCurrentPath();
 	bool SetCurrentPath(std::string Path);
 
+	std::string LocateFile(FEObject* File);
 	void LocateAndDeleteFile(FEObject* File);
 
 	void SaveState(std::string FileName);
@@ -81,7 +82,7 @@ private:
 	std::string DirectoryToPath(FEVFSDirectory* Directory);
 	void DeleteDirectory(FEVFSDirectory* Directory);
 	std::string CurrentPath = "/";
-	void LocateAndDeleteFileRecursive(FEVFSDirectory* Directory, FEObject* File);
+	std::string LocateFileRecursive(FEVFSDirectory* Directory, FEObject* File);
 
 	void SaveStateRecursive(Json::Value* LocalRoot, FEVFSDirectory* Directory);
 	void LoadStateRecursive(Json::Value* LocalRoot, FEVFSDirectory* Parent, FEVFSDirectory* Directory, std::string ForceObjectID);

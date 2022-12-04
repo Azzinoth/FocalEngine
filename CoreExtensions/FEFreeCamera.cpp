@@ -5,7 +5,7 @@ using namespace FocalEngine;
 
 FEFreeCamera::FEFreeCamera(std::string Name) : FEBasicCamera (std::move(Name))
 {
-
+	Type = 1;
 }
 
 FEFreeCamera::~FEFreeCamera() = default;

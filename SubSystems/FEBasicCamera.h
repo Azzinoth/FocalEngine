@@ -56,6 +56,7 @@ namespace FocalEngine
 
 		virtual void KeyboardInput(int Key, int Scancode, int Action, int Mods) {};
 		virtual void MouseMoveInput(double Xpos, double Ypos) {};
+		virtual void MouseScrollInput(double Xoffset, double Yoffset) {};
 
 		virtual void Reset();
 
@@ -66,6 +67,8 @@ namespace FocalEngine
 
 		virtual float GetMovementSpeed();
 		virtual void SetMovementSpeed(float NewValue);
+
+		int GetCameraType() const;
 	protected:
 		bool bIsInputActive = true;
 
@@ -90,5 +93,7 @@ namespace FocalEngine
 		void(*ClientOnUpdateImpl)(FEBasicCamera*) = nullptr;
 
 		float** Frustum;
+
+		int Type = 0;
 	};
 }

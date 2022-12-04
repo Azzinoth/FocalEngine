@@ -3,6 +3,7 @@
 FEEditor* FEEditor::Instance = nullptr;
 ImGuiWindow* FEEditor::SceneWindow = nullptr;
 FEEntity* FEEditor::EntityToModify = nullptr;
+FEObject* FEEditor::ItemInFocus = nullptr;
 
 bool SceneWindowDragAndDropCallBack(FEObject* Object, void** UserData)
 {
@@ -72,7 +73,8 @@ FEEditor::FEEditor()
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigWindowsMoveFromTitleBarOnly = true;
 
-	ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+	if (ENGINE.GetCamera()->GetCameraType() == 1)
+		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 
 	strcpy_s(FilterForResourcesContentBrowser, "");
 	strcpy_s(FilterForSceneEntities, "");
@@ -132,6 +134,8 @@ void FEEditor::SetObjectNameInClipboard(const std::string NewValue)
 
 void FEEditor::MouseButtonCallback(const int Button, const int Action, int Mods)
 {
+	ItemInFocus = nullptr;
+
 	if (ImGui::GetCurrentContext()->HoveredWindow != nullptr && FEEditor::SceneWindow != nullptr)
 	{
 		EDITOR.bSceneWindowHovered = ImGui::GetCurrentContext()->HoveredWindow->Name == EDITOR.SceneWindow->Name;
@@ -1333,7 +1337,8 @@ void FEEditor::Render()
 		ENGINE.SetRenderTargetXShift((int)SceneWindow->ContentRegionRect.GetTL().x);
 		ENGINE.SetRenderTargetYShift((int)SceneWindow->ContentRegionRect.GetTL().y);
 
-		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+		if (ENGINE.GetCamera()->GetCameraType() == 1)
+			ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 
 		ImGuiStyle& style = ImGui::GetStyle();
 		style.WindowBorderSize = 0.0f;
@@ -1403,7 +1408,8 @@ void FEEditor::CloseWindowCallBack()
 
 void FEEditor::RenderTargetResizeCallback(int NewW, int NewH)
 {
-	ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+	if (ENGINE.GetCamera()->GetCameraType() == 1)
+		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 	SELECTED.ReInitializeResources();
 }
 
@@ -1453,12 +1459,14 @@ void FEEditor::SetGameMode(const bool GameMode)
 	if (this->bGameMode)
 	{
 		ENGINE.SetRenderTargetMode(FE_GLFW_MODE);
-		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+		if (ENGINE.GetCamera()->GetCameraType() == 1)
+			ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 	}
 	else
 	{
 		ENGINE.SetRenderTargetMode(FE_CUSTOM_MODE);
-		ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
+		if (ENGINE.GetCamera()->GetCameraType() == 1)
+			ENGINE.RenderTargetCenterForCamera(reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera()));
 	}
 }
 
@@ -1487,6 +1495,36 @@ bool FEEditor::TerrainChangeMaterialTargetCallBack(FEObject* Object, void** Laye
 		terrain->GetLayerInSlot(TempLayerIndex)->SetMaterial(MaterialToAssign);
 
 	return true;
+}
+
+void FEEditor::ShowInFolderItem(FEObject* Object)
+{
+	VIRTUAL_FILE_SYSTEM.SetCurrentPath(VIRTUAL_FILE_SYSTEM.LocateFile(Object));
+	ImGui::SetWindowFocus("Content Browser");
+	strcpy_s(FilterForResourcesContentBrowser, "");
+	ItemInFocus = Object;
+
+	const auto Content = VIRTUAL_FILE_SYSTEM.GetDirectoryContent(VIRTUAL_FILE_SYSTEM.GetCurrentPath());
+	size_t TotalItemCount = Content.size();
+
+	size_t ItemIndex = 0;
+	for (size_t i = 0; i < Content.size(); i++)
+	{
+		if (Content[i]->GetObjectID() == Object->GetObjectID())
+		{
+			ItemIndex = i;
+			break;
+		}
+	}
+
+	ImGuiWindow* ContentBrowserWindow = ImGui::FindWindowByName("Content Browser");
+	const int IconsPerWindowWidth = (int)(ContentBrowserWindow->Rect().GetWidth() / (ContentBrowserItemIconSize + 8 + 32));
+	const size_t ItemRow = ItemIndex / IconsPerWindowWidth;
+	
+	if (ContentBrowserWindow != nullptr)
+	{
+		ContentBrowserWindow->Scroll.y = float(ItemRow * (ContentBrowserItemIconSize + 8 + 8 + 32));
+	}
 }
 
 void FEEditor::DisplayInspector()
@@ -1528,8 +1566,32 @@ void FEEditor::DisplayInspector()
 			{
 				EntityToModify = entity;
 				SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, ChangePrefabOfEntityCallBack, entity->Prefab);
+				
 			}
 			EntityChangePrefabTarget->StickToItem();
+
+			bool open_context_menu = false;
+			if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+				open_context_menu = true;
+
+			if (open_context_menu)
+				ImGui::OpenPopup("##Inspector_context_menu");
+
+			bShouldOpenContextMenuInContentBrowser = false;
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+			if (ImGui::BeginPopup("##Inspector_context_menu"))
+			{
+				bShouldOpenContextMenuInContentBrowser = true;
+
+				if (ImGui::MenuItem("Show in folder"))
+				{
+					ShowInFolderItem(entity->Prefab);
+				}
+
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar();
+
 			ImGui::Separator();
 
 			ImGui::PopStyleColor();
@@ -1584,6 +1646,28 @@ void FEEditor::DisplayInspector()
 					SelectFeObjectPopUp::getInstance().Show(FE_PREFAB, ChangePrefabOfEntityCallBack, entity->Prefab);
 				}
 				EntityChangePrefabTarget->StickToItem();
+
+				bool open_context_menu = false;
+				if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(1))
+					open_context_menu = true;
+
+				if (open_context_menu)
+					ImGui::OpenPopup("##Inspector_context_menu");
+
+				bShouldOpenContextMenuInContentBrowser = false;
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
+				if (ImGui::BeginPopup("##Inspector_context_menu"))
+				{
+					bShouldOpenContextMenuInContentBrowser = true;
+
+					if (ImGui::MenuItem("Show in folder"))
+					{
+						ShowInFolderItem(entity->Prefab);
+					}
+
+					ImGui::EndPopup();
+				}
+				ImGui::PopStyleVar();
 				ImGui::Separator();
 
 				ImGui::PopStyleColor();
@@ -1872,10 +1956,11 @@ void FEEditor::DisplayInspector()
 	}
 	else if (SELECTED.GetSelected()->GetType() == FE_CAMERA)
 	{
-		FEFreeCamera* camera = reinterpret_cast<FEFreeCamera*>(ENGINE.GetCamera());
+		FEBasicCamera* camera = ENGINE.GetCamera();
+
 		// ********* POSITION *********
 		glm::vec3 CameraPosition = camera->GetPosition();
-		
+
 		ImGui::Text("Position : ");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(90);
@@ -2274,7 +2359,7 @@ void FEEditor::DisplayLogWindow() const
 	if (!bLogWindowVisible)
 		return;
 
-	auto TopicList = LOG.GetTopicList();
+	const auto TopicList = LOG.GetTopicList();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
 	ImGui::Begin("Log", nullptr, ImGuiWindowFlags_None);

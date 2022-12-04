@@ -2,6 +2,7 @@
 
 SelectFeObjectPopUp* SelectFeObjectPopUp::Instance = nullptr;
 bool SelectFeObjectPopUp::ControlButtonPressed = false;
+bool SelectFeObjectPopUp::bOneObjectSelectonMode = true;
 
 SelectFeObjectPopUp::SelectFeObjectPopUp()
 {
@@ -103,20 +104,17 @@ void SelectFeObjectPopUp::Show(const FE_OBJECT_TYPE Type, void(*CallBack)(std::v
 	FilteredItemsList = ItemsList;
 	strcpy_s(Filter, "");
 
+	SelectedObjects.clear();
 	if (HighlightedObject != nullptr)
 	{
 		for (size_t i = 0; i < ItemsList.size(); i++)
 		{
 			if (ItemsList[i]->GetObjectID() == HighlightedObject->GetObjectID())
 			{
-				IndexSelected = static_cast<int>(i);
+				AddToSelected(OBJECT_MANAGER.GetFEObject(ItemsList[i]->GetObjectID()));
 				break;
 			}
 		}
-	}
-	else
-	{
-		IndexSelected = -1;
 	}
 }
 
@@ -164,8 +162,8 @@ void SelectFeObjectPopUp::Render()
 			{
 				if (IndexUnderMouse != -1)
 				{
-					SelectedObjects.push_back(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
-					if (!ControlButtonPressed)
+					AddToSelected(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
+					if (!ControlButtonPressed || bOneObjectSelectonMode && SelectedObjects.size() == 1)
 					{
 						OnSelectAction();
 						Close();
@@ -173,13 +171,12 @@ void SelectFeObjectPopUp::Render()
 				}
 			}
 
-			//IndexSelected == i ? setSelectedStyle(iconButton) : setDefaultStyle(iconButton);
 			IsSelected(FilteredItemsList[i]) ? SetSelectedStyle(IconButton) : SetDefaultStyle(IconButton);
 			IconButton->SetTexture(PREVIEW_MANAGER.GetPreview(FilteredItemsList[i]));
 			IconButton->Render();
 			if (IconButton->IsClicked())
 			{
-				IndexSelected = static_cast<int>(i);
+				AddToSelected(OBJECT_MANAGER.GetFEObject(FilteredItemsList[i]->GetObjectID()));
 			}
 
 			if (ImGui::IsItemHovered())
@@ -215,13 +212,10 @@ void SelectFeObjectPopUp::Render()
 		SelectButton->Render();
 		if (SelectButton->IsClicked())
 		{
-			if (IndexSelected != -1)
-			{
-				SelectedObjects.push_back(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
-				OnSelectAction();
+			AddToSelected(OBJECT_MANAGER.GetFEObject(FilteredItemsList[IndexUnderMouse]->GetObjectID()));
+			OnSelectAction();
 
-				Close();
-			}
+			Close();
 		}
 
 		CancelButton->Render();
@@ -247,7 +241,6 @@ void SelectFeObjectPopUp::Close()
 {
 	ImGuiModalPopup::Close();
 	IndexUnderMouse = -1;
-	IndexSelected = -1;
 	HighlightedObject = nullptr;
 	SelectedObjects.clear();
 }
@@ -273,4 +266,31 @@ bool SelectFeObjectPopUp::IsSelected(const FEObject* Object) const
 	}
 	
 	return false;
+}
+
+bool SelectFeObjectPopUp::IsOneObjectSelectonMode()
+{
+	return bOneObjectSelectonMode;
+}
+
+void SelectFeObjectPopUp::SetOneObjectSelectonMode(const bool NewValue)
+{
+	bOneObjectSelectonMode = NewValue;
+	if (bOneObjectSelectonMode && SelectedObjects.size() > 1)
+		SelectedObjects.resize(1);
+}
+
+void SelectFeObjectPopUp::AddToSelected(FEObject* Object)
+{
+	if (IsSelected(Object))
+		return;
+
+	if (bOneObjectSelectonMode && SelectedObjects.size() == 1)
+	{
+		SelectedObjects[0] = Object;
+	}
+	else
+	{
+		SelectedObjects.push_back(Object);
+	}
 }

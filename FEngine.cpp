@@ -149,6 +149,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	APPLICATION.SetMouseMoveCallback(&FEngine::MouseMoveCallback);
 	APPLICATION.SetKeyCallback(&FEngine::KeyButtonCallback);
 	APPLICATION.SetDropCallback(&FEngine::DropCallback);
+	APPLICATION.SetScrollCallback(&FEngine::MouseScrollCallback);
 	
 	ImGuiIO& io = ImGui::GetIO();
 
@@ -751,4 +752,17 @@ void FEngine::AddDropCallback(void(*Func)(int, const char**))
 {
 	if (Func != nullptr)
 		ClientDropCallbacks.push_back(Func);
+}
+
+void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
+{
+	for (size_t i = 0; i < ENGINE.ClientMouseScrollCallbacks.size(); i++)
+	{
+		if (ENGINE.ClientMouseScrollCallbacks[i] == nullptr)
+			continue;
+
+		ENGINE.ClientMouseScrollCallbacks[i](Xoffset, Yoffset);
+	}
+
+	ENGINE.CurrentCamera->MouseScrollInput(Xoffset, Yoffset);
 }

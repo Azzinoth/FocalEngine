@@ -325,3 +325,8 @@ void FEBasicCamera::SetMovementSpeed(const float NewValue)
 {
 	MovementSpeed = NewValue;
 }
+
+int FEBasicCamera::GetCameraType() const
+{
+	return Type;
+}

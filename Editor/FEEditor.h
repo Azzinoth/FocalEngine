@@ -109,6 +109,8 @@ private:
 	void DisplayLightProperties(FELight* Light) const;
 	void DisplayLightsProperties() const;
 
+	void ShowInFolderItem(FEObject* Object);
+
 	// ************** Terrain Settings **************
 	ImGuiButton* ExportHeightMapButton = nullptr;
 	ImGuiButton* ImportHeightMapButton = nullptr;
@@ -150,8 +152,10 @@ private:
 
 	void DisplayContentBrowser();
 	bool bContentBrowserVisible = true;
+	void ChooseTexturesForContentBrowserItem(FETexture*& PreviewTexture, FETexture*& SmallAdditionTypeIcon, ImVec2& UV0, ImVec2& UV1, FEObject* Item);
 	void DisplayContentBrowserItems();
 
+	float ContentBrowserItemIconSize = 128.0;
 	int ContentBrowserItemUnderMouse = -1;
 	int ContentBrowserRenameIndex = -1;
 	char ContentBrowserRename[1024];
@@ -160,6 +164,7 @@ private:
 	std::vector<FEObject*> AllResourcesContentBrowser;
 	std::vector<FEObject*> FilteredResourcesContentBrowser;
 	char FilterForResourcesContentBrowser[512];
+	static FEObject* ItemInFocus;
 	std::string ObjTypeFilterForResourcesContentBrowser;
 	void UpdateFilterForResourcesContentBrowser();
 	FETexture* AllContentBrowserIcon = nullptr;
@@ -173,7 +178,6 @@ private:
 	char FilterForSceneEntities[512];
 	bool bShouldOpenContextMenuInContentBrowser = false;
 	bool bShouldOpenContextMenuInSceneEntities = false;
-	int ActiveTabContentBrowser = 0;
 
 	// ************** Drag&Drop **************
 	struct DirectoryDragAndDropCallbackInfo

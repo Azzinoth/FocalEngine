@@ -4,8 +4,9 @@
 
 class SelectFeObjectPopUp : public ImGuiModalPopup
 {
+	SINGLETON_PRIVATE_PART(SelectFeObjectPopUp)
+
 	int IndexUnderMouse = -1;
-	int IndexSelected = -1;
 	FEObject* HighlightedObject = nullptr;
 
 	std::vector<FEObject*> ItemsList;
@@ -24,7 +25,9 @@ class SelectFeObjectPopUp : public ImGuiModalPopup
 
 	static void KeyButtonCallback(int Key, int Scancode, int Action, int Mods);
 	static bool ControlButtonPressed;
+	static bool bOneObjectSelectonMode;
 	bool IsSelected(const FEObject* Object) const;
+	void AddToSelected(FEObject* Object);
 public:
 	SINGLETON_PUBLIC_PART(SelectFeObjectPopUp)
 
@@ -32,6 +35,6 @@ public:
 	void Close() override;
 	void Render() override;
 
-private:
-	SINGLETON_PRIVATE_PART(SelectFeObjectPopUp)
+	bool IsOneObjectSelectonMode();
+	void SetOneObjectSelectonMode(bool NewValue);
 };

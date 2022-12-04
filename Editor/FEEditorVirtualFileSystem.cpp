@@ -553,47 +553,68 @@ bool FEVirtualFileSystem::DeleteFile(const FEObject* Data, const std::string Pat
 	return true;
 }
 
-void FEVirtualFileSystem::LocateAndDeleteFileRecursive(FEVFSDirectory* Directory, FEObject* File)
+std::string FEVirtualFileSystem::LocateFileRecursive(FEVFSDirectory* Directory, FEObject* File)
 {
+	std::string Path = "";
+
 	if (Directory == nullptr)
 	{
-		LOG.Add("directory is nullptr in function FEVirtualFileSystem::locateAndDeleteFileRecursive.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return;
+		LOG.Add("Directory is nullptr in function FEVirtualFileSystem::LocateFileRecursive.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return Path;
 	}
 
 	if (File == nullptr)
 	{
-		LOG.Add("file is nullptr in function FEVirtualFileSystem::locateAndDeleteFileRecursive.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return;
+		LOG.Add("File is nullptr in function FEVirtualFileSystem::LocateFileRecursive.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return Path;
 	}
-
-	if (Directory->IsReadOnly())
-		return;
 
 	for (size_t i = 0; i < Directory->Files.size(); i++)
 	{
-		if (Directory->Files[i].Data->GetObjectID() == File->GetObjectID() && !Directory->Files[i].IsReadOnly())
+		if (Directory->Files[i].Data->GetObjectID() == File->GetObjectID())
 		{
-			Directory->Files.erase(Directory->Files.begin() + i, Directory->Files.begin() + i + 1);
-			return;
+			Path = DirectoryToPath(Directory);
+			return Path;
 		}
 	}
 
 	for (size_t i = 0; i < Directory->SubDirectories.size(); i++)
 	{
-		LocateAndDeleteFileRecursive(Directory->SubDirectories[i], File);
+		Path = LocateFileRecursive(Directory->SubDirectories[i], File);
+		if (!Path.empty())
+			return Path;
 	}
+
+	return Path;
+}
+
+std::string FEVirtualFileSystem::LocateFile(FEObject* File)
+{
+	if (File == nullptr)
+	{
+		LOG.Add("File is nullptr in function FEVirtualFileSystem::LocateFile.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return "";
+	}
+
+	return LocateFileRecursive(Root, File);
 }
 
 void FEVirtualFileSystem::LocateAndDeleteFile(FEObject* File)
 {
 	if (File == nullptr)
 	{
-		LOG.Add("file is nullptr in function FEVirtualFileSystem::locateAndDeleteFile.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("File is nullptr in function FEVirtualFileSystem::LocateAndDeleteFile.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	LocateAndDeleteFileRecursive(Root, File);
+	const std::string Path = LocateFile(File);
+	if (Path.empty())
+		return;
+
+	if (IsReadOnly(File, Path))
+		return;
+
+	PathToDirectory(Path)->DeleteFile(File);
 }
 
 void FEVirtualFileSystem::SaveStateRecursive(Json::Value* LocalRoot, FEVFSDirectory* Directory)

@@ -51,9 +51,10 @@ static void CreateNewPrefabCallBack(const std::vector<FEObject*> SelectionsResul
 		PROJECT_MANAGER.GetCurrent()->SetModified(true);
 		VIRTUAL_FILE_SYSTEM.CreateFile(NewPrefab, VIRTUAL_FILE_SYSTEM.GetCurrentPath());
 	}
+
+	SelectFeObjectPopUp::getInstance().SetOneObjectSelectonMode(true);
 }
 
-static int ItemIconSide = 128 + 8;
 void FEEditor::DisplayContentBrowser()
 {
 	if (!bContentBrowserVisible)
@@ -117,6 +118,13 @@ void FEEditor::DisplayContentBrowser()
 				}
 			}
 
+			if (ImGui::MenuItem("Test Model camera"))
+			{
+				FEModelViewCamera* NewCamera = new FEModelViewCamera("New ModelViewCamera");
+				NewCamera->SetAspectRatio(static_cast<float>(ENGINE.GetRenderTargetWidth()) / static_cast<float>(ENGINE.GetRenderTargetHeight()));
+				ENGINE.SetCamera(NewCamera);
+			}
+
 			if (ImGui::BeginMenu("Add"))
 			{
 				if (ImGui::MenuItem("Add folder"))
@@ -167,6 +175,7 @@ void FEEditor::DisplayContentBrowser()
 
 				if (ImGui::MenuItem("Create new prefab"))
 				{
+					SelectFeObjectPopUp::getInstance().SetOneObjectSelectonMode(false);
 					SelectFeObjectPopUp::getInstance().Show(FE_GAMEMODEL, CreateNewPrefabCallBack);
 				}
 
@@ -336,6 +345,77 @@ void FEEditor::DisplayContentBrowser()
 	ImGui::End();
 }
 
+void FEEditor::ChooseTexturesForContentBrowserItem(FETexture*& PreviewTexture, FETexture*& SmallAdditionTypeIcon, ImVec2& UV0, ImVec2& UV1, FEObject* Item)
+{
+	if (Item->GetType() == FE_NULL)
+	{
+		UV0 = ImVec2(0.0f, 0.0f);
+		UV1 = ImVec2(1.0f, 1.0f);
+
+		PreviewTexture = FolderIcon;
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+	}
+	else if (Item->GetType() == FE_SHADER)
+	{
+		UV0 = ImVec2(0.0f, 0.0f);
+		UV1 = ImVec2(1.0f, 1.0f);
+
+		PreviewTexture = ShaderIcon;
+
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+		ImGui::PopStyleColor();
+
+		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(0.95f, 0.90f, 0.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+	}
+	else if (Item->GetType() == FE_MESH)
+	{
+		UV0 = ImVec2(0.0f, 1.0f);
+		UV1 = ImVec2(1.0f, 0.0f);
+
+		PreviewTexture = PREVIEW_MANAGER.GetMeshPreview(Item->GetObjectID());
+		SmallAdditionTypeIcon = MeshContentBrowserIcon;
+	}
+	else if (Item->GetType() == FE_TEXTURE)
+	{
+		PreviewTexture = RESOURCE_MANAGER.GetTexture(Item->GetObjectID());
+		SmallAdditionTypeIcon = TextureContentBrowserIcon;
+	}
+	else if (Item->GetType() == FE_MATERIAL)
+	{
+		UV0 = ImVec2(0.0f, 1.0f);
+		UV1 = ImVec2(1.0f, 0.0f);
+
+		PreviewTexture = PREVIEW_MANAGER.GetMaterialPreview(Item->GetObjectID());
+		SmallAdditionTypeIcon = MaterialContentBrowserIcon;
+	}
+	else if (Item->GetType() == FE_GAMEMODEL)
+	{
+		UV0 = ImVec2(0.0f, 1.0f);
+		UV1 = ImVec2(1.0f, 0.0f);
+
+		PreviewTexture = PREVIEW_MANAGER.GetGameModelPreview(Item->GetObjectID());
+		SmallAdditionTypeIcon = GameModelContentBrowserIcon;
+	}
+	else if (Item->GetType() == FE_PREFAB)
+	{
+		UV0 = ImVec2(0.0f, 1.0f);
+		UV1 = ImVec2(1.0f, 0.0f);
+
+		PreviewTexture = PREVIEW_MANAGER.GetPrefabPreview(Item->GetObjectID());
+		SmallAdditionTypeIcon = PrefabContentBrowserIcon;
+	}
+}
+
 void FEEditor::DisplayContentBrowserItems()
 {
 	ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
@@ -428,7 +508,7 @@ void FEEditor::DisplayContentBrowserItems()
 	int DirectoryIndex = 0;
 	// ************** Drag&Drop END **************
 
-	int IconsPerWindowWidth = (int)ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (ItemIconSide + 32);
+	int IconsPerWindowWidth = (int)(ImGui::GetCurrentContext()->CurrentWindow->Rect().GetWidth() / (ContentBrowserItemIconSize + 8 + 32));
 	// Possibly window is minimized anyway ImGui::Columns can't take 0 as columns count!
 	if (IconsPerWindowWidth == 0)
 		return;
@@ -440,87 +520,30 @@ void FEEditor::DisplayContentBrowserItems()
 	for (size_t i = 0; i < FilteredResourcesContentBrowser.size(); i++)
 	{
 		ImGui::PushID(int(std::hash<std::string>{}(FilteredResourcesContentBrowser[i]->GetObjectID())));
+
+		if (ItemInFocus != nullptr && ItemInFocus->GetObjectID() == FilteredResourcesContentBrowser[i]->GetObjectID())
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		}
+		else
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor(0.95f, 0.90f, 0.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor(0.1f, 1.0f, 0.1f, 1.0f));
+		}
 		
-		ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-		
-		ImVec2 uv0 = ImVec2(0.0f, 0.0f);
+ 		ImVec2 uv0 = ImVec2(0.0f, 0.0f);
 		ImVec2 uv1 = ImVec2(1.0f, 1.0f);
 
 		FETexture* PreviewTexture = nullptr;
 		FETexture* SmallAdditionTypeIcon = nullptr;
 
-		if (FilteredResourcesContentBrowser[i]->GetType() == FE_NULL)
-		{
-			uv0 = ImVec2(0.0f, 0.0f);
-			uv1 = ImVec2(1.0f, 1.0f);
-
-			PreviewTexture = FolderIcon;
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-		}
-		if (FilteredResourcesContentBrowser[i]->GetType() == FE_SHADER)
-		{
-			uv0 = ImVec2(0.0f, 0.0f);
-			uv1 = ImVec2(1.0f, 1.0f);
-
-			PreviewTexture = ShaderIcon;
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
-			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(0.5f, 0.5f, 0.5f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::ImColor(0.95f, 0.90f, 0.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::ImColor(0.1f, 1.0f, 0.1f, 1.0f));
-		}
-		else if (FilteredResourcesContentBrowser[i]->GetType() == FE_MESH)
-		{
-			uv0 = ImVec2(0.0f, 1.0f);
-			uv1 = ImVec2(1.0f, 0.0f);
-
-			PreviewTexture = PREVIEW_MANAGER.GetMeshPreview(FilteredResourcesContentBrowser[i]->GetObjectID());
-			SmallAdditionTypeIcon = MeshContentBrowserIcon;
-		}
-		else if (FilteredResourcesContentBrowser[i]->GetType() == FE_TEXTURE)
-		{
-			PreviewTexture = RESOURCE_MANAGER.GetTexture(FilteredResourcesContentBrowser[i]->GetObjectID());
-			SmallAdditionTypeIcon = TextureContentBrowserIcon;
-		}
-		else if (FilteredResourcesContentBrowser[i]->GetType() == FE_MATERIAL)
-		{
-			uv0 = ImVec2(0.0f, 1.0f);
-			uv1 = ImVec2(1.0f, 0.0f);
-
-			PreviewTexture = PREVIEW_MANAGER.GetMaterialPreview(FilteredResourcesContentBrowser[i]->GetObjectID());
-			SmallAdditionTypeIcon = MaterialContentBrowserIcon;
-		}
-		else if (FilteredResourcesContentBrowser[i]->GetType() == FE_GAMEMODEL)
-		{
-			uv0 = ImVec2(0.0f, 1.0f);
-			uv1 = ImVec2(1.0f, 0.0f);
-
-			PreviewTexture = PREVIEW_MANAGER.GetGameModelPreview(FilteredResourcesContentBrowser[i]->GetObjectID());
-			SmallAdditionTypeIcon = GameModelContentBrowserIcon;
-		}
-		else if (FilteredResourcesContentBrowser[i]->GetType() == FE_PREFAB)
-		{
-			uv0 = ImVec2(0.0f, 1.0f);
-			uv1 = ImVec2(1.0f, 0.0f);
-
-			PreviewTexture = PREVIEW_MANAGER.GetPrefabPreview(FilteredResourcesContentBrowser[i]->GetObjectID());
-			SmallAdditionTypeIcon = PrefabContentBrowserIcon;
-		}
+		ChooseTexturesForContentBrowserItem(PreviewTexture, SmallAdditionTypeIcon, uv0, uv1, FilteredResourcesContentBrowser[i]);
 
 		if (PreviewTexture != nullptr)
-			ImGui::ImageButton((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(128, 128), uv0, uv1, 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f));
+			ImGui::ImageButton((void*)(intptr_t)PreviewTexture->GetTextureID(), ImVec2(ContentBrowserItemIconSize, ContentBrowserItemIconSize), uv0, uv1, 8, ImColor(0.0f, 0.0f, 0.0f, 0.0f), ImColor(1.0f, 1.0f, 1.0f, 1.0f));
 		
 		if (FilteredResourcesContentBrowser[i]->GetType() == FE_NULL && ContentBrowserDirectoriesTargets.size() > (size_t)DirectoryIndex)
 			ContentBrowserDirectoriesTargets[DirectoryIndex++]->StickToItem();
@@ -560,7 +583,6 @@ void FEEditor::DisplayContentBrowserItems()
 			ImGui::Image((void*)(intptr_t)SmallAdditionTypeIcon->GetTextureID(), ImVec2(32, 32));
 			ImGui::SetCursorPos(CursorPosBefore);
 		}
-			
 
 		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
@@ -578,7 +600,7 @@ void FEEditor::DisplayContentBrowserItems()
 				bLastFrameRenameEditWasVisiable = true;
 			}
 
-			ImGui::SetNextItemWidth(ItemIconSide + 8.0f);
+			ImGui::SetNextItemWidth(ContentBrowserItemIconSize + 8.0f + 8.0f);
 			if (ImGui::InputText("##newNameEditor", ContentBrowserRename, IM_ARRAYSIZE(ContentBrowserRename), ImGuiInputTextFlags_EnterReturnsTrue) ||
 				ImGui::IsMouseClicked(0) && !ImGui::IsItemHovered() || ImGui::GetFocusID() != ImGui::GetID("##newNameEditor"))
 			{
@@ -606,9 +628,9 @@ void FEEditor::DisplayContentBrowserItems()
 		else
 		{
 			ImVec2 TextSize = ImGui::CalcTextSize(FilteredResourcesContentBrowser[i]->GetName().c_str());
-			if (TextSize.x < ItemIconSide + 8)
+			if (TextSize.x < ContentBrowserItemIconSize + 8 + 8)
 			{
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ItemIconSide + 8.0f) / 2.0f - TextSize.x / 2.0f);
+				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (ContentBrowserItemIconSize + 8.0f + 8.0f) / 2.0f - TextSize.x / 2.0f);
 				ImGui::Text(FilteredResourcesContentBrowser[i]->GetName().c_str());
 			}
 			else
