@@ -13,8 +13,7 @@ renameFailedPopUp::renameFailedPopUp()
 
 renameFailedPopUp::~renameFailedPopUp()
 {
-	if (OkButton != nullptr)
-		delete OkButton;
+	delete OkButton;
 }
 
 void renameFailedPopUp::Render()
@@ -22,7 +21,7 @@ void renameFailedPopUp::Render()
 	ImGuiModalPopup::Render();
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(15, 15));
-	if (ImGui::BeginPopupModal(PopupCaption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+	if (ImGui::BeginPopupModal(PopupCaption.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
 	{
 		ImGui::SetWindowPos(ImVec2(ENGINE.GetWindowWidth() / 2.0f - ImGui::GetWindowWidth() / 2.0f, ENGINE.GetWindowHeight() / 2.0f - ImGui::GetWindowHeight() / 2.0f));
 		ImGui::Text("Entered name is incorrect !");
@@ -54,7 +53,7 @@ renamePopUp::renamePopUp()
 void renamePopUp::Show(FEObject* ObjToWorkWith)
 {
 	bShouldOpen = true;
-	ObjToWorkWith = ObjToWorkWith;
+	this->ObjToWorkWith = ObjToWorkWith;
 	strcpy_s(NewName, ObjToWorkWith->GetName().size() + 1, ObjToWorkWith->GetName().c_str());
 }
 

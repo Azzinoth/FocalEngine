@@ -560,7 +560,9 @@ void FEngine::SetRenderTargetMode(const FE_RENDER_TARGET_MODE NewMode)
 	if (RenderTargetMode != NewMode && NewMode == FE_GLFW_MODE)
 	{
 		RenderTargetMode = NewMode;
-		WindowResizeCallback(0, 0);
+		int WindowWidth, WindowHeight;
+		APPLICATION.GetWindowSize(&WindowWidth, &WindowHeight);
+		WindowResizeCallback(WindowWidth, WindowHeight);
 	}
 	else
 	{

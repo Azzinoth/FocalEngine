@@ -20,13 +20,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ENGINE.Render();
 
 #ifdef EDITOR_SELECTION_DEBUG_MODE
-		std::string objectsUnderMouse = "objectsUnderMouse: " + std::to_string(SELECTED.objectsUnderMouse.size());
+		std::string objectsUnderMouse = "objectsUnderMouse: " + std::to_string(SELECTED.ObjectsUnderMouse.size());
 		ImGui::Text(objectsUnderMouse.c_str());
 
-		std::string colorIndex = "colorIndex: " + std::to_string(SELECTED.colorIndex);
+		std::string colorIndex = "colorIndex: " + std::to_string(SELECTED.ColorIndex);
 		ImGui::Text(colorIndex.c_str());
 
-		ImGui::Image((void*)(intptr_t)SELECTED.pixelAccurateSelectionFB->getColorAttachment()->getTextureID(), ImVec2(256 * 4, 256 * 4), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
+		ImGui::Image((void*)(intptr_t)SELECTED.PixelAccurateSelectionFB->GetColorAttachment()->GetTextureID(), ImVec2(256 * 4, 256 * 4), ImVec2(0.0f, 1.0f), ImVec2(1.0f, 0.0f));
 #endif
 
 		//ImGui::ShowDemoWindow();

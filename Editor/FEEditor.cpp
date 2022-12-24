@@ -883,28 +883,55 @@ void FEEditor::DisplaySceneBrowser()
 			{
 				if (SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					const FEEntity* entity = SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
-					if (SELECTED.GetEntity() == entity)
+					const FEEntity* Entity = SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetEntity() == Entity)
 						SELECTED.Clear();
 
-					SCENE.DeleteEntity(entity->GetObjectID());
+					SCENE.DeleteEntity(Entity->GetObjectID());
 				}
 				else if (SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					const FETerrain* terrain = SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
-					if (SELECTED.GetTerrain() == terrain)
+					const FETerrain* Terrain = SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetTerrain() == Terrain)
 						SELECTED.Clear();
 
-					SCENE.DeleteTerrain(terrain->GetObjectID());
+					SCENE.DeleteTerrain(Terrain->GetObjectID());
 				}
 				else if (SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
 				{
-					const FELight* light = SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
-					if (SELECTED.GetLight() == light)
+					const FELight* Light = SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					if (SELECTED.GetLight() == Light)
 						SELECTED.Clear();
 
-					SCENE.DeleteLight(light->GetObjectID());
+					SCENE.DeleteLight(Light->GetObjectID());
 				}
+			}
+
+			if (ImGui::MenuItem("*DEBUG* Test model camera on this"))
+			{
+				FEModelViewCamera* NewCamera = new FEModelViewCamera("New ModelViewCamera");
+				NewCamera->SetAspectRatio(static_cast<float>(ENGINE.GetRenderTargetWidth()) / static_cast<float>(ENGINE.GetRenderTargetHeight()));
+
+				glm::vec3 Position = glm::vec3(0.0f);
+				if (SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
+				{
+					const FEEntity* Entity = SCENE.GetEntity(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					Position = Entity->Transform.GetPosition();
+				}
+				else if (SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
+				{
+					const FETerrain* Terrain = SCENE.GetTerrain(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					Position = Terrain->Transform.GetPosition();
+				}
+				else if (SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]) != nullptr)
+				{
+					const FELight* Light = SCENE.GetLight(FilteredSceneObjectsList[SceneObjectHoveredIndex]);
+					Position = Light->Transform.GetPosition();
+				}
+
+				NewCamera->SetTrackingObjectPosition(Position);
+				NewCamera->SetOnUpdate(OnCameraUpdate);
+				ENGINE.SetCamera(NewCamera);
 			}
 		}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/resizeTexturePopup.h"
+#include "resizeTexturePopup.h"
 
 class SelectFeObjectPopUp : public ImGuiModalPopup
 {

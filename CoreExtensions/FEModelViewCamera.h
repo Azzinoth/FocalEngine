@@ -25,6 +25,9 @@ namespace FocalEngine
 
 		double GetDistanceToModel();
 		void SetDistanceToModel(double NewValue);
+
+		glm::vec3 GetTrackingObjectPosition();
+		void SetTrackingObjectPosition(glm::vec3 NewValue);
 	private:
 		int LastMouseX = 0;
 		int LastMouseY = 0;
@@ -32,6 +35,8 @@ namespace FocalEngine
 		double DistanceToModel = 10.0;
 		double CurrentPolarAngle = 90.0;
 		double CurrentAzimutAngle = 90.0;
+
+		glm::vec3 TrackingObjectPosition = glm::vec3(0.0f);
 
 		glm::dvec3 PolarToCartesian(double PolarAngle, double AzimutAngle, double R = 1.0);
 	};

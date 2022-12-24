@@ -181,14 +181,6 @@ namespace FocalEngine
 
 		FETexture* DepthPyramid = nullptr;
 		bool bUseOccusionCulling = true;
-
-		struct DebugCullingInfo
-		{
-			std::string EntityID;
-			int SubGameModel;
-			int TotalCount;
-		};
-		std::unordered_map<std::string, std::vector<DebugCullingInfo>> CullingInfo;
 		// *********** GPU Culling END ***********
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> DebugOutputTextures;

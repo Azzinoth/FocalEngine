@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/selectPopups.h"
+#include "selectPopups.h"
 
 class EditGameModelPopup : public FEImGuiWindow
 {

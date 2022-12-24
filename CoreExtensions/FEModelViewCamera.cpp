@@ -47,13 +47,7 @@ void FEModelViewCamera::MouseMoveInput(const double Xpos, const double Ypos)
 
 	if (LastMouseY != MouseY )
 	{
-		//CurrentPolarAngle -= (MouseY - LastMouseY) * 0.1f;
 		SetPolarAngle(CurrentPolarAngle - (MouseY - LastMouseY) * 0.1f);
-		/*if (CurrentPolarAngle < 0.01)
-			CurrentPolarAngle = 0.011;
-
-		if (CurrentPolarAngle > 179.98)
-			CurrentPolarAngle = 179.98;*/
 	}
 
 	LastMouseX = MouseX;
@@ -83,10 +77,10 @@ void FEModelViewCamera::UpdateViewMatrix()
 	ViewMatrix = glm::mat4(1.0f);
 
 	Position = PolarToCartesian(CurrentPolarAngle, CurrentAzimutAngle, DistanceToModel);
-	glm::vec3 Center = glm::vec3(10.0f);
 	ViewMatrix = glm::lookAt(Position, glm::vec3(0.0f), glm::vec3(0, 1, 0));
-
-	//ViewMatrix = glm::translate(ViewMatrix, Center);
+	
+	ViewMatrix = glm::translate(ViewMatrix, -TrackingObjectPosition);
+	Position += TrackingObjectPosition;
 }
 
 double FEModelViewCamera::GetDistanceToModel()
@@ -129,7 +123,17 @@ double FEModelViewCamera::GetAzimutAngle()
 	return CurrentAzimutAngle;
 }
 
-void FEModelViewCamera::SetAzimutAngle(double NewValue)
+void FEModelViewCamera::SetAzimutAngle(const double NewValue)
 {
 	CurrentAzimutAngle = NewValue;
+}
+
+glm::vec3 FEModelViewCamera::GetTrackingObjectPosition()
+{
+	return TrackingObjectPosition;
+}
+
+void FEModelViewCamera::SetTrackingObjectPosition(const glm::vec3 NewValue)
+{
+	TrackingObjectPosition = NewValue;
 }

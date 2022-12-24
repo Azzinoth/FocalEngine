@@ -118,13 +118,6 @@ void FEEditor::DisplayContentBrowser()
 				}
 			}
 
-			if (ImGui::MenuItem("Test Model camera"))
-			{
-				FEModelViewCamera* NewCamera = new FEModelViewCamera("New ModelViewCamera");
-				NewCamera->SetAspectRatio(static_cast<float>(ENGINE.GetRenderTargetWidth()) / static_cast<float>(ENGINE.GetRenderTargetHeight()));
-				ENGINE.SetCamera(NewCamera);
-			}
-
 			if (ImGui::BeginMenu("Add"))
 			{
 				if (ImGui::MenuItem("Add folder"))

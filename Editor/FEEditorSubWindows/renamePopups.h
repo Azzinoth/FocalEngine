@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Editor/FEEditorSubWindows/deletePopups.h"
+#include "deletePopups.h"
 
 class renameFailedPopUp : public ImGuiModalPopup
 {

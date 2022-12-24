@@ -353,15 +353,15 @@ int FEEditorSelectedObject::GetIndexOfObjectUnderMouse(const double MouseX, cons
 	SELECTED.Clear();
 	return -1;
 #else
-	colorIndex = 0;
-	colorIndex |= int(colorUnderMouse[2]);
-	colorIndex <<= 8;
-	colorIndex |= int(colorUnderMouse[1]);
-	colorIndex <<= 8;
-	colorIndex |= int(colorUnderMouse[0]);
+	ColorIndex = 0;
+	ColorIndex |= int(ColorUnderMouse[2]);
+	ColorIndex <<= 8;
+	ColorIndex |= int(ColorUnderMouse[1]);
+	ColorIndex <<= 8;
+	ColorIndex |= int(ColorUnderMouse[0]);
 
-	colorIndex /= 50;
-	colorIndex -= 1;
+	ColorIndex /= 50;
+	ColorIndex -= 1;
 
 	return -1;
 #endif

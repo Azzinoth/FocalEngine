@@ -26,7 +26,7 @@ void resizeTexturePopup::Show(FETexture* ObjToWorkWith)
 	if (ObjToWorkWith == nullptr)
 		return;
 	bShouldOpen = true;
-	ObjToWorkWith = ObjToWorkWith;
+	this->ObjToWorkWith = ObjToWorkWith;
 
 	NewWidth = ObjToWorkWith->GetWidth();
 	NewHeight = ObjToWorkWith->GetHeight();
