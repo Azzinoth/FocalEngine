@@ -10,7 +10,6 @@ namespace FocalEngine
 	#define FE_MAX_LINES 200000
 
 	class FEngine;
-#ifdef USE_DEFERRED_RENDERER
 	class FERenderer;
 
 	class FEGBuffer
@@ -31,8 +30,29 @@ namespace FocalEngine
 
 		void RenderTargetResize(FEFramebuffer* MainFrameBuffer);
 	};
-	
-#endif // USE_DEFERRED_RENDERER
+
+	class FESSAO
+	{
+		friend FERenderer;
+
+		FESSAO(FEFramebuffer* MainFrameBuffer);
+		void InitializeResources(FEFramebuffer* MainFrameBuffer);
+		void RenderTargetResize(FEFramebuffer* MainFrameBuffer);
+
+		FEFramebuffer* FB = nullptr;
+		FEShader* Shader = nullptr;
+
+		bool bActive = true;
+		int SampleCount = 16;
+
+		bool bSmallDetails = true;
+		bool bBlured = true;
+
+		float Bias = 0.013f;
+		float Radius = 10.0f;
+		float RadiusSmallDetails = 0.4f;
+		float SmallDetailsWeight = 0.2f;
+	};
 	
 	class FERenderer
 	{
@@ -116,10 +136,34 @@ namespace FocalEngine
 		bool IsOccusionCullingEnabled();
 		void SetOccusionCullingEnabled(bool NewValue);
 
-#ifdef USE_DEFERRED_RENDERER
+		// *********** SSAO ***********
+		bool IsSSAOEnabled();
+		void SetSSAOEnabled(bool NewValue);
+
+		int GetSSAOSampleCount();
+		void SetSSAOSampleCount(int NewValue);
+
+		bool IsSSAOSmallDetailsEnabled();
+		void SetSSAOSmallDetailsEnabled(bool NewValue);
+
+		bool IsSSAOResultBlured();
+		void SetSSAOResultBlured(bool NewValue);
+
+		float GetSSAOBias();
+		void SetSSAOBias(float NewValue);
+
+		float GetSSAORadius();
+		void SetSSAORadius(float NewValue);
+
+		float GetSSAORadiusSmallDetails();
+		void SetSSAORadiusSmallDetails(float NewValue);
+
+		float GetSSAOSmallDetailsWeight();
+		void SetSSAOSmallDetailsWeight(float NewValue);
+
 		FEGBuffer* GBuffer = nullptr;
-		FEFramebuffer* SSAOFB = nullptr;
-#endif // USE_DEFERRED_RENDERER
+		FESSAO* SSAO;
+		void UpdateSSAO(const FEBasicCamera* CurrentCamera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 	private:

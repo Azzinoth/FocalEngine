@@ -99,10 +99,9 @@ void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
 {
 	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
 
-#ifdef USE_DEFERRED_RENDERER
 	GBuffer = new FEGBuffer(SceneToTextureFB);
-	SSAOFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, WindowWidth, WindowHeight, false);
-#endif // USE_DEFERRED_RENDERER
+	SSAO = new FESSAO(SceneToTextureFB);
+	DebugOutputTextures["SSAO FrameBuffer"] = []() { return RENDERER.SSAO->FB->GetColorAttachment(); };
 
 	DebugOutputTextures["albedoRenderTarget"] = []() { return RENDERER.GBuffer->Albedo; };
 	DebugOutputTextures["positionsRenderTarget"] = []() { return RENDERER.GBuffer->Positions; };
@@ -614,9 +613,6 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 			const float ShadowsBlurFactor = Light->GetShadowBlurFactor();
 			ShaderPBR->GetParameter("shadowBlurFactor")->UpdateData(ShadowsBlurFactor);
 			ShaderInstancedPBR->GetParameter("shadowBlurFactor")->UpdateData(ShadowsBlurFactor);
-#ifndef USE_DEFERRED_RENDERER
-			shaderTerrain->getParameter("shadowBlurFactor")->updateData(shadowsBlurFactor);
-#endif // USE_DEFERRED_RENDERER
 
 			const glm::vec3 OldCameraPosition = CurrentCamera->GetPosition();
 			const glm::mat4 OldViewMatrix = CurrentCamera->GetViewMatrix();
@@ -762,7 +758,6 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	}
 
 	// ********* RENDER SCENE *********
-#ifdef USE_DEFERRED_RENDERER
 
 	GBuffer->GFrameBuffer->Bind();
 
@@ -807,92 +802,31 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	GBuffer->GFrameBuffer->UnBind();
 	ForceShader(nullptr);
-#else
-	sceneToTextureFB->bind();
 
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-	// ********* RENDER SKY *********
-	if (isSkyEnabled())
-		renderEntity(skyDome, currentCamera);
-#endif // USE_DEFERRED_RENDERER
-	
-
-
-#ifdef USE_DEFERRED_RENDERER
-	
-	// ************************************ SSAO ************************************
-#ifdef USE_SSAO
-	SSAOFB->bind();
-	FEShader* SSAOShader = RESOURCE_MANAGER.getShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
-	SSAOShader->start();
-	loadStandardParams(SSAOShader, currentCamera, true);
-	SSAOShader->loadDataToGPU();
-#endif // USE_SSAO
 	GBuffer->Albedo->Bind(0);
 	GBuffer->Normals->Bind(1);
 	GBuffer->MaterialProperties->Bind(2);
 	GBuffer->Positions->Bind(3);
 	GBuffer->ShaderProperties->Bind(4);
-#ifdef USE_SSAO
-	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glBindVertexArray(0));
-
-	SSAOShader->stop();
-
-	// First blur stage
-	FEShader* BlurShader = RESOURCE_MANAGER.getShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
-	BlurShader->start();
-	BlurShader->getParameter("FEBlurDirection")->updateData(glm::vec2(0.0f, 1.0f));
-	BlurShader->getParameter("BloomSize")->updateData(1.5f);
-
-	BlurShader->loadDataToGPU();
-
-	SSAOFB->getColorAttachment()->bind(0);
-	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glBindVertexArray(0));
-
-	// Second blur stage
-	BlurShader->getParameter("FEBlurDirection")->updateData(glm::vec2(1.0f, 0.0f));
-	BlurShader->getParameter("BloomSize")->updateData(1.5f);
-
-	BlurShader->loadDataToGPU();
-
-	SSAOFB->getColorAttachment()->bind(0);
-	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVaoID()));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.getMesh("1Y251E6E6T78013635793156"/*"plane"*/)->getVertexCount(), GL_UNSIGNED_INT, 0));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glBindVertexArray(0));
-
-	BlurShader->stop();
-
-	SSAOFB->getColorAttachment()->unBind();
-	SSAOFB->unBind();
-
-	GBuffer->albedo->bind(0);
-	GBuffer->normals->bind(1);
-	GBuffer->materialProperties->bind(2);
-	GBuffer->positions->bind(3);
-	GBuffer->shaderProperties->bind(4);
-	SSAOFB->getColorAttachment()->bind(5);
-#endif // USE_SSAO
+	
+	// ************************************ SSAO ************************************
+	UpdateSSAO(CurrentCamera);
 	// ************************************ SSAO END ************************************
 
 	// ************************************ COPYING DEPTH BUFFER ************************************
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer->GFrameBuffer->FBO);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, SceneToTextureFB->FBO); // write to default framebuffer
 	glBlitFramebuffer(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight(),
-		0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight(),
-		GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+					  0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight(),
+					  GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	// ************************************ COPYING DEPTH BUFFER END ************************************
 
+	GBuffer->Albedo->Bind(0);
+	GBuffer->Normals->Bind(1);
+	GBuffer->MaterialProperties->Bind(2);
+	GBuffer->Positions->Bind(3);
+	GBuffer->ShaderProperties->Bind(4);
+	SSAO->FB->GetColorAttachment()->Bind(5);
 	SceneToTextureFB->Bind();
 
 	const unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
@@ -901,10 +835,11 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
 
-	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-	ScreenQuadShader->Start();
-	LoadStandardParams(ScreenQuadShader, CurrentCamera, true);
-	ScreenQuadShader->LoadDataToGPU();
+	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	FinalSceneShader->Start();
+	FinalSceneShader->GetParameter("SSAOActive")->UpdateData(SSAO->bActive ? 1.0f : 0.0f);
+	LoadStandardParams(FinalSceneShader, CurrentCamera, true);
+	FinalSceneShader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -918,48 +853,11 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	GBuffer->Positions->UnBind();
 	GBuffer->ShaderProperties->UnBind();
 
-	ScreenQuadShader->Stop();
+	FinalSceneShader->Stop();
 
 	glDepthMask(GL_TRUE);
 	// Could impact depth pyramid construction( min vs max ).
 	glDepthFunc(GL_LESS);
-	
-#else
-	glDepthMask(GL_TRUE);
-
-	auto itTerrain = scene.terrainMap.begin();
-	while (itTerrain != scene.terrainMap.end())
-	{
-		auto terrain = itTerrain->second;
-		if (terrain->IsVisible())
-			renderTerrain(terrain, currentCamera);
-
-		itTerrain++;
-	}
-
-	FE_GL_ERROR(glDisable(GL_CULL_FACE));
-
-	auto entityIterator = scene.entityMap.begin();
-	while (entityIterator != scene.entityMap.end())
-	{
-		auto entity = entityIterator->second;
-
-		if (entity->IsVisible())
-		{
-			if (entity->getType() == FE_ENTITY)
-			{
-				renderEntity(entity, currentCamera);
-			}
-			else if (entity->getType() == FE_ENTITY_INSTANCED)
-			{
-				renderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), currentCamera, currentCamera->getFrustumPlanes(), false);
-			}
-		}
-
-		entityIterator++;
-	}
-
-#endif // USE_DEFERRED_RENDERER
 
 	// ********* RENDER INSTANCED LINE *********
 	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
@@ -1529,13 +1427,6 @@ void FERenderer::UpdateFogInShaders()
 
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(DistanceFogDensity);
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(DistanceFogGradient);
-
-#ifdef USE_DEFERRED_RENDERER
-
-#else
-		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(distanceFogDensity);
-		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(distanceFogGradient);
-#endif // USE_DEFERRED_RENDERER
 	}
 	else
 	{
@@ -1544,12 +1435,6 @@ void FERenderer::UpdateFogInShaders()
 
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(-1.0f);
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(-1.0f);
-#ifdef USE_DEFERRED_RENDERER
-
-#else
-		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogDensity")->updateData(-1.0f);
-		RESOURCE_MANAGER.getShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/)->getParameter("fogGradient")->updateData(-1.0f);
-#endif // USE_DEFERRED_RENDERER
 	}
 }
 
@@ -1834,10 +1719,9 @@ void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, NewWidth, NewHeight));
 	DepthPyramid->Width = NewWidth;
 	DepthPyramid->Height = NewHeight;
-	
-	#ifdef USE_DEFERRED_RENDERER
-		GBuffer->RenderTargetResize(SceneToTextureFB);
-	#endif // USE_DEFERRED_RENDERER
+
+	GBuffer->RenderTargetResize(SceneToTextureFB);
+	SSAO->RenderTargetResize(SceneToTextureFB);
 	
 	for (size_t i = 0; i < PostProcessEffects.size(); i++)
 	{
@@ -1864,7 +1748,165 @@ void FERenderer::SetOccusionCullingEnabled(const bool NewValue)
 	bUseOccusionCulling = NewValue;
 }
 
-#ifdef USE_DEFERRED_RENDERER
+void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
+{
+	if (!SSAO->bActive)
+		return;
+
+	SSAO->FB->Bind();
+	if (SSAO->Shader == nullptr)
+		SSAO->Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+
+	SSAO->Shader->GetParameter("SampleCount")->UpdateData(SSAO->SampleCount);
+	
+	SSAO->Shader->GetParameter("SmallDetails")->UpdateData(SSAO->bSmallDetails ? 1.0f : 0.0f);
+	SSAO->Shader->GetParameter("Bias")->UpdateData(SSAO->Bias);
+	SSAO->Shader->GetParameter("Radius")->UpdateData(SSAO->Radius);
+	SSAO->Shader->GetParameter("RadiusSmallDetails")->UpdateData(SSAO->RadiusSmallDetails);
+	SSAO->Shader->GetParameter("SmallDetailsWeight")->UpdateData(SSAO->SmallDetailsWeight);
+	
+	SSAO->Shader->Start();
+	LoadStandardParams(SSAO->Shader, CurrentCamera, true);
+	SSAO->Shader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, 0));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	SSAO->Shader->Stop();
+
+	if (SSAO->bBlured)
+	{
+		// First blur stage
+		FEShader* BlurShader = RESOURCE_MANAGER.GetShader("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
+		BlurShader->Start();
+		if (BlurShader->GetParameter("FEBlurDirection"))
+			BlurShader->GetParameter("FEBlurDirection")->UpdateData(glm::vec2(0.0f, 1.0f));
+		if (BlurShader->GetParameter("BlurRadius"))
+			BlurShader->GetParameter("BlurRadius")->UpdateData(1.3f);
+
+		BlurShader->LoadDataToGPU();
+
+		SSAO->FB->GetColorAttachment()->Bind(0);
+		SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		GBuffer->Normals->Bind(2);
+		FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+		FE_GL_ERROR(glEnableVertexAttribArray(0));
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, 0));
+		FE_GL_ERROR(glDisableVertexAttribArray(0));
+		FE_GL_ERROR(glBindVertexArray(0));
+
+		// Second blur stage
+		if (BlurShader->GetParameter("FEBlurDirection"))
+			BlurShader->GetParameter("FEBlurDirection")->UpdateData(glm::vec2(1.0f, 0.0f));
+		if (BlurShader->GetParameter("BlurRadius"))
+			BlurShader->GetParameter("BlurRadius")->UpdateData(1.3f);
+
+		BlurShader->LoadDataToGPU();
+
+		SSAO->FB->GetColorAttachment()->Bind(0);
+		SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		GBuffer->Normals->Bind(2);
+		FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+		FE_GL_ERROR(glEnableVertexAttribArray(0));
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, 0));
+		FE_GL_ERROR(glDisableVertexAttribArray(0));
+		FE_GL_ERROR(glBindVertexArray(0));
+
+		BlurShader->Stop();
+
+		SSAO->FB->GetColorAttachment()->UnBind();
+		SSAO->FB->UnBind();
+	}
+}
+
+bool FERenderer::IsSSAOEnabled()
+{
+	return SSAO->bActive;
+}
+
+void FERenderer::SetSSAOEnabled(const bool NewValue)
+{
+	SSAO->bActive = NewValue;
+}
+
+int FERenderer::GetSSAOSampleCount()
+{
+	return SSAO->SampleCount;
+}
+
+void FERenderer::SetSSAOSampleCount(int NewValue)
+{
+	if (NewValue < 1)
+		NewValue = 1;
+
+	if (NewValue > 64)
+		NewValue = 64;
+
+	SSAO->SampleCount = NewValue;
+}
+
+bool FERenderer::IsSSAOSmallDetailsEnabled()
+{
+	return SSAO->bSmallDetails;
+}
+
+void FERenderer::SetSSAOSmallDetailsEnabled(const bool NewValue)
+{
+	SSAO->bSmallDetails = NewValue;
+}
+
+bool FERenderer::IsSSAOResultBlured()
+{
+	return SSAO->bBlured;
+}
+
+void FERenderer::SetSSAOResultBlured(const bool NewValue)
+{
+	SSAO->bBlured = NewValue;
+}
+
+float FERenderer::GetSSAOBias()
+{
+	return SSAO->Bias;
+}
+
+void FERenderer::SetSSAOBias(const float NewValue)
+{
+	SSAO->Bias = NewValue;
+}
+
+float FERenderer::GetSSAORadius()
+{
+	return SSAO->Radius;
+}
+
+void FERenderer::SetSSAORadius(const float NewValue)
+{
+	SSAO->Radius = NewValue;
+}
+
+float FERenderer::GetSSAORadiusSmallDetails()
+{
+	return SSAO->RadiusSmallDetails;
+}
+
+void FERenderer::SetSSAORadiusSmallDetails(const float NewValue)
+{
+	SSAO->RadiusSmallDetails = NewValue;
+}
+
+float FERenderer::GetSSAOSmallDetailsWeight()
+{
+	return SSAO->SmallDetailsWeight;
+}
+
+void FERenderer::SetSSAOSmallDetailsWeight(const float NewValue)
+{
+	SSAO->SmallDetailsWeight = NewValue;
+}
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
 {
@@ -1897,4 +1939,19 @@ void FEGBuffer::RenderTargetResize(FEFramebuffer* MainFrameBuffer)
 	InitializeResources(MainFrameBuffer);
 }
 
-#endif // USE_DEFERRED_RENDERER
+FESSAO::FESSAO(FEFramebuffer* MainFrameBuffer)
+{
+	InitializeResources(MainFrameBuffer);
+}
+
+void FESSAO::InitializeResources(FEFramebuffer* MainFrameBuffer)
+{
+	FB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight(), false);
+	Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+}
+
+void FESSAO::RenderTargetResize(FEFramebuffer* MainFrameBuffer)
+{
+	delete FB;
+	InitializeResources(MainFrameBuffer);
+}

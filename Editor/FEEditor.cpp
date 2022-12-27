@@ -2098,7 +2098,6 @@ void FEEditor::DisplayEffectsWindow() const
 	{
 		static const char* options[5] = { "none", "1x", "2x", "4x", "8x" };
 		static std::string SelectedOption = "1x";
-		//FEPostProcess* PPEffect = RENDERER.getPostProcessEffect("FE_FXAA");
 
 		static bool bFirstLook = true;
 		if (bFirstLook)
@@ -2377,6 +2376,160 @@ void FEEditor::DisplayEffectsWindow() const
 		ImGui::PopID();
 	}
 
+	if (ImGui::CollapsingHeader("SSAO", 0))
+	{
+		static const char* options[5] = { "Off", "Low", "Medium", "High", "Custom"};
+		static std::string SelectedOption = "Medium";
+
+		static bool bFirstLook = true;
+		if (bFirstLook)
+		{
+			const int SampleCount = RENDERER.GetSSAOSampleCount();
+
+			if (!RENDERER.IsSSAOEnabled())
+			{
+				SelectedOption = options[0];
+			}
+			else if (SampleCount == 4)
+			{
+				SelectedOption = options[1];
+			}
+			else if (SampleCount == 16 && RENDERER.GetSSAORadiusSmallDetails())
+			{
+				SelectedOption = options[2];
+			}
+			else if (SampleCount == 32 && RENDERER.GetSSAORadiusSmallDetails())
+			{
+				SelectedOption = options[3];
+			}
+			else
+			{
+				SelectedOption = options[4];
+			}
+
+			//bFirstLook = false;
+		}
+
+		static bool bDebugSettings = false;
+		if (ImGui::Checkbox("Debug view", &bDebugSettings))
+		{
+
+		}
+		
+		if (!bDebugSettings)
+		{
+			ImGui::Text("SSAO Quality:");
+			ImGui::SetNextItemWidth(150);
+			if (ImGui::BeginCombo("##SSAO Quality", SelectedOption.c_str(), ImGuiWindowFlags_None))
+			{
+				for (size_t i = 0; i < 5; i++)
+				{
+					const bool is_selected = (SelectedOption == options[i]);
+					if (ImGui::Selectable(options[i], is_selected))
+					{
+						RENDERER.SetSSAOResultBlured(true);
+						RENDERER.SetSSAOBias(0.013f);
+						RENDERER.SetSSAORadius(10.0f);
+						RENDERER.SetSSAORadiusSmallDetails(0.4f);
+						RENDERER.SetSSAOSmallDetailsWeight(0.2f);
+
+						if (i == 0)
+						{
+							RENDERER.SetSSAOEnabled(false);
+						}
+						else if (i == 1)
+						{
+							RENDERER.SetSSAOEnabled(true);
+
+							RENDERER.SetSSAOSampleCount(4);
+							RENDERER.SetSSAOSmallDetailsEnabled(false);
+						}
+						else if (i == 2)
+						{
+							RENDERER.SetSSAOEnabled(true);
+
+							RENDERER.SetSSAOSampleCount(16);
+							RENDERER.SetSSAOSmallDetailsEnabled(true);
+						}
+						else if (i == 3)
+						{
+							RENDERER.SetSSAOEnabled(true);
+
+							RENDERER.SetSSAOSampleCount(32);
+							RENDERER.SetSSAOSmallDetailsEnabled(true);
+						}
+
+						SelectedOption = options[i];
+					}
+
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+		}
+		else
+		{
+			bool TempBool = RENDERER.IsSSAOEnabled();
+			ImGui::Checkbox("SSAO active", &TempBool);
+			RENDERER.SetSSAOEnabled(TempBool);
+
+			TempBool = RENDERER.IsSSAOSmallDetailsEnabled();
+			ImGui::Checkbox("SSAO small details", &TempBool);
+			RENDERER.SetSSAOSmallDetailsEnabled(TempBool);
+
+			TempBool = RENDERER.IsSSAOResultBlured();
+			ImGui::Checkbox("SSAO blured", &TempBool);
+			RENDERER.SetSSAOResultBlured(TempBool);
+
+			int TempInt = RENDERER.GetSSAOSampleCount();
+			ImGui::SetNextItemWidth(100);
+			ImGui::DragInt("SSAO sample count", &TempInt);
+			RENDERER.SetSSAOSampleCount(TempInt);
+
+			float TempFloat = RENDERER.GetSSAOBias();
+			ImGui::SetNextItemWidth(100);
+			ImGui::DragFloat("SSAO bias", &TempFloat, 0.1f);
+			RENDERER.SetSSAOBias(TempFloat);
+
+			TempFloat = RENDERER.GetSSAORadius();
+			ImGui::SetNextItemWidth(100);
+			ImGui::DragFloat("SSAO radius", &TempFloat, 0.1f);
+			RENDERER.SetSSAORadius(TempFloat);
+
+			TempFloat = RENDERER.GetSSAORadiusSmallDetails();
+			ImGui::SetNextItemWidth(100);
+			ImGui::DragFloat("SSAO radius small details", &TempFloat, 0.1f);
+			RENDERER.SetSSAORadiusSmallDetails(TempFloat);
+
+			TempFloat = RENDERER.GetSSAOSmallDetailsWeight();
+			ImGui::SetNextItemWidth(100);
+			ImGui::DragFloat("SSAO small details weight", &TempFloat, 0.01f);
+			RENDERER.SetSSAOSmallDetailsWeight(TempFloat);
+		}
+
+		/*bool bEnabledSky = RENDERER.IsSkyEnabled();
+		if (ImGui::Checkbox("enable sky", &bEnabledSky))
+		{
+			RENDERER.SetSkyEnabld(bEnabledSky);
+		}
+
+		ImGui::Text("Sphere size:");
+		ImGui::SetNextItemWidth(FieldWidth);
+		float size = RENDERER.GetDistanceToSky();
+		ImGui::DragFloat("##Sphere size", &size, 0.01f, 0.0f, 200.0f);
+		RENDERER.SetDistanceToSky(size);
+
+		ImGui::PushID(GUIID++);
+		ImGui::SameLine();
+		ResetButton->Render();
+		if (ResetButton->IsClicked())
+		{
+			RENDERER.SetDistanceToSky(50.0f);
+		}
+		ImGui::PopID();*/
+	}
+
 	ImGui::PopStyleVar();
 	ImGui::End();
 }
@@ -2555,15 +2708,9 @@ void FEEditor::DisplayTerrainSettings(FETerrain* Terrain)
 			ImGui::Checkbox("WireframeMode", &bActive);
 			Terrain->SetWireframeMode(bActive);
 
-#ifdef USE_DEFERRED_RENDERER
 			int IData = *(int*)RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("debugFlag")->Data;
 			ImGui::SliderInt("debugFlag", &IData, 0, 10);
 			RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("debugFlag")->UpdateData(IData);
-#else
-			int iData = *(int*)terrain->shader->getParameter("debugFlag")->data;
-			ImGui::SliderInt("debugFlag", &iData, 0, 10);
-			terrain->shader->getParameter("debugFlag")->updateData(iData);
-#endif // USE_DEFERRED_RENDERER
 
 			float DisplacementScale = Terrain->GetDisplacementScale();
 			ImGui::DragFloat("displacementScale", &DisplacementScale, 0.02f, -10.0f, 10.0f);

@@ -54,7 +54,6 @@ file(GLOB SolidColorMaterial_SRC
 )
 
 file(GLOB TerrainMaterial_SRC
-	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS_DEFERRED.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_FS_GBUFFER.glsl"
 	"CoreExtensions/StandardMaterial/TerrainMaterial/FE_Terrain_GS.glsl"
@@ -113,6 +112,7 @@ file(GLOB FE_GammaAndHDRCorrection_SRC
 file(GLOB FE_SSAO_SRC
 	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_FS.glsl"
 	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_VS.glsl"
+	"CoreExtensions/PostProcessEffects/FE_SSAO/FE_SSAO_Blur_FS.glsl"
 )
 
 file(GLOB ComputeShaders_SRC

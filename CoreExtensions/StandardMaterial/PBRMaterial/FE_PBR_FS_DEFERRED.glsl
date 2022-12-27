@@ -32,6 +32,8 @@ uniform float fogDensity;
 uniform float fogGradient;
 uniform float shadowBlurFactor;
 
+uniform float SSAOActive;
+
 struct FELight
 {
 	vec3 typeAndAngles;
@@ -97,8 +99,13 @@ vec3 getNormal()
 vec4 materialProperties;
 float getAO()
 {
-	//return texture(textures[2], FS_IN.UV).r;
-	return materialProperties.r;
+	float result = materialProperties.r;
+	float SSAOIntensity = 1.0;
+
+	if (SSAOActive > 0)
+		SSAOIntensity = texture(textures[5], FS_IN.UV).r;
+
+	return result * SSAOIntensity;
 }
 
 float getRoughtness()
@@ -311,10 +318,6 @@ void main(void)
 
 	vec3 normal = getNormal();
 	
-// #ifdef USE_SSAO
-	//float SSAOResult = texture(textures[5], FS_IN.UV).r;
-	//outColor = vec4(ambientColor * getAO() * SSAOResult, 1.0f);
-//#elseif
 	outColor = vec4(ambientColor * getAO(), 1.0f);
 
 	for (int i = 0; i < MAX_LIGHTS; i++)

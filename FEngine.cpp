@@ -209,7 +209,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("bloom", static_cast<int>(GetRenderTargetWidth() / 4.0f), static_cast<int>(GetRenderTargetHeight() / 4.0f));
 	BloomEffect->SetID("451C48791871283D372C5938"/*"bloom"*/);
 
-	FocalEngine::FEShader* BloomThresholdShader =
+	FEShader* BloomThresholdShader =
 		RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
 														  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomThresholdShader->GetObjectID());
@@ -219,7 +219,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, BloomThresholdShader));
 	BloomEffect->Stages[0]->Shader->GetParameter("thresholdBrightness")->UpdateData(1.0f);
 
-	FocalEngine::FEShader* BloomBlurShader =
+	FEShader* BloomBlurShader =
 		RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
 												     RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomBlurShader->GetObjectID());
@@ -242,7 +242,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 
-	FocalEngine::FEShader* BloomCompositionShader =
+	FEShader* BloomCompositionShader =
 		RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
 														    RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomCompositionShader->GetObjectID());
@@ -258,7 +258,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", GetRenderTargetWidth(), GetRenderTargetHeight());
 	GammaHDR->SetID("2374462A7B0E78141B5F5D79"/*"GammaAndHDR"*/);
 
-	FocalEngine::FEShader* GammaHDRShader =
+	FEShader* GammaHDRShader =
 		RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str(),
 															 RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(GammaHDRShader->GetObjectID());
@@ -273,7 +273,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", GetRenderTargetWidth(), GetRenderTargetHeight());
 	FEFXAAEffect->SetID("0A3F10643F06525D70016070"/*"FE_FXAA"*/);
 
-	FocalEngine::FEShader* FEFXAAShader =
+	FEShader* FEFXAAShader =
 		RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str(),
 													  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(FEFXAAShader->GetObjectID());
@@ -293,16 +293,16 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// ************************************ FXAA END ************************************
 
 	// ************************************ DOF ************************************
-	FocalEngine::FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
+	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
 	DOFEffect->SetID("217C4E80482B6C650D7B492F"/*"DOF"*/);
 
-	FocalEngine::FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str(),
+	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str(),
 																			RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str());
 	RESOURCE_MANAGER.Shaders.erase(DOFShader->GetObjectID());
 	DOFShader->SetID("7800253C244442155D0F3C7B"/*"DOF"*/);
 	RESOURCE_MANAGER.Shaders[DOFShader->GetObjectID()] = DOFShader;
 
-	DOFEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FocalEngine::FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
 	DOFEffect->Stages.back()->Shader->GetParameter("blurSize")->UpdateData(2.0f);
 	DOFEffect->Stages.back()->Shader->GetParameter("depthThreshold")->UpdateData(0.0f);
@@ -310,7 +310,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	DOFEffect->Stages.back()->Shader->GetParameter("zNear")->UpdateData(0.1f);
 	DOFEffect->Stages.back()->Shader->GetParameter("zFar")->UpdateData(5000.0f);
 	DOFEffect->Stages.back()->Shader->GetParameter("intMult")->UpdateData(100.0f);
-	DOFEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FocalEngine::FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	DOFEffect->Stages.back()->Shader->GetParameter("blurSize")->UpdateData(2.0f);
 	DOFEffect->Stages.back()->Shader->GetParameter("depthThreshold")->UpdateData(0.0f);
@@ -331,7 +331,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	ChromaticAberrationShader->SetID("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
 	RESOURCE_MANAGER.Shaders[ChromaticAberrationShader->GetObjectID()] = ChromaticAberrationShader;
 	
-	ChromaticAberrationEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
+	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
 	ChromaticAberrationEffect->Stages.back()->Shader->GetParameter("intensity")->UpdateData(1.0f);
 	RENDERER.AddPostProcess(ChromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
@@ -339,7 +339,6 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// ************************************ chromaticAberrationEffect END ************************************
 
 	// ************************************ SSAO ************************************
-#ifdef USE_DEFERRED_RENDERER
 	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str(),
 																		   RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str());
 
@@ -348,7 +347,15 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.Shaders[FESSAOShader->GetObjectID()] = FESSAOShader;
 
 	RESOURCE_MANAGER.MakeShaderStandard(FESSAOShader);
-#endif // USE_DEFERRED_RENDERER
+
+	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
+																				   RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str());
+
+	RESOURCE_MANAGER.Shaders.erase(FESSAOBlurShader->GetObjectID());
+	FESSAOBlurShader->SetID("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
+	RESOURCE_MANAGER.Shaders[FESSAOBlurShader->GetObjectID()] = FESSAOBlurShader;
+
+	RESOURCE_MANAGER.MakeShaderStandard(FESSAOBlurShader);
 	// ************************************ SSAO END ************************************
 
 	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial");
@@ -648,12 +655,12 @@ void FEngine::RenderTargetResize()
 	// ************************************ FXAA END ************************************
 
 	// ************************************ DOF ************************************
-	FocalEngine::FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
+	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
 	DOFEffect->SetID("217C4E80482B6C650D7B492F"/*"DOF"*/);
 
-	DOFEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FocalEngine::FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	DOFEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FocalEngine::FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
 	RENDERER.AddPostProcess(DOFEffect);
 	// ************************************ DOF END ************************************
@@ -661,17 +668,11 @@ void FEngine::RenderTargetResize()
 	// ************************************ chromaticAberrationEffect ************************************
 	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration");
 	ChromaticAberrationEffect->SetID("506D804162647749060C3E68"/*"chromaticAberration"*/);
-	ChromaticAberrationEffect->AddStage(new FocalEngine::FEPostProcessStage(std::vector<int> { FocalEngine::FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
+	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
 	RENDERER.AddPostProcess(ChromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, ENGINE.RenderTargetW, ENGINE.RenderTargetH));
 	// ************************************ chromaticAberrationEffect END ************************************
-
-	// ************************************ SSAO ************************************
-#ifdef USE_DEFERRED_RENDERER
-	RENDERER.SSAOFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, ENGINE.RenderTargetW, ENGINE.RenderTargetH, false);
-#endif // USE_DEFERRED_RENDERER
-	// ************************************ SSAO END ************************************
 
 	for (size_t i = 0; i < ENGINE.ClientRenderTargetResizeCallbacks.size(); i++)
 	{

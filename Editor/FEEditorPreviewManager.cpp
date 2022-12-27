@@ -220,11 +220,7 @@ void FEEditorPreviewManager::CreateMaterialPreview(const std::string MaterialID)
 	ENGINE.GetCamera()->SetYaw(0.0f);
 
 	// rendering material to texture
-#ifdef USE_DEFERRED_RENDERER
 	RENDERER.RenderEntityForward(PreviewEntity, ENGINE.GetCamera(), true);
-#else
-	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
-#endif // USE_DEFERRED_RENDERER
 
 	ENGINE.GetCamera()->SetPosition(RegularCameraPosition);
 	ENGINE.GetCamera()->SetAspectRatio(RegularAspectRation);
@@ -379,11 +375,8 @@ void FEEditorPreviewManager::CreateGameModelPreview(const std::string GameModelI
 	ENGINE.GetCamera()->SetYaw(0.0f);
 
 	// rendering game model to texture
-#ifdef USE_DEFERRED_RENDERER
 	RENDERER.RenderEntityForward(PreviewEntity, ENGINE.GetCamera(), true);
-#else
-	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
-#endif // USE_DEFERRED_RENDERER
+
 	// reversing all of our transformations.
 	PreviewEntity->Transform = RegularMeshTransform;
 
@@ -480,11 +473,7 @@ void FEEditorPreviewManager::CreateGameModelPreview(const FEGameModel* GameModel
 	ENGINE.GetCamera()->SetYaw(0.0f);
 
 	// rendering game model to texture
-#ifdef USE_DEFERRED_RENDERER
 	RENDERER.RenderEntityForward(PreviewEntity, ENGINE.GetCamera(), true);
-#else
-	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
-#endif // USE_DEFERRED_RENDERER
 
 	// reversing all of our transformations.
 	PreviewEntity->Transform = RegularMeshTransform;
@@ -620,11 +609,8 @@ void FEEditorPreviewManager::CreatePrefabPreview(const std::string PrefabID)
 	ENGINE.GetCamera()->SetYaw(0.0f);
 
 	// rendering game model to texture
-#ifdef USE_DEFERRED_RENDERER
 	RENDERER.RenderEntityForward(PreviewEntity, ENGINE.GetCamera(), true);
-#else
-	RENDERER.renderEntity(previewEntity, ENGINE.getCamera(), true);
-#endif // USE_DEFERRED_RENDERER
+
 	PreviewEntity->Prefab = PreviewPrefab;
 	// reversing all of our transformations.
 	PreviewEntity->Transform = RegularMeshTransform;
