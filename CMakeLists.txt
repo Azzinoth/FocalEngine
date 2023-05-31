@@ -277,6 +277,17 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FETransformComponent.h"
 )
 
+file(GLOB BasicApplicationNetworkSubSystem_SRC
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworkingBaseClasses.cpp"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworkingBaseClasses.h"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FEClientSideNetworkConnection.cpp"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FEClientSideNetworkConnection.h"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FEServerSideNetworkConnection.cpp"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FEServerSideNetworkConnection.h"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworking.cpp"
+	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworking.h"
+)
+
 file(GLOB BasicApplicationSubSystem_SRC
 	"SubSystems/FEBasicApplication/FEBasicApplication.cpp"
 	"SubSystems/FEBasicApplication/FEBasicApplication.h"
@@ -286,6 +297,8 @@ file(GLOB BasicApplicationSubSystem_SRC
 	"SubSystems/FEBasicApplication/FELog.h"
 	"SubSystems/FEBasicApplication/FETime.cpp"
 	"SubSystems/FEBasicApplication/FETime.h"
+	"SubSystems/FEBasicApplication/FEUniqueID.cpp"
+	"SubSystems/FEBasicApplication/FEUniqueID.h"
 )
 
 # *************** THIRD_PARTY ***************
@@ -365,6 +378,7 @@ add_executable(FocalEngineEditor WIN32
 								 # *************** SUB_SYSTEM ***************
 								 ${SubSystems_SRC}
 								 ${BasicApplicationSubSystem_SRC}
+								 ${BasicApplicationNetworkSubSystem_SRC}
 								 # *************** THIRD_PARTY ***************
 								 ${imgui_SRC}
 								 ${jsoncpp_SRC}
@@ -411,6 +425,7 @@ source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 source_group("Source Files/SubSystems/BasicApplication" FILES ${BasicApplicationSubSystem_SRC})
+source_group("Source Files/SubSystems/BasicApplication/SubSystems/Networking" FILES ${BasicApplicationNetworkSubSystem_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/imgui" FILES ${imgui_SRC})
 source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
