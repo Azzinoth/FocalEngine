@@ -387,7 +387,7 @@ add_executable(FocalEngineEditor WIN32
 								 ${stb_image_SRC}
 )
 
-target_link_libraries(FocalEngineEditor glew32.lib)
+target_link_libraries(FocalEngineEditor glew32s.lib)
 target_link_libraries(FocalEngineEditor glfw3.lib)
 target_link_libraries(FocalEngineEditor glfw3dll.lib)
 target_link_libraries(FocalEngineEditor opengl32.lib)
