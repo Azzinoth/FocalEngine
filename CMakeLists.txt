@@ -18,6 +18,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF 
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+if(NOT TARGET FEBasicApplication)
+  add_subdirectory(SubSystems/FEBasicApplication)
+endif()
+
 file(GLOB InstancedLineMaterial_SRC
 	"CoreExtensions/StandardMaterial/InstancedLineMaterial/FE_InstancedLine_FS.glsl"
 	"CoreExtensions/StandardMaterial/InstancedLineMaterial/FE_InstancedLine_VS.glsl"
@@ -277,41 +281,7 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FETransformComponent.h"
 )
 
-file(GLOB BasicApplicationNetworkSubSystem_SRC
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworkingBaseClasses.cpp"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworkingBaseClasses.h"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FEClientSideNetworkConnection.cpp"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FEClientSideNetworkConnection.h"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FEServerSideNetworkConnection.cpp"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FEServerSideNetworkConnection.h"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworking.cpp"
-	"SubSystems/FEBasicApplication/SubSystems/Networking/FENetworking.h"
-)
-
-file(GLOB BasicApplicationSubSystem_SRC
-	"SubSystems/FEBasicApplication/FEBasicApplication.cpp"
-	"SubSystems/FEBasicApplication/FEBasicApplication.h"
-	"SubSystems/FEBasicApplication/FEThreadPool.cpp"
-	"SubSystems/FEBasicApplication/FEThreadPool.h"
-	"SubSystems/FEBasicApplication/FELog.cpp"
-	"SubSystems/FEBasicApplication/FELog.h"
-	"SubSystems/FEBasicApplication/FETime.cpp"
-	"SubSystems/FEBasicApplication/FETime.h"
-	"SubSystems/FEBasicApplication/FEUniqueID.cpp"
-	"SubSystems/FEBasicApplication/FEUniqueID.h"
-)
-
 # *************** THIRD_PARTY ***************
-
-file(GLOB imgui_SRC
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_demo.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_draw.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_impl_glfw.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_impl_opengl3.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_tables.cpp"
-	"SubSystems/FEBasicApplication/ThirdParty/imgui/imgui_widgets.cpp"
-)
 
 file(GLOB jsoncpp_SRC
 	"ThirdParty/jsoncpp/json_reader.cpp"
@@ -340,8 +310,10 @@ file(GLOB source_SRC
 	"main.cpp"
 )
 
-link_directories("SubSystems/FEBasicApplication/ThirdParty/glew2/lib/$(PlatformTarget)")
-link_directories("SubSystems/FEBasicApplication/ThirdParty/GLFW/lib/$(PlatformTarget)")
+link_directories(${GLEW_LIB_DIR})
+link_directories(${GLFW_LIB_DIR})
+#link_directories("SubSystems/FEBasicApplication/ThirdParty/glew2/lib/$(PlatformTarget)")
+#link_directories("SubSystems/FEBasicApplication/ThirdParty/GLFW/lib/$(PlatformTarget)")
 
 # add the executable
 add_executable(FocalEngineEditor WIN32
@@ -377,15 +349,14 @@ add_executable(FocalEngineEditor WIN32
 								 ${ResourceManager_SRC}
 								 # *************** SUB_SYSTEM ***************
 								 ${SubSystems_SRC}
-								 ${BasicApplicationSubSystem_SRC}
-								 ${BasicApplicationNetworkSubSystem_SRC}
 								 # *************** THIRD_PARTY ***************
-								 ${imgui_SRC}
 								 ${jsoncpp_SRC}
 								 ${lodepng_SRC}
 								 ${textEditor_SRC}
 								 ${stb_image_SRC}
 )
+
+target_link_libraries(FocalEngineEditor FEBasicApplication)
 
 target_link_libraries(FocalEngineEditor glew32s.lib)
 target_link_libraries(FocalEngineEditor glfw3.lib)
@@ -424,10 +395,7 @@ source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
-source_group("Source Files/SubSystems/BasicApplication" FILES ${BasicApplicationSubSystem_SRC})
-source_group("Source Files/SubSystems/BasicApplication/SubSystems/Networking" FILES ${BasicApplicationNetworkSubSystem_SRC})
 # *************** THIRD_PARTY ***************
-source_group("Source Files/ThirdParty/imgui" FILES ${imgui_SRC})
 source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/textEditor" FILES ${textEditor_SRC})
@@ -437,8 +405,19 @@ source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngineEditor)
 
 include_directories(
-	"SubSystems/FEBasicApplication/ThirdParty/glew2/include"
-	"SubSystems/FEBasicApplication/ThirdParty/"
-	"SubSystems/FEBasicApplication/"
+	#"SubSystems/FEBasicApplication/ThirdParty/glew2/include"
+	#"SubSystems/FEBasicApplication/ThirdParty/"
+	#"SubSystems/FEBasicApplication/"
+	${GLEW_INCLUDE_DIR}
+	${BASICAPP_THIRDPARTY_DIR}
+	${BASICAPP_DIR}
 	"ThirdParty/"
 )
+
+# Re-export of the variables from child projects
+set(GLEW_LIB_DIR ${GLEW_LIB_DIR} PARENT_SCOPE)
+set(GLFW_LIB_DIR ${GLFW_LIB_DIR} PARENT_SCOPE)
+
+set(GLEW_INCLUDE_DIR ${GLEW_INCLUDE_DIR} PARENT_SCOPE)
+set(BASICAPP_THIRDPARTY_DIR ${BASICAPP_THIRDPARTY_DIR} PARENT_SCOPE)
+set(BASICAPP_DIR ${BASICAPP_DIR} PARENT_SCOPE)
