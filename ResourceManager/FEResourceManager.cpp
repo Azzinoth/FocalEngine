@@ -892,7 +892,7 @@ void FEResourceManager::LoadStandardMeshes()
 	Meshes.erase(StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->GetObjectID());
 	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
 
-	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((DefaultResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
+	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
 	Meshes.erase(StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->GetObjectID());
 	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
 }
@@ -900,7 +900,7 @@ void FEResourceManager::LoadStandardMeshes()
 FEResourceManager::FEResourceManager()
 {
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
-	NoTexture = LoadFETexture((DefaultResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
+	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
 	MakeTextureStandard(NoTexture);
 	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
@@ -1264,8 +1264,8 @@ void FEResourceManager::LoadStandardMaterial()
 	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial");
 	Materials.erase(NewMaterial->GetObjectID());
 	NewMaterial->SetID("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
-	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str(),
-															 LoadGLSL("CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str());
+	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str()).c_str(),
+															 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str()).c_str());
 	NewMaterial->Shader->SetID("6917497A5E0C05454876186F");
 
 	MakeShaderStandard(NewMaterial->Shader);
@@ -1273,8 +1273,8 @@ void FEResourceManager::LoadStandardMaterial()
 	NewMaterial->AddParameter(color);
 	MakeMaterialStandard(NewMaterial);
 
-	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str(),
-															LoadGLSL("CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str());
+	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str()).c_str(),
+															LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str());
 	Shaders.erase(FEPhongShader->GetObjectID());
 	FEPhongShader->SetID("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/);
 	Shaders[FEPhongShader->GetObjectID()] = FEPhongShader;
@@ -1282,11 +1282,11 @@ void FEResourceManager::LoadStandardMaterial()
 	MakeShaderStandard(GetShader("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/));
 
 	// ****************************** PBR SHADER ******************************
-	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str(),
-														LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str()).c_str(),
+													  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str());
 
-	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
-																	  LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str());
+	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
+																	LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str()).c_str());
 
 	Shaders.erase(PBRShaderForward->GetObjectID());
 	PBRShaderForward->SetID("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
@@ -1294,8 +1294,8 @@ void FEResourceManager::LoadStandardMaterial()
 
 	MakeShaderStandard(GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/));
 
-	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str(),
-															          LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
+															        LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str());
 
 	Shaders.erase(PBRGBufferShader->GetObjectID());
 	PBRGBufferShader->SetID("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/);
@@ -1309,11 +1309,11 @@ void FEResourceManager::LoadStandardMaterial()
 
 	MakeShaderStandard(GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
 
-	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
-																		  LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str());
+	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
+																		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str());
 
-	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str(),
-																						LoadGLSL("CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str());
+	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
+																					  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str());
 
 	Shaders.erase(PBRInstancedGBufferShader->GetObjectID());
 	PBRInstancedGBufferShader->SetID("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/);
@@ -1335,11 +1335,11 @@ void FEResourceManager::LoadStandardMaterial()
 	MakeMaterialStandard(NewMaterial);
 	// ****************************** PBR SHADER END ******************************
 
-	FEShader* TerrainShader = CreateShader("FETerrainShader", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str(),
-																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_GBUFFER.glsl").c_str(),
-																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str(),
-																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str(),
-																LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str());
+	FEShader* TerrainShader = CreateShader("FETerrainShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_VS.glsl").c_str()).c_str(),
+															  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_FS_GBUFFER.glsl").c_str()).c_str(),
+															  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TCS.glsl").c_str()).c_str(),
+															  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_TES.glsl").c_str()).c_str(),
+															  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//FE_Terrain_GS.glsl").c_str()).c_str());
 
 	// ****************************** TERRAIN ******************************
 	Shaders.erase(TerrainShader->GetObjectID());
@@ -1348,10 +1348,10 @@ void FEResourceManager::LoadStandardMaterial()
 
 	MakeShaderStandard(GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/));
 
-	FEShader* ShadowMapTerrainShader = CreateShader("FESMTerrainShader", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str(),
-																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str(),
-																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TCS.glsl").c_str(),
-																	LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str());
+	FEShader* ShadowMapTerrainShader = CreateShader("FESMTerrainShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str()).c_str(),
+																		 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str()).c_str(),
+																		 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TCS.glsl").c_str()).c_str(),
+																		 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str()).c_str());
 	Shaders.erase(ShadowMapTerrainShader->GetObjectID());
 	ShadowMapTerrainShader->SetID("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
 	Shaders[ShadowMapTerrainShader->GetObjectID()] = ShadowMapTerrainShader;
@@ -1361,22 +1361,22 @@ void FEResourceManager::LoadStandardMaterial()
 
 	MakeShaderStandard(GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/));
 
-	FEShader* TerrainBrushOutput = CreateShader("terrainBrushOutput", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
-																	  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str());
+	FEShader* TerrainBrushOutput = CreateShader("terrainBrushOutput", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str()).c_str(),
+																	  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str()).c_str());
 	Shaders.erase(TerrainBrushOutput->GetObjectID());
 	TerrainBrushOutput->SetID("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
 	Shaders[TerrainBrushOutput->GetObjectID()] = TerrainBrushOutput;
 	MakeShaderStandard(GetShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/));
 
-	FEShader* TerrainBrushVisual = CreateShader("terrainBrushVisual", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str(),
-																	  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str());
+	FEShader* TerrainBrushVisual = CreateShader("terrainBrushVisual", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str()).c_str(),
+																	  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str()).c_str());
 	Shaders.erase(TerrainBrushVisual->GetObjectID());
 	TerrainBrushVisual->SetID("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/);
 	Shaders[TerrainBrushVisual->GetObjectID()] = TerrainBrushVisual;
 	MakeShaderStandard(GetShader("40064B7B4287805B296E526E"/*"terrainBrushVisual"*/));
 
-	FEShader* TerrainLayersNormalize = CreateShader("terrainLayersNormalize", LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str(),
-																			  LoadGLSL("CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_LayersNormalize_FS.glsl").c_str());
+	FEShader* TerrainLayersNormalize = CreateShader("terrainLayersNormalize", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str()).c_str(),
+																			  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_LayersNormalize_FS.glsl").c_str()).c_str());
 	Shaders.erase(TerrainLayersNormalize->GetObjectID());
 	TerrainLayersNormalize->SetID("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
 	Shaders[TerrainLayersNormalize->GetObjectID()] = TerrainLayersNormalize;
@@ -1386,8 +1386,8 @@ void FEResourceManager::LoadStandardMaterial()
 	FEMaterial* SkyDomeMaterial = CreateMaterial("skyDomeMaterial");
 	Materials.erase(SkyDomeMaterial->GetObjectID());
 	SkyDomeMaterial->SetID("5A649B9E0F36073D4939313H");
-	SkyDomeMaterial->Shader = CreateShader("FESkyDome", LoadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str(),
-														LoadGLSL("CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str());
+	SkyDomeMaterial->Shader = CreateShader("FESkyDome", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str()).c_str(),
+														LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str()).c_str());
 	Shaders.erase(SkyDomeMaterial->Shader->GetObjectID());
 	SkyDomeMaterial->Shader->SetID("3A69744E831A574E4857361B");
 	Shaders[SkyDomeMaterial->Shader->GetObjectID()] = SkyDomeMaterial->Shader;
@@ -2273,7 +2273,7 @@ void FEResourceManager::ReSaveStandardMeshes()
 	for (size_t i = 0; i < StandardMeshes.size(); i++)
 	{
 		FEMesh* CurrentMesh = GetMesh(StandardMeshes[i]);
-		SaveFEMesh(CurrentMesh, (DefaultResourcesFolder + CurrentMesh->GetObjectID() + std::string(".model")).c_str());
+		SaveFEMesh(CurrentMesh, (ResourcesFolder + CurrentMesh->GetObjectID() + std::string(".model")).c_str());
 	}
 }
 
@@ -2282,7 +2282,7 @@ void FEResourceManager::ReSaveStandardTextures()
 	auto it = StandardTextures.begin();
 	while (it != StandardTextures.end())
 	{
-		SaveFETexture(it->second, (DefaultResourcesFolder + it->second->GetObjectID() + std::string(".texture")).c_str());
+		SaveFETexture(it->second, (ResourcesFolder + it->second->GetObjectID() + std::string(".texture")).c_str());
 		it++;
 	}
 }
@@ -2306,7 +2306,7 @@ void FEResourceManager::DeleteMaterial(const FEMaterial* Material)
 
 std::string FEResourceManager::GetDefaultResourcesFolder()
 {
-	return DefaultResourcesFolder;
+	return ResourcesFolder;
 }
 
 std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* SourceTexture)

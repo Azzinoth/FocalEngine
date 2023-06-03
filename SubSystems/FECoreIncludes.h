@@ -2,7 +2,7 @@
 #pragma warning (disable: 4752)     // found Intel(R) Advanced Vector Extensions; consider using / arch:AVX	FocalEnginePrivate
 #pragma warning (disable: 4334)     // '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?) in lodepng.cpp
 
-#include "FEBasicApplication/FEBasicApplication.h"
+#include "FEBasicApplication.h"
 
 #include <iostream>
 #include <fstream>

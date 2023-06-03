@@ -1,0 +1,3 @@
+#pragma once
+
+#define ENGINE_FOLDER "@ENGINE_FOLDER@"

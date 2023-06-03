@@ -18,6 +18,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF 
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Set default resource folder location
+set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
+configure_file(ResourceManager/Config.h.in ResourceManager/Config.h @ONLY)
+
 if(NOT TARGET FEBasicApplication)
   add_subdirectory(SubSystems/FEBasicApplication)
 endif()
@@ -132,93 +136,6 @@ file(GLOB CoreExtensions_SRC
 	"CoreExtensions/FEModelViewCamera.h"
 )
 
-# *************** EDITOR ***************
-file(GLOB Editor_SRC
-	"Editor/FEEditor.cpp"
-	"Editor/FEEditor.h"
-	"Editor/FEEditorContentBrowser.cpp"
-	"Editor/FEEditorDragAndDropManager.cpp"
-	"Editor/FEEditorDragAndDropManager.h"
-	"Editor/FEEditorGizmoManager.cpp"
-	"Editor/FEEditorGizmoManager.h"
-	"Editor/FEEditorHaloSelectionEffect.cpp"
-	"Editor/FEEditorHaloSelectionEffect.h"
-	"Editor/FEEditorInternalResources.cpp"
-	"Editor/FEEditorInternalResources.h"
-	"Editor/FEEditorPreviewManager.cpp"
-	"Editor/FEEditorPreviewManager.h"
-	"Editor/FEEditorSelectedObject.cpp"
-	"Editor/FEEditorSelectedObject.h"
-	"Editor/FEEditorVirtualFileSystem.cpp"
-	"Editor/FEEditorVirtualFileSystem.h"
-	"Editor/FEProject.cpp"
-	"Editor/FEProject.h"
-)
-
-file(GLOB FEDearImguiWrapper_SRC
-	"Editor/FEDearImguiWrapper/FEDearImguiWrapper.cpp"
-	"Editor/FEDearImguiWrapper/FEDearImguiWrapper.h"
-)
-
-file(GLOB FEEditorSubWindows_SRC
-	"Editor/FEEditorSubWindows/deletePopups.cpp"
-	"Editor/FEEditorSubWindows/deletePopups.h"
-	"Editor/FEEditorSubWindows/editPopups.cpp"
-	"Editor/FEEditorSubWindows/editPopups.h"
-	"Editor/FEEditorSubWindows/gyzmosSettingsWindow.h"
-	"Editor/FEEditorSubWindows/combineChannelsToTexturePopUp.cpp"
-	"Editor/FEEditorSubWindows/combineChannelsToTexturePopUp.h"
-	"Editor/FEEditorSubWindows/projectWasModifiedPopUp.cpp"
-	"Editor/FEEditorSubWindows/projectWasModifiedPopUp.h"
-	"Editor/FEEditorSubWindows/renamePopups.cpp"
-	"Editor/FEEditorSubWindows/renamePopups.h"
-	"Editor/FEEditorSubWindows/selectPopups.cpp"
-	"Editor/FEEditorSubWindows/selectPopups.h"
-	"Editor/FEEditorSubWindows/shaderEditorWindow.cpp"
-	"Editor/FEEditorSubWindows/shaderEditorWindow.h"
-	"Editor/FEEditorSubWindows/resizeTexturePopup.cpp"
-	"Editor/FEEditorSubWindows/resizeTexturePopup.h"
-	"Editor/FEEditorSubWindows/prefabEditorWindow.cpp"
-	"Editor/FEEditorSubWindows/prefabEditorWindow.h"
-	"Editor/FEEditorSubWindows/debugTextureViewWindow.cpp"
-	"Editor/FEEditorSubWindows/debugTextureViewWindow.h"
-)
-
-file(GLOB Editor_Materials_SRC
-	"Editor/Materials/FE_HaloDrawObject_FS.glsl"
-	"Editor/Materials/FE_HaloDrawObject_INSTANCED_VS.glsl"
-	"Editor/Materials/FE_HaloDrawObject_VS.glsl"
-	"Editor/Materials/FE_HaloSelectionEffect_FS.glsl"
-	"Editor/Materials/FE_MeshPreview_FS.glsl"
-	"Editor/Materials/FE_MeshPreview_VS.glsl"
-	"Editor/Materials/FE_PixelAccurateSelection_FS.glsl"
-	"Editor/Materials/FE_PixelAccurateSelection_INSTANCED_VS.glsl"
-	"Editor/Materials/FE_PixelAccurateSelection_VS.glsl"
-)
-
-file(GLOB FEVisualNodeSystem_SRC
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.cpp"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSystem.h"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeArea.cpp"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeArea.h"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNode.cpp"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNode.h"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSocket.cpp"
-	"Editor/NodeSystem/FEVisualNodeSystem/FEVisualNodeSocket.h"
-)
-
-file(GLOB FEVisualNodeSystem_CustomNodes_SRC
-	"Editor/NodeSystem/CustomNodes/FEEditorStandardNodes.h"
-	"Editor/NodeSystem/CustomNodes/FEEditorMaterialNode.cpp"
-	"Editor/NodeSystem/CustomNodes/FEEditorMaterialNode.h"
-	"Editor/NodeSystem/CustomNodes/FEEditorFloatSourceNode.cpp"
-	"Editor/NodeSystem/CustomNodes/FEEditorFloatSourceNode.h"
-	"Editor/NodeSystem/CustomNodes/FEEditorTextureSourceNode.cpp"
-	"Editor/NodeSystem/CustomNodes/FEEditorTextureSourceNode.h"
-	"Editor/NodeSystem/CustomNodes/FEEditorTextureCreatingNode.cpp"
-	"Editor/NodeSystem/CustomNodes/FEEditorTextureCreatingNode.h"
-)
-
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
@@ -261,6 +178,7 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
 	"ResourceManager/FEResourceManager.h"
+	"ResourceManager/Config.h"
 )
 
 # *************** SUB_SYSTEM ***************
@@ -296,10 +214,6 @@ file(GLOB lodepng_SRC
 	"ThirdParty/lodepng/lodepng.h"
 )
 
-file(GLOB textEditor_SRC
-	"ThirdParty/textEditor/TextEditor.cpp"
-)
-
 file(GLOB stb_image_SRC
 	"ThirdParty/stb_image/stb_image.h"
 )
@@ -307,61 +221,50 @@ file(GLOB stb_image_SRC
 file(GLOB source_SRC
 	"FEngine.cpp"
 	"FEngine.h"
-	"main.cpp"
 )
 
 link_directories(${GLEW_LIB_DIR})
 link_directories(${GLFW_LIB_DIR})
-#link_directories("SubSystems/FEBasicApplication/ThirdParty/glew2/lib/$(PlatformTarget)")
-#link_directories("SubSystems/FEBasicApplication/ThirdParty/GLFW/lib/$(PlatformTarget)")
 
 # add the executable
-add_executable(FocalEngineEditor WIN32
-								 ${source_SRC}
-								 ${InstancedLineMaterial_SRC}
-								 ${PBRMaterial_SRC}
-								 ${PhongMaterial_SRC}
-								 ${ShadowMapMaterial_SRC}
-								 ${SkyDomeMaterial_SRC}
-								 ${SolidColorMaterial_SRC}
-								 ${TerrainMaterial_SRC}
-								 ${TerrainEditorTools_SRC}
-								 ${TerrainShadowMapShader_SRC}
-								 ${PostProcessEffects_SRC}
-								 ${FE_Bloom_SRC}
-								 ${FE_ChromaticAberration_SRC}
-								 ${FE_DOF_SRC}
-								 ${FE_FXAA_SRC}
-								 ${FE_GammaAndHDRCorrection_SRC}
-								 ${FE_SSAO_SRC}
-								 ${ComputeShaders_SRC}
-								 ${CoreExtensions_SRC}
-								 # *************** EDITOR ***************
-								 ${Editor_SRC}
-								 ${FEDearImguiWrapper_SRC}
-								 ${FEEditorSubWindows_SRC}
-								 ${Editor_Materials_SRC}
-								 ${FEVisualNodeSystem_SRC}
-								 ${FEVisualNodeSystem_CustomNodes_SRC}
-								 # *************** RENDERER ***************
-								 ${Renderer_SRC}
-								 # *************** RESOURCE MANAGER ***************
-								 ${ResourceManager_SRC}
-								 # *************** SUB_SYSTEM ***************
-								 ${SubSystems_SRC}
-								 # *************** THIRD_PARTY ***************
-								 ${jsoncpp_SRC}
-								 ${lodepng_SRC}
-								 ${textEditor_SRC}
-								 ${stb_image_SRC}
+add_library(FocalEngine 
+			${source_SRC}
+			${InstancedLineMaterial_SRC}
+			${PBRMaterial_SRC}
+			${PhongMaterial_SRC}
+			${ShadowMapMaterial_SRC}
+			${SkyDomeMaterial_SRC}
+			${SolidColorMaterial_SRC}
+			${TerrainMaterial_SRC}
+			${TerrainEditorTools_SRC}
+			${TerrainShadowMapShader_SRC}
+			${PostProcessEffects_SRC}
+			${FE_Bloom_SRC}
+			${FE_ChromaticAberration_SRC}
+			${FE_DOF_SRC}
+			${FE_FXAA_SRC}
+			${FE_GammaAndHDRCorrection_SRC}
+			${FE_SSAO_SRC}
+			${ComputeShaders_SRC}
+			${CoreExtensions_SRC}
+			# *************** RENDERER ***************
+			${Renderer_SRC}
+			# *************** RESOURCE MANAGER ***************
+			${ResourceManager_SRC}
+			# *************** SUB_SYSTEM ***************
+			${SubSystems_SRC}
+			# *************** THIRD_PARTY ***************
+			${jsoncpp_SRC}
+			${lodepng_SRC}
+			${stb_image_SRC}
 )
 
-target_link_libraries(FocalEngineEditor FEBasicApplication)
+target_link_libraries(FocalEngine FEBasicApplication)
 
-target_link_libraries(FocalEngineEditor glew32s.lib)
-target_link_libraries(FocalEngineEditor glfw3.lib)
-target_link_libraries(FocalEngineEditor glfw3dll.lib)
-target_link_libraries(FocalEngineEditor opengl32.lib)
+target_link_libraries(FocalEngine glew32s.lib)
+target_link_libraries(FocalEngine glfw3.lib)
+target_link_libraries(FocalEngine glfw3dll.lib)
+target_link_libraries(FocalEngine opengl32.lib)
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/CoreExtensions/Materials/InstancedLineMaterial" FILES ${InstancedLineMaterial_SRC})
@@ -382,13 +285,6 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorre
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
 source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${ComputeShaders_SRC})
 source_group("Source Files/CoreExtensions" FILES ${CoreExtensions_SRC})
-# *************** EDITOR ***************
-source_group("Source Files/Editor" FILES ${Editor_SRC})
-source_group("Source Files/Editor/FEDearImguiWrapper" FILES ${FEDearImguiWrapper_SRC})
-source_group("Source Files/Editor/FEEditorSubWindows" FILES ${FEEditorSubWindows_SRC})
-source_group("Source Files/Editor/Materials" FILES ${Editor_Materials_SRC})
-source_group("Source Files/Editor/NodeSystem/FEVisualNodeSystem" FILES ${FEVisualNodeSystem_SRC})
-source_group("Source Files/Editor/NodeSystem/CustomNodes" FILES ${FEVisualNodeSystem_CustomNodes_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************
@@ -396,22 +292,20 @@ source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 # *************** THIRD_PARTY ***************
-source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
-source_group("Source Files/ThirdParty/textEditor" FILES ${textEditor_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
 
-# set FocalEngineEditor as the startup project
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngineEditor)
+# set the startup project
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngine)
+
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ PARENT_SCOPE)
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/)
 
 include_directories(
-	#"SubSystems/FEBasicApplication/ThirdParty/glew2/include"
-	#"SubSystems/FEBasicApplication/ThirdParty/"
-	#"SubSystems/FEBasicApplication/"
 	${GLEW_INCLUDE_DIR}
 	${BASICAPP_THIRDPARTY_DIR}
 	${BASICAPP_DIR}
-	"ThirdParty/"
+	${FOCAL_ENGINE_THIRD_PARTY_DIR}
 )
 
 # Re-export of the variables from child projects

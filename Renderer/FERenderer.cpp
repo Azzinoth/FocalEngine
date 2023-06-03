@@ -62,9 +62,10 @@ FERenderer::FERenderer()
 	SkyDome->bVisible = false;
 	SkyDome->Transform.SetScale(glm::vec3(50.0f));
 
-	FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader", nullptr, nullptr,
-															nullptr, nullptr,
-															nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
+	FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader",
+														 nullptr, nullptr,
+														 nullptr, nullptr,
+														 nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str()).c_str());
 
 	FE_GL_ERROR(glGenBuffers(1, &FrustumInfoBuffer));
 	FE_GL_ERROR(glGenBuffers(1, &CullingLODCountersBuffer));
@@ -83,14 +84,16 @@ FERenderer::FERenderer()
 	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), FrustumData.data(), GL_DYNAMIC_DRAW));
 
 
-	ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy", nullptr, nullptr,
-														  nullptr, nullptr,
-														  nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str());
+	ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy",
+													   nullptr, nullptr,
+													   nullptr, nullptr,
+													   nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str()).c_str());
 
 
-	ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample", nullptr, nullptr,
-																	 nullptr, nullptr,
-																	 nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str());
+	ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample",
+																  nullptr, nullptr,
+																  nullptr, nullptr,
+																  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
 	
 	ComputeDepthPyramidDownSample->GetParameter("scaleDownBy")->UpdateData(2);
 }

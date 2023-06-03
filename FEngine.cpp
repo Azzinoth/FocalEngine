@@ -153,12 +153,12 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	
 	ImGuiIO& io = ImGui::GetIO();
 
-	const size_t PathLen = strlen((RESOURCE_MANAGER.DefaultResourcesFolder + "imgui.ini").c_str()) + 1;
+	const size_t PathLen = strlen((RESOURCE_MANAGER.ResourcesFolder + "imgui.ini").c_str()) + 1;
 	char* ImguiIniFile = new char[PathLen];
-	strcpy_s(ImguiIniFile, PathLen, (RESOURCE_MANAGER.DefaultResourcesFolder + "imgui.ini").c_str());
+	strcpy_s(ImguiIniFile, PathLen, (RESOURCE_MANAGER.ResourcesFolder + "imgui.ini").c_str());
 	io.IniFilename = ImguiIniFile;
-	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.DefaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
-	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.DefaultResourcesFolder + "Cousine-Regular.ttf").c_str(), 32);
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.ResourcesFolder + "Cousine-Regular.ttf").c_str(), 20);
+	io.Fonts->AddFontFromFileTTF((RESOURCE_MANAGER.ResourcesFolder + "Cousine-Regular.ttf").c_str(), 32);
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	unsigned char* TexPixels = nullptr;
@@ -190,14 +190,14 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// tessellation parameter
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
 
-	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str(),
-																				  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str());
+	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
+																				  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(RENDERER.InstancedLineShader->GetObjectID());
 	RENDERER.InstancedLineShader->SetID("7E0826291010377D564F6115"/*"instancedLine"*/);
 	RESOURCE_MANAGER.Shaders[RENDERER.InstancedLineShader->GetObjectID()] = RENDERER.InstancedLineShader;
 
-	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
-																					   RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str());
+	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(FEScreenQuadShader->GetObjectID());
 	FEScreenQuadShader->SetID("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 	RESOURCE_MANAGER.Shaders[FEScreenQuadShader->GetObjectID()] = FEScreenQuadShader;
@@ -210,8 +210,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	BloomEffect->SetID("451C48791871283D372C5938"/*"bloom"*/);
 
 	FEShader* BloomThresholdShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
-														  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str());
+		RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+														  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomThresholdShader->GetObjectID());
 	BloomThresholdShader->SetID("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/);
 	RESOURCE_MANAGER.Shaders[BloomThresholdShader->GetObjectID()] = BloomThresholdShader;
@@ -220,8 +220,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	BloomEffect->Stages[0]->Shader->GetParameter("thresholdBrightness")->UpdateData(1.0f);
 
 	FEShader* BloomBlurShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
-												     RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str());
+		RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+												     RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomBlurShader->GetObjectID());
 	BloomBlurShader->SetID("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
 	RESOURCE_MANAGER.Shaders[BloomBlurShader->GetObjectID()] = BloomBlurShader;
@@ -243,8 +243,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
 
 	FEShader* BloomCompositionShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str(),
-														    RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str());
+		RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+														    RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(BloomCompositionShader->GetObjectID());
 	BloomCompositionShader->SetID("1833272551376C2E5645200E"/*"FEBloomComposition"*/);
 	RESOURCE_MANAGER.Shaders[BloomCompositionShader->GetObjectID()] = BloomCompositionShader;
@@ -259,8 +259,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	GammaHDR->SetID("2374462A7B0E78141B5F5D79"/*"GammaAndHDR"*/);
 
 	FEShader* GammaHDRShader =
-		RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str(),
-															 RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str());
+		RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
+															 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(GammaHDRShader->GetObjectID());
 	GammaHDRShader->SetID("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/);
 	RESOURCE_MANAGER.Shaders[GammaHDRShader->GetObjectID()] = GammaHDRShader;
@@ -274,8 +274,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEFXAAEffect->SetID("0A3F10643F06525D70016070"/*"FE_FXAA"*/);
 
 	FEShader* FEFXAAShader =
-		RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str(),
-													  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str());
+		RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
+													  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(FEFXAAShader->GetObjectID());
 	FEFXAAShader->SetID("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/);
 	RESOURCE_MANAGER.Shaders[FEFXAAShader->GetObjectID()] = FEFXAAShader;
@@ -296,8 +296,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
 	DOFEffect->SetID("217C4E80482B6C650D7B492F"/*"DOF"*/);
 
-	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str(),
-																			RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str());
+	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
+															   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(DOFShader->GetObjectID());
 	DOFShader->SetID("7800253C244442155D0F3C7B"/*"DOF"*/);
 	RESOURCE_MANAGER.Shaders[DOFShader->GetObjectID()] = DOFShader;
@@ -325,8 +325,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration");
 	ChromaticAberrationEffect->SetID("506D804162647749060C3E68"/*"chromaticAberration"*/);
 
-	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str(),
-																									 RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str());
+	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
+																									 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(ChromaticAberrationShader->GetObjectID());
 	ChromaticAberrationShader->SetID("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
 	RESOURCE_MANAGER.Shaders[ChromaticAberrationShader->GetObjectID()] = ChromaticAberrationShader;
@@ -339,8 +339,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// ************************************ chromaticAberrationEffect END ************************************
 
 	// ************************************ SSAO ************************************
-	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str(),
-																		   RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str());
+	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
+																		   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str());
 
 	RESOURCE_MANAGER.Shaders.erase(FESSAOShader->GetObjectID());
 	FESSAOShader->SetID("1037115B676E383E36345079"/*"FESSAOShader"*/);
@@ -348,8 +348,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 
 	RESOURCE_MANAGER.MakeShaderStandard(FESSAOShader);
 
-	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str(),
-																				   RESOURCE_MANAGER.LoadGLSL("CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str());
+	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																				   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str());
 
 	RESOURCE_MANAGER.Shaders.erase(FESSAOBlurShader->GetObjectID());
 	FESSAOBlurShader->SetID("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
@@ -359,16 +359,16 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// ************************************ SSAO END ************************************
 
 	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial");
-	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str(),
-																							RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
+	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str()).c_str(),
+																							RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
 	RENDERER.ShadowMapMaterial->Shader->SetID("7C41565B2E2B05321A182D89"/*"FEShadowMapShader"*/);
 	
 	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterial->Shader);
 	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterial);
 
 	RENDERER.ShadowMapMaterialInstanced = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterialInstanced");
-	RENDERER.ShadowMapMaterialInstanced->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str(),
-																											  RESOURCE_MANAGER.LoadGLSL("CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str());
+	RENDERER.ShadowMapMaterialInstanced->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str()).c_str(),
+																											  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
 	RENDERER.ShadowMapMaterialInstanced->Shader->SetID("5634765B2E2A05321A182D1A"/*"FEShadowMapShaderInstanced"*/);
 	
 	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterialInstanced->Shader);

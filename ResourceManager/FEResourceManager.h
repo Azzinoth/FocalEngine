@@ -5,6 +5,7 @@
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
+#include "Config.h"
 
 namespace FocalEngine
 {
@@ -163,11 +164,13 @@ namespace FocalEngine
 
 		GLint MaxColorAttachments = 1;
 
-		std::string DefaultResourcesFolder = "Resources//";
 		void FillTerrainLayerMaskWithRawData(const unsigned char* RawData, const FETerrain* Terrain, size_t LayerIndex);
 		void CreateMaterialsFromOBJData(std::vector<FEObject*>& ResultArray);
 
 		static void LoadTextureFileAsyncCallBack(void* OutputData);
+
+		std::string EngineFolder = std::string(ENGINE_FOLDER) + "/";
+		std::string ResourcesFolder = EngineFolder + "/Resources/";
 	};
 
 	#define RESOURCE_MANAGER FEResourceManager::getInstance()
