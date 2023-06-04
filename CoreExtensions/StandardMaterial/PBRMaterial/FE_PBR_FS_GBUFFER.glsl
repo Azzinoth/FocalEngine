@@ -20,8 +20,8 @@ layout (location = 5) out vec4 gShaderProperties;
 uniform float FENormalMapIntensity;
 uniform float FEAOIntensity;
 uniform float FEAOMapIntensity;
-uniform float FERoughtness;
-uniform float FERoughtnessMapIntensity;
+uniform float FERoughness;
+uniform float FERoughnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapIntensity;
 
@@ -107,13 +107,13 @@ float getAO()
 	return result;
 }
 
-float getRoughtness()
+float getRoughness()
 {
-	float result = FERoughtness;
+	float result = FERoughness;
 
 	if (compactMaterialPacking == 1)
 	{
-		result = materialProperties[textureChannels[3]] * FERoughtnessMapIntensity;
+		result = materialProperties[textureChannels[3]] * FERoughnessMapIntensity;
 		return result;
 	}
 
@@ -124,16 +124,16 @@ float getRoughtness()
 
 			//float gamma = 2.2;
 			//result = pow(texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]], gamma);
-			//result = result * FERoughtnessMapIntensity;
+			//result = result * FERoughnessMapIntensity;
 
-			result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
+			result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughnessMapIntensity;
 		}
 			
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
 		if (textureBindings[9] != -1)
-			result = texture(textures[textureBindings[9]], FS_IN.UV)[textureChannels[9]] * FERoughtnessMapIntensity;
+			result = texture(textures[textureBindings[9]], FS_IN.UV)[textureChannels[9]] * FERoughnessMapIntensity;
 	}
 
 	return result;
@@ -211,7 +211,7 @@ void main(void)
 	gNormal = getNormal();
 	gAlbedo = textureColor;
 	gMaterialProperties.r = getAO();
-	gMaterialProperties.g = getRoughtness();
+	gMaterialProperties.g = getRoughness();
 	gMaterialProperties.b = getMetalness();
 	gMaterialProperties.a = getDisplacement();
 	gShaderProperties.r = 0; // 0 - shaderID

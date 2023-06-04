@@ -45,11 +45,11 @@ namespace FocalEngine
 		float GetMetalness() const;
 		void SetMetalness(float NewValue);
 
-		float GetRoughtness() const;
-		void SetRoughtness(float NewValue);
+		float GetRoughness() const;
+		void SetRoughness(float NewValue);
 
-		float GetRoughtnessMapIntensity() const;
-		void SetRoughtnessMapIntensity(float NewValue);
+		float GetRoughnessMapIntensity() const;
+		void SetRoughnessMapIntensity(float NewValue);
 
 		float GetMetalnessMapIntensity() const;
 		void SetMetalnessMapIntensity(float NewValue);
@@ -79,10 +79,10 @@ namespace FocalEngine
 		FETexture* GetAOMap(int SubMaterial = 0);
 		int GetAOMapChannel(int SubMaterial = 0) const;
 
-		void SetRoughtnessMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
-		void SetRoughtnessMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
-		FETexture* GetRoughtnessMap(int SubMaterial = 0);
-		int GetRoughtnessMapChannel(int SubMaterial = 0) const;
+		void SetRoughnessMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
+		void SetRoughnessMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
+		FETexture* GetRoughnessMap(int SubMaterial = 0);
+		int GetRoughnessMapChannel(int SubMaterial = 0) const;
 
 		void SetMetalnessMap(FETexture* Texture, int Channel = 0, int SubMaterial = 0);
 		void SetMetalnessMap(int TextureIndex, int Channel = 0, int SubMaterial = 0);
@@ -119,15 +119,15 @@ namespace FocalEngine
 		const int AlbedoBindingIndex = 0;
 		const int NormalBindingIndex = 1;
 		const int AOBindingIndex = 2;
-		const int RoughtnessBindingIndex = 3;
+		const int RoughnessBindingIndex = 3;
 		const int MetalnessBindingIndex = 4;
 		const int DisplacementBindingIndex = 5;
 
 		float NormalMapIntensity = 1.0f;
 		float Metalness = 0.01f;
 		float MetalnessMapIntensity = 1.0f;
-		float Roughtness = 0.8f;
-		float RoughtnessMapIntensity = 1.0f;
+		float Roughness = 0.8f;
+		float RoughnessMapIntensity = 1.0f;
 		float AmbientOcclusionMapIntensity = 1.0f;
 		float AmbientOcclusionIntensity = 1.0f;
 		float DisplacementMapIntensity = 1.0f;

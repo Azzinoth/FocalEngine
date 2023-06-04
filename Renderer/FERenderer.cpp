@@ -146,8 +146,8 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 	static int FEAOIntensityHash = static_cast<int>(std::hash<std::string>{}("FEAOIntensity"));
 	static int FEAOMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FEAOMapIntensity"));
 	static int FENormalMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FENormalMapIntensity"));
-	static int FERoughtnessHash = static_cast<int>(std::hash<std::string>{}("FERoughtness"));
-	static int FERoughtnessMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FERoughtnessMapIntensity"));
+	static int FERoughnessHash = static_cast<int>(std::hash<std::string>{}("FERoughness"));
+	static int FERoughnessMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FERoughnessMapIntensity"));
 	static int FEMetalnessHash = static_cast<int>(std::hash<std::string>{}("FEMetalness"));
 	static int FEMetalnessMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FEMetalnessMapIntensity"));
 	static int FETilingHash = static_cast<int>(std::hash<std::string>{}("FETiling"));
@@ -205,11 +205,11 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 			if (Iterator->second.NameHash == FEAOMapIntensityHash)
 				Iterator->second.UpdateData(Material->GetAmbientOcclusionMapIntensity());
 
-			if (Iterator->second.NameHash == FERoughtnessHash)
-				Iterator->second.UpdateData(Material->Roughtness);
+			if (Iterator->second.NameHash == FERoughnessHash)
+				Iterator->second.UpdateData(Material->Roughness);
 
-			if (Iterator->second.NameHash == FERoughtnessMapIntensityHash)
-				Iterator->second.UpdateData(Material->GetRoughtnessMapIntensity());
+			if (Iterator->second.NameHash == FERoughnessMapIntensityHash)
+				Iterator->second.UpdateData(Material->GetRoughnessMapIntensity());
 
 			if (Iterator->second.NameHash == FEMetalnessHash)
 				Iterator->second.UpdateData(Material->Metalness);
@@ -1122,6 +1122,9 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 		for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
 		{
 			FEShader* OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
+			if (OriginalShader == nullptr)
+				continue;
+
 			if (ShaderToForce)
 			{
 				if (OriginalShader->GetName() == "FEPBRShader")

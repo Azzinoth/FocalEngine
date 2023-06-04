@@ -710,9 +710,9 @@ void FETerrain::LoadLayersDataToGPU()
 			// AOMapIntensity
 			GPULayersData[index + 2] = CurrentMaterial->GetAmbientOcclusionMapIntensity();
 			// roughness
-			GPULayersData[index + 3] = CurrentMaterial->GetRoughtness();
+			GPULayersData[index + 3] = CurrentMaterial->GetRoughness();
 			// roughnessMapIntensity
-			GPULayersData[index + 4] = CurrentMaterial->GetRoughtnessMapIntensity();
+			GPULayersData[index + 4] = CurrentMaterial->GetRoughnessMapIntensity();
 			// metalness
 			GPULayersData[index + 5] = CurrentMaterial->GetMetalness();
 			// metalnessMapIntensity

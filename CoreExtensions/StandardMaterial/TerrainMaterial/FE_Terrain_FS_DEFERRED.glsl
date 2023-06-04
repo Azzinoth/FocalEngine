@@ -8,9 +8,9 @@ uniform float FENormalMapIntensity;
 uniform float FEAOMapPresent;
 uniform float FEAOIntensity;
 uniform float FEAOMapIntensity;
-uniform float FERoughtnessMapPresent;
-uniform float FERoughtness;
-uniform float FERoughtnessMapIntensity;
+uniform float FERoughnessMapPresent;
+uniform float FERoughness;
+uniform float FERoughnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapPresent;
 uniform float FEMetalnessMapIntensity;
@@ -134,12 +134,12 @@ float getAO()
 	//return SSAOIntensity;
 }
 
-float getRoughtness()
+float getRoughness()
 {
-	float result = FERoughtness;
+	float result = FERoughness;
 
 	if (textureBindings[3] != -1)
-		result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughtnessMapIntensity;
+		result = texture(textures[textureBindings[3]], FS_IN.UV)[textureChannels[3]] * FERoughnessMapIntensity;
 
 	return result;
 }
@@ -602,7 +602,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 	vec3 albedo = baseColor;
 	float metallic = getMetalness();
-	float roughness = getRoughtness();
+	float roughness = getRoughness();
 
     vec3 N = normal;
     vec3 V = viewDir;

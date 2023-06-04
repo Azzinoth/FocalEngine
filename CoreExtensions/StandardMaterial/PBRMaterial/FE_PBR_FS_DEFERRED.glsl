@@ -18,8 +18,8 @@ layout (location = 0) out vec4 outColor;
 uniform float FENormalMapIntensity;
 uniform float FEAOIntensity;
 uniform float FEAOMapIntensity;
-uniform float FERoughtness;
-uniform float FERoughtnessMapIntensity;
+uniform float FERoughness;
+uniform float FERoughnessMapIntensity;
 uniform float FEMetalness;
 uniform float FEMetalnessMapIntensity;
 
@@ -108,7 +108,7 @@ float getAO()
 	return result * SSAOIntensity;
 }
 
-float getRoughtness()
+float getRoughness()
 {
 	//return texture(textures[2], FS_IN.UV).g;
 	return materialProperties.g;
@@ -500,7 +500,7 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 	vec3 albedo = baseColor;
 	float metallic = getMetalness();
-	float roughness = getRoughtness();
+	float roughness = getRoughness();
 
     vec3 N = normal;
     vec3 V = viewDir;

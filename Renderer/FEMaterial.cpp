@@ -126,12 +126,12 @@ void FEMaterial::SetMetalness(float NewValue)
 	Metalness = NewValue;
 }
 
-float FEMaterial::GetRoughtness() const
+float FEMaterial::GetRoughness() const
 {
-	return Roughtness;
+	return Roughness;
 }
 
-void FEMaterial::SetRoughtness(float NewValue)
+void FEMaterial::SetRoughness(float NewValue)
 {
 	if (NewValue > 1.0f)
 		NewValue = 1.0f;
@@ -139,7 +139,7 @@ void FEMaterial::SetRoughtness(float NewValue)
 	if (NewValue < 0.0f)
 		NewValue = 0.0f;
 
-	Roughtness = NewValue;
+	Roughness = NewValue;
 }
 
 float FEMaterial::GetNormalMapIntensity() const
@@ -171,17 +171,17 @@ void FEMaterial::SetAmbientOcclusionIntensity(float NewValue)
 	AmbientOcclusionIntensity = NewValue;
 }
 
-float FEMaterial::GetRoughtnessMapIntensity() const
+float FEMaterial::GetRoughnessMapIntensity() const
 {
-	return RoughtnessMapIntensity;
+	return RoughnessMapIntensity;
 }
 
-void FEMaterial::SetRoughtnessMapIntensity(float NewValue)
+void FEMaterial::SetRoughnessMapIntensity(float NewValue)
 {
 	if (NewValue < 0.0f)
 		NewValue = 0.0f;
 
-	RoughtnessMapIntensity = NewValue;
+	RoughnessMapIntensity = NewValue;
 }
 
 float FEMaterial::GetMetalnessMapIntensity() const
@@ -316,35 +316,35 @@ void FEMaterial::SetAOMap(const int TextureIndex, const int Channel, const int S
 	SetTextureBinding(AOBindingIndex, TextureIndex, SubMaterial, Channel);
 }
 
-FETexture* FEMaterial::GetRoughtnessMap(const int SubMaterial)
+FETexture* FEMaterial::GetRoughnessMap(const int SubMaterial)
 {
-	return GetSpecifiedMap(RoughtnessBindingIndex, SubMaterial);
+	return GetSpecifiedMap(RoughnessBindingIndex, SubMaterial);
 }
 
-int FEMaterial::GetRoughtnessMapChannel(const int SubMaterial) const
+int FEMaterial::GetRoughnessMapChannel(const int SubMaterial) const
 {
-	return TextureChannels[RoughtnessBindingIndex + SubMaterial * 6];
+	return TextureChannels[RoughnessBindingIndex + SubMaterial * 6];
 }
 
-void FEMaterial::SetRoughtnessMap(FETexture* Texture, const int Channel, const int SubMaterial)
+void FEMaterial::SetRoughnessMap(FETexture* Texture, const int Channel, const int SubMaterial)
 {
 	const int TextureIndex = PlaceTextureInList(Texture);
 	if (TextureIndex == -1 && Texture == nullptr)
 	{
-		ClearTextureBinding(RoughtnessBindingIndex, SubMaterial, Channel);
+		ClearTextureBinding(RoughnessBindingIndex, SubMaterial, Channel);
 	}
 	else
 	{
-		SetTextureBinding(RoughtnessBindingIndex, TextureIndex, SubMaterial, Channel);
+		SetTextureBinding(RoughnessBindingIndex, TextureIndex, SubMaterial, Channel);
 	}
 }
 
-void FEMaterial::SetRoughtnessMap(const int TextureIndex, const int Channel, const int SubMaterial)
+void FEMaterial::SetRoughnessMap(const int TextureIndex, const int Channel, const int SubMaterial)
 {
 	if (Textures[TextureIndex] == nullptr)
 		return;
 
-	SetTextureBinding(RoughtnessBindingIndex, TextureIndex, SubMaterial, Channel);
+	SetTextureBinding(RoughnessBindingIndex, TextureIndex, SubMaterial, Channel);
 }
 
 FETexture* FEMaterial::GetMetalnessMap(const int SubMaterial)
@@ -532,7 +532,7 @@ void FEMaterial::SetCompackPacking(const bool NewValue)
 bool FEMaterial::IsCompackPackingPossible()
 {
 	// All material properties should be available from one texture.
-	if (GetAOMap() != nullptr && GetAOMap() == GetRoughtnessMap() && GetAOMap() == GetMetalnessMap() && GetAOMap() == GetDisplacementMap())
+	if (GetAOMap() != nullptr && GetAOMap() == GetRoughnessMap() && GetAOMap() == GetMetalnessMap() && GetAOMap() == GetDisplacementMap())
 		return true;
 
 	return false;

@@ -3699,7 +3699,7 @@ std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* FileName)
 				Its green channel contains roughness values and its blue channel contains metalness values.
 			*/
 			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index]);
-			NewMaterial->SetRoughtnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 1, 0);
+			NewMaterial->SetRoughnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 1, 0);
 			NewMaterial->SetMetalnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 2, 0);
 		}
 

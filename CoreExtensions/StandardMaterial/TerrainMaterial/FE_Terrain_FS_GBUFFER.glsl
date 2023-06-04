@@ -8,8 +8,8 @@ struct materialPropertiesData
     float normalMapIntensity;
 	float AOIntensity;
 	float AOMapIntensity;
-	float roughtness;
-	float roughtnessMapIntensity;
+	float roughness;
+	float roughnessMapIntensity;
 	float metalness;
 	float metalnessMapIntensity;
 	float displacementMapIntensity;
@@ -26,7 +26,7 @@ struct layerMaterialInfo
 	vec4 albedo;
     vec3 normal;
 	float AO;
-	float roughtness;
+	float roughness;
 	float metalness;
 	float displacement;
 };
@@ -104,7 +104,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[2], tiledUV);
 		layerMaterial[0].AO = layerMaterialPropertiesTemp.r * materials[0].AOMapIntensity;
 		layerMaterial[0].AO = mix(materials[0].AOIntensity, layerMaterial[0].AO, materials[0].AOMapIntensity);
-		layerMaterial[0].roughtness = layerMaterialPropertiesTemp.g * materials[0].roughtnessMapIntensity;
+		layerMaterial[0].roughness = layerMaterialPropertiesTemp.g * materials[0].roughnessMapIntensity;
 		layerMaterial[0].metalness = layerMaterialPropertiesTemp.b * materials[0].metalnessMapIntensity;
 		layerMaterial[0].displacement = layerMaterialPropertiesTemp.a * materials[0].displacementMapIntensity;
 	
@@ -112,7 +112,7 @@ void main(void)
 		finalNormal += layerMaterial[0].normal * firstLayersMap[0];
 
 		finalMaterialProperties.r += layerMaterial[0].AO * firstLayersMap[0];
-		finalMaterialProperties.g += layerMaterial[0].roughtness * firstLayersMap[0];
+		finalMaterialProperties.g += layerMaterial[0].roughness * firstLayersMap[0];
 		finalMaterialProperties.b += layerMaterial[0].metalness * firstLayersMap[0];
 		finalMaterialProperties.a += layerMaterial[0].displacement * firstLayersMap[0];
 	}
@@ -130,7 +130,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[5], tiledUV);
 		layerMaterial[1].AO = layerMaterialPropertiesTemp.r * materials[1].AOMapIntensity;
 		layerMaterial[1].AO = mix(materials[1].AOIntensity, layerMaterial[1].AO, materials[1].AOMapIntensity);
-		layerMaterial[1].roughtness = layerMaterialPropertiesTemp.g * materials[1].roughtnessMapIntensity;
+		layerMaterial[1].roughness = layerMaterialPropertiesTemp.g * materials[1].roughnessMapIntensity;
 		layerMaterial[1].metalness = layerMaterialPropertiesTemp.b * materials[1].metalnessMapIntensity;
 		layerMaterial[1].displacement = layerMaterialPropertiesTemp.a * materials[1].displacementMapIntensity;
 	
@@ -138,7 +138,7 @@ void main(void)
 		finalNormal += layerMaterial[1].normal * firstLayersMap[1];
 
 		finalMaterialProperties.r += layerMaterial[1].AO * firstLayersMap[1];
-		finalMaterialProperties.g += layerMaterial[1].roughtness * firstLayersMap[1];
+		finalMaterialProperties.g += layerMaterial[1].roughness * firstLayersMap[1];
 		finalMaterialProperties.b += layerMaterial[1].metalness * firstLayersMap[1];
 		finalMaterialProperties.a += layerMaterial[1].displacement * firstLayersMap[1];
 	}
@@ -156,7 +156,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[8], tiledUV);
 		layerMaterial[2].AO = layerMaterialPropertiesTemp.r * materials[2].AOMapIntensity;
 		layerMaterial[2].AO = mix(materials[2].AOIntensity, layerMaterial[2].AO, materials[2].AOMapIntensity);
-		layerMaterial[2].roughtness = layerMaterialPropertiesTemp.g * materials[2].roughtnessMapIntensity;
+		layerMaterial[2].roughness = layerMaterialPropertiesTemp.g * materials[2].roughnessMapIntensity;
 		layerMaterial[2].metalness = layerMaterialPropertiesTemp.b * materials[2].metalnessMapIntensity;
 		layerMaterial[2].displacement = layerMaterialPropertiesTemp.a * materials[2].displacementMapIntensity;
 		
@@ -164,7 +164,7 @@ void main(void)
 		finalNormal += layerMaterial[2].normal * firstLayersMap[2];
 
 		finalMaterialProperties.r += layerMaterial[2].AO * firstLayersMap[2];
-		finalMaterialProperties.g += layerMaterial[2].roughtness * firstLayersMap[2];
+		finalMaterialProperties.g += layerMaterial[2].roughness * firstLayersMap[2];
 		finalMaterialProperties.b += layerMaterial[2].metalness * firstLayersMap[2];
 		finalMaterialProperties.a += layerMaterial[2].displacement * firstLayersMap[2];
 	}
@@ -182,7 +182,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[11], tiledUV);
 		layerMaterial[3].AO = layerMaterialPropertiesTemp.r * materials[3].AOMapIntensity;
 		layerMaterial[3].AO = mix(materials[3].AOIntensity, layerMaterial[3].AO, materials[3].AOMapIntensity);
-		layerMaterial[3].roughtness = layerMaterialPropertiesTemp.g * materials[3].roughtnessMapIntensity;
+		layerMaterial[3].roughness = layerMaterialPropertiesTemp.g * materials[3].roughnessMapIntensity;
 		layerMaterial[3].metalness = layerMaterialPropertiesTemp.b * materials[3].metalnessMapIntensity;
 		layerMaterial[3].displacement = layerMaterialPropertiesTemp.a * materials[3].displacementMapIntensity;
 	
@@ -190,7 +190,7 @@ void main(void)
 		finalNormal += layerMaterial[3].normal * firstLayersMap[3];
 
 		finalMaterialProperties.r += layerMaterial[3].AO * firstLayersMap[3];
-		finalMaterialProperties.g += layerMaterial[3].roughtness * firstLayersMap[3];
+		finalMaterialProperties.g += layerMaterial[3].roughness * firstLayersMap[3];
 		finalMaterialProperties.b += layerMaterial[3].metalness * firstLayersMap[3];
 		finalMaterialProperties.a += layerMaterial[3].displacement * firstLayersMap[3];
 	}
@@ -208,7 +208,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[14], tiledUV);
 		layerMaterial[4].AO = layerMaterialPropertiesTemp.r * materials[4].AOMapIntensity;
 		layerMaterial[4].AO = mix(materials[4].AOIntensity, layerMaterial[4].AO, materials[4].AOMapIntensity);
-		layerMaterial[4].roughtness = layerMaterialPropertiesTemp.g * materials[4].roughtnessMapIntensity;
+		layerMaterial[4].roughness = layerMaterialPropertiesTemp.g * materials[4].roughnessMapIntensity;
 		layerMaterial[4].metalness = layerMaterialPropertiesTemp.b * materials[4].metalnessMapIntensity;
 		layerMaterial[4].displacement = layerMaterialPropertiesTemp.a * materials[4].displacementMapIntensity;
 		
@@ -216,7 +216,7 @@ void main(void)
 		finalNormal += layerMaterial[4].normal * secondLayersMap[0];
 
 		finalMaterialProperties.r += layerMaterial[4].AO * secondLayersMap[0];
-		finalMaterialProperties.g += layerMaterial[4].roughtness * secondLayersMap[0];
+		finalMaterialProperties.g += layerMaterial[4].roughness * secondLayersMap[0];
 		finalMaterialProperties.b += layerMaterial[4].metalness * secondLayersMap[0];
 		finalMaterialProperties.a += layerMaterial[4].displacement * secondLayersMap[0];
 	}
@@ -234,7 +234,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[17], tiledUV);
 		layerMaterial[5].AO = layerMaterialPropertiesTemp.r * materials[5].AOMapIntensity;
 		layerMaterial[5].AO = mix(materials[5].AOIntensity, layerMaterial[5].AO, materials[5].AOMapIntensity);
-		layerMaterial[5].roughtness = layerMaterialPropertiesTemp.g * materials[5].roughtnessMapIntensity;
+		layerMaterial[5].roughness = layerMaterialPropertiesTemp.g * materials[5].roughnessMapIntensity;
 		layerMaterial[5].metalness = layerMaterialPropertiesTemp.b * materials[5].metalnessMapIntensity;
 		layerMaterial[5].displacement = layerMaterialPropertiesTemp.a * materials[5].displacementMapIntensity;
 		
@@ -242,7 +242,7 @@ void main(void)
 		finalNormal += layerMaterial[5].normal * secondLayersMap[1];
 
 		finalMaterialProperties.r += layerMaterial[5].AO * secondLayersMap[1];
-		finalMaterialProperties.g += layerMaterial[5].roughtness * secondLayersMap[1];
+		finalMaterialProperties.g += layerMaterial[5].roughness * secondLayersMap[1];
 		finalMaterialProperties.b += layerMaterial[5].metalness * secondLayersMap[1];
 		finalMaterialProperties.a += layerMaterial[5].displacement * secondLayersMap[1];
 	}
@@ -260,7 +260,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[20], tiledUV);
 		layerMaterial[6].AO = layerMaterialPropertiesTemp.r * materials[6].AOMapIntensity;
 		layerMaterial[6].AO = mix(materials[6].AOIntensity, layerMaterial[6].AO, materials[6].AOMapIntensity);
-		layerMaterial[6].roughtness = layerMaterialPropertiesTemp.g * materials[6].roughtnessMapIntensity;
+		layerMaterial[6].roughness = layerMaterialPropertiesTemp.g * materials[6].roughnessMapIntensity;
 		layerMaterial[6].metalness = layerMaterialPropertiesTemp.b * materials[6].metalnessMapIntensity;
 		layerMaterial[6].displacement = layerMaterialPropertiesTemp.a * materials[6].displacementMapIntensity;
 		
@@ -268,7 +268,7 @@ void main(void)
 		finalNormal += layerMaterial[6].normal * secondLayersMap[2];
 
 		finalMaterialProperties.r += layerMaterial[6].AO * secondLayersMap[2];
-		finalMaterialProperties.g += layerMaterial[6].roughtness * secondLayersMap[2];
+		finalMaterialProperties.g += layerMaterial[6].roughness * secondLayersMap[2];
 		finalMaterialProperties.b += layerMaterial[6].metalness * secondLayersMap[2];
 		finalMaterialProperties.a += layerMaterial[6].displacement * secondLayersMap[2];
 	}
@@ -286,7 +286,7 @@ void main(void)
 		layerMaterialPropertiesTemp = texture(textures[23], tiledUV);
 		layerMaterial[7].AO = layerMaterialPropertiesTemp.r * materials[7].AOMapIntensity;
 		layerMaterial[7].AO = mix(materials[7].AOIntensity, layerMaterial[7].AO, materials[7].AOMapIntensity);
-		layerMaterial[7].roughtness = layerMaterialPropertiesTemp.g * materials[7].roughtnessMapIntensity;
+		layerMaterial[7].roughness = layerMaterialPropertiesTemp.g * materials[7].roughnessMapIntensity;
 		layerMaterial[7].metalness = layerMaterialPropertiesTemp.b * materials[7].metalnessMapIntensity;
 		layerMaterial[7].displacement = layerMaterialPropertiesTemp.a * materials[7].displacementMapIntensity;
 		
@@ -294,7 +294,7 @@ void main(void)
 		finalNormal += layerMaterial[7].normal * secondLayersMap[3];
 
 		finalMaterialProperties.r += layerMaterial[7].AO * secondLayersMap[3];
-		finalMaterialProperties.g += layerMaterial[7].roughtness * secondLayersMap[3];
+		finalMaterialProperties.g += layerMaterial[7].roughness * secondLayersMap[3];
 		finalMaterialProperties.b += layerMaterial[7].metalness * secondLayersMap[3];
 		finalMaterialProperties.a += layerMaterial[7].displacement * secondLayersMap[3];
 	}
