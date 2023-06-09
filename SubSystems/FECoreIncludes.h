@@ -59,5 +59,3 @@
 //#define FE_GPUMEM_ALLOCATION_LOGING
 
 #define USE_OCCUSION_CULLING
-
-#define FE_CLEAR_COLOR glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f)

@@ -5,102 +5,115 @@ FERenderer* FERenderer::Instance = nullptr;
 
 FERenderer::FERenderer()
 {
-	glGenBuffers(1, &UniformBufferForLights);
-	glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
-	glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
+}
 
-	glGenBuffers(1, &UniformBufferForDirectionalLight);
-	glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
-	glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
-
-	// Instanced lines
-	LinesBuffer.resize(FE_MAX_LINES);
-
-	const float QuadVertices[] = {
-		0.0f,  -0.5f,  0.0f,
-		1.0f,  -0.5f,  1.0f,
-		1.0f,  0.5f,   1.0f,
-
-		0.0f,  -0.5f,  0.0f,
-		1.0f,  0.5f,   1.0f,
-		0.0f,  0.5f,   0.0f,
-	};
-	glGenVertexArrays(1, &InstancedLineVAO);
-	glBindVertexArray(InstancedLineVAO);
-
-	unsigned int QuadVBO;
-	glGenBuffers(1, &QuadVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, QuadVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-
-	glGenBuffers(1, &InstancedLineBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer);
-	glBufferData(GL_ARRAY_BUFFER, LinesBuffer.size() * sizeof(FELine), LinesBuffer.data(), GL_DYNAMIC_DRAW);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), static_cast<void*>(nullptr));
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(6 * sizeof(float)));
-	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(9 * sizeof(float)));
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glVertexAttribDivisor(0, 0);
-	glVertexAttribDivisor(1, 1);
-	glVertexAttribDivisor(2, 1);
-	glVertexAttribDivisor(3, 1);
-	glVertexAttribDivisor(4, 1);
-
-	glBindVertexArray(0);
-
-	SkyDome = RESOURCE_MANAGER.CreateEntity(RESOURCE_MANAGER.GetGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
-	RESOURCE_MANAGER.MakePrefabStandard(SkyDome->Prefab);
-	SkyDome->bVisible = false;
-	SkyDome->Transform.SetScale(glm::vec3(50.0f));
-
-	FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader",
-														 nullptr, nullptr,
-														 nullptr, nullptr,
-														 nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str()).c_str());
-
-	FE_GL_ERROR(glGenBuffers(1, &FrustumInfoBuffer));
-	FE_GL_ERROR(glGenBuffers(1, &CullingLODCountersBuffer));
-
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, CullingLODCountersBuffer));
-	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * 40, nullptr, GL_DYNAMIC_DRAW));
-
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
-
-	std::vector<float> FrustumData;
-	for (size_t i = 0; i < 32; i++)
+void FERenderer::Init()
+{
+	if (bSimplifiedRendering)
 	{
-		FrustumData.push_back(0.0);
+
 	}
+	else
+	{
+		glGenBuffers(1, &UniformBufferForLights);
+		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
+		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
 
-	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), FrustumData.data(), GL_DYNAMIC_DRAW));
+		glGenBuffers(1, &UniformBufferForDirectionalLight);
+		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
+		glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
+
+		// Instanced lines
+		LinesBuffer.resize(FE_MAX_LINES);
+
+		const float QuadVertices[] = {
+			0.0f,  -0.5f,  0.0f,
+			1.0f,  -0.5f,  1.0f,
+			1.0f,  0.5f,   1.0f,
+
+			0.0f,  -0.5f,  0.0f,
+			1.0f,  0.5f,   1.0f,
+			0.0f,  0.5f,   0.0f,
+		};
+		glGenVertexArrays(1, &InstancedLineVAO);
+		glBindVertexArray(InstancedLineVAO);
+
+		unsigned int QuadVBO;
+		glGenBuffers(1, &QuadVBO);
+		glBindBuffer(GL_ARRAY_BUFFER, QuadVBO);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+
+		glGenBuffers(1, &InstancedLineBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer);
+		glBufferData(GL_ARRAY_BUFFER, LinesBuffer.size() * sizeof(FELine), LinesBuffer.data(), GL_DYNAMIC_DRAW);
+
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), static_cast<void*>(nullptr));
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
+		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(6 * sizeof(float)));
+		glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(9 * sizeof(float)));
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glVertexAttribDivisor(0, 0);
+		glVertexAttribDivisor(1, 1);
+		glVertexAttribDivisor(2, 1);
+		glVertexAttribDivisor(3, 1);
+		glVertexAttribDivisor(4, 1);
+
+		glBindVertexArray(0);
+
+		SkyDome = RESOURCE_MANAGER.CreateEntity(RESOURCE_MANAGER.GetGameModel("17271E603508013IO77931TY"/*"skyDomeGameModel"*/), "skyDomeEntity");
+		RESOURCE_MANAGER.MakePrefabStandard(SkyDome->Prefab);
+		SkyDome->bVisible = false;
+		SkyDome->Transform.SetScale(glm::vec3(50.0f));
+
+		FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader", nullptr, nullptr,
+			nullptr, nullptr,
+			nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str());
+
+		FE_GL_ERROR(glGenBuffers(1, &FrustumInfoBuffer));
+		FE_GL_ERROR(glGenBuffers(1, &CullingLODCountersBuffer));
+
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, CullingLODCountersBuffer));
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * 40, nullptr, GL_DYNAMIC_DRAW));
+
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
+
+		std::vector<float> FrustumData;
+		for (size_t i = 0; i < 32; i++)
+		{
+			FrustumData.push_back(0.0);
+		}
+
+		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), FrustumData.data(), GL_DYNAMIC_DRAW));
 
 
-	ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy",
-													   nullptr, nullptr,
-													   nullptr, nullptr,
-													   nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str()).c_str());
+		ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy",
+														   nullptr, nullptr,
+														   nullptr, nullptr,
+														   nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str());
 
 
-	ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample",
-																  nullptr, nullptr,
-																  nullptr, nullptr,
-																  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
-	
-	ComputeDepthPyramidDownSample->GetParameter("scaleDownBy")->UpdateData(2);
+		ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample",
+																	  nullptr, nullptr,
+																	  nullptr, nullptr,
+																	  nullptr, RESOURCE_MANAGER.LoadGLSL("CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str());
+
+		ComputeDepthPyramidDownSample->GetParameter("scaleDownBy")->UpdateData(2);
+	}
 }
 
 void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
 {
 	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
+
+	if (bSimplifiedRendering)
+		return;
 
 	GBuffer = new FEGBuffer(SceneToTextureFB);
 	SSAO = new FESSAO(SceneToTextureFB);
@@ -565,6 +578,68 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 	}
 }
 
+//void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
+//{
+//	CurrentCamera->UpdateFrustumPlanes();
+//	FEScene& scene = SCENE;
+//
+//	SceneToTextureFB->Bind();
+//	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+//	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+//
+//	auto EntityIterator = scene.EntityMap.begin();
+//	while (EntityIterator != scene.EntityMap.end())
+//	{
+//		auto entity = EntityIterator->second;
+//
+//		if (entity->IsVisible() && entity->IsPostprocessApplied())
+//		{
+//			if (entity->GetType() == FE_ENTITY)
+//			{
+//				//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+//				RenderEntityForward(entity, CurrentCamera);
+//			}
+//			else if (entity->GetType() == FE_ENTITY_INSTANCED)
+//			{
+//				//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+//				//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
+//			}
+//		}
+//
+//		EntityIterator++;
+//	}
+//
+//	// ********* RENDER INSTANCED LINE *********
+//	/*FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+//	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+//	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+//
+//	InstancedLineShader->Start();
+//	InstancedLineShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
+//	InstancedLineShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
+//	InstancedLineShader->GetParameter("resolution")->UpdateData(glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+//	InstancedLineShader->LoadDataToGPU();
+//
+//	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+//	FE_GL_ERROR(glEnableVertexAttribArray(0));
+//	FE_GL_ERROR(glEnableVertexAttribArray(1));
+//	FE_GL_ERROR(glEnableVertexAttribArray(2));
+//	FE_GL_ERROR(glEnableVertexAttribArray(3));
+//	FE_GL_ERROR(glEnableVertexAttribArray(4));
+//	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+//	FE_GL_ERROR(glDisableVertexAttribArray(0));
+//	FE_GL_ERROR(glDisableVertexAttribArray(1));
+//	FE_GL_ERROR(glDisableVertexAttribArray(2));
+//	FE_GL_ERROR(glDisableVertexAttribArray(3));
+//	FE_GL_ERROR(glDisableVertexAttribArray(4));
+//	FE_GL_ERROR(glBindVertexArray(0));
+//	InstancedLineShader->Stop();*/
+//	// ********* RENDER INSTANCED LINE END *********
+//
+//	SceneToTextureFB->UnBind();
+//	FinalScene = SceneToTextureFB->GetColorAttachment();
+//}
+
 void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
 	CurrentCamera->UpdateFrustumPlanes();
@@ -572,6 +647,9 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	LastTestTime = TestTime;
 	TestTime = 0.0f;
 	FEScene& scene = SCENE;
+
+	if (bSimplifiedRendering)
+		return;
 
 	// there is only 1 directional light, sun.
 	// and we need to set correct light position
@@ -1709,6 +1787,9 @@ void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 {
 	delete SceneToTextureFB;
 	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, NewWidth, NewHeight);
+
+	if (bSimplifiedRendering)
+		return;
 
 	delete DepthPyramid;
 	DepthPyramid = RESOURCE_MANAGER.CreateTexture();

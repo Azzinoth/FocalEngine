@@ -8,7 +8,6 @@ int FEngine::RenderTargetYShift = 0;
 
 FEngine::FEngine()
 {
-
 }
 
 FEngine::~FEngine()
@@ -139,6 +138,8 @@ void FEngine::SetImguiStyle()
 
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
 {
+	RENDERER.Init();
+
 	WindowW = Width;
 	WindowH = Height;
 	this->WindowTitle = WindowTitle;
@@ -170,7 +171,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 
 	SetImguiStyle();
 
-	glClearColor(FE_CLEAR_COLOR.x, FE_CLEAR_COLOR.y, FE_CLEAR_COLOR.z, FE_CLEAR_COLOR.w);
+	SetClearColor(DefaultGammaCorrectedClearColor);
 
 	// turn off v-sync
 	//glfwSwapInterval(0);
@@ -768,4 +769,20 @@ void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
 	}
 
 	ENGINE.CurrentCamera->MouseScrollInput(Xoffset, Yoffset);
+}
+
+void FEngine::SetClearColor(glm::vec4 ClearColor)
+{
+	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+}
+
+bool FEngine::IsSimplifiedRenderingModeActive()
+{
+	return bSimplifiedRendering;
+}
+
+void FEngine::ActivateSimplifiedRenderingMode()
+{
+	bSimplifiedRendering = true;
+	RENDERER.bSimplifiedRendering = true;
 }

@@ -294,6 +294,7 @@ source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
+source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 
 # set the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngine)

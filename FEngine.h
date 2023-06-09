@@ -65,6 +65,11 @@ namespace FocalEngine
 		void SetRenderTargetYShift(int NewRenderTargetYShift);
 
 		void RenderTargetCenterForCamera(FEFreeCamera* Camera);
+
+		void SetClearColor(glm::vec4 ClearColor);
+
+		bool IsSimplifiedRenderingModeActive();
+		void ActivateSimplifiedRenderingMode();
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -74,6 +79,11 @@ namespace FocalEngine
 
 		double CPUTime, GPUTime;
 		double MouseX, MouseY;
+
+		bool bSimplifiedRendering = false;
+
+		const glm::vec4 DefaultClearColor = glm::vec4(0.55f, 0.73f, 0.87f, 1.0f);
+		const glm::vec4 DefaultGammaCorrectedClearColor = glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f);
 
 		static FE_RENDER_TARGET_MODE RenderTargetMode;
 		int RenderTargetW;
