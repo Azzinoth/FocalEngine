@@ -66,6 +66,7 @@ namespace FocalEngine
 
 		void RenderTargetCenterForCamera(FEFreeCamera* Camera);
 
+		glm::vec4 GetClearColor();
 		void SetClearColor(glm::vec4 ClearColor);
 
 		bool IsSimplifiedRenderingModeActive();
@@ -84,6 +85,7 @@ namespace FocalEngine
 
 		const glm::vec4 DefaultClearColor = glm::vec4(0.55f, 0.73f, 0.87f, 1.0f);
 		const glm::vec4 DefaultGammaCorrectedClearColor = glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f);
+		glm::vec4 CurrentClearColor = DefaultGammaCorrectedClearColor;
 
 		static FE_RENDER_TARGET_MODE RenderTargetMode;
 		int RenderTargetW;

@@ -138,8 +138,6 @@ void FEngine::SetImguiStyle()
 
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
 {
-	RENDERER.Init();
-
 	WindowW = Width;
 	WindowH = Height;
 	this->WindowTitle = WindowTitle;
@@ -151,7 +149,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	APPLICATION.SetKeyCallback(&FEngine::KeyButtonCallback);
 	APPLICATION.SetDropCallback(&FEngine::DropCallback);
 	APPLICATION.SetScrollCallback(&FEngine::MouseScrollCallback);
-	
+
 	ImGuiIO& io = ImGui::GetIO();
 
 	const size_t PathLen = strlen((RESOURCE_MANAGER.ResourcesFolder + "imgui.ini").c_str()) + 1;
@@ -191,6 +189,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	// tessellation parameter
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
 
+	RENDERER.Init();
 	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
 																				  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str());
 	RESOURCE_MANAGER.Shaders.erase(RENDERER.InstancedLineShader->GetObjectID());
@@ -771,8 +770,14 @@ void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
 	ENGINE.CurrentCamera->MouseScrollInput(Xoffset, Yoffset);
 }
 
+glm::vec4 FEngine::GetClearColor()
+{
+	return CurrentClearColor;
+}
+
 void FEngine::SetClearColor(glm::vec4 ClearColor)
 {
+	CurrentClearColor = ClearColor;
 	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 }
 
