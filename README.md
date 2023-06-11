@@ -34,10 +34,21 @@ All instanced entities will have a pass with multiple computer shaders that perf
 ## Building the Project for Visual Studio (Windows)
 
 ```bash
+# Initialize a new Git repository
 git init
+
+# Add the remote repository
 git remote add origin https://github.com/Azzinoth/FocalEngine
+
+# Pull the contents of the remote repository
 git pull origin master
+
+# Initialize and update submodules
 git submodule update --init --recursive
+
+# Generate the build files using CMake
+# Will work in Windows PowerShell
+cmake CMakeLists.txt
 ```
 
 ## Scene Editor
