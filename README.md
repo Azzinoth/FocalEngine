@@ -31,7 +31,7 @@ Focal Engine is a personal project of a 3D rendering engine, showcasing an array
 
 All instanced entities will have a pass with multiple computer shaders that perform LOD level calculations, Frustum and Occlusion culling entirely on the GPU.
 
-## Building the Project for Visual Studio (Windows)
+## Building the Project for Visual Studio (Windows) as .lib
 
 ```bash
 # Initialize a new Git repository
@@ -53,6 +53,9 @@ cmake CMakeLists.txt
 
 ## Scene Editor
 This repository only contains the engine itself to maintain modularity. For the full experience, it is recommended to use the [Focal Engine Editor](https://github.com/Azzinoth/FocalEngineEditor).
+
+## Simple Application Example
+An example of a simple application that integrates the Engine: [Example](https://github.com/Azzinoth/FocalEngineAppExample).
 
 ## Third Party Licenses
 
