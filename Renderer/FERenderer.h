@@ -166,6 +166,7 @@ namespace FocalEngine
 		void UpdateSSAO(const FEBasicCamera* CurrentCamera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
+		void SimplifiedRender(FEBasicCamera* CurrentCamera);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
