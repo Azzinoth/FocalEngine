@@ -609,6 +609,9 @@ void FEngine::RenderTargetResize()
 
 	RENDERER.RenderTargetResize(ENGINE.RenderTargetW, ENGINE.RenderTargetH);
 
+	if (ENGINE.bSimplifiedRendering)
+		return;
+
 	// ************************************ Bloom ************************************
 	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("bloom", static_cast<int>(ENGINE.RenderTargetW / 4.0f), static_cast<int>(ENGINE.RenderTargetH / 4.0f));
 	BloomEffect->SetID("451C48791871283D372C5938"/*"bloom"*/);

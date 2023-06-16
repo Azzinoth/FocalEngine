@@ -732,6 +732,9 @@ void FEShader::Stop()
 	if (SSBO == static_cast<GLuint>(-1))
 		return;
 
+	if (this->ComputeShaderText != nullptr)
+		FE_GL_ERROR(glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT));
+
 	unsigned DebugSize = 0, BufferSize;
 	FE_GL_ERROR(glGetNamedBufferSubData(SSBO, 0, sizeof(unsigned), &DebugSize));
 	FE_GL_ERROR(glGetNamedBufferParameteriv(SSBO, GL_BUFFER_SIZE, (GLint*)&BufferSize));
