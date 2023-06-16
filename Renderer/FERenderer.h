@@ -166,14 +166,12 @@ namespace FocalEngine
 		void UpdateSSAO(const FEBasicCamera* CurrentCamera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
+		void SimplifiedRender(FEBasicCamera* CurrentCamera);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
-		// Temporary DELETE !
-	public:
+
 		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false);
 		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows);
-	private:
-		// Temporary DELETE !
 		void LoadUniformBlocks();
 
 		void StandardFBInit(int WindowWidth, int WindowHeight);

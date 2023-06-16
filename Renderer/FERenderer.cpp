@@ -579,78 +579,105 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 	}
 }
 
-//void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
-//{
-//	CurrentCamera->UpdateFrustumPlanes();
-//	FEScene& scene = SCENE;
-//
-//	SceneToTextureFB->Bind();
-//	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-//	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-//
-//	auto EntityIterator = scene.EntityMap.begin();
-//	while (EntityIterator != scene.EntityMap.end())
-//	{
-//		auto entity = EntityIterator->second;
-//
-//		if (entity->IsVisible() && entity->IsPostprocessApplied())
-//		{
-//			if (entity->GetType() == FE_ENTITY)
-//			{
-//				//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-//				RenderEntityForward(entity, CurrentCamera);
-//			}
-//			else if (entity->GetType() == FE_ENTITY_INSTANCED)
-//			{
-//				//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-//				//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
-//			}
-//		}
-//
-//		EntityIterator++;
-//	}
-//
-//	// ********* RENDER INSTANCED LINE *********
-//	/*FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-//	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-//	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-//
-//	InstancedLineShader->Start();
-//	InstancedLineShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
-//	InstancedLineShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
-//	InstancedLineShader->GetParameter("resolution")->UpdateData(glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
-//	InstancedLineShader->LoadDataToGPU();
-//
-//	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
-//	FE_GL_ERROR(glEnableVertexAttribArray(0));
-//	FE_GL_ERROR(glEnableVertexAttribArray(1));
-//	FE_GL_ERROR(glEnableVertexAttribArray(2));
-//	FE_GL_ERROR(glEnableVertexAttribArray(3));
-//	FE_GL_ERROR(glEnableVertexAttribArray(4));
-//	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
-//	FE_GL_ERROR(glDisableVertexAttribArray(0));
-//	FE_GL_ERROR(glDisableVertexAttribArray(1));
-//	FE_GL_ERROR(glDisableVertexAttribArray(2));
-//	FE_GL_ERROR(glDisableVertexAttribArray(3));
-//	FE_GL_ERROR(glDisableVertexAttribArray(4));
-//	FE_GL_ERROR(glBindVertexArray(0));
-//	InstancedLineShader->Stop();*/
-//	// ********* RENDER INSTANCED LINE END *********
-//
-//	SceneToTextureFB->UnBind();
-//	FinalScene = SceneToTextureFB->GetColorAttachment();
-//}
+void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
+{
+	CurrentCamera->UpdateFrustumPlanes();
+	FEScene& scene = SCENE;
+
+	SceneToTextureFB->Bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	auto EntityIterator = scene.EntityMap.begin();
+	while (EntityIterator != scene.EntityMap.end())
+	{
+		auto entity = EntityIterator->second;
+
+		if (entity->IsVisible() && entity->IsPostprocessApplied())
+		{
+			if (entity->GetType() == FE_ENTITY)
+			{
+				//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+				RenderEntityForward(entity, CurrentCamera);
+			}
+			else if (entity->GetType() == FE_ENTITY_INSTANCED)
+			{
+				//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+				//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
+			}
+		}
+
+		EntityIterator++;
+	}
+
+	// ********* RENDER INSTANCED LINE *********
+	/*FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	InstancedLineShader->Start();
+	InstancedLineShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
+	InstancedLineShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
+	InstancedLineShader->GetParameter("resolution")->UpdateData(glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+	InstancedLineShader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glEnableVertexAttribArray(1));
+	FE_GL_ERROR(glEnableVertexAttribArray(2));
+	FE_GL_ERROR(glEnableVertexAttribArray(3));
+	FE_GL_ERROR(glEnableVertexAttribArray(4));
+	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glDisableVertexAttribArray(1));
+	FE_GL_ERROR(glDisableVertexAttribArray(2));
+	FE_GL_ERROR(glDisableVertexAttribArray(3));
+	FE_GL_ERROR(glDisableVertexAttribArray(4));
+	FE_GL_ERROR(glBindVertexArray(0));
+	InstancedLineShader->Stop();*/
+	// ********* RENDER INSTANCED LINE END *********
+
+	SceneToTextureFB->UnBind();
+	FinalScene = SceneToTextureFB->GetColorAttachment();
+	FinalScene->Bind();
+
+	// ********* RENDER FRAME BUFFER TO SCREEN *********
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_ALWAYS);
+
+	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+	ScreenQuadShader->Start();
+	LoadStandardParams(ScreenQuadShader, CurrentCamera, true);
+	ScreenQuadShader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	ScreenQuadShader->Stop();
+
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
+	// ********* RENDER FRAME BUFFER TO SCREEN END *********
+
+	FinalScene->UnBind();
+}
 
 void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
+	if (bSimplifiedRendering)
+	{
+		SimplifiedRender(CurrentCamera);
+		return;
+	}
+
 	CurrentCamera->UpdateFrustumPlanes();
 
 	LastTestTime = TestTime;
 	TestTime = 0.0f;
 	FEScene& scene = SCENE;
-
-	if (bSimplifiedRendering)
-		return;
 
 	// there is only 1 directional light, sun.
 	// and we need to set correct light position
