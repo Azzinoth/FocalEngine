@@ -24,7 +24,9 @@ jobs:
       
     - name: Debugging
       run: |
-        cd
+        cd D:\a\FocalEngine\FocalEngine\
+        dir
+        cd D:\a\FocalEngine\FocalEngine\ResourceManager
         dir
 
     - name: Build
