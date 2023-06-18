@@ -21,7 +21,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 message("Before configure_file")
 # Set default resource folder location
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
-configure_file(ResourceManager/Config.h.in ResourceManager/Config.h @ONLY)
+configure_file(${ENGINE_FOLDER}/ResourceManager/Config.h.in ${ENGINE_FOLDER}/ResourceManager/Config.h @ONLY)
 message("After configure_file")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager/Config.h")
