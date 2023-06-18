@@ -1,5 +1,7 @@
 # Focal Engine
 
+![build](https://github.com/Azzinoth/FocalEngine/actions/workflows/Build.yml/badge.svg?branch=master)
+
 Focal Engine is a personal project of a 3D rendering engine, showcasing an array of custom shaders, materials, and rendering techniques.
 
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/1.png)
