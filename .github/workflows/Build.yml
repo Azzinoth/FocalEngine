@@ -27,8 +27,8 @@ jobs:
       
     - name: Debugging
       run: |
-        pwd
-        ls -la
+        cd
+        dir
 
     - name: Test
       working-directory: ${{github.workspace}}/build
