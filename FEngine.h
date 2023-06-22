@@ -71,6 +71,9 @@ namespace FocalEngine
 
 		bool IsSimplifiedRenderingModeActive();
 		void ActivateSimplifiedRenderingMode();
+
+		bool IsVsyncEnabled();
+		void SetVsyncEnabled(bool NewValue);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -82,6 +85,7 @@ namespace FocalEngine
 		double MouseX, MouseY;
 
 		bool bSimplifiedRendering = false;
+		bool bVsyncEnabled = true;
 
 		const glm::vec4 DefaultClearColor = glm::vec4(0.55f, 0.73f, 0.87f, 1.0f);
 		const glm::vec4 DefaultGammaCorrectedClearColor = glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f);
@@ -116,7 +120,6 @@ namespace FocalEngine
 		std::vector<void(*)(double, double)> ClientMouseScrollCallbacks;
 
 		FEBasicCamera* CurrentCamera = nullptr;
-		void SetImguiStyle();
 	};
 
 	#define ENGINE FEngine::getInstance()
