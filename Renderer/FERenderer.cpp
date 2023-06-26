@@ -586,7 +586,7 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 
 	SceneToTextureFB->Bind();
 	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	//FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	auto EntityIterator = scene.EntityMap.begin();
 	while (EntityIterator != scene.EntityMap.end())
@@ -1315,9 +1315,12 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 
 	for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
 	{
-		FEShader* OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
-		Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-			
+		FEShader* OriginalShader = nullptr;
+		if (!bSimplifiedRendering)
+		{
+			OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
+			Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+		}
 
 		Entity->Prefab->Components[i]->GameModel->Material->Bind();
 		LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &Entity->Transform, Entity->IsReceivingShadows());
@@ -1340,7 +1343,8 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 
 		Entity->Prefab->Components[i]->GameModel->Material->UnBind();
 
-		Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
+		if (!bSimplifiedRendering)
+			Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
 	}
 }
 
