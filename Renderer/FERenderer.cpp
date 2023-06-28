@@ -105,7 +105,7 @@ void FERenderer::Init()
 																	  nullptr, nullptr,
 																	  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
 
-		ComputeDepthPyramidDownSample->GetParameter("scaleDownBy")->UpdateData(2);
+		ComputeDepthPyramidDownSample->UpdateParameterData("scaleDownBy", 2);
 	}
 }
 
@@ -149,28 +149,9 @@ void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
 
 void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, const bool IsReceivingShadows)
 {
-	static int FEWorldMatrixHash = static_cast<int>(std::hash<std::string>{}("FEWorldMatrix"));
-	static int FEViewMatrixHash = static_cast<int>(std::hash<std::string>{}("FEViewMatrix"));
-	static int FEProjectionMatrixHash = static_cast<int>(std::hash<std::string>{}("FEProjectionMatrix"));
-	static int FEPVMMatrixHash = static_cast<int>(std::hash<std::string>{}("FEPVMMatrix"));
-	static int FECameraPositionHash = static_cast<int>(std::hash<std::string>{}("FECameraPosition"));
-	static int FEGammaHash = static_cast<int>(std::hash<std::string>{}("FEGamma"));
-	static int FEExposureHash = static_cast<int>(std::hash<std::string>{}("FEExposure"));
-	static int FEReceiveShadowsHash = static_cast<int>(std::hash<std::string>{}("FEReceiveShadows"));
-	static int FEAOIntensityHash = static_cast<int>(std::hash<std::string>{}("FEAOIntensity"));
-	static int FEAOMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FEAOMapIntensity"));
-	static int FENormalMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FENormalMapIntensity"));
-	static int FERoughnessHash = static_cast<int>(std::hash<std::string>{}("FERoughness"));
-	static int FERoughnessMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FERoughnessMapIntensity"));
-	static int FEMetalnessHash = static_cast<int>(std::hash<std::string>{}("FEMetalness"));
-	static int FEMetalnessMapIntensityHash = static_cast<int>(std::hash<std::string>{}("FEMetalnessMapIntensity"));
-	static int FETilingHash = static_cast<int>(std::hash<std::string>{}("FETiling"));
-
 	static int FETextureBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureBindings[0]"));
 	static int FETextureChannelsBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureChannels[0]"));
 
-	static int FECompactMaterialPackingHash = static_cast<int>(std::hash<std::string>{}("compactMaterialPacking"));
-	
 	if (Material != nullptr)
 	{
 		if (Shader->bMaterialTexturesList)
@@ -180,110 +161,80 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 		}
 	}
 
-	//auto start = std::chrono::system_clock::now();
-	auto Iterator = Shader->Parameters.begin();
-	while (Iterator != Shader->Parameters.end())
+	if (Shader->GetParameter("FEWorldMatrix") != nullptr)
+		Shader->UpdateParameterData("FEWorldMatrix", Transform->GetTransformMatrix());
+
+	if (Shader->GetParameter("FEViewMatrix") != nullptr)
+		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+
+	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
+		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+
+	if (Shader->GetParameter("FEPVMMatrix") != nullptr)
+		Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Transform->GetTransformMatrix());
+
+	if (Shader->GetParameter("FECameraPosition") != nullptr)
+		Shader->UpdateParameterData("FECameraPosition", CurrentCamera->GetPosition());
+
+	if (Shader->GetParameter("FEGamma") != nullptr)
+		Shader->UpdateParameterData("FEGamma", CurrentCamera->GetGamma());
+
+	if (Shader->GetParameter("FEExposure") != nullptr)
+		Shader->UpdateParameterData("FEExposure", CurrentCamera->GetExposure());
+
+	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
+		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
+
+	if (Material != nullptr)
 	{
-		if (Iterator->second.NameHash == FEWorldMatrixHash)
-			Iterator->second.UpdateData(Transform->GetTransformMatrix());
+		if (Shader->GetParameter("FEAOIntensity") != nullptr)
+			Shader->UpdateParameterData("FEAOIntensity", Material->GetAmbientOcclusionIntensity());
 
-		if (Iterator->second.NameHash == FEViewMatrixHash)
-			Iterator->second.UpdateData(CurrentCamera->GetViewMatrix());
+		if (Shader->GetParameter("FEAOMapIntensity") != nullptr)
+			Shader->UpdateParameterData("FEAOMapIntensity", Material->GetAmbientOcclusionMapIntensity());
 
-		if (Iterator->second.NameHash == FEProjectionMatrixHash)
-			Iterator->second.UpdateData(CurrentCamera->GetProjectionMatrix());
+		if (Shader->GetParameter("FENormalMapIntensity") != nullptr)
+			Shader->UpdateParameterData("FENormalMapIntensity", Material->GetNormalMapIntensity());
 
-		if (Iterator->second.NameHash == FEPVMMatrixHash)
-			Iterator->second.UpdateData(CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Transform->GetTransformMatrix());
+		if (Shader->GetParameter("FERoughness") != nullptr)
+			Shader->UpdateParameterData("FERoughness", Material->Roughness);
 
-		if (Iterator->second.NameHash == FECameraPositionHash)
-			Iterator->second.UpdateData(CurrentCamera->GetPosition());
+		if (Shader->GetParameter("FERoughnessMapIntensity") != nullptr)
+			Shader->UpdateParameterData("FERoughnessMapIntensity", Material->GetRoughnessMapIntensity());
 
-		if (Iterator->second.NameHash == FEGammaHash)
-			Iterator->second.UpdateData(CurrentCamera->GetGamma());
+		if (Shader->GetParameter("FEMetalness") != nullptr)
+			Shader->UpdateParameterData("FEMetalness", Material->Metalness);
 
-		if (Iterator->second.NameHash == FEExposureHash)
-			Iterator->second.UpdateData(CurrentCamera->GetExposure());
+		if (Shader->GetParameter("FEMetalnessMapIntensity") != nullptr)
+			Shader->UpdateParameterData("FEMetalnessMapIntensity", Material->GetMetalnessMapIntensity());
 
-		if (Iterator->second.NameHash == FEReceiveShadowsHash)
-			Iterator->second.UpdateData(IsReceivingShadows);
+		if (Shader->GetParameter("FETiling") != nullptr)
+			Shader->UpdateParameterData("FETiling", Material->GetTiling());
 
-		if (Material != nullptr)
-		{
-			if (Iterator->second.NameHash == FEAOIntensityHash)
-				Iterator->second.UpdateData(Material->GetAmbientOcclusionIntensity());
-
-			if (Iterator->second.NameHash == FENormalMapIntensityHash)
-				Iterator->second.UpdateData(Material->GetNormalMapIntensity());
-
-			if (Iterator->second.NameHash == FEAOMapIntensityHash)
-				Iterator->second.UpdateData(Material->GetAmbientOcclusionMapIntensity());
-
-			if (Iterator->second.NameHash == FERoughnessHash)
-				Iterator->second.UpdateData(Material->Roughness);
-
-			if (Iterator->second.NameHash == FERoughnessMapIntensityHash)
-				Iterator->second.UpdateData(Material->GetRoughnessMapIntensity());
-
-			if (Iterator->second.NameHash == FEMetalnessHash)
-				Iterator->second.UpdateData(Material->Metalness);
-
-			if (Iterator->second.NameHash == FEMetalnessMapIntensityHash)
-				Iterator->second.UpdateData(Material->GetMetalnessMapIntensity());
-
-			if (Iterator->second.NameHash == FETilingHash)
-				Iterator->second.UpdateData(Material->GetTiling());
-
-			if (Iterator->second.NameHash == FECompactMaterialPackingHash)
-				Iterator->second.UpdateData(Material->IsCompackPacking());
-		}
-		
-		Iterator++;
+		if (Shader->GetParameter("compactMaterialPacking") != nullptr)
+			Shader->UpdateParameterData("compactMaterialPacking", Material->IsCompackPacking());
 	}
-
-	//auto end = std::chrono::system_clock::now();
-	////auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-	//double eTime = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count() * 1000.0;
-	//if (eTime > 0.02)
-	//{
-	//	LOG.logError(std::to_string(eTime));
-	//	float time = 1;
-	//	time += 1;
-	//}
 }
 
 void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, const bool IsReceivingShadows)
 {
-	static int FEViewMatrixHash = static_cast<int>(std::hash<std::string>{}("FEViewMatrix"));
-	static int FEProjectionMatrixHash = static_cast<int>(std::hash<std::string>{}("FEProjectionMatrix"));
-	static int FECameraPositionHash = static_cast<int>(std::hash<std::string>{}("FECameraPosition"));
-	static int FEGammaHash = static_cast<int>(std::hash<std::string>{}("FEGamma"));
-	static int FEExposureHash = static_cast<int>(std::hash<std::string>{}("FEExposure"));
-	static int FEReceiveShadowsHash = static_cast<int>(std::hash<std::string>{}("FEReceiveShadows"));
+	if (Shader->GetParameter("FEViewMatrix") != nullptr)
+		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
 
-	auto Iterator = Shader->Parameters.begin();
-	while (Iterator != Shader->Parameters.end())
-	{
-		if (Iterator->second.NameHash == FEViewMatrixHash)
-			Iterator->second.UpdateData(CurrentCamera->GetViewMatrix());
+	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
+		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
 
-		if (Iterator->second.NameHash == FEProjectionMatrixHash)
-			Iterator->second.UpdateData(CurrentCamera->GetProjectionMatrix());
+	if (Shader->GetParameter("FECameraPosition") != nullptr)
+		Shader->UpdateParameterData("FECameraPosition", CurrentCamera->GetPosition());
 
-		if (Iterator->second.NameHash == FECameraPositionHash)
-			Iterator->second.UpdateData(CurrentCamera->GetPosition());
+	if (Shader->GetParameter("FEGamma") != nullptr)
+		Shader->UpdateParameterData("FEGamma", CurrentCamera->GetGamma());
 
-		if (Iterator->second.NameHash == FEGammaHash)
-			Iterator->second.UpdateData(CurrentCamera->GetGamma());
+	if (Shader->GetParameter("FEExposure") != nullptr)
+		Shader->UpdateParameterData("FEExposure", CurrentCamera->GetExposure());
 
-		if (Iterator->second.NameHash == FEExposureHash)
-			Iterator->second.UpdateData(CurrentCamera->GetExposure());
-
-		if (Iterator->second.NameHash == FEReceiveShadowsHash)
-			Iterator->second.UpdateData(IsReceivingShadows);
-
-		Iterator++;
-	}
+	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
+		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
 }
 
 void FERenderer::AddPostProcess(FEPostProcess* NewPostProcess, const bool NoProcessing)
@@ -616,9 +567,9 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	InstancedLineShader->Start();
-	InstancedLineShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
-	InstancedLineShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
-	InstancedLineShader->GetParameter("resolution")->UpdateData(glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
 	InstancedLineShader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
@@ -720,8 +671,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		if (Light->IsCastShadows())
 		{
 			const float ShadowsBlurFactor = Light->GetShadowBlurFactor();
-			ShaderPBR->GetParameter("shadowBlurFactor")->UpdateData(ShadowsBlurFactor);
-			ShaderInstancedPBR->GetParameter("shadowBlurFactor")->UpdateData(ShadowsBlurFactor);
+			ShaderPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
+			ShaderInstancedPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
 
 			const glm::vec3 OldCameraPosition = CurrentCamera->GetPosition();
 			const glm::mat4 OldViewMatrix = CurrentCamera->GetViewMatrix();
@@ -946,7 +897,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	FinalSceneShader->Start();
-	FinalSceneShader->GetParameter("SSAOActive")->UpdateData(SSAO->bActive ? 1.0f : 0.0f);
+	FinalSceneShader->UpdateParameterData("SSAOActive", SSAO->bActive ? 1.0f : 0.0f);
 	LoadStandardParams(FinalSceneShader, CurrentCamera, true);
 	FinalSceneShader->LoadDataToGPU();
 
@@ -976,9 +927,9 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	InstancedLineShader->Start();
-	InstancedLineShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
-	InstancedLineShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
-	InstancedLineShader->GetParameter("resolution")->UpdateData(glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
 	InstancedLineShader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
@@ -1030,7 +981,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 				FEShaderParam* Param = Effect.Stages[j]->Shader->GetParameter(Effect.Stages[j]->StageSpecificUniforms[k].GetName());
 				if (Param != nullptr)
 				{
-					Param->UpdateData(Effect.Stages[j]->StageSpecificUniforms[k].Data);
+					Param->Data = Effect.Stages[j]->StageSpecificUniforms[k].Data;
 				}
 			}
 
@@ -1153,7 +1104,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 #ifdef USE_OCCUSION_CULLING
 
 	ComputeTextureCopy->Start();
-	ComputeTextureCopy->GetParameter("textureSize")->UpdateData(glm::vec2(RENDERER.DepthPyramid->GetWidth(), RENDERER.DepthPyramid->GetHeight()));
+	ComputeTextureCopy->UpdateParameterData("textureSize", glm::vec2(RENDERER.DepthPyramid->GetWidth(), RENDERER.DepthPyramid->GetHeight()));
 	ComputeTextureCopy->LoadDataToGPU();
 
 	RENDERER.SceneToTextureFB->GetDepthAttachment()->Bind(0);
@@ -1168,7 +1119,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		const float DownScale = static_cast<float>(pow(2.0f, i));
 
 		ComputeDepthPyramidDownSample->Start();
-		ComputeDepthPyramidDownSample->GetParameter("textureSize")->UpdateData(glm::vec2(RENDERER.DepthPyramid->GetWidth() / DownScale, RENDERER.DepthPyramid->GetHeight() / DownScale));
+		ComputeDepthPyramidDownSample->UpdateParameterData("textureSize", glm::vec2(RENDERER.DepthPyramid->GetWidth() / DownScale, RENDERER.DepthPyramid->GetHeight() / DownScale));
 		ComputeDepthPyramidDownSample->LoadDataToGPU();
 		glBindImageTexture(0, RENDERER.DepthPyramid->GetTextureID(), static_cast<GLint>(i), GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 		glBindImageTexture(1, RENDERER.DepthPyramid->GetTextureID(), static_cast<GLint>(i + 1), GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
@@ -1401,15 +1352,15 @@ void FERenderer::RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentC
 
 	// Shadow map shader does not have this parameter.
 	if (Terrain->Shader->GetParameter("usedLayersCount") != nullptr)
-		Terrain->Shader->GetParameter("usedLayersCount")->UpdateData(static_cast<float>(LayersUsed));
+		Terrain->Shader->UpdateParameterData("usedLayersCount", static_cast<float>(LayersUsed));
 	// ************ Load materials data for all terrain layers END ************
 
-	Terrain->Shader->GetParameter("hightScale")->UpdateData(Terrain->HightScale);
-	Terrain->Shader->GetParameter("scaleFactor")->UpdateData(Terrain->ScaleFactor);
+	Terrain->Shader->UpdateParameterData("hightScale", Terrain->HightScale);
+	Terrain->Shader->UpdateParameterData("scaleFactor", Terrain->ScaleFactor);
 	if (Terrain->Shader->GetName() != "FESMTerrainShader")
-		Terrain->Shader->GetParameter("tileMult")->UpdateData(Terrain->TileMult);
-	Terrain->Shader->GetParameter("LODlevel")->UpdateData(Terrain->LODLevel);
-	Terrain->Shader->GetParameter("hightMapShift")->UpdateData(Terrain->HightMapShift);
+		Terrain->Shader->UpdateParameterData("tileMult", Terrain->TileMult);
+	Terrain->Shader->UpdateParameterData("LODlevel", Terrain->LODLevel);
+	Terrain->Shader->UpdateParameterData("hightMapShift", Terrain->HightMapShift);
 
 	static glm::vec3 PivotPosition = Terrain->Transform.GetPosition();
 	PivotPosition = Terrain->Transform.GetPosition();
@@ -1427,10 +1378,10 @@ void FERenderer::RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentC
 		{
 			Terrain->Transform.SetPosition(glm::vec3(PivotPosition.x + i * 64.0f * Terrain->Transform.Scale[0], PivotPosition.y, PivotPosition.z + j * 64.0f * Terrain->Transform.Scale[2]));
 
-			Terrain->Shader->GetParameter("FEPVMMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Terrain->Transform.GetTransformMatrix());
+			Terrain->Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Terrain->Transform.GetTransformMatrix());
 			if (Terrain->Shader->GetParameter("FEWorldMatrix") != nullptr)
-				Terrain->Shader->GetParameter("FEWorldMatrix")->UpdateData(Terrain->Transform.GetTransformMatrix());
-			Terrain->Shader->GetParameter("hightMapShift")->UpdateData(glm::vec2(i * -1.0f, j * -1.0f));
+				Terrain->Shader->UpdateParameterData("FEWorldMatrix", Terrain->Transform.GetTransformMatrix());
+			Terrain->Shader->UpdateParameterData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
 			Terrain->Shader->LoadMatrix(PVMHash, *static_cast<glm::mat4*>(Terrain->Shader->GetParameter("FEPVMMatrix")->Data));
 			if (Terrain->Shader->GetParameter("FEWorldMatrix") != nullptr)
@@ -1538,19 +1489,19 @@ void FERenderer::UpdateFogInShaders()
 {
 	if (bDistanceFogEnabled)
 	{
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogDensity")->UpdateData(DistanceFogDensity);
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogGradient")->UpdateData(DistanceFogGradient);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", DistanceFogDensity);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", DistanceFogGradient);
 
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(DistanceFogDensity);
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(DistanceFogGradient);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", DistanceFogDensity);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", DistanceFogGradient);
 	}
 	else
 	{
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogDensity")->UpdateData(-1.0f);
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogGradient")->UpdateData(-1.0f);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", -1.0f);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", -1.0f);
 
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(-1.0f);
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(-1.0f);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", -1.0f);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", -1.0f);
 	}
 }
 
@@ -1566,7 +1517,7 @@ void FERenderer::SetChromaticAberrationIntensity(const float NewValue)
 {
 	if (GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/) == nullptr)
 		return;
-	GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->Stages[0]->Shader->GetParameter("intensity")->UpdateData(NewValue);
+	GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->Stages[0]->Shader->UpdateParameterData("intensity", NewValue);
 }
 
 float FERenderer::GetDOFNearDistance()
@@ -1581,8 +1532,8 @@ void FERenderer::SetDOFNearDistance(const float NewValue)
 {
 	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
 		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->GetParameter("depthThreshold")->UpdateData(NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->GetParameter("depthThreshold")->UpdateData(NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("depthThreshold", NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("depthThreshold", NewValue);
 }
 
 float FERenderer::GetDOFFarDistance()
@@ -1597,8 +1548,8 @@ void FERenderer::SetDOFFarDistance(const float NewValue)
 {
 	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
 		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->GetParameter("depthThresholdFar")->UpdateData(NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->GetParameter("depthThresholdFar")->UpdateData(NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("depthThresholdFar", NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("depthThresholdFar", NewValue);
 }
 
 float FERenderer::GetDOFStrength()
@@ -1613,8 +1564,8 @@ void FERenderer::SetDOFStrength(const float NewValue)
 {
 	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
 		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->GetParameter("blurSize")->UpdateData(NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->GetParameter("blurSize")->UpdateData(NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("blurSize", NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("blurSize", NewValue);
 }
 
 float FERenderer::GetDOFDistanceDependentStrength()
@@ -1629,8 +1580,8 @@ void FERenderer::SetDOFDistanceDependentStrength(const float NewValue)
 {
 	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
 		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->GetParameter("intMult")->UpdateData(NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->GetParameter("intMult")->UpdateData(NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("intMult", NewValue);
+	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("intMult", NewValue);
 }
 
 float FERenderer::GetBloomThreshold()
@@ -1645,7 +1596,7 @@ void FERenderer::SetBloomThreshold(const float NewValue)
 {
 	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
 		return;
-	GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[0]->Shader->GetParameter("thresholdBrightness")->UpdateData(NewValue);
+	GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", NewValue);
 }
 
 float FERenderer::GetBloomSize()
@@ -1660,8 +1611,8 @@ void FERenderer::SetBloomSize(const float NewValue)
 {
 	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
 		return;
-	GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[1]->StageSpecificUniforms[1].UpdateData(NewValue);
-	GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[2]->StageSpecificUniforms[1].UpdateData(NewValue);
+	*static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[1]->StageSpecificUniforms[1].Data) = NewValue;
+	*static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[2]->StageSpecificUniforms[1].Data) = NewValue;
 }
 
 float FERenderer::GetFXAASpanMax()
@@ -1676,7 +1627,7 @@ void FERenderer::SetFXAASpanMax(const float NewValue)
 {
 	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
 		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->GetParameter("FXAASpanMax")->UpdateData(NewValue);
+	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAASpanMax", NewValue);
 }
 
 float FERenderer::GetFXAAReduceMin()
@@ -1691,7 +1642,7 @@ void FERenderer::SetFXAAReduceMin(const float NewValue)
 {
 	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
 		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->GetParameter("FXAAReduceMin")->UpdateData(NewValue);
+	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAAReduceMin", NewValue);
 }
 
 float FERenderer::GetFXAAReduceMul()
@@ -1706,7 +1657,7 @@ void FERenderer::SetFXAAReduceMul(const float NewValue)
 {
 	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
 		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->GetParameter("FXAAReduceMul")->UpdateData(NewValue);
+	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAAReduceMul", NewValue);
 }
 
 void FERenderer::DrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
@@ -1767,13 +1718,13 @@ void FERenderer::GPUCulling(FEEntityInstanced* Entity, const int SubGameModel, c
 	FrustumCullingShader->Start();
 
 #ifdef USE_OCCUSION_CULLING
-	FrustumCullingShader->GetParameter("FEProjectionMatrix")->UpdateData(CurrentCamera->GetProjectionMatrix());
-	FrustumCullingShader->GetParameter("FEViewMatrix")->UpdateData(CurrentCamera->GetViewMatrix());
-	FrustumCullingShader->GetParameter("useOccusionCulling")->UpdateData(bUseOccusionCulling);
+	FrustumCullingShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+	FrustumCullingShader->UpdateParameterData("useOccusionCulling", bUseOccusionCulling);
 	// It should be last frame size!
 	const glm::vec2 RenderTargetSize = glm::vec2(GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
-	FrustumCullingShader->GetParameter("renderTargetSize")->UpdateData(RenderTargetSize);
-	FrustumCullingShader->GetParameter("nearFarPlanes")->UpdateData(glm::vec2(CurrentCamera->NearPlane, CurrentCamera->FarPlane));
+	FrustumCullingShader->UpdateParameterData("renderTargetSize", RenderTargetSize);
+	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCamera->NearPlane, CurrentCamera->FarPlane));
 #endif // USE_OCCUSION_CULLING
 
 	FrustumCullingShader->LoadDataToGPU();
@@ -1876,13 +1827,13 @@ void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
 	if (SSAO->Shader == nullptr)
 		SSAO->Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
 
-	SSAO->Shader->GetParameter("SampleCount")->UpdateData(SSAO->SampleCount);
+	SSAO->Shader->UpdateParameterData("SampleCount", SSAO->SampleCount);
 	
-	SSAO->Shader->GetParameter("SmallDetails")->UpdateData(SSAO->bSmallDetails ? 1.0f : 0.0f);
-	SSAO->Shader->GetParameter("Bias")->UpdateData(SSAO->Bias);
-	SSAO->Shader->GetParameter("Radius")->UpdateData(SSAO->Radius);
-	SSAO->Shader->GetParameter("RadiusSmallDetails")->UpdateData(SSAO->RadiusSmallDetails);
-	SSAO->Shader->GetParameter("SmallDetailsWeight")->UpdateData(SSAO->SmallDetailsWeight);
+	SSAO->Shader->UpdateParameterData("SmallDetails", SSAO->bSmallDetails ? 1.0f : 0.0f);
+	SSAO->Shader->UpdateParameterData("Bias", SSAO->Bias);
+	SSAO->Shader->UpdateParameterData("Radius", SSAO->Radius);
+	SSAO->Shader->UpdateParameterData("RadiusSmallDetails", SSAO->RadiusSmallDetails);
+	SSAO->Shader->UpdateParameterData("SmallDetailsWeight", SSAO->SmallDetailsWeight);
 	
 	SSAO->Shader->Start();
 	LoadStandardParams(SSAO->Shader, CurrentCamera, true);
@@ -1902,9 +1853,9 @@ void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
 		FEShader* BlurShader = RESOURCE_MANAGER.GetShader("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
 		BlurShader->Start();
 		if (BlurShader->GetParameter("FEBlurDirection"))
-			BlurShader->GetParameter("FEBlurDirection")->UpdateData(glm::vec2(0.0f, 1.0f));
+			BlurShader->UpdateParameterData("FEBlurDirection", glm::vec2(0.0f, 1.0f));
 		if (BlurShader->GetParameter("BlurRadius"))
-			BlurShader->GetParameter("BlurRadius")->UpdateData(1.3f);
+			BlurShader->UpdateParameterData("BlurRadius", 1.3f);
 
 		BlurShader->LoadDataToGPU();
 
@@ -1919,9 +1870,9 @@ void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
 
 		// Second blur stage
 		if (BlurShader->GetParameter("FEBlurDirection"))
-			BlurShader->GetParameter("FEBlurDirection")->UpdateData(glm::vec2(1.0f, 0.0f));
+			BlurShader->UpdateParameterData("FEBlurDirection", glm::vec2(1.0f, 0.0f));
 		if (BlurShader->GetParameter("BlurRadius"))
-			BlurShader->GetParameter("BlurRadius")->UpdateData(1.3f);
+			BlurShader->UpdateParameterData("BlurRadius", 1.3f);
 
 		BlurShader->LoadDataToGPU();
 

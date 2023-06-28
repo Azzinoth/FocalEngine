@@ -443,14 +443,14 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 
 		if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
 		{
-			BrushOutputShader->GetParameter("brushCenter")->UpdateData(glm::vec2(LocalX, LocalZ));
+			BrushOutputShader->UpdateParameterData("brushCenter", glm::vec2(LocalX, LocalZ));
 		}
 
-		BrushOutputShader->GetParameter("brushSize")->UpdateData(BrushSize / (GetXSize() * 2.0f));
-		BrushOutputShader->GetParameter("brushMode")->UpdateData(static_cast<float>(GetBrushMode()));
+		BrushOutputShader->UpdateParameterData("brushSize", BrushSize / (GetXSize() * 2.0f));
+		BrushOutputShader->UpdateParameterData("brushMode", static_cast<float>(GetBrushMode()));
 
 		BrushOutputFB->SetColorAttachment(HeightMap);
-		BrushOutputShader->GetParameter("brushIntensity")->UpdateData(BrushIntensity / 10.0f);
+		BrushOutputShader->UpdateParameterData("brushIntensity", BrushIntensity / 10.0f);
 
 		BrushOutputFB->Bind();
 		BrushOutputShader->Start();
@@ -460,8 +460,8 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 			LayerMaps[0]->Bind(0);
 			FE_GL_ERROR(glViewport(0, 0, LayerMaps[0]->GetWidth(), LayerMaps[0]->GetHeight()));
 
-			BrushOutputShader->GetParameter("brushIntensity")->UpdateData(BrushIntensity * 5.0f);
-			BrushOutputShader->GetParameter("layerIndex")->UpdateData(static_cast<float>(GetBrushLayerIndex()));
+			BrushOutputShader->UpdateParameterData("brushIntensity", BrushIntensity * 5.0f);
+			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex()));
 			BrushOutputFB->SetColorAttachment(LayerMaps[0]);
 			BrushOutputShader->LoadDataToGPU();
 
@@ -471,7 +471,7 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 
 
 			LayerMaps[1]->Bind(0);
-			BrushOutputShader->GetParameter("layerIndex")->UpdateData(static_cast<float>(GetBrushLayerIndex() - 4.0f));
+			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex() - 4.0f));
 			BrushOutputFB->SetColorAttachment(LayerMaps[1]);
 			BrushOutputShader->LoadDataToGPU();
 
@@ -519,9 +519,9 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 
 	if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
 	{
-		BrushVisualShader->GetParameter("brushCenter")->UpdateData(glm::vec2(LocalX, LocalZ));
+		BrushVisualShader->UpdateParameterData("brushCenter", glm::vec2(LocalX, LocalZ));
 	}
-	BrushVisualShader->GetParameter("brushSize")->UpdateData(BrushSize / (GetXSize() * 2.0f));
+	BrushVisualShader->UpdateParameterData("brushSize", BrushSize / (GetXSize() * 2.0f));
 
 	BrushVisualFB->Bind();
 	BrushVisualShader->Start();

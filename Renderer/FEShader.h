@@ -74,15 +74,6 @@ namespace FocalEngine
 
 		~FEShaderParam();
 
-		void UpdateData(void* Data);
-		void UpdateData(bool Data);
-		void UpdateData(int Data);
-		void UpdateData(float Data);
-		void UpdateData(glm::vec2 Data);
-		void UpdateData(glm::vec3 Data);
-		void UpdateData(glm::vec4 Data);
-		void UpdateData(glm::mat4 Data);
-
 		int NameHash = 0;
 		std::string GetName();
 		void SetName(std::string NewName);
@@ -132,9 +123,36 @@ namespace FocalEngine
 		virtual void AddParameter(FEShaderParam Parameter);
 
 		std::vector<std::string> GetParameterList();
+		void* GetParameterData(std::string Name);
 		std::vector<std::string> GetTextureList();
-		FEShaderParam* GetParameter(std::string Name);
 
+		template<typename T>
+		void UpdateParameterData(std::string Name, const T& Data);
+
+		template<>
+		void UpdateParameterData<void*>(std::string Name, void* const& Data);
+
+		template<>
+		void UpdateParameterData<bool>(std::string Name, const bool& Data);
+
+		template<>
+		void UpdateParameterData<int>(std::string Name, const int& Data);
+
+		template<>
+		void UpdateParameterData<float>(std::string Name, const float& Data);
+
+		template<>
+		void UpdateParameterData<glm::vec2>(std::string Name, const glm::vec2& Data);
+
+		template<>
+		void UpdateParameterData<glm::vec3>(std::string Name, const glm::vec3& Data);
+
+		template<>
+		void UpdateParameterData<glm::vec4>(std::string Name, const glm::vec4& Data);
+
+		template<>
+		void UpdateParameterData<glm::mat4>(std::string Name, const glm::mat4& Data);
+		
 		char* GetVertexShaderText();
 		char* GetTessControlShaderText();
 		char* GetTessEvalShaderText();
@@ -149,6 +167,8 @@ namespace FocalEngine
 		std::vector<std::string> GetDebugVariables();
 
 		void Dispatch(GLuint GroupXCount, GLuint GroupYCount, GLuint GroupZCount);
+
+		void AddParametersFromShader(FEShader* Shader);
 	private:
 		void CopyCode(const FEShader& Shader);
 
@@ -171,6 +191,7 @@ namespace FocalEngine
 		int VertexAttributes = 0;
 
 		std::unordered_map<std::string, FEShaderParam> Parameters;
+		FEShaderParam* GetParameter(std::string Name);
 		std::unordered_map<int, GLuint> BlockUniforms;
 
 		GLuint LoadShader(const char* ShaderText, GLuint ShaderType);
@@ -203,4 +224,6 @@ namespace FocalEngine
 					   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
 					   const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool TestCompilation = false, int GlslVersion = 450);
 	};
+
+#include "FEShader.inl"
 }

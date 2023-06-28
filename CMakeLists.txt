@@ -163,6 +163,7 @@ file(GLOB Renderer_SRC
 	"Renderer/FERenderer.h"
 	"Renderer/FEShader.cpp"
 	"Renderer/FEShader.h"
+	"Renderer/FEShader.inl"
 	"Renderer/FETexture.cpp"
 	"Renderer/FETexture.h"
 	"Renderer/FETerrain.cpp"

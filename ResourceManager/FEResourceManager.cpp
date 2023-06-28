@@ -1396,13 +1396,13 @@ void FEResourceManager::LoadStandardMaterial()
 	MakeMaterialStandard(SkyDomeMaterial);
 
 	// same as FERenderer::updateFogInShaders()
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogDensity")->UpdateData(0.007f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("fogGradient")->UpdateData(2.5f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->GetParameter("shadowBlurFactor")->UpdateData(1.0f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", 0.007f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", 2.5f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("shadowBlurFactor", 1.0f);
 
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogDensity")->UpdateData(0.007f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("fogGradient")->UpdateData(2.5f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->GetParameter("shadowBlurFactor")->UpdateData(1.0f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", 0.007f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", 2.5f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("shadowBlurFactor", 1.0f);
 }
 
 void FEResourceManager::LoadStandardGameModels()

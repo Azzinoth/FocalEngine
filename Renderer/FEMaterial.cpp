@@ -38,8 +38,7 @@ void FEMaterial::Bind()
 	}
 
 	// #fix such specific if statement in this class is not clean coding
-	if (Shader->GetParameter("baseColor") != nullptr)
-		Shader->GetParameter("baseColor")->UpdateData(BaseColor);
+	Shader->UpdateParameterData("baseColor", BaseColor);
 }
 
 void FEMaterial::UnBind()
@@ -56,32 +55,32 @@ void FEMaterial::UnBind()
 
 void FEMaterial::SetParam(const std::string Name, const int NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::SetParam(const std::string Name, const float NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::SetParam(const std::string Name, const glm::vec2 NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::SetParam(const std::string Name, const glm::vec3 NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::SetParam(const std::string Name, const glm::vec4 NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::SetParam(const std::string Name, const glm::mat4 NewData) const
 {
-	Shader->GetParameter(Name)->UpdateData(NewData);
+	Shader->UpdateParameterData(Name, NewData);
 }
 
 void FEMaterial::AddParameter(const FEShaderParam NewParameter) const

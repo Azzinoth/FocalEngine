@@ -73,134 +73,6 @@ FEShaderParam::FEShaderParam(const glm::mat4 Data, const std::string Name)
 	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
 }
 
-void FEShaderParam::UpdateData(void* Data)
-{
-	switch (Type)
-	{
-		case FE_BOOL_UNIFORM:
-		{
-			*static_cast<bool*>(this->Data) = *static_cast<bool*>(Data);
-			break;
-		}
-
-		case FE_INT_SCALAR_UNIFORM:
-		{
-			*static_cast<int*>(this->Data) = *static_cast<int*>(Data);
-			break;
-		}
-
-		case FE_FLOAT_SCALAR_UNIFORM:
-		{
-			*static_cast<float*>(this->Data) = *static_cast<float*>(Data);
-			break;
-		}
-
-		case FE_VECTOR2_UNIFORM:
-		{
-			*static_cast<glm::vec2*>(this->Data) = *static_cast<glm::vec2*>(Data);
-			break;
-		}
-
-		case FE_VECTOR3_UNIFORM:
-		{
-			*static_cast<glm::vec3*>(this->Data) = *static_cast<glm::vec3*>(Data);
-			break;
-		}
-
-		case FE_VECTOR4_UNIFORM:
-		{
-			*static_cast<glm::vec4*>(this->Data) = *static_cast<glm::vec4*>(Data);
-			break;
-		}
-
-		case FE_MAT4_UNIFORM:
-		{
-			*static_cast<glm::mat4*>(this->Data) = *static_cast<glm::mat4*>(Data);
-			break;
-		}
-
-		default:
-			break;
-	}
-}
-
-void FEShaderParam::UpdateData(bool Data)
-{
-	if (Type != FE_BOOL_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<bool*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(int Data)
-{
-	if (Type != FE_INT_SCALAR_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-		
-	*static_cast<int*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(float Data)
-{
-	if (Type != FE_FLOAT_SCALAR_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<float*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(glm::vec2 Data)
-{
-	if (Type != FE_VECTOR2_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<glm::vec2*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(glm::vec3 Data)
-{
-	if (Type != FE_VECTOR3_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<glm::vec3*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(glm::vec4 Data)
-{
-	if (Type != FE_VECTOR4_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<glm::vec4*>(this->Data) = Data;
-}
-
-void FEShaderParam::UpdateData(glm::mat4 Data)
-{
-	if (Type != FE_MAT4_UNIFORM)
-	{
-		LOG.Add("updateData() incorrect type", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-
-	*static_cast<glm::mat4*>(this->Data) = Data;
-}
-
 void FEShaderParam::CopyCode(const FEShaderParam& Copy)
 {
 	switch (Copy.Type)
@@ -1338,4 +1210,28 @@ void FEShader::ReCompile(const std::string Name, const char* VertexText, const c
 	CreateSSBO();
 #endif
 	RegisterUniforms();
+}
+
+void FEShader::AddParametersFromShader(FEShader* Shader)
+{
+	if (Shader == nullptr)
+		return;
+
+	auto iterator = Parameters.begin();
+	while (iterator != Parameters.end())
+	{
+		AddParameter(iterator->second);
+		iterator++;
+	}
+}
+
+void* FEShader::GetParameterData(std::string Name)
+{
+	if (Parameters.find(Name) == Parameters.end())
+	{
+		LOG.Add(std::string("GetParameterData can't find : ") + Name + " in function FEShader::GetParameterData", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	return Parameters[Name].Data;
 }

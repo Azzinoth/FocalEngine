@@ -122,7 +122,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.Shaders[BloomThresholdShader->GetObjectID()] = BloomThresholdShader;
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, BloomThresholdShader));
-	BloomEffect->Stages[0]->Shader->GetParameter("thresholdBrightness")->UpdateData(1.0f);
+	BloomEffect->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", 1.0f);
 
 	FEShader* BloomBlurShader =
 		RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
@@ -186,10 +186,10 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.Shaders[FEFXAAShader->GetObjectID()] = FEFXAAShader;
 
 	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FEFXAAShader));
-	FEFXAAEffect->Stages.back()->Shader->GetParameter("FXAASpanMax")->UpdateData(8.0f);
-	FEFXAAEffect->Stages.back()->Shader->GetParameter("FXAAReduceMin")->UpdateData(1.0f / 128.0f);
-	FEFXAAEffect->Stages.back()->Shader->GetParameter("FXAAReduceMul")->UpdateData(0.4f);
-	FEFXAAEffect->Stages.back()->Shader->GetParameter("FXAATextuxelSize")->UpdateData(glm::vec2(1.0f / GetRenderTargetWidth(), 1.0f / GetRenderTargetHeight()));
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAASpanMax", 8.0f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMin", 1.0f / 128.0f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMul", 0.4f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / GetRenderTargetWidth(), 1.0f / GetRenderTargetHeight()));
 	RENDERER.AddPostProcess(FEFXAAEffect);
 
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
@@ -209,20 +209,20 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->GetParameter("blurSize")->UpdateData(2.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("depthThreshold")->UpdateData(0.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("depthThresholdFar")->UpdateData(9000.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("zNear")->UpdateData(0.1f);
-	DOFEffect->Stages.back()->Shader->GetParameter("zFar")->UpdateData(5000.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("intMult")->UpdateData(100.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->GetParameter("blurSize")->UpdateData(2.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("depthThreshold")->UpdateData(0.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("depthThresholdFar")->UpdateData(9000.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("zNear")->UpdateData(0.1f);
-	DOFEffect->Stages.back()->Shader->GetParameter("zFar")->UpdateData(5000.0f);
-	DOFEffect->Stages.back()->Shader->GetParameter("intMult")->UpdateData(100.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
 	RENDERER.AddPostProcess(DOFEffect);
 	// ************************************ DOF END ************************************
 
@@ -237,7 +237,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.Shaders[ChromaticAberrationShader->GetObjectID()] = ChromaticAberrationShader;
 	
 	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
-	ChromaticAberrationEffect->Stages.back()->Shader->GetParameter("intensity")->UpdateData(1.0f);
+	ChromaticAberrationEffect->Stages.back()->Shader->UpdateParameterData("intensity", 1.0f);
 	RENDERER.AddPostProcess(ChromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, GetRenderTargetWidth(), GetRenderTargetHeight()));
@@ -554,7 +554,7 @@ void FEngine::RenderTargetResize()
 		FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", ENGINE.RenderTargetW, ENGINE.RenderTargetH);
 		FEFXAAEffect->SetID("0A3F10643F06525D70016070"/*"FE_FXAA"*/);
 		FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
-		FEFXAAEffect->Stages.back()->Shader->GetParameter("FXAATextuxelSize")->UpdateData(glm::vec2(1.0f / ENGINE.RenderTargetW, 1.0f / ENGINE.RenderTargetH));
+		FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / ENGINE.RenderTargetW, 1.0f / ENGINE.RenderTargetH));
 		RENDERER.AddPostProcess(FEFXAAEffect);
 
 		//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
