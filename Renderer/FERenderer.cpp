@@ -651,9 +651,9 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	LoadUniformBlocks();
 
 	// ********* GENERATE SHADOW MAPS *********
-	const bool PreviousState = bUseOccusionCulling;
-	// Currently OCCUSION_CULLING is not supported in shadow maps pass.
-	bUseOccusionCulling = false;
+	const bool PreviousState = bUseOcclusionCulling;
+	// Currently OCCLUSION_CULLING is not supported in shadow maps pass.
+	bUseOcclusionCulling = false;
 
 	CSM0 = nullptr;
 	CSM1 = nullptr;
@@ -805,7 +805,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		ItLight++;
 	}
 
-	bUseOccusionCulling = PreviousState;
+	bUseOcclusionCulling = PreviousState;
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
@@ -1101,7 +1101,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	LineCounter = 0;
 
 	// **************************** DEPTH PYRAMID ****************************
-#ifdef USE_OCCUSION_CULLING
+#ifdef USE_OCCLUSION_CULLING
 
 	ComputeTextureCopy->Start();
 	ComputeTextureCopy->UpdateParameterData("textureSize", glm::vec2(RENDERER.DepthPyramid->GetWidth(), RENDERER.DepthPyramid->GetHeight()));
@@ -1127,7 +1127,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		ComputeDepthPyramidDownSample->Dispatch(static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetWidth() / DownScale) / 32.0f)), static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetHeight() / DownScale) / 32.0f)), 1);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
-#endif // USE_OCCUSION_CULLING
+#endif // USE_OCCLUSION_CULLING
 	// **************************** DEPTH PYRAMID END ****************************
 }
 
@@ -1430,7 +1430,7 @@ bool FERenderer::IsSkyEnabled()
 	return SkyDome->IsVisible();
 }
 
-void FERenderer::SetSkyEnabld(const bool NewValue)
+void FERenderer::SetSkyEnabled(const bool NewValue)
 {
 	SkyDome->SetVisibility(NewValue);
 }
@@ -1717,15 +1717,15 @@ void FERenderer::GPUCulling(FEEntityInstanced* Entity, const int SubGameModel, c
 
 	FrustumCullingShader->Start();
 
-#ifdef USE_OCCUSION_CULLING
+#ifdef USE_OCCLUSION_CULLING
 	FrustumCullingShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
 	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
-	FrustumCullingShader->UpdateParameterData("useOccusionCulling", bUseOccusionCulling);
+	FrustumCullingShader->UpdateParameterData("useOcclusionCulling", bUseOcclusionCulling);
 	// It should be last frame size!
 	const glm::vec2 RenderTargetSize = glm::vec2(GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
 	FrustumCullingShader->UpdateParameterData("renderTargetSize", RenderTargetSize);
 	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCamera->NearPlane, CurrentCamera->FarPlane));
-#endif // USE_OCCUSION_CULLING
+#endif // USE_OCCLUSION_CULLING
 
 	FrustumCullingShader->LoadDataToGPU();
 
@@ -1808,14 +1808,14 @@ void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 	PostProcessEffects.clear();
 }
 
-bool FERenderer::IsOccusionCullingEnabled()
+bool FERenderer::IsOcclusionCullingEnabled()
 {
-	return bUseOccusionCulling;
+	return bUseOcclusionCulling;
 }
 
-void FERenderer::SetOccusionCullingEnabled(const bool NewValue)
+void FERenderer::SetOcclusionCullingEnabled(const bool NewValue)
 {
-	bUseOccusionCulling = NewValue;
+	bUseOcclusionCulling = NewValue;
 }
 
 void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)

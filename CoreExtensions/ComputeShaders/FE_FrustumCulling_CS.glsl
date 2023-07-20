@@ -71,7 +71,7 @@ layout(std430, binding = 10) writeonly buffer drawCallsInfoBuffer
 };
 
 layout(binding = 0) uniform sampler2D depthPyramid;
-uniform bool useOccusionCulling;
+uniform bool useOcclusionCulling;
 uniform vec2 renderTargetSize;
 uniform vec2 nearFarPlanes;
 
@@ -173,9 +173,9 @@ void main() // FEViewMatrix
 			return;
 	}
 
-	// Occusion culling
+	// Occlusion culling
 	// Based on https://vkguide.dev/docs/gpudriven/compute_culling/
-	if (useOccusionCulling)
+	if (useOcclusionCulling)
 	{
 		vec3 center = vec3(positions[invocationOffset], positions[invocationOffset + 1], positions[invocationOffset + 2]);
 		center = (FEViewMatrix * vec4(center, 1.0)).xyz;

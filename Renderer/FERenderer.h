@@ -122,7 +122,7 @@ namespace FocalEngine
 
 		// *********** Sky ***********
 		bool IsSkyEnabled();
-		void SetSkyEnabld(bool NewValue);
+		void SetSkyEnabled(bool NewValue);
 
 		float GetDistanceToSky();
 		void SetDistanceToSky(float NewValue);
@@ -133,8 +133,8 @@ namespace FocalEngine
 		bool bFreezeCulling = false;
 		void DrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
 
-		bool IsOccusionCullingEnabled();
-		void SetOccusionCullingEnabled(bool NewValue);
+		bool IsOcclusionCullingEnabled();
+		void SetOcclusionCullingEnabled(bool NewValue);
 
 		// *********** SSAO ***********
 		bool IsSSAOEnabled();
@@ -226,7 +226,7 @@ namespace FocalEngine
 		void GPUCulling(FEEntityInstanced* Entity, int SubGameModel, const FEBasicCamera* CurrentCamera);
 
 		FETexture* DepthPyramid = nullptr;
-		bool bUseOccusionCulling = true;
+		bool bUseOcclusionCulling = true;
 		// *********** GPU Culling END ***********
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> DebugOutputTextures;
@@ -240,4 +240,4 @@ namespace FocalEngine
 	#define RENDERER FERenderer::getInstance()
 }
 
-#endif FERENDERER_H
+#endif // FERENDERER_H
