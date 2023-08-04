@@ -11,7 +11,18 @@ void FERenderer::Init()
 {
 	if (bSimplifiedRendering)
 	{
+		// Because of VR
+		glGenBuffers(1, &UniformBufferForLights);
+		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
+		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
 
+		glGenBuffers(1, &UniformBufferForDirectionalLight);
+		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
+		glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
 	}
 	else
 	{
@@ -618,6 +629,9 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 
 void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
+	if (bVR)
+		return;
+
 	if (bSimplifiedRendering)
 	{
 		SimplifiedRender(CurrentCamera);
@@ -1267,7 +1281,7 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 	for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
 	{
 		FEShader* OriginalShader = nullptr;
-		if (!bSimplifiedRendering)
+		if (!bSimplifiedRendering || RENDERER.bVR)
 		{
 			OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
 			Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
@@ -1294,7 +1308,7 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 
 		Entity->Prefab->Components[i]->GameModel->Material->UnBind();
 
-		if (!bSimplifiedRendering)
+		if (!bSimplifiedRendering || RENDERER.bVR)
 			Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
 	}
 }
@@ -1976,6 +1990,46 @@ float FERenderer::GetSSAOSmallDetailsWeight()
 void FERenderer::SetSSAOSmallDetailsWeight(const float NewValue)
 {
 	SSAO->SmallDetailsWeight = NewValue;
+}
+
+void FERenderer::InitVR(int VRScreenW, int VRScreenH)
+{
+	//
+}
+
+void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/)
+{
+	// glViewPort and Frame buffer already are set.
+	CurrentCamera->UpdateFrustumPlanes();
+	FEScene& scene = SCENE;
+
+	//SceneToTextureFB->Bind();
+	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	//FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	LoadUniformBlocks();
+
+	auto EntityIterator = scene.EntityMap.begin();
+	while (EntityIterator != scene.EntityMap.end())
+	{
+		auto entity = EntityIterator->second;
+
+		if (entity->IsVisible() && entity->IsPostprocessApplied())
+		{
+			if (entity->GetType() == FE_ENTITY)
+			{
+				//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+				RenderEntityForward(entity, CurrentCamera);
+			}
+			else if (entity->GetType() == FE_ENTITY_INSTANCED)
+			{
+				//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+				//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
+			}
+		}
+
+		EntityIterator++;
+	}
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

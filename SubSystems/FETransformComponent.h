@@ -28,6 +28,7 @@ namespace FocalEngine
 
 		void SetPosition(glm::vec3 NewPosition);
 		void SetRotation(glm::vec3 NewRotation);
+		void SetQuaternion(glm::quat Quaternion);
 		void RotateByQuaternion(glm::quat Quaternion);
 		void SetScale(glm::vec3 NewScale);
 

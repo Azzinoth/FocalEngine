@@ -167,6 +167,15 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 		void SimplifiedRender(FEBasicCamera* CurrentCamera);
+
+		// *********** VR Rendering ***********
+
+		bool bVR = false;
+		void InitVR(int VRScreenW, int VRScreenH);
+		FEFramebuffer* SceneToVRTextureFB = nullptr;
+		void RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/);
+
+		// *********** VR Rendering END ***********
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -235,6 +244,12 @@ namespace FocalEngine
 
 		bool bSimplifiedRendering = false;
 		void Init();
+
+		// *********** VR Rendering ***********
+
+		//FEFramebuffer* SceneToVRTextureFB = nullptr;
+
+		// *********** VR Rendering END ***********
 	};
 
 	#define RENDERER FERenderer::getInstance()

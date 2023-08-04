@@ -9,6 +9,7 @@ namespace FocalEngine
 	class FEBasicCamera : public FEObject
 	{
 		friend FERenderer;
+		friend class FEOpenXRRendering;
 	public:
 		FEBasicCamera(std::string Name);
 		~FEBasicCamera();

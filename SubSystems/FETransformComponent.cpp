@@ -202,3 +202,16 @@ void FETransformComponent::SetUniformScaling(const bool NewValue)
 {
 	bUniformScaling = NewValue;
 }
+
+void FETransformComponent::SetQuaternion(glm::quat Quaternion)
+{
+	RotationQuaternion = Quaternion;
+	glm::vec3 NewRotationAngle = glm::eulerAngles(GetQuaternion());
+
+	NewRotationAngle.x /= ANGLE_TORADIANS_COF;
+	NewRotationAngle.y /= ANGLE_TORADIANS_COF;
+	NewRotationAngle.z /= ANGLE_TORADIANS_COF;
+
+	RotationAngles = NewRotationAngle;
+	Update();
+}
