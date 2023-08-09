@@ -1284,7 +1284,15 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 		if (!bSimplifiedRendering || RENDERER.bVR)
 		{
 			OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
-			Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+			if (RENDERER.bVR)
+			{
+				if (OriginalShader->GetObjectID() != "6917497A5E0C05454876186F"/*"SolidColorMaterial"*/)
+				Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+			}
+			else
+			{
+				Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+			}
 		}
 
 		Entity->Prefab->Components[i]->GameModel->Material->Bind();
