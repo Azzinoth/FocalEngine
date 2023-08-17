@@ -904,6 +904,11 @@ FEResourceManager::FEResourceManager()
 	MakeTextureStandard(NoTexture);
 	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
+	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																	     LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str());
+	NewShader->SetID("5C267A01466A545E7D1A2E66"/*FECombineFrameBuffers*/);
+	MakeShaderStandard(NewShader);
+
 	LoadStandardMaterial();
 	LoadStandardMeshes();
 	LoadStandardGameModels();

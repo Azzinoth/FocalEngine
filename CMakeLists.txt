@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 set(BUILD_TYPE "Debug and Release" CACHE STRING "Choose Build type")
 set(CMAKE_BUILD_TYPE Debug)
@@ -88,6 +88,7 @@ file(GLOB TerrainShadowMapShader_SRC
 file(GLOB PostProcessEffects_SRC
 	"CoreExtensions/PostProcessEffects/FE_ScreenQuad_FS.glsl"
 	"CoreExtensions/PostProcessEffects/FE_ScreenQuad_VS.glsl"
+	"CoreExtensions/PostProcessEffects/FE_CombineFrameBuffers_FS.glsl"
 )
 
 file(GLOB FE_Bloom_SRC

@@ -173,6 +173,8 @@ namespace FocalEngine
 		void CopyCode(const FEShader& Shader);
 
 		std::string CompilationErrors;
+		std::string LinkErrors;
+		std::string ValidateErrors;
 
 		GLuint ProgramID;
 		GLuint VertexShaderID;
@@ -195,6 +197,7 @@ namespace FocalEngine
 		std::unordered_map<int, GLuint> BlockUniforms;
 
 		GLuint LoadShader(const char* ShaderText, GLuint ShaderType);
+		bool LinkProgram();
 		void CleanUp();
 		void BindAttributes();
 		std::unordered_map<int, GLuint> UniformLocations;

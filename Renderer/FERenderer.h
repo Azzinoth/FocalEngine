@@ -172,10 +172,19 @@ namespace FocalEngine
 
 		bool bVR = false;
 		void InitVR(int VRScreenW, int VRScreenH);
+		int VRScreenW = 0;
+		int VRScreenH = 0;
 		FEFramebuffer* SceneToVRTextureFB = nullptr;
 		void RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/);
 
+		void UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH);
+
 		// *********** VR Rendering END ***********
+
+		void RenderToFrameBuffer(FETexture* SceneTexture, FEFramebuffer* Target);
+		void RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target);
+
+		bool CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 

@@ -277,9 +277,7 @@ FEShader::FEShader(const std::string Name, const char* VertexText, const char* F
 		FE_GL_ERROR(glAttachShader(ProgramID, ComputeShaderID));
 
 	BindAttributes();
-
-	FE_GL_ERROR(glLinkProgram(ProgramID));
-	FE_GL_ERROR(glValidateProgram(ProgramID)); // too slow ?
+	LinkProgram();
 
 	if (VertexText != nullptr)
 		FE_GL_ERROR(glDeleteShader(VertexShaderID));
@@ -526,10 +524,11 @@ GLuint FEShader::LoadShader(const char* ShaderText, const GLuint ShaderType)
 	const char *ParsedShaderText = TempString.c_str();
 	FE_GL_ERROR(glShaderSource(ShaderID, 1, &ParsedShaderText, nullptr));
 	FE_GL_ERROR(glCompileShader(ShaderID));
-	GLint status = 0;
-	FE_GL_ERROR(glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &status));
+	GLint Status = 0;
+	FE_GL_ERROR(glGetShaderiv(ShaderID, GL_COMPILE_STATUS, &Status));
 
-	if (status == GL_FALSE) {
+	if (Status == GL_FALSE)
+	{
 		GLint LogSize = 0;
 		FE_GL_ERROR(glGetShaderiv(ShaderID, GL_INFO_LOG_LENGTH, &LogSize));
 		std::vector<GLchar> ErrorLog(LogSize);
@@ -540,10 +539,65 @@ GLuint FEShader::LoadShader(const char* ShaderText, const GLuint ShaderType)
 			CompilationErrors.push_back(ErrorLog[i]);
 		}
 		if (!bTestCompilationMode)
-			assert(status);
+			assert(Status);
 	}
 
 	return ShaderID;
+}
+
+bool FEShader::LinkProgram()
+{
+	FE_GL_ERROR(glLinkProgram(ProgramID));
+
+	GLint Status = 0;
+	FE_GL_ERROR(glGetProgramiv(ProgramID, GL_LINK_STATUS, &Status));
+	if (Status == GL_FALSE)
+	{
+		GLint LogSize = 0;
+		FE_GL_ERROR(glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &LogSize));
+		if (LogSize > 0)
+		{
+			std::vector<GLchar> ErrorLog(LogSize);
+
+			FE_GL_ERROR(glGetProgramInfoLog(ProgramID, LogSize, &LogSize, &ErrorLog[0]));
+			for (size_t i = 0; i < ErrorLog.size(); i++)
+			{
+				LinkErrors.push_back(ErrorLog[i]);
+			}
+		}
+
+		if (!bTestCompilationMode)
+			assert(Status);
+
+		return false;
+	}
+
+	FE_GL_ERROR(glValidateProgram(ProgramID));
+
+	Status = 0;
+	glGetProgramiv(ProgramID, GL_VALIDATE_STATUS, &Status);
+	if (Status == GL_FALSE)
+	{
+		GLint LogSize = 0;
+		FE_GL_ERROR(glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &LogSize));
+		if (LogSize > 0)
+		{
+			std::vector<GLchar> ErrorLog(LogSize);
+
+			FE_GL_ERROR(glGetProgramInfoLog(ProgramID, LogSize, &LogSize, &ErrorLog[0]));
+			for (size_t i = 0; i < ErrorLog.size(); i++)
+			{
+				ValidateErrors.push_back(ErrorLog[i]);
+			}
+		}
+
+		if (!bTestCompilationMode)
+			assert(Status);
+
+		return false;
+	}
+
+	return true;
 }
 
 void FEShader::CleanUp()
@@ -587,7 +641,14 @@ void FEShader::BindAttributes()
 
 void FEShader::Start()
 {
-	FE_GL_ERROR(glUseProgram(ProgramID));
+	/*FE_GL_ERROR(*/glUseProgram(ProgramID)/*)*/;
+
+	GLenum error = glGetError();
+	if (error != 0)
+	{
+		int y = 0;
+		y++;
+	}
 #ifdef FE_DEBUG_ENABLED
 		if (SSBO == static_cast<GLuint>(-1))
 			return;

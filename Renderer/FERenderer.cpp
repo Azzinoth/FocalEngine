@@ -1793,6 +1793,15 @@ void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 	delete SceneToTextureFB;
 	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, NewWidth, NewHeight);
 
+	if (bVR)
+	{
+		if (VRScreenW != 0 && VRScreenH != 0)
+		{
+			delete SceneToVRTextureFB;
+			SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
+		}
+	}
+
 	if (bSimplifiedRendering)
 		return;
 
@@ -2002,18 +2011,33 @@ void FERenderer::SetSSAOSmallDetailsWeight(const float NewValue)
 
 void FERenderer::InitVR(int VRScreenW, int VRScreenH)
 {
-	//
+	UpdateVRRenderTargetSize( VRScreenW, VRScreenH);
+}
+
+void FERenderer::UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH)
+{
+	this->VRScreenW = VRScreenW;
+	this->VRScreenH = VRScreenH;
+
+	if (VRScreenW != 0 && VRScreenH != 0)
+	{
+		delete SceneToVRTextureFB;
+		SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
+	}
 }
 
 void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/)
 {
+	if (SceneToVRTextureFB == nullptr)
+		return;
+
 	// glViewPort and Frame buffer already are set.
 	CurrentCamera->UpdateFrustumPlanes();
 	FEScene& scene = SCENE;
 
-	//SceneToTextureFB->Bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-	//FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	SceneToVRTextureFB->Bind();
+	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
+	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	LoadUniformBlocks();
 
@@ -2038,6 +2062,142 @@ void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture,
 
 		EntityIterator++;
 	}
+
+	SceneToVRTextureFB->UnBind();
+}
+
+void FERenderer::RenderToFrameBuffer(FETexture* SceneTexture, FEFramebuffer* Target)
+{
+	if (SceneTexture == nullptr)
+	{
+		LOG.Add("Tring to call FERenderer::RenderToFrameBuffer with SceneTexture = nullptr", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	if (Target == nullptr)
+	{
+		RenderToFrameBuffer(SceneTexture, static_cast<GLuint>(0));
+		return;
+	}
+
+	RenderToFrameBuffer(SceneTexture, Target->FBO);
+}
+
+void FERenderer::RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target)
+{
+	SceneTexture->Bind(0);
+	FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, Target));
+
+	FE_GL_ERROR(glDepthMask(GL_FALSE));
+	FE_GL_ERROR(glDepthFunc(GL_ALWAYS));
+
+	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+	ScreenQuadShader->Start();
+	ScreenQuadShader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	ScreenQuadShader->Stop();
+
+	FE_GL_ERROR(glDepthMask(GL_TRUE));
+	FE_GL_ERROR(glDepthFunc(GL_LESS));
+
+	SceneTexture->UnBind();
+	if (Target != 0)
+		FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
+}
+
+bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target)
+{
+	if (FirstSource == nullptr)
+	{
+		LOG.Add("Attempted to call FERenderer::CombineFrameBuffers with FirstSource set to nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (SecondSource == nullptr)
+	{
+		LOG.Add("Attempted to call FERenderer::CombineFrameBuffers with SecondSource set to nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetColorAttachment() == nullptr || SecondSource->GetColorAttachment() == nullptr)
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, either the FirstSource or SecondSource is missing a ColorAttachment.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetDepthAttachment() == nullptr || SecondSource->GetDepthAttachment() == nullptr)
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, either the FirstSource or SecondSource is missing a DepthAttachment, which is currently unsupported.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetColorAttachment(1) != nullptr || SecondSource->GetColorAttachment(1) != nullptr)
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, either the FirstSource or SecondSource have multiple ColorAttachments, which is currently unsupported.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource == Target || SecondSource == Target)
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, Sources and Target should be different framebuffers.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetColorAttachment()->GetWidth() != SecondSource->GetColorAttachment()->GetWidth() ||
+		FirstSource->GetColorAttachment()->GetHeight() != SecondSource->GetColorAttachment()->GetHeight())
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, FirstSource and SecondSource ColorAttachment have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetColorAttachment()->GetWidth() != Target->GetColorAttachment()->GetWidth() ||
+		FirstSource->GetColorAttachment()->GetHeight() != Target->GetColorAttachment()->GetHeight())
+	{
+		LOG.Add("In FERenderer::CombineFrameBuffers, Sources and Target ColorAttachment have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	Target->Bind();
+
+	// Although we are using screen quad texture, in this function we need to write to a depth buffer.
+	glDepthMask(GL_TRUE);
+	// Bypass depth buffer checks.
+	glDepthFunc(GL_ALWAYS);
+
+	FirstSource->GetColorAttachment()->Bind(0);
+	FirstSource->GetDepthAttachment()->Bind(1);
+
+	SecondSource->GetColorAttachment()->Bind(2);
+	SecondSource->GetDepthAttachment()->Bind(3);
+
+	FEShader* CurrentShader = RESOURCE_MANAGER.GetShader("5C267A01466A545E7D1A2E66"/*FECombineFrameBuffers*/);
+	CurrentShader->Start();
+	CurrentShader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	CurrentShader->Stop();
+
+	// Return to default value.
+	glDepthFunc(GL_LESS);
+
+	FirstSource->GetColorAttachment()->UnBind();
+	FirstSource->GetDepthAttachment()->UnBind();
+
+	SecondSource->GetColorAttachment()->UnBind();
+	SecondSource->GetDepthAttachment()->UnBind();
+
+	Target->UnBind();
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
