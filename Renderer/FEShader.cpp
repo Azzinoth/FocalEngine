@@ -258,7 +258,7 @@ FEShader::FEShader(const std::string Name, const char* VertexText, const char* F
 		strcpy_s(ComputeShaderText, TextLenght + 1, ComputeText);
 	}
 
-	if (bTestCompilationMode && !CompilationErrors.empty())
+	if (bTestCompilationMode && !CompilationErrors.empty() && !LinkErrors.empty() && !ValidateErrors.empty())
 		return;
 
 	FE_GL_ERROR(ProgramID = glCreateProgram());
@@ -304,6 +304,8 @@ void FEShader::CopyCode(const FEShader& Shader)
 	Name = Shader.Name;
 	NameHash = Shader.NameHash;
 	CompilationErrors = Shader.CompilationErrors;
+	LinkErrors = Shader.LinkErrors;
+	ValidateErrors = Shader.ValidateErrors;
 
 	ProgramID = Shader.ProgramID;
 	VertexShaderID = Shader.VertexShaderID;
@@ -1101,6 +1103,16 @@ std::string FEShader::GetCompilationErrors()
 	return CompilationErrors;
 }
 
+std::string FEShader::GetLinkErrors()
+{
+	return LinkErrors;
+}
+
+std::string FEShader::GetValidateErrors()
+{
+	return ValidateErrors;
+}
+
 char* FEShader::GetTessControlShaderText()
 {
 	return TessControlShaderText;
@@ -1231,7 +1243,7 @@ void FEShader::ReCompile(const std::string Name, const char* VertexText, const c
 		strcpy_s(ComputeShaderText, TextLenght + 1, ComputeText);
 	}
 
-	if (bTestCompilationMode && !CompilationErrors.empty())
+	if (bTestCompilationMode && !CompilationErrors.empty() && !LinkErrors.empty() && !ValidateErrors.empty())
 		return;
 
 	FE_GL_ERROR(ProgramID = glCreateProgram());

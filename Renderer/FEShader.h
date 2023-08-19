@@ -161,6 +161,8 @@ namespace FocalEngine
 		char* GetComputeShaderText();
 
 		std::string GetCompilationErrors();
+		std::string GetLinkErrors();
+		std::string GetValidateErrors();
 
 		bool IsDebugRequest();
 		std::vector<std::vector<float>>* GetDebugData();

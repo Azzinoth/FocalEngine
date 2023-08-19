@@ -2198,6 +2198,8 @@ bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* 
 	SecondSource->GetDepthAttachment()->UnBind();
 
 	Target->UnBind();
+
+	return true;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
