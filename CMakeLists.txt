@@ -201,6 +201,17 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FETransformComponent.h"
 )
 
+file(GLOB OpenXR_SRC
+	"SubSystems/FEOpenXR/FEOpenXRCore.h"
+	"SubSystems/FEOpenXR/FEOpenXRCore.cpp"
+	"SubSystems/FEOpenXR/FEOpenXRInput.h"
+	"SubSystems/FEOpenXR/FEOpenXRInput.cpp"
+	"SubSystems/FEOpenXR/FEOpenXRRendering.h"
+	"SubSystems/FEOpenXR/FEOpenXRRendering.cpp"
+	"SubSystems/FEOpenXR/FEOpenXR.h"
+	"SubSystems/FEOpenXR/FEOpenXR.cpp"
+)
+
 # *************** THIRD_PARTY ***************
 
 file(GLOB jsoncpp_SRC
@@ -255,18 +266,24 @@ add_library(FocalEngine
 			${ResourceManager_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
+			${OpenXR_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
 			${lodepng_SRC}
 			${stb_image_SRC}
 )
 
-target_link_libraries(FocalEngine FEBasicApplication)
-
-target_link_libraries(FocalEngine glew32s.lib)
-target_link_libraries(FocalEngine glfw3.lib)
-target_link_libraries(FocalEngine glfw3dll.lib)
-target_link_libraries(FocalEngine opengl32.lib)
+target_link_libraries(FocalEngine 
+    PRIVATE 
+        FEBasicApplication
+        glew32s.lib
+        glfw3.lib
+        glfw3dll.lib
+        opengl32.lib
+    PUBLIC 
+        debug	  ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/openxr_loaderd.lib
+        optimized ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/openxr_loader.lib
+)
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/CoreExtensions/Materials/InstancedLineMaterial" FILES ${InstancedLineMaterial_SRC})
@@ -293,6 +310,7 @@ source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
+source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})

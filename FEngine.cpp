@@ -53,6 +53,15 @@ void FEngine::Render(const bool InternalCall)
 	ENGINE.CurrentCamera->Move(static_cast<float>(CPUTime + GPUTime));
 	RENDERER.Render(CurrentCamera);
 
+	if (bVRActive)
+	{
+		OpenXR_MANAGER.Update();
+		glViewport(static_cast<GLint>(0.0),
+					static_cast<GLint>(0.0),
+					static_cast<GLsizei>(ENGINE.GetRenderTargetWidth()),
+					static_cast<GLsizei>(ENGINE.GetRenderTargetHeight()));
+	}
+
 	if (!InternalCall) CPUTime = TIME.EndTimeStamp();
 }
 
@@ -716,4 +725,41 @@ void FEngine::SetVsyncEnabled(bool NewValue)
 	{
 		glfwSwapInterval(0);
 	}
+}
+
+void FEngine::DisableVR()
+{
+	bVRActive = false;
+	RENDERER.bVRActive = false;
+}
+
+bool FEngine::EnableVR()
+{
+	if (!bVRInitializedCorrectly)
+	{
+		OpenXR_MANAGER.Init(WindowTitle);
+
+		auto test = LOG.GetLogItems("OpenXR");
+		// Fix this!
+		bVRInitializedCorrectly = true/*LOG.GetLogItems("OpenXR").empty()*/;
+	}
+
+	if (bVRInitializedCorrectly)
+	{
+		bVRActive = true;
+		RENDERER.bVRActive = true;
+		RENDERER.UpdateVRRenderTargetSize(static_cast<int>(OpenXR_MANAGER.EyeResolution().x), static_cast<int>(OpenXR_MANAGER.EyeResolution().y));
+	}
+
+	return bVRActive;
+}
+
+bool FEngine::IsVRInitializedCorrectly()
+{
+	return bVRInitializedCorrectly;
+}
+
+bool FEngine::IsVREnabled()
+{
+	return bVRActive;
 }

@@ -170,7 +170,7 @@ namespace FocalEngine
 
 		// *********** VR Rendering ***********
 
-		bool bVR = false;
+		bool bVRActive = false;
 		void InitVR(int VRScreenW, int VRScreenH);
 		int VRScreenW = 0;
 		int VRScreenH = 0;
@@ -185,6 +185,9 @@ namespace FocalEngine
 		void RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target);
 
 		bool CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target);
+
+		void AddAfterRenderCallback(std::function<void()> Callback);
+		FEFramebuffer* GetLastRenderedResult();
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -256,9 +259,12 @@ namespace FocalEngine
 
 		// *********** VR Rendering ***********
 
-		//FEFramebuffer* SceneToVRTextureFB = nullptr;
+		
 
 		// *********** VR Rendering END ***********
+
+		FEFramebuffer* LastRenderedResult = nullptr;
+		std::vector<std::function<void()>> AfterRenderCallbacks;
 	};
 
 	#define RENDERER FERenderer::getInstance()

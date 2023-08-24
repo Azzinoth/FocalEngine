@@ -643,14 +643,8 @@ void FEShader::BindAttributes()
 
 void FEShader::Start()
 {
-	/*FE_GL_ERROR(*/glUseProgram(ProgramID)/*)*/;
+	FE_GL_ERROR(glUseProgram(ProgramID));
 
-	GLenum error = glGetError();
-	if (error != 0)
-	{
-		int y = 0;
-		y++;
-	}
 #ifdef FE_DEBUG_ENABLED
 		if (SSBO == static_cast<GLuint>(-1))
 			return;

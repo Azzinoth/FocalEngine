@@ -70,3 +70,5 @@ This project uses the following third-party libraries:
 3) **lodepng**: This library is licensed under the zlib License. The full license text can be found at [lodepng's GitHub repository](https://github.com/lvandeve/lodepng/blob/master/LICENSE).
 
 4) **stb**: This library is licensed under the MIT License. The full license text can be found at [stb's GitHub repository](https://github.com/nothings/stb/blob/master/LICENSE).
+
+5) **OpenXR**: This library is licensed under Apache 2.0 License. The full license text can be found at [OpenXR's GitHub repository](https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/main/LICENSE).

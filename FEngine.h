@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Renderer\FERenderer.h"
+#include "..\SubSystems\FEOpenXR\FEOpenXR.h"
 
 namespace FocalEngine
 {
@@ -74,6 +75,11 @@ namespace FocalEngine
 
 		bool IsVsyncEnabled();
 		void SetVsyncEnabled(bool NewValue);
+
+		void DisableVR();
+		bool EnableVR();
+		bool IsVRInitializedCorrectly();
+		bool IsVREnabled();
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -86,6 +92,8 @@ namespace FocalEngine
 
 		bool bSimplifiedRendering = false;
 		bool bVsyncEnabled = true;
+		bool bVRInitializedCorrectly = false;
+		bool bVRActive = false;
 
 		const glm::vec4 DefaultClearColor = glm::vec4(0.55f, 0.73f, 0.87f, 1.0f);
 		const glm::vec4 DefaultGammaCorrectedClearColor = glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f);

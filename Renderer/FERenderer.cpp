@@ -629,7 +629,9 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 
 void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
-	if (bVR)
+	LastRenderedResult = nullptr;
+
+	if (bVRActive)
 		return;
 
 	if (bSimplifiedRendering)
@@ -1281,10 +1283,10 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 	for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
 	{
 		FEShader* OriginalShader = nullptr;
-		if (!bSimplifiedRendering || RENDERER.bVR)
+		if (!bSimplifiedRendering || RENDERER.bVRActive)
 		{
 			OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
-			if (RENDERER.bVR)
+			if (RENDERER.bVRActive)
 			{
 				if (OriginalShader->GetObjectID() != "6917497A5E0C05454876186F"/*"SolidColorMaterial"*/)
 				Entity->Prefab->Components[i]->GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
@@ -1316,7 +1318,7 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 
 		Entity->Prefab->Components[i]->GameModel->Material->UnBind();
 
-		if (!bSimplifiedRendering || RENDERER.bVR)
+		if (!bSimplifiedRendering || RENDERER.bVRActive)
 			Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
 	}
 }
@@ -1793,7 +1795,7 @@ void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 	delete SceneToTextureFB;
 	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, NewWidth, NewHeight);
 
-	if (bVR)
+	if (bVRActive)
 	{
 		if (VRScreenW != 0 && VRScreenH != 0)
 		{
@@ -2064,6 +2066,12 @@ void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture,
 	}
 
 	SceneToVRTextureFB->UnBind();
+	LastRenderedResult = SceneToVRTextureFB;
+
+	for (size_t i = 0; i < AfterRenderCallbacks.size(); i++)
+	{
+		AfterRenderCallbacks[i]();
+	}
 }
 
 void FERenderer::RenderToFrameBuffer(FETexture* SceneTexture, FEFramebuffer* Target)
@@ -2200,6 +2208,22 @@ bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* 
 	Target->UnBind();
 
 	return true;
+}
+
+void FERenderer::AddAfterRenderCallback(std::function<void()> Callback)
+{
+	if (Callback == nullptr)
+	{
+		LOG.Add("Attempted to call FERenderer::AddAfterRenderCallback with Callback set to nullptr.", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return;
+	}
+
+	AfterRenderCallbacks.push_back(Callback);
+}
+
+FEFramebuffer* FERenderer::GetLastRenderedResult()
+{
+	return LastRenderedResult;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
