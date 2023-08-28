@@ -145,12 +145,16 @@ namespace FocalEngine
 		friend class FEOpenXRInput;
 		friend class FEOpenXRRendering;
 		friend class FEOpenXR;
+
+		friend class FEngine;
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXRCore)
 
 		void Init(std::string VRAppName = "");
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRCore)
+
+		bool bInitializedCorrectly = false;
 
 		XrInstance OpenXRInstance;
 		XrSystemId SystemID;

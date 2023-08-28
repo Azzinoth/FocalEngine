@@ -9,6 +9,9 @@ FEOpenXRRendering::~FEOpenXRRendering() {}
 
 void FEOpenXRRendering::GetViews()
 {
+	if (!FEOpenXR_CORE.bInitializedCorrectly)
+		return;
+
 	FE_OPENXR_ERROR(xrEnumerateViewConfigurationViews(FEOpenXR_CORE.OpenXRInstance, FEOpenXR_CORE.SystemID, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, 0, &ViewCount, nullptr));
 	ViewConfigs.resize(ViewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW, nullptr });
 	FE_OPENXR_ERROR(xrEnumerateViewConfigurationViews(FEOpenXR_CORE.OpenXRInstance, FEOpenXR_CORE.SystemID, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, ViewCount, &ViewCount, ViewConfigs.data()));
@@ -17,6 +20,9 @@ void FEOpenXRRendering::GetViews()
 
 void FEOpenXRRendering::CreateSwapChain()
 {
+	if (!FEOpenXR_CORE.bInitializedCorrectly)
+		return;
+
 	SwapChains.resize(ViewCount);
 	SwapChainImages.resize(ViewCount);
 	for (uint32_t i = 0; i < ViewCount; i++)

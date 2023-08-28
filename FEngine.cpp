@@ -738,10 +738,7 @@ bool FEngine::EnableVR()
 	if (!bVRInitializedCorrectly)
 	{
 		OpenXR_MANAGER.Init(WindowTitle);
-
-		auto test = LOG.GetLogItems("OpenXR");
-		// Fix this!
-		bVRInitializedCorrectly = true/*LOG.GetLogItems("OpenXR").empty()*/;
+		bVRInitializedCorrectly = FEOpenXR_CORE.bInitializedCorrectly;
 	}
 
 	if (bVRInitializedCorrectly)

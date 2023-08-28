@@ -23,18 +23,28 @@ void FEOpenXRCore::CreateInstance()
 	CreateInfo.enabledExtensionNames = Extension.data();
 
 	FE_OPENXR_ERROR(xrCreateInstance(&CreateInfo, &OpenXRInstance));
+	if (OpenXRInstance == nullptr)
+		bInitializedCorrectly = false;
 }
 
 void FEOpenXRCore::InitializeSystem()
 {
+	if (!bInitializedCorrectly)
+		return;
+
 	XrSystemGetInfo SystemGetInfo = { XR_TYPE_SYSTEM_GET_INFO };
 	SystemGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
 
 	FE_OPENXR_ERROR(xrGetSystem(OpenXRInstance, &SystemGetInfo, &SystemID));
+	if (SystemID == 0)
+		bInitializedCorrectly = false;
 }
 
 void FEOpenXRCore::InitializeSession()
 {
+	if (!bInitializedCorrectly)
+		return;
+
 	XrGraphicsRequirementsOpenGLKHR OpenglReqs;
 	OpenglReqs.type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR;
 	OpenglReqs.next = nullptr;
@@ -59,6 +69,9 @@ void FEOpenXRCore::InitializeSession()
 
 void FEOpenXRCore::CreateReferenceSpace()
 {
+	if (!bInitializedCorrectly)
+		return;
+
 	XrPosef IdentityPose;
 	IdentityPose.orientation.x = 0;
 	IdentityPose.orientation.y = 0;
