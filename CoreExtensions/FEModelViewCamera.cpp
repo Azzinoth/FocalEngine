@@ -1,7 +1,7 @@
 #include "FEModelViewCamera.h"
 using namespace FocalEngine;
 
-FEModelViewCamera::FEModelViewCamera(const std::string Name) : FEBasicCamera (Name)
+FEModelViewCamera::FEModelViewCamera(const std::string Name) : FEBasicCamera(Name)
 {
 	Type = 2;
 }
@@ -45,7 +45,7 @@ void FEModelViewCamera::MouseMoveInput(const double Xpos, const double Ypos)
 		CurrentAzimutAngle += (MouseX - LastMouseX) * 0.1f;
 	}
 
-	if (LastMouseY != MouseY )
+	if (LastMouseY != MouseY)
 	{
 		SetPolarAngle(CurrentPolarAngle - (MouseY - LastMouseY) * 0.1f);
 	}
@@ -78,7 +78,7 @@ void FEModelViewCamera::UpdateViewMatrix()
 
 	Position = PolarToCartesian(CurrentPolarAngle, CurrentAzimutAngle, DistanceToModel);
 	ViewMatrix = glm::lookAt(Position, glm::vec3(0.0f), glm::vec3(0, 1, 0));
-	
+
 	ViewMatrix = glm::translate(ViewMatrix, -TrackingObjectPosition);
 	Position += TrackingObjectPosition;
 }
@@ -99,6 +99,9 @@ void FEModelViewCamera::SetDistanceToModel(double NewValue)
 
 void FEModelViewCamera::MouseScrollInput(const double Xoffset, const double Yoffset)
 {
+	if (!bIsInputActive)
+		return;
+
 	SetDistanceToModel(DistanceToModel + Yoffset * 2.0);
 }
 
