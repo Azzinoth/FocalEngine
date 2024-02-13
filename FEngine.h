@@ -23,7 +23,7 @@ namespace FocalEngine
 
 		void Render(bool InternalCall = false);
 
-		bool IsWindowOpened();
+		bool IsNotTerminated();
 		void Terminate();
 
 		void SetCamera(FEBasicCamera* NewCamera);

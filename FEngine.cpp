@@ -14,19 +14,26 @@ FEngine::~FEngine()
 {
 }
 
-bool FEngine::IsWindowOpened()
+bool FEngine::IsNotTerminated()
 {
-	return APPLICATION.IsWindowOpened();
+	return APPLICATION.IsNotTerminated();
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
 {
+	if (!APPLICATION.IsNotTerminated())
+		return;
+
 	if (!InternalCall)
 		TIME.BeginTimeStamp();
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	APPLICATION.BeginFrame();
+	if (APPLICATION.GetMainWindow() == nullptr)
+		return;
+
+	APPLICATION.GetMainWindow()->BeginFrame();
 
 #ifdef FE_DEBUG_ENABLED
 	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShadersList();
@@ -62,12 +69,15 @@ void FEngine::Render(const bool InternalCall)
 					static_cast<GLsizei>(ENGINE.GetRenderTargetHeight()));
 	}
 
+	APPLICATION.GetMainWindow()->Render();
+
 	if (!InternalCall) CPUTime = TIME.EndTimeStamp();
 }
 
 void FEngine::EndFrame(const bool InternalCall)
 {
 	if (!InternalCall) TIME.BeginTimeStamp();
+	APPLICATION.GetMainWindow()->EndFrame();
 	APPLICATION.EndFrame();
 	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
 }
@@ -78,19 +88,19 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	WindowH = Height;
 	this->WindowTitle = WindowTitle;
 
-	APPLICATION.InitWindow(Width, Height, WindowTitle);
-	APPLICATION.SetWindowResizeCallback(&FEngine::WindowResizeCallback);
-	APPLICATION.SetMouseButtonCallback(&FEngine::MouseButtonCallback);
-	APPLICATION.SetMouseMoveCallback(&FEngine::MouseMoveCallback);
-	APPLICATION.SetKeyCallback(&FEngine::KeyButtonCallback);
-	APPLICATION.SetDropCallback(&FEngine::DropCallback);
-	APPLICATION.SetScrollCallback(&FEngine::MouseScrollCallback);
+	APPLICATION.AddWindow(Width, Height, WindowTitle);
+	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
+	APPLICATION.GetMainWindow()->AddOnMouseButtonCallback(&FEngine::MouseButtonCallback);
+	APPLICATION.GetMainWindow()->AddOnMouseMoveCallback(&FEngine::MouseMoveCallback);
+	APPLICATION.GetMainWindow()->AddOnKeyCallback(&FEngine::KeyButtonCallback);
+	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
+	APPLICATION.GetMainWindow()->AddOnScrollCallback(&FEngine::MouseScrollCallback);
 
 	SetClearColor(DefaultGammaCorrectedClearColor);
 
 	CurrentCamera = new FEFreeCamera("mainCamera");
 	int FinalWidth, FinalHeight;
-	APPLICATION.GetWindowSize(&FinalWidth, &FinalHeight);
+	APPLICATION.GetMainWindow()->GetSize(&FinalWidth, &FinalHeight);
 	
 	WindowW = FinalWidth;
 	WindowH = FinalHeight;
@@ -291,7 +301,8 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 
 void FEngine::SetWindowCaption(const std::string NewCaption)
 {
-	APPLICATION.SetWindowCaption(NewCaption);
+	if (APPLICATION.GetMainWindow() != nullptr)
+		APPLICATION.GetMainWindow()->SetTitle(NewCaption);
 }
 
 void FEngine::AddWindowResizeCallback(void(*Func)(int, int))
@@ -302,7 +313,7 @@ void FEngine::AddWindowResizeCallback(void(*Func)(int, int))
 
 void FEngine::AddWindowCloseCallback(void(*Func)())
 {
-	APPLICATION.SetWindowCloseCallback(Func);
+	APPLICATION.GetMainWindow()->AddOnCloseCallback(Func);
 }
 
 void FEngine::AddKeyCallback(void(*Func)(int, int, int, int))
@@ -441,7 +452,7 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 
 void FEngine::Terminate()
 {
-	APPLICATION.Terminate();
+	APPLICATION.Close();
 }
 
 void FEngine::TakeScreenshot(const char* FileName)
@@ -482,7 +493,7 @@ void FEngine::SetRenderTargetMode(const FE_RENDER_TARGET_MODE NewMode)
 	{
 		RenderTargetMode = NewMode;
 		int WindowWidth, WindowHeight;
-		APPLICATION.GetWindowSize(&WindowWidth, &WindowHeight);
+		APPLICATION.GetMainWindow()->GetSize(&WindowWidth, &WindowHeight);
 		WindowResizeCallback(WindowWidth, WindowHeight);
 	}
 	else
@@ -631,7 +642,7 @@ void FEngine::RenderTargetCenterForCamera(FEFreeCamera* Camera)
 	int ShiftX, ShiftY = 0;
 
 	int xpos, ypos;
-	APPLICATION.GetWindowPosition(&xpos, &ypos);
+	APPLICATION.GetMainWindow()->GetPosition(&xpos, &ypos);
 
 	if (RenderTargetMode == FE_GLFW_MODE)
 	{
@@ -738,7 +749,10 @@ bool FEngine::EnableVR()
 	if (!bVRInitializedCorrectly)
 	{
 		OpenXR_MANAGER.Init(WindowTitle);
-		bVRInitializedCorrectly = FEOpenXR_CORE.bInitializedCorrectly;
+
+		auto test = LOG.GetLogItems("OpenXR");
+		// Fix this!
+		bVRInitializedCorrectly = true/*LOG.GetLogItems("OpenXR").empty()*/;
 	}
 
 	if (bVRInitializedCorrectly)
