@@ -166,7 +166,8 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 		InternalFormat != GL_RED &&
 		InternalFormat != GL_R16 &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
+		InternalFormat != GL_RGBA16F)
 	{
 		LOG.Add("FETexture::getRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return result;
@@ -175,7 +176,16 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
 
-	if (InternalFormat == GL_R16)
+	if (InternalFormat == GL_RGBA16F)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = GetWidth() * GetHeight() * 4 * sizeof(unsigned short);
+		result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
+		glPixelStorei(GL_PACK_ALIGNMENT, 2);
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, result));
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	}
+	else if (InternalFormat == GL_R16)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 2;

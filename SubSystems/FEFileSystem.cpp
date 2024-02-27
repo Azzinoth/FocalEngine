@@ -252,3 +252,20 @@ char* FEFileSystem::GetFileName(const char* FullPath)
 
 	return result;
 }
+
+std::string FEFileSystem::ReadFEString(std::fstream& File)
+{
+	char* Buffer = new char[4];
+
+	File.read(Buffer, 4);
+	const int TempCharSize = *(int*)Buffer;
+	char* TempChar = new char[TempCharSize + 1];
+	File.read(TempChar, TempCharSize);
+	TempChar[TempCharSize] = '\0';
+
+	std::string Result = TempChar;
+	delete[] TempChar;
+	delete[] Buffer;
+
+	return Result;
+}

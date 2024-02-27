@@ -26,6 +26,8 @@ namespace FocalEngine
 		GLuint GetIndicesCount() const;
 		GLuint GetPositionsBufferID() const;
 		GLuint GetPositionsCount() const;
+		GLuint GetColorBufferID() const;
+		GLuint GetColorCount() const;
 		GLuint GetNormalsBufferID() const;
 		GLuint GetNormalsCount() const;
 		GLuint GetTangentsBufferID() const;
@@ -44,6 +46,8 @@ namespace FocalEngine
 		unsigned int IndicesCount = -1;
 		GLuint PositionsBufferID = -1;
 		unsigned int PositionsCount = -1;
+		GLuint ColorBufferID = -1;
+		unsigned int ColorCount = -1;
 		GLuint NormalsBufferID = -1;
 		unsigned int NormalsCount = -1;
 		GLuint TangentsBufferID = -1;

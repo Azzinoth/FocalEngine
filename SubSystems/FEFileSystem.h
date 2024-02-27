@@ -36,7 +36,7 @@ namespace FocalEngine
 		void ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
 		std::string GetApplicationPath();
 #endif
-
+		std::string ReadFEString(std::fstream& File);
 	private:
 		SINGLETON_PRIVATE_PART(FEFileSystem)
 #ifdef FE_WIN_32
