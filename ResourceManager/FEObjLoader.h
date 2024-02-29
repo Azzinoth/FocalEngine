@@ -8,16 +8,16 @@ namespace FocalEngine
 
 	struct MaterialRecord
 	{
-		std::string Name;
+		std::string Name = "";
 
-		std::string AlbedoMapFile;
-		std::string SpecularMapFile;
-		std::string SpecularHighlightMapFile;
-		std::string AlphaMapFile;
-		std::string NormalMapFile;
-		std::string BumpMapFile;
-		std::string DisplacementMapFile;
-		std::string StencilDecalMapFile;
+		std::string AlbedoMapFile = "";
+		std::string SpecularMapFile = "";
+		std::string SpecularHighlightMapFile = "";
+		std::string AlphaMapFile = "";
+		std::string NormalMapFile = "";
+		std::string BumpMapFile = "";
+		std::string DisplacementMapFile = "";
+		std::string StencilDecalMapFile = "";
 
 		unsigned int MinVertexIndex = INT_MAX;
 		unsigned int MaxVertexIndex = 0;
@@ -62,14 +62,34 @@ namespace FocalEngine
 		friend FEResourceManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjLoader)
+		
+		void ForceOneMesh(bool bForce);
+		bool IsForcingOneMesh();
+
+		void ForcePositionNormalization(bool bForce);
+		bool IsForcingPositionNormalization();
+
+		void ReadFile(const char* FileName);
+
+		// Use to get raw data from the loaded file.
+		// Recommenede only if you know what you are doing.
+		std::vector<FERawOBJData*>* GetLoadedObjects();
 	private:
 		SINGLETON_PRIVATE_PART(FEObjLoader)
 		
 		std::vector<FERawOBJData*> LoadedObjects;
-		bool bForceOneMesh = false;
-		std::string CurrentFilePath;
 
-		void ReadFile(const char* FileName);
+		bool bForceOneMesh = false;
+		bool bForcePositionNormalization = false;
+		bool bHaveColors = false;
+		bool bHaveTextureCoord = false;
+		bool bHaveNormalCoord = false;
+
+		std::string CurrentFilePath = "";
+		std::string MaterialFileName = "";
+		FERawOBJData* CurrentMaterialObject = nullptr;
+		void ReadMaterialFile(const char* OriginalOBJFile);
+		void ReadMaterialLine(std::stringstream& LineStream);
 
 		void ReadLine(std::stringstream& LineStream, FERawOBJData* Data);
 		void ProcessRawData(FERawOBJData* Data);
@@ -80,15 +100,9 @@ namespace FocalEngine
 		glm::vec3 CalculateTangent(glm::vec3 V0, glm::vec3 V1, glm::vec3 V2, std::vector<glm::vec2>&& Textures);
 		void CalculateTangents(FERawOBJData* Data);
 
-		std::string MaterialFileName;
-		void ReadMaterialFile(const char* OriginalObjFile);
-		void ReadMaterialLine(std::stringstream& LineStream);
-		FERawOBJData* CurrentMaterialObject = nullptr;
+		void NormalizeVertexPositions(FERawOBJData* data);
+		
 		bool CheckCurrentMaterialObject();
-
-		bool bHaveColors = false;
-		bool bHaveTextureCoord = false;
-		bool bHaveNormalCoord = false;
 
 #ifdef FE_OBJ_DOUBLE_VERTEX_ON_SEAMS
 		struct VertexThatNeedDoubling

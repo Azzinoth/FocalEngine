@@ -379,8 +379,63 @@ void FEObjLoader::CalculateTangents(FERawOBJData* Data)
 	}
 }
 
+void FEObjLoader::NormalizeVertexPositions(FERawOBJData* Data)
+{
+	double MinX = DBL_MAX;
+	double MaxX = -DBL_MAX;
+	double MinY = DBL_MAX;
+	double MaxY = -DBL_MAX;
+	double MinZ = DBL_MAX;
+	double MaxZ = -DBL_MAX;
+
+	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
+	{
+		if (MinX > Data->RawVertexCoordinates[i].x)
+			MinX = Data->RawVertexCoordinates[i].x;
+
+		if (MaxX < Data->RawVertexCoordinates[i].x)
+			MaxX = Data->RawVertexCoordinates[i].x;
+
+		if (MinY > Data->RawVertexCoordinates[i].y)
+			MinY = Data->RawVertexCoordinates[i].y;
+
+		if (MaxY < Data->RawVertexCoordinates[i].y)
+			MaxY = Data->RawVertexCoordinates[i].y;
+
+		if (MinZ > Data->RawVertexCoordinates[i].z)
+			MinZ = Data->RawVertexCoordinates[i].z;
+
+		if (MaxZ < Data->RawVertexCoordinates[i].z)
+			MaxZ = Data->RawVertexCoordinates[i].z;
+	}
+
+	double RangeX = abs(MaxX - MinX);
+	double RangeY = abs(MaxY - MinY);
+	double RangeZ = abs(MaxZ - MinZ);
+
+	double MinRange = std::min(std::min(RangeX, RangeY), RangeZ);
+	double ScaleFactor = 1.0;
+
+	if (MinRange < 1.0)
+	{
+		ScaleFactor = 1.0 / MinRange;
+	}
+
+	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
+	{
+		Data->RawVertexCoordinates[i].x -= MinX;
+		Data->RawVertexCoordinates[i].y -= MinY;
+		Data->RawVertexCoordinates[i].z -= MinZ;
+
+		Data->RawVertexCoordinates[i] *= ScaleFactor;
+	}
+}
+
 void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 {
+	if (bForcePositionNormalization)
+		NormalizeVertexPositions(Data);
+
 	if (bHaveTextureCoord && bHaveNormalCoord)
 	{
 #ifdef FE_OBJ_DOUBLE_VERTEX_ON_SEAMS
@@ -548,12 +603,12 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 	}
 }
 
-void FEObjLoader::ReadMaterialFile(const char* OriginalObjFile)
+void FEObjLoader::ReadMaterialFile(const char* OriginalOBJFile)
 {
-	if (MaterialFileName.empty() || OriginalObjFile == "")
+	if (MaterialFileName.empty() || OriginalOBJFile == "")
 		return;
 
-	std::string MaterialFileFullPath = FILE_SYSTEM.GetDirectoryPath(OriginalObjFile);
+	std::string MaterialFileFullPath = FILE_SYSTEM.GetDirectoryPath(OriginalOBJFile);
 	MaterialFileFullPath += MaterialFileName;
 	if (!FILE_SYSTEM.CheckFile(MaterialFileFullPath.c_str()))
 	{
@@ -780,4 +835,29 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
+}
+
+void FEObjLoader::ForceOneMesh(bool bForce)
+{
+	bForceOneMesh = bForce;
+}
+
+bool FEObjLoader::IsForcingOneMesh()
+{
+	return bForceOneMesh;
+}
+
+void FEObjLoader::ForcePositionNormalization(bool bForce)
+{
+	bForcePositionNormalization = bForce;
+}
+
+bool FEObjLoader::IsForcingPositionNormalization()
+{
+	return bForcePositionNormalization;
+}
+
+std::vector<FERawOBJData*>* FEObjLoader::GetLoadedObjects()
+{
+	return &LoadedObjects;
 }
