@@ -39,6 +39,22 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		}
 
 		Data->RawVertexCoordinates.push_back(NewVec);
+		
+		// File could contain RGB.
+		if (!LineStream.eof())
+		{
+			for (int i = 0; i <= 2; i++)
+			{
+				LineStream >> STemp;
+				if (STemp == "")
+					break;
+
+				NewVec[i] = std::stof(STemp);
+				bHaveColors = true;
+			}
+
+			Data->RawVertexColors.push_back(NewVec);
+		}
 	}
 	// if this line contains vertex texture coordinates
 	else if (STemp[0] == 'v' && STemp.size() == 2 && STemp[1] == 't')
@@ -65,8 +81,13 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 			LineStream >> STemp;
 			NewVec[i] = std::stof(STemp);
 		}
+		
+		glm::vec3 NormilizedVector = glm::normalize(NewVec);
 
-		Data->RawNormalCoordinates.push_back(NewVec);
+		if (isnan(NormilizedVector.x) || isnan(NormilizedVector.y) || isnan(NormilizedVector.z))
+			NormilizedVector = glm::vec3(0.0f);
+
+		Data->RawNormalCoordinates.push_back(NormilizedVector);
 	}
 	// if this line contains indices
 	else if (STemp[0] == 'f' && STemp.size() == 1)
@@ -103,27 +124,27 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 				{
 					if (iterations == 0)
 					{
-						if (Data->MaterialRecords.back().MinVertexIndex > static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MinVertexIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MinVertexIndex > static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MinVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
 
-						if (Data->MaterialRecords.back().MaxVertexIndex < static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MaxVertexIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MaxVertexIndex < static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MaxVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
 					else if (iterations == 1)
 					{
-						if (Data->MaterialRecords.back().MinTextureIndex > static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MinTextureIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MinTextureIndex > static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MinTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
 
-						if (Data->MaterialRecords.back().MaxTextureIndex < static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MaxTextureIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MaxTextureIndex < static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MaxTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
 					else if (iterations == 2)
 					{
-						if (Data->MaterialRecords.back().MinNormalIndex > static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MinNormalIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MinNormalIndex > static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MinNormalIndex = static_cast<unsigned int>(Data->RawIndices.back());
 
-						if (Data->MaterialRecords.back().MaxNormalIndex < static_cast<unsigned>(Data->RawIndices.back()))
-							Data->MaterialRecords.back().MaxNormalIndex = static_cast<unsigned>(Data->RawIndices.back());
+						if (Data->MaterialRecords.back().MaxNormalIndex < static_cast<unsigned int>(Data->RawIndices.back()))
+							Data->MaterialRecords.back().MaxNormalIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
 
 					Data->MaterialRecords.back().FaceCount++;
@@ -151,6 +172,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 
 void FEObjLoader::ReadFile(const char* FileName)
 {
+	bHaveColors = false;
 	bHaveTextureCoord = false;
 	bHaveNormalCoord = false;
 	CurrentFilePath = FileName;
@@ -254,6 +276,45 @@ void FEObjLoader::ReadFile(const char* FileName)
 	for (size_t i = 0; i < LoadedObjects.size(); i++)
 	{
 		ProcessRawData(LoadedObjects[i]);
+	}
+}
+
+glm::vec3 FEObjLoader::CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2)
+{
+	glm::dvec3 Edge_0 = V2 - V1;
+	glm::dvec3 Edge_1 = V2 - V0;
+
+	glm::dvec3 Normal = glm::normalize(glm::cross(Edge_1, Edge_0));
+
+	if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+		Normal = glm::dvec3();
+
+	return Normal;
+}
+
+void FEObjLoader::CalculateNormals(FERawOBJData* Data)
+{
+	int IndexShift = 3;
+	// We assume that there were no normals info read.
+	for (size_t i = 0; i < Data->FInd.size() - 1; i+=3)
+	{
+		glm::dvec3 V0 = { Data->FVerC[Data->FInd[i] * IndexShift], Data->FVerC[Data->FInd[i] * IndexShift + 1], Data->FVerC[Data->FInd[i] * IndexShift + 2] };
+		glm::dvec3 V1 = { Data->FVerC[Data->FInd[i + 1] * IndexShift], Data->FVerC[Data->FInd[i + 1] * IndexShift + 1], Data->FVerC[Data->FInd[i + 1] * IndexShift + 2] };
+		glm::dvec3 V2 = { Data->FVerC[Data->FInd[i + 2] * IndexShift], Data->FVerC[Data->FInd[i + 2] * IndexShift + 1], Data->FVerC[Data->FInd[i + 2] * IndexShift + 2] };
+
+		glm::vec3 Normal = CalculateNormal(V0, V1, V2);
+
+		Data->FNorC[Data->FInd[i] * IndexShift] = Normal.x;
+		Data->FNorC[Data->FInd[i] * IndexShift + 1] = Normal.y;
+		Data->FNorC[Data->FInd[i] * IndexShift + 2] = Normal.z;
+
+		Data->FNorC[Data->FInd[i + 1] * IndexShift] = Normal.x;
+		Data->FNorC[Data->FInd[i + 1] * IndexShift + 1] = Normal.y;
+		Data->FNorC[Data->FInd[i + 1] * IndexShift + 2] = Normal.z;
+
+		Data->FNorC[Data->FInd[i + 2] * IndexShift] = Normal.x;
+		Data->FNorC[Data->FInd[i + 2] * IndexShift + 1] = Normal.y;
+		Data->FNorC[Data->FInd[i + 2] * IndexShift + 2] = Normal.z;
 	}
 }
 

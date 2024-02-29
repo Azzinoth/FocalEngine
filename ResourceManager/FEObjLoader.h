@@ -35,6 +35,7 @@ namespace FocalEngine
 	struct FERawOBJData
 	{
 		std::vector<glm::vec3> RawVertexCoordinates;
+		std::vector<glm::vec3> RawVertexColors;
 		std::vector<glm::vec2> RawTextureCoordinates;
 		std::vector<glm::vec3> RawNormalCoordinates;
 		std::vector<int> RawIndices;
@@ -73,6 +74,9 @@ namespace FocalEngine
 		void ReadLine(std::stringstream& LineStream, FERawOBJData* Data);
 		void ProcessRawData(FERawOBJData* Data);
 
+		glm::vec3 CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2);
+		void CalculateNormals(FERawOBJData* Data);
+
 		glm::vec3 CalculateTangent(glm::vec3 V0, glm::vec3 V1, glm::vec3 V2, std::vector<glm::vec2>&& Textures);
 		void CalculateTangents(FERawOBJData* Data);
 
@@ -82,6 +86,7 @@ namespace FocalEngine
 		FERawOBJData* CurrentMaterialObject = nullptr;
 		bool CheckCurrentMaterialObject();
 
+		bool bHaveColors = false;
 		bool bHaveTextureCoord = false;
 		bool bHaveNormalCoord = false;
 
