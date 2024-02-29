@@ -191,28 +191,28 @@ void FEObjLoader::ReadFile(const char* FileName)
 		return;
 	}
 
-	std::ifstream file;
-	file.open(FileName);
+	std::ifstream File(FileName, std::ios::binary);
+	const auto begin = File.tellg();
+	File.seekg(0, std::ios::end);
+	const auto end = File.tellg();
+	const auto fsize = static_cast<size_t>(end - begin);
 
-	if ((file.rdstate() & std::ifstream::failbit) != 0)
+	File.seekg(0, 0);
+
+	std::string CurrentLine;
+	for (size_t i = 0; i < fsize; i++)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEObjLoader::readFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return;
-	}
+		char NewChar;
+		File.read(&NewChar, 1);
+		CurrentLine += NewChar;
 
-	std::stringstream FileData;
-	// read file to fileData and close it.
-	FileData << file.rdbuf();
-	file.close();
+		if (NewChar == '\n')
+		{
+			CurrentLine.erase(CurrentLine.end() - 1, CurrentLine.end());
+			ReadLine(std::stringstream(CurrentLine), LoadedObjects.back());
 
-	std::string line;
-	while (std::getline(FileData, line))
-	{
-		// read next line
-		std::stringstream LineStream;
-		LineStream << line;
-			
-		ReadLine(LineStream, LoadedObjects.back());
+			CurrentLine = "";
+		}
 	}
 
 	if (!bForceOneMesh)
