@@ -4,8 +4,6 @@
 
 namespace FocalEngine
 {
-#define FE_OBJ_DOUBLE_VERTEX_ON_SEAMS
-
 	struct MaterialRecord
 	{
 		std::string Name = "";
@@ -35,6 +33,7 @@ namespace FocalEngine
 	struct FERawOBJData
 	{
 		std::vector<glm::vec3> RawVertexCoordinates;
+		std::vector<glm::dvec3> RawVertexCoordinatesDoublePrecision;
 		std::vector<glm::vec3> RawVertexColors;
 		std::vector<glm::vec2> RawTextureCoordinates;
 		std::vector<glm::vec3> RawNormalCoordinates;
@@ -42,6 +41,8 @@ namespace FocalEngine
 
 		// final vertex coordinates
 		std::vector<float> FVerC;
+		// final colors
+		std::vector<float> fColorsC;
 		// final texture coordinates
 		std::vector<float> FTexC;
 		// final normal coordinates
@@ -55,19 +56,23 @@ namespace FocalEngine
 		std::vector<float> MatIDs;
 	};
 
-	class FEResourceManager;
-
 	class FEObjLoader
 	{
-		friend FEResourceManager;
+		friend class FEResourceManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjLoader)
-		
-		void ForceOneMesh(bool bForce);
+
+		void ForceOneMesh(bool NewValue);
 		bool IsForcingOneMesh();
 
-		void ForcePositionNormalization(bool bForce);
+		void ForcePositionNormalization(bool NewValue);
 		bool IsForcingPositionNormalization();
+
+		void UseDoublePrecisionForReadingCoordinates(bool NewValue);
+		bool IsUsingDoublePrecisionForReadingCoordinates();
+
+		void DoubleVertexOnSeams(bool NewValue);
+		bool IsDoubleVertexOnSeams();
 
 		void ReadFile(const char* FileName);
 
@@ -76,11 +81,13 @@ namespace FocalEngine
 		std::vector<FERawOBJData*>* GetLoadedObjects();
 	private:
 		SINGLETON_PRIVATE_PART(FEObjLoader)
-		
+			
 		std::vector<FERawOBJData*> LoadedObjects;
 
 		bool bForceOneMesh = false;
 		bool bForcePositionNormalization = false;
+		bool bUseDoublePrecisionForReadingCoordinates = false;
+		bool bDoubleVertexOnSeams = true;
 		bool bHaveColors = false;
 		bool bHaveTextureCoord = false;
 		bool bHaveNormalCoord = false;
@@ -90,25 +97,24 @@ namespace FocalEngine
 		FERawOBJData* CurrentMaterialObject = nullptr;
 		void ReadMaterialFile(const char* OriginalOBJFile);
 		void ReadMaterialLine(std::stringstream& LineStream);
+		bool CheckCurrentMaterialObject();
 
-		void ReadLine(std::stringstream& LineStream, FERawOBJData* Data);
+		void ReadLine(std::stringstream& lineStream, FERawOBJData* data);
 		void ProcessRawData(FERawOBJData* Data);
 
 		glm::vec3 CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2);
 		void CalculateNormals(FERawOBJData* Data);
 
-		glm::vec3 CalculateTangent(glm::vec3 V0, glm::vec3 V1, glm::vec3 V2, std::vector<glm::vec2>&& Textures);
+		glm::vec3 CalculateTangent(const glm::vec3 V0, const glm::vec3 V1, const glm::vec3 V2, std::vector<glm::vec2>&& Textures);
 		void CalculateTangents(FERawOBJData* Data);
 
-		void NormalizeVertexPositions(FERawOBJData* data);
-		
-		bool CheckCurrentMaterialObject();
+		void NormalizeVertexPositions(FERawOBJData* Data);
+		void NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data);
 
-#ifdef FE_OBJ_DOUBLE_VERTEX_ON_SEAMS
 		struct VertexThatNeedDoubling
 		{
 			VertexThatNeedDoubling(const int IndexInArray, const int AcctualIndex, const int TexIndex, const int NormIndex) : IndexInArray(IndexInArray),
-			                                                                                                                  AcctualIndex(AcctualIndex), TexIndex(TexIndex), NormIndex(NormIndex), bWasDone(false) {};
+																															  AcctualIndex(AcctualIndex), TexIndex(TexIndex), NormIndex(NormIndex), bWasDone(false) {};
 
 			int IndexInArray;
 			int AcctualIndex;
@@ -121,8 +127,5 @@ namespace FocalEngine
 				return Lhs.AcctualIndex == Rhs.AcctualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TexIndex == Rhs.TexIndex && Lhs.NormIndex == Rhs.NormIndex;
 			}
 		};
-#endif // FE_OBJ_DOUBLE_VERTEX_ON_SEAMS
 	};
-
-	#define LOG FELOG::getInstance()
 }
