@@ -18,8 +18,10 @@ set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF 
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Set default resource folder location
+# Any project that will include FocalEngine will need to redefine this variable
+# to make sure that the engine can find its dependencies
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
+set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
 configure_file(${ENGINE_FOLDER}/ResourceManager/Config.h.in ${ENGINE_FOLDER}/ResourceManager/Config.h @ONLY)
 
 if(NOT TARGET FEBasicApplication)
