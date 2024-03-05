@@ -355,7 +355,7 @@ void FEEntityInstanced::AddInstanceInternal(const glm::mat4 InstanceMatrix)
 {
 	for (size_t i = 0; i < Prefab->Components.size(); i++)
 	{
-		Renderers[i]->InstancedAABBSizes.push_back(-FEAABB(Prefab->Components[i]->GameModel->GetMesh()->GetAABB(), InstanceMatrix).Size);
+		Renderers[i]->InstancedAABBSizes.push_back(-FEAABB(Prefab->Components[i]->GameModel->GetMesh()->GetAABB(), InstanceMatrix).LongestAxisLength);
 		Renderers[i]->InstancedMatrices.push_back(InstanceMatrix);
 		Renderers[i]->TransformedInstancedMatrices.push_back(Transform.TransformMatrix * InstanceMatrix);
 		Renderers[i]->InstancePositions.push_back(Renderers[i]->TransformedInstancedMatrices.back()[3]);
@@ -384,7 +384,7 @@ void FEEntityInstanced::AddInstances(const glm::mat4* InstanceMatrix, const size
 
 		for (size_t j = StartIndex; j < Count; j++)
 		{
-			Renderers[i]->InstancedAABBSizes[j] = -FEAABB(OriginalAABB, InstanceMatrix[j]).Size;
+			Renderers[i]->InstancedAABBSizes[j] = -FEAABB(OriginalAABB, InstanceMatrix[j]).LongestAxisLength;
 			Renderers[i]->InstancedMatrices[j] = InstanceMatrix[j];
 			Renderers[i]->TransformedInstancedMatrices[j] = Transform.TransformMatrix * InstanceMatrix[j];
 
@@ -647,7 +647,7 @@ void FEEntityInstanced::ModifyInstance(const size_t InstanceIndex, glm::mat4 New
 
 		if (InstancedAABB.size() > InstanceIndex)
 			InstancedAABB[InstanceIndex] = FEAABB(Prefab->GetAABB(), NewMatrix);
-		Renderers[i]->InstancedAABBSizes[InstanceIndex] = -FEAABB(Prefab->GetAABB(), NewMatrix).Size;
+		Renderers[i]->InstancedAABBSizes[InstanceIndex] = -FEAABB(Prefab->GetAABB(), NewMatrix).LongestAxisLength;
 	}
 
 	SetDirtyFlag(true);

@@ -52,6 +52,9 @@ namespace FocalEngine
 									  _mm256_set_ps(other.min[0], other.min[1], other.min[2], other.min[2], min[0], min[1], min[2], min[2]), _CMP_GT_OS)) == 255;*/
 		}
 
+		FEAABB FEAABB::GetIntersectionAABB(FEAABB& Other);
+		float FEAABB::GetVolume();
+
 		inline bool FEAABB::AABBContain(FEAABB& Other)
 		{
 			if (Min[0] > Other.Min[0] || Max[0] < Other.Max[0]) return false;
@@ -66,15 +69,17 @@ namespace FocalEngine
 		FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix);
 		FEAABB FEAABB::Merge(FEAABB& Other);
 
-		float GetSize();
 		glm::vec3 FEAABB::GetCenter();
+		glm::vec3 FEAABB::GetSize();
 
+		float GetLongestAxisLength();
 		bool ContainsPoint(const glm::vec3& Point) const;
 	private:
 		glm::vec3 Min = glm::vec3(0.0f);
 		glm::vec3 Max = glm::vec3(0.0f);
 
-		float Size = 0.0f;
+		glm::vec3 Size = glm::vec3(0.0f);
+		float LongestAxisLength = 0.0f;
 	};
 
 	class FEGeometry

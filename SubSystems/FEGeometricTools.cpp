@@ -14,12 +14,8 @@ FEAABB::FEAABB(const glm::vec3 Min, const glm::vec3 Max)
 	this->Min = Min;
 	this->Max = Max;
 
-	Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > Size)
-		Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > Size)
-		Size = abs(Max.z - Min.z);
+	Size = this->Max - this->Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
 FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
@@ -53,12 +49,8 @@ FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
 			Max.z = VertexPositions[i].z;
 	}
 
-	Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > Size)
-		Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > Size)
-		Size = abs(Max.z - Min.z);
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
 FEAABB::FEAABB(std::vector<float>& VertexPositions)
@@ -92,12 +84,8 @@ FEAABB::FEAABB(std::vector<float>& VertexPositions)
 			Max.z = VertexPositions[i + 2];
 	}
 
-	Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > Size)
-		Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > Size)
-		Size = abs(Max.z - Min.z);
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
 FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
@@ -131,12 +119,8 @@ FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 			Max.z = VertexPositions[i + 2];
 	}
 
-	Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > Size)
-		Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > Size)
-		Size = abs(Max.z - Min.z);
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
 FEAABB::~FEAABB()
@@ -204,12 +188,8 @@ FEAABB::FEAABB(glm::vec3 Center, const float Size)
 	Max[1] = Center[1] + HalfSize;
 	Max[2] = Center[2] + HalfSize;
 
-	this->Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > this->Size)
-		this->Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > this->Size)
-		this->Size = abs(Max.z - Min.z);
+	this->Size = Max - Min;
+	LongestAxisLength = std::max({ this->Size.x, this->Size.y, this->Size.z });
 }
 
 FEAABB::FEAABB(FEAABB Other, glm::mat4 TransformMatrix)
@@ -272,12 +252,8 @@ FEAABB::FEAABB(FEAABB Other, glm::mat4 TransformMatrix)
 			Max.z = Point.z;
 	}
 
-	Size = abs(Max.x - Min.x);
-	if (abs(Max.y - Min.y) > Size)
-		Size = abs(Max.y - Min.y);
-
-	if (abs(Max.z - Min.z) > Size)
-		Size = abs(Max.z - Min.z);
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
 FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix)
@@ -342,54 +318,42 @@ FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix)
 			Result.Max.z = Point.z;
 	}
 
-	Result.Size = abs(Result.Max.x - Result.Min.x);
-	if (abs(Result.Max.y - Result.Min.y) > Result.Size)
-		Result.Size = abs(Result.Max.y - Result.Min.y);
-
-	if (abs(Result.Max.z - Result.Min.z) > Result.Size)
-		Result.Size = abs(Result.Max.z - Result.Min.z);
+	Result.Size = Result.Max - Result.Min;
+	Result.LongestAxisLength = std::max({ Result.Size.x, Result.Size.y, Result.Size.z });
 
 	return Result;
 }
 
 FEAABB FEAABB::Merge(FEAABB& Other)
 {
-	if (this->Size == 0)
+	if (this->LongestAxisLength == 0)
 		return Other;
 
-	FEAABB result;
+	FEAABB Result;
 
-	result.Min[0] = Min[0] < Other.Min[0] ? Min[0] : Other.Min[0];
-	result.Min[1] = Min[1] < Other.Min[1] ? Min[1] : Other.Min[1];
-	result.Min[2] = Min[2] < Other.Min[2] ? Min[2] : Other.Min[2];
+	Result.Min[0] = Min[0] < Other.Min[0] ? Min[0] : Other.Min[0];
+	Result.Min[1] = Min[1] < Other.Min[1] ? Min[1] : Other.Min[1];
+	Result.Min[2] = Min[2] < Other.Min[2] ? Min[2] : Other.Min[2];
 
-	result.Max[0] = Max[0] > Other.Max[0] ? Max[0] : Other.Max[0];
-	result.Max[1] = Max[1] > Other.Max[1] ? Max[1] : Other.Max[1];
-	result.Max[2] = Max[2] > Other.Max[2] ? Max[2] : Other.Max[2];
+	Result.Max[0] = Max[0] > Other.Max[0] ? Max[0] : Other.Max[0];
+	Result.Max[1] = Max[1] > Other.Max[1] ? Max[1] : Other.Max[1];
+	Result.Max[2] = Max[2] > Other.Max[2] ? Max[2] : Other.Max[2];
 
-	result.Size = abs(result.Max.x - result.Min.x);
-	if (abs(result.Max.y - result.Min.y) > result.Size)
-		result.Size = abs(result.Max.y - result.Min.y);
+	Result.Size = Result.Max - Result.Min;
+	Result.LongestAxisLength = std::max({ Result.Size.x, Result.Size.y, Result.Size.z });
 
-	if (abs(result.Max.z - result.Min.z) > result.Size)
-		result.Size = abs(result.Max.z - result.Min.z);
-
-	return result;
+	return Result;
 }
 
-float FEAABB::GetSize()
+float FEAABB::GetLongestAxisLength()
 {
-	if (Size == 0.0f)
-	{
-		Size = abs(Max.x - Min.x);
-		if (abs(Max.y - Min.y) > Size)
-			Size = abs(Max.y - Min.y);
+	if (Size == glm::vec3(0.0f))
+		Size = Max - Min;
 
-		if (abs(Max.z - Min.z) > Size)
-			Size = abs(Max.z - Min.z);
-	}
+	if (LongestAxisLength == 0.0f)
+		LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 
-	return Size;
+	return LongestAxisLength;
 }
 
 glm::vec3 FEAABB::GetCenter()
@@ -397,11 +361,34 @@ glm::vec3 FEAABB::GetCenter()
 	return Min + abs(Min - Max) / 2.0f;
 }
 
+glm::vec3 FEAABB::GetSize()
+{
+	return Size;
+}
+
 bool FEAABB::ContainsPoint(const glm::vec3& Point) const
 {
 	return (Point.x >= Min.x && Point.x <= Max.x) &&
 		   (Point.y >= Min.y && Point.y <= Max.y) &&
 		   (Point.z >= Min.z && Point.z <= Max.z);
+}
+
+FEAABB FEAABB::GetIntersectionAABB(FEAABB& Other)
+{
+	if (!this->AABBIntersect(Other))
+	{
+		return FEAABB(glm::vec3(0.0f), glm::vec3(0.0f));
+	}
+
+	glm::vec3 IntersectionMin = glm::max(Min, Other.Min);
+	glm::vec3 IntersectionMax = glm::min(Max, Other.Max);
+
+	return FEAABB(IntersectionMin, IntersectionMax);
+}
+
+float FEAABB::GetVolume()
+{
+	return Size.x * Size.y * Size.z;
 }
 
 bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint)
