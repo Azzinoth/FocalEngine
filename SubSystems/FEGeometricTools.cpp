@@ -176,6 +176,57 @@ bool FEAABB::RayIntersect(const glm::vec3 RayOrigin, const glm::vec3 RayDirectio
 	return true;
 }
 
+bool FEAABB::RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDirection, std::vector<glm::dvec3>& HitPoints)
+{
+	double tmin = (Min.x - RayOrigin.x) / RayDirection.x;
+	double tmax = (Max.x - RayOrigin.x) / RayDirection.x;
+
+	if (tmin > tmax) std::swap(tmin, tmax);
+
+	double tymin = (Min.y - RayOrigin.y) / RayDirection.y;
+	double tymax = (Max.y - RayOrigin.y) / RayDirection.y;
+
+	if (tymin > tymax) std::swap(tymin, tymax);
+
+	if ((tmin > tymax) || (tymin > tmax))
+		return false;
+
+	if (tymin > tmin)
+		tmin = tymin;
+
+	if (tymax < tmax)
+		tmax = tymax;
+
+	double tzmin = (Min.z - RayOrigin.z) / RayDirection.z;
+	double tzmax = (Max.z - RayOrigin.z) / RayDirection.z;
+
+	if (tzmin > tzmax) std::swap(tzmin, tzmax);
+
+	if ((tmin > tzmax) || (tzmin > tmax))
+		return false;
+
+	if (tzmin > tmin)
+		tmin = tzmin;
+
+	if (tzmax < tmax)
+		tmax = tzmax;
+
+	// If tmax < 0, the object is behind the ray, so we do not consider these cases as hits.
+	if (tmax < 0.0)
+		return false;
+
+	// Clear previous hit points
+	HitPoints.clear();
+
+	// If tmin < 0, the origin is inside the AABB, so we only consider the exit point.
+	if (tmin >= 0.0)
+		HitPoints.push_back(RayOrigin + tmin * RayDirection);
+
+	HitPoints.push_back(RayOrigin + tmax * RayDirection);
+
+	return true;
+}
+
 // only for uniform sized AABB
 FEAABB::FEAABB(glm::vec3 Center, const float Size)
 {
@@ -450,6 +501,64 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDir
 	return false; // No valid intersection was found
 }
 
+bool FEGeometry::IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, std::vector<glm::dvec3>& TriangleVertices, double& Distance, glm::dvec3* HitPoint)
+{
+	// Ensure the triangle is defined by exactly three vertices
+	if (TriangleVertices.size() != 3)
+		return false;
+
+	// Decompose RayDirection and triangle edges into components
+	const double a = RayDirection[0];
+	const double b = TriangleVertices[0][0] - TriangleVertices[1][0];
+	const double c = TriangleVertices[0][0] - TriangleVertices[2][0];
+
+	const double d = RayDirection[1];
+	const double e = TriangleVertices[0][1] - TriangleVertices[1][1];
+	const double f = TriangleVertices[0][1] - TriangleVertices[2][1];
+
+	const double g = RayDirection[2];
+	const double h = TriangleVertices[0][2] - TriangleVertices[1][2];
+	const double j = TriangleVertices[0][2] - TriangleVertices[2][2];
+
+	// Calculate vectors from RayOrigin to the first vertex of the triangle
+	const double k = TriangleVertices[0][0] - RayOrigin[0];
+	const double l = TriangleVertices[0][1] - RayOrigin[1];
+	const double m = TriangleVertices[0][2] - RayOrigin[2];
+
+	const glm::dmat3 temp0 = glm::dmat3(a, b, c, d, e, f, g, h, j);
+	const double determinant0 = glm::determinant(temp0);
+
+	const glm::dmat3 temp1 = glm::dmat3(k, b, c, l, e, f, m, h, j);
+	const double determinant1 = glm::determinant(temp1);
+
+	// Calculate t from the first determinant and check if intersection is in the correct direction
+	const double t = determinant1 / determinant0;
+
+	const glm::dmat3 temp2 = glm::dmat3(a, k, c, d, l, f, g, m, j);
+	const double determinant2 = glm::determinant(temp2);
+	const double u = determinant2 / determinant0;
+
+	const double determinant3 = glm::determinant(glm::dmat3(a, b, k, d, e, l, g, h, m));
+	const double v = determinant3 / determinant0;
+
+	// Check if the intersection point lies within the triangle using barycentric coordinates
+	if (t >= 0.00001 &&
+		u >= 0.00001 && v >= 0.00001 &&
+		u <= 1 && v <= 1 &&
+		u + v >= 0.00001 &&
+		u + v <= 1 && t > 0.00001)
+	{
+		// Calculate the exact intersection point if required
+		if (HitPoint != nullptr)
+			*HitPoint = TriangleVertices[0] + u * (TriangleVertices[1] - TriangleVertices[0]) + v * (TriangleVertices[2] - TriangleVertices[0]);
+
+		Distance = t; // Set the distance to the intersection point
+		return true; // Intersection detected
+	}
+
+	return false; // No valid intersection was found
+}
+
 float FEGeometry::CalculateTriangleArea(std::vector<glm::vec3>& TriangleVertices)
 {
 	return CalculateTriangleArea(TriangleVertices[0], TriangleVertices[1], TriangleVertices[2]);
@@ -506,6 +615,49 @@ bool FEGeometry::IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& T
 		AABB.ContainsPoint(TriangleVertices[2]))
 		return true;
 
+	// We will define 6 rays that represent 3 sides of triangle, for each side we will define 2 rays.
+	std::vector<std::pair<glm::dvec3, glm::dvec3>> TriangleSidesRays = {
+		// Edge 1: Vertex 0 to Vertex 1 and Vertex 1 to Vertex 0
+		{TriangleVertices[0], TriangleVertices[1] - TriangleVertices[0]},
+		{TriangleVertices[1], TriangleVertices[0] - TriangleVertices[1]},
+		// Edge 2: Vertex 1 to Vertex 2 and Vertex 2 to Vertex 1
+		{TriangleVertices[1], TriangleVertices[2] - TriangleVertices[1]},
+		{TriangleVertices[2], TriangleVertices[1] - TriangleVertices[2]},
+		// Edge 3: Vertex 2 to Vertex 0 and Vertex 0 to Vertex 2
+		{TriangleVertices[2], TriangleVertices[0] - TriangleVertices[2]},
+		{TriangleVertices[0], TriangleVertices[2] - TriangleVertices[0]},
+	};
+
+	for (int i = 0; i < TriangleSidesRays.size(); i += 2)
+	{
+		glm::dvec3 Origin = TriangleSidesRays[i].first;
+		glm::dvec3 Direction = glm::normalize(TriangleSidesRays[i].second);
+
+		std::vector<glm::dvec3> LocalResult;
+
+		// If a ray originating from an edge of the AABB intersects with the triangle...
+		if (AABB.RayIntersect(Origin, Direction, LocalResult))
+		{
+			for (auto HitPoint : LocalResult)
+				if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+					return true;
+		}
+		else
+		{
+			Origin = TriangleSidesRays[i + 1].first;
+			Direction = glm::normalize(TriangleSidesRays[i + 1].second);
+
+			std::vector<glm::dvec3> LocalResult;
+
+			if (AABB.RayIntersect(Origin, Direction, LocalResult))
+			{
+				for (auto HitPoint : LocalResult)
+					if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+						return true;
+			}
+		}
+	}
+
 	// Calculate the 8 corners of the AABB to use them for generating rays.
 	std::vector<glm::vec3> Corners;
 	// Bottom face corners
@@ -559,4 +711,164 @@ bool FEGeometry::IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& T
 
 	// If none of the edges intersect with the triangle, there is no intersection.
 	return false;
+}
+
+std::vector<glm::dvec3> FEGeometry::GetIntersectionPoints(FEAABB& AABB, std::vector<glm::dvec3> TriangleVertices)
+{
+	std::vector<glm::dvec3> Result;
+
+	if (TriangleVertices.size() != 3)
+		return Result;
+
+	// We will define 6 rays that represent 3 sides of triangle, for each side we will define 2 rays.
+	std::vector<std::pair<glm::dvec3, glm::dvec3>> TriangleSidesRays = {
+		// Edge 1: Vertex 0 to Vertex 1 and Vertex 1 to Vertex 0
+		{TriangleVertices[0], TriangleVertices[1] - TriangleVertices[0]},
+		{TriangleVertices[1], TriangleVertices[0] - TriangleVertices[1]},
+		// Edge 2: Vertex 1 to Vertex 2 and Vertex 2 to Vertex 1
+		{TriangleVertices[1], TriangleVertices[2] - TriangleVertices[1]},
+		{TriangleVertices[2], TriangleVertices[1] - TriangleVertices[2]},
+		// Edge 3: Vertex 2 to Vertex 0 and Vertex 0 to Vertex 2
+		{TriangleVertices[2], TriangleVertices[0] - TriangleVertices[2]},
+		{TriangleVertices[0], TriangleVertices[2] - TriangleVertices[0]},
+	};
+
+	for (int i=0; i < TriangleSidesRays.size(); i+=2)
+	{
+		glm::dvec3 Origin = TriangleSidesRays[i].first;
+		glm::dvec3 Direction = glm::normalize(TriangleSidesRays[i].second);
+
+		//float Distance = 0.0f;
+		std::vector<glm::dvec3> LocalResult;
+
+		// If a ray originating from an edge of the AABB intersects with the triangle...
+		if (AABB.RayIntersect(Origin, Direction, LocalResult))
+		{
+			for (auto HitPoint : LocalResult)
+				if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+					Result.push_back(HitPoint);
+
+			if (LocalResult.size() > 0)
+				continue;
+		}
+		else
+		{
+			Origin = TriangleSidesRays[i + 1].first;
+			Direction = glm::normalize(TriangleSidesRays[i + 1].second);
+
+			std::vector<glm::dvec3> LocalResult;
+
+			if (AABB.RayIntersect(Origin, Direction, LocalResult))
+			{
+				for (auto HitPoint : LocalResult)
+					if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+						Result.push_back(HitPoint);
+			}
+		}
+	}
+
+	// Clear duplicates
+	for (size_t i = 0; i < Result.size(); i++)
+	{
+		int PointsThatAreNotSame = 0;
+		for (size_t j = 0; j < Result.size(); j++)
+		{
+			if (i == j)
+				continue;
+
+			if (abs(Result[i] - Result[j]).x > glm::dvec3(DBL_EPSILON).x ||
+				abs(Result[i] - Result[j]).y > glm::dvec3(DBL_EPSILON).y ||
+				abs(Result[i] - Result[j]).z > glm::dvec3(DBL_EPSILON).z)
+			{
+				PointsThatAreNotSame++;
+			}
+		}
+
+		if (PointsThatAreNotSame != Result.size() - 1)
+		{
+			Result.erase(Result.begin() + i);
+			i--;
+			break;
+		}
+	}
+
+	// Calculate the 8 corners of the AABB to use them for generating rays.
+	std::vector<glm::dvec3> Corners;
+	// Bottom face corners
+	Corners.push_back(AABB.GetMin());
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMin().y, AABB.GetMax().z));
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMax().y, AABB.GetMin().z));
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMax().y, AABB.GetMax().z));
+	// Top face corners
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMin().y, AABB.GetMin().z));
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMin().y, AABB.GetMax().z));
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMax().y, AABB.GetMin().z));
+	Corners.push_back(AABB.GetMax());
+
+	// Define the rays along the edges of the AABB.
+	std::vector<std::pair<glm::dvec3, glm::dvec3>> EdgesRays = {
+		// Bottom face edges
+		{Corners[0], Corners[1] - Corners[0]},
+		{Corners[1], Corners[3] - Corners[1]},
+		{Corners[3], Corners[2] - Corners[3]},
+		{Corners[2], Corners[0] - Corners[2]},
+		// Top face edges
+		{Corners[4], Corners[5] - Corners[4]},
+		{Corners[5], Corners[7] - Corners[5]},
+		{Corners[7], Corners[6] - Corners[7]},
+		{Corners[6], Corners[4] - Corners[6]},
+		// Vertical edges
+		{Corners[0], Corners[4] - Corners[0]},
+		{Corners[1], Corners[5] - Corners[1]},
+		{Corners[3], Corners[7] - Corners[3]},
+		{Corners[2], Corners[6] - Corners[2]}
+	};
+
+	// Test each edge of the AABB as a ray to check for intersections with the triangle.
+	for (const auto& Ray : EdgesRays)
+	{
+		glm::dvec3 Origin = Ray.first;
+		glm::dvec3 Direction = Ray.second;
+
+		double Distance;
+		glm::dvec3 HitPoint;
+
+		// If a ray originating from an edge of the AABB intersects with the triangle...
+		if (IsRayIntersectingTriangle(Origin, Direction, TriangleVertices, Distance, &HitPoint))
+		{
+			// ...and the intersection point is within the edge's span (i.e., the edge 'hits' the triangle),
+			// conclude that the AABB and triangle intersect.
+			if (glm::length(HitPoint - Origin) <= glm::length(Direction))
+			{
+				Result.push_back(HitPoint);
+			}
+		}
+	}
+
+	// Clear duplicates
+	for (size_t i = 0; i < Result.size(); i++)
+	{
+		int PointsThatAreNotSame = 0;
+		for (size_t j = 0; j < Result.size(); j++)
+		{
+			if (i == j)
+				continue;
+
+			if (abs(Result[i] - Result[j]).x > glm::dvec3(DBL_EPSILON).x ||
+				abs(Result[i] - Result[j]).y > glm::dvec3(DBL_EPSILON).y ||
+				abs(Result[i] - Result[j]).z > glm::dvec3(DBL_EPSILON).z)
+			{
+				PointsThatAreNotSame++;
+			}
+		}
+
+		if (PointsThatAreNotSame != Result.size() - 1)
+		{
+			Result.erase(Result.begin() + i);
+			i--;
+			break;
+		}
+	}
+
+	return Result;
 }

@@ -30,6 +30,7 @@ namespace FocalEngine
 		glm::vec3 GetMax();
 
 		bool RayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& Distance);
+		bool RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDirection, std::vector<glm::dvec3>& HitPoints);
 		inline bool FEAABB::AABBIntersect(FEAABB Other)
 		{
 			if (Max[0] < Other.Min[0] || Min[0] > Other.Max[0]) return false;
@@ -88,6 +89,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEGeometry)
 
 		bool IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint = nullptr);
+		bool IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, std::vector<glm::dvec3>& TriangleVertices, double& Distance, glm::dvec3* HitPoint = nullptr);
 
 		float CalculateTriangleArea(std::vector<glm::vec3>& TriangleVertices);
 		double CalculateTriangleArea(std::vector<glm::dvec3>& TriangleVertices);
@@ -95,6 +97,7 @@ namespace FocalEngine
 		double CalculateTriangleArea(glm::dvec3 PointA, glm::dvec3 PointB, glm::dvec3 PointC);
 
 		bool IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& TriangleVertices);
+		std::vector<glm::dvec3> GetIntersectionPoints(FEAABB& AABB, std::vector<glm::dvec3> TriangleVertices);
 	private:
 		SINGLETON_PRIVATE_PART(FEGeometry)
 	};
