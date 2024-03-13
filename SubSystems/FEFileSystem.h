@@ -33,7 +33,7 @@ namespace FocalEngine
 		void ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
 		void ShowFolderOpenDialog(std::string& Path);
 
-		void ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
+		void ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1, int* ChosenFilterIndex = nullptr);
 		std::string GetApplicationPath();
 #endif
 		std::string ReadFEString(std::fstream& File);

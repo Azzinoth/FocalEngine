@@ -134,7 +134,7 @@ void FEFileSystem::ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC
 	}
 }
 
-void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount)
+void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount, int* ChosenFilterIndex)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
@@ -167,6 +167,14 @@ void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC
 					}
 					PItem->Release();
 				}
+
+				// Retrieve the index of the selected filter
+				unsigned int TempChosenFilterIndex;
+				hr = PFileSave->GetFileTypeIndex(&TempChosenFilterIndex);
+				*ChosenFilterIndex = TempChosenFilterIndex - 1;
+
+				if (FAILED(hr))
+					*ChosenFilterIndex = -1;
 			}
 			PFileSave->Release();
 		}
