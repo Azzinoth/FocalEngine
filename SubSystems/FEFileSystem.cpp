@@ -228,10 +228,6 @@ void FEFileSystem::ShowFolderOpenDialog(std::string& Path)
 
 std::string FEFileSystem::GetFileExtension(const char* Path)
 {
-	// Should I use _splitpath_s ?
-	if (!CheckFile(Path))
-		return "";
-
 	const LPSTR extension = PathFindExtensionA(Path);
 	return std::string(extension);
 }
