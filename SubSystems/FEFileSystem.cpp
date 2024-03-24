@@ -169,12 +169,15 @@ void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC
 				}
 
 				// Retrieve the index of the selected filter
-				unsigned int TempChosenFilterIndex;
-				hr = PFileSave->GetFileTypeIndex(&TempChosenFilterIndex);
-				*ChosenFilterIndex = TempChosenFilterIndex - 1;
+				if (ChosenFilterIndex != nullptr)
+				{
+					unsigned int TempChosenFilterIndex;
+					hr = PFileSave->GetFileTypeIndex(&TempChosenFilterIndex);
+					*ChosenFilterIndex = TempChosenFilterIndex - 1;
 
-				if (FAILED(hr))
-					*ChosenFilterIndex = -1;
+					if (FAILED(hr))
+						*ChosenFilterIndex = -1;
+				}
 			}
 			PFileSave->Release();
 		}
