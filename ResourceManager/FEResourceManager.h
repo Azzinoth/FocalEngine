@@ -68,6 +68,7 @@ namespace FocalEngine
 							  float* Normals, int NormSize,
 							  float* Tangents, int TanSize,
 							  int* Indices, int IndexSize,
+							  float* Colors = nullptr, int ColorSize = 0,
 							  float* MatIndexs = nullptr, int MatIndexsSize = 0, int MatCount = 0,
 							  std::string Name = "");
 
@@ -81,6 +82,7 @@ namespace FocalEngine
 		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
 		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
 		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
+		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
 
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 

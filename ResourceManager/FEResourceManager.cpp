@@ -684,7 +684,7 @@ FETexture* FEResourceManager::LoadFETextureUnmanaged(const char* FileName, const
 
 FEMesh* FEResourceManager::RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name)
 {
-	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()), UV.data(), static_cast<int>(UV.size()), Normals.data(), static_cast<int>(Normals.size()), Tangents.data(), static_cast<int>(Tangents.size()), Index.data(), static_cast<int>(Index.size()), nullptr, 0, 0, Name);
+	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()), UV.data(), static_cast<int>(UV.size()), Normals.data(), static_cast<int>(Normals.size()), Tangents.data(), static_cast<int>(Tangents.size()), Index.data(), static_cast<int>(Index.size()), nullptr, 0, nullptr, 0, 0, Name);
 }
 
 FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
@@ -692,7 +692,8 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 										 float* Normals, const int NormSize,
 										 float* Tangents, const int TanSize,
 										 int* Indices, const int IndexSize,
-										 float* MatIndexs, const int MatIndexsSize, const int MatCount,
+										 float* Colors, int ColorSize,
+										 float* MatIndexs, const int MatIndexsSize, const int MatCount, 
 										 const std::string Name)
 {
 	int VertexType = FE_POSITION | FE_INDEX;
@@ -714,6 +715,18 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * PosSize, Positions, GL_STATIC_DRAW));
 	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	GLuint ColorsBufferID = 0;
+	if (Colors != nullptr)
+	{
+		VertexType |= FE_COLOR;
+		// colors
+		FE_GL_ERROR(glGenBuffers(1, &ColorsBufferID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, ColorsBufferID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ColorSize, Colors, GL_STATIC_DRAW));
+		FE_GL_ERROR(glVertexAttribPointer(1/*FE_COLOR*/, 3, GL_FLOAT, false, 0, 0));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	}
 
 	GLuint NormalsBufferID = 0;
 	if (Normals != nullptr)
@@ -774,6 +787,9 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 
 	NewMesh->PositionsCount = PosSize;
 	NewMesh->PositionsBufferID = PositionsBufferID;
+
+	NewMesh->ColorCount = ColorSize;
+	NewMesh->ColorBufferID = ColorsBufferID;
 
 	NewMesh->NormalsCount = NormSize;
 	NewMesh->NormalsBufferID = NormalsBufferID;
@@ -937,6 +953,7 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 									   OBJLoader.LoadedObjects[i]->FNorC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FNorC.size()),
 									   OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
 								       OBJLoader.LoadedObjects[i]->FInd.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FInd.size()),
+									   nullptr, 0,
 									   OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
 	
 	
@@ -1059,6 +1076,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 									(float*)NormBuffer, NormCout,
 									(float*)TangBuffer, TangCout,
 									(int*)IndexBuffer, IndexCout,
+									nullptr, 0,
 									(float*)MatIndexBuffer, MatIndexCout, MatCount,
 									Name);
 
@@ -2806,14 +2824,62 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		TextureToExport->InternalFormat != GL_RED &&
 		TextureToExport->InternalFormat != GL_R16 &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
-		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
+		TextureToExport->InternalFormat != GL_RGBA16F)
 	{
 		LOG.Add("FEResourceManager::exportFETextureToPNG internalFormat of textureToExport is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
 	std::vector<unsigned char> RawData;
-	if (TextureToExport->InternalFormat == GL_RED)
+
+	if (TextureToExport->InternalFormat == GL_RGBA16F)
+	{
+		auto HalfFloatToFloat = [](unsigned short HalfFloat) -> float {
+			int Sign = (HalfFloat >> 15) & 0x00000001;
+			int Exponent = (HalfFloat >> 10) & 0x0000001F;
+			int Mantissa = HalfFloat & 0x000003FF;
+
+			Exponent = Exponent + (127 - 15);
+			int FloatValue = (Sign << 31) | (Exponent << 23) | (Mantissa << 13);
+
+			return *reinterpret_cast<float*>(&FloatValue);
+		};
+
+		const unsigned char* TextureData = TextureToExport->GetRawData();
+		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
+
+		size_t RawDataIndex = 0;
+		for (size_t i = 0; i < RawData.size() * sizeof(unsigned short); i+=2)
+		{
+			// Combine two bytes into one 16-bit half float.
+			unsigned short Half = (TextureData[i + 1] << 8) | TextureData[i];
+			float Value = HalfFloatToFloat(Half);
+
+			// Clamp and scale the floating-point value to a byte.
+			unsigned char ByteValue = static_cast<unsigned char>(std::max(0.0f, std::min(1.0f, Value)) * 255.0f);
+			RawData[RawDataIndex++] = ByteValue;
+		}
+
+		// Flip image vertically
+		const size_t RowBytes = TextureToExport->GetWidth() * 4;
+		unsigned char* RowBuffer = new unsigned char[RowBytes];
+
+		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
+		{
+			// Copy the top row to a buffer
+			std::memcpy(RowBuffer, RawData.data() + y * RowBytes, RowBytes);
+
+			// Copy the bottom row to the top
+			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBytes);
+
+			// Copy the buffer contents (original top row) to the bottom
+			std::memcpy(RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
+		}
+
+		delete[] RowBuffer;
+	}
+	else if (TextureToExport->InternalFormat == GL_RED)
 	{
 		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
 		const unsigned char* TextreData = TextureToExport->GetRawData();
@@ -3898,4 +3964,24 @@ void FEResourceManager::LoadStandardPrefabs()
 	FEPrefab* NewPrefab = new FEPrefab(GetGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
 	NewPrefab->SetID("4575527C773848040760656F");
 	MakePrefabStandard(NewPrefab);
+}
+
+void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize)
+{
+	if (Mesh == nullptr)
+		return;
+
+	if (Colors == nullptr || ColorSize <= 0)
+		return;
+
+	FE_GL_ERROR(glBindVertexArray(Mesh->VaoID));
+
+	Mesh->ColorCount = ColorSize;
+	Mesh->ColorBufferID = 0;
+	Mesh->VertexAttributes |= FE_COLOR;
+	FE_GL_ERROR(glGenBuffers(1, &Mesh->ColorBufferID));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, Mesh->ColorBufferID));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * Mesh->ColorCount, Colors, GL_STATIC_DRAW));
+	FE_GL_ERROR(glVertexAttribPointer(1/*FE_COLOR*/, 3, GL_FLOAT, false, 0, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }

@@ -134,7 +134,7 @@ void FEFileSystem::ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC
 	}
 }
 
-void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount)
+void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount, int* ChosenFilterIndex)
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
 	if (SUCCEEDED(hr))
@@ -166,6 +166,17 @@ void FEFileSystem::ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC
 						CoTaskMemFree(PszFilePath);
 					}
 					PItem->Release();
+				}
+
+				// Retrieve the index of the selected filter
+				if (ChosenFilterIndex != nullptr)
+				{
+					unsigned int TempChosenFilterIndex;
+					hr = PFileSave->GetFileTypeIndex(&TempChosenFilterIndex);
+					*ChosenFilterIndex = TempChosenFilterIndex - 1;
+
+					if (FAILED(hr))
+						*ChosenFilterIndex = -1;
 				}
 			}
 			PFileSave->Release();
@@ -220,10 +231,6 @@ void FEFileSystem::ShowFolderOpenDialog(std::string& Path)
 
 std::string FEFileSystem::GetFileExtension(const char* Path)
 {
-	// Should I use _splitpath_s ?
-	if (!CheckFile(Path))
-		return "";
-
 	const LPSTR extension = PathFindExtensionA(Path);
 	return std::string(extension);
 }
@@ -251,4 +258,21 @@ char* FEFileSystem::GetFileName(const char* FullPath)
 	_splitpath_s(FullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
 
 	return result;
+}
+
+std::string FEFileSystem::ReadFEString(std::fstream& File)
+{
+	char* Buffer = new char[4];
+
+	File.read(Buffer, 4);
+	const int TempCharSize = *(int*)Buffer;
+	char* TempChar = new char[TempCharSize + 1];
+	File.read(TempChar, TempCharSize);
+	TempChar[TempCharSize] = '\0';
+
+	std::string Result = TempChar;
+	delete[] TempChar;
+	delete[] Buffer;
+
+	return Result;
 }

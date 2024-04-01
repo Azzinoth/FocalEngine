@@ -45,6 +45,16 @@ GLuint FEMesh::GetPositionsCount() const
 	return PositionsCount;
 }
 
+GLuint FEMesh::GetColorBufferID() const
+{
+	return ColorBufferID;
+}
+
+GLuint FEMesh::GetColorCount() const
+{
+	return ColorCount;
+}
+
 GLuint FEMesh::GetNormalsBufferID() const
 {
 	return NormalsBufferID;
