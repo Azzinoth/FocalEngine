@@ -96,6 +96,7 @@ void FEOpenXRCore::Init(std::string VRAppName)
 	if (!VRAppName.empty())
 	 this->VRAppName = VRAppName;
 
+	bInitializedCorrectly = true;
 	CreateInstance();
 	InitializeSystem();
 	InitializeSession();

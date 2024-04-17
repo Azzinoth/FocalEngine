@@ -188,6 +188,9 @@ namespace FocalEngine
 
 		void AddAfterRenderCallback(std::function<void()> Callback);
 		FEFramebuffer* GetLastRenderedResult();
+
+		bool IsClearActiveInSimplifiedRendering();
+		void SetClearActiveInSimplifiedRendering(bool NewValue);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -259,7 +262,7 @@ namespace FocalEngine
 
 		// *********** VR Rendering ***********
 
-		
+		bool bClearActiveInSimplifiedRendering = true;
 
 		// *********** VR Rendering END ***********
 

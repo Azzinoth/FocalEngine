@@ -549,7 +549,8 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 	SceneToTextureFB->Bind();
 	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	if (bClearActiveInSimplifiedRendering)
+		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	auto EntityIterator = scene.EntityMap.begin();
 	while (EntityIterator != scene.EntityMap.end())
@@ -2220,6 +2221,16 @@ void FERenderer::AddAfterRenderCallback(std::function<void()> Callback)
 	}
 
 	AfterRenderCallbacks.push_back(Callback);
+}
+
+bool FERenderer::IsClearActiveInSimplifiedRendering()
+{
+	return bClearActiveInSimplifiedRendering;
+}
+
+void FERenderer::SetClearActiveInSimplifiedRendering(bool NewValue)
+{
+	bClearActiveInSimplifiedRendering = NewValue;
 }
 
 FEFramebuffer* FERenderer::GetLastRenderedResult()
