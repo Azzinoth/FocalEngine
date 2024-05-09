@@ -39,10 +39,12 @@ namespace FocalEngine
 		std::vector<glm::vec3> RawNormalCoordinates;
 		std::vector<int> RawIndices;
 
+		// final vertex coordinates with double precision
+		std::vector<double> DVerC;
 		// final vertex coordinates
 		std::vector<float> FVerC;
 		// final colors
-		std::vector<float> fColorsC;
+		std::vector<float> FColorsC;
 		// final texture coordinates
 		std::vector<float> FTexC;
 		// final normal coordinates

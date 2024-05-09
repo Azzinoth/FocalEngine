@@ -18,6 +18,15 @@ FEAABB::FEAABB(const glm::vec3 Min, const glm::vec3 Max)
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
+FEAABB::FEAABB(glm::dvec3 Min, glm::dvec3 Max)
+{
+	this->Min = Min;
+	this->Max = Max;
+
+	Size = this->Max - this->Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
+}
+
 FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
 {
 	Min.x = VertexPositions[0].x;
@@ -47,6 +56,41 @@ FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
 
 		if (Max.z < VertexPositions[i].z)
 			Max.z = VertexPositions[i].z;
+	}
+
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
+}
+
+FEAABB::FEAABB(std::vector<glm::dvec3>& VertexPositions)
+{
+	Min.x = static_cast<float>(VertexPositions[0].x);
+	Min.y = static_cast<float>(VertexPositions[0].y);
+	Min.z = static_cast<float>(VertexPositions[0].z);
+
+	Max.x = static_cast<float>(VertexPositions[0].x);
+	Max.y = static_cast<float>(VertexPositions[0].y);
+	Max.z = static_cast<float>(VertexPositions[0].z);
+
+	for (size_t i = 1; i < VertexPositions.size(); i++)
+	{
+		if (Min.x > static_cast<float>(VertexPositions[i].x))
+			Min.x = static_cast<float>(VertexPositions[i].x);
+
+		if (Min.y > static_cast<float>(VertexPositions[i].y))
+			Min.y = static_cast<float>(VertexPositions[i].y);
+
+		if (Min.z > static_cast<float>(VertexPositions[i].z))
+			Min.z = static_cast<float>(VertexPositions[i].z);
+
+		if (Max.x < static_cast<float>(VertexPositions[i].x))
+			Max.x = static_cast<float>(VertexPositions[i].x);
+
+		if (Max.y < static_cast<float>(VertexPositions[i].y))
+			Max.y = static_cast<float>(VertexPositions[i].y);
+
+		if (Max.z < static_cast<float>(VertexPositions[i].z))
+			Max.z = static_cast<float>(VertexPositions[i].z);
 	}
 
 	Size = Max - Min;
@@ -88,6 +132,41 @@ FEAABB::FEAABB(std::vector<float>& VertexPositions)
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
+FEAABB::FEAABB(std::vector<double>& VertexPositions)
+{
+	Min.x = static_cast<float>(VertexPositions[0]);
+	Min.y = static_cast<float>(VertexPositions[1]);
+	Min.z = static_cast<float>(VertexPositions[2]);
+
+	Max.x = static_cast<float>(VertexPositions[0]);
+	Max.y = static_cast<float>(VertexPositions[1]);
+	Max.z = static_cast<float>(VertexPositions[2]);
+
+	for (size_t i = 3; i < VertexPositions.size(); i += 3)
+	{
+		if (Min.x > static_cast<float>(VertexPositions[i]))
+			Min.x = static_cast<float>(VertexPositions[i]);
+
+		if (Min.y > static_cast<float>(VertexPositions[i + 1]))
+			Min.y = static_cast<float>(VertexPositions[i + 1]);
+
+		if (Min.z > static_cast<float>(VertexPositions[i + 2]))
+			Min.z = static_cast<float>(VertexPositions[i + 2]);
+
+		if (Max.x < static_cast<float>(VertexPositions[i]))
+			Max.x = static_cast<float>(VertexPositions[i]);
+
+		if (Max.y < static_cast<float>(VertexPositions[i + 1]))
+			Max.y = static_cast<float>(VertexPositions[i + 1]);
+
+		if (Max.z < static_cast<float>(VertexPositions[i + 2]))
+			Max.z = static_cast<float>(VertexPositions[i + 2]);
+	}
+
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
+}
+
 FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 {
 	Min.x = VertexPositions[0];
@@ -117,6 +196,41 @@ FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 
 		if (Max.z < VertexPositions[i + 2])
 			Max.z = VertexPositions[i + 2];
+	}
+
+	Size = Max - Min;
+	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
+}
+
+FEAABB::FEAABB(double* VertexPositions, const int VertexCount)
+{
+	Min.x = static_cast<float>(VertexPositions[0]);
+	Min.y = static_cast<float>(VertexPositions[1]);
+	Min.z = static_cast<float>(VertexPositions[2]);
+
+	Max.x = static_cast<float>(VertexPositions[0]);
+	Max.y = static_cast<float>(VertexPositions[1]);
+	Max.z = static_cast<float>(VertexPositions[2]);
+
+	for (size_t i = 3; i < static_cast<size_t>(VertexCount); i += 3)
+	{
+		if (Min.x > static_cast<float>(VertexPositions[i]))
+			Min.x = static_cast<float>(VertexPositions[i]);
+
+		if (Min.y > static_cast<float>(VertexPositions[i + 1]))
+			Min.y = static_cast<float>(VertexPositions[i + 1]);
+
+		if (Min.z > static_cast<float>(VertexPositions[i + 2]))
+			Min.z = static_cast<float>(VertexPositions[i + 2]);
+
+		if (Max.x < static_cast<float>(VertexPositions[i]))
+			Max.x = static_cast<float>(VertexPositions[i]);
+
+		if (Max.y < static_cast<float>(VertexPositions[i + 1]))
+			Max.y = static_cast<float>(VertexPositions[i + 1]);
+
+		if (Max.z < static_cast<float>(VertexPositions[i + 2]))
+			Max.z = static_cast<float>(VertexPositions[i + 2]);
 	}
 
 	Size = Max - Min;
@@ -698,6 +812,112 @@ bool FEGeometry::IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& T
 
 		float Distance;
 		glm::vec3 HitPoint;
+
+		// If a ray originating from an edge of the AABB intersects with the triangle...
+		if (IsRayIntersectingTriangle(Origin, Direction, TriangleVertices, Distance, &HitPoint))
+		{
+			// ...and the intersection point is within the edge's span (i.e., the edge 'hits' the triangle),
+			// conclude that the AABB and triangle intersect.
+			if (glm::length(HitPoint - Origin) <= glm::length(Direction))
+				return true;
+		}
+	}
+
+	// If none of the edges intersect with the triangle, there is no intersection.
+	return false;
+}
+
+bool FEGeometry::IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::dvec3>& TriangleVertices)
+{
+	// Check if any of the triangle's vertices are inside the AABB, providing an early exit if true.
+	if (AABB.ContainsPoint(TriangleVertices[0]) ||
+		AABB.ContainsPoint(TriangleVertices[1]) ||
+		AABB.ContainsPoint(TriangleVertices[2]))
+		return true;
+
+	// We will define 6 rays that represent 3 sides of triangle, for each side we will define 2 rays.
+	std::vector<std::pair<glm::dvec3, glm::dvec3>> TriangleSidesRays = {
+		// Edge 1: Vertex 0 to Vertex 1 and Vertex 1 to Vertex 0
+		{TriangleVertices[0], TriangleVertices[1] - TriangleVertices[0]},
+		{TriangleVertices[1], TriangleVertices[0] - TriangleVertices[1]},
+		// Edge 2: Vertex 1 to Vertex 2 and Vertex 2 to Vertex 1
+		{TriangleVertices[1], TriangleVertices[2] - TriangleVertices[1]},
+		{TriangleVertices[2], TriangleVertices[1] - TriangleVertices[2]},
+		// Edge 3: Vertex 2 to Vertex 0 and Vertex 0 to Vertex 2
+		{TriangleVertices[2], TriangleVertices[0] - TriangleVertices[2]},
+		{TriangleVertices[0], TriangleVertices[2] - TriangleVertices[0]},
+	};
+
+	for (int i = 0; i < TriangleSidesRays.size(); i += 2)
+	{
+		glm::dvec3 Origin = TriangleSidesRays[i].first;
+		glm::dvec3 Direction = glm::normalize(TriangleSidesRays[i].second);
+
+		std::vector<glm::dvec3> LocalResult;
+
+		// If a ray originating from an edge of the AABB intersects with the triangle...
+		if (AABB.RayIntersect(Origin, Direction, LocalResult))
+		{
+			for (auto HitPoint : LocalResult)
+				if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+					return true;
+		}
+		else
+		{
+			Origin = TriangleSidesRays[i + 1].first;
+			Direction = glm::normalize(TriangleSidesRays[i + 1].second);
+
+			std::vector<glm::dvec3> LocalResult;
+
+			if (AABB.RayIntersect(Origin, Direction, LocalResult))
+			{
+				for (auto HitPoint : LocalResult)
+					if (glm::length(HitPoint - Origin) <= glm::length(TriangleSidesRays[i].second))
+						return true;
+			}
+		}
+	}
+
+	// Calculate the 8 corners of the AABB to use them for generating rays.
+	std::vector<glm::dvec3> Corners;
+	// Bottom face corners
+	Corners.push_back(AABB.GetMin());
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMin().y, AABB.GetMax().z));
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMax().y, AABB.GetMin().z));
+	Corners.push_back(glm::dvec3(AABB.GetMin().x, AABB.GetMax().y, AABB.GetMax().z));
+	// Top face corners
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMin().y, AABB.GetMin().z));
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMin().y, AABB.GetMax().z));
+	Corners.push_back(glm::dvec3(AABB.GetMax().x, AABB.GetMax().y, AABB.GetMin().z));
+	Corners.push_back(AABB.GetMax());
+
+	// Define the rays along the edges of the AABB.
+	std::vector<std::pair<glm::dvec3, glm::dvec3>> EdgesRays = {
+		// Bottom face edges
+		{Corners[0], Corners[1] - Corners[0]},
+		{Corners[1], Corners[3] - Corners[1]},
+		{Corners[3], Corners[2] - Corners[3]},
+		{Corners[2], Corners[0] - Corners[2]},
+		// Top face edges
+		{Corners[4], Corners[5] - Corners[4]},
+		{Corners[5], Corners[7] - Corners[5]},
+		{Corners[7], Corners[6] - Corners[7]},
+		{Corners[6], Corners[4] - Corners[6]},
+		// Vertical edges
+		{Corners[0], Corners[4] - Corners[0]},
+		{Corners[1], Corners[5] - Corners[1]},
+		{Corners[3], Corners[7] - Corners[3]},
+		{Corners[2], Corners[6] - Corners[2]}
+	};
+
+	// Test each edge of the AABB as a ray to check for intersections with the triangle.
+	for (const auto& Ray : EdgesRays)
+	{
+		glm::dvec3 Origin = Ray.first;
+		glm::dvec3 Direction = Ray.second;
+
+		double Distance;
+		glm::dvec3 HitPoint;
 
 		// If a ray originating from an edge of the AABB intersects with the triangle...
 		if (IsRayIntersectingTriangle(Origin, Direction, TriangleVertices, Distance, &HitPoint))

@@ -18,9 +18,13 @@ namespace FocalEngine
 	public:
 		FEAABB();
 		FEAABB(glm::vec3 Min, glm::vec3 Max);
+		FEAABB(glm::dvec3 Min, glm::dvec3 Max);
 		FEAABB(std::vector<glm::vec3>& VertexPositions);
+		FEAABB(std::vector<glm::dvec3>& VertexPositions);
 		FEAABB(std::vector<float>& VertexPositions);
+		FEAABB(std::vector<double>& VertexPositions);
 		FEAABB(float* VertexPositions, int VertexCount);
+		FEAABB(double* VertexPositions, int VertexCount);
 		// only for uniform sized AABB
 		FEAABB(glm::vec3 Center, float Size);
 		FEAABB(FEAABB Other, glm::mat4 TransformMatrix);
@@ -97,6 +101,8 @@ namespace FocalEngine
 		double CalculateTriangleArea(glm::dvec3 PointA, glm::dvec3 PointB, glm::dvec3 PointC);
 
 		bool IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& TriangleVertices);
+		bool IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::dvec3>& TriangleVertices);
+
 		std::vector<glm::dvec3> GetIntersectionPoints(FEAABB& AABB, std::vector<glm::dvec3> TriangleVertices);
 	private:
 		SINGLETON_PRIVATE_PART(FEGeometry)
