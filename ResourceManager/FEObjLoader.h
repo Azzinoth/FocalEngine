@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../SubSystems/FEFileSystem.h"
+#include "../SubSystems/FEGeometricTools.h"
 
 namespace FocalEngine
 {
