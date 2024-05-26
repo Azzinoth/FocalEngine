@@ -556,7 +556,7 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
-bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint)
+bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint, float* U, float* V)
 {
 	// Ensure the triangle is defined by exactly three vertices
 	if (TriangleVertices.size() != 3)
@@ -588,14 +588,18 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDir
 
 	// Calculate t from the first determinant and check if intersection is in the correct direction
 	const float t = determinant1 / determinant0;
-
-
 	const glm::mat3 temp2 = glm::mat3(a, k, c, d, l, f, g, m, j);
 	const float determinant2 = glm::determinant(temp2);
 	const float u = determinant2 / determinant0;
 
 	const float determinant3 = glm::determinant(glm::mat3(a, b, k, d, e, l, g, h, m));
 	const float v = determinant3 / determinant0;
+
+	if (U != nullptr)
+		*U = u;
+
+	if (V != nullptr)
+		*V = v;
 
 	// Check if the intersection point lies within the triangle using barycentric coordinates
 	if (t >= 0.00001 &&
@@ -615,7 +619,7 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDir
 	return false; // No valid intersection was found
 }
 
-bool FEGeometry::IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, std::vector<glm::dvec3>& TriangleVertices, double& Distance, glm::dvec3* HitPoint)
+bool FEGeometry::IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, std::vector<glm::dvec3>& TriangleVertices, double& Distance, glm::dvec3* HitPoint, double* U, double* V)
 {
 	// Ensure the triangle is defined by exactly three vertices
 	if (TriangleVertices.size() != 3)
@@ -654,6 +658,12 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayD
 
 	const double determinant3 = glm::determinant(glm::dmat3(a, b, k, d, e, l, g, h, m));
 	const double v = determinant3 / determinant0;
+
+	if (U != nullptr)
+		*U = u;
+
+	if (V != nullptr)
+		*V = v;
 
 	// Check if the intersection point lies within the triangle using barycentric coordinates
 	if (t >= 0.00001 &&

@@ -201,6 +201,8 @@ file(GLOB SubSystems_SRC
 	"SubSystems/FEScene.h"
 	"SubSystems/FETransformComponent.cpp"
 	"SubSystems/FETransformComponent.h"
+	"SubSystems/FEVirtualUIContext.h"
+	"SubSystems/FEVirtualUIContext.cpp"
 )
 
 file(GLOB OpenXR_SRC

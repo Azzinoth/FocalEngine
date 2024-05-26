@@ -881,6 +881,7 @@ void FEResourceManager::LoadStandardMeshes()
 	StandardMeshes["84251E6E0D0801363579317R"] = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
 	Meshes.erase(StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->GetObjectID());
 	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetID("84251E6E0D0801363579317R"/*"cube"*/);
+	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetName("FECube");
 
 	std::vector<int> PlaneIndices = {
 		0, 1, 2, 3, 0, 2
@@ -907,10 +908,12 @@ void FEResourceManager::LoadStandardMeshes()
 	StandardMeshes["1Y251E6E6T78013635793156"] = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
 	Meshes.erase(StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->GetObjectID());
 	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
+	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetName("FEPlane");
 
 	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
 	Meshes.erase(StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->GetObjectID());
 	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
+	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetName("FESphere");
 }
 
 FEResourceManager::FEResourceManager()
@@ -2274,7 +2277,7 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture,
 {
 	if (ExampleTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::CreateSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2288,6 +2291,23 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture,
 		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, DifferentH, bUnManaged, Name);
 	
 	return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
+}
+
+void FEResourceManager::AddTextureToManaged(FETexture* Texture)
+{
+	if (Texture == nullptr)
+	{
+		LOG.Add("FEResourceManager::AddTextureToManaged called with nullptr pointer as texture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	if (Textures.find(Texture->GetObjectID()) != Textures.end())
+	{
+		LOG.Add("FEResourceManager::AddTextureToManaged called with already managed texture", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return;
+	}
+
+	Textures[Texture->GetObjectID()] = Texture;
 }
 
 void FEResourceManager::ReSaveStandardMeshes()

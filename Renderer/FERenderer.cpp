@@ -158,7 +158,7 @@ void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
 	DepthPyramid->Height = WindowHeight;
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, const bool IsReceivingShadows)
+void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, const bool IsReceivingShadows, const bool IsUniformLighting)
 {
 	static int FETextureBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureBindings[0]"));
 	static int FETextureChannelsBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureChannels[0]"));
@@ -196,6 +196,9 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
 		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
 
+	if (Shader->GetParameter("FEUniformLighting") != nullptr)
+		Shader->UpdateParameterData("FEUniformLighting", IsUniformLighting);
+
 	if (Material != nullptr)
 	{
 		if (Shader->GetParameter("FEAOIntensity") != nullptr)
@@ -227,7 +230,7 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 	}
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, const bool IsReceivingShadows)
+void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
 {
 	if (Shader->GetParameter("FEViewMatrix") != nullptr)
 		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
@@ -246,6 +249,9 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 
 	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
 		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
+
+	if (Shader->GetParameter("FEUniformLighting") != nullptr)
+		Shader->UpdateParameterData("FEUniformLighting", IsUniformLighting);
 }
 
 void FERenderer::AddPostProcess(FEPostProcess* NewPostProcess, const bool NoProcessing)
@@ -411,7 +417,7 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 
 		CurrentGameModel->GetMaterial()->Bind();
 		const FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[ComponentIndex]->Transform);
-		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows());
+		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
 		CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
 
 		EntityInstanced->Render(static_cast<int>(ComponentIndex));
@@ -448,7 +454,7 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 			}
 
 			CurrentGameModel->GetBillboardMaterial()->Bind();
-			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows());
+			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
 			CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
 
 			EntityInstanced->RenderOnlyBillbords(CurrentCamera->GetPosition());
@@ -487,7 +493,7 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 
 		CurrentGameModel->GetMaterial()->Bind();
 		FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[i]->Transform);
-		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows());
+		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
 		CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
 
 		EntityInstanced->Render(static_cast<int>(i));
@@ -524,7 +530,7 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 			}
 
 			CurrentGameModel->GetBillboardMaterial()->Bind();
-			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows());
+			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
 			CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
 
 			EntityInstanced->RenderOnlyBillbords(CurrentCamera->GetPosition());
@@ -544,7 +550,6 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 {
 	CurrentCamera->UpdateFrustumPlanes();
-	FEScene& scene = SCENE;
 
 	SceneToTextureFB->Bind();
 	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
@@ -552,8 +557,8 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 	if (bClearActiveInSimplifiedRendering)
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	auto EntityIterator = scene.EntityMap.begin();
-	while (EntityIterator != scene.EntityMap.end())
+	auto EntityIterator = SCENE.EntityMap.begin();
+	while (EntityIterator != SCENE.EntityMap.end())
 	{
 		auto entity = EntityIterator->second;
 
@@ -646,7 +651,6 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	LastTestTime = TestTime;
 	TestTime = 0.0f;
-	FEScene& scene = SCENE;
 
 	// there is only 1 directional light, sun.
 	// and we need to set correct light position
@@ -709,8 +713,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 				Light->CascadeData[i].FrameBuffer->Bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
 
-				auto ItTerrain = scene.TerrainMap.begin();
-				while (ItTerrain != scene.TerrainMap.end())
+				auto ItTerrain = SCENE.TerrainMap.begin();
+				while (ItTerrain != SCENE.TerrainMap.end())
 				{
 					auto terrain = ItTerrain->second;
 					if (!terrain->IsCastingShadows() || !terrain->IsVisible())
@@ -725,8 +729,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 					ItTerrain++;
 				}
 
-				auto it = scene.EntityMap.begin();
-				while (it != scene.EntityMap.end())
+				auto it = SCENE.EntityMap.begin();
+				while (it != SCENE.EntityMap.end())
 				{
 					const auto Entity = it->second;
 					if (!Entity->IsCastShadows() || !Entity->IsVisible() || Entity->Prefab == nullptr)
@@ -846,8 +850,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	UpdateGPUCullingFrustum(CurrentCamera->Frustum, CurrentCamera->GetPosition());
 
-	auto EntityIterator = scene.EntityMap.begin();
-	while (EntityIterator != scene.EntityMap.end())
+	auto EntityIterator = SCENE.EntityMap.begin();
+	while (EntityIterator != SCENE.EntityMap.end())
 	{
 		auto entity = EntityIterator->second;
 
@@ -868,8 +872,20 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		EntityIterator++;
 	}
 
-	auto ItTerrain = scene.TerrainMap.begin();
-	while (ItTerrain != scene.TerrainMap.end())
+	// It is not renderer work to update interaction ray.
+	// It should be done in the input update.
+	auto VirtualUIIterator = SCENE.VirtualUIContextMap.begin();
+	while (VirtualUIIterator != SCENE.VirtualUIContextMap.end())
+	{
+		auto VirtualUIContext = VirtualUIIterator->second;
+		if (VirtualUIContext->bMouseMovePassThrough)
+			VirtualUIContext->UpdateInteractionRay(CurrentCamera->GetPosition(), RENDERER.MouseRay);
+
+		VirtualUIIterator++;
+	}
+
+	auto ItTerrain = SCENE.TerrainMap.begin();
+	while (ItTerrain != SCENE.TerrainMap.end())
 	{
 		auto terrain = ItTerrain->second;
 		if (terrain->IsVisible())
@@ -1081,8 +1097,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	SceneToTextureFB->Bind();
 
-	EntityIterator = scene.EntityMap.begin();
-	while (EntityIterator != scene.EntityMap.end())
+	EntityIterator = SCENE.EntityMap.begin();
+	while (EntityIterator != SCENE.EntityMap.end())
 	{
 		auto Entity = EntityIterator->second;
 
@@ -1105,8 +1121,8 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
-	ItTerrain = scene.TerrainMap.begin();
-	while (ItTerrain != scene.TerrainMap.end())
+	ItTerrain = SCENE.TerrainMap.begin();
+	while (ItTerrain != SCENE.TerrainMap.end())
 	{
 		auto terrain = ItTerrain->second;
 		if (terrain->IsVisible())
@@ -1196,6 +1212,24 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 	{
 		for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
 		{
+			if (Entity->Prefab->Components[i]->GameModel == nullptr)
+			{
+				LOG.Add("Trying to draw Entity with GameModel that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
+				continue;
+			}
+
+			if (Entity->Prefab->Components[i]->GameModel->Material == nullptr)
+			{
+				LOG.Add("Trying to draw Entity with Material that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
+				continue;
+			}
+
+			if (Entity->Prefab->Components[i]->GameModel->Material->Shader == nullptr)
+			{
+				LOG.Add("Trying to draw Entity with Shader that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
+				continue;
+			}
+				
 			FEShader* OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
 			if (OriginalShader == nullptr)
 				continue;
@@ -1207,8 +1241,16 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 			}
 
 			Entity->Prefab->Components[i]->GameModel->Material->Bind();
-			FETransformComponent TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[i]->Transform);
-			LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows());
+			FETransformComponent TempTransform;
+			if (Entity->Prefab->Components.size() == 1)
+			{
+				TempTransform = Entity->Transform;
+			}
+			else
+			{
+				TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[i]->Transform);
+			}
+			LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
 			Entity->Prefab->Components[i]->GameModel->Material->Shader->LoadDataToGPU();
 
 			FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[i]->GameModel->Mesh->GetVaoID()));
@@ -1246,7 +1288,7 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 
 		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Bind();
 		const FETransformComponent TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[ComponentIndex]->Transform);
-		LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows());
+		LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
 		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader->LoadDataToGPU();
 
 		FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->GetVaoID()));
@@ -1300,7 +1342,7 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 		}
 
 		Entity->Prefab->Components[i]->GameModel->Material->Bind();
-		LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &Entity->Transform, Entity->IsReceivingShadows());
+		LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &Entity->Transform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
 		Entity->Prefab->Components[i]->GameModel->Material->Shader->LoadDataToGPU();
 
 		FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[i]->GameModel->Mesh->GetVaoID()));

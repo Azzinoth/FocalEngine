@@ -25,7 +25,8 @@ namespace FocalEngine
 		FE_FRAME_BUFFER = 13,
 		FE_POST_PROCESS = 14,
 		FE_TERRAIN_LAYER = 15,
-		FE_PREFAB = 16
+		FE_PREFAB = 16,
+		FE_VIRTUAL_UI_CONTEXT = 17
 	};
 
 	class FEObject;
@@ -158,7 +159,7 @@ namespace FocalEngine
 		bool IsDirty() const;
 		void SetDirtyFlag(bool NewValue);
 
-		std::string GetName();
+		std::string GetName() const;
 		void SetName(std::string NewValue);
 		int GetNameHash() const;
 

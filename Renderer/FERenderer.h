@@ -194,8 +194,8 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
-		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false);
-		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows);
+		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
+		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows, const bool IsUniformLighting = false);
 		void LoadUniformBlocks();
 
 		void StandardFBInit(int WindowWidth, int WindowHeight);

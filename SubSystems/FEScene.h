@@ -5,13 +5,14 @@
 #include "../CoreExtensions/FEModelViewCamera.h"
 #include "../Renderer/FELight.h"
 #include "../Renderer/FELine.h"
+#include "FEVirtualUIContext.h"
 
 namespace FocalEngine
 {
-	class FERenderer;
 	class FEScene
 	{
-		friend FERenderer;
+		friend class FERenderer;
+		friend class FEngine;
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
@@ -40,6 +41,11 @@ namespace FocalEngine
 		FETerrain* GetTerrain(std::string ID);
 		void DeleteTerrain(std::string ID);
 
+		FEVirtualUIContext* AddVirtualUIContext(int Width = 1280, int Height = 720, FEMesh* SampleMesh = nullptr, std::string Name = "UnNamed");
+		FEVirtualUIContext* GetVirtualUIContext(std::string ID);
+		std::vector<std::string> GetVirtualUIContextList();
+		void DeleteVirtualUIContext(std::string ID);
+
 		void PrepareForGameModelDeletion(const FEGameModel* GameModel);
 		void PrepareForPrefabDeletion(const FEPrefab* Prefab);
 
@@ -49,6 +55,7 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FEEntity*> EntityMap;
 		std::unordered_map<std::string, FETerrain*> TerrainMap;
+		std::unordered_map<std::string, FEVirtualUIContext*> VirtualUIContextMap;
 	};
 
 	#define SCENE FEScene::getInstance()

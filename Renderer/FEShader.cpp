@@ -841,6 +841,12 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 		bTerrainLayersTexturesList = true;
 	}
 
+	Index = ParsedShaderText.find(FE_UNIFORM_LIGHTING_MACRO);
+	if (Index != std::string::npos)
+	{
+		ParsedShaderText.replace(Index, strlen(FE_UNIFORM_LIGHTING_MACRO), "uniform bool FEUniformLighting;");
+	}
+
 	// find out if there is any debug requests in shader text.
 	int DebugRequestCount = 0;
 	int FirstOccurrenceIndex = -1;

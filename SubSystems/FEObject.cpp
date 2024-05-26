@@ -5,7 +5,7 @@ FEObjectManager* FEObjectManager::Instance = nullptr;
 
 FEObjectManager::FEObjectManager()
 {
-	ObjectsByType.resize(17);
+	ObjectsByType.resize(18);
 }
 
 FEObjectManager::~FEObjectManager()
@@ -74,7 +74,7 @@ void FEObject::SetDirtyFlag(const bool NewValue)
 	bDirtyFlag = NewValue;
 }
 
-std::string FEObject::GetName()
+std::string FEObject::GetName() const
 {
 	return Name;
 }

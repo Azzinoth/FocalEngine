@@ -422,3 +422,35 @@ void FEScene::DeleteLight(const std::string ID)
 
 	return;
 }
+
+FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name)
+{
+	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
+	NewVirtualUIContext->CanvasEntity = AddEntity(NewVirtualUIContext->CanvasPrefab, Name + "_Virtual_UI_Canvas");
+	NewVirtualUIContext->CanvasEntity->SetUniformLighting(true);
+	VirtualUIContextMap[NewVirtualUIContext->GetObjectID()] = NewVirtualUIContext;
+	return NewVirtualUIContext;
+}
+
+FEVirtualUIContext* FEScene::GetVirtualUIContext(const std::string ID)
+{
+	if (VirtualUIContextMap.find(ID) == VirtualUIContextMap.end())
+		return nullptr;
+
+	return VirtualUIContextMap[ID];
+}
+
+std::vector<std::string> FEScene::GetVirtualUIContextList()
+{
+	FE_MAP_TO_STR_VECTOR(VirtualUIContextMap)
+}
+
+void FEScene::DeleteVirtualUIContext(const std::string ID)
+{
+	if (VirtualUIContextMap.find(ID) == VirtualUIContextMap.end())
+		return;
+
+	const FEVirtualUIContext* VirtualUIContextToDelete = VirtualUIContextMap[ID];
+	delete VirtualUIContextToDelete;
+	VirtualUIContextMap.erase(ID);
+}

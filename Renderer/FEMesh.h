@@ -40,6 +40,10 @@ namespace FocalEngine
 		int GetMaterialCount() const;
 
 		FEAABB GetAABB();
+
+		// Slow function, mainly for debugging
+		std::vector<std::vector<glm::vec3>> GetTrianglePositions();
+		std::vector<std::vector<glm::vec2>> GetTriangleUVs();
 	private:
 		GLuint VaoID = -1;
 		GLuint IndicesBufferID = -1;

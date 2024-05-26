@@ -102,3 +102,13 @@ bool FEEntity::IsWireframeMode() const
 {
 	return bWireframeMode;
 }
+
+bool FEEntity::IsUniformLighting() const
+{
+	return bUniformLighting;
+}
+
+void FEEntity::SetUniformLighting(bool NewValue)
+{
+	bUniformLighting = NewValue;
+}

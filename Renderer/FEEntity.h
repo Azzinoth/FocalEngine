@@ -8,17 +8,17 @@
 
 namespace FocalEngine
 {
-	class FEOctree;
-
 	class FEEntity : public FEObject
 	{
-		friend FERenderer;
-		friend FEOctree;
+		friend class FEEntityInstanced;
+		friend class FERenderer;
+		friend class FEResourceManager;
+		friend class FEScene;
+
 		FEEntity();
-	public:
 		FEEntity(FEPrefab* Prefab, std::string Name);
 		~FEEntity();
-
+	public:
 		FEPrefab* Prefab = nullptr;
 		FETransformComponent Transform;
 
@@ -35,6 +35,9 @@ namespace FocalEngine
 		bool IsReceivingShadows() const;
 		void SetReceivingShadows(bool NewValue);
 
+		bool IsUniformLighting() const;
+		void SetUniformLighting(bool NewValue);
+
 		bool IsPostprocessApplied() const;
 		void SetIsPostprocessApplied(bool NewValue);
 
@@ -44,6 +47,7 @@ namespace FocalEngine
 		bool bVisible = true;
 		bool bCastShadows = true;
 		bool bReceiveShadows = true;
+		bool bUniformLighting = false;
 		bool bApplyPostprocess = true;
 		bool bWireframeMode = false;
 
