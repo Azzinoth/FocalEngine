@@ -384,10 +384,10 @@ void FEGLTFLoader::Load(const char* FileName)
 			if (JsonNodes[static_cast<int>(i)].isMember("rotation"))
 			{
 				// glm::quat takes w,x,y,z. But gltf stores x,y,z,w.
-				NewNode.Rotation = glm::quat(JsonNodes[static_cast<int>(i)]["rotation"][3].asDouble(),
-											 JsonNodes[static_cast<int>(i)]["rotation"][0].asDouble(),
-											 JsonNodes[static_cast<int>(i)]["rotation"][1].asDouble(),
-											 JsonNodes[static_cast<int>(i)]["rotation"][2].asDouble());
+				NewNode.Rotation = glm::quat(JsonNodes[static_cast<int>(i)]["rotation"][3].asFloat(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][0].asFloat(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][1].asFloat(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][2].asFloat());
 
 				bAnyInfoWasRead = true;
 			}
