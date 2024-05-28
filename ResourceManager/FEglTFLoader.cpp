@@ -18,14 +18,12 @@ void FEGLTFLoader::Clear()
 	Buffers.clear();
 	BufferViews.clear();
 	Accessors.clear();
-	Primitives.clear();
 	Meshes.clear();
-	Entities.clear();
+	Nodes.clear();
 
 	Images.clear();
 	Textures.clear();
 	Materials.clear();
-	GameModels.clear();
 }
 
 void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPrimitive)
@@ -102,19 +100,7 @@ void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPr
 	if (JsonPrimitive.isMember("material"))
 		NewPrimitive.Material = JsonPrimitive["material"].asInt();
 
-	
-	if (LoadMeshRawData(NewPrimitive))
-	{
-		if (NewPrimitive.Material != -1)
-		{
-			GLTFGameModel CurrentGameModel;
-			CurrentGameModel.Primitive = static_cast<int>(Primitives.size());
-			CurrentGameModel.Material = NewPrimitive.Material;
-			CurrentGameModel.MeshParent = static_cast<int>(Meshes.size());
-
-			GameModels.push_back(CurrentGameModel);
-		}
-	}
+	LoadMeshRawData(NewPrimitive);
 }
 
 GLTFMaterialTexture FEGLTFLoader::LoadMaterialTexture(Json::Value JsonTextureNode)
@@ -173,18 +159,22 @@ void FEGLTFLoader::Load(const char* FileName)
 			File.open(Directory + "\\" + CurrentBuffer.Uri, std::ios::in | std::ios::binary | std::ios::ate);
 			std::streamsize FileSize = File.tellg();
 			if (FileSize < 0)
-				LOG.Add(std::string("can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::load.", "FE_LOG_LOADING", FE_LOG_ERROR);
-
-			File.seekg(0, std::ios::beg);
-			CurrentBuffer.RawData = new char[static_cast<int>(FileSize)];
-			File.read(CurrentBuffer.RawData, FileSize);
+			{
+				LOG.Add(std::string("can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+			}
+			else
+			{
+				File.seekg(0, std::ios::beg);
+				CurrentBuffer.RawData = new char[static_cast<int>(FileSize)];
+				File.read(CurrentBuffer.RawData, FileSize);
+			}
 			File.close();
 
 			if (JsonBuffers[static_cast<int>(i)].isMember("byteLength"))
 				CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();
 
 			if (CurrentBuffer.ByteLength != FileSize)
-				LOG.Add("byteLength and fileSize is not equal in function FEGLTFLoader::load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("byteLength and fileSize is not equal in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 
 			Buffers.push_back(CurrentBuffer);
 		}
@@ -245,7 +235,8 @@ void FEGLTFLoader::Load(const char* FileName)
 		for (size_t i = 0; i < JsonMeshes.size(); i++)
 		{
 			GLTFMesh CurrentMesh;
-			CurrentMesh.Name = JsonMeshes[static_cast<int>(i)]["name"].asCString();
+			if (JsonMeshes[static_cast<int>(i)].isMember("name"))
+				CurrentMesh.Name = JsonMeshes[static_cast<int>(i)]["name"].asCString();
 
 			if (JsonMeshes[static_cast<int>(i)].isMember("primitives"))
 			{
@@ -254,7 +245,6 @@ void FEGLTFLoader::Load(const char* FileName)
 				{
 					GLTFPrimitive CurrentPrimitive;
 					LoadPrimitive(JsonPrimitives[static_cast<int>(j)], CurrentPrimitive);
-					Primitives.push_back(CurrentPrimitive);
 					CurrentMesh.Primitives.push_back(CurrentPrimitive);
 				}
 			}
@@ -367,45 +357,46 @@ void FEGLTFLoader::Load(const char* FileName)
 		Json::Value JsonNodes = Root["nodes"];
 		for (size_t i = 0; i < JsonNodes.size(); i++)
 		{
-			GLTFEntity NewEntity;
+			GLTFNodes NewNode;
 			bool bAnyInfoWasRead = false;
 
 			if (JsonNodes[static_cast<int>(i)].isMember("name"))
 			{
-				NewEntity.Name = JsonNodes[static_cast<int>(i)]["name"].asCString();
+				NewNode.Name = JsonNodes[static_cast<int>(i)]["name"].asCString();
 				bAnyInfoWasRead = true;
 			}
 
 			if (JsonNodes[static_cast<int>(i)].isMember("mesh"))
 			{
-				NewEntity.Mesh = JsonNodes[static_cast<int>(i)]["mesh"].asInt();
+				NewNode.Mesh = JsonNodes[static_cast<int>(i)]["mesh"].asInt();
 				bAnyInfoWasRead = true;
 			}
 
 			if (JsonNodes[static_cast<int>(i)].isMember("translation"))
 			{
-				NewEntity.Translation = glm::vec3(JsonNodes[static_cast<int>(i)]["translation"][0].asDouble(),
-												  JsonNodes[static_cast<int>(i)]["translation"][1].asDouble(),
-											      JsonNodes[static_cast<int>(i)]["translation"][2].asDouble());
+				NewNode.Translation = glm::vec3(JsonNodes[static_cast<int>(i)]["translation"][0].asDouble(),
+												JsonNodes[static_cast<int>(i)]["translation"][1].asDouble(),
+											    JsonNodes[static_cast<int>(i)]["translation"][2].asDouble());
 
 				bAnyInfoWasRead = true;
 			}
 
 			if (JsonNodes[static_cast<int>(i)].isMember("rotation"))
 			{
-				NewEntity.Rotation = glm::vec4(JsonNodes[static_cast<int>(i)]["rotation"][0].asDouble(),
-											   JsonNodes[static_cast<int>(i)]["rotation"][1].asDouble(),
-											   JsonNodes[static_cast<int>(i)]["rotation"][2].asDouble(),
-											   JsonNodes[static_cast<int>(i)]["rotation"][3].asDouble());
+				// glm::quat takes w,x,y,z. But gltf stores x,y,z,w.
+				NewNode.Rotation = glm::quat(JsonNodes[static_cast<int>(i)]["rotation"][3].asDouble(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][0].asDouble(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][1].asDouble(),
+											 JsonNodes[static_cast<int>(i)]["rotation"][2].asDouble());
 
 				bAnyInfoWasRead = true;
 			}
 
 			if (JsonNodes[static_cast<int>(i)].isMember("scale"))
 			{
-				NewEntity.Scale = glm::vec3(JsonNodes[static_cast<int>(i)]["scale"][0].asDouble(),
-											JsonNodes[static_cast<int>(i)]["scale"][1].asDouble(),
-											JsonNodes[static_cast<int>(i)]["scale"][2].asDouble());
+				NewNode.Scale = glm::vec3(JsonNodes[static_cast<int>(i)]["scale"][0].asDouble(),
+										  JsonNodes[static_cast<int>(i)]["scale"][1].asDouble(),
+										  JsonNodes[static_cast<int>(i)]["scale"][2].asDouble());
 
 				bAnyInfoWasRead = true;
 			}
@@ -420,7 +411,7 @@ void FEGLTFLoader::Load(const char* FileName)
 			}
 
 			if (bAnyInfoWasRead)
-				Entities.push_back(NewEntity);
+				Nodes.push_back(NewNode);
 		}
 	}
 }

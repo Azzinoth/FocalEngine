@@ -87,12 +87,12 @@ namespace FocalEngine
 		int MeshParent = -1;
 	};
 
-	struct GLTFEntity
+	struct GLTFNodes
 	{
 		std::string Name;
 		int Mesh = -1;
 		glm::vec3 Translation = glm::vec3(0);
-		glm::vec4 Rotation = glm::vec4(0);
+		glm::quat Rotation = glm::quat();
 		glm::vec3 Scale = glm::vec3(1);
 	};
 
@@ -111,9 +111,8 @@ namespace FocalEngine
 		std::vector<GLTFBuffer> Buffers;
 		std::vector<GLTFBufferView> BufferViews;
 		std::vector<GLTFAccessor> Accessors;
-		std::vector<GLTFPrimitive> Primitives;
 		std::vector<GLTFMesh> Meshes;
-		std::vector<GLTFEntity> Entities;
+		std::vector<GLTFNodes> Nodes;
 
 		void LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPrimitive);
 		bool LoadMeshRawData(GLTFPrimitive& Primitive);
@@ -128,6 +127,5 @@ namespace FocalEngine
 		std::vector<std::string> Images;
 		std::vector<std::string> Textures;
 		std::vector<GLTFMaterial> Materials;
-		std::vector<GLTFGameModel> GameModels;
 	};
 }
