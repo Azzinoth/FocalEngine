@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FECoreIncludes.h"
+#include "../Core/FECoreIncludes.h"
+#include <filesystem>
 
 #ifdef FE_WIN_32
 	#include <direct.h> // file system
@@ -23,19 +24,23 @@ namespace FocalEngine
 		bool DeleteFolder(const char* Path);
 		std::vector<std::string> GetFolderList(const char* Path);
 		std::vector<std::string> GetFileList(const char* Path);
+		std::vector<std::string> GetFileList(const std::string& Path);
 		bool ChangeFileName(const char* Path, const char* NewPath);
 		bool DeleteFile(const char* Path);
 
 		char* GetDirectoryPath(const char* FullPath);
+		std::string GetDirectoryPath(const std::string& FullPath);
 		char* GetFileName(const char* FullPath);
+		std::string GetFileName(const std::string& FullPath);
 
 #ifdef FE_WIN_32
 		void ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
 		void ShowFolderOpenDialog(std::string& Path);
 
 		void ShowFileSaveDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1, int* ChosenFilterIndex = nullptr);
-		std::string GetApplicationPath();
+		std::string GetExecutablePath();
 #endif
+		std::string GetCurrentWorkingPath();
 		std::string ReadFEString(std::fstream& File);
 	private:
 		SINGLETON_PRIVATE_PART(FEFileSystem)

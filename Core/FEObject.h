@@ -3,7 +3,7 @@
 #ifndef FEOBJECT_H
 #define FEOBJECT_H
 
-#include "FECoreIncludes.h"
+#include "../Core/FECoreIncludes.h"
 
 namespace FocalEngine
 {

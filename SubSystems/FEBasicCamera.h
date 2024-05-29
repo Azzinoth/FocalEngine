@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FETransformComponent.h"
+#include "Scene/FETransformComponent.h"
 
 namespace FocalEngine
 {

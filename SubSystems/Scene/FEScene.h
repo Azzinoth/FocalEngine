@@ -5,7 +5,7 @@
 #include "../CoreExtensions/FEModelViewCamera.h"
 #include "../Renderer/FELight.h"
 #include "../Renderer/FELine.h"
-#include "FEVirtualUIContext.h"
+#include "../FEVirtualUIContext.h"
 
 namespace FocalEngine
 {

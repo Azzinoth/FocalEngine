@@ -3,7 +3,7 @@
 #ifndef FERENDERER_H
 #define FERENDERER_H
 
-#include "../SubSystems/FEScene.h"
+#include "../SubSystems/Scene/FEScene.h"
 
 namespace FocalEngine
 {

@@ -80,6 +80,33 @@ std::vector<std::string> FEFileSystem::GetFileList(const char* Path)
 	return result;
 }
 
+std::vector<std::string> FEFileSystem::GetFileList(const std::string& Path)
+{
+	std::vector<std::string> Result;
+
+	try
+	{
+		std::filesystem::path Directory(Path);
+		if (std::filesystem::exists(Directory) && std::filesystem::is_directory(Directory))
+		{
+			for (const auto& Entry : std::filesystem::directory_iterator(Directory))
+			{
+				const auto& path = Entry.path();
+				if (std::filesystem::is_regular_file(path))
+				{
+					Result.push_back(path.filename().string());
+				}
+			}
+		}
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetFileList: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+	}
+
+	return Result;
+}
+
 #ifdef FE_WIN_32
 // open dialog staff
 std::string FEFileSystem::PWSTRtoString(const PWSTR WString)
@@ -235,7 +262,7 @@ std::string FEFileSystem::GetFileExtension(const char* Path)
 	return std::string(extension);
 }
 
-std::string FEFileSystem::GetApplicationPath()
+std::string FEFileSystem::GetExecutablePath()
 {
 	char buffer[MAX_PATH] = { 0 };
 	GetModuleFileNameA(nullptr, buffer, MAX_PATH);
@@ -243,6 +270,12 @@ std::string FEFileSystem::GetApplicationPath()
 }
 
 #endif
+
+std::string FEFileSystem::GetCurrentWorkingPath()
+{
+	std::filesystem::path ApplicationPath = std::filesystem::current_path();
+	return ApplicationPath.string();
+}
 
 char* FEFileSystem::GetDirectoryPath(const char* FullPath)
 {
@@ -261,12 +294,24 @@ char* FEFileSystem::GetDirectoryPath(const char* FullPath)
 	return Result;
 }
 
+std::string FEFileSystem::GetDirectoryPath(const std::string& FullPath)
+{
+	std::filesystem::path Path(FullPath);
+	return Path.parent_path().string();
+}
+
 char* FEFileSystem::GetFileName(const char* FullPath)
 {
 	char* result = new char[1024];
 	_splitpath_s(FullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
 
 	return result;
+}
+
+std::string FEFileSystem::GetFileName(const std::string& FullPath)
+{
+	std::filesystem::path Path(FullPath);
+	return Path.filename().string();
 }
 
 std::string FEFileSystem::ReadFEString(std::fstream& File)
