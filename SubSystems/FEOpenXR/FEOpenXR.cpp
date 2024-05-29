@@ -31,13 +31,15 @@ FEOpenXR::~FEOpenXR()
 		xrDestroyInstance(FEOpenXR_CORE.OpenXRInstance);
 }
 
-void FEOpenXR::Init(std::string VRAppName)
+bool FEOpenXR::Init(std::string VRAppName)
 {
 	FEOpenXR_CORE.Init(VRAppName);
 	FEOpenXR_INPUT.Init();
 	FEOpenXR_RENDERING.Init();
 
 	FEOpenXR_INPUT.FrameState = &FEOpenXR_RENDERING.FrameState;
+
+	return FEOpenXR_CORE.bInitializedCorrectly;
 }
 
 void FEOpenXR::PollEvents()

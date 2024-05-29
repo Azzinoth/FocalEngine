@@ -17,7 +17,7 @@ void FEOpenXRCore::CreateInstance()
 	CreateInfo.applicationInfo.applicationVersion = 1;
 	strcpy_s(CreateInfo.applicationInfo.engineName, sizeof(CreateInfo.applicationInfo.engineName), "NoEngine");
 	CreateInfo.applicationInfo.engineVersion = 1;
-	CreateInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+	CreateInfo.applicationInfo.apiVersion = XR_API_VERSION_1_0;
 
 	CreateInfo.enabledExtensionCount = static_cast<uint32_t>(Extension.size());
 	CreateInfo.enabledExtensionNames = Extension.data();
@@ -65,6 +65,8 @@ void FEOpenXRCore::InitializeSession()
 	SessionCreateInfo.systemId = SystemID;
 
 	FE_OPENXR_ERROR(xrCreateSession(OpenXRInstance, &SessionCreateInfo, &Session));
+	if (Session == nullptr)
+		bInitializedCorrectly = false;
 }
 
 void FEOpenXRCore::CreateReferenceSpace()
@@ -89,6 +91,8 @@ void FEOpenXRCore::CreateReferenceSpace()
 	PlaySpaceCreateInfo.poseInReferenceSpace = IdentityPose;
 
 	FE_OPENXR_ERROR(xrCreateReferenceSpace(Session, &PlaySpaceCreateInfo, &ApplicationSpace));
+	if (ApplicationSpace == nullptr)
+		bInitializedCorrectly = false;
 }
 
 void FEOpenXRCore::Init(std::string VRAppName)

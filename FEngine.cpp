@@ -748,11 +748,7 @@ bool FEngine::EnableVR()
 {
 	if (!bVRInitializedCorrectly)
 	{
-		OpenXR_MANAGER.Init(WindowTitle);
-
-		auto test = LOG.GetLogItems("OpenXR");
-		// Fix this!
-		bVRInitializedCorrectly = true/*LOG.GetLogItems("OpenXR").empty()*/;
+		bVRInitializedCorrectly = OpenXR_MANAGER.Init(WindowTitle);
 	}
 
 	if (bVRInitializedCorrectly)
@@ -760,6 +756,11 @@ bool FEngine::EnableVR()
 		bVRActive = true;
 		RENDERER.bVRActive = true;
 		RENDERER.UpdateVRRenderTargetSize(static_cast<int>(OpenXR_MANAGER.EyeResolution().x), static_cast<int>(OpenXR_MANAGER.EyeResolution().y));
+	}
+	else
+	{
+		bVRActive = false;
+		RENDERER.bVRActive = false;
 	}
 
 	return bVRActive;
