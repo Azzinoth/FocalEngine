@@ -4,80 +4,122 @@ FEFileSystem* FEFileSystem::Instance = nullptr;
 FEFileSystem::FEFileSystem() {}
 FEFileSystem::~FEFileSystem() {}
 
-bool FEFileSystem::CheckFile(const char* Path)
+bool FEFileSystem::CheckFile(const std::string& Path)
 {
-	const DWORD DwAttrib = GetFileAttributesA(Path);
-	return (DwAttrib != INVALID_FILE_ATTRIBUTES &&
-		!(DwAttrib & FILE_ATTRIBUTE_DIRECTORY));
+	std::filesystem::path FilePath(Path);
+	return std::filesystem::exists(FilePath) && std::filesystem::is_regular_file(FilePath);
 }
 
-bool FEFileSystem::IsFolder(const char* Path)
+bool FEFileSystem::RenameFile(const std::string& Path, const std::string& NewPath)
 {
-	const DWORD DwAttrib = GetFileAttributesA(Path);
-	return (DwAttrib != INVALID_FILE_ATTRIBUTES &&
-		(DwAttrib & FILE_ATTRIBUTE_DIRECTORY));
-}
-
-bool FEFileSystem::CreateFolder(const char* Path)
-{
-	return (_mkdir(Path) != 0);
-}
-
-bool FEFileSystem::DeleteFolder(const char* Path)
-{
-	return (_rmdir(Path) == 0);
-}
-
-bool FEFileSystem::ChangeFileName(const char* Path, const char* NewPath)
-{
-	const int result = rename(Path, NewPath);
-	return result == 0 ? true : false;
-}
-
-bool FEFileSystem::DeleteFile(const char* Path)
-{
-	const int result = remove(Path);
-	return result == 0 ? true : false;
-}
-
-std::vector<std::string> FEFileSystem::GetFolderList(const char* Path)
-{
-	std::vector<std::string> result;
-	std::string pattern(Path);
-	pattern.append("\\*");
-	WIN32_FIND_DATAA data;
-	HANDLE HFind;
-	if ((HFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
+	try
 	{
-		do
+		std::filesystem::rename(Path, NewPath);
+		return true;
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::ChangeFileName: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+bool FEFileSystem::DeleteFile(const std::string& Path)
+{
+	try
+	{
+		return std::filesystem::remove(Path);
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::DeleteFile: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+bool FEFileSystem::CheckDirectory(const std::string& Path)
+{
+	std::filesystem::path FolderPath(Path);
+	return std::filesystem::exists(FolderPath) && std::filesystem::is_directory(FolderPath);
+}
+
+bool FEFileSystem::RenameDirectory(const std::string& Path, const std::string& NewPath)
+{
+	try
+	{
+		if (std::filesystem::exists(Path) && std::filesystem::is_directory(Path))
 		{
-			if (IsFolder((Path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
-				result.push_back(data.cFileName);
-		} while (FindNextFileA(HFind, &data) != 0);
-		FindClose(HFind);
+			std::filesystem::rename(Path, NewPath);
+			return true;
+		}
+		else
+		{
+			// Directory doesn't exist or is not a directory
+			return false;
+		}
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::RenameDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+bool FEFileSystem::CreateDirectory(const std::string& Path)
+{
+	try
+	{
+		return std::filesystem::create_directory(Path);
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::CreateDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+bool FEFileSystem::DeleteDirectory(const std::string& Path)
+{
+	try
+	{
+		return std::filesystem::remove(Path);
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::DeleteDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+std::vector<std::string> FEFileSystem::GetDirectoryList(const std::string& Path)
+{
+	std::vector<std::string> Result;
+
+	try
+	{
+		std::filesystem::path Directory(Path);
+		if (std::filesystem::exists(Directory) && std::filesystem::is_directory(Directory))
+		{
+			for (const auto& Entry : std::filesystem::directory_iterator(Directory))
+			{
+				const auto& Path = Entry.path();
+				if (std::filesystem::is_directory(Path))
+				{
+					std::string DirectoryName = Path.filename().string();
+					if (DirectoryName != "." && DirectoryName != "..")
+					{
+						Result.push_back(DirectoryName);
+					}
+				}
+			}
+		}
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetFolderList: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
 	}
 
-	return result;
-}
-
-std::vector<std::string> FEFileSystem::GetFileList(const char* Path)
-{
-	std::vector<std::string> result;
-	std::string pattern(Path);
-	pattern.append("\\*");
-	WIN32_FIND_DATAA data;
-	HANDLE HFind;
-	if ((HFind = FindFirstFileA(pattern.c_str(), &data)) != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if (!IsFolder((Path + std::string("/") + std::string(data.cFileName)).c_str()) && std::string(data.cFileName) != std::string(".") && std::string(data.cFileName) != std::string(".."))
-				result.push_back(data.cFileName);
-		} while (FindNextFileA(HFind, &data) != 0);
-		FindClose(HFind);
-	}
-
-	return result;
+	return Result;
 }
 
 std::vector<std::string> FEFileSystem::GetFileList(const std::string& Path)
@@ -91,10 +133,10 @@ std::vector<std::string> FEFileSystem::GetFileList(const std::string& Path)
 		{
 			for (const auto& Entry : std::filesystem::directory_iterator(Directory))
 			{
-				const auto& path = Entry.path();
-				if (std::filesystem::is_regular_file(path))
+				const auto& Path = Entry.path();
+				if (std::filesystem::is_regular_file(Path))
 				{
-					Result.push_back(path.filename().string());
+					Result.push_back(Path.filename().string());
 				}
 			}
 		}
@@ -256,12 +298,6 @@ void FEFileSystem::ShowFolderOpenDialog(std::string& Path)
 	}
 }
 
-std::string FEFileSystem::GetFileExtension(const char* Path)
-{
-	const LPSTR extension = PathFindExtensionA(Path);
-	return std::string(extension);
-}
-
 std::string FEFileSystem::GetExecutablePath()
 {
 	char buffer[MAX_PATH] = { 0 };
@@ -277,35 +313,16 @@ std::string FEFileSystem::GetCurrentWorkingPath()
 	return ApplicationPath.string();
 }
 
-char* FEFileSystem::GetDirectoryPath(const char* FullPath)
+std::string FEFileSystem::GetFileExtension(const std::string& Path)
 {
-	char* Result = new char[1024];
-	char Drive[1024];  // Buffer for the drive
-
-	// Extract both drive and directory
-	_splitpath_s(FullPath, Drive, sizeof(Drive), Result, 1024, nullptr, 0, nullptr, 0);
-
-	// Concatenate drive and directory to get the full path
-	strcat_s(Drive, sizeof(Drive), Result);
-
-	// Since result is the output, we should copy the concatenated path back to result
-	strcpy_s(Result, 1024, Drive);
-
-	return Result;
+	std::filesystem::path filePath(Path);
+	return filePath.extension().string();
 }
 
 std::string FEFileSystem::GetDirectoryPath(const std::string& FullPath)
 {
 	std::filesystem::path Path(FullPath);
 	return Path.parent_path().string();
-}
-
-char* FEFileSystem::GetFileName(const char* FullPath)
-{
-	char* result = new char[1024];
-	_splitpath_s(FullPath, nullptr, 0, nullptr, 0, result, 1024, nullptr, 0);
-
-	return result;
 }
 
 std::string FEFileSystem::GetFileName(const std::string& FullPath)

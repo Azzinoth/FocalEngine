@@ -144,7 +144,6 @@ void FEGLTFLoader::Load(const char* FileName)
 		return;
 
 	std::string Directory = FILE_SYSTEM.GetDirectoryPath(FileName);
-
 	if (Root.isMember("buffers"))
 	{
 		Json::Value JsonBuffers = Root["buffers"];
