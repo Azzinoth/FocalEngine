@@ -3,7 +3,7 @@
 #ifndef FELINE_H
 #define FELINE_H
 
-#include "../SubSystems/FETransformComponent.h"
+#include "../SubSystems/Scene/FETransformComponent.h"
 
 namespace FocalEngine
 {

@@ -52,8 +52,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		{
 			for (int i = 0; i <= 2; i++)
 			{
-				LineStream >> STemp;
-				if (STemp == "")
+				if (!(LineStream >> STemp) || STemp.empty())
 					break;
 
 				NewVec[i] = std::stof(STemp);
@@ -306,23 +305,93 @@ glm::vec3 FEObjLoader::CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 
 
 void FEObjLoader::CalculateNormals(FERawOBJData* Data)
 {
+	std::vector<double> TrianglesArea;
+	std::vector<glm::dvec3> TrianglePoints;
+	TrianglePoints.resize(3);
+
+	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	{
+		int VertexPosition = Data->FInd[i] * 3;
+		TrianglePoints[0] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
+
+		VertexPosition = Data->FInd[i + 1] * 3;
+		TrianglePoints[1] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
+
+		VertexPosition = Data->FInd[i + 2] * 3;
+		TrianglePoints[2] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
+
+		TrianglesArea.push_back(GEOMETRY.CalculateTriangleArea(TrianglePoints[0], TrianglePoints[1], TrianglePoints[2]));
+	}
+	
+	struct VertexNormalsInfo
+	{
+		std::vector<glm::dvec3> Normals;
+		std::vector<double> Areas;
+		double AreaSum = 0.0;
+	};
+
+	std::vector<VertexNormalsInfo> DataForWeightedNormals;
+	DataForWeightedNormals.resize(Data->FInd.size());
+
 	int IndexShift = 3;
 	// We assume that there were no normals info read.
-	for (size_t i = 0; i < Data->FInd.size() - 1; i+=3)
+	for (size_t i = 0; i < Data->FInd.size(); i += 3)
 	{
-		glm::dvec3 V0 = { Data->FVerC[Data->FInd[i] * IndexShift], Data->FVerC[Data->FInd[i] * IndexShift + 1], Data->FVerC[Data->FInd[i] * IndexShift + 2] };
-		glm::dvec3 V1 = { Data->FVerC[Data->FInd[i + 1] * IndexShift], Data->FVerC[Data->FInd[i + 1] * IndexShift + 1], Data->FVerC[Data->FInd[i + 1] * IndexShift + 2] };
-		glm::dvec3 V2 = { Data->FVerC[Data->FInd[i + 2] * IndexShift], Data->FVerC[Data->FInd[i + 2] * IndexShift + 1], Data->FVerC[Data->FInd[i + 2] * IndexShift + 2] };
+		glm::dvec3 V0 = { Data->DVerC[Data->FInd[i] * IndexShift], Data->DVerC[Data->FInd[i] * IndexShift + 1], Data->DVerC[Data->FInd[i] * IndexShift + 2] };
+		glm::dvec3 V1 = { Data->DVerC[Data->FInd[i + 1] * IndexShift], Data->DVerC[Data->FInd[i + 1] * IndexShift + 1], Data->DVerC[Data->FInd[i + 1] * IndexShift + 2] };
+		glm::dvec3 V2 = { Data->DVerC[Data->FInd[i + 2] * IndexShift], Data->DVerC[Data->FInd[i + 2] * IndexShift + 1], Data->DVerC[Data->FInd[i + 2] * IndexShift + 2] };
 
 		glm::vec3 Normal = CalculateNormal(V0, V1, V2);
+
+		DataForWeightedNormals[Data->FInd[i]].Normals.push_back(Normal);
+		DataForWeightedNormals[Data->FInd[i]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Data->FInd[i]].AreaSum += TrianglesArea[i / 3];
+
+		DataForWeightedNormals[Data->FInd[i + 1]].Normals.push_back(Normal);
+		DataForWeightedNormals[Data->FInd[i + 1]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Data->FInd[i + 1]].AreaSum += TrianglesArea[i / 3];
+
+		DataForWeightedNormals[Data->FInd[i + 2]].Normals.push_back(Normal);
+		DataForWeightedNormals[Data->FInd[i + 2]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Data->FInd[i + 2]].AreaSum += TrianglesArea[i / 3];
+	}
+	
+	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	{
+		glm::vec3 Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Data->FInd[i]].Normals[j] * DataForWeightedNormals[Data->FInd[i]].Areas[j] / DataForWeightedNormals[Data->FInd[i]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
 
 		Data->FNorC[Data->FInd[i] * IndexShift] = Normal.x;
 		Data->FNorC[Data->FInd[i] * IndexShift + 1] = Normal.y;
 		Data->FNorC[Data->FInd[i] * IndexShift + 2] = Normal.z;
 
+		Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 1]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Data->FInd[i + 1]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 1]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 1]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
+
 		Data->FNorC[Data->FInd[i + 1] * IndexShift] = Normal.x;
 		Data->FNorC[Data->FInd[i + 1] * IndexShift + 1] = Normal.y;
 		Data->FNorC[Data->FInd[i + 1] * IndexShift + 2] = Normal.z;
+
+		Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 2]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Data->FInd[i + 2]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 2]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 2]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
 
 		Data->FNorC[Data->FInd[i + 2] * IndexShift] = Normal.x;
 		Data->FNorC[Data->FInd[i + 2] * IndexShift + 1] = Normal.y;
@@ -517,8 +586,6 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		{
 			Data->RawVertexCoordinates[i] = glm::vec3(Data->RawVertexCoordinatesDoublePrecision[i]);
 		}
-
-		Data->RawVertexCoordinatesDoublePrecision.clear();
 	}
 
 	if (bHaveTextureCoord && bHaveNormalCoord)
@@ -545,7 +612,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 					const bool NormD = Data->RawIndices[i + 2] != Data->RawIndices[j + 2];
 					if (Data->RawIndices[i] == Data->RawIndices[j] && (TexD || NormD))
 					{
-						// we do not need to add first appearance of vertex that we need to double
+						// We do not need to add first appearance of vertex that we need to double.
 						FEObjLoader::VertexThatNeedDoubling NewVertex = FEObjLoader::VertexThatNeedDoubling(static_cast<int>(j), Data->RawIndices[j], Data->RawIndices[j + 1], Data->RawIndices[j + 2]);
 						if (std::find(VertexList.begin(), VertexList.end(), NewVertex) == VertexList.end())
 						{
@@ -567,7 +634,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 				Data->RawIndices[Vertex.IndexInArray] = NewVertexIndex;
 				Vertex.bWasDone = true;
 
-				// preserve matIndex!
+				// Preserve matIndex!
 				for (size_t i = 0; i < Data->MaterialRecords.size(); i++)
 				{
 					if (Vertex.AcctualIndex >= (static_cast<int>(Data->MaterialRecords[i].MinVertexIndex + 1)) && Vertex.AcctualIndex <= (static_cast<int>(Data->MaterialRecords[i].MaxVertexIndex + 1)))
@@ -588,6 +655,8 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			}
 		}
 
+		if (bUseDoublePrecisionForReadingCoordinates)
+			Data->DVerC.resize(Data->RawVertexCoordinatesDoublePrecision.size() * 3);
 		Data->FVerC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTexC.resize(Data->RawVertexCoordinates.size() * 2);
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
@@ -604,6 +673,13 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 			const int ShiftInVerArr = VIndex * 3;
 			const int ShiftInTexArr = VIndex * 2;
+
+			if (bUseDoublePrecisionForReadingCoordinates)
+			{
+				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+			}
 
 			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
 			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
@@ -640,15 +716,14 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 	}
 	else if (bHaveTextureCoord && !bHaveNormalCoord)
 	{
+		if (bUseDoublePrecisionForReadingCoordinates)
+			Data->DVerC.resize(Data->RawVertexCoordinatesDoublePrecision.size() * 3);
 		Data->FVerC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTexC.resize(Data->RawVertexCoordinates.size() * 2);
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTanC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FInd.resize(0);
 		Data->MatIDs.resize(Data->RawVertexCoordinates.size());
-
-		if (bHaveColors)
-			Data->fColorsC.resize(Data->RawVertexCoordinates.size() * 3);
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i+=2)
 		{
@@ -659,18 +734,18 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			const int ShiftInVerArr = VIndex * 3;
 			const int ShiftInTexArr = VIndex * 2;
 
+			if (bUseDoublePrecisionForReadingCoordinates)
+			{
+				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+			}
+
 			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
 			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
 			Data->FVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinates[VIndex][2];
 
-			if (bHaveColors)
-			{
-				Data->fColorsC[ShiftInVerArr] = Data->RawVertexColors[VIndex][0];
-				Data->fColorsC[ShiftInVerArr + 1] = Data->RawVertexColors[VIndex][1];
-				Data->fColorsC[ShiftInVerArr + 2] = Data->RawVertexColors[VIndex][2];
-			}
-
-			// saving material ID in vertex attribute array
+			// Saving material ID in vertex attribute array.
 			for (size_t i = 0; i < Data->MaterialRecords.size(); i++)
 			{
 				if (VIndex >= int(Data->MaterialRecords[i].MinVertexIndex - 1) && VIndex <= int(Data->MaterialRecords[i].MaxVertexIndex - 1))
@@ -690,6 +765,8 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 	}
 	else if (!bHaveTextureCoord && bHaveNormalCoord)
 	{
+		if (bUseDoublePrecisionForReadingCoordinates)
+			Data->DVerC.resize(Data->RawVertexCoordinatesDoublePrecision.size() * 3);
 		Data->FVerC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTexC.resize(0);
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
@@ -699,11 +776,18 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i += 2)
 		{
-			// faces index in OBJ file begins from 1 not 0.
+			// Faces index in OBJ file begins from 1 not 0.
 			int VIndex = Data->RawIndices[i] - 1;
 			const int NIndex = Data->RawIndices[i + 1] - 1;
 
 			const int ShiftInVerArr = VIndex * 3;
+
+			if (bUseDoublePrecisionForReadingCoordinates)
+			{
+				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+			}
 
 			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
 			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
@@ -718,6 +802,8 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 	}
 	else
 	{
+		if (bUseDoublePrecisionForReadingCoordinates)
+			Data->DVerC.resize(Data->RawVertexCoordinatesDoublePrecision.size() * 3);
 		Data->FVerC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTexC.resize(0);
 		Data->FNorC.resize(0);
@@ -727,10 +813,17 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i++)
 		{
-			// faces index in OBJ file begins from 1 not 0.
+			// Faces index in OBJ file begins from 1 not 0.
 			int VIndex = Data->RawIndices[i] - 1;
 
 			int ShiftInVerArr = VIndex * 3;
+
+			if (bUseDoublePrecisionForReadingCoordinates)
+			{
+				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+			}
 
 			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
 			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
@@ -741,6 +834,23 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
 		CalculateNormals(Data);
+	}
+
+	if (bHaveColors)
+	{
+		Data->FColorsC.resize(Data->RawVertexCoordinates.size() * 3);
+		for (size_t i = 0; i < Data->RawIndices.size(); i++)
+		{
+			// Faces index in OBJ file begins from 1 not 0.
+			int VIndex = Data->RawIndices[i] - 1;
+			if (VIndex >= Data->RawVertexCoordinates.size())
+				continue;
+			const int ShiftInVerArr = VIndex * 3;
+
+			Data->FColorsC[ShiftInVerArr] = Data->RawVertexColors[VIndex][0];
+			Data->FColorsC[ShiftInVerArr + 1] = Data->RawVertexColors[VIndex][1];
+			Data->FColorsC[ShiftInVerArr + 2] = Data->RawVertexColors[VIndex][2];
+		}
 	}
 }
 

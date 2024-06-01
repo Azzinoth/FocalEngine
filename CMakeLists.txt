@@ -8,7 +8,9 @@ add_definitions(-DUNICODE)
 add_definitions(-D_UNICODE)
 
 # set the project name
-project(FocalEngine LANGUAGES CXX)
+project(FocalEngine)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "/MP /ZI /W3 /Od /MDd /JMC /sdl /FC /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D WIN32 /D _WINDOWS /D _DEBUG /D FE_DEBUG_ENABLED")
 set(CMAKE_CXX_FLAGS_RELEASE "/MP /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D NDEBUG /D WIN32 /D _WINDOWS")
@@ -185,22 +187,34 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/Config.h"
 )
 
+# *************** CORE ***************
+
+file(GLOB Core_SRC
+	"Core/FECoreIncludes.h"
+	"Core/FEGeometricTools.cpp"
+	"Core/FEGeometricTools.h"
+	"Core/FEObject.cpp"
+	"Core/FEObject.h"
+)
+
+# *************** SCENE ***************
+
+file(GLOB Scene_SRC
+	"SubSystems/Scene/FEScene.cpp"
+	"SubSystems/Scene/FEScene.h"
+	"SubSystems/Scene/FETransformComponent.cpp"
+	"SubSystems/Scene/FETransformComponent.h"
+)
+
 # *************** SUB_SYSTEM ***************
 
 file(GLOB SubSystems_SRC
 	"SubSystems/FEBasicCamera.cpp"
 	"SubSystems/FEBasicCamera.h"
-	"SubSystems/FECoreIncludes.h"
 	"SubSystems/FEFileSystem.cpp"
 	"SubSystems/FEFileSystem.h"
-	"SubSystems/FEGeometricTools.cpp"
-	"SubSystems/FEGeometricTools.h"
-	"SubSystems/FEObject.cpp"
-	"SubSystems/FEObject.h"
-	"SubSystems/FEScene.cpp"
-	"SubSystems/FEScene.h"
-	"SubSystems/FETransformComponent.cpp"
-	"SubSystems/FETransformComponent.h"
+	"SubSystems/FEVirtualUIContext.h"
+	"SubSystems/FEVirtualUIContext.cpp"
 )
 
 file(GLOB OpenXR_SRC
@@ -261,6 +275,7 @@ add_library(FocalEngine
 			${FE_GammaAndHDRCorrection_SRC}
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
+			${Core_SRC}
 			${CoreExtensions_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
@@ -268,6 +283,7 @@ add_library(FocalEngine
 			${ResourceManager_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
+			${Scene_SRC}
 			${OpenXR_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
@@ -288,6 +304,7 @@ target_link_libraries(FocalEngine
 )
 
 source_group("Source Files" FILES ${source_SRC})
+source_group("Source Files/Core" FILES ${Core_SRC})
 source_group("Source Files/CoreExtensions/Materials/InstancedLineMaterial" FILES ${InstancedLineMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PBRMaterial" FILES ${PBRMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PhongMaterial" FILES ${PhongMaterial_SRC})
@@ -312,6 +329,7 @@ source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
+source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})

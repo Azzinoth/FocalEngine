@@ -44,6 +44,7 @@ struct FELight
 
 // is object receiving shadows.
 @RECEVESHADOWS@
+@UNIFORM_LIGHTING@
 // adds cascade shadow maps, 4 cascades.
 @CSM@
 
@@ -563,6 +564,9 @@ float shadowCalculationCSM3(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 
 vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 baseColor)
 {
+	if (FEUniformLighting)
+		return (baseColor * directionalLight.color.xyz);
+
 	vec3 lightDirection = normalize(-directionalLight.direction.xyz);
 	// only sun light
 	if (lightDirection.y < 0)
@@ -679,6 +683,9 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 vec3 pointLightColor(FELight light, vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 baseColor)
 {
+	if (FEUniformLighting)
+		return (baseColor * light.color.xyz);
+
 	float distance = length(light.position.xyz - fragPosition);
 	float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));
 	vec3 lightDirection = normalize(light.position.xyz - fragPosition);
@@ -701,7 +708,7 @@ vec3 spotLightColor(FELight light, vec3 normal, vec3 fragPosition, vec3 viewDir,
 {
 	vec3 lightDirection = normalize(light.position.xyz - fragPosition);
 	float theta = dot(lightDirection, normalize(-light.direction.xyz));
-	if(theta > light.typeAndAngles.z)
+	if (theta > light.typeAndAngles.z)
 	{
 		float epsilon = light.typeAndAngles.y - light.typeAndAngles.z;
 		float intensity = clamp((theta - light.typeAndAngles.z) / epsilon, 0.0, 1.0);

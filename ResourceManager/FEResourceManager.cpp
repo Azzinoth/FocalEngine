@@ -881,6 +881,7 @@ void FEResourceManager::LoadStandardMeshes()
 	StandardMeshes["84251E6E0D0801363579317R"] = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
 	Meshes.erase(StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->GetObjectID());
 	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetID("84251E6E0D0801363579317R"/*"cube"*/);
+	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetName("FECube");
 
 	std::vector<int> PlaneIndices = {
 		0, 1, 2, 3, 0, 2
@@ -907,10 +908,12 @@ void FEResourceManager::LoadStandardMeshes()
 	StandardMeshes["1Y251E6E6T78013635793156"] = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
 	Meshes.erase(StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->GetObjectID());
 	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
+	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetName("FEPlane");
 
 	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
 	Meshes.erase(StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->GetObjectID());
 	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
+	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetName("FESphere");
 }
 
 FEResourceManager::FEResourceManager()
@@ -2274,7 +2277,7 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture,
 {
 	if (ExampleTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::createSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::CreateSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2288,6 +2291,23 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture,
 		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, DifferentH, bUnManaged, Name);
 	
 	return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
+}
+
+void FEResourceManager::AddTextureToManaged(FETexture* Texture)
+{
+	if (Texture == nullptr)
+	{
+		LOG.Add("FEResourceManager::AddTextureToManaged called with nullptr pointer as texture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	if (Textures.find(Texture->GetObjectID()) != Textures.end())
+	{
+		LOG.Add("FEResourceManager::AddTextureToManaged called with already managed texture", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return;
+	}
+
+	Textures[Texture->GetObjectID()] = Texture;
 }
 
 void FEResourceManager::ReSaveStandardMeshes()
@@ -3789,62 +3809,65 @@ std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* FileName)
 		Result.push_back(NewMaterial);
 	}
 
-	std::unordered_map<int, FEGameModel*> GameModelMap;
-	for (size_t i = 0; i < GLTF.Primitives.size(); i++)
+	std::unordered_map<int, FEPrefab*> PrefabMap;
+	for (size_t i = 0; i < GLTF.Meshes.size(); i++)
 	{
-		GameModelMap[static_cast<int>(i)] = nullptr;
+		PrefabMap[static_cast<int>(i)] = nullptr;
 		
-		if (!GLTF.Primitives[i].RawData.Indices.empty())
+		if (!GLTF.Meshes[i].Primitives[0].RawData.Indices.empty())
 		{
-			if (GLTF.Primitives[i].Material != -1)
+			if (GLTF.Meshes[i].Primitives[0].Material != -1)
 			{
 				int UVIndex = 0;
-				UVIndex = GLTF.Materials[GLTF.Primitives[i].Material].BaseColorTexture.TexCoord;
-				if (GLTF.Primitives[i].RawData.UVs.size() <= UVIndex)
+				UVIndex = GLTF.Materials[GLTF.Meshes[i].Primitives[0].Material].BaseColorTexture.TexCoord;
+				if (GLTF.Meshes[i].Primitives[0].RawData.UVs.size() <= UVIndex)
 					UVIndex = 0;
 			}
 			
-			Result.push_back(RawDataToMesh(GLTF.Primitives[i].RawData.Positions,
-										   GLTF.Primitives[i].RawData.Normals,
-										   GLTF.Primitives[i].RawData.Tangents,
-										   GLTF.Primitives[i].RawData.UVs[0/*UVIndex*/],
-										   GLTF.Primitives[i].RawData.Indices));
+			Result.push_back(RawDataToMesh(GLTF.Meshes[i].Primitives[0].RawData.Positions,
+										   GLTF.Meshes[i].Primitives[0].RawData.Normals,
+										   GLTF.Meshes[i].Primitives[0].RawData.Tangents,
+										   GLTF.Meshes[i].Primitives[0].RawData.UVs[0/*UVIndex*/],
+										   GLTF.Meshes[i].Primitives[0].RawData.Indices,
+										   GLTF.Meshes[i].Name));
 
-			if (GLTF.Primitives[i].Material != -1)
+			if (GLTF.Meshes[i].Primitives[0].Material != -1)
 			{
-				FEGameModel* NewGameModel = CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Primitives[i].Material]);
-				//glTF.primitives[i].
-				//newGameModel->setName();
-				GameModelMap[static_cast<int>(i)] = NewGameModel;
+				FEGameModel* NewGameModel = CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Meshes[i].Primitives[0].Material]);
+				NewGameModel->SetName(GLTF.Meshes[i].Name + "_GameModel");
 				Result.push_back(NewGameModel);
 
 				FEPrefab* NewPrefab = CreatePrefab(NewGameModel);
+				NewPrefab->SetName(GLTF.Meshes[i].Name + "_Prefab");
+				PrefabMap[static_cast<int>(i)] = NewPrefab;
 				Result.push_back(NewPrefab);
 			}
 		}
 	}
 
-	for (size_t i = 0; i < GLTF.Entities.size(); i++)
+	for (size_t i = 0; i < GLTF.Nodes.size(); i++)
 	{
-		int GameModelIndex = -1;
-		for (size_t j = 0; j < GLTF.GameModels.size(); j++)
+		int PrefabIndex = -1;
+		PrefabIndex = GLTF.Nodes[i].Mesh;
+
+		if (PrefabIndex != -1)
 		{
-			if (GLTF.GameModels[j].MeshParent == GLTF.Entities[i].Mesh)
+			if (PrefabMap.find(PrefabIndex) == PrefabMap.end())
 			{
-				GameModelIndex = static_cast<int>(j);
-				break;
+				LOG.Add("PrefabMap does not contain PrefabIndex in FEResourceManager::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+				continue;
 			}
-		}
 
-		if (GameModelIndex != -1)
-		{
-			FEEntity* NewEntity = CreateEntity(GameModelMap[GameModelIndex], GLTF.Entities[i].Name);
-			if (GameModelMap[GameModelIndex] != nullptr)
-				GameModelMap[GameModelIndex]->SetName(GLTF.Entities[i].Name);
-
-			NewEntity->Transform.SetPosition(GLTF.Entities[i].Translation);
-			NewEntity->Transform.SetScale(GLTF.Entities[i].Scale);
-			NewEntity->Transform.SetRotation(GLTF.Entities[i].Rotation);
+			if (PrefabMap[PrefabIndex] == nullptr)
+			{
+				LOG.Add("PrefabMap[PrefabIndex] is nullptr in FEResourceManager::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+				continue;
+			}
+			
+			FEEntity* NewEntity = CreateEntity(PrefabMap[PrefabIndex], GLTF.Nodes[i].Name);
+			NewEntity->Transform.SetPosition(GLTF.Nodes[i].Translation);
+			NewEntity->Transform.RotateByQuaternion(GLTF.Nodes[i].Rotation);
+			NewEntity->Transform.SetScale(GLTF.Nodes[i].Scale);
 
 			Result.push_back(NewEntity);
 		}
@@ -3880,14 +3903,14 @@ FEPrefab* FEResourceManager::GetPrefab(const std::string ID)
 
 std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name)
 {
-	std::vector<FEPrefab*> result;
+	std::vector<FEPrefab*> Result;
 
 	auto it = Prefabs.begin();
 	while (it != Prefabs.end())
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
@@ -3898,13 +3921,13 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	return result;
+	return Result;
 }
 
 FEPrefab* FEResourceManager::CreatePrefab(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)

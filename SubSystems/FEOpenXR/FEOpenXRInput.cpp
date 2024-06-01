@@ -266,6 +266,9 @@ void FEOpenXRInput::InitializeActions()
 
 void FEOpenXRInput::Init()
 {
+    if (!FEOpenXR_CORE.bInitializedCorrectly)
+        return;
+
     InitializeActions();
 }
 

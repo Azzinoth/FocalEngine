@@ -10,7 +10,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXR)
 
-		void Init(std::string VRAppName = "");
+		bool Init(std::string VRAppName = "");
 		void Update();
 
 		glm::vec2 EyeResolution();

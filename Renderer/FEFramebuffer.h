@@ -11,14 +11,12 @@ namespace FocalEngine
 		FE_STENCIL_ATTACHMENT = 4,
 	};
 
-	class FEngine;
-	class FEResourceManager;
-
 	class FEFramebuffer : public FEObject
 	{
-		friend FEngine;
-		friend FEResourceManager;
-		friend FERenderer;
+		friend class FEVirtualUIContext;
+		friend class FEngine;
+		friend class FEResourceManager;
+		friend class FERenderer;
 	public:
 		~FEFramebuffer();
 
