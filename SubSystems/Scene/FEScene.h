@@ -6,6 +6,7 @@
 #include "../Renderer/FELight.h"
 #include "../Renderer/FELine.h"
 #include "../FEVirtualUIContext.h"
+#include "FENaiveSceneGraph.h"
 
 namespace FocalEngine
 {
@@ -50,12 +51,17 @@ namespace FocalEngine
 		void PrepareForPrefabDeletion(const FEPrefab* Prefab);
 
 		void Clear();
+
+		FENaiveSceneGraph SceneGraph;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
 		std::unordered_map<std::string, FEEntity*> EntityMap;
 		std::unordered_map<std::string, FETerrain*> TerrainMap;
 		std::unordered_map<std::string, FEVirtualUIContext*> VirtualUIContextMap;
+
+		void AddEntityToEntityMap(FEEntity* Entity);
+		//void AddEntityToSceneGraph(FEEntity* Entity);
 	};
 
 	#define SCENE FEScene::getInstance()

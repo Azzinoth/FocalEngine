@@ -26,7 +26,8 @@ namespace FocalEngine
 		FE_POST_PROCESS = 14,
 		FE_TERRAIN_LAYER = 15,
 		FE_PREFAB = 16,
-		FE_VIRTUAL_UI_CONTEXT = 17
+		FE_VIRTUAL_UI_CONTEXT = 17,
+		FE_SCENE_ENTITY = 18
 	};
 
 	class FEObject;
@@ -118,6 +119,14 @@ namespace FocalEngine
 			case FocalEngine::FE_PREFAB:
 			{
 				return "FE_PREFAB";
+			}
+			case FocalEngine::FE_VIRTUAL_UI_CONTEXT:
+			{
+				return "FE_VIRTUAL_UI_CONTEXT";
+			}
+			case FocalEngine::FE_SCENE_ENTITY:
+			{
+				return "FE_SCENE_ENTITY";
 			}
 			default:
 				break;

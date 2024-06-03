@@ -204,6 +204,10 @@ file(GLOB Scene_SRC
 	"SubSystems/Scene/FEScene.h"
 	"SubSystems/Scene/FETransformComponent.cpp"
 	"SubSystems/Scene/FETransformComponent.h"
+	"SubSystems/Scene/FENaiveSceneGraph.cpp"
+	"SubSystems/Scene/FENaiveSceneGraph.h"
+	"SubSystems/Scene/FENaiveSceneEntity.cpp"
+	"SubSystems/Scene/FENaiveSceneEntity.h"
 )
 
 # *************** SUB_SYSTEM ***************

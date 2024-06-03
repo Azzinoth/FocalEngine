@@ -52,14 +52,20 @@ FELight* FEScene::AddLight(const FE_OBJECT_TYPE LightType, std::string Name, con
 	return nullptr;
 }
 
+void FEScene::AddEntityToEntityMap(FEEntity* Entity)
+{
+	EntityMap[Entity->GetObjectID()] = Entity;
+	SceneGraph.AddEntity(Entity);
+}
+
 FEEntity* FEScene::AddEntity(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
 		Name = "unnamedEntity";
 
 	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(GameModel, Name, ForceObjectID);
-	EntityMap[NewEntity->GetObjectID()] = NewEntity;
-	return EntityMap[NewEntity->GetObjectID()];
+	AddEntityToEntityMap(NewEntity);
+	return NewEntity;
 }
 
 FEEntity* FEScene::AddEntity(FEPrefab* Prefab, std::string Name, const std::string ForceObjectID)
@@ -68,8 +74,8 @@ FEEntity* FEScene::AddEntity(FEPrefab* Prefab, std::string Name, const std::stri
 		Name = "unnamedEntity";
 
 	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(Prefab, Name, ForceObjectID);
-	EntityMap[NewEntity->GetObjectID()] = NewEntity;
-	return EntityMap[NewEntity->GetObjectID()];
+	AddEntityToEntityMap(NewEntity);
+	return NewEntity;
 }
 
 bool FEScene::AddEntity(FEEntity* NewEntity)
@@ -80,7 +86,7 @@ bool FEScene::AddEntity(FEEntity* NewEntity)
 	if (NewEntity->Prefab == nullptr)
 		return false;
 
-	EntityMap[NewEntity->GetObjectID()] = NewEntity;
+	AddEntityToEntityMap(NewEntity);
 
 	return true;
 }
@@ -324,7 +330,7 @@ FEEntityInstanced* FEScene::AddEntityInstanced(FEPrefab* Prefab, std::string Nam
 	if (!ForceObjectID.empty())
 		NewEntityInstanced->SetID(ForceObjectID);
 
-	EntityMap[NewEntityInstanced->GetObjectID()] = NewEntityInstanced;
+	AddEntityToEntityMap(NewEntityInstanced);
 	return NewEntityInstanced;
 }
 
@@ -342,7 +348,7 @@ bool FEScene::AddEntityInstanced(FEEntityInstanced* NewEntityInstanced)
 	if (NewEntityInstanced->Prefab == nullptr)
 		return false;
 
-	EntityMap[NewEntityInstanced->GetObjectID()] = NewEntityInstanced;
+	AddEntityToEntityMap(NewEntityInstanced);
 
 	return true;
 }

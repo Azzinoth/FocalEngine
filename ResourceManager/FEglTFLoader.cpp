@@ -259,7 +259,7 @@ void FEGLTFLoader::Load(const char* FileName)
 		{
 			if (JsonImages[static_cast<int>(i)].isMember("uri"))
 			{
-				std::string ImageUri = (Directory + JsonImages[static_cast<int>(i)]["uri"].asCString());
+				std::string ImageUri = (Directory + "\\" + JsonImages[static_cast<int>(i)]["uri"].asCString());
 				Images.push_back(ImageUri);
 			}
 		}
