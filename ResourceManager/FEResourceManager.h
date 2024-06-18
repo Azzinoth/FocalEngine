@@ -63,6 +63,8 @@ namespace FocalEngine
 		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
 
+		FETexture* ImportTexture(const char* FileName);
+
 		FEMesh* RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name = "");
 		FEMesh* RawDataToMesh(float* Positions, int PosSize,
 							  float* UV, int UVSize,
@@ -129,9 +131,10 @@ namespace FocalEngine
 		void ReSaveStandardMeshes();
 
 		std::string GetDefaultResourcesFolder();
-		std::vector<FEObject*> LoadGLTF(const char* FileName);
+		//std::vector<FEObject*> LoadGLTF(const char* FileName);
 
-		std::vector<FEObject*> ImportAsset(const char* FileName);
+		
+		//std::vector<FEObject*> ImportAsset(const char* FileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 

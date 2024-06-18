@@ -19,11 +19,15 @@ void FEGLTFLoader::Clear()
 	BufferViews.clear();
 	Accessors.clear();
 	Meshes.clear();
-	Nodes.clear();
 
 	Images.clear();
+	TextureSamplers.clear();
 	Textures.clear();
 	Materials.clear();
+
+	Nodes.clear();
+	Scenes.clear();
+	Scene = -1;
 }
 
 void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPrimitive)
@@ -103,26 +107,25 @@ void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPr
 	LoadMeshRawData(NewPrimitive);
 }
 
-GLTFMaterialTexture FEGLTFLoader::LoadMaterialTexture(Json::Value JsonTextureNode)
+GLTFTextureInfo FEGLTFLoader::LoadTextureInfo(Json::Value JsonTextureNode)
 {
-	GLTFMaterialTexture TempTexture;
+	GLTFTextureInfo TempTextureInfo;
 
 	if (JsonTextureNode.isMember("index"))
 	{
-		TempTexture.Index = JsonTextureNode["index"].asInt();
+		TempTextureInfo.Index = JsonTextureNode["index"].asInt();
+	}
+	else
+	{
+		LOG.Add("index is not present in function FEGLTFLoader::LoadTextureInfo.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 
 	if (JsonTextureNode.isMember("texCoord"))
 	{
-		TempTexture.TexCoord = JsonTextureNode["texCoord"].asInt();
+		TempTextureInfo.TexCoord = JsonTextureNode["texCoord"].asInt();
 	}
 
-	if (JsonTextureNode.isMember("scale"))
-	{
-		TempTexture.TexCoord = JsonTextureNode["scale"].asInt();
-	}
-
-	return TempTexture;
+	return TempTextureInfo;
 }
 
 void FEGLTFLoader::Load(const char* FileName)
@@ -257,11 +260,21 @@ void FEGLTFLoader::Load(const char* FileName)
 		Json::Value JsonImages = Root["images"];
 		for (size_t i = 0; i < JsonImages.size(); i++)
 		{
+			GLTFImage NewImage;
+
 			if (JsonImages[static_cast<int>(i)].isMember("uri"))
-			{
-				std::string ImageUri = (Directory + "\\" + JsonImages[static_cast<int>(i)]["uri"].asCString());
-				Images.push_back(ImageUri);
-			}
+				NewImage.Uri = JsonImages[static_cast<int>(i)]["uri"].asCString();
+
+			if (JsonImages[static_cast<int>(i)].isMember("mimeType"))
+				NewImage.MimeType = JsonImages[static_cast<int>(i)]["mimeType"].asCString();
+
+			if (JsonImages[static_cast<int>(i)].isMember("bufferView"))
+				NewImage.BufferView = JsonImages[static_cast<int>(i)]["bufferView"].asInt();
+
+			if (JsonImages[static_cast<int>(i)].isMember("name"))
+				NewImage.Name = JsonImages[static_cast<int>(i)]["name"].asCString();
+
+			Images.push_back(NewImage);
 		}
 	}
 
@@ -270,15 +283,44 @@ void FEGLTFLoader::Load(const char* FileName)
 		Json::Value JsonTextures = Root["textures"];
 		for (size_t i = 0; i < JsonTextures.size(); i++)
 		{
+			GLTFTexture NewTexture;
+
+			if (JsonTextures[static_cast<int>(i)].isMember("sampler"))
+				NewTexture.Sampler = JsonTextures[static_cast<int>(i)]["sampler"].asInt();
+
 			if (JsonTextures[static_cast<int>(i)].isMember("source"))
-			{
-				int ImageIndex = JsonTextures[static_cast<int>(i)]["source"].asInt();
-				if (ImageIndex < Images.size())
-				{
-					std::string TextureFile = Images[ImageIndex];
-					Textures.push_back(TextureFile);
-				}
-			}
+				NewTexture.Source = JsonTextures[static_cast<int>(i)]["source"].asInt();
+
+			if (JsonTextures[static_cast<int>(i)].isMember("name"))
+				NewTexture.Name = JsonTextures[static_cast<int>(i)]["name"].asCString();
+
+			Textures.push_back(NewTexture);
+		}
+	}
+
+	if (Root.isMember("samplers"))
+	{
+		Json::Value JsonSamplers = Root["samplers"];
+		for (size_t i = 0; i < JsonSamplers.size(); i++)
+		{
+			GLTFTextureSampler NewSampler;
+
+			if (JsonSamplers[static_cast<int>(i)].isMember("magFilter"))
+				NewSampler.MagFilter = JsonSamplers[static_cast<int>(i)]["magFilter"].asInt();
+
+			if (JsonSamplers[static_cast<int>(i)].isMember("minFilter"))
+				NewSampler.MinFilter = JsonSamplers[static_cast<int>(i)]["minFilter"].asInt();
+
+			if (JsonSamplers[static_cast<int>(i)].isMember("wrapS"))
+				NewSampler.WrapS = JsonSamplers[static_cast<int>(i)]["wrapS"].asInt();
+
+			if (JsonSamplers[static_cast<int>(i)].isMember("wrapT"))
+				NewSampler.WrapT = JsonSamplers[static_cast<int>(i)]["wrapT"].asInt();
+
+			if (JsonSamplers[static_cast<int>(i)].isMember("name"))
+				NewSampler.Name = JsonSamplers[static_cast<int>(i)]["name"].asCString();
+
+			TextureSamplers.push_back(NewSampler);
 		}
 	}
 
@@ -288,64 +330,88 @@ void FEGLTFLoader::Load(const char* FileName)
 		for (size_t i = 0; i < JsonMaterials.size(); i++)
 		{
 			GLTFMaterial NewMaterial;
-			NewMaterial.Name = JsonMaterials[static_cast<int>(i)]["name"].asCString();
+
+			if (JsonMaterials[static_cast<int>(i)].isMember("name"))
+				NewMaterial.Name = JsonMaterials[static_cast<int>(i)]["name"].asCString();
 
 			if (JsonMaterials[static_cast<int>(i)].isMember("pbrMetallicRoughness"))
 			{
 				if (JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"].isMember("baseColorFactor"))
 				{
-					NewMaterial.BaseColor = glm::vec4(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][0].asDouble(),
-													  JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][1].asDouble(),
-													  JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][2].asDouble(),
-													  JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][3].asDouble());
+					NewMaterial.PBRMetallicRoughness.BaseColorFactor = glm::vec4(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][0].asDouble(),
+																				 JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][1].asDouble(),
+																				 JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][2].asDouble(),
+																				 JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorFactor"][3].asDouble());
 				}
 
 				if (JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"].isMember("baseColorTexture"))
-				{
-					NewMaterial.BaseColorTexture = LoadMaterialTexture(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorTexture"]);
-					/*if (jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"].isMember("index"))
-					{
-						newMaterial.baseColorTexture.index = jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"]["index"].asInt();
-					}
+					NewMaterial.PBRMetallicRoughness.BaseColorTexture = LoadTextureInfo(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["baseColorTexture"]);
+				
 
-					if (jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"].isMember("texCoord"))
-					{
-						newMaterial.baseColorTexture.texCoord = jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"]["texCoord"].asInt();
-					}
+				if (JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"].isMember("metallicFactor"))
+					NewMaterial.PBRMetallicRoughness.MetallicFactor = static_cast<float>(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["metallicFactor"].asDouble());
 
-					if (jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"].isMember("scale"))
-					{
-						newMaterial.baseColorTexture.texCoord = jsonMaterials[int(i)]["pbrMetallicRoughness"]["baseColorTexture"]["scale"].asInt();
-					}*/
-				}
+				if (JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"].isMember("roughnessFactor"))
+					NewMaterial.PBRMetallicRoughness.RoughnessFactor = static_cast<float>(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["roughnessFactor"].asDouble());
 
 				if (JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"].isMember("metallicRoughnessTexture"))
-				{
-					NewMaterial.MetallicRoughnessTexture = LoadMaterialTexture(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["metallicRoughnessTexture"]);
-					//if (jsonMaterials[int(i)]["pbrMetallicRoughness"]["metallicRoughnessTexture"].isMember("index"))
-					//{
-					//	newMaterial.metallicRoughnessTexture = jsonMaterials[int(i)]["pbrMetallicRoughness"]["metallicRoughnessTexture"]["index"].asInt();
-					//}
-				}
+					NewMaterial.PBRMetallicRoughness.MetallicRoughnessTexture = LoadTextureInfo(JsonMaterials[static_cast<int>(i)]["pbrMetallicRoughness"]["metallicRoughnessTexture"]);
 			}
 
 			if (JsonMaterials[static_cast<int>(i)].isMember("normalTexture"))
 			{
-				NewMaterial.NormalTexture = LoadMaterialTexture(JsonMaterials[static_cast<int>(i)]["normalTexture"]);
-				/*if (jsonMaterials[int(i)]["normalTexture"].isMember("index"))
+				if (JsonMaterials[int(i)]["normalTexture"].isMember("index"))
 				{
-					newMaterial.normalTexture = jsonMaterials[int(i)]["normalTexture"]["index"].asInt();
-				}*/
+					NewMaterial.NormalTexture.Index = JsonMaterials[int(i)]["normalTexture"]["index"].asInt();
+
+					if (JsonMaterials[int(i)]["normalTexture"].isMember("texCoord"))
+						NewMaterial.NormalTexture.TexCoord = JsonMaterials[int(i)]["normalTexture"]["texCoord"].asInt();
+
+					if (JsonMaterials[int(i)]["normalTexture"].isMember("scale"))
+						NewMaterial.NormalTexture.Scale = JsonMaterials[int(i)]["normalTexture"]["scale"].asInt();
+				}
+				else
+				{
+					LOG.Add("normalTexture.index is not present in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				}
 			}
 
 			if (JsonMaterials[static_cast<int>(i)].isMember("occlusionTexture"))
 			{
-				NewMaterial.OcclusionTexture = LoadMaterialTexture(JsonMaterials[static_cast<int>(i)]["occlusionTexture"]);
-				/*if (jsonMaterials[int(i)]["occlusionTexture"].isMember("index"))
+				if (JsonMaterials[int(i)]["occlusionTexture"].isMember("index"))
 				{
-					newMaterial.occlusionTexture = jsonMaterials[int(i)]["occlusionTexture"]["index"].asInt();
-				}*/
+					NewMaterial.OcclusionTexture.Index = JsonMaterials[int(i)]["occlusionTexture"]["index"].asInt();
+
+					if (JsonMaterials[int(i)]["occlusionTexture"].isMember("texCoord"))
+						NewMaterial.OcclusionTexture.TexCoord = JsonMaterials[int(i)]["occlusionTexture"]["texCoord"].asInt();
+
+					if (JsonMaterials[int(i)]["occlusionTexture"].isMember("strength"))
+						NewMaterial.OcclusionTexture.Strength = JsonMaterials[int(i)]["occlusionTexture"]["strength"].asInt();
+				}
+				else
+				{
+					LOG.Add("occlusionTexture.index is not present in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				}
 			}
+
+			if (JsonMaterials[static_cast<int>(i)].isMember("emissiveTexture"))
+				NewMaterial.EmissiveTexture = LoadTextureInfo(JsonMaterials[static_cast<int>(i)]["emissiveTexture"]);
+			
+			if (JsonMaterials[static_cast<int>(i)].isMember("emissiveFactor"))
+			{
+				NewMaterial.EmissiveFactor = glm::vec3(JsonMaterials[static_cast<int>(i)]["emissiveFactor"][0].asDouble(),
+													   JsonMaterials[static_cast<int>(i)]["emissiveFactor"][1].asDouble(),
+													   JsonMaterials[static_cast<int>(i)]["emissiveFactor"][2].asDouble());
+			}
+
+			if (JsonMaterials[static_cast<int>(i)].isMember("alphaMode"))
+				NewMaterial.AlphaMode = JsonMaterials[static_cast<int>(i)]["alphaMode"].asCString();
+
+			if (JsonMaterials[static_cast<int>(i)].isMember("alphaCutoff"))
+				NewMaterial.AlphaCutoff = static_cast<float>(JsonMaterials[static_cast<int>(i)]["alphaCutoff"].asDouble());
+
+			if (JsonMaterials[static_cast<int>(i)].isMember("doubleSided"))
+				NewMaterial.bDoubleSided = JsonMaterials[static_cast<int>(i)]["doubleSided"].asBool();
 
 			Materials.push_back(NewMaterial);
 		}
@@ -365,10 +431,64 @@ void FEGLTFLoader::Load(const char* FileName)
 				bAnyInfoWasRead = true;
 			}
 
+			if (JsonNodes[static_cast<int>(i)].isMember("camera"))
+			{
+				int CameraIndex = JsonNodes[static_cast<int>(i)]["camera"].asInt();
+				if (CameraIndex < 0)
+				{
+					LOG.Add("camera is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				}
+				else
+				{
+					NewNode.Camera = CameraIndex;
+					bAnyInfoWasRead = true;
+				}
+			}
+
 			if (JsonNodes[static_cast<int>(i)].isMember("mesh"))
 			{
-				NewNode.Mesh = JsonNodes[static_cast<int>(i)]["mesh"].asInt();
-				bAnyInfoWasRead = true;
+				int MeshIndex = JsonNodes[static_cast<int>(i)]["mesh"].asInt();
+				if (MeshIndex < 0)
+				{
+					LOG.Add("mesh is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				}
+				else
+				{
+					NewNode.Mesh = MeshIndex;
+					bAnyInfoWasRead = true;
+				}
+			}
+
+			if (JsonNodes[static_cast<int>(i)].isMember("skin"))
+			{
+				int SkinIndex = JsonNodes[static_cast<int>(i)]["skin"].asInt();
+				if (SkinIndex < 0)
+				{
+					LOG.Add("skin is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+					
+				}
+				else
+				{
+					NewNode.Skin = SkinIndex;
+					bAnyInfoWasRead = true;
+				}
+			}
+
+			if (JsonNodes[static_cast<int>(i)].isMember("matrix"))
+			{
+				if (JsonNodes[static_cast<int>(i)]["matrix"].size() != 16)
+				{
+					LOG.Add("matrix size is not 16 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				}
+				else
+				{
+					NewNode.Matrix.resize(16);
+					for (int j = 0; j < 16; j++)
+					{
+						NewNode.Matrix[j] = JsonNodes[static_cast<int>(i)]["matrix"][j].asFloat();
+					}
+					bAnyInfoWasRead = true;
+				}
 			}
 
 			if (JsonNodes[static_cast<int>(i)].isMember("translation"))
@@ -402,15 +522,77 @@ void FEGLTFLoader::Load(const char* FileName)
 
 			if (JsonNodes[static_cast<int>(i)].isMember("children"))
 			{
-				Json::Value JsonChildrens = Root["children"];
+				std::unordered_map<int, bool> ChildrensPresent;
+
+				Json::Value JsonChildrens = JsonNodes[static_cast<int>(i)]["children"];
 				for (size_t j = 0; j < JsonChildrens.size(); j++)
 				{
+					int NewChild = JsonChildrens[static_cast<int>(j)].asInt();
+					// Each element in the array MUST be greater than or equal to 0.
+					if (NewChild < 0)
+					{
+						LOG.Add("child is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+						continue;
+					}
 
+					// Each element in the array MUST be unique.
+					if (ChildrensPresent.find(NewChild) != ChildrensPresent.end())
+					{
+						LOG.Add("child is not unique in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+						continue;
+					}
+
+					ChildrensPresent[NewChild] = true;
+					NewNode.Children.push_back(NewChild);
 				}
 			}
 
 			if (bAnyInfoWasRead)
 				Nodes.push_back(NewNode);
+		}
+	}
+
+	if (Root.isMember("scenes"))
+	{
+		Json::Value JsonScenes = Root["scenes"];
+		for (size_t i = 0; i < JsonScenes.size(); i++)
+		{
+			GLTFScene NewScene;
+
+			if (JsonScenes[static_cast<int>(i)].isMember("name"))
+				NewScene.Name = JsonScenes[static_cast<int>(i)]["name"].asCString();
+
+			if (JsonScenes[static_cast<int>(i)].isMember("nodes"))
+			{
+				Json::Value JsonNodeIndexes = JsonScenes[static_cast<int>(i)]["nodes"];
+				for (size_t j = 0; j < JsonNodeIndexes.size(); j++)
+				{
+					int NewNodeIndex = JsonNodeIndexes[static_cast<int>(j)].asInt();
+					// Each element in the array MUST be greater than or equal to 0.
+					if (NewNodeIndex < 0)
+					{
+						LOG.Add("node is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+						continue;
+					}
+
+					NewScene.Nodes.push_back(NewNodeIndex);
+				}
+			}
+
+			Scenes.push_back(NewScene);
+		}
+	}
+
+	if (Root.isMember("scene"))
+	{
+		int SceneIndex = Root["scene"].asInt();
+		if (SceneIndex < 0)
+		{
+			LOG.Add("scene is less than 0 in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		}
+		else
+		{
+			Scene = Root["scene"].asInt();
 		}
 	}
 }

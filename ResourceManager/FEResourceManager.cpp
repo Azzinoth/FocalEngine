@@ -3433,66 +3433,59 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 
 		FEMaterial* Material = nullptr;
 		std::string Name;
-		FETexture* Texture = nullptr;
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
-				Material->SetAlbedoMap(Texture);
+				Material->SetAlbedoMap(LoadedTexture);
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
 					Material = CreateMaterial(OBJLoader.LoadedObjects[i]->MaterialRecords[0].Name);
-				Material->SetNormalMap(Texture);
+				Material->SetNormalMap(LoadedTexture);
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
@@ -3500,22 +3493,20 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
@@ -3523,22 +3514,20 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
@@ -3546,22 +3535,20 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
@@ -3569,22 +3556,20 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
 		if (LoadedTextures.find(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile) == LoadedTextures.end() &&
 			!OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.empty())
 		{
-			std::vector<FEObject*> LoadedObjects = ImportAsset(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.c_str());
-			if (!LoadedObjects.empty() && LoadedObjects[0] != nullptr)
+			FETexture* LoadedTexture = ImportTexture(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.c_str());
+			if (LoadedTexture != nullptr)
 			{
-				Texture = reinterpret_cast<FETexture*>(LoadedObjects[0]);
-
 				LoadedTextures[OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile] = true;
 				Name = FILE_SYSTEM.GetFileName(OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile.c_str());
 
-				ResultArray.push_back(Texture);
+				ResultArray.push_back(LoadedTexture);
 				ResultArray.back()->SetName(Name);
 
 				if (Material == nullptr)
@@ -3592,7 +3577,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::createMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3607,62 +3592,39 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 	}
 }
 
-std::vector<FEObject*> FEResourceManager::ImportAsset(const char* FileName)
+FETexture* FEResourceManager::ImportTexture(const char* FileName)
 {
-	std::vector<FEObject*> Result; 
+	FETexture* Result = nullptr;
+
 	if (FileName == nullptr)
 	{
-		LOG.Add("call of FEResourceManager::importAsset with nullptr fileName", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("call of FEResourceManager::ImportTexture with nullptr FileName", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
-
+	
 	if (!FILE_SYSTEM.CheckFile(FileName))
 	{
-		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::importAsset", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::ImportTexture", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
 
 	std::string FileExtention = FILE_SYSTEM.GetFileExtension(FileName);
-	// To lower case
 	std::transform(FileExtention.begin(), FileExtention.end(), FileExtention.begin(), [](const unsigned char C) { return std::tolower(C); });
-
+	
 	if (FileExtention == ".png")
 	{
-		FETexture* TempTexture = LoadPNGTexture(FileName);
-		if (TempTexture != nullptr)
-		{
-			Result.push_back(TempTexture);
-			return Result;
-		}
+		Result = LoadPNGTexture(FileName);
 	}
 	else if (FileExtention == ".jpg")
 	{
-		FETexture* TempTexture = LoadJPGTexture(FileName);
-		if (TempTexture != nullptr)
-		{
-			Result.push_back(TempTexture);
-			return Result;
-		}
+		Result = LoadJPGTexture(FileName);
+
 	}
 	else if (FileExtention == ".bmp")
 	{
-		FETexture* TempTexture = LoadBMPTexture(FileName);
-		if (TempTexture != nullptr)
-		{
-			Result.push_back(TempTexture);
-			return Result;
-		}
+		Result = LoadBMPTexture(FileName);
 	}
-	else if (FileExtention == ".obj")
-	{
-		Result = ImportOBJ(FileName,true);
-		return Result;
-	}
-	else if (FileExtention == ".gltf")
-	{
-		return LoadGLTF(FileName);
-	}
-
+	
 	return Result;
 }
 
@@ -3724,154 +3686,6 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 
 	delete[] RawData;
 	delete[] MaskRawData;
-
-	return Result;
-}
-
-std::vector<FEObject*> FEResourceManager::LoadGLTF(const char* FileName)
-{
-	std::vector<FEObject*> Result;
-	if (!FILE_SYSTEM.CheckFile(FileName))
-	{
-		LOG.Add("call of FEResourceManager::LoadGLTF can't locate file: " + std::string(FileName), "FE_LOG_LOADING", FE_LOG_ERROR);
-		return Result;
-	}
-
-	FEGLTFLoader& GLTF = FEGLTFLoader::getInstance();
-	GLTF.Load(FileName);
-
-	std::unordered_map<std::string, FETexture*> AlreadyLoadedTextures;
-	std::unordered_map<int, FETexture*> TextureMap;
-	for (size_t i = 0; i < GLTF.Textures.size(); i++)
-	{
-		if (AlreadyLoadedTextures.find(GLTF.Textures[i]) != AlreadyLoadedTextures.end())
-		{
-			TextureMap[static_cast<int>(TextureMap.size())] = AlreadyLoadedTextures[GLTF.Textures[i]];
-			continue;
-		}
-
-		if (!FILE_SYSTEM.CheckFile(GLTF.Textures[i].c_str()))
-		{
-			TextureMap[static_cast<int>(TextureMap.size())] = nullptr;
-			continue;
-		}
-
-		std::vector<FEObject*> TempResult = ImportAsset(GLTF.Textures[i].c_str());
-		if (!TempResult.empty())
-		{
-			TextureMap[static_cast<int>(TextureMap.size())] = reinterpret_cast<FETexture*>(TempResult[0]);
-			AlreadyLoadedTextures[GLTF.Textures[i]] = reinterpret_cast<FETexture*>(TempResult[0]);
-			Result.push_back(TempResult[0]);
-		}
-	}
-
-	std::unordered_map<int, FEMaterial*> MaterialsMap;
-	for (size_t i = 0; i < GLTF.Materials.size(); i++)
-	{
-		FEMaterial* NewMaterial = CreateMaterial(GLTF.Materials[i].Name);
-		MaterialsMap[static_cast<int>(i)] = NewMaterial;
-		NewMaterial->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-
-		if (TextureMap.find(GLTF.Materials[i].BaseColorTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].BaseColorTexture.Index] != nullptr)
-		{
-			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].BaseColorTexture.Index]);
-			NewMaterial->SetAlbedoMap(TextureMap[GLTF.Materials[i].BaseColorTexture.Index]);
-		}
-		else if (GLTF.Materials[i].BaseColor[0] != -1)
-		{
-			NewMaterial->BaseColor = GLTF.Materials[i].BaseColor;
-		}
-
-		if (TextureMap.find(GLTF.Materials[i].MetallicRoughnessTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index] != nullptr)
-		{
-			/*
-				https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/Specification.adoc#reference-material
-				The textures for metalness and roughness properties are packed together in a single texture called metallicRoughnessTexture.
-				Its green channel contains roughness values and its blue channel contains metalness values.
-			*/
-			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index]);
-			NewMaterial->SetRoughnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 1, 0);
-			NewMaterial->SetMetalnessMap(TextureMap[GLTF.Materials[i].MetallicRoughnessTexture.Index], 2, 0);
-		}
-
-		if (TextureMap.find(GLTF.Materials[i].NormalTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].NormalTexture.Index] != nullptr)
-		{
-			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
-			NewMaterial->SetNormalMap(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
-		}
-
-		if (TextureMap.find(GLTF.Materials[i].OcclusionTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].OcclusionTexture.Index] != nullptr)
-		{
-			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
-			NewMaterial->SetAOMap(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
-		}
-
-		Result.push_back(NewMaterial);
-	}
-
-	std::unordered_map<int, FEPrefab*> PrefabMap;
-	for (size_t i = 0; i < GLTF.Meshes.size(); i++)
-	{
-		PrefabMap[static_cast<int>(i)] = nullptr;
-		
-		if (!GLTF.Meshes[i].Primitives[0].RawData.Indices.empty())
-		{
-			if (GLTF.Meshes[i].Primitives[0].Material != -1)
-			{
-				int UVIndex = 0;
-				UVIndex = GLTF.Materials[GLTF.Meshes[i].Primitives[0].Material].BaseColorTexture.TexCoord;
-				if (GLTF.Meshes[i].Primitives[0].RawData.UVs.size() <= UVIndex)
-					UVIndex = 0;
-			}
-			
-			Result.push_back(RawDataToMesh(GLTF.Meshes[i].Primitives[0].RawData.Positions,
-										   GLTF.Meshes[i].Primitives[0].RawData.Normals,
-										   GLTF.Meshes[i].Primitives[0].RawData.Tangents,
-										   GLTF.Meshes[i].Primitives[0].RawData.UVs[0/*UVIndex*/],
-										   GLTF.Meshes[i].Primitives[0].RawData.Indices,
-										   GLTF.Meshes[i].Name));
-
-			if (GLTF.Meshes[i].Primitives[0].Material != -1)
-			{
-				FEGameModel* NewGameModel = CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Meshes[i].Primitives[0].Material]);
-				NewGameModel->SetName(GLTF.Meshes[i].Name + "_GameModel");
-				Result.push_back(NewGameModel);
-
-				FEPrefab* NewPrefab = CreatePrefab(NewGameModel);
-				NewPrefab->SetName(GLTF.Meshes[i].Name + "_Prefab");
-				PrefabMap[static_cast<int>(i)] = NewPrefab;
-				Result.push_back(NewPrefab);
-			}
-		}
-	}
-
-	for (size_t i = 0; i < GLTF.Nodes.size(); i++)
-	{
-		int PrefabIndex = -1;
-		PrefabIndex = GLTF.Nodes[i].Mesh;
-
-		if (PrefabIndex != -1)
-		{
-			if (PrefabMap.find(PrefabIndex) == PrefabMap.end())
-			{
-				LOG.Add("PrefabMap does not contain PrefabIndex in FEResourceManager::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-				continue;
-			}
-
-			if (PrefabMap[PrefabIndex] == nullptr)
-			{
-				LOG.Add("PrefabMap[PrefabIndex] is nullptr in FEResourceManager::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-				continue;
-			}
-			
-			FEEntity* NewEntity = CreateEntity(PrefabMap[PrefabIndex], GLTF.Nodes[i].Name);
-			NewEntity->Transform.SetPosition(GLTF.Nodes[i].Translation);
-			NewEntity->Transform.RotateByQuaternion(GLTF.Nodes[i].Rotation);
-			NewEntity->Transform.SetScale(GLTF.Nodes[i].Scale);
-
-			Result.push_back(NewEntity);
-		}
-	}
 
 	return Result;
 }

@@ -52,6 +52,9 @@ namespace FocalEngine
 
 		void Clear();
 
+		std::vector<FEObject*> ImportAsset(std::string FileName);
+		
+
 		FENaiveSceneGraph SceneGraph;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
@@ -62,6 +65,8 @@ namespace FocalEngine
 
 		void AddEntityToEntityMap(FEEntity* Entity);
 		//void AddEntityToSceneGraph(FEEntity* Entity);
+
+		std::vector<FEObject*> LoadGLTF(std::string FileName);
 	};
 
 	#define SCENE FEScene::getInstance()
