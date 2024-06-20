@@ -14,6 +14,24 @@ FENaiveSceneEntity::~FENaiveSceneEntity()
 void FENaiveSceneEntity::AddChild(FENaiveSceneEntity* Child)
 {
 	Children.push_back(Child);
+
+	bool bPreserveWorldPosition = false;
+	if (bPreserveWorldPosition)
+	{
+		// If I want to have to add child without changing world position of it.
+		FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
+		if (Entity == nullptr)
+			return;
+
+		FETransformComponent& ParentTransform = Entity->Transform;
+
+		FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(Child->GetOldStyleEntity());
+		FETransformComponent& ChildTransform = ChildEntity->Transform;
+
+		ChildTransform.SetPosition(ChildTransform.GetPosition() - ParentTransform.GetPosition());
+		//ChildTransform.SetQuaternion(ChildTransform.GetQuaternion() - ParentTransform.GetQuaternion());
+		ChildTransform.SetScale(ChildTransform.GetScale() / ParentTransform.GetScale());
+	}
 }
 
 void FENaiveSceneEntity::RemoveChild(FENaiveSceneEntity* Child)

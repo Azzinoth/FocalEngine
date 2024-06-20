@@ -575,7 +575,7 @@ void FEGLTFLoader::Load(const char* FileName)
 						continue;
 					}
 
-					NewScene.Nodes.push_back(NewNodeIndex);
+					NewScene.RootChildren.push_back(NewNodeIndex);
 				}
 			}
 

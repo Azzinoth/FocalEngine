@@ -67,6 +67,7 @@ namespace FocalEngine
 		//void AddEntityToSceneGraph(FEEntity* Entity);
 
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
+		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, FEPrefab*>& PrefabMap, const std::string ParentID);
 	};
 
 	#define SCENE FEScene::getInstance()

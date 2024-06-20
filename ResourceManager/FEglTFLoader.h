@@ -167,7 +167,7 @@ namespace FocalEngine
 	{
 		std::string Name;
 		// All nodes listed in scene.nodes array MUST be root nodes, i.e., they MUST NOT be listed in a node.children array of any node. The same root node MAY appear in multiple scenes.
-		std::vector<int> Nodes;
+		std::vector<int> RootChildren;
 	};
 
 	class FEGLTFLoader
@@ -179,7 +179,7 @@ namespace FocalEngine
 
 		void Load(const char* FileName);
 		void Clear();
-		
+
 	private:
 		SINGLETON_PRIVATE_PART(FEGLTFLoader)
 

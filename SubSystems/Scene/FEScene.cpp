@@ -538,7 +538,8 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 			continue;
 		}
 
-		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
+		//FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
+		FETexture* LoadedTexture = RESOURCE_MANAGER.NoTexture;
 		if (LoadedTexture != nullptr)
 		{
 			if (!GLTF.Textures[i].Name.empty())
@@ -669,32 +670,90 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 
 	for (size_t i = 0; i < GLTF.Nodes.size(); i++)
 	{
-		int PrefabIndex = -1;
-		PrefabIndex = GLTF.Nodes[i].Mesh;
-
-		if (PrefabIndex != -1)
-		{
-			if (PrefabMap.find(PrefabIndex) == PrefabMap.end())
-			{
-				LOG.Add("PrefabMap does not contain PrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-				continue;
-			}
-
-			if (PrefabMap[PrefabIndex] == nullptr)
-			{
-				LOG.Add("PrefabMap[PrefabIndex] is nullptr in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-				continue;
-			}
-
-			FEEntity* NewEntity = AddEntity(PrefabMap[PrefabIndex], GLTF.Nodes[i].Name);
-			NewEntity->Transform.SetPosition(GLTF.Nodes[i].Translation);
-			NewEntity->Transform.RotateByQuaternion(GLTF.Nodes[i].Rotation);
-			NewEntity->Transform.SetScale(GLTF.Nodes[i].Scale);
-
-			Result.push_back(NewEntity);
-		}
+		AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[i], PrefabMap, SceneGraph.GetRoot()->GetObjectID());
 	}
 
 	GLTF.Clear();
+	return Result;
+}
+
+std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, FEPrefab*>& PrefabMap, const std::string ParentID)
+{
+	std::vector<FEObject*> Result;
+
+	int PrefabIndex = -1;
+	PrefabIndex = Node.Mesh;
+
+	std::string NewNaiveSceneEntityID = "";
+
+	if (PrefabIndex != -1)
+	{
+		if (PrefabMap.find(PrefabIndex) == PrefabMap.end())
+		{
+			LOG.Add("PrefabMap does not contain PrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			//continue;
+		}
+
+		FEPrefab* CorrentPrefab = PrefabMap.find(PrefabIndex)->second;
+		if (CorrentPrefab == nullptr)
+		{
+			LOG.Add("PrefabMap[PrefabIndex] is nullptr in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			//continue;
+		}
+		
+		FEEntity* NewEntity = AddEntity(CorrentPrefab, Node.Name);
+		NewEntity->Transform.SetPosition(Node.Translation);
+		NewEntity->Transform.RotateByQuaternion(Node.Rotation);
+		NewEntity->Transform.SetScale(Node.Scale);
+
+		// Problem is that currently we can not have entity without prefab
+		// Later we should add support for entities without prefabs
+		NewNaiveSceneEntityID = SceneGraph.AddEntity(NewEntity);
+		SceneGraph.MoveEntity(NewNaiveSceneEntityID, ParentID);
+
+		Result.push_back(NewEntity);
+	}
+	// Currently we are useing this hack to add empty entities
+	else
+	{
+		FEEntity* DummyEntity = new FEEntity();
+		DummyEntity->SetName(Node.Name);
+		DummyEntity->Transform.SetPosition(Node.Translation);
+		DummyEntity->Transform.RotateByQuaternion(Node.Rotation);
+		DummyEntity->Transform.SetScale(Node.Scale);
+
+		NewNaiveSceneEntityID = SceneGraph.AddEntity(DummyEntity);
+		SceneGraph.MoveEntity(NewNaiveSceneEntityID, ParentID);
+	}
+
+	for (size_t i = 0; i < Node.Children.size(); i++)
+	{
+		if (Node.Children[i] < 0 || Node.Children[i] >= GLTF.Nodes.size())
+		{
+			LOG.Add("Node.Children[i] out of bounds in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
+			continue;
+		}
+
+		if (Node.Name == "BistroInterior")
+		{
+			int y = 0;
+			y++;
+		}
+		else if (Node.Name == "BistroExterior")
+		{
+			int y = 0;
+			y++;
+		}
+		else
+		{
+			int y = 0;
+			y++;
+		}
+
+		GLTFNodes ChildNode = GLTF.Nodes[Node.Children[i]];
+		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, PrefabMap, NewNaiveSceneEntityID);
+		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
+	}
+
 	return Result;
 }

@@ -24,6 +24,9 @@ FENaiveSceneEntity* FENaiveSceneGraph::GetRoot() const
 
 FENaiveSceneEntity* FENaiveSceneGraph::GetEntity(std::string ID)
 {
+	if (ID == Root->GetObjectID())
+		return Root;
+
 	return Root->GetChild(ID);
 }
 
