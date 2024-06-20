@@ -290,173 +290,54 @@ void FEObjLoader::ReadFile(const char* FileName)
 	}
 }
 
-glm::vec3 FEObjLoader::CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2)
-{
-	glm::dvec3 Edge_0 = V2 - V1;
-	glm::dvec3 Edge_1 = V2 - V0;
-
-	glm::dvec3 Normal = glm::normalize(glm::cross(Edge_1, Edge_0));
-
-	if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-		Normal = glm::dvec3();
-
-	return Normal;
-}
-
 void FEObjLoader::CalculateNormals(FERawOBJData* Data)
 {
-	std::vector<double> TrianglesArea;
 	std::vector<glm::dvec3> TrianglePoints;
 	TrianglePoints.resize(3);
 
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	std::vector<int> Indices;
+	for (size_t i = 0; i < Data->FInd.size(); i++)
 	{
-		int VertexPosition = Data->FInd[i] * 3;
-		TrianglePoints[0] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		VertexPosition = Data->FInd[i + 1] * 3;
-		TrianglePoints[1] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		VertexPosition = Data->FInd[i + 2] * 3;
-		TrianglePoints[2] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		TrianglesArea.push_back(GEOMETRY.CalculateTriangleArea(TrianglePoints[0], TrianglePoints[1], TrianglePoints[2]));
+		Indices.push_back(Data->FInd[i]);
 	}
-	
-	struct VertexNormalsInfo
+
+	if (bUseDoublePrecisionForReadingCoordinates)
 	{
-		std::vector<glm::dvec3> Normals;
-		std::vector<double> Areas;
-		double AreaSum = 0.0;
-	};
-
-	std::vector<VertexNormalsInfo> DataForWeightedNormals;
-	DataForWeightedNormals.resize(Data->FInd.size());
-
-	int IndexShift = 3;
-	// We assume that there were no normals info read.
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
-	{
-		glm::dvec3 V0 = { Data->DVerC[Data->FInd[i] * IndexShift], Data->DVerC[Data->FInd[i] * IndexShift + 1], Data->DVerC[Data->FInd[i] * IndexShift + 2] };
-		glm::dvec3 V1 = { Data->DVerC[Data->FInd[i + 1] * IndexShift], Data->DVerC[Data->FInd[i + 1] * IndexShift + 1], Data->DVerC[Data->FInd[i + 1] * IndexShift + 2] };
-		glm::dvec3 V2 = { Data->DVerC[Data->FInd[i + 2] * IndexShift], Data->DVerC[Data->FInd[i + 2] * IndexShift + 1], Data->DVerC[Data->FInd[i + 2] * IndexShift + 2] };
-
-		glm::vec3 Normal = CalculateNormal(V0, V1, V2);
-
-		DataForWeightedNormals[Data->FInd[i]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i]].AreaSum += TrianglesArea[i / 3];
-
-		DataForWeightedNormals[Data->FInd[i + 1]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i + 1]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i + 1]].AreaSum += TrianglesArea[i / 3];
-
-		DataForWeightedNormals[Data->FInd[i + 2]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i + 2]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i + 2]].AreaSum += TrianglesArea[i / 3];
+		GEOMETRY.CalculateNormals(Data->FInd, Data->DVerC, Data->FNorC);
 	}
-	
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	else
 	{
-		glm::vec3 Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i]].Normals.size(); j++)
+		std::vector<double> DoubleVertices;
+		for (size_t i = 0; i < Data->FVerC.size(); i++)
 		{
-			Normal += DataForWeightedNormals[Data->FInd[i]].Normals[j] * DataForWeightedNormals[Data->FInd[i]].Areas[j] / DataForWeightedNormals[Data->FInd[i]].AreaSum;
+			DoubleVertices.push_back(Data->FVerC[i]);
 		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
 
-		Data->FNorC[Data->FInd[i] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i] * IndexShift + 2] = Normal.z;
-
-		Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 1]].Normals.size(); j++)
-		{
-			Normal += DataForWeightedNormals[Data->FInd[i + 1]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 1]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 1]].AreaSum;
-		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
-
-		Data->FNorC[Data->FInd[i + 1] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i + 1] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i + 1] * IndexShift + 2] = Normal.z;
-
-		Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 2]].Normals.size(); j++)
-		{
-			Normal += DataForWeightedNormals[Data->FInd[i + 2]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 2]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 2]].AreaSum;
-		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
-
-		Data->FNorC[Data->FInd[i + 2] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i + 2] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i + 2] * IndexShift + 2] = Normal.z;
+		GEOMETRY.CalculateNormals(Data->FInd, DoubleVertices, Data->FNorC);
 	}
-}
-
-glm::vec3 FEObjLoader::CalculateTangent(const glm::vec3 V0, const glm::vec3 V1, const glm::vec3 V2, std::vector<glm::vec2>&& Textures)
-{
-	const glm::vec3 Q1 = V1 - V0;
-	const glm::vec3 Q2 = V2 - V0;
-	const glm::vec2 UV0 = Textures[0];
-	const glm::vec2 UV1 = Textures[1];
-	const glm::vec2 UV2 = Textures[2];
-
-	const float T1 = UV1.y - UV0.y;
-	const float T2 = UV2.y - UV0.y;
-
-	const glm::vec3 Tangent = T1 * Q2 - T2 * Q1;
-
-	return Tangent;
 }
 
 void FEObjLoader::CalculateTangents(FERawOBJData* Data)
 {
-	for (size_t i = 0; i < Data->FInd.size() - 1; i += 3)
+	std::vector<int> Indices;
+	for (size_t i = 0; i < Data->FInd.size(); i++)
 	{
-		const glm::vec3 V0 = { Data->FVerC[Data->FInd[i] * 3], Data->FVerC[Data->FInd[i] * 3 + 1], Data->FVerC[Data->FInd[i] * 3 + 2] };
-		const glm::vec3 V1 = { Data->FVerC[Data->FInd[i + 1] * 3], Data->FVerC[Data->FInd[i + 1] * 3 + 1], Data->FVerC[Data->FInd[i + 1] * 3 + 2] };
-		const glm::vec3 V2 = { Data->FVerC[Data->FInd[i + 2] * 3], Data->FVerC[Data->FInd[i + 2] * 3 + 1], Data->FVerC[Data->FInd[i + 2] * 3 + 2] };
+		Indices.push_back(Data->FInd[i]);
+	}
 
-		glm::vec2 T0 = { Data->FTexC[Data->FInd[i] * 2], Data->FTexC[Data->FInd[i] * 2 + 1] };
-		glm::vec2 T1 = { Data->FTexC[Data->FInd[i + 1] * 2], Data->FTexC[Data->FInd[i + 1] * 2 + 1] };
-		glm::vec2 T2 = { Data->FTexC[Data->FInd[i + 2] * 2], Data->FTexC[Data->FInd[i + 2] * 2 + 1] };
-
-		glm::vec3 Tangent = CalculateTangent(V0, V1, V2, { T0, T1, T2 });
-		// To eliminate NaN values after normalization.
-		// I encounter this problem if triangle has same texture coordinates.
-		if (Tangent.x != 0 || Tangent.y != 0 || Tangent.z != 0)
+	if (bUseDoublePrecisionForReadingCoordinates)
+	{
+		GEOMETRY.CalculateTangents(Data->FInd, Data->DVerC, Data->FTexC, Data->FNorC, Data->FTanC);
+	}
+	else
+	{
+		std::vector<double> DoubleVertices;
+		for (size_t i = 0; i < Data->FVerC.size(); i++)
 		{
-			Tangent = glm::normalize(Tangent);
+			DoubleVertices.push_back(Data->FVerC[i]);
 		}
-		else
-		{
-			glm::vec3 Normal = { Data->FNorC[Data->FInd[i] * 3], Data->FNorC[Data->FInd[i] * 3 + 1], Data->FNorC[Data->FInd[i] * 3 + 2] };
-			glm::vec3 TangentOne = glm::cross(Normal, glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::vec3 TangentTwo = glm::cross(Normal, glm::vec3(0.0f, 1.0f, 0.0f));
-			// Choosing candidate with bigger length/magnitude.
-			// Length/magnitude of cross product depend on sine of angle between vectors
-			// and sine of 90 degrees is 1.0(max value), so basically we are choosing cross product in which vectors was closer to perpendicular(assuming both vectors are unit vectors).
-			Tangent = glm::length(TangentOne) > glm::length(TangentTwo) ? TangentOne : TangentTwo;
-			Tangent = glm::normalize(Tangent);
-		}	
 
-		Data->FTanC[Data->FInd[i] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i] * 3 + 2] = Tangent.z;
-
-		Data->FTanC[Data->FInd[i + 1] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i + 1] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i + 1] * 3 + 2] = Tangent.z;
-
-		Data->FTanC[Data->FInd[i + 2] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i + 2] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i + 2] * 3 + 2] = Tangent.z;
+		GEOMETRY.CalculateTangents(Data->FInd, DoubleVertices, Data->FTexC, Data->FNorC, Data->FTanC);
 	}
 }
 

@@ -105,10 +105,7 @@ namespace FocalEngine
 		void ReadLine(std::stringstream& lineStream, FERawOBJData* data);
 		void ProcessRawData(FERawOBJData* Data);
 
-		glm::vec3 CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2);
 		void CalculateNormals(FERawOBJData* Data);
-
-		glm::vec3 CalculateTangent(const glm::vec3 V0, const glm::vec3 V1, const glm::vec3 V2, std::vector<glm::vec2>&& Textures);
 		void CalculateTangents(FERawOBJData* Data);
 
 		void NormalizeVertexPositions(FERawOBJData* Data);

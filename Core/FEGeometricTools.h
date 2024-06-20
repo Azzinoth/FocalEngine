@@ -92,6 +92,14 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEGeometry)
 
+		glm::vec3 CalculateNormal(glm::dvec3 FirstVertex, glm::dvec3 SecondVertex, glm::dvec3 ThirdVertex);
+		void CalculateNormals(const std::vector<int>& Indices, const std::vector<float>& Vertices, std::vector<float>& NormalsToFill);
+		void CalculateNormals(const std::vector<int>& Indices, const std::vector<double>& Vertices, std::vector<float>& NormalsToFill);
+
+		glm::vec3 CalculateTangent(const glm::vec3 FirstVertex, const glm::vec3 SecondVertex, const glm::vec3 ThirdVertex, std::vector<glm::vec2>&& TextureCoordinates);
+		void CalculateTangents(const std::vector<int>& Indices, const std::vector<float>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
+		void CalculateTangents(const std::vector<int>& Indices, const std::vector<double>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
+
 		bool IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint = nullptr, float* U = nullptr, float* V = nullptr);
 		bool IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, std::vector<glm::dvec3>& TriangleVertices, double& Distance, glm::dvec3* HitPoint = nullptr, double* U = nullptr, double* V = nullptr);
 
