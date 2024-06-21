@@ -54,11 +54,14 @@ void FEEntity::SetVisibility(const bool NewValue)
 
 FEAABB FEEntity::GetAABB()
 {
-	if (Transform.bDirtyFlag)
+	/*if (Transform.bDirtyFlag)
 	{
 		EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
 		Transform.bDirtyFlag = false;
-	}
+	}*/
+
+	// Temporary solution
+	EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
 
 	return EntityAABB;
 }

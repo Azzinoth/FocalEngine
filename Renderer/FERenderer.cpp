@@ -492,8 +492,17 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 		}
 
 		CurrentGameModel->GetMaterial()->Bind();
-		FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[i]->Transform);
-		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
+
+		// Temporary staff, until we will have proper transform hierarchy
+		if (EntityInstanced->Prefab->Components.size() == 1)
+		{
+			LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
+		}
+		else
+		{
+			FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[i]->Transform);
+			LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
+		}
 		CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
 
 		EntityInstanced->Render(static_cast<int>(i));
@@ -1287,8 +1296,18 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 		}
 
 		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Bind();
-		const FETransformComponent TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[ComponentIndex]->Transform);
-		LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
+
+		// Temporary staff, until we will have proper transform hierarchy
+		if (Entity->Prefab->Components.size() == 1)
+		{
+			LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &Entity->Transform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
+		}
+		else
+		{
+			const FETransformComponent TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[ComponentIndex]->Transform);
+			LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
+		}
+		
 		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader->LoadDataToGPU();
 
 		FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->GetVaoID()));

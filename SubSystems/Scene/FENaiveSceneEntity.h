@@ -9,6 +9,9 @@ namespace FocalEngine
 		friend class FENaiveSceneGraph;
 		friend class FEScene;
 	public:
+
+		FENaiveSceneEntity* GetParent();
+
 		void AddChild(FENaiveSceneEntity* Child);
 		void RemoveChild(FENaiveSceneEntity* Child);
 		FENaiveSceneEntity* GetChild(std::string ID);
@@ -21,6 +24,7 @@ namespace FocalEngine
 		FENaiveSceneEntity(std::string Name = "UnNamedNaiveSceneEntity");
 		~FENaiveSceneEntity();
 
+		FENaiveSceneEntity* Parent = nullptr;
 		std::vector<FENaiveSceneEntity*> Children;
 		FEObject* OldStyleEntity = nullptr;
 	};

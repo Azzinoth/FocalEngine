@@ -1,6 +1,8 @@
 #include "FETransformComponent.h"
 using namespace FocalEngine;
 
+bool FETransformComponent::OldWayGlobal = true;
+
 FETransformComponent::FETransformComponent()
 {
 	Position = glm::vec3(0.0f);
@@ -146,19 +148,79 @@ void FETransformComponent::SetScale(const glm::vec3 NewScale)
 
 void FETransformComponent::Update()
 {
-	TransformMatrix = glm::mat4(1.0);
-	TransformMatrix = glm::translate(TransformMatrix, Position);
+	glm::mat4* MatrixToUse = &TransformMatrix;
+	if (bUseLocalSpace)
+		MatrixToUse = &LocalSpaceMatrix;
 
-	TransformMatrix *= glm::toMat4(RotationQuaternion);
-	TransformMatrix = glm::scale(TransformMatrix, glm::vec3(Scale[0], Scale[1], Scale[2]));
+	/*if (OldWayForce != -1)
+	{
+		if (OldWayForce)
+		{*/
+			*MatrixToUse = glm::identity<glm::mat4>();
+			*MatrixToUse = glm::translate(*MatrixToUse, Position);
 
-	if (PreviousTransformMatrix != TransformMatrix)
-		bDirtyFlag = true;
-	PreviousTransformMatrix = TransformMatrix;
+			*MatrixToUse *= glm::toMat4(RotationQuaternion);
+			*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
+
+			if (PreviousTransformMatrix != *MatrixToUse)
+				bDirtyFlag = true;
+			PreviousTransformMatrix = *MatrixToUse;
+	//	}
+	//	else
+	//	{
+	//		*MatrixToUse = glm::mat4(1.0);
+	//		*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
+	//		*MatrixToUse *= glm::toMat4(RotationQuaternion);
+	//		*MatrixToUse = glm::translate(*MatrixToUse, Position);
+
+	//		if (PreviousTransformMatrix != *MatrixToUse)
+	//			bDirtyFlag = true;
+
+	//		PreviousTransformMatrix = *MatrixToUse;
+	//	}
+	//	return;
+	//}
+
+	//if (OldWayGlobal)
+	//{
+	//	*MatrixToUse = glm::mat4(1.0);
+	//	*MatrixToUse = glm::translate(*MatrixToUse, Position);
+
+	//	*MatrixToUse *= glm::toMat4(RotationQuaternion);
+	//	*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
+
+	//	if (PreviousTransformMatrix != *MatrixToUse)
+	//		bDirtyFlag = true;
+	//	PreviousTransformMatrix = *MatrixToUse;
+	//}
+	//else
+	//{
+	//	*MatrixToUse = glm::mat4(1.0);
+	//	*MatrixToUse = glm::translate(*MatrixToUse, -Position);
+	//	//*MatrixToUse *= TranslateToOrigin;
+	//	*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
+	//	*MatrixToUse *= glm::toMat4(RotationQuaternion);
+	//	*MatrixToUse = glm::translate(*MatrixToUse, Position);
+
+	//	if (PreviousTransformMatrix != *MatrixToUse)
+	//		bDirtyFlag = true;
+
+	//	PreviousTransformMatrix = *MatrixToUse;
+	//}
 }
 
 glm::mat4 FETransformComponent::GetTransformMatrix() const
 {
+	if (bUseLocalSpace)
+	{
+		//  * LocalSpaceMatrix is temporary
+		// Because not all objects have are part of scene graph
+		if (!bIsInSceneGraph)
+			return WorldSpaceMatrix * LocalSpaceMatrix;
+
+		return WorldSpaceMatrix;
+	}
+	
 	return TransformMatrix;
 }
 

@@ -11,14 +11,16 @@ FENaiveSceneEntity::~FENaiveSceneEntity()
 	Children.clear();
 }
 
+#include <glm/gtx/matrix_decompose.hpp>
 void FENaiveSceneEntity::AddChild(FENaiveSceneEntity* Child)
 {
 	Children.push_back(Child);
+	Child->Parent = this;
 
-	bool bPreserveWorldPosition = false;
+	// If we want to add child without changing world position of it.
+	bool bPreserveWorldPosition = true;
 	if (bPreserveWorldPosition)
 	{
-		// If I want to have to add child without changing world position of it.
 		FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
 		if (Entity == nullptr)
 			return;
@@ -28,9 +30,31 @@ void FENaiveSceneEntity::AddChild(FENaiveSceneEntity* Child)
 		FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(Child->GetOldStyleEntity());
 		FETransformComponent& ChildTransform = ChildEntity->Transform;
 
-		ChildTransform.SetPosition(ChildTransform.GetPosition() - ParentTransform.GetPosition());
-		//ChildTransform.SetQuaternion(ChildTransform.GetQuaternion() - ParentTransform.GetQuaternion());
-		ChildTransform.SetScale(ChildTransform.GetScale() / ParentTransform.GetScale());
+		// Get the world matrices
+		glm::mat4 ParentWorldMatrix = ParentTransform.GetTransformMatrix();
+		glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
+
+		// Calculate the inverse of the parent's world matrix
+		glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
+
+		// Calculate the new local matrix for the child
+		glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
+
+		glm::vec3 scale;
+		glm::quat rotation;
+		glm::vec3 translation;
+		glm::vec3 skew;
+		glm::vec4 perspective;
+		glm::decompose(ChildLocalMatrix, scale, rotation, translation, skew, perspective);
+
+		ChildTransform.SetPosition(translation);
+		ChildTransform.SetQuaternion(rotation);
+		ChildTransform.SetScale(scale);
+
+		/*ChildTransform.SetPosition(ChildTransform.GetPosition() - ParentTransform.GetPosition());
+		glm::quat ParentInverseRotation = glm::inverse(ParentTransform.GetQuaternion());
+		ChildTransform.SetQuaternion(ParentInverseRotation * ChildTransform.GetQuaternion());
+		ChildTransform.SetScale(ChildTransform.GetScale() / ParentTransform.GetScale());*/
 	}
 }
 
@@ -40,6 +64,7 @@ void FENaiveSceneEntity::RemoveChild(FENaiveSceneEntity* Child)
 	{
 		if (Children[i] == Child)
 		{
+			Child->Parent = nullptr;
 			Children.erase(Children.begin() + i);
 			return;
 		}
@@ -103,4 +128,9 @@ std::vector<FENaiveSceneEntity*> FENaiveSceneEntity::GetChildren()
 FEObject* FENaiveSceneEntity::GetOldStyleEntity()
 {
 	return OldStyleEntity;
+}
+
+FENaiveSceneEntity* FENaiveSceneEntity::GetParent()
+{
+	return Parent;
 }
