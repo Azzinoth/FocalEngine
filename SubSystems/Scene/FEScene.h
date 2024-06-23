@@ -17,6 +17,8 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
+		// Temporary solution for the editor.
+		FEEntity* AddEmptyEntity(std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* AddEntity(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* AddEntity(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
 		bool AddEntity(FEEntity* NewEntity);
@@ -68,6 +70,9 @@ namespace FocalEngine
 
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, FEPrefab*>& PrefabMap, const std::string ParentID);
+
+		void TransformUpdate(FENaiveSceneEntity* SubTreeRoot);
+		void UpdateSceneGraph();
 	};
 
 	#define SCENE FEScene::getInstance()

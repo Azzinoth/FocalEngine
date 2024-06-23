@@ -61,6 +61,10 @@ FEAABB FEEntity::GetAABB()
 	}*/
 
 	// Temporary solution
+	if (Prefab == nullptr)
+		return EntityAABB;
+
+	// Temporary solution
 	EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
 
 	return EntityAABB;

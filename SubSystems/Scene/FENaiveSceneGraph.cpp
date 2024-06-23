@@ -8,6 +8,7 @@ FENaiveSceneGraph::FENaiveSceneGraph()
 
 void FENaiveSceneGraph::Clear()
 {
+	RemoveEntity(Root);
 	delete Root;
 	Root = new FENaiveSceneEntity();
 }
@@ -28,6 +29,12 @@ FENaiveSceneEntity* FENaiveSceneGraph::GetEntity(std::string ID)
 		return Root;
 
 	return Root->GetChild(ID);
+}
+
+FENaiveSceneEntity* FENaiveSceneGraph::GetEntityByOldEntityID(std::string OldEntityID)
+{
+	// Root can'n have OldStyleEntity
+	return Root->GetChildByOldEntityID(OldEntityID);
 }
 
 std::string FENaiveSceneGraph::AddEntity(FEObject* OldStyleEntity)

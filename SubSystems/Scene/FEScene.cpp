@@ -55,7 +55,28 @@ FELight* FEScene::AddLight(const FE_OBJECT_TYPE LightType, std::string Name, con
 void FEScene::AddEntityToEntityMap(FEEntity* Entity)
 {
 	EntityMap[Entity->GetObjectID()] = Entity;
-	SceneGraph.AddEntity(Entity);
+	// Temporary solution
+	if (SceneGraph.GetEntityByOldEntityID(Entity->GetObjectID()) == nullptr)
+		SceneGraph.AddEntity(Entity);
+	/*if (Entity == "transformationXGizmoEntity")
+	{
+		int y = 0;
+		y++;
+	}*/
+}
+
+FEEntity* FEScene::AddEmptyEntity(std::string Name, std::string ForceObjectID)
+{
+	if (Name.empty())
+		Name = "UnnamedEntity";
+
+	FEEntity* NewEntity = new FEEntity();
+	if (!ForceObjectID.empty())
+		NewEntity->SetID(ForceObjectID);
+	NewEntity->SetName(Name);
+
+	AddEntityToEntityMap(NewEntity);
+	return NewEntity;
 }
 
 FEEntity* FEScene::AddEntity(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
@@ -234,6 +255,8 @@ void FEScene::Clear()
 		TerrainIterator++;
 	}
 	TerrainMap.clear();
+
+	SceneGraph.Clear();
 }
 
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
@@ -756,4 +779,58 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	}
 
 	return Result;
+}
+
+
+//#include "glm/gtx/matrix_decompose.hpp"
+void FEScene::TransformUpdate(FENaiveSceneEntity* SubTreeRoot)
+{
+	FEEntity* Entity = reinterpret_cast<FEEntity*>(SubTreeRoot->GetOldStyleEntity());
+	if (Entity == nullptr)
+	{
+		auto Children = SubTreeRoot->GetChildren();
+		for (size_t i = 0; i < Children.size(); i++)
+		{
+			TransformUpdate(Children[i]);
+		}
+		return;
+	}
+
+	if (SubTreeRoot->GetName() == "entity_16")
+	{
+		int y = 0;
+		y++;
+	}
+
+	Entity->Transform.bIsInSceneGraph = true;
+
+	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SCENE.SceneGraph.GetRoot())
+	{
+		//if (SubTreeRoot->GetName() == "transformationXGizmoEntity")
+		//{
+		//	int y = 0;
+		//	y++;
+		//}
+
+		Entity->Transform.Update();
+		Entity->Transform.WorldSpaceMatrix = Entity->Transform.LocalSpaceMatrix;
+	}
+
+	FETransformComponent& ParentTransform = Entity->Transform;
+
+	auto Children = SubTreeRoot->GetChildren();
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(Children[i]->GetOldStyleEntity());
+		FETransformComponent& ChildTransform = ChildEntity->Transform;
+
+		ChildTransform.Update();
+		ChildTransform.WorldSpaceMatrix = ParentTransform.WorldSpaceMatrix * ChildTransform.LocalSpaceMatrix;
+		TransformUpdate(Children[i]);
+	}
+}
+
+void FEScene::UpdateSceneGraph()
+{
+	TransformUpdate(SceneGraph.GetRoot());
 }

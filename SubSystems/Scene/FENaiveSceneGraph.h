@@ -17,6 +17,7 @@ namespace FocalEngine
 		void RemoveEntity(FENaiveSceneEntity* Entity);
 
 		FENaiveSceneEntity* GetEntity(std::string ID);
+		FENaiveSceneEntity* GetEntityByOldEntityID(std::string OldEntityID);
 		std::vector<FENaiveSceneEntity*> GetEntityByName(std::string Name);
 
 		void Clear();

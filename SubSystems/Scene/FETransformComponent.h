@@ -47,6 +47,7 @@ namespace FocalEngine
 		bool IsUniformScalingSet() const;
 		void SetUniformScaling(bool NewValue);
 
+		// New temporary
 		int OldWayForce = -1;
 		static bool OldWayGlobal;
 		glm::mat4 WorldSpaceMatrix = glm::identity<glm::mat4>();
@@ -55,12 +56,12 @@ namespace FocalEngine
 		bool bIsInSceneGraph = false;
 	private:
 		bool bDirtyFlag = false;
-		glm::vec3 Position;
-		glm::quat RotationQuaternion;
-		glm::vec3 RotationAngles;
+		glm::vec3 Position = glm::vec3(0.0f);
+		glm::quat RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
+		glm::vec3 RotationAngles = glm::vec3(0.0f);
 		bool bUniformScaling = true;
 		
-		glm::vec3 Scale;
+		glm::vec3 Scale = glm::vec3(1.0f);
 
 		glm::mat4 TransformMatrix;
 		

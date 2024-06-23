@@ -492,7 +492,6 @@ void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBas
 		}
 
 		CurrentGameModel->GetMaterial()->Bind();
-
 		// Temporary staff, until we will have proper transform hierarchy
 		if (EntityInstanced->Prefab->Components.size() == 1)
 		{
@@ -646,6 +645,8 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
 	LastRenderedResult = nullptr;
+
+	SCENE.UpdateSceneGraph();
 
 	if (bVRActive)
 		return;
@@ -862,19 +863,18 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	auto EntityIterator = SCENE.EntityMap.begin();
 	while (EntityIterator != SCENE.EntityMap.end())
 	{
-		auto entity = EntityIterator->second;
-
-		if (entity->IsVisible() && entity->IsPostprocessApplied())
+		auto Entity = EntityIterator->second;
+		if (Entity->IsVisible() && Entity->IsPostprocessApplied())
 		{
-			if (entity->GetType() == FE_ENTITY)
+			if (Entity->GetType() == FE_ENTITY)
 			{
 				ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-				RenderEntity(entity, CurrentCamera);
+				RenderEntity(Entity, CurrentCamera);
 			}
-			else if (entity->GetType() == FE_ENTITY_INSTANCED)
+			else if (Entity->GetType() == FE_ENTITY_INSTANCED)
 			{
 				ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-				RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
+				RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(Entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
 			}
 		}
 
@@ -1216,6 +1216,10 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 
 	if (bReloadUniformBlocks)
 		LoadUniformBlocks();
+
+	// Temporary staff, until we will have proper new entity system.
+	if (Entity->Prefab == nullptr)
+		return;
 
 	if (ComponentIndex == -1)
 	{

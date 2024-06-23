@@ -64,8 +64,9 @@ void FETerrain::SetVisibility(const bool NewValue)
 
 FEAABB FETerrain::GetAABB()
 {
-	if (Transform.bDirtyFlag)
-	{
+	// Temporary fix for AABB recalculation.
+	//if (Transform.bDirtyFlag)
+	//{
 		Transform.bDirtyFlag = false;
 		//#fix it should be optimized.
 		FEAABB MeshAABB = AABB;
@@ -78,7 +79,7 @@ FEAABB FETerrain::GetAABB()
 
 		XSize = FinalAABB.GetMax()[0] - FinalAABB.GetMin()[0];
 		ZSize = FinalAABB.GetMax()[2] - FinalAABB.GetMin()[2];
-	}
+	//}
 
 	return FinalAABB;
 }
@@ -398,9 +399,9 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 		if (bBrushVisualFBCleared)
 			return;
 
-		// get current clear color.
-		GLfloat BkColor[4];
-		glGetFloatv(GL_COLOR_CLEAR_VALUE, BkColor);
+		// Get current clear color.
+		GLfloat BackgroundColor[4];
+		glGetFloatv(GL_COLOR_CLEAR_VALUE, BackgroundColor);
 
 		BrushVisualFB->Bind();
 		FE_GL_ERROR(glClearColor(0.0f, 0.0f, 0.0f, 0.0f));
@@ -408,7 +409,7 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 		BrushVisualFB->UnBind();
 		bBrushVisualFBCleared = true;
 
-		FE_GL_ERROR(glClearColor(BkColor[0], BkColor[1], BkColor[2], BkColor[3]));
+		FE_GL_ERROR(glClearColor(BackgroundColor[0], BackgroundColor[1], BackgroundColor[2], BackgroundColor[3]));
 
 		return;
 	}
@@ -468,7 +469,6 @@ void FETerrain::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 Mou
 			FE_GL_ERROR(glBindVertexArray(PlaneMesh->GetVaoID()));
 			FE_GL_ERROR(glEnableVertexAttribArray(0));
 			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, PlaneMesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
-
 
 			LayerMaps[1]->Bind(0);
 			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex() - 4.0f));

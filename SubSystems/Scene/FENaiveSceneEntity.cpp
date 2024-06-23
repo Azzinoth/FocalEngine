@@ -40,21 +40,21 @@ void FENaiveSceneEntity::AddChild(FENaiveSceneEntity* Child)
 		// Calculate the new local matrix for the child
 		glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
 
-		glm::vec3 scale;
-		glm::quat rotation;
-		glm::vec3 translation;
-		glm::vec3 skew;
-		glm::vec4 perspective;
-		glm::decompose(ChildLocalMatrix, scale, rotation, translation, skew, perspective);
-
-		ChildTransform.SetPosition(translation);
-		ChildTransform.SetQuaternion(rotation);
-		ChildTransform.SetScale(scale);
-
-		/*ChildTransform.SetPosition(ChildTransform.GetPosition() - ParentTransform.GetPosition());
-		glm::quat ParentInverseRotation = glm::inverse(ParentTransform.GetQuaternion());
-		ChildTransform.SetQuaternion(ParentInverseRotation * ChildTransform.GetQuaternion());
-		ChildTransform.SetScale(ChildTransform.GetScale() / ParentTransform.GetScale());*/
+		// In rare cases glm::decompose can fail because of precision issues
+		// So we will use double precision version of glm::decompose
+		glm::dvec3 DoubleScale;
+		glm::dquat DoubleRotation;
+		glm::dvec3 DoubleTranslation;
+		glm::dvec3 DoubleSkew;
+		glm::dvec4 DoublePerspective;
+		glm::dmat4 DoubleNewChildLocalMatrix = ChildLocalMatrix;
+		bool Success = glm::decompose(DoubleNewChildLocalMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
+		if (Success)
+		{
+			ChildTransform.SetPosition(DoubleTranslation);
+			ChildTransform.SetQuaternion(DoubleRotation);
+			ChildTransform.SetScale(DoubleScale);
+		}
 	}
 }
 
@@ -93,6 +93,24 @@ FENaiveSceneEntity* FENaiveSceneEntity::GetChild(std::string ID)
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		FENaiveSceneEntity* Child = Children[i]->GetChild(ID);
+		if (Child != nullptr)
+			return Child;
+	}
+
+	return nullptr;
+}
+
+FENaiveSceneEntity* FENaiveSceneEntity::GetChildByOldEntityID(std::string OldEntityID)
+{
+	if (OldStyleEntity != nullptr && OldStyleEntity->GetObjectID() == OldEntityID)
+		return this;
+
+	// If we reach here, the child was not found
+	// It is possible that the child is a child of a child
+	// So we need to search recursively
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		FENaiveSceneEntity* Child = Children[i]->GetChildByOldEntityID(OldEntityID);
 		if (Child != nullptr)
 			return Child;
 	}

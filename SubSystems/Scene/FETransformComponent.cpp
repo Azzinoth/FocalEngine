@@ -152,61 +152,14 @@ void FETransformComponent::Update()
 	if (bUseLocalSpace)
 		MatrixToUse = &LocalSpaceMatrix;
 
-	/*if (OldWayForce != -1)
-	{
-		if (OldWayForce)
-		{*/
-			*MatrixToUse = glm::identity<glm::mat4>();
-			*MatrixToUse = glm::translate(*MatrixToUse, Position);
+	*MatrixToUse = glm::identity<glm::mat4>();
+	*MatrixToUse = glm::translate(*MatrixToUse, Position);
+	*MatrixToUse *= glm::toMat4(RotationQuaternion);
+	*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
 
-			*MatrixToUse *= glm::toMat4(RotationQuaternion);
-			*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
-
-			if (PreviousTransformMatrix != *MatrixToUse)
-				bDirtyFlag = true;
-			PreviousTransformMatrix = *MatrixToUse;
-	//	}
-	//	else
-	//	{
-	//		*MatrixToUse = glm::mat4(1.0);
-	//		*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
-	//		*MatrixToUse *= glm::toMat4(RotationQuaternion);
-	//		*MatrixToUse = glm::translate(*MatrixToUse, Position);
-
-	//		if (PreviousTransformMatrix != *MatrixToUse)
-	//			bDirtyFlag = true;
-
-	//		PreviousTransformMatrix = *MatrixToUse;
-	//	}
-	//	return;
-	//}
-
-	//if (OldWayGlobal)
-	//{
-	//	*MatrixToUse = glm::mat4(1.0);
-	//	*MatrixToUse = glm::translate(*MatrixToUse, Position);
-
-	//	*MatrixToUse *= glm::toMat4(RotationQuaternion);
-	//	*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
-
-	//	if (PreviousTransformMatrix != *MatrixToUse)
-	//		bDirtyFlag = true;
-	//	PreviousTransformMatrix = *MatrixToUse;
-	//}
-	//else
-	//{
-	//	*MatrixToUse = glm::mat4(1.0);
-	//	*MatrixToUse = glm::translate(*MatrixToUse, -Position);
-	//	//*MatrixToUse *= TranslateToOrigin;
-	//	*MatrixToUse = glm::scale(*MatrixToUse, glm::vec3(Scale[0], Scale[1], Scale[2]));
-	//	*MatrixToUse *= glm::toMat4(RotationQuaternion);
-	//	*MatrixToUse = glm::translate(*MatrixToUse, Position);
-
-	//	if (PreviousTransformMatrix != *MatrixToUse)
-	//		bDirtyFlag = true;
-
-	//	PreviousTransformMatrix = *MatrixToUse;
-	//}
+	if (PreviousTransformMatrix != *MatrixToUse)
+		bDirtyFlag = true;
+	PreviousTransformMatrix = *MatrixToUse;
 }
 
 glm::mat4 FETransformComponent::GetTransformMatrix() const
@@ -220,7 +173,7 @@ glm::mat4 FETransformComponent::GetTransformMatrix() const
 
 		return WorldSpaceMatrix;
 	}
-	
+
 	return TransformMatrix;
 }
 

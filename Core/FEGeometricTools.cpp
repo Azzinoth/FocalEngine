@@ -745,6 +745,23 @@ void FEGeometry::CalculateTangents(const std::vector<int>& Indices, const std::v
 	}
 }
 
+bool FEGeometry::RaysIntersection(const glm::vec3& FirstRayOrigin, const glm::vec3& FirstRayDirection, const glm::vec3& SecondRayOrigin, const glm::vec3& SecondRayDirection, float& FirstRayParametricIntersection, float& SecondRayParametricIntersection) const
+{
+	const glm::vec3 DirectionsCrossProduct = glm::cross(FirstRayDirection, SecondRayDirection);
+
+	// Two rays are parallel.
+	if (DirectionsCrossProduct == glm::vec3(0.0f))
+		return false;
+
+	FirstRayParametricIntersection = glm::dot(glm::cross((SecondRayOrigin - FirstRayOrigin), SecondRayDirection), DirectionsCrossProduct);
+	FirstRayParametricIntersection /= glm::length(DirectionsCrossProduct) * glm::length(DirectionsCrossProduct);
+
+	SecondRayParametricIntersection = glm::dot(glm::cross((SecondRayOrigin - FirstRayOrigin), FirstRayDirection), DirectionsCrossProduct);
+	SecondRayParametricIntersection /= glm::length(DirectionsCrossProduct) * glm::length(DirectionsCrossProduct);
+
+	return true;
+}
+
 bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint, float* U, float* V)
 {
 	// Ensure the triangle is defined by exactly three vertices

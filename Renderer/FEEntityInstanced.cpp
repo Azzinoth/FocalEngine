@@ -440,13 +440,13 @@ void FEEntityInstanced::UpdateMatrices()
 	{
 		if (Renderers[i]->InstancedMatrices.size() != Renderers[i]->TransformedInstancedMatrices.size())
 		{
-			LOG.Add("instancedMatrices size and transformedInstancedMatrices size is not equal!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			LOG.Add("InstancedMatrices size and TransformedInstancedMatrices size is not equal!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 			return;
 		}
 
 		for (size_t j = 0; j < Renderers[i]->InstancedMatrices.size(); j++)
 		{
-			Renderers[i]->TransformedInstancedMatrices[j] = Transform.TransformMatrix * Renderers[i]->InstancedMatrices[j];
+			Renderers[i]->TransformedInstancedMatrices[j] = Transform.GetTransformMatrix() * Renderers[i]->InstancedMatrices[j];
 			Renderers[i]->InstancePositions[j] = Renderers[i]->TransformedInstancedMatrices[j][3];
 		}
 
