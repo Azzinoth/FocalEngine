@@ -1,5 +1,6 @@
 #pragma once
-#include "FENaiveSceneEntity.h"
+#include "FENaiveSceneGraphNode.h"
+#include <unordered_set>
 
 namespace FocalEngine
 {
@@ -10,21 +11,28 @@ namespace FocalEngine
 		FENaiveSceneGraph();
 		~FENaiveSceneGraph();
 
-		FENaiveSceneEntity* GetRoot() const;
+		FENaiveSceneGraphNode* GetRoot() const;
 
-		std::string AddEntity(FEObject* OldStyleEntity);
-		bool MoveEntity(std::string EntityID, std::string NewParentID);
-		void RemoveEntity(FENaiveSceneEntity* Entity);
+		std::string AddNode(FEObject* OldStyleEntity);
+		bool MoveNode(std::string NodeID, std::string NewParentID);
+		void RemoveNode(FENaiveSceneGraphNode* NodeToRemove);
 
-		FENaiveSceneEntity* GetEntity(std::string ID);
-		FENaiveSceneEntity* GetEntityByOldEntityID(std::string OldEntityID);
-		std::vector<FENaiveSceneEntity*> GetEntityByName(std::string Name);
+		bool IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant);
+        bool HasCycle(FENaiveSceneGraphNode* NodeToCheck);
+
+		FENaiveSceneGraphNode* GetNode(std::string ID);
+		FENaiveSceneGraphNode* GetNodeByOldEntityID(std::string OldEntityID);
+		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
 		void Clear();
 	private:
-		FENaiveSceneEntity* Root;
+		FENaiveSceneGraphNode* Root;
 
-		void AddEntity(FENaiveSceneEntity* Entity);
-		void AddEntity(FENaiveSceneEntity* Parent, FENaiveSceneEntity* Entity);
+		void AddNode(FENaiveSceneGraphNode* NodeToAdd);
+		void AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd);
+
+        bool HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
+							  std::unordered_set<FENaiveSceneGraphNode*>& Visited,
+							  std::unordered_set<FENaiveSceneGraphNode*>& RecursionStack);
 	};
 }

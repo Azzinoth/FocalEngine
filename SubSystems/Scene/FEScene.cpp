@@ -56,8 +56,8 @@ void FEScene::AddEntityToEntityMap(FEEntity* Entity)
 {
 	EntityMap[Entity->GetObjectID()] = Entity;
 	// Temporary solution
-	if (SceneGraph.GetEntityByOldEntityID(Entity->GetObjectID()) == nullptr)
-		SceneGraph.AddEntity(Entity);
+	if (SceneGraph.GetNodeByOldEntityID(Entity->GetObjectID()) == nullptr)
+		SceneGraph.AddNode(Entity);
 	/*if (Entity == "transformationXGizmoEntity")
 	{
 		int y = 0;
@@ -731,8 +731,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 		// Problem is that currently we can not have entity without prefab
 		// Later we should add support for entities without prefabs
-		NewNaiveSceneEntityID = SceneGraph.AddEntity(NewEntity);
-		SceneGraph.MoveEntity(NewNaiveSceneEntityID, ParentID);
+		NewNaiveSceneEntityID = SceneGraph.AddNode(NewEntity);
+		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID);
 
 		Result.push_back(NewEntity);
 	}
@@ -745,8 +745,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		DummyEntity->Transform.RotateByQuaternion(Node.Rotation);
 		DummyEntity->Transform.SetScale(Node.Scale);
 
-		NewNaiveSceneEntityID = SceneGraph.AddEntity(DummyEntity);
-		SceneGraph.MoveEntity(NewNaiveSceneEntityID, ParentID);
+		NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
+		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID);
 	}
 
 	for (size_t i = 0; i < Node.Children.size(); i++)
@@ -783,7 +783,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 
 //#include "glm/gtx/matrix_decompose.hpp"
-void FEScene::TransformUpdate(FENaiveSceneEntity* SubTreeRoot)
+void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 {
 	FEEntity* Entity = reinterpret_cast<FEEntity*>(SubTreeRoot->GetOldStyleEntity());
 	if (Entity == nullptr)

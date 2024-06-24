@@ -12,6 +12,34 @@ project(FocalEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(ENABLE_TESTS "Enable tests" OFF)
+
+set(TEST_LIBS)
+set(TEST_SOURCE_FILES)
+set(TEST_INCLUDE_FILES)
+
+if(ENABLE_TESTS)
+    list(APPEND TEST_LIBS
+        debug       Tests/ThirdParty/googletest/lib/Debug/gtest
+        debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
+        optimized   Tests/ThirdParty/googletest/lib/Release/gtest
+        optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
+    )
+
+	list(APPEND TEST_SOURCE_FILES
+        "Tests/RunAllTests.cpp"
+        "Tests/RunAllTests.h"
+    )
+
+	list(APPEND TEST_INCLUDE_FILES
+        "Tests/ThirdParty/googletest/include"
+    )
+
+	# Adding flags for multi-processor compilation
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP")
+endif()
+
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
@@ -203,8 +231,8 @@ file(GLOB Scene_SRC
 	"SubSystems/Scene/FETransformComponent.h"
 	"SubSystems/Scene/FENaiveSceneGraph.cpp"
 	"SubSystems/Scene/FENaiveSceneGraph.h"
-	"SubSystems/Scene/FENaiveSceneEntity.cpp"
-	"SubSystems/Scene/FENaiveSceneEntity.h"
+	"SubSystems/Scene/FENaiveSceneGraphNode.cpp"
+	"SubSystems/Scene/FENaiveSceneGraphNode.h"
 )
 
 # *************** SUB_SYSTEM ***************
@@ -256,8 +284,9 @@ file(GLOB source_SRC
 link_directories(${GLEW_LIB_DIR})
 link_directories(${GLFW_LIB_DIR})
 
-# add the executable
-add_library(FocalEngine 
+set(ALL_SOURCE_FILES "")
+list(APPEND ALL_SOURCE_FILES
+			${TEST_SOURCE_FILES}
 			${source_SRC}
 			${InstancedLineMaterial_SRC}
 			${PBRMaterial_SRC}
@@ -292,6 +321,12 @@ add_library(FocalEngine
 			${stb_image_SRC}
 )
 
+if(ENABLE_TESTS)
+    add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
+else()
+    add_library(FocalEngine ${ALL_SOURCE_FILES})
+endif()
+
 target_link_libraries(FocalEngine 
     PRIVATE 
         FEBasicApplication
@@ -302,7 +337,12 @@ target_link_libraries(FocalEngine
     PUBLIC 
         debug	  ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/openxr_loaderd.lib
         optimized ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/openxr_loader.lib
+		${TEST_LIBS}
 )
+
+if(ENABLE_TESTS)
+	source_group("Test Source Files" FILES ${TEST_SOURCE_FILES})
+endif()
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/Core" FILES ${Core_SRC})
@@ -348,6 +388,9 @@ include_directories(
 	${BASICAPP_THIRDPARTY_DIR}
 	${BASICAPP_DIR}
 	${FOCAL_ENGINE_THIRD_PARTY_DIR}
+if(ENABLE_TESTS)
+	${TEST_INCLUDE_FILES}
+endif()
 )
 
 # Re-export of the variables from child projects

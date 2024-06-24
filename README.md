@@ -72,3 +72,5 @@ This project uses the following third-party libraries:
 4) **stb**: This library is licensed under the MIT License. The full license text can be found at [stb's GitHub repository](https://github.com/nothings/stb/blob/master/LICENSE).
 
 5) **OpenXR**: This library is licensed under Apache 2.0 License. The full license text can be found at [OpenXR's GitHub repository](https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/main/LICENSE).
+
+6) **googletest**: This library is under the BSD-3-Clause license. The full license text can be found at [googletest's GitHub repository](https://github.com/google/googletest?tab=BSD-3-Clause-1-ov-file).

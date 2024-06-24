@@ -3,14 +3,16 @@ using namespace FocalEngine;
 
 FENaiveSceneGraph::FENaiveSceneGraph()
 {
-	Root = new FENaiveSceneEntity();
+	Root = new FENaiveSceneGraphNode();
 }
 
 void FENaiveSceneGraph::Clear()
 {
-	RemoveEntity(Root);
+	for (size_t i = 0; i < Root->Children.size(); i++)
+		RemoveNode(Root->Children[i]);
+	
 	delete Root;
-	Root = new FENaiveSceneEntity();
+	Root = new FENaiveSceneGraphNode();
 }
 
 FENaiveSceneGraph::~FENaiveSceneGraph()
@@ -18,12 +20,12 @@ FENaiveSceneGraph::~FENaiveSceneGraph()
 	delete Root;
 }
 
-FENaiveSceneEntity* FENaiveSceneGraph::GetRoot() const
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetRoot() const
 {
 	return Root;
 }
 
-FENaiveSceneEntity* FENaiveSceneGraph::GetEntity(std::string ID)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
 {
 	if (ID == Root->GetObjectID())
 		return Root;
@@ -31,53 +33,70 @@ FENaiveSceneEntity* FENaiveSceneGraph::GetEntity(std::string ID)
 	return Root->GetChild(ID);
 }
 
-FENaiveSceneEntity* FENaiveSceneGraph::GetEntityByOldEntityID(std::string OldEntityID)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByOldEntityID(std::string OldEntityID)
 {
 	// Root can'n have OldStyleEntity
 	return Root->GetChildByOldEntityID(OldEntityID);
 }
 
-std::string FENaiveSceneGraph::AddEntity(FEObject* OldStyleEntity)
+std::string FENaiveSceneGraph::AddNode(FEObject* OldStyleEntity)
 {
-	FENaiveSceneEntity* NewEntity = new FENaiveSceneEntity(OldStyleEntity->GetName());
+	FENaiveSceneGraphNode* NewEntity = new FENaiveSceneGraphNode(OldStyleEntity->GetName());
 	NewEntity->OldStyleEntity = OldStyleEntity;
 	Root->AddChild(NewEntity);
 	return NewEntity->GetObjectID();
 }
 
-bool FENaiveSceneGraph::MoveEntity(std::string EntityID, std::string NewParentID)
+bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID)
 {
-	FENaiveSceneEntity* Entity = GetEntity(EntityID);
-	FENaiveSceneEntity* NewParent = GetEntity(NewParentID);
+	FENaiveSceneGraphNode* NodeToMove = GetNode(NodeID);
+	FENaiveSceneGraphNode* NewParent = GetNode(NewParentID);
 
-	if (Entity == nullptr || NewParent == nullptr)
+	if (NodeToMove == nullptr || NewParent == nullptr)
 		return false;
 
-	RemoveEntity(Entity);
-	AddEntity(NewParent, Entity);
+	if (IsDescendant(NodeToMove, NewParent))
+		return false;
+
+	FENaiveSceneGraphNode* OldParent = NodeToMove->GetParent();
+
+	// Temporarily move the node
+	RemoveNode(NodeToMove);
+	AddNode(NewParent, NodeToMove);
+
+	// Check for cycles
+	if (HasCycle(GetRoot()))
+	{
+		// If a cycle is created, revert the change
+		RemoveNode(NodeToMove);
+		AddNode(OldParent, NodeToMove);
+		return false;
+	}
 
 	return true;
 }
 
-void FENaiveSceneGraph::AddEntity(FENaiveSceneEntity* Entity)
+void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* NodeToAdd)
 {
-	Root->AddChild(Entity);
+	Root->AddChild(NodeToAdd);
 }
 
-void FENaiveSceneGraph::AddEntity(FENaiveSceneEntity* Parent, FENaiveSceneEntity* Entity)
+void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd)
 {
-	Parent->AddChild(Entity);
+	Parent->AddChild(NodeToAdd);
 }
 
-void FENaiveSceneGraph::RemoveEntity(FENaiveSceneEntity* Entity)
+void FENaiveSceneGraph::RemoveNode(FENaiveSceneGraphNode* NodeToRemove)
 {
-	Root->RemoveChild(Entity);
+	if (NodeToRemove == Root)
+		return;
+	Root->RemoveChild(NodeToRemove);
 }
 
-std::vector<FENaiveSceneEntity*> FENaiveSceneGraph::GetEntityByName(std::string Name)
+std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetNodeByName(std::string Name)
 {
-	std::vector<FENaiveSceneEntity*> Entities;
-	std::vector<FENaiveSceneEntity*> Children = Root->GetChildren();
+	std::vector<FENaiveSceneGraphNode*> Entities;
+	std::vector<FENaiveSceneGraphNode*> Children = Root->GetChildren();
 
 	for (size_t i = 0; i < Children.size(); i++)
 	{
@@ -86,4 +105,54 @@ std::vector<FENaiveSceneEntity*> FENaiveSceneGraph::GetEntityByName(std::string 
 	}
 
 	return Entities;
+}
+
+bool FENaiveSceneGraph::IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant)
+{
+	if (PotentialDescendant == nullptr)
+		return false;
+
+	if (PotentialAncestor == PotentialDescendant)
+		return true;
+
+	return IsDescendant(PotentialAncestor, PotentialDescendant->GetParent());
+}
+
+bool FENaiveSceneGraph::HasCycle(FENaiveSceneGraphNode* NodeToCheck)
+{
+	std::unordered_set<FENaiveSceneGraphNode*> Visited;
+	std::unordered_set<FENaiveSceneGraphNode*> RecursionStack;
+	return HasCycleInternal(NodeToCheck, Visited, RecursionStack);
+}
+
+bool FENaiveSceneGraph::HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
+										 std::unordered_set<FENaiveSceneGraphNode*>& Visited,
+										 std::unordered_set<FENaiveSceneGraphNode*>& RecursionStack)
+{
+	if (NodeToCheck == nullptr)
+		return false;
+
+	// If the node is already in the recursion stack, we've found a cycle
+	if (RecursionStack.find(NodeToCheck) != RecursionStack.end())
+		return true;
+
+	// If we've already visited this node and found no cycles, we can return false
+	if (Visited.find(NodeToCheck) != Visited.end())
+		return false;
+
+	// Mark the current node as visited and part of recursion stack
+	Visited.insert(NodeToCheck);
+	RecursionStack.insert(NodeToCheck);
+
+	// Recur for all the children
+	for (auto& child : NodeToCheck->GetChildren())
+	{
+		if (HasCycleInternal(child, Visited, RecursionStack))
+			return true;
+	}
+
+	// Remove the node from recursion stack
+	RecursionStack.erase(NodeToCheck);
+
+	return false;
 }
