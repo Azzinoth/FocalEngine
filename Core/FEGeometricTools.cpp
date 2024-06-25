@@ -556,6 +556,15 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
+bool FEGeometry::DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale)
+{
+	// In rare cases glm::decompose can fail because of precision issues
+	// So we will use double precision version of glm::decompose
+	glm::dvec3 DoubleSkew;
+	glm::dvec4 DoublePerspective;
+	return glm::decompose(Matrix, OutScale, OutRotationQuaternion, OutTranslation, DoubleSkew, DoublePerspective);
+}
+
 glm::vec3 FEGeometry::CalculateNormal(glm::dvec3 FirstVertex, glm::dvec3 SecondVertex, glm::dvec3 ThirdVertex)
 {
 	glm::dvec3 Edge_0 = ThirdVertex - SecondVertex;

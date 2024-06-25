@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Core/FECoreIncludes.h"
+#include <glm/gtx/matrix_decompose.hpp>
 
 namespace FocalEngine
 {
@@ -91,6 +92,8 @@ namespace FocalEngine
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEGeometry)
+
+		bool DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale);
 
 		glm::vec3 CalculateNormal(glm::dvec3 FirstVertex, glm::dvec3 SecondVertex, glm::dvec3 ThirdVertex);
 		void CalculateNormals(const std::vector<int>& Indices, const std::vector<float>& Vertices, std::vector<float>& NormalsToFill);

@@ -40,16 +40,10 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd)
 		// Calculate the new local matrix for the child
 		glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
 
-		// In rare cases glm::decompose can fail because of precision issues
-		// So we will use double precision version of glm::decompose
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotation;
 		glm::dvec3 DoubleTranslation;
-		glm::dvec3 DoubleSkew;
-		glm::dvec4 DoublePerspective;
-		glm::dmat4 DoubleNewChildLocalMatrix = ChildLocalMatrix;
-		bool Success = glm::decompose(DoubleNewChildLocalMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
-		if (Success)
+		if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
 		{
 			ChildTransform.SetPosition(DoubleTranslation);
 			ChildTransform.SetQuaternion(DoubleRotation);

@@ -155,3 +155,160 @@ TEST(SceneGraph, Check_IsDescendant_Function)
 
 	SCENE.Clear();
 }
+
+bool IsEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon = 1e-5)
+{
+	return std::abs(FirstVector.x - SecondVector.x) < Epsilon &&
+		   std::abs(FirstVector.y - SecondVector.y) < Epsilon &&
+		   std::abs(FirstVector.z - SecondVector.z) < Epsilon;
+}
+
+bool IsEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon = 1e-5)
+{
+	return std::abs(FirstQuaternion.x - SecondQuaternion.x) < Epsilon &&
+		   std::abs(FirstQuaternion.y - SecondQuaternion.y) < Epsilon &&
+		   std::abs(FirstQuaternion.z - SecondQuaternion.z) < Epsilon &&
+		   std::abs(FirstQuaternion.w - SecondQuaternion.w) < Epsilon;
+}
+
+bool ValidateTransformConsistency(const FETransformComponent& Transform)
+{
+	glm::dvec3 Position = Transform.GetPosition();
+	glm::dquat Rotation = Transform.GetQuaternion();
+	glm::dvec3 Scale = Transform.GetScale();
+
+	glm::mat4 TransformMatrix = Transform.GetTransformMatrix();
+	glm::dvec3 PositionFromMatrix;
+	glm::dquat RotationFromMatrix;
+	glm::dvec3 ScaleFromMatrix;
+	GEOMETRY.DecomposeMatrixToTranslationRotationScale(TransformMatrix, PositionFromMatrix, RotationFromMatrix, ScaleFromMatrix);
+
+	// Check if GetPosition() returns the same value as the position from the matrix
+	if (!IsEqual(Position, PositionFromMatrix))
+		return false;
+
+	// Check if GetQuaternion() returns the same value as the rotation from the matrix
+	if (!IsEqual(Rotation, RotationFromMatrix))
+		return false;
+
+	// Check if GetScale() returns the same value as the scale from the matrix
+	if (!IsEqual(Scale, ScaleFromMatrix))
+		return false;
+
+	return true;
+}
+
+TEST(SceneGraph, Check_Basic_Transformations_After_Child_Added)
+{
+	// Check positions.
+	glm::vec3 InitialParentPosition = glm::vec3(1.0f, 1.0f, 1.0f);
+	glm::vec3 InitialChildPosition = glm::vec3(-1.0f, -1.0f, -1.0f);
+
+	FEEntity* Entity_A = SCENE.AddEmptyEntity("A");
+	Entity_A->Transform.SetPosition(InitialParentPosition);
+
+	FEEntity* Entity_B = SCENE.AddEmptyEntity("B");
+	Entity_B->Transform.SetPosition(InitialChildPosition);
+
+	// Add nodes to the scene graph
+	std::string Node_A_ID = SCENE.SceneGraph.AddNode(Entity_A);
+	std::string Node_B_ID = SCENE.SceneGraph.AddNode(Entity_B);
+
+	// Create a hierarchy: A -> B
+	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+
+	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->Transform));
+
+	// Check that child's position was set in a way that it is relative to parent.
+	// and to preserve the world position of the child.
+	glm::vec3 ExpectedPosition = InitialChildPosition - InitialParentPosition;
+	glm::vec3 ActualPosition = Entity_B->Transform.GetPosition();
+	ASSERT_EQ(ActualPosition, ExpectedPosition);
+
+	SCENE.Clear();
+
+	// Test with different initial positions
+	InitialParentPosition = glm::vec3(-34.6f, 20.4f, -23.5f);
+	InitialChildPosition = glm::vec3(4.5f, -2.7f, -13.3f);
+
+	Entity_A = SCENE.AddEmptyEntity("A");
+	Entity_A->Transform.SetPosition(InitialParentPosition);
+
+	Entity_B = SCENE.AddEmptyEntity("B");
+	Entity_B->Transform.SetPosition(InitialChildPosition);
+
+	// Add nodes to the scene graph
+	Node_A_ID = SCENE.SceneGraph.AddNode(Entity_A);
+	Node_B_ID = SCENE.SceneGraph.AddNode(Entity_B);
+
+	// Create a hierarchy: A -> B
+	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+
+	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->Transform));
+
+	// Check that child's position was set in a way that it is relative to parent.
+	// and to preserve the world position of the child.
+	ExpectedPosition = InitialChildPosition - InitialParentPosition;
+	ActualPosition = Entity_B->Transform.GetPosition();
+	ASSERT_EQ(ActualPosition, ExpectedPosition);
+
+	SCENE.Clear();
+
+	// Check rotations.
+	glm::quat InitialParentRotation = glm::quat(glm::vec3(glm::radians(5.0f), glm::radians(145.0f), glm::radians(45.0f)));
+	glm::quat InitialChildRotation = glm::quat(glm::vec3(glm::radians(-65.0f), glm::radians(15.0f), glm::radians(90.0f)));
+
+	Entity_A = SCENE.AddEmptyEntity("A");
+	Entity_A->Transform.SetQuaternion(InitialParentRotation);
+
+	Entity_B = SCENE.AddEmptyEntity("B");
+	Entity_B->Transform.SetQuaternion(InitialChildRotation);
+
+	// Add nodes to the scene graph
+	Node_A_ID = SCENE.SceneGraph.AddNode(Entity_A);
+	Node_B_ID = SCENE.SceneGraph.AddNode(Entity_B);
+
+	// Create a hierarchy: A -> B
+	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+
+	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->Transform));
+
+	// Check that child's rotation was set in a way that it is relative to parent.
+	// and to preserve the world rotation of the child.
+	glm::quat ExpectedRotation = -(glm::inverse(InitialParentRotation) * InitialChildRotation);
+	glm::quat ActualRotation = Entity_B->Transform.GetQuaternion();
+	// Temporary code to check with UE5 values.
+	glm::vec3 ExpectedEuler = glm::degrees(glm::eulerAngles(ExpectedRotation));
+	ASSERT_TRUE(IsEqual(ActualRotation, ExpectedRotation));
+
+	SCENE.Clear();
+
+	// Test with different initial rotations
+	InitialParentRotation = glm::quat(glm::vec3(glm::radians(-46.23f), glm::radians(175.12f), glm::radians(90.0f)));
+	InitialChildRotation = glm::quat(glm::vec3(glm::radians(-162.6f), glm::radians(-27.23f), glm::radians(90.0f)));
+
+	Entity_A = SCENE.AddEmptyEntity("A");
+	Entity_A->Transform.SetQuaternion(InitialParentRotation);
+
+	Entity_B = SCENE.AddEmptyEntity("B");
+	Entity_B->Transform.SetQuaternion(InitialChildRotation);
+
+	// Add nodes to the scene graph
+	Node_A_ID = SCENE.SceneGraph.AddNode(Entity_A);
+	Node_B_ID = SCENE.SceneGraph.AddNode(Entity_B);
+
+	// Create a hierarchy: A -> B
+	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+
+	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->Transform));
+
+	// Check that child's rotation was set in a way that it is relative to parent.
+	// and to preserve the world rotation of the child.
+	ExpectedRotation = -(glm::inverse(InitialParentRotation) * InitialChildRotation);
+	ActualRotation = Entity_B->Transform.GetQuaternion();
+	// Temporary code to check with UE5 values.
+	glm::vec3 ExpectedEuler = glm::degrees(glm::eulerAngles(ExpectedRotation));
+	ASSERT_TRUE(IsEqual(ActualRotation, ExpectedRotation));
+
+	SCENE.Clear();
+}
