@@ -12,8 +12,8 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* GetParent();
 
-		void AddChild(FENaiveSceneGraphNode* Child);
-		void DetachChild(FENaiveSceneGraphNode* NodeToAdd);
+		void AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
+		void DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		FENaiveSceneGraphNode* GetChild(std::string ID);
 		FENaiveSceneGraphNode* GetChildByOldEntityID(std::string OldEntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);

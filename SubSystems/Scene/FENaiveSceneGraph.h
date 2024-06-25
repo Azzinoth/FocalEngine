@@ -13,9 +13,9 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* GetRoot() const;
 
-		std::string AddNode(FEObject* OldStyleEntity);
-		bool MoveNode(std::string NodeID, std::string NewParentID);
-		void DetachNode(FENaiveSceneGraphNode* NodeToRemove);
+		std::string AddNode(FEObject* OldStyleEntity, bool bPreserveWorldTransform = true);
+		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
+		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
 		size_t GetNodeCount();
 
@@ -31,8 +31,8 @@ namespace FocalEngine
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;
 
-		void AddNode(FENaiveSceneGraphNode* NodeToAdd);
-		void AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd);
+		void AddNode(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
+		void AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
 
         bool HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 							  std::unordered_set<FENaiveSceneGraphNode*>& Visited,

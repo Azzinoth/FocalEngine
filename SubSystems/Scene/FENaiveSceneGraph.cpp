@@ -38,15 +38,16 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByOldEntityID(std::string OldEn
 	return Root->GetChildByOldEntityID(OldEntityID);
 }
 
-std::string FENaiveSceneGraph::AddNode(FEObject* OldStyleEntity)
+std::string FENaiveSceneGraph::AddNode(FEObject* OldStyleEntity, bool bPreserveWorldTransform)
 {
 	FENaiveSceneGraphNode* NewEntity = new FENaiveSceneGraphNode(OldStyleEntity->GetName());
 	NewEntity->OldStyleEntity = OldStyleEntity;
-	Root->AddChild(NewEntity);
+	Root->AddChild(NewEntity, bPreserveWorldTransform);
+
 	return NewEntity->GetObjectID();
 }
 
-bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID)
+bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform)
 {
 	FENaiveSceneGraphNode* NodeToMove = GetNode(NodeID);
 	FENaiveSceneGraphNode* NewParent = GetNode(NewParentID);
@@ -59,30 +60,31 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID)
 
 	FENaiveSceneGraphNode* OldParent = NodeToMove->GetParent();
 
-	// Temporarily detach the node
-	DetachNode(NodeToMove);
-	AddNode(NewParent, NodeToMove);
+	// Temporarily detach the node.
+	// With temporary detach, bPreserveWorldTransform could be a problem.
+	DetachNode(NodeToMove, bPreserveWorldTransform);
+	AddNode(NewParent, NodeToMove, bPreserveWorldTransform);
 
 	// Check for cycles
 	if (HasCycle(GetRoot()))
 	{
 		// If a cycle is created, revert the change
-		DetachNode(NodeToMove);
-		AddNode(OldParent, NodeToMove);
+		DetachNode(NodeToMove, bPreserveWorldTransform);
+		AddNode(OldParent, NodeToMove, bPreserveWorldTransform);
 		return false;
 	}
 
 	return true;
 }
 
-void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* NodeToAdd)
+void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
-	Root->AddChild(NodeToAdd);
+	Root->AddChild(NodeToAdd, bPreserveWorldTransform);
 }
 
-void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd)
+void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
-	Parent->AddChild(NodeToAdd);
+	Parent->AddChild(NodeToAdd, bPreserveWorldTransform);
 }
 
 void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
@@ -102,12 +104,12 @@ void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
 	delete NodeToDelete;
 }
 
-void FENaiveSceneGraph::DetachNode(FENaiveSceneGraphNode* NodeToRemove)
+void FENaiveSceneGraph::DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform)
 {
-	if (NodeToRemove == Root)
+	if (NodeToDetach == Root)
 		return;
 
-	Root->DetachChild(NodeToRemove);
+	Root->DetachChild(NodeToDetach, bPreserveWorldTransform);
 }
 
 std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetNodeByName(std::string Name)

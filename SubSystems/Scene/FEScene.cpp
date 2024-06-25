@@ -691,10 +691,24 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 		}
 	}
 
+	if (GLTF.Scene != -1)
+	{
+		GLTFScene& SceneToLoad = GLTF.Scenes[GLTF.Scene];
+
+		for (size_t i = 0; i < SceneToLoad.RootChildren.size(); i++)
+		{
+			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], PrefabMap, SceneGraph.GetRoot()->GetObjectID());
+		}
+	}
+
+	/*std::unordered_map<int, bool> AlreadyProcessedNodesMap;
 	for (size_t i = 0; i < GLTF.Nodes.size(); i++)
 	{
-		AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[i], PrefabMap, SceneGraph.GetRoot()->GetObjectID());
-	}
+		if (AlreadyProcessedNodesMap.find(i) != AlreadyProcessedNodesMap.end())
+			continue;
+
+		AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[i], PrefabMap, AlreadyProcessedNodesMap, SceneGraph.GetRoot()->GetObjectID());
+	}*/
 
 	GLTF.Clear();
 	return Result;
@@ -731,8 +745,9 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 		// Problem is that currently we can not have entity without prefab
 		// Later we should add support for entities without prefabs
-		NewNaiveSceneEntityID = SceneGraph.AddNode(NewEntity);
-		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID);
+		FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByOldEntityID(NewEntity->GetObjectID());
+		NewNaiveSceneEntityID = AddedNode->GetObjectID();
+		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID, false);
 
 		Result.push_back(NewEntity);
 	}
