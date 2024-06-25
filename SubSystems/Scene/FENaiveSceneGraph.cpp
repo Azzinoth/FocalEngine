@@ -8,11 +8,10 @@ FENaiveSceneGraph::FENaiveSceneGraph()
 
 void FENaiveSceneGraph::Clear()
 {
-	for (size_t i = 0; i < Root->Children.size(); i++)
-		RemoveNode(Root->Children[i]);
-	
-	delete Root;
+	bClearing = true;
+	DeleteNode(Root);
 	Root = new FENaiveSceneGraphNode();
+	bClearing = false;
 }
 
 FENaiveSceneGraph::~FENaiveSceneGraph()
@@ -60,15 +59,15 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID)
 
 	FENaiveSceneGraphNode* OldParent = NodeToMove->GetParent();
 
-	// Temporarily move the node
-	RemoveNode(NodeToMove);
+	// Temporarily detach the node
+	DetachNode(NodeToMove);
 	AddNode(NewParent, NodeToMove);
 
 	// Check for cycles
 	if (HasCycle(GetRoot()))
 	{
 		// If a cycle is created, revert the change
-		RemoveNode(NodeToMove);
+		DetachNode(NodeToMove);
 		AddNode(OldParent, NodeToMove);
 		return false;
 	}
@@ -86,11 +85,29 @@ void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraph
 	Parent->AddChild(NodeToAdd);
 }
 
-void FENaiveSceneGraph::RemoveNode(FENaiveSceneGraphNode* NodeToRemove)
+void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
+{
+	if (NodeToDelete == nullptr)
+		return;
+
+	if (NodeToDelete == Root && !bClearing)
+		return;
+
+	for (size_t i = 0; i < NodeToDelete->GetChildren().size(); i++)
+		DeleteNode(NodeToDelete->GetChildren()[i]);
+
+	if (NodeToDelete->GetParent() != nullptr)
+		NodeToDelete->GetParent()->DetachChild(NodeToDelete);
+
+	delete NodeToDelete;
+}
+
+void FENaiveSceneGraph::DetachNode(FENaiveSceneGraphNode* NodeToRemove)
 {
 	if (NodeToRemove == Root)
 		return;
-	Root->RemoveChild(NodeToRemove);
+
+	Root->DetachChild(NodeToRemove);
 }
 
 std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetNodeByName(std::string Name)
@@ -155,4 +172,9 @@ bool FENaiveSceneGraph::HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 	RecursionStack.erase(NodeToCheck);
 
 	return false;
+}
+
+size_t FENaiveSceneGraph::GetNodeCount()
+{
+	return Root->GetRecursiveChildCount();
 }

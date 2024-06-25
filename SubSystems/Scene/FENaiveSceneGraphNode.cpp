@@ -11,28 +11,18 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 	Children.clear();
 }
 
-#include <glm/gtx/matrix_decompose.hpp>
-void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd)
+void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
-	Children.push_back(NodeToAdd);
-	NodeToAdd->Parent = this;
+	FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToWorkOn->GetOldStyleEntity());
+	FETransformComponent& ChildTransform = ChildEntity->Transform;
+	glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
 
-	// If we want to add child without changing world position of it.
-	bool bPreserveWorldPosition = true;
-	if (bPreserveWorldPosition)
+	FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
+	if (Entity != nullptr)
 	{
-		FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
-		if (Entity == nullptr)
-			return;
-
 		FETransformComponent& ParentTransform = Entity->Transform;
 
-		FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToAdd->GetOldStyleEntity());
-		FETransformComponent& ChildTransform = ChildEntity->Transform;
-
-		// Get the world matrices
 		glm::mat4 ParentWorldMatrix = ParentTransform.GetTransformMatrix();
-		glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
 
 		// Calculate the inverse of the parent's world matrix
 		glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
@@ -52,12 +42,115 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd)
 	}
 }
 
-void FENaiveSceneGraphNode::RemoveChild(FENaiveSceneGraphNode* Child)
+void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd)
+{
+	////FENaiveSceneGraphNode* OldParent = NodeToAdd->Parent;
+
+	//FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToAdd->GetOldStyleEntity());
+	//FETransformComponent& ChildTransform = ChildEntity->Transform;
+	//glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
+
+	////// We want preserve the world position of the child
+	////// First we need to check if current parent is not root node
+	////if (OldParent != nullptr && OldParent->GetParent() != nullptr)
+	////{
+	////	// In case it is not root we need to reverce old parent influence.
+	////	FEEntity* OldParentEntity = reinterpret_cast<FEEntity*>(OldParent->GetOldStyleEntity());
+	////	if (OldParentEntity != nullptr)
+	////	{
+	////		FETransformComponent& OldParentTransform = OldParentEntity->Transform;
+
+	////		glm::mat4 ChildLocalMatrix = ChildTransform.LocalSpaceMatrix;
+	////		glm::mat4 OldParentWorldMatrix = OldParentTransform.GetTransformMatrix();
+
+	////		// Calculate the child's world matrix
+	////		ChildWorldMatrix = OldParentWorldMatrix * ChildLocalMatrix;
+
+	////		glm::dvec3 DoubleScale;
+	////		glm::dquat DoubleRotation;
+	////		glm::dvec3 DoubleTranslation;
+	////		if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
+	////		{
+	////			ChildTransform.SetPosition(DoubleTranslation);
+	////			ChildTransform.SetQuaternion(DoubleRotation);
+	////			ChildTransform.SetScale(DoubleScale);
+	////		}
+	////	}
+	////}
+
+	//FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
+	//if (Entity != nullptr)
+	//{
+	//	FETransformComponent& ParentTransform = Entity->Transform;
+
+	//	glm::mat4 ParentWorldMatrix = ParentTransform.GetTransformMatrix();
+
+	//	// Calculate the inverse of the parent's world matrix
+	//	glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
+
+	//	// Calculate the new local matrix for the child
+	//	glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
+
+	//	glm::dvec3 DoubleScale;
+	//	glm::dquat DoubleRotation;
+	//	glm::dvec3 DoubleTranslation;
+	//	if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
+	//	{
+	//		ChildTransform.SetPosition(DoubleTranslation);
+	//		ChildTransform.SetQuaternion(DoubleRotation);
+	//		ChildTransform.SetScale(DoubleScale);
+	//	}
+	//}
+
+	ApplyTransformHierarchy(NodeToAdd);
+	Children.push_back(NodeToAdd);
+	NodeToAdd->Parent = this;
+}
+
+void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
+{
+	FENaiveSceneGraphNode* OldParent = NodeToWorkOn->Parent;
+
+	FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToWorkOn->GetOldStyleEntity());
+	FETransformComponent& ChildTransform = ChildEntity->Transform;
+	glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
+
+	// We want preserve the world position of the child
+	// First we need to check if current parent is not root node
+	if (OldParent != nullptr && OldParent->GetParent() != nullptr)
+	{
+		// In case it is not root we need to reverce old parent influence.
+		FEEntity* OldParentEntity = reinterpret_cast<FEEntity*>(OldParent->GetOldStyleEntity());
+		if (OldParentEntity != nullptr)
+		{
+			FETransformComponent& OldParentTransform = OldParentEntity->Transform;
+
+			glm::mat4 ChildLocalMatrix = ChildTransform.LocalSpaceMatrix;
+			glm::mat4 OldParentWorldMatrix = OldParentTransform.GetTransformMatrix();
+
+			// Calculate the child's world matrix
+			ChildWorldMatrix = OldParentWorldMatrix * ChildLocalMatrix;
+
+			glm::dvec3 DoubleScale;
+			glm::dquat DoubleRotation;
+			glm::dvec3 DoubleTranslation;
+			if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildWorldMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
+			{
+				ChildTransform.SetPosition(DoubleTranslation);
+				ChildTransform.SetQuaternion(DoubleRotation);
+				ChildTransform.SetScale(DoubleScale);
+			}
+		}
+	}
+}
+
+void FENaiveSceneGraphNode::DetachChild(FENaiveSceneGraphNode* Child)
 {
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		if (Children[i] == Child)
 		{
+			ReverseTransformHierarchy(Child);
 			Child->Parent = nullptr;
 			Children.erase(Children.begin() + i);
 			return;
@@ -69,7 +162,7 @@ void FENaiveSceneGraphNode::RemoveChild(FENaiveSceneGraphNode* Child)
 	// So we need to search recursively
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		Children[i]->RemoveChild(Child);
+		Children[i]->DetachChild(Child);
 	}
 }
 
@@ -145,4 +238,19 @@ FEObject* FENaiveSceneGraphNode::GetOldStyleEntity()
 FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()
 {
 	return Parent;
+}
+
+size_t FENaiveSceneGraphNode::GetImediateChildrenCount()
+{
+	return Children.size();
+}
+
+size_t FENaiveSceneGraphNode::GetRecursiveChildCount()
+{
+	size_t Count = Children.size();
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		Count += Children[i]->GetRecursiveChildCount();
+	}
+	return Count;
 }

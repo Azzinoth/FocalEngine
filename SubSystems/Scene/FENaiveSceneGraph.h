@@ -15,7 +15,9 @@ namespace FocalEngine
 
 		std::string AddNode(FEObject* OldStyleEntity);
 		bool MoveNode(std::string NodeID, std::string NewParentID);
-		void RemoveNode(FENaiveSceneGraphNode* NodeToRemove);
+		void DetachNode(FENaiveSceneGraphNode* NodeToRemove);
+		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
+		size_t GetNodeCount();
 
 		bool IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant);
         bool HasCycle(FENaiveSceneGraphNode* NodeToCheck);
@@ -26,6 +28,7 @@ namespace FocalEngine
 
 		void Clear();
 	private:
+		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;
 
 		void AddNode(FENaiveSceneGraphNode* NodeToAdd);

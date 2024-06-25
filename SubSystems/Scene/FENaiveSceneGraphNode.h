@@ -13,10 +13,12 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetParent();
 
 		void AddChild(FENaiveSceneGraphNode* Child);
-		void RemoveChild(FENaiveSceneGraphNode* NodeToAdd);
+		void DetachChild(FENaiveSceneGraphNode* NodeToAdd);
 		FENaiveSceneGraphNode* GetChild(std::string ID);
 		FENaiveSceneGraphNode* GetChildByOldEntityID(std::string OldEntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
+		size_t GetImediateChildrenCount();
+		size_t GetRecursiveChildCount();
 
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
 
@@ -28,5 +30,8 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
 		FEObject* OldStyleEntity = nullptr;
+
+		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
+		void ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
 	};
 }

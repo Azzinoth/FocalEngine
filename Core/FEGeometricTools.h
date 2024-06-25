@@ -93,6 +93,9 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEGeometry)
 
+		bool IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon = 1e-5);
+		bool IsEpsilonEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon = 1e-5);
+
 		bool DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale);
 
 		glm::vec3 CalculateNormal(glm::dvec3 FirstVertex, glm::dvec3 SecondVertex, glm::dvec3 ThirdVertex);

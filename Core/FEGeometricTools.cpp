@@ -556,6 +556,23 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
+bool FEGeometry::IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon)
+{
+	return std::abs(FirstVector.x - SecondVector.x) < Epsilon &&
+		   std::abs(FirstVector.y - SecondVector.y) < Epsilon &&
+		   std::abs(FirstVector.z - SecondVector.z) < Epsilon;
+}
+
+bool FEGeometry::IsEpsilonEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon)
+{
+	return glm::abs(glm::dot(FirstQuaternion, SecondQuaternion)) > (1.0 - Epsilon);
+
+	/*return std::abs(FirstQuaternion.x - SecondQuaternion.x) < Epsilon &&
+		   std::abs(FirstQuaternion.y - SecondQuaternion.y) < Epsilon &&
+		   std::abs(FirstQuaternion.z - SecondQuaternion.z) < Epsilon &&
+		   std::abs(FirstQuaternion.w - SecondQuaternion.w) < Epsilon;*/
+}
+
 bool FEGeometry::DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale)
 {
 	// In rare cases glm::decompose can fail because of precision issues
