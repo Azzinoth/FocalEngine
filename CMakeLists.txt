@@ -29,6 +29,8 @@ if(ENABLE_TESTS)
 	list(APPEND TEST_SOURCE_FILES
         "Tests/RunAllTests.cpp"
         "Tests/RunAllTests.h"
+		"Tests/SceneGraphTest.cpp"
+        "Tests/SceneGraphTest.h"
     )
 
 	list(APPEND TEST_INCLUDE_FILES

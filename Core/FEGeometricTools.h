@@ -95,6 +95,7 @@ namespace FocalEngine
 
 		bool IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon = 1e-5);
 		bool IsEpsilonEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon = 1e-5);
+		bool IsEpsilonEqual(const glm::dmat4& FirstMatrix, const glm::dmat4& SecondMatrix, double Epsilon = 1e-5);
 
 		bool DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale);
 

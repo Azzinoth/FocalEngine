@@ -55,6 +55,9 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bo
 	if (NodeToMove == nullptr || NewParent == nullptr)
 		return false;
 
+	if (NodeToMove->GetParent() == NewParent)
+		return false;
+
 	if (IsDescendant(NodeToMove, NewParent))
 		return false;
 
@@ -95,18 +98,13 @@ void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
 	if (NodeToDelete == Root && !bClearing)
 		return;
 
-	for (size_t i = 0; i < NodeToDelete->GetChildren().size(); i++)
-		DeleteNode(NodeToDelete->GetChildren()[i]);
-
-	if (NodeToDelete->GetParent() != nullptr)
-		NodeToDelete->GetParent()->DetachChild(NodeToDelete);
-
+	DetachNode(NodeToDelete);
 	delete NodeToDelete;
 }
 
 void FENaiveSceneGraph::DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform)
 {
-	if (NodeToDetach == Root)
+	if (NodeToDetach == Root && !bClearing)
 		return;
 
 	Root->DetachChild(NodeToDetach, bPreserveWorldTransform);
@@ -179,4 +177,23 @@ bool FENaiveSceneGraph::HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 size_t FENaiveSceneGraph::GetNodeCount()
 {
 	return Root->GetRecursiveChildCount();
+}
+
+std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetAllNodes()
+{
+	return Root->GetAllNodesInternal();
+}
+
+Json::Value FENaiveSceneGraph::ToJson()
+{
+	Json::Value Root;
+	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
+	AllNodes.erase(AllNodes.begin());
+
+	for (size_t i = 0; i < AllNodes.size(); i++)
+	{
+		Root["Nodes"][AllNodes[i]->GetObjectID()] = AllNodes[i]->ToJson();
+	}
+
+	return Root;
 }

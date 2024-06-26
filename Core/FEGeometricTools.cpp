@@ -566,11 +566,14 @@ bool FEGeometry::IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3&
 bool FEGeometry::IsEpsilonEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon)
 {
 	return glm::abs(glm::dot(FirstQuaternion, SecondQuaternion)) > (1.0 - Epsilon);
+}
 
-	/*return std::abs(FirstQuaternion.x - SecondQuaternion.x) < Epsilon &&
-		   std::abs(FirstQuaternion.y - SecondQuaternion.y) < Epsilon &&
-		   std::abs(FirstQuaternion.z - SecondQuaternion.z) < Epsilon &&
-		   std::abs(FirstQuaternion.w - SecondQuaternion.w) < Epsilon;*/
+bool FEGeometry::IsEpsilonEqual(const glm::dmat4& FirstMatrix, const glm::dmat4& SecondMatrix, double Epsilon)
+{
+	return IsEpsilonEqual(FirstMatrix[0], SecondMatrix[0], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[1], SecondMatrix[1], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[2], SecondMatrix[2], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[3], SecondMatrix[3], Epsilon);
 }
 
 bool FEGeometry::DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale)

@@ -175,6 +175,19 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetChildren()
 	return Children;
 }
 
+std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetRecursiveChildren()
+{
+	std::vector<FENaiveSceneGraphNode*> Result;
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		Result.push_back(Children[i]);
+		std::vector<FENaiveSceneGraphNode*> SubResult = Children[i]->GetRecursiveChildren();
+		for (size_t j = 0; j < SubResult.size(); j++)
+			Result.push_back(SubResult[j]);
+	}
+	return Result;
+}
+
 FEObject* FENaiveSceneGraphNode::GetOldStyleEntity()
 {
 	return OldStyleEntity;
@@ -198,4 +211,43 @@ size_t FENaiveSceneGraphNode::GetRecursiveChildCount()
 		Count += Children[i]->GetRecursiveChildCount();
 	}
 	return Count;
+}
+
+std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetAllNodesInternal()
+{
+	std::vector<FENaiveSceneGraphNode*> Result;
+	Result.push_back(this);
+
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		std::vector<FENaiveSceneGraphNode*> SubResult = Children[i]->GetAllNodesInternal();
+		for (size_t j = 0; j < SubResult.size(); j++)
+			Result.push_back(SubResult[j]);
+	}
+
+	return Result;
+}
+
+Json::Value FENaiveSceneGraphNode::ToJson()
+{
+	Json::Value Node;
+	Node["Name"] = GetName();
+	Node["ID"] = GetObjectID();
+	if (OldStyleEntity == nullptr)
+	{
+		Node["OldEntityID"] = -1;
+	}
+	else
+	{
+		Node["OldEntityID"] = OldStyleEntity->GetObjectID();
+	}
+
+	Json::Value ChildrenArray;
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		ChildrenArray[std::to_string(i)]["ID"] = Children[i]->GetObjectID();
+	}
+	Node["Children"] = ChildrenArray;
+
+	return Node;
 }

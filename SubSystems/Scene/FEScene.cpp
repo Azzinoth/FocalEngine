@@ -796,8 +796,6 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	return Result;
 }
 
-
-//#include "glm/gtx/matrix_decompose.hpp"
 void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 {
 	FEEntity* Entity = reinterpret_cast<FEEntity*>(SubTreeRoot->GetOldStyleEntity());
@@ -811,11 +809,11 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 		return;
 	}
 
-	if (SubTreeRoot->GetName() == "entity_16")
+	/*if (SubTreeRoot->GetName() == "entity_16")
 	{
 		int y = 0;
 		y++;
-	}
+	}*/
 
 	Entity->Transform.bIsInSceneGraph = true;
 

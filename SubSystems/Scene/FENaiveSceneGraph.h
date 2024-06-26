@@ -27,6 +27,8 @@ namespace FocalEngine
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
 		void Clear();
+
+		Json::Value ToJson();
 	private:
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;
@@ -37,5 +39,7 @@ namespace FocalEngine
         bool HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 							  std::unordered_set<FENaiveSceneGraphNode*>& Visited,
 							  std::unordered_set<FENaiveSceneGraphNode*>& RecursionStack);
+
+		std::vector<FENaiveSceneGraphNode*> GetAllNodes();
 	};
 }

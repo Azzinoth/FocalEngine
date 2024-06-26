@@ -21,8 +21,11 @@ namespace FocalEngine
 		size_t GetRecursiveChildCount();
 
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
+		std::vector<FENaiveSceneGraphNode*> GetRecursiveChildren();
 
 		FEObject* GetOldStyleEntity();
+
+		Json::Value ToJson();
 	private:
 		FENaiveSceneGraphNode(std::string Name = "Unnamed NaiveSceneNode");
 		~FENaiveSceneGraphNode();
@@ -33,5 +36,7 @@ namespace FocalEngine
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
 		void ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
+
+		std::vector<FENaiveSceneGraphNode*> GetAllNodesInternal();
 	};
 }
