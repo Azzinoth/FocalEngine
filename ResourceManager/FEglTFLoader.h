@@ -11,24 +11,50 @@ namespace FocalEngine
 		char* RawData = nullptr;
 	};
 
+	//https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-bufferview
 	struct GLTFBufferView
 	{
 		int Buffer = -1;
+		int ByteOffset = 0;
 		int ByteLength = -1;
-		int ByteOffset = -1;
+		int ByteStride = -1;
 		int Target = -1;
+		std::string Name;
+	};
+
+	struct GLTFAccessorSparseIndices
+	{
+		int BufferView = -1;
+		int ByteOffset = 0;
+		int ComponentType = -1;
+	};
+
+	struct GLTFAccessorSparseValues
+	{
+		int BufferView = -1;
+		int ByteOffset = 0;
+	};
+
+	struct GLTFAccessorSparse
+	{
+		int Count = -1;
+		int Indices = -1;
+		int Values = -1;
 	};
 
 	struct GLTFAccessor
 	{
 		int BufferView = -1;
-		int ByteOffset = -1;
+		int ByteOffset = 0;
 		int ComponentType = -1;
+		bool bNormalized = false;
+		std::string Type;
 		int Count = -1;
 		std::vector<int> Max;
 		std::vector<int> Min;
-
-		std::string Type;
+		GLTFAccessorSparse Sparse;
+		std::string Name;
+		
 	};
 
 	struct GLTFPrimitiveRawData
@@ -208,5 +234,9 @@ namespace FocalEngine
 		bool LoadTangents(GLTFPrimitive& Primitive);
 		bool LoadUV(GLTFPrimitive& Primitive);
 		bool LoadIndices(GLTFPrimitive& Primitive);
+
+		size_t GetComponentSize(const int ComponentType);
+		size_t GetComponentCount(const std::string& Type);
+		size_t GetTotalMemorySize(const int Count, const int ComponentType, const std::string& Type);
 	};
 }

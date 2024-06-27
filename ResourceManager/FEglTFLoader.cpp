@@ -189,17 +189,33 @@ void FEGLTFLoader::Load(const char* FileName)
 		{
 			GLTFBufferView CurrentBufferView;
 
-			if (JsonBufferViews[static_cast<int>(i)].isMember("buffer"))
-				CurrentBufferView.Buffer = JsonBufferViews[static_cast<int>(i)]["buffer"].asInt();
-
-			if (JsonBufferViews[static_cast<int>(i)].isMember("byteLength"))
-				CurrentBufferView.ByteLength = JsonBufferViews[static_cast<int>(i)]["byteLength"].asInt();
+			// Buffer is required.
+			if (!JsonBufferViews[static_cast<int>(i)].isMember("buffer"))
+			{
+				LOG.Add("Buffer is not present in bufferView with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				return;
+			}
+			CurrentBufferView.Buffer = JsonBufferViews[static_cast<int>(i)]["buffer"].asInt();
 
 			if (JsonBufferViews[static_cast<int>(i)].isMember("byteOffset"))
 				CurrentBufferView.ByteOffset = JsonBufferViews[static_cast<int>(i)]["byteOffset"].asInt();
 
+			// ByteLength is required.
+			if (!JsonBufferViews[static_cast<int>(i)].isMember("byteLength"))
+			{
+				LOG.Add("ByteLength is not present in bufferView with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				return;
+			}
+			CurrentBufferView.ByteLength = JsonBufferViews[static_cast<int>(i)]["byteLength"].asInt();
+
+			if (JsonBufferViews[static_cast<int>(i)].isMember("byteStride"))
+				CurrentBufferView.ByteStride = JsonBufferViews[static_cast<int>(i)]["byteStride"].asInt();
+
 			if (JsonBufferViews[static_cast<int>(i)].isMember("target"))
 				CurrentBufferView.Target = JsonBufferViews[static_cast<int>(i)]["target"].asInt();
+
+			if (JsonBufferViews[static_cast<int>(i)].isMember("name"))
+				CurrentBufferView.Name = JsonBufferViews[static_cast<int>(i)]["name"].asCString();
 
 			BufferViews.push_back(CurrentBufferView);
 		}
@@ -218,14 +234,57 @@ void FEGLTFLoader::Load(const char* FileName)
 			if (JsonAccessors[static_cast<int>(i)].isMember("byteOffset"))
 				CurrentAccessor.ByteOffset = JsonAccessors[static_cast<int>(i)]["byteOffset"].asInt();
 
-			if (JsonAccessors[static_cast<int>(i)].isMember("componentType"))
-				CurrentAccessor.ComponentType = JsonAccessors[static_cast<int>(i)]["componentType"].asInt();
+			// ComponentType is required.
+			if (!JsonAccessors[static_cast<int>(i)].isMember("componentType"))
+			{
+				LOG.Add("ComponentType is not present in accessor with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				return;
+			}
+			CurrentAccessor.ComponentType = JsonAccessors[static_cast<int>(i)]["componentType"].asInt();
 
-			if (JsonAccessors[static_cast<int>(i)].isMember("count"))
-				CurrentAccessor.Count = JsonAccessors[static_cast<int>(i)]["count"].asInt();
+			if (JsonAccessors[static_cast<int>(i)].isMember("normalized"))
+				CurrentAccessor.bNormalized = JsonAccessors[static_cast<int>(i)]["normalized"].asBool();
 
-			if (JsonAccessors[static_cast<int>(i)].isMember("type"))
-				CurrentAccessor.Type = JsonAccessors[static_cast<int>(i)]["type"].asString();
+			// Count is required.
+			if (!JsonAccessors[static_cast<int>(i)].isMember("count"))
+			{
+				LOG.Add("Count is not present in accessor with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				return;
+			}
+			CurrentAccessor.Count = JsonAccessors[static_cast<int>(i)]["count"].asInt();
+
+			// Type is required.
+			if (!JsonAccessors[static_cast<int>(i)].isMember("type"))
+			{
+				LOG.Add("Type is not present in accessor with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+			}
+			CurrentAccessor.Type = JsonAccessors[static_cast<int>(i)]["type"].asString();
+
+			if (JsonAccessors[static_cast<int>(i)].isMember("max"))
+			{
+				/*Json::Value JsonMax = JsonAccessors[static_cast<int>(i)]["max"];
+				for (size_t j = 0; j < JsonMax.size(); j++)
+				{
+					CurrentAccessor.Max.push_back(JsonMax[static_cast<int>(j)].asInt());
+				}*/
+			}
+
+			if (JsonAccessors[static_cast<int>(i)].isMember("min"))
+			{
+				/*Json::Value JsonMin = JsonAccessors[static_cast<int>(i)]["min"];
+				for (size_t j = 0; j < JsonMin.size(); j++)
+				{
+					CurrentAccessor.Min.push_back(JsonMin[static_cast<int>(j)].asInt());
+				}*/
+			}
+
+			
+			// read GLTFAccessorSparse
+
+			if (JsonAccessors[static_cast<int>(i)].isMember("name"))
+				CurrentAccessor.Name = JsonAccessors[static_cast<int>(i)]["name"].asCString();
+
+
 
 			Accessors.push_back(CurrentAccessor);
 		}
@@ -617,12 +676,14 @@ bool FEGLTFLoader::LoadPositions(GLTFPrimitive& Primitive)
 	}
 
 	int ByteOffset = 0;
-	if (CurrentBufferView.ByteOffset > 0)
-		ByteOffset = CurrentBufferView.ByteOffset;
+	/*if (CurrentAccessor.ByteOffset > 0)
+		ByteOffset = CurrentAccessor.ByteOffset;*/
+	ByteOffset = CurrentBufferView.ByteOffset + CurrentAccessor.ByteOffset;
 
 	// It is vec3 so size should be currentAccessor.count * 3.
 	Primitive.RawData.Positions.resize(CurrentAccessor.Count * 3);
-	memcpy_s(Primitive.RawData.Positions.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+	size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+	memcpy_s(Primitive.RawData.Positions.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 	return true;
 }
@@ -647,12 +708,14 @@ bool FEGLTFLoader::LoadNomals(GLTFPrimitive& Primitive)
 	}
 
 	int ByteOffset = 0;
-	if (CurrentBufferView.ByteOffset > 0)
-		ByteOffset = CurrentBufferView.ByteOffset;
+	//if (CurrentAccessor.ByteOffset > 0)
+		//ByteOffset = CurrentAccessor.ByteOffset;
+	ByteOffset = CurrentBufferView.ByteOffset + CurrentAccessor.ByteOffset;
 
 	// It is vec3 so size should be currentAccessor.count * 3.
 	Primitive.RawData.Normals.resize(CurrentAccessor.Count * 3);
-	memcpy_s(Primitive.RawData.Normals.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+	size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+	memcpy_s(Primitive.RawData.Normals.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 	return true;
 }
@@ -677,19 +740,22 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 	}
 
 	int ByteOffset = 0;
-	if (CurrentBufferView.ByteOffset > 0)
-		ByteOffset = CurrentBufferView.ByteOffset;
+	/*if (CurrentAccessor.ByteOffset > 0)
+		ByteOffset = CurrentAccessor.ByteOffset;*/
+	ByteOffset = CurrentBufferView.ByteOffset + CurrentAccessor.ByteOffset;
 
 	if (CurrentAccessor.Type == "VEC3")
 	{
 		Primitive.RawData.Tangents.resize(CurrentAccessor.Count * 3);
-		memcpy_s(Primitive.RawData.Tangents.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+		memcpy_s(Primitive.RawData.Tangents.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 	}
 	else if (CurrentAccessor.Type == "VEC4")
 	{
 		std::vector<float> TempBuffer;
 		TempBuffer.resize(CurrentAccessor.Count * 4);
-		memcpy_s(TempBuffer.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 		int iteration = 0;
 		for (size_t i = 0; i < TempBuffer.size(); i++)
@@ -736,13 +802,15 @@ bool FEGLTFLoader::LoadUV(GLTFPrimitive& Primitive)
 			}
 
 			int ByteOffset = 0;
-			if (CurrentBufferView.ByteOffset > 0)
-				ByteOffset = CurrentBufferView.ByteOffset;
+			//if (CurrentAccessor.ByteOffset > 0)
+			//	ByteOffset = CurrentAccessor.ByteOffset;
+			ByteOffset = CurrentBufferView.ByteOffset + CurrentAccessor.ByteOffset;
 
 			Primitive.RawData.UVs.resize(Primitive.RawData.UVs.size() + 1);
 			// It is vec2 so size should be currentAccessor.count * 2.
 			Primitive.RawData.UVs[i].resize(CurrentAccessor.Count * 2);
-			memcpy_s(Primitive.RawData.UVs[i].data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+			size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+			memcpy_s(Primitive.RawData.UVs[i].data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 		}
 	}
 
@@ -769,14 +837,16 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 	}
 
 	int ByteOffset = 0;
-	if (CurrentBufferView.ByteOffset > 0)
-		ByteOffset = CurrentBufferView.ByteOffset;
+	//if (CurrentAccessor.ByteOffset > 0)
+	//	ByteOffset = CurrentAccessor.ByteOffset;
+	ByteOffset = CurrentBufferView.ByteOffset + CurrentAccessor.ByteOffset;
 
 	if (CurrentAccessor.ComponentType == 5121)
 	{
 		std::vector<unsigned char> TempBuffer;
 		TempBuffer.resize(CurrentAccessor.Count);
-		memcpy_s(TempBuffer.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 		for (size_t i = 0; i < TempBuffer.size(); i++)
 		{
@@ -787,7 +857,8 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 	{
 		std::vector<unsigned short> TempBuffer;
 		TempBuffer.resize(CurrentAccessor.Count);
-		memcpy_s(TempBuffer.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 		for (size_t i = 0; i < TempBuffer.size(); i++)
 		{
@@ -798,7 +869,8 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 	{
 		std::vector<unsigned int> TempBuffer;
 		TempBuffer.resize(CurrentAccessor.Count);
-		memcpy_s(TempBuffer.data(), CurrentBufferView.ByteLength, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), CurrentBufferView.ByteLength);
+		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
+		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
 		for (size_t i = 0; i < TempBuffer.size(); i++)
 		{
@@ -842,4 +914,35 @@ bool FEGLTFLoader::LoadMeshRawData(GLTFPrimitive& Primitive)
 	}
 
 	return true;
+}
+
+size_t FEGLTFLoader::GetComponentSize(const int ComponentType)
+{
+	switch (ComponentType)
+	{
+		case 5120: return sizeof(int8_t);   // BYTE
+		case 5121: return sizeof(uint8_t);  // UNSIGNED_BYTE
+		case 5122: return sizeof(int16_t);  // SHORT
+		case 5123: return sizeof(uint16_t); // UNSIGNED_SHORT
+		case 5125: return sizeof(uint32_t); // UNSIGNED_INT
+		case 5126: return sizeof(float);    // FLOAT
+		default: return 0;
+	}
+}
+
+size_t FEGLTFLoader::GetComponentCount(const std::string& Type)
+{
+	if (Type == "SCALAR") return 1;
+	if (Type == "VEC2") return 2;
+	if (Type == "VEC3") return 3;
+	if (Type == "VEC4") return 4;
+	if (Type == "MAT2") return 4;
+	if (Type == "MAT3") return 9;
+	if (Type == "MAT4") return 16;
+	return 0;
+}
+
+size_t FEGLTFLoader::GetTotalMemorySize(const int Count, const int ComponentType, const std::string& Type)
+{
+	return Count * GetComponentSize(ComponentType) * GetComponentCount(Type);
 }
