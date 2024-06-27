@@ -104,6 +104,20 @@ void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPr
 	if (JsonPrimitive.isMember("material"))
 		NewPrimitive.Material = JsonPrimitive["material"].asInt();
 
+	if (JsonPrimitive.isMember("mode"))
+	{
+		NewPrimitive.Mode = JsonPrimitive["mode"].asInt();
+		if (NewPrimitive.Mode < 0 || NewPrimitive.Mode > 6)
+		{
+			LOG.Add("Mode is not in range 0-6 in function FEGLTFLoader::LoadPrimitive.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		}
+
+		if (NewPrimitive.Mode != 4)
+		{
+			LOG.Add("Mesh.Primitive.Mode is not TRIANGLES, and is not supported, function FEGLTFLoader::LoadPrimitive.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		}
+	}
+
 	LoadMeshRawData(NewPrimitive);
 }
 
@@ -117,7 +131,7 @@ GLTFTextureInfo FEGLTFLoader::LoadTextureInfo(Json::Value JsonTextureNode)
 	}
 	else
 	{
-		LOG.Add("index is not present in function FEGLTFLoader::LoadTextureInfo.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Index is not present in function FEGLTFLoader::LoadTextureInfo.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 
 	if (JsonTextureNode.isMember("texCoord"))
@@ -162,7 +176,7 @@ void FEGLTFLoader::Load(const char* FileName)
 			std::streamsize FileSize = File.tellg();
 			if (FileSize < 0)
 			{
-				LOG.Add(std::string("can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add(std::string("Can't load buffer from: ") + CurrentBuffer.Uri + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 			else
 			{
@@ -172,11 +186,19 @@ void FEGLTFLoader::Load(const char* FileName)
 			}
 			File.close();
 
-			if (JsonBuffers[static_cast<int>(i)].isMember("byteLength"))
-				CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();
+			// ByteLength is required.
+			if (!JsonBuffers[static_cast<int>(i)].isMember("byteLength"))
+			{
+				LOG.Add("ByteLength is not present in buffer with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				return;
+			}
+			CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();
 
 			if (CurrentBuffer.ByteLength != FileSize)
-				LOG.Add("byteLength and fileSize is not equal in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("ByteLength and fileSize is not equal in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+
+			if (JsonBuffers[static_cast<int>(i)].isMember("name"))
+				CurrentBuffer.Name = JsonBuffers[static_cast<int>(i)]["name"].asCString();
 
 			Buffers.push_back(CurrentBuffer);
 		}
@@ -427,7 +449,7 @@ void FEGLTFLoader::Load(const char* FileName)
 						NewMaterial.NormalTexture.TexCoord = JsonMaterials[int(i)]["normalTexture"]["texCoord"].asInt();
 
 					if (JsonMaterials[int(i)]["normalTexture"].isMember("scale"))
-						NewMaterial.NormalTexture.Scale = JsonMaterials[int(i)]["normalTexture"]["scale"].asInt();
+						NewMaterial.NormalTexture.Scale = JsonMaterials[int(i)]["normalTexture"]["scale"].asFloat();
 				}
 				else
 				{
@@ -445,7 +467,7 @@ void FEGLTFLoader::Load(const char* FileName)
 						NewMaterial.OcclusionTexture.TexCoord = JsonMaterials[int(i)]["occlusionTexture"]["texCoord"].asInt();
 
 					if (JsonMaterials[int(i)]["occlusionTexture"].isMember("strength"))
-						NewMaterial.OcclusionTexture.Strength = JsonMaterials[int(i)]["occlusionTexture"]["strength"].asInt();
+						NewMaterial.OcclusionTexture.Strength = JsonMaterials[int(i)]["occlusionTexture"]["strength"].asFloat();
 				}
 				else
 				{

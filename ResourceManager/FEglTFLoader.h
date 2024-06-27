@@ -8,10 +8,11 @@ namespace FocalEngine
 	{
 		std::string Uri;
 		int ByteLength = -1;
+		std::string Name;
+
 		char* RawData = nullptr;
 	};
 
-	//https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#reference-bufferview
 	struct GLTFBufferView
 	{
 		int Buffer = -1;
@@ -54,7 +55,6 @@ namespace FocalEngine
 		std::vector<int> Min;
 		GLTFAccessorSparse Sparse;
 		std::string Name;
-		
 	};
 
 	struct GLTFPrimitiveRawData
@@ -72,15 +72,16 @@ namespace FocalEngine
 		std::unordered_map<std::string, int> Attributes;
 		int Indices = -1;
 		int Material = -1;
-		int Mode = -1;
+		// Default: TRIANGLES
+		int Mode = 4;
 
 		GLTFPrimitiveRawData RawData;
 	};
 
 	struct GLTFMesh
 	{
-		std::string Name;
 		std::vector<GLTFPrimitive> Primitives;
+		std::string Name;
 	};
 
 	struct GLTFImage
@@ -101,7 +102,6 @@ namespace FocalEngine
 		// Default: REPEAT
 		int WrapT = 10497;
 		std::string Name;
-	
 	};
 
 	struct GLTFTexture
@@ -121,14 +121,14 @@ namespace FocalEngine
 	{
 		int Index = -1;
 		int TexCoord = 0;
-		int Scale = 1;
+		float Scale = 1.0f;
 	};
 
 	struct GLTFMaterialOcclusionTextureInfo
 	{
 		int Index = -1;
 		int TexCoord = 0;
-		int Strength = 1;
+		float Strength = 1.0f;
 	};
 
 	struct GLTFMaterialPBRMetallicRoughness

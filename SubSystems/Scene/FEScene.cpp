@@ -561,8 +561,8 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 			continue;
 		}
 
-		//FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
-		FETexture* LoadedTexture = RESOURCE_MANAGER.NoTexture;
+		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
+		//FETexture* LoadedTexture = RESOURCE_MANAGER.NoTexture;
 		if (LoadedTexture != nullptr)
 		{
 			if (!GLTF.Textures[i].Name.empty())
@@ -613,81 +613,107 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 		{
 			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
 			NewMaterial->SetNormalMap(TextureMap[GLTF.Materials[i].NormalTexture.Index]);
+			NewMaterial->SetNormalMapIntensity(GLTF.Materials[i].NormalTexture.Scale);
 		}
 
 		if (TextureMap.find(GLTF.Materials[i].OcclusionTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].OcclusionTexture.Index] != nullptr)
 		{
 			NewMaterial->AddTexture(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
 			NewMaterial->SetAOMap(TextureMap[GLTF.Materials[i].OcclusionTexture.Index]);
+			NewMaterial->SetAmbientOcclusionMapIntensity(GLTF.Materials[i].OcclusionTexture.Strength);
 		}
 
 		Result.push_back(NewMaterial);
 	}
 
-	std::unordered_map<int, FEPrefab*> PrefabMap;
+	// Each Primitive need to have Prefab, there could be multiple Primitives in one glTFMesh.
+	std::unordered_map<int, std::vector<FEPrefab*>> GLTFMeshesToPrefabMap;
 	for (size_t i = 0; i < GLTF.Meshes.size(); i++)
 	{
-		PrefabMap[static_cast<int>(i)] = nullptr;
+		GLTFMeshesToPrefabMap[static_cast<int>(i)] = std::vector<FEPrefab*>();
+		GLTFMeshesToPrefabMap[static_cast<int>(i)].resize(GLTF.Meshes[i].Primitives.size());
 
-		if (GLTF.Meshes[i].Primitives[0].RawData.Indices.empty())
+		for (size_t j = 0; j < GLTF.Meshes[i].Primitives.size(); j++)
 		{
-			LOG.Add("primitive.attributes does not contain \"INDICES\" in function FEScene::LoadGLTF.", "FE_LOG_LOADING", FE_LOG_ERROR);
-			continue;
-		}
+			GLTFMeshesToPrefabMap[static_cast<int>(i)][j] = nullptr;
 
-		if (GLTF.Meshes[i].Primitives[0].RawData.Positions.empty())
-		{
-			LOG.Add("primitive.attributes does not contain \"POSITION\" in function FEScene::LoadGLTF.", "FE_LOG_LOADING", FE_LOG_ERROR);
-			continue;
-		}
-
-		if (GLTF.Meshes[i].Primitives[0].RawData.Normals.empty())
-		{
-			LOG.Add("primitive.attributes does not contain \"NORMAL\" in function FEScene::LoadGLTF. Trying to calculate normals.", "FE_LOG_LOADING", FE_LOG_WARNING);
-
-			GLTF.Meshes[i].Primitives[0].RawData.Normals.resize(GLTF.Meshes[i].Primitives[0].RawData.Positions.size());
-			GEOMETRY.CalculateNormals(GLTF.Meshes[i].Primitives[0].RawData.Indices, GLTF.Meshes[i].Primitives[0].RawData.Positions, GLTF.Meshes[i].Primitives[0].RawData.Normals);
-		}
-
-		if (GLTF.Meshes[i].Primitives[0].RawData.Tangents.empty())
-		{
-			LOG.Add("primitive.attributes does not contain \"TANGENT\" in function FEScene::LoadGLTF. Trying to calculate tangents.", "FE_LOG_LOADING", FE_LOG_WARNING);
-
-			if (GLTF.Meshes[i].Primitives[0].RawData.UVs.empty())
+			if (GLTF.Meshes[i].Primitives[j].RawData.Indices.empty())
 			{
-				LOG.Add("primitive.attributes does not contain \"TEXCOORD_0\" in function FEScene::LoadGLTF. Can't calculate tangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("Primitive[" + std::to_string(j) + "].RawData.Indices is empty in function FEScene::LoadGLTF.", "FE_LOG_LOADING", FE_LOG_ERROR);
 				continue;
 			}
 
-			GLTF.Meshes[i].Primitives[0].RawData.Tangents.resize(GLTF.Meshes[i].Primitives[0].RawData.Positions.size());
-			GEOMETRY.CalculateTangents(GLTF.Meshes[i].Primitives[0].RawData.Indices, GLTF.Meshes[i].Primitives[0].RawData.Positions, GLTF.Meshes[i].Primitives[0].RawData.UVs[0], GLTF.Meshes[i].Primitives[0].RawData.Normals, GLTF.Meshes[i].Primitives[0].RawData.Tangents);
-		}
-		
-		if (GLTF.Meshes[i].Primitives[0].Material != -1)
-		{
-			int UVIndex = 0;
-			UVIndex = GLTF.Materials[GLTF.Meshes[i].Primitives[0].Material].PBRMetallicRoughness.BaseColorTexture.TexCoord;
-			if (GLTF.Meshes[i].Primitives[0].RawData.UVs.size() <= UVIndex)
-				UVIndex = 0;
-		}
+			if (GLTF.Meshes[i].Primitives[j].RawData.Positions.empty())
+			{
+				LOG.Add("Primitive[" + std::to_string(j) + "].RawData.Positions is empty in function FEScene::LoadGLTF.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				continue;
+			}
 
-		Result.push_back(RESOURCE_MANAGER.RawDataToMesh(GLTF.Meshes[i].Primitives[0].RawData.Positions,
-														GLTF.Meshes[i].Primitives[0].RawData.Normals,
-														GLTF.Meshes[i].Primitives[0].RawData.Tangents,
-														GLTF.Meshes[i].Primitives[0].RawData.UVs[0/*UVIndex*/],
-														GLTF.Meshes[i].Primitives[0].RawData.Indices,
-														GLTF.Meshes[i].Name));
+			if (GLTF.Meshes[i].Primitives[j].RawData.Normals.empty())
+			{
+				LOG.Add("Primitive[" + std::to_string(j) + "].RawData.Normals is empty in function FEScene::LoadGLTF. Trying to calculate normals.", "FE_LOG_LOADING", FE_LOG_WARNING);
 
-		if (GLTF.Meshes[i].Primitives[0].Material != -1)
-		{
-			FEGameModel* NewGameModel = RESOURCE_MANAGER.CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Meshes[i].Primitives[0].Material]);
-			NewGameModel->SetName(GLTF.Meshes[i].Name + "_GameModel");
-			Result.push_back(NewGameModel);
+				GLTF.Meshes[i].Primitives[j].RawData.Normals.resize(GLTF.Meshes[i].Primitives[j].RawData.Positions.size());
+				GEOMETRY.CalculateNormals(GLTF.Meshes[i].Primitives[j].RawData.Indices, GLTF.Meshes[i].Primitives[0].RawData.Positions, GLTF.Meshes[i].Primitives[j].RawData.Normals);
+			}
 
-			FEPrefab* NewPrefab = RESOURCE_MANAGER.CreatePrefab(NewGameModel);
-			NewPrefab->SetName(GLTF.Meshes[i].Name + "_Prefab");
-			PrefabMap[static_cast<int>(i)] = NewPrefab;
-			Result.push_back(NewPrefab);
+			if (GLTF.Meshes[i].Primitives[j].RawData.Tangents.empty())
+			{
+				LOG.Add("Primitive[" + std::to_string(j) + "].RawData.Tangents is empty in function FEScene::LoadGLTF. Trying to calculate tangents.", "FE_LOG_LOADING", FE_LOG_WARNING);
+
+				if (GLTF.Meshes[i].Primitives[j].RawData.UVs.empty())
+				{
+					LOG.Add("Primitive[" + std::to_string(j) + "].RawData.UVs is empty in function FEScene::LoadGLTF. Can't calculate tangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
+					continue;
+				}
+
+				GLTF.Meshes[i].Primitives[j].RawData.Tangents.resize(GLTF.Meshes[i].Primitives[j].RawData.Positions.size());
+				GEOMETRY.CalculateTangents(GLTF.Meshes[i].Primitives[j].RawData.Indices, GLTF.Meshes[i].Primitives[j].RawData.Positions, GLTF.Meshes[i].Primitives[j].RawData.UVs[0], GLTF.Meshes[i].Primitives[j].RawData.Normals, GLTF.Meshes[i].Primitives[j].RawData.Tangents);
+			}
+
+			if (GLTF.Meshes[i].Primitives[j].Material != -1)
+			{
+				int UVIndex = 0;
+				UVIndex = GLTF.Materials[GLTF.Meshes[i].Primitives[j].Material].PBRMetallicRoughness.BaseColorTexture.TexCoord;
+				if (GLTF.Meshes[i].Primitives[j].RawData.UVs.size() <= UVIndex)
+					UVIndex = 0;
+			}
+
+			Result.push_back(RESOURCE_MANAGER.RawDataToMesh(GLTF.Meshes[i].Primitives[j].RawData.Positions,
+															GLTF.Meshes[i].Primitives[j].RawData.Normals,
+															GLTF.Meshes[i].Primitives[j].RawData.Tangents,
+															GLTF.Meshes[i].Primitives[j].RawData.UVs[0/*UVIndex*/],
+															GLTF.Meshes[i].Primitives[j].RawData.Indices,
+															GLTF.Meshes[i].Name));
+
+			if (GLTF.Meshes[i].Primitives[j].Material != -1)
+			{
+				FEGameModel* NewGameModel = RESOURCE_MANAGER.CreateGameModel(reinterpret_cast<FEMesh*>(Result.back()), MaterialsMap[GLTF.Meshes[i].Primitives[j].Material]);
+
+				std::string GameModelName = "Unnamed Gamemodel";
+				std::string PrefabName = "Unnamed Prefab";
+				if (!GLTF.Meshes[i].Name.empty())
+				{
+					if (GLTF.Meshes[i].Primitives.size() == 1)
+					{
+						GameModelName = GLTF.Meshes[i].Name + "_GameModel";
+						PrefabName = GLTF.Meshes[i].Name + "_Prefab";
+					}
+					else
+					{
+						GameModelName = GLTF.Meshes[i].Name + "_GameModel_Primitive_" + std::to_string(j);
+						PrefabName = GLTF.Meshes[i].Name + "_Prefab_Primitive_" + std::to_string(j);
+					}
+				}
+
+				NewGameModel->SetName(GameModelName);
+				Result.push_back(NewGameModel);
+
+				FEPrefab* NewPrefab = RESOURCE_MANAGER.CreatePrefab(NewGameModel);
+				NewPrefab->SetName(PrefabName);
+				GLTFMeshesToPrefabMap[static_cast<int>(i)][j] = NewPrefab;
+				Result.push_back(NewPrefab);
+			}
 		}
 	}
 
@@ -697,59 +723,85 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 
 		for (size_t i = 0; i < SceneToLoad.RootChildren.size(); i++)
 		{
-			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], PrefabMap, SceneGraph.GetRoot()->GetObjectID());
+			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], GLTFMeshesToPrefabMap, SceneGraph.GetRoot()->GetObjectID());
 		}
 	}
-
-	/*std::unordered_map<int, bool> AlreadyProcessedNodesMap;
-	for (size_t i = 0; i < GLTF.Nodes.size(); i++)
-	{
-		if (AlreadyProcessedNodesMap.find(i) != AlreadyProcessedNodesMap.end())
-			continue;
-
-		AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[i], PrefabMap, AlreadyProcessedNodesMap, SceneGraph.GetRoot()->GetObjectID());
-	}*/
 
 	GLTF.Clear();
 	return Result;
 }
 
-std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, FEPrefab*>& PrefabMap, const std::string ParentID)
+std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID)
 {
 	std::vector<FEObject*> Result;
 
-	int PrefabIndex = -1;
-	PrefabIndex = Node.Mesh;
+	int GLTFMesheToPrefabIndex = -1;
+	GLTFMesheToPrefabIndex = Node.Mesh;
 
 	std::string NewNaiveSceneEntityID = "";
 
-	if (PrefabIndex != -1)
+	if (GLTFMesheToPrefabIndex != -1)
 	{
-		if (PrefabMap.find(PrefabIndex) == PrefabMap.end())
+		if (GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex) == GLTFMeshesToPrefabMap.end())
 		{
-			LOG.Add("PrefabMap does not contain PrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
 			//continue;
 		}
 
-		FEPrefab* CorrentPrefab = PrefabMap.find(PrefabIndex)->second;
-		if (CorrentPrefab == nullptr)
+		if (GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex)->second.empty())
 		{
-			LOG.Add("PrefabMap[PrefabIndex] is nullptr in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
 			//continue;
 		}
-		
-		FEEntity* NewEntity = AddEntity(CorrentPrefab, Node.Name);
-		NewEntity->Transform.SetPosition(Node.Translation);
-		NewEntity->Transform.RotateByQuaternion(Node.Rotation);
-		NewEntity->Transform.SetScale(Node.Scale);
 
-		// Problem is that currently we can not have entity without prefab
-		// Later we should add support for entities without prefabs
-		FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByOldEntityID(NewEntity->GetObjectID());
-		NewNaiveSceneEntityID = AddedNode->GetObjectID();
-		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID, false);
+		std::string NodeName = "Unnamed Node";
+		if (!NodeName.empty())
+			NodeName = Node.Name;
 
-		Result.push_back(NewEntity);
+		std::vector<FEPrefab*> Prefabs = GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex)->second;
+		if (Prefabs.size() == 1)
+		{
+			FEEntity* NewEntity = AddEntity(Prefabs[0], NodeName);
+			NewEntity->Transform.SetPosition(Node.Translation);
+			NewEntity->Transform.RotateByQuaternion(Node.Rotation);
+			NewEntity->Transform.SetScale(Node.Scale);
+
+			// Problem is that currently we can not have entity without prefab
+			// Later we should add support for entities without prefabs
+			FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByOldEntityID(NewEntity->GetObjectID());
+			NewNaiveSceneEntityID = AddedNode->GetObjectID();
+			SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID, false);
+
+			Result.push_back(NewEntity);
+		}
+		else
+		{
+			FENaiveSceneGraphNode* FirstNode = nullptr;
+
+			FEEntity* DummyEntity = new FEEntity();
+			DummyEntity->SetName(Node.Name);
+			DummyEntity->Transform.SetPosition(Node.Translation);
+			DummyEntity->Transform.RotateByQuaternion(Node.Rotation);
+			DummyEntity->Transform.SetScale(Node.Scale);
+			NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
+			FirstNode = SceneGraph.GetNode(NewNaiveSceneEntityID);
+			SceneGraph.MoveNode(FirstNode->GetObjectID(), ParentID, false);
+
+			for (size_t i = 0; i < Prefabs.size(); i++)
+			{
+				std::string CurrentNodeName = NodeName;
+				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
+
+				FEEntity* NewEntity = AddEntity(Prefabs[i], CurrentNodeName);
+				// Problem is that currently we can not have entity without prefab
+				// Later we should add support for entities without prefabs
+				FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByOldEntityID(NewEntity->GetObjectID());
+				NewNaiveSceneEntityID = AddedNode->GetObjectID();
+				SceneGraph.MoveNode(NewNaiveSceneEntityID, FirstNode->GetObjectID(), false);
+
+				Result.push_back(NewEntity);
+			}
+		}
 	}
 	// Currently we are useing this hack to add empty entities
 	else
@@ -772,24 +824,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 			continue;
 		}
 
-		if (Node.Name == "BistroInterior")
-		{
-			int y = 0;
-			y++;
-		}
-		else if (Node.Name == "BistroExterior")
-		{
-			int y = 0;
-			y++;
-		}
-		else
-		{
-			int y = 0;
-			y++;
-		}
-
 		GLTFNodes ChildNode = GLTF.Nodes[Node.Children[i]];
-		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, PrefabMap, NewNaiveSceneEntityID);
+		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToPrefabMap, NewNaiveSceneEntityID);
 		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
 	}
 
