@@ -233,6 +233,9 @@ Json::Value FENaiveSceneGraphNode::ToJson()
 	Json::Value Node;
 	Node["Name"] = GetName();
 	Node["ID"] = GetObjectID();
+	// Only root node does not have ParentID
+	Node["ParentID"] = Parent->GetObjectID();
+	// Temporary, each node should have entity ID
 	if (OldStyleEntity == nullptr)
 	{
 		Node["OldEntityID"] = -1;
@@ -250,4 +253,17 @@ Json::Value FENaiveSceneGraphNode::ToJson()
 	Node["Children"] = ChildrenArray;
 
 	return Node;
+}
+
+void FENaiveSceneGraphNode::FromJson(Json::Value Root)
+{
+	SetName(Root["Name"].asString());
+	SetID(Root["ID"].asString());
+	std::string OldEntityID = Root["OldEntityID"].asString();
+	if (OldEntityID != "-1")
+	{
+		OldStyleEntity = OBJECT_MANAGER.GetFEObject(OldEntityID);
+		if (OldStyleEntity == nullptr)
+			LOG.Add("FENaiveSceneGraphNode::FromJson: Could not find entity with ID: " + OldEntityID, "FE_LOG_LOADING", FE_LOG_ERROR);
+	}
 }

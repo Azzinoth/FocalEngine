@@ -29,6 +29,7 @@ namespace FocalEngine
 		void Clear();
 
 		Json::Value ToJson();
+		void FromJson(Json::Value Root);
 	private:
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;

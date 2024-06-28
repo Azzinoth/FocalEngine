@@ -26,6 +26,7 @@ namespace FocalEngine
 		FEObject* GetOldStyleEntity();
 
 		Json::Value ToJson();
+		void FromJson(Json::Value Root);
 	private:
 		FENaiveSceneGraphNode(std::string Name = "Unnamed NaiveSceneNode");
 		~FENaiveSceneGraphNode();

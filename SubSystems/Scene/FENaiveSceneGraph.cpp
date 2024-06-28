@@ -188,12 +188,51 @@ Json::Value FENaiveSceneGraph::ToJson()
 {
 	Json::Value Root;
 	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
+	// Remove root node
 	AllNodes.erase(AllNodes.begin());
 
 	for (size_t i = 0; i < AllNodes.size(); i++)
-	{
 		Root["Nodes"][AllNodes[i]->GetObjectID()] = AllNodes[i]->ToJson();
-	}
 
 	return Root;
+}
+
+void FENaiveSceneGraph::FromJson(Json::Value Root)
+{
+	Clear();
+
+	Json::Value Nodes = Root["Nodes"];
+	std::unordered_map<std::string, FENaiveSceneGraphNode*> LoadedNodes;
+
+	// First pass: Create all nodes
+	for (Json::Value::const_iterator NodeIterator = Nodes.begin(); NodeIterator != Nodes.end(); NodeIterator++)
+	{
+		std::string NodeID = NodeIterator.key().asString();
+		Json::Value NodeData = *NodeIterator;
+
+		FENaiveSceneGraphNode* NewNode = new FENaiveSceneGraphNode(NodeData["Name"].asString());
+		NewNode->FromJson(NodeData);
+		LoadedNodes[NodeID] = NewNode;
+	}
+
+	// Second pass: Set up parent-child relationships
+	for (Json::Value::const_iterator NodeIterator = Nodes.begin(); NodeIterator != Nodes.end(); NodeIterator++)
+	{
+		std::string NodeID = NodeIterator.key().asString();
+		Json::Value NodeData = *NodeIterator;
+
+		FENaiveSceneGraphNode* CurrentNode = LoadedNodes[NodeID];
+		std::string ParentID = NodeData["ParentID"].asString();
+
+		FENaiveSceneGraphNode* ParentNode = LoadedNodes[ParentID];
+		// If we can not find parent, it is root
+		if (ParentNode == nullptr)
+		{
+			this->Root->AddChild(CurrentNode, false);
+		}
+		else
+		{
+			ParentNode->AddChild(CurrentNode, false); 
+		}
+	}
 }

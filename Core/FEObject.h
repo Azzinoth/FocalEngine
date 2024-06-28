@@ -30,19 +30,13 @@ namespace FocalEngine
 		FE_SCENE_ENTITY = 18
 	};
 
-	class FEObject;
-	class FEngine;
-	class FERenderer;
-	class FEResourceManager;
-	class FEScene;
-
 	class FEObjectManager
 	{
-		friend FEObject;
-		friend FEngine;
-		friend FERenderer;
-		friend FEResourceManager;
-		friend FEScene;
+		friend class FEObject;
+		friend class FEngine;
+		friend class FERenderer;
+		friend class FEResourceManager;
+		friend class FEScene;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
 		FEObject* GetFEObject(std::string ID);
@@ -135,29 +129,20 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	class FEShader;
-	class FEMesh;
-	class FETexture;
-	class FEMaterial;
-	class FEGameModel;
-	class FEEntity;
-	class FETerrain;
-	class FEEntityInstanced;
-	class FEScene;
-
 	class FEObject
 	{
-		friend FEngine;
-		friend FEShader;
-		friend FEMesh;
-		friend FETexture;
-		friend FEMaterial;
-		friend FEGameModel;
-		friend FEEntity;
-		friend FETerrain;
-		friend FEEntityInstanced;
-		friend FEResourceManager;
-		friend FEScene;
+		friend class FEngine;
+		friend class FEShader;
+		friend class FEMesh;
+		friend class FETexture;
+		friend class FEMaterial;
+		friend class FEGameModel;
+		friend class FEEntity;
+		friend class FETerrain;
+		friend class FEEntityInstanced;
+		friend class FEResourceManager;
+		friend class FENaiveSceneGraphNode;
+		friend class FEScene;
 	public:
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();

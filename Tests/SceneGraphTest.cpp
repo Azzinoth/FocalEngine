@@ -996,3 +996,126 @@ TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 
 	SCENE.Clear();
 }
+
+TEST_F(SceneGraphTest, Check_Save_Load_Simple)
+{
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
+	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+
+	// Save IDs of the entities
+	std::vector<std::string> EntityIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetOldStyleEntity())->GetObjectID());
+	}
+
+	// Save IDs of the nodes
+	std::vector<std::string> NodeIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		NodeIDs.push_back(Node->GetObjectID());
+	}
+
+	// Save the scene.
+	std::string FilePath = "SceneGraphTest_Check_Save_Load_Simple.txt";
+	
+	Json::Value SceneHierarchy = SCENE.SceneGraph.ToJson();
+	Json::StreamWriterBuilder Builder;
+	const std::string JsonFile = Json::writeString(Builder, SceneHierarchy);
+
+	std::ofstream SceneFile;
+	SceneFile.open("SceneGraphTest_Check_Save_Load_Simple.txt");
+	SceneFile << JsonFile;
+	SceneFile.close();
+
+	SCENE.Clear();
+	Nodes.clear();
+	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+
+	// ****************************** Load the scene ******************************
+
+	// Before we load the scene, we need to create the entities.
+	for (size_t i = 0; i < 30; i++)
+	{
+		FEEntity* Entity = SCENE.AddEmptyEntity("Node_" + std::to_string(i), EntityIDs[i]);
+		// Delete this entity from the scene graph.
+		SCENE.SceneGraph.DeleteNode(SCENE.SceneGraph.GetNodeByOldEntityID(Entity->GetObjectID()));
+	}
+
+	std::ifstream LoadSceneFile;
+	LoadSceneFile.open("SceneGraphTest_Check_Save_Load_Simple.txt");
+	std::string FileData((std::istreambuf_iterator<char>(LoadSceneFile)), std::istreambuf_iterator<char>());
+	LoadSceneFile.close();
+
+	Json::Value Root;
+	JSONCPP_STRING Err;
+	Json::CharReaderBuilder ReadBuilder;
+
+	const std::unique_ptr<Json::CharReader> Reader(ReadBuilder.newCharReader());
+	ASSERT_TRUE(Reader->parse(FileData.c_str(), FileData.c_str() + FileData.size(), &Root, &Err));
+		
+	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+	SCENE.SceneGraph.FromJson(Root);
+	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+
+	// Retrieve the nodes with IDs of original nodes.
+	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
+	for (const std::string& NodeID : NodeIDs)
+	{
+		LoadedNodes.push_back(SCENE.SceneGraph.GetNode(NodeID));
+		ASSERT_NE(LoadedNodes.back(), nullptr);
+	}
+
+	// Check that scene nodes bound to correct entities.
+	for (size_t i = 0; i < 30; i++)
+	{
+		ASSERT_EQ(LoadedNodes[i]->GetOldStyleEntity()->GetObjectID(), EntityIDs[i]);
+	}
+
+	// Check if the hierarchy is correct.
+	// Test direct parent-child relationship
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[1]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[2]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[3]));
+
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[4]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[5]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[6]));
+
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[15], LoadedNodes[24]));
+
+	// Test grandparent relationship
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[5]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[8]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[12]));
+
+	// Test great-grandparent relationship
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[26]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[3], LoadedNodes[29]));
+
+	// Test long-distance relationship
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[23]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[24]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[25]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[26]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[27]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[28]));
+	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[29]));
+
+	// Test non-descendant relationships
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[25]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[7]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[3]));
+
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[24]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[10]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[23]));
+
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[2]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[1]));
+
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
+	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
+
+	SCENE.Clear();
+}

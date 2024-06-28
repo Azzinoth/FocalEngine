@@ -779,13 +779,18 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 			FENaiveSceneGraphNode* FirstNode = nullptr;
 
 			FEEntity* DummyEntity = new FEEntity();
+			DummyEntity->SetVisibility(false);
+			// Because this entity was created directly we need to add it to entity map in order it to be saved.
+			EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
 			DummyEntity->SetName(Node.Name);
 			DummyEntity->Transform.SetPosition(Node.Translation);
 			DummyEntity->Transform.RotateByQuaternion(Node.Rotation);
 			DummyEntity->Transform.SetScale(Node.Scale);
 			NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
 			FirstNode = SceneGraph.GetNode(NewNaiveSceneEntityID);
+
 			SceneGraph.MoveNode(FirstNode->GetObjectID(), ParentID, false);
+			Result.push_back(DummyEntity);
 
 			for (size_t i = 0; i < Prefabs.size(); i++)
 			{
@@ -807,6 +812,9 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	else
 	{
 		FEEntity* DummyEntity = new FEEntity();
+		DummyEntity->SetVisibility(false);
+		// Because this entity was created directly we need to add it to entity map in order it to be saved.
+		EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
 		DummyEntity->SetName(Node.Name);
 		DummyEntity->Transform.SetPosition(Node.Translation);
 		DummyEntity->Transform.RotateByQuaternion(Node.Rotation);
@@ -814,6 +822,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 		NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
 		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID);
+
+		Result.push_back(DummyEntity);
 	}
 
 	for (size_t i = 0; i < Node.Children.size(); i++)
@@ -845,22 +855,10 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 		return;
 	}
 
-	/*if (SubTreeRoot->GetName() == "entity_16")
-	{
-		int y = 0;
-		y++;
-	}*/
-
 	Entity->Transform.bIsInSceneGraph = true;
 
 	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SCENE.SceneGraph.GetRoot())
 	{
-		//if (SubTreeRoot->GetName() == "transformationXGizmoEntity")
-		//{
-		//	int y = 0;
-		//	y++;
-		//}
-
 		Entity->Transform.Update();
 		Entity->Transform.WorldSpaceMatrix = Entity->Transform.LocalSpaceMatrix;
 	}
