@@ -60,14 +60,16 @@ FEAABB FEEntity::GetAABB()
 		Transform.bDirtyFlag = false;
 	}*/
 
-	// Temporary solution
-	if (Prefab == nullptr)
-		return EntityAABB;
+	//// Temporary solution
+	//if (Prefab == nullptr)
+	//	return EntityAABB;
 
-	// Temporary solution
-	EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
+	//// Temporary solution
+	//EntityAABB = Prefab->GetAABB().Transform(Transform.GetTransformMatrix());
 
-	return EntityAABB;
+	//return EntityAABB;
+
+	return Prefab->GetAABB();
 }
 
 bool FEEntity::IsCastShadows() const

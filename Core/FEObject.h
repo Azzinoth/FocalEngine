@@ -27,7 +27,8 @@ namespace FocalEngine
 		FE_TERRAIN_LAYER = 15,
 		FE_PREFAB = 16,
 		FE_VIRTUAL_UI_CONTEXT = 17,
-		FE_SCENE_ENTITY = 18
+		FE_SCENE_ENTITY = 18,
+		FE_NEW_ENTITY = 19
 	};
 
 	class FEObjectManager
@@ -121,6 +122,10 @@ namespace FocalEngine
 			case FocalEngine::FE_SCENE_ENTITY:
 			{
 				return "FE_SCENE_ENTITY";
+			}
+			case FocalEngine::FE_NEW_ENTITY:
+			{
+				return "FE_NEW_ENTITY";
 			}
 			default:
 				break;

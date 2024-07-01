@@ -1,17 +1,23 @@
 #include "FENaiveSceneGraph.h"
+#include "FENewEntity.h"
 using namespace FocalEngine;
 
 FENaiveSceneGraph::FENaiveSceneGraph()
 {
-	Root = new FENaiveSceneGraphNode();
+	//Root = new FENaiveSceneGraphNode();
 }
 
 void FENaiveSceneGraph::Clear()
 {
 	bClearing = true;
 	DeleteNode(Root);
-	Root = new FENaiveSceneGraphNode();
+	//Root = new FENaiveSceneGraphNode();
 	bClearing = false;
+}
+
+void FENaiveSceneGraph::InitializeRoot(FENaiveSceneGraphNode* NewRoot)
+{
+	Root = NewRoot;
 }
 
 FENaiveSceneGraph::~FENaiveSceneGraph()
@@ -32,19 +38,42 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
 	return Root->GetChild(ID);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByOldEntityID(std::string OldEntityID)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByNewEntityID(std::string NewEntityID)
 {
-	// Root can'n have OldStyleEntity
-	return Root->GetChildByOldEntityID(OldEntityID);
+	if (Root->NewStyleEntity->GetObjectID() == NewEntityID)
+		return Root;
+
+	return Root->GetChildByNewEntityID(NewEntityID);
 }
 
-std::string FENaiveSceneGraph::AddNode(FEObject* OldStyleEntity, bool bPreserveWorldTransform)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID)
 {
-	FENaiveSceneGraphNode* NewEntity = new FENaiveSceneGraphNode(OldStyleEntity->GetName());
-	NewEntity->OldStyleEntity = OldStyleEntity;
-	Root->AddChild(NewEntity, bPreserveWorldTransform);
+	return GetNodeByNewEntityID(EntityID);
+}
 
-	return NewEntity->GetObjectID();
+std::string FENaiveSceneGraph::AddNode(FENewEntity* Entity, bool bPreserveWorldTransform)
+{
+	FENaiveSceneGraphNode* NewNode = nullptr;
+	NewNode = GetNodeByNewEntityID(Entity->GetObjectID());
+	if (NewNode != nullptr)
+	{
+		LOG.Add("Entity already exists in the scene graph", "FE_LOG_SCENE", FE_LOG_WARNING);
+		// Entity already exists in the scene graph
+		return NewNode->GetObjectID();
+	}
+
+	// FIX ME!
+	std::vector<FENewEntity*> EntityFound = SCENE.GetNewStyleEntityByName(Entity->GetName());
+	if (!EntityFound.empty())
+	{
+		return "";
+	}
+
+	NewNode = new FENaiveSceneGraphNode(Entity->GetName());
+	NewNode->NewStyleEntity = Entity;
+	Root->AddChild(NewNode, bPreserveWorldTransform);
+
+	return NewNode->GetObjectID();
 }
 
 bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform)

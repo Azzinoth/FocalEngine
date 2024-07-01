@@ -13,7 +13,7 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* GetRoot() const;
 
-		std::string AddNode(FEObject* OldStyleEntity, bool bPreserveWorldTransform = true);
+		std::string AddNode(FENewEntity* Entity, bool bPreserveWorldTransform = true);
 		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
 		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
@@ -23,7 +23,7 @@ namespace FocalEngine
         bool HasCycle(FENaiveSceneGraphNode* NodeToCheck);
 
 		FENaiveSceneGraphNode* GetNode(std::string ID);
-		FENaiveSceneGraphNode* GetNodeByOldEntityID(std::string OldEntityID);
+		FENaiveSceneGraphNode* GetNodeByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
 		void Clear();
@@ -42,5 +42,10 @@ namespace FocalEngine
 							  std::unordered_set<FENaiveSceneGraphNode*>& RecursionStack);
 
 		std::vector<FENaiveSceneGraphNode*> GetAllNodes();
+
+		//FENaiveSceneGraphNode* GetNodeByOldEntityID(std::string OldEntityID);
+		FENaiveSceneGraphNode* GetNodeByNewEntityID(std::string NewEntityID);
+
+		void InitializeRoot(FENaiveSceneGraphNode* NewRoot);
 	};
 }

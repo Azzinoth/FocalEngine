@@ -2,8 +2,10 @@
 #include "../Core/FEObject.h"
 #include "../ResourceManager/FEResourceManager.h"
 
+
 namespace FocalEngine
 {
+	class FENewEntity;
 	class FENaiveSceneGraphNode : public FEObject
 	{
 		friend class FENaiveSceneGraph;
@@ -15,7 +17,7 @@ namespace FocalEngine
 		void AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		void DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		FENaiveSceneGraphNode* GetChild(std::string ID);
-		FENaiveSceneGraphNode* GetChildByOldEntityID(std::string OldEntityID);
+		FENaiveSceneGraphNode* GetChildByNewEntityID(std::string NewEntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
 		size_t GetImediateChildrenCount();
 		size_t GetRecursiveChildCount();
@@ -23,7 +25,7 @@ namespace FocalEngine
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
 		std::vector<FENaiveSceneGraphNode*> GetRecursiveChildren();
 
-		FEObject* GetOldStyleEntity();
+		FENewEntity* GetNewStyleEntity();
 
 		Json::Value ToJson();
 		void FromJson(Json::Value Root);
@@ -33,7 +35,7 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
-		FEObject* OldStyleEntity = nullptr;
+		FENewEntity* NewStyleEntity = nullptr;
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
 		void ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);

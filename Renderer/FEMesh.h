@@ -17,6 +17,7 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEResourceManager;
 	public:
+		FEMesh() : FEObject(FE_MESH, "Name") {};
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
 		~FEMesh();
 

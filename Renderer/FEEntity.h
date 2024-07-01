@@ -6,6 +6,8 @@
 #include "FEFramebuffer.h"
 #include "FEPrefab.h"
 
+#include "entt.hpp"
+
 namespace FocalEngine
 {
 	class FEEntity : public FEObject
@@ -15,10 +17,11 @@ namespace FocalEngine
 		friend class FEResourceManager;
 		friend class FEScene;
 
+	public:
 		FEEntity();
 		FEEntity(FEPrefab* Prefab, std::string Name);
 		~FEEntity();
-	public:
+
 		FEPrefab* Prefab = nullptr;
 		FETransformComponent Transform;
 

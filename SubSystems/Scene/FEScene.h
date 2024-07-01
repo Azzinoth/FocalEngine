@@ -8,12 +8,15 @@
 #include "../FEVirtualUIContext.h"
 #include "FENaiveSceneGraph.h"
 
+#include "entt.hpp"
+
 namespace FocalEngine
 {
 	class FEScene
 	{
 		friend class FERenderer;
 		friend class FEngine;
+		friend class FENewEntity;
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
@@ -26,6 +29,11 @@ namespace FocalEngine
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
 		std::vector<std::string> GetEntityList();
 		void DeleteEntity(std::string ID);
+		void DeleteNewEntity(std::string ID);
+
+		std::vector<FENewEntity*> GetNewStyleEntityByName(std::string Name);
+		FENewEntity* AddNewStyleEntity(std::string Name = "", std::string ForceObjectID = "", FEEntity* OldStyleEntity = nullptr);
+		FENewEntity* GetNewStyleEntityByOldStyleID(std::string OldStyleID);
 
 		FEEntityInstanced* AddEntityInstanced(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
 		FEEntityInstanced* AddEntityInstanced(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
@@ -61,7 +69,10 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
 
+		entt::registry Registry;
+
 		std::unordered_map<std::string, FEEntity*> EntityMap;
+		std::unordered_map<std::string, FENewEntity*> NewEntityMap;
 		std::unordered_map<std::string, FETerrain*> TerrainMap;
 		std::unordered_map<std::string, FEVirtualUIContext*> VirtualUIContextMap;
 
@@ -73,6 +84,7 @@ namespace FocalEngine
 
 		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
 		void UpdateSceneGraph();
+		bool bSceneGraphInitialization = true;
 	};
 
 	#define SCENE FEScene::getInstance()

@@ -5,7 +5,7 @@ FEObjectManager* FEObjectManager::Instance = nullptr;
 
 FEObjectManager::FEObjectManager()
 {
-	ObjectsByType.resize(19);
+	ObjectsByType.resize(20);
 }
 
 FEObjectManager::~FEObjectManager()
