@@ -8,6 +8,7 @@
 
 namespace FocalEngine
 {
+	// FIX ME! Move all components to separate files(or one file).
 	struct FETagComponent
 	{
 		std::string Tag = "";
@@ -20,12 +21,81 @@ namespace FocalEngine
 
 	struct FEGameModelComponent
 	{
-		FEGameModel* GameModel = nullptr;
 		FEGameModelComponent() {};
 		FEGameModelComponent(FEGameModel* GameModelToSet)
 		{
 			GameModel = GameModelToSet;
 		}
+
+		bool IsVisible() const
+		{
+			return bVisible;
+		}
+
+		void SetVisibility(bool NewValue)
+		{
+			bVisible = NewValue;
+		}
+
+		bool IsCastShadows() const
+		{
+			return bCastShadows;
+		}
+
+		void SetCastShadows(bool NewValue)
+		{
+			bCastShadows = NewValue;
+		}
+
+		bool IsReceivingShadows() const
+		{
+			return bReceiveShadows;
+		}
+
+		void SetReceivingShadows(bool NewValue)
+		{
+			bReceiveShadows = NewValue;
+		}
+
+		bool IsUniformLighting() const
+		{
+			return bUniformLighting;
+		}
+
+		void SetUniformLighting(bool NewValue)
+		{
+			bUniformLighting = NewValue;
+		}
+
+		bool IsPostprocessApplied() const
+		{
+			return bApplyPostprocess;
+		}
+
+		void SetIsPostprocessApplied(bool NewValue)
+		{
+			bApplyPostprocess = NewValue;
+		}
+
+		bool IsWireframeMode() const
+		{
+			return bWireframeMode;
+		}
+
+		void SetWireframeMode(bool NewValue)
+		{
+			bWireframeMode = NewValue;
+		}
+
+		FEGameModel* GameModel = nullptr;
+		
+	private:
+		bool bVisible = true;
+		bool bCastShadows = true;
+		bool bReceiveShadows = true;
+		bool bUniformLighting = false;
+		bool bApplyPostprocess = true;
+		bool bWireframeMode = false;
 	};
 
 	class FERenderableComponent

@@ -1484,6 +1484,60 @@ void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* Curre
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
+void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+{
+	if (GameModelComponent.IsWireframeMode())
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	if (bReloadUniformBlocks)
+		LoadUniformBlocks();
+
+	FEGameModel* GameModel = GameModelComponent.GameModel;
+	if (GameModel == nullptr)
+	{
+		LOG.Add("Trying to draw FEGameModelComponent with GameModel that is nullptr in FERenderer::RenderGameModelComponent", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	FEShader* OriginalShader = GameModel->Material->Shader;
+	if (ShaderToForce)
+	{
+		if (OriginalShader->GetName() == "FEPBRShader")
+			GameModel->Material->Shader = ShaderToForce;
+	}
+
+	GameModel->Material->Bind();
+	LoadStandardParams(GameModel->Material->Shader, CurrentCamera, GameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	GameModel->Material->Shader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
+	if ((GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+	if ((GameModel->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+	if ((GameModel->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+	if ((GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+	if ((GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+	if ((GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
+	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) != FE_INDEX)
+		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, GameModel->Mesh->GetVertexCount()));
+
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	GameModel->Material->UnBind();
+
+	if (ShaderToForce)
+	{
+		if (OriginalShader->GetName() == "FEPBRShader")
+			GameModel->Material->Shader = OriginalShader;
+	}
+	
+
+	if (GameModelComponent.IsWireframeMode())
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+}
+
 void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, const bool bReloadUniformBlocks)
 {
 	if (bReloadUniformBlocks)
@@ -1530,6 +1584,58 @@ void FERenderer::RenderEntityForward(const FEEntity* Entity, const FEBasicCamera
 		if (!bSimplifiedRendering || RENDERER.bVRActive)
 			Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
 	}
+}
+
+void FERenderer::RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+{
+	if (bReloadUniformBlocks)
+		LoadUniformBlocks();
+
+	FEGameModel* GameModel = GameModelComponent.GameModel;
+	if (GameModel == nullptr)
+	{
+		LOG.Add("Trying to draw FEGameModelComponent with GameModel that is nullptr in FERenderer::RenderGameModelComponent", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	FEShader* OriginalShader = nullptr;
+	if (!bSimplifiedRendering || RENDERER.bVRActive)
+	{
+		OriginalShader = GameModel->Material->Shader;
+		if (RENDERER.bVRActive)
+		{
+			if (OriginalShader->GetObjectID() != "6917497A5E0C05454876186F"/*"SolidColorMaterial"*/)
+				GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+		}
+		else
+		{
+			GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+		}
+	}
+
+	GameModel->Material->Bind();
+	LoadStandardParams(GameModel->Material->Shader, CurrentCamera, GameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	GameModel->Material->Shader->LoadDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
+	if ((GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+	if ((GameModel->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+	if ((GameModel->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+	if ((GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+	if ((GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+	if ((GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
+	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) != FE_INDEX)
+		FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, GameModel->Mesh->GetVertexCount()));
+
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	GameModel->Material->UnBind();
+
+	if (!bSimplifiedRendering || RENDERER.bVRActive)
+		GameModel->Material->Shader = OriginalShader;
 }
 
 void FERenderer::RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentCamera)

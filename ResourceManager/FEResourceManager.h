@@ -131,10 +131,6 @@ namespace FocalEngine
 		void ReSaveStandardMeshes();
 
 		std::string GetDefaultResourcesFolder();
-		//std::vector<FEObject*> LoadGLTF(const char* FileName);
-
-		
-		//std::vector<FEObject*> ImportAsset(const char* FileName);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 

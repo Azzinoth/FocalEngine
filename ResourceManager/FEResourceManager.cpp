@@ -129,10 +129,10 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	if (Name.empty())
 	{
 		const std::string FilePath = NewTexture->FileName;
-		std::size_t index = FilePath.find_last_of("/\\");
-		const std::string NewFileName = FilePath.substr(index + 1);
-		index = NewFileName.find_last_of(".");
-		const std::string FileNameWithOutExtention = NewFileName.substr(0, index);
+		std::size_t Index = FilePath.find_last_of("/\\");
+		const std::string NewFileName = FilePath.substr(Index + 1);
+		Index = NewFileName.find_last_of(".");
+		const std::string FileNameWithOutExtention = NewFileName.substr(0, Index);
 		NewTexture->SetName(FileNameWithOutExtention);
 	}
 
@@ -144,36 +144,36 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Texture->TextureID));
 
 	GLint ImgSize = 0;
-	std::fstream file;
+	std::fstream File;
+	File.open(FileName, std::ios::out | std::ios::binary);
 
-	file.open(FileName, std::ios::out | std::ios::binary);
-	// version of FETexture file type
-	float version = FE_TEXTURE_VERSION;
-	file.write((char*)&version, sizeof(float));
+	// Version of FETexture File type
+	float Version = FE_TEXTURE_VERSION;
+	File.write((char*)&Version, sizeof(float));
 
 	int ObjectIDSize = static_cast<int>(Texture->GetObjectID().size() + 1);
-	file.write((char*)&ObjectIDSize, sizeof(int));
-	file.write((char*)Texture->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
+	File.write((char*)&ObjectIDSize, sizeof(int));
+	File.write((char*)Texture->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
 
-	file.write((char*)&Texture->Width, sizeof(int));
-	file.write((char*)&Texture->Height, sizeof(int));
-	file.write((char*)&Texture->InternalFormat, sizeof(int));
+	File.write((char*)&Texture->Width, sizeof(int));
+	File.write((char*)&Texture->Height, sizeof(int));
+	File.write((char*)&Texture->InternalFormat, sizeof(int));
 
 	int NameSize = static_cast<int>(Texture->GetName().size() + 1);
-	file.write((char*)&NameSize, sizeof(int));
+	File.write((char*)&NameSize, sizeof(int));
 
 	char* TextureName = new char[NameSize];
 	strcpy_s(TextureName, NameSize, Texture->GetName().c_str());
-	file.write((char*)TextureName, sizeof(char) * NameSize);
+	File.write((char*)TextureName, sizeof(char) * NameSize);
 
 	if (Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
 	{
 		size_t DataSize = 0;
 		unsigned char* Pixels = Texture->GetRawData(&DataSize);
 
-		file.write((char*)&DataSize, sizeof(int));
-		file.write((char*)Pixels, sizeof(char) * DataSize);
-		file.close();
+		File.write((char*)&DataSize, sizeof(int));
+		File.write((char*)Pixels, sizeof(char) * DataSize);
+		File.close();
 
 		delete[] Pixels;
 		return;
@@ -229,11 +229,11 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 		delete[] Pixels;
 		delete[] AdditionalTestPixels;
 
-		file.write((char*)&RealSize, sizeof(int));
-		file.write((char*)PixelData[i], sizeof(char) * RealSize);
+		File.write((char*)&RealSize, sizeof(int));
+		File.write((char*)PixelData[i], sizeof(char) * RealSize);
 	}
 
-	file.close();
+	File.close();
 
 	for (size_t i = 0; i < MipCount; i++)
 	{
@@ -304,9 +304,9 @@ struct LoadTextureAsyncInfo
 void LoadTextureFileAsync(void* InputData, void* OutputData)
 {
 	const LoadTextureAsyncInfo* Input = reinterpret_cast<LoadTextureAsyncInfo*>(InputData);
-	std::fstream file;
-	file.open(Input->FileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
-	const std::streamsize FileSize = file.tellg();
+	std::fstream File;
+	File.open(Input->FileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = File.tellg();
 	if (FileSize <= 0)
 	{
 		LoadTextureAsyncInfo* Output = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
@@ -317,10 +317,10 @@ void LoadTextureFileAsync(void* InputData, void* OutputData)
 		return;
 	}
 
-	file.seekg(0, std::ios::beg);
+	File.seekg(0, std::ios::beg);
 	char* FileData = new char[static_cast<int>(FileSize)];
-	file.read(FileData, FileSize);
-	file.close();
+	File.read(FileData, FileSize);
+	File.close();
 
 	LoadTextureAsyncInfo* Output = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
 	Output->FileData = FileData;
@@ -333,7 +333,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 {
 	const LoadTextureAsyncInfo* Input = reinterpret_cast<LoadTextureAsyncInfo*>(OutputData);
 
-	// File was not found, or it can't be read.
+	// File was not found, or TextureIterator can't be read.
 	if (Input->FileData == nullptr)
 	{
 		// Get info about problematic texture.
@@ -341,7 +341,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		// We will spill out error into a log.
 		LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		// And delete entry for that texture in a general list of textures.
-		// That will prevent it from saving in a scene file.
+		// That will prevent TextureIterator from saving in a scene File.
 		RESOURCE_MANAGER.DeleteFETexture(NotLoadedTexture);
 		//textures.erase(notLoadedTexture->getObjectID());
 	}
@@ -387,19 +387,19 @@ FETexture* FEResourceManager::LoadFETextureAsync(const char* FileName, const std
 
 FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::string Name, FETexture* ExistingTexture)
 {
-	std::fstream file;
-	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
-	const std::streamsize FileSize = file.tellg();
+	std::fstream File;
+	File.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 	
-	file.seekg(0, std::ios::beg);
+	File.seekg(0, std::ios::beg);
 	char* FileData = new char[static_cast<int>(FileSize)];
-	file.read(FileData, FileSize);
-	file.close();
+	File.read(FileData, FileSize);
+	File.close();
 
 	return LoadFETexture(FileData, Name, ExistingTexture);
 }
@@ -407,10 +407,10 @@ FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::str
 FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FETexture* ExistingTexture)
 {
 	int CurrentShift = 0;
-	// version of FETexture file type
-	const float version = *(float*)(&FileData[CurrentShift]);
+	// Version of FETexture File type
+	const float Version = *(float*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
-	if (version != FE_TEXTURE_VERSION)
+	if (Version != FE_TEXTURE_VERSION)
 	{
 		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), "FE_LOG_LOADING", FE_LOG_ERROR);
 		if (!StandardTextures.empty())
@@ -436,7 +436,6 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	CurrentShift += 4;
 	const int InternalFormat = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
-
 	const int NameSize = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
 
@@ -468,7 +467,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 
 	if (NewTexture->InternalFormat == GL_RED || NewTexture->InternalFormat == GL_RGBA)
 	{
-		int size = *(int*)(&FileData[CurrentShift]);
+		int Size = *(int*)(&FileData[CurrentShift]);
 		CurrentShift += 4;
 		
 		NewTexture->UpdateRawData((unsigned char*)(&FileData[CurrentShift]));
@@ -483,16 +482,16 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		int MipH = NewTexture->Height / 2;
 		for (size_t i = 0; i < MipCount; i++)
 		{
-			const int size = *(int*)(&FileData[CurrentShift]);
+			const int Size = *(int*)(&FileData[CurrentShift]);
 			CurrentShift += 4;
 
 			if (i == 0)
 			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewTexture->Width, NewTexture->Height, NewTexture->InternalFormat, size, static_cast<void*>(&FileData[CurrentShift])));
+				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewTexture->Width, NewTexture->Height, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
 			}
 			else
 			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipW, MipH, NewTexture->InternalFormat, size, static_cast<void*>(&FileData[CurrentShift])));
+				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipW, MipH, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
 
 				MipW = MipW / 2;
 				MipH = MipH / 2;
@@ -501,7 +500,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 					break;
 			}
 
-			CurrentShift += size;
+			CurrentShift += Size;
 		}
 	}
 
@@ -526,7 +525,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
-	// overwrite objectID with objectID from file.
+	// overwrite objectID with objectID from File.
 	if (ObjectID != nullptr)
 	{
 		const std::string OldID = NewTexture->GetObjectID();
@@ -547,9 +546,9 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 
 FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* Terrain, const std::string Name)
 {
-	std::fstream file;
-	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
-	const std::streamsize FileSize = file.tellg();
+	std::fstream File;
+	File.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
@@ -557,13 +556,13 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 		return this->NoTexture;
 	}
 
-	file.seekg(0, std::ios::beg);
+	File.seekg(0, std::ios::beg);
 	char* FileData = new char[static_cast<int>(FileSize)];
-	file.read(FileData, FileSize);
-	file.close();
+	File.read(FileData, FileSize);
+	File.close();
 
 	int CurrentShift = 0;
-	// version of FETexture file type
+	// Version of FETexture File type
 	const float version = *(float*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
 	if (version != FE_TEXTURE_VERSION)
@@ -606,7 +605,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 	NewTexture->InternalFormat = InternalFormat;
 	NewTexture->FileName = FileName;
 
-	const int size = *(int*)(&FileData[CurrentShift]);
+	const int Size = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
 
 	// Reformating terrain from old saves.
@@ -615,25 +614,25 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 		*(unsigned short*)(&fileData[i]) += 0xffff * 0.5;
 	}*/
 
-	Terrain->HeightMapArray.resize(size / sizeof(unsigned short));
-	float max = FLT_MIN;
-	float min = FLT_MAX;
-	for (size_t i = 0; i < size / sizeof(unsigned short); i++)
+	Terrain->HeightMapArray.resize(Size / sizeof(unsigned short));
+	float Max = FLT_MIN;
+	float Min = FLT_MAX;
+	for (size_t i = 0; i < Size / sizeof(unsigned short); i++)
 	{
 		const unsigned short temp = *(unsigned short*)(&FileData[CurrentShift]);
 		Terrain->HeightMapArray[i] = temp / static_cast<float>(0xFFFF);
 		CurrentShift += sizeof(unsigned short);
 
-		if (max < Terrain->HeightMapArray[i])
-			max = Terrain->HeightMapArray[i];
+		if (Max < Terrain->HeightMapArray[i])
+			Max = Terrain->HeightMapArray[i];
 
-		if (min > Terrain->HeightMapArray[i])
-			min = Terrain->HeightMapArray[i];
+		if (Min > Terrain->HeightMapArray[i])
+			Min = Terrain->HeightMapArray[i];
 	}
 
-	CurrentShift -= size;
-	const glm::vec3 MinPoint = glm::vec3(-1.0f, min, -1.0f);
-	const glm::vec3 MaxPoint = glm::vec3(1.0f, max, 1.0f);
+	CurrentShift -= Size;
+	const glm::vec3 MinPoint = glm::vec3(-1.0f, Min, -1.0f);
+	const glm::vec3 MaxPoint = glm::vec3(1.0f, Max, 1.0f);
 	Terrain->AABB = FEAABB(MinPoint, MaxPoint);
 
 	NewTexture->UpdateRawData((unsigned char*)(&FileData[CurrentShift]));
@@ -652,7 +651,7 @@ FETexture* FEResourceManager::LoadFEHeightmap(const char* FileName, FETerrain* T
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
-	// overwrite objectID with objectID from file.
+	// overwrite objectID with objectID from File.
 	if (ObjectID != nullptr)
 	{
 		const std::string OldID = NewTexture->GetObjectID();
@@ -703,7 +702,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	FE_GL_ERROR(glBindVertexArray(VaoID));
 
 	GLuint IndicesBufferID;
-	// index
+	// Index
 	FE_GL_ERROR(glGenBuffers(1, &IndicesBufferID));
 	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndicesBufferID));
 	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * IndexSize, Indices, GL_STATIC_DRAW));
@@ -945,13 +944,13 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 	OBJLoader.bForceOneMesh = bForceOneMesh;
 	OBJLoader.ReadFile(FileName);
 
-	std::vector<FEObject*> result;
+	std::vector<FEObject*> Result;
 	for (size_t i = 0; i < OBJLoader.LoadedObjects.size(); i++)
 	{
 		const std::string name = GetFileNameFromFilePath(FileName) + "_" + std::to_string(i);
 
 
-		result.push_back(RawDataToMesh(OBJLoader.LoadedObjects[i]->FVerC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FVerC.size()),
+		Result.push_back(RawDataToMesh(OBJLoader.LoadedObjects[i]->FVerC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FVerC.size()),
 									   OBJLoader.LoadedObjects[i]->FTexC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTexC.size()),
 									   OBJLoader.LoadedObjects[i]->FNorC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FNorC.size()),
 									   OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
@@ -960,14 +959,14 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 									   OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
 	
 	
-		// in rawDataToMesh() hidden FEMesh allocation and it will go to hash table so we need to use setMeshName() not setName.
-		result.back()->SetName(name);
-		Meshes[result.back()->GetObjectID()] = reinterpret_cast<FEMesh*>(result.back());
+		// in rawDataToMesh() hidden FEMesh allocation and TextureIterator will go to hash table so we need to use setMeshName() not setName.
+		Result.back()->SetName(name);
+		Meshes[Result.back()->GetObjectID()] = reinterpret_cast<FEMesh*>(Result.back());
 	}
 
-	CreateMaterialsFromOBJData(result);
+	CreateMaterialsFromOBJData(Result);
 
-	return result;
+	return Result;
 }
 
 FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Name)
@@ -991,7 +990,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 
 	char* Buffer = new char[4];
 
-	// version of FEMesh file type
+	// Version of FEMesh File type
 	File.read(Buffer, 4);
 	const float Version = *(float*)Buffer;
 	if (Version != FE_MESH_VERSION)
@@ -1084,7 +1083,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 									Name);
 
 	const std::string OldID = NewMesh->ID;
-	// overwrite objectID with objectID from file.
+	// overwrite objectID with objectID from File.
 	if (ObjectID != nullptr)
 	{
 		NewMesh->SetID(ObjectID);
@@ -1171,14 +1170,14 @@ FEMaterial* FEResourceManager::GetMaterial(const std::string ID)
 
 std::vector<FEMaterial*> FEResourceManager::GetMaterialByName(const std::string Name)
 {
-	std::vector<FEMaterial*> result;
+	std::vector<FEMaterial*> Result;
 
 	auto it = Materials.begin();
 	while (it != Materials.end())
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
@@ -1189,13 +1188,13 @@ std::vector<FEMaterial*> FEResourceManager::GetMaterialByName(const std::string 
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	return result;
+	return Result;
 }
 
 std::string FEResourceManager::GetFileNameFromFilePath(const std::string FilePath)
@@ -1238,14 +1237,14 @@ FEMesh* FEResourceManager::GetMesh(const std::string ID)
 
 std::vector<FEMesh*> FEResourceManager::GetMeshByName(const std::string Name)
 {
-	std::vector<FEMesh*> result;
+	std::vector<FEMesh*> Result;
 
 	auto it = Meshes.begin();
 	while (it != Meshes.end())
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
@@ -1256,13 +1255,13 @@ std::vector<FEMesh*> FEResourceManager::GetMeshByName(const std::string Name)
 	{
 		if (it->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(it->second);
 		}
 
 		it++;
 	}
 
-	return result;
+	return Result;
 }
 
 bool FEResourceManager::MakeMaterialStandard(FEMaterial* Material)
@@ -1487,73 +1486,73 @@ void FEResourceManager::Clear()
 
 void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 {
-	std::fstream file;
-	file.open(FileName, std::ios::out | std::ios::binary);
+	std::fstream File;
+	File.open(FileName, std::ios::out | std::ios::binary);
 
-	// Version of FEMesh file type.
+	// Version of FEMesh File type.
 	float version = FE_MESH_VERSION;
-	file.write((char*)&version, sizeof(float));
+	File.write((char*)&version, sizeof(float));
 
 	int ObjectIDSize = static_cast<int>(Mesh->GetObjectID().size());
-	file.write((char*)&ObjectIDSize, sizeof(int));
-	file.write((char*)Mesh->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
+	File.write((char*)&ObjectIDSize, sizeof(int));
+	File.write((char*)Mesh->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
 
 	int NameSize = static_cast<int>(Mesh->GetName().size());
-	file.write((char*)&NameSize, sizeof(int));
-	file.write((char*)Mesh->GetName().c_str(), sizeof(char) * NameSize);
+	File.write((char*)&NameSize, sizeof(int));
+	File.write((char*)Mesh->GetName().c_str(), sizeof(char) * NameSize);
 
 	int Count = Mesh->GetPositionsCount();
 	float* Positions = new float[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetPositionsBufferID(), 0, sizeof(float) * Count, Positions));
-	file.write((char*)&Count, sizeof(int));
-	file.write((char*)Positions, sizeof(float) * Count);
+	File.write((char*)&Count, sizeof(int));
+	File.write((char*)Positions, sizeof(float) * Count);
 
 	Count = Mesh->GetUVCount();
 	float* UV = new float[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetUVBufferID(), 0, sizeof(float) * Count, UV));
-	file.write((char*)&Count, sizeof(int));
-	file.write((char*)UV, sizeof(float) * Count);
+	File.write((char*)&Count, sizeof(int));
+	File.write((char*)UV, sizeof(float) * Count);
 
 	Count = Mesh->GetNormalsCount();
 	float* Normals = new float[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetNormalsBufferID(), 0, sizeof(float) * Count, Normals));
-	file.write((char*)&Count, sizeof(int));
-	file.write((char*)Normals, sizeof(float) * Count);
+	File.write((char*)&Count, sizeof(int));
+	File.write((char*)Normals, sizeof(float) * Count);
 	
 	Count = Mesh->GetTangentsCount();
 	float* Tangents = new float[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetTangentsBufferID(), 0, sizeof(float) * Count, Tangents));
-	file.write((char*)&Count, sizeof(int));
-	file.write((char*)Tangents, sizeof(float) * Count);
+	File.write((char*)&Count, sizeof(int));
+	File.write((char*)Tangents, sizeof(float) * Count);
 
 	Count = Mesh->GetIndicesCount();
 	int* Indices = new int[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetIndicesBufferID(), 0, sizeof(int) * Count, Indices));
-	file.write((char*)&Count, sizeof(int));
-	file.write((char*)Indices, sizeof(int) * Count);
+	File.write((char*)&Count, sizeof(int));
+	File.write((char*)Indices, sizeof(int) * Count);
 
 	int MaterialCount = Mesh->MaterialsCount;
-	file.write((char*)&MaterialCount, sizeof(int));
+	File.write((char*)&MaterialCount, sizeof(int));
 	
 	if (MaterialCount > 1)
 	{
 		Count = Mesh->GetMaterialsIndicesCount();
 		float* MatIndices = new float[Count];
 		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetMaterialsIndicesBufferID(), 0, sizeof(float) * Count, MatIndices));
-		file.write((char*)&Count, sizeof(int));
-		file.write((char*)MatIndices, sizeof(float) * Count);
+		File.write((char*)&Count, sizeof(int));
+		File.write((char*)MatIndices, sizeof(float) * Count);
 	}
 
 	FEAABB TempAABB(Positions, Mesh->GetPositionsCount());
-	file.write((char*)&TempAABB.Min[0], sizeof(float));
-	file.write((char*)&TempAABB.Min[1], sizeof(float));
-	file.write((char*)&TempAABB.Min[2], sizeof(float));
+	File.write((char*)&TempAABB.Min[0], sizeof(float));
+	File.write((char*)&TempAABB.Min[1], sizeof(float));
+	File.write((char*)&TempAABB.Min[2], sizeof(float));
 
-	file.write((char*)&TempAABB.Max[0], sizeof(float));
-	file.write((char*)&TempAABB.Max[1], sizeof(float));
-	file.write((char*)&TempAABB.Max[2], sizeof(float));
+	File.write((char*)&TempAABB.Max[0], sizeof(float));
+	File.write((char*)&TempAABB.Max[1], sizeof(float));
+	File.write((char*)&TempAABB.Max[2], sizeof(float));
 
-	file.close();
+	File.close();
 
 	delete[] Positions;
 	delete[] UV;
@@ -1577,20 +1576,20 @@ FETexture* FEResourceManager::GetTexture(const std::string ID)
 
 std::vector<FETexture*> FEResourceManager::GetTextureByName(const std::string Name)
 {
-	std::vector<FETexture*> result;
+	std::vector<FETexture*> Result;
 
-	auto it = Textures.begin();
-	while (it != Textures.end())
+	auto TextureIterator = Textures.begin();
+	while (TextureIterator != Textures.end())
 	{
-		if (it->second->GetName() == Name)
+		if (TextureIterator->second->GetName() == Name)
 		{
-			result.push_back(it->second);
+			Result.push_back(TextureIterator->second);
 		}
 
-		it++;
+		TextureIterator++;
 	}
 
-	return result;
+	return Result;
 }
 
 void FEResourceManager::DeleteFETexture(const FETexture* Texture)
@@ -1618,7 +1617,7 @@ void FEResourceManager::DeleteFETexture(const FETexture* Texture)
 		MaterialIterator++;
 	}
 
-	// After we make sure that texture is no more referenced by any material, we can delete it.
+	// After we make sure that texture is no more referenced by any material, we can delete TextureIterator.
 	Textures.erase(Texture->GetObjectID());
 
 	delete Texture;
@@ -1993,13 +1992,13 @@ FETexture* FEResourceManager::LoadPNGHeightmap(const char* FileName, FETerrain* 
 {
 	FETexture* NewTexture = CreateTexture(Name);
 
-	std::fstream file;
-	file.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
-	std::streamsize FileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
+	std::fstream File;
+	File.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
+	std::streamsize FileSize = File.tellg();
+	File.seekg(0, std::ios::beg);
 	char* FileData = new char[static_cast<int>(FileSize)];
-	file.read(FileData, FileSize);
-	file.close();
+	File.read(FileData, FileSize);
+	File.close();
 
 	unsigned UWidth, UHeight;
 	lodepng::State PNGState;
@@ -2099,7 +2098,7 @@ std::string FEResourceManager::LoadGLSL(const char* FileName)
 	}
 	else
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::loadGLSL.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadGLSL.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 
 	return ShaderData;
@@ -2158,7 +2157,7 @@ FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const
 
 	if (Attachments & FE_STENCIL_ATTACHMENT)
 	{
-		//to-do: make it correct
+		//to-do: make TextureIterator correct
 		NewFramebuffer->SetStencilAttachment(new FETexture(Width, Height, FreeObjectName(FE_TEXTURE)));
 	}
 
@@ -2354,7 +2353,7 @@ std::string FEResourceManager::GetDefaultResourcesFolder()
 
 std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* SourceTexture)
 {
-	std::vector<FETexture*> result;
+	std::vector<FETexture*> Result;
 
 	size_t TextureDataLenght = 0;
 	const unsigned char* pixels = SourceTexture->GetRawData(&TextureDataLenght);
@@ -2387,17 +2386,17 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 		AlphaChannel[index++] = pixels[i];
 	}
 
-	result.push_back(RawDataToFETexture(RedChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
-	result.back()->SetName(SourceTexture->GetName() + "_R");
+	Result.push_back(RawDataToFETexture(RedChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	Result.back()->SetName(SourceTexture->GetName() + "_R");
 
-	result.push_back(RawDataToFETexture(GreenChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
-	result.back()->SetName(SourceTexture->GetName() + "_G");
+	Result.push_back(RawDataToFETexture(GreenChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	Result.back()->SetName(SourceTexture->GetName() + "_G");
 
-	result.push_back(RawDataToFETexture(BlueChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
-	result.back()->SetName(SourceTexture->GetName() + "_B");
+	Result.push_back(RawDataToFETexture(BlueChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	Result.back()->SetName(SourceTexture->GetName() + "_B");
 
-	result.push_back(RawDataToFETexture(AlphaChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
-	result.back()->SetName(SourceTexture->GetName() + "_A");
+	Result.push_back(RawDataToFETexture(AlphaChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
+	Result.back()->SetName(SourceTexture->GetName() + "_A");
 
 	delete[] pixels;
 	delete[] RedChannel;
@@ -2405,7 +2404,7 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	delete[] BlueChannel;
 	delete[] AlphaChannel;
 
-	return result;
+	return Result;
 }
 
 void FEResourceManager::ActivateTerrainVacantLayerSlot(FETerrain* Terrain, FEMaterial* Material)
@@ -2610,7 +2609,7 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 		return;
 	}
 
-	// Reading data from file.
+	// Reading data from File.
 	std::vector<unsigned char> RawData;
 	unsigned UWidth, UHeight;
 	lodepng::decode(RawData, UWidth, UHeight, FileName);
@@ -2639,7 +2638,7 @@ void FEResourceManager::LoadTerrainLayerMask(const char* FileName, FETerrain* Te
 		LayersPerTextureData[0] = Terrain->LayerMaps[0]->GetRawData();
 		LayersPerTextureData[1] = Terrain->LayerMaps[1]->GetRawData();
 
-		// We fill first layer by default so we should check it differently
+		// We fill first layer by default so we should check TextureIterator differently
 		const unsigned char FirstValue = LayersPerTextureData[0][0];
 		for (size_t i = 0; i < static_cast<size_t>(Terrain->LayerMaps[0]->GetWidth() * Terrain->LayerMaps[0]->GetHeight()); i+=4)
 		{
@@ -3147,10 +3146,10 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 				newPixel[3] /= pixelsRead;
 			}
 
-			result[targetIndex] = newPixel[0];
-			result[targetIndex + 1] = newPixel[1];
-			result[targetIndex + 2] = newPixel[2];
-			result[targetIndex + 3] = newPixel[3];*/
+			Result[targetIndex] = newPixel[0];
+			Result[targetIndex + 1] = newPixel[1];
+			Result[targetIndex + 2] = newPixel[2];
+			Result[targetIndex + 3] = newPixel[3];*/
 
 			const size_t ScaledI = static_cast<size_t>(i * ResizeFactorY);
 			const size_t ScaledJ = static_cast<size_t>(j * ResizeFactorX);
@@ -3215,7 +3214,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, SourceTexture->GetTextureID()));
 
 	const unsigned char* CurrentData = SourceTexture->GetRawData();
-	unsigned char* result = ResizeTextureRawData(CurrentData, SourceTexture->GetWidth(), SourceTexture->GetHeight(), TargetWidth, TargetHeight, SourceTexture->InternalFormat, FiltrationLevel);
+	unsigned char* Result = ResizeTextureRawData(CurrentData, SourceTexture->GetWidth(), SourceTexture->GetHeight(), TargetWidth, TargetHeight, SourceTexture->InternalFormat, FiltrationLevel);
 
 	SourceTexture->Width = TargetWidth;
 	SourceTexture->Height = TargetHeight;
@@ -3224,7 +3223,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 
 	if (SourceTexture->InternalFormat == GL_RGBA)
 	{
-		SourceTexture->UpdateRawData(result, MipCount);
+		SourceTexture->UpdateRawData(Result, MipCount);
 	}
 	else if (SourceTexture->InternalFormat == GL_RED)
 	{
@@ -3233,14 +3232,14 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 		RedChannel.resize(SourceTexture->GetWidth() * SourceTexture->GetHeight());
 		for (size_t i = 0; i < RedChannel.size() * 4; i+=4)
 		{
-			RedChannel[i / 4] = result[i];
+			RedChannel[i / 4] = Result[i];
 		}
 
 		SourceTexture->UpdateRawData(RedChannel.data(), MipCount);
 	}
 	else
 	{
-		SourceTexture->UpdateRawData(result, MipCount);
+		SourceTexture->UpdateRawData(Result, MipCount);
 	}
 
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -3248,7 +3247,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
 	delete[] CurrentData;
-	delete[] result;
+	delete[] Result;
 }
 
 void FEResourceManager::DeleteTerrainLayerMask(FETerrain* Terrain, const size_t LayerIndex)
@@ -3632,13 +3631,13 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 {
 	if (OriginalTexture == nullptr || MaskTexture == nullptr)
 	{
-		LOG.Add("call of FEResourceManager::createTextureWithTransparency with nullptr argument(s)", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("call of FEResourceManager::CreateTextureWithTransparency with nullptr argument(s)", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (OriginalTexture->GetWidth() != MaskTexture->GetWidth() || OriginalTexture->GetHeight() != MaskTexture->GetHeight())
 	{
-		LOG.Add("originalTexture and maskTexture dimensions mismatch in FEResourceManager::createTextureWithTransparency", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("OriginalTexture and MaskTexture dimensions mismatch in FEResourceManager::CreateTextureWithTransparency", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 

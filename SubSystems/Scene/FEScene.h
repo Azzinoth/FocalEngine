@@ -31,6 +31,7 @@ namespace FocalEngine
 		void DeleteEntity(std::string ID);
 		void DeleteNewEntity(std::string ID);
 
+		FENewEntity* GetNewStyleEntity(std::string ID);
 		std::vector<FENewEntity*> GetNewStyleEntityByName(std::string Name);
 		FENewEntity* AddNewStyleEntity(std::string Name = "", std::string ForceObjectID = "", FEEntity* OldStyleEntity = nullptr);
 		FENewEntity* GetNewStyleEntityByOldStyleID(std::string OldStyleID);

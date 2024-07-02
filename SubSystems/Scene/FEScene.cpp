@@ -124,6 +124,14 @@ FEEntity* FEScene::GetEntity(const std::string ID)
 	return EntityMap[ID];
 }
 
+FENewEntity* FEScene::GetNewStyleEntity(std::string ID)
+{
+	if (NewEntityMap.find(ID) == NewEntityMap.end())
+		return nullptr;
+
+	return NewEntityMap[ID];
+}
+
 std::vector<FEEntity*> FEScene::GetEntityByName(const std::string Name)
 {
 	std::vector<FEEntity*> Result;
