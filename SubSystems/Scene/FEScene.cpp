@@ -60,7 +60,7 @@ FELight* FEScene::AddLight(const FE_OBJECT_TYPE LightType, std::string Name, con
 void FEScene::AddEntityToEntityMap(FEEntity* Entity)
 {
 	// FIX ME!
-	std::vector<FENewEntity*> EntityFound = SCENE.GetNewStyleEntityByName(Entity->GetName());
+	std::vector<FENewEntity*> EntityFound = SCENE.GetEntityByName(Entity->GetName());
 	if (EntityFound.empty())
 	{
 		AddNewStyleEntity(Entity->GetName(), "", Entity);
@@ -132,63 +132,17 @@ FENewEntity* FEScene::GetNewStyleEntity(std::string ID)
 	return NewEntityMap[ID];
 }
 
-std::vector<FEEntity*> FEScene::GetEntityByName(const std::string Name)
-{
-	std::vector<FEEntity*> Result;
-
-	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
-	for (entt::entity CurrentEntity : RenderableView)
-	{
-		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
-
-		if (CurrentRenderableComponent.OldStyleEntity->GetType() != FE_ENTITY)
-			continue;
-
-		if (CurrentRenderableComponent.OldStyleEntity->GetName() == Name)
-		{
-			Result.push_back(CurrentRenderableComponent.OldStyleEntity);
-		}
-	}
-
-	/*auto it = NewEntityMap.begin();
-	while (it != NewEntityMap.end())
-	{
-		if (it->second->GetType() != FE_ENTITY)
-		{
-			it++;
-			continue;
-		}
-
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
-	}*/
-
-	return Result;
-}
-
-std::vector<FENewEntity*> FEScene::GetNewStyleEntityByName(std::string Name)
+std::vector<FENewEntity*> FEScene::GetEntityByName(const std::string Name)
 {
 	std::vector<FENewEntity*> Result;
 
-	auto it = NewEntityMap.begin();
-	while (it != NewEntityMap.end())
+	auto EntityIterator = NewEntityMap.begin();
+	while (EntityIterator != NewEntityMap.end())
 	{
-		/*if (it->second->GetType() != FE_ENTITY)
-		{
-			it++;
-			continue;
-		}*/
+		if (EntityIterator->second->GetName() == Name)
+			Result.push_back(EntityIterator->second);
 
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
+		EntityIterator++;
 	}
 
 	return Result;
@@ -217,6 +171,11 @@ void FEScene::DeleteNewEntity(std::string ID)
 std::vector<std::string> FEScene::GetEntityList()
 {
 	FE_MAP_TO_STR_VECTOR(EntityMap)
+}
+
+std::vector<std::string> FEScene::GetNewEntityList()
+{
+	FE_MAP_TO_STR_VECTOR(NewEntityMap)
 }
 
 FELight* FEScene::GetLight(const std::string ID)
@@ -414,7 +373,8 @@ void FEScene::DeleteTerrain(const std::string ID)
 
 	const FETerrain* TerrainToDelete = TerrainMap[ID];
 
-	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
+	// FIX ME! Instanced
+	/*entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
 	for (entt::entity CurrentEntity : RenderableView)
 	{
 		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
@@ -427,7 +387,7 @@ void FEScene::DeleteTerrain(const std::string ID)
 				InstancedEntity->UnSnapFromTerrain();
 			}
 		}
-	}
+	}*/
 
 	/*auto EntityIt = EntityMap.begin();
 	while (EntityIt != EntityMap.end())
@@ -495,7 +455,8 @@ std::vector<FEEntityInstanced*> FEScene::GetEntityInstancedByName(const std::str
 {
 	std::vector<FEEntityInstanced*> Result;
 
-	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
+	// FIX ME! Instanced
+	/*entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
 	for (entt::entity CurrentEntity : RenderableView)
 	{
 		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
@@ -507,23 +468,23 @@ std::vector<FEEntityInstanced*> FEScene::GetEntityInstancedByName(const std::str
 		{
 			Result.push_back(reinterpret_cast<FEEntityInstanced*>(CurrentRenderableComponent.OldStyleEntity));
 		}
-	}
+	}*/
 
-	/*auto it = EntityMap.begin();
-	while (it != EntityMap.end())
+	/*auto EntityIterator = EntityMap.begin();
+	while (EntityIterator != EntityMap.end())
 	{
-		if (it->second->GetType() != FE_ENTITY_INSTANCED)
+		if (EntityIterator->second->GetType() != FE_ENTITY_INSTANCED)
 		{
-			it++;
+			EntityIterator++;
 			continue;
 		}
 
-		if (it->second->GetName() == Name)
+		if (EntityIterator->second->GetName() == Name)
 		{
-			Result.push_back(reinterpret_cast<FEEntityInstanced*>(it->second));
+			Result.push_back(reinterpret_cast<FEEntityInstanced*>(EntityIterator->second));
 		}
 
-		it++;
+		EntityIterator++;
 	}*/
 
 	return Result;
@@ -531,7 +492,8 @@ std::vector<FEEntityInstanced*> FEScene::GetEntityInstancedByName(const std::str
 
 void FEScene::SetSelectMode(FEEntityInstanced* EntityInstanced, const bool NewValue)
 {
-	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
+	// FIX ME! Instanced
+	/*entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
 	for (entt::entity CurrentEntity : RenderableView)
 	{
 		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
@@ -540,19 +502,19 @@ void FEScene::SetSelectMode(FEEntityInstanced* EntityInstanced, const bool NewVa
 			continue;
 
 		reinterpret_cast<FEEntityInstanced*>(CurrentRenderableComponent.OldStyleEntity)->SetSelectMode(false);
-	}
+	}*/
 
-	/*auto it = EntityMap.begin();
-	while (it != EntityMap.end())
+	/*auto EntityIterator = EntityMap.begin();
+	while (EntityIterator != EntityMap.end())
 	{
-		if (it->second->GetType() != FE_ENTITY_INSTANCED)
+		if (EntityIterator->second->GetType() != FE_ENTITY_INSTANCED)
 		{
-			it++;
+			EntityIterator++;
 			continue;
 		}
 
-		reinterpret_cast<FEEntityInstanced*>(it->second)->SetSelectMode(false);
-		it++;
+		reinterpret_cast<FEEntityInstanced*>(EntityIterator->second)->SetSelectMode(false);
+		EntityIterator++;
 	}*/
 
 	EntityInstanced->SetSelectMode(NewValue);
@@ -643,7 +605,7 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName.c_str(), true);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
 	}
-	// .gltf could contain scene, so it should be loaded in FEScene
+	// .gltf could contain scene, so EntityIterator should be loaded in FEScene
 	else if (FileExtention == ".gltf")
 	{
 		std::vector<FEObject*> LoadedObjects = LoadGLTF(FileName);
@@ -892,14 +854,11 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		{
 			FEEntity* NewEntity = AddEntity(Prefabs[0], NodeName);
 			FENewEntity* NewNewEntity = AddNewStyleEntity();
-			NewNewEntity->AddComponent<FERenderableComponent>(NewEntity);
+			NewNewEntity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
 			NewNewEntity->SetName(Node.Name);
 			NewNewEntity->GetComponent<FETransformComponent>().SetPosition(Node.Translation);
 			NewNewEntity->GetComponent<FETransformComponent>().RotateByQuaternion(Node.Rotation);
 			NewNewEntity->GetComponent<FETransformComponent>().SetScale(Node.Scale);
-			//NewEntity->Transform.SetPosition(Node.Translation);
-			//NewEntity->Transform.RotateByQuaternion(Node.Rotation);
-			//NewEntity->Transform.SetScale(Node.Scale);
 
 			// Problem is that currently we can not have entity without prefab
 			// Later we should add support for entities without prefabs
@@ -916,7 +875,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 			FENewEntity* DummyEntity = AddNewStyleEntity();
 			//FEEntity* DummyEntity = new FEEntity();
 			//DummyEntity->SetVisibility(false);
-			// Because this entity was created directly we need to add it to entity map in order it to be saved.
+			// Because this entity was created directly we need to add EntityIterator to entity map in order EntityIterator to be saved.
 			//EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
 			DummyEntity->SetName(Node.Name);
 			FETransformComponent& Transform = DummyEntity->GetComponent<FETransformComponent>();
@@ -936,7 +895,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 				FEEntity* NewEntity = AddEntity(Prefabs[i], CurrentNodeName);
 				FENewEntity* NewNewEntity = AddNewStyleEntity();
-				NewNewEntity->AddComponent<FERenderableComponent>(NewEntity);
+				NewNewEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
 				NewNewEntity->SetName(Node.Name);
 				// Problem is that currently we can not have entity without prefab
 				// Later we should add support for entities without prefabs
@@ -954,7 +913,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		FENewEntity* DummyEntity = AddNewStyleEntity();
 		//FEEntity* DummyEntity = new FEEntity();
 		//DummyEntity->SetVisibility(false);
-		// Because this entity was created directly we need to add it to entity map in order it to be saved.
+		// Because this entity was created directly we need to add EntityIterator to entity map in order EntityIterator to be saved.
 		//EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
 		DummyEntity->SetName(Node.Name);
 		FETransformComponent& Transform = DummyEntity->GetComponent<FETransformComponent>();
@@ -1072,7 +1031,8 @@ FENewEntity* FEScene::AddNewStyleEntity(std::string Name, std::string ForceObjec
 
 	if (OldStyleEntity != nullptr)
 	{
-		FENewEntity* AlreadyInList = GetNewStyleEntityByOldStyleID(OldStyleEntity->GetObjectID());
+		FENewEntity* AlreadyInList = GetEntityByName(OldStyleEntity->GetName())[0];
+		//FENewEntity* AlreadyInList = GetNewStyleEntityByOldStyleID(OldStyleEntity->GetObjectID());
 		if (AlreadyInList != nullptr)
 			return AlreadyInList;
 	}
@@ -1083,7 +1043,7 @@ FENewEntity* FEScene::AddNewStyleEntity(std::string Name, std::string ForceObjec
 	NewEntity->AddComponent<FETransformComponent>();
 	if (OldStyleEntity != nullptr)
 	{
-		NewEntity->AddComponent<FERenderableComponent>(OldStyleEntity);
+		NewEntity->AddComponent<FEGameModelComponent>(OldStyleEntity->Prefab->GetComponent(0)->GameModel);
 		NewEntity->SetName(OldStyleEntity->GetName());
 		SceneGraph.AddNode(NewEntity);
 
@@ -1110,25 +1070,25 @@ FENewEntity* FEScene::AddNewStyleEntity(std::string Name, std::string ForceObjec
 	return NewEntity;
 }
 
-FENewEntity* FEScene::GetNewStyleEntityByOldStyleID(std::string OldStyleID)
-{
-	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
-	for (entt::entity CurrentEntity : RenderableView)
-	{
-		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
-
-		if (CurrentRenderableComponent.OldStyleEntity->GetObjectID() == OldStyleID)
-		{
-			auto it = NewEntityMap.begin();
-			while (it != NewEntityMap.end())
-			{
-				if (it->second->EnTTEntity == CurrentEntity)
-					return it->second;
-
-				it++;
-			}
-		}
-	}
-
-	return nullptr;
-}
+//FENewEntity* FEScene::GetNewStyleEntityByOldStyleID(std::string OldStyleID)
+//{
+//	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
+//	for (entt::entity CurrentEntity : RenderableView)
+//	{
+//		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
+//
+//		if (CurrentRenderableComponent.OldStyleEntity->GetObjectID() == OldStyleID)
+//		{
+//			auto it = NewEntityMap.begin();
+//			while (it != NewEntityMap.end())
+//			{
+//				if (it->second->EnTTEntity == CurrentEntity)
+//					return it->second;
+//
+//				it++;
+//			}
+//		}
+//	}
+//
+//	return nullptr;
+//}

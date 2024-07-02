@@ -62,11 +62,11 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void Render(FEBasicCamera* CurrentCamera);
-		void RenderEntity(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
+		//void RenderEntity(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
 		// FIX ME! It is closer to what it should be, but still not perfect.
+		// It should be done as system, and only ocassionally throught this function.
 		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderEntityForward(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
 		void RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
 		void RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentCamera);
 		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);

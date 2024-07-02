@@ -26,15 +26,15 @@ namespace FocalEngine
 		FEEntity* AddEntity(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
 		bool AddEntity(FEEntity* NewEntity);
 		FEEntity* GetEntity(std::string ID);
-		std::vector<FEEntity*> GetEntityByName(std::string Name);
+		std::vector<FENewEntity*> GetEntityByName(std::string Name);
 		std::vector<std::string> GetEntityList();
 		void DeleteEntity(std::string ID);
 		void DeleteNewEntity(std::string ID);
 
 		FENewEntity* GetNewStyleEntity(std::string ID);
-		std::vector<FENewEntity*> GetNewStyleEntityByName(std::string Name);
 		FENewEntity* AddNewStyleEntity(std::string Name = "", std::string ForceObjectID = "", FEEntity* OldStyleEntity = nullptr);
-		FENewEntity* GetNewStyleEntityByOldStyleID(std::string OldStyleID);
+		std::vector<std::string> GetNewEntityList();
+		//FENewEntity* GetNewStyleEntityByOldStyleID(std::string OldStyleID);
 
 		FEEntityInstanced* AddEntityInstanced(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
 		FEEntityInstanced* AddEntityInstanced(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");

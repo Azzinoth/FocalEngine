@@ -63,7 +63,7 @@ std::string FENaiveSceneGraph::AddNode(FENewEntity* Entity, bool bPreserveWorldT
 	}
 
 	// FIX ME!
-	std::vector<FENewEntity*> EntityFound = SCENE.GetNewStyleEntityByName(Entity->GetName());
+	std::vector<FENewEntity*> EntityFound = SCENE.GetEntityByName(Entity->GetName());
 	if (!EntityFound.empty())
 	{
 		return "";

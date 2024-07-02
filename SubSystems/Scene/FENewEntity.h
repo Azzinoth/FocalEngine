@@ -98,21 +98,6 @@ namespace FocalEngine
 		bool bWireframeMode = false;
 	};
 
-	class FERenderableComponent
-	{
-	public:
-		
-		FERenderableComponent() {};
-		FERenderableComponent(FEEntity* OldStyleEntityToInitialize)
-		{
-			OldStyleEntity = OldStyleEntityToInitialize;
-		}
-
-		~FERenderableComponent() {};
-	//private:
-		FEEntity* OldStyleEntity = nullptr;
-	};
-
 	class FENewEntity : public FEObject
 	{
 		friend class FEEntityInstanced;
