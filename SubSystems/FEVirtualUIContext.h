@@ -1,5 +1,6 @@
 #include "FEVirtualUI.h"
 #include "../ResourceManager/FEResourceManager.h"
+#include "../SubSystems/Scene/FENewEntity.h"
 
 namespace FocalEngine
 {
@@ -19,9 +20,8 @@ namespace FocalEngine
 		FEMesh* CanvasMesh = nullptr;
 		FEMaterial* CanvasMaterial = nullptr;
 		FEGameModel* CanvasGameModel = nullptr;
-		FEPrefab* CanvasPrefab = nullptr;
 	public:
-		FEEntity* CanvasEntity = nullptr;
+		FENewEntity* CanvasEntity = nullptr;
 	private:
 
 		// Mesh interaction

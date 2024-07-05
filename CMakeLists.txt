@@ -224,6 +224,25 @@ file(GLOB Core_SRC
 	"Core/FEObject.h"
 )
 
+# *************** COMPONENTS ***************
+
+file(GLOB Scene_Components_SRC
+	"SubSystems/Scene/Components/FEComponents.h"
+	"SubSystems/Scene/Components/FETagComponent.cpp"
+	"SubSystems/Scene/Components/FETagComponent.h"
+	"SubSystems/Scene/Components/FETransformComponent.cpp"
+	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FEGameModelComponent.cpp"
+	"SubSystems/Scene/Components/FEGameModelComponent.h"
+	"SubSystems/Scene/Components/FEInstancedRenderingComponent.cpp"
+	"SubSystems/Scene/Components/FEInstancedRenderingComponent.h"
+)
+
+file(GLOB Scene_Component_Systems_SRC
+	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
+	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.cpp"
+)
+
 # *************** SCENE ***************
 
 file(GLOB Scene_SRC
@@ -318,6 +337,8 @@ list(APPEND ALL_SOURCE_FILES
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
 			${Scene_SRC}
+			${Scene_Components_SRC}
+			${Scene_Component_Systems_SRC}
 			${OpenXR_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
@@ -375,6 +396,8 @@ source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
+source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
+source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})

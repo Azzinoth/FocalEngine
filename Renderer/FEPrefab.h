@@ -3,7 +3,8 @@
 #ifndef FEPREFAB_H
 #define FEPREFAB_H
 
-#include "../SubSystems/Scene/FETransformComponent.h"
+// FIX ME! It should not be here.
+#include "../SubSystems/Scene/Components/FETransformComponent.h"
 #include "FEGameModel.h"
 
 namespace FocalEngine

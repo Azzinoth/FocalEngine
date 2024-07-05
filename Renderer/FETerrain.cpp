@@ -548,6 +548,16 @@ void FETerrain::SnapInstancedEntity(FEEntityInstanced* EntityToSnap)
 	SnapedInstancedEntities.push_back(EntityToSnap);
 }
 
+void FETerrain::SnapInstancedEntity(FENewEntity* EntityToSnap)
+{
+	// FIX ME! Temporary
+	if (EntityToSnap->HasComponent<FEInstancedRenderingComponent>())
+	{
+		FEInstancedRenderingComponent& InstancedComponent = EntityToSnap->GetComponent<FEInstancedRenderingComponent>();
+		InstancedComponent.SnapToTerrain(this, &FETerrain::GetHeightAt);
+	}
+}
+
 void FETerrain::UpdateSnapedInstancedEntities()
 {
 	for (size_t i = 0; i < SnapedInstancedEntities.size(); i++)

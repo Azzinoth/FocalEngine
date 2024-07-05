@@ -1,6 +1,7 @@
 #pragma once
 
-#include "Scene/FETransformComponent.h"
+// FIX ME! It should not be here.
+#include "Scene/Components/FETransformComponent.h"
 
 namespace FocalEngine
 {

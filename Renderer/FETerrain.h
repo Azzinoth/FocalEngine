@@ -4,6 +4,8 @@
 #define FETERRAIN_H
 
 #include "../Renderer/FEEntityInstanced.h"
+// FIX ME ! Temporary
+#include "../SubSystems/Scene/FENewEntity.h"
 
 namespace FocalEngine
 {
@@ -112,6 +114,8 @@ namespace FocalEngine
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 		void SnapInstancedEntity(FEEntityInstanced* EntityToSnap);
+		// FIX ME! Temporary
+		void SnapInstancedEntity(FENewEntity* EntityToSnap);
 		void UnSnapInstancedEntity(FEEntityInstanced* EntityToUnSnap);
 
 		void ConnectInstancedEntityToLayer(FEEntityInstanced* Entity, int LayerIndex);

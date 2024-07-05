@@ -5,6 +5,7 @@
 
 #include "../SubSystems/Scene/FEScene.h"
 #include "../SubSystems/Scene/FENewEntity.h"
+#include "../SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
 
 namespace FocalEngine
 {
@@ -62,12 +63,11 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void Render(FEBasicCamera* CurrentCamera);
-		//void RenderEntity(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
 		// FIX ME! It is closer to what it should be, but still not perfect.
 		// It should be done as system, and only ocassionally throught this function.
 		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false, int ComponentIndex = -1);
+		void RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
 		void RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentCamera);
 		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
 
@@ -251,7 +251,7 @@ namespace FocalEngine
 		GLuint CullingLODCountersBuffer = 0;
 
 		void UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPosition);
-		void GPUCulling(FEEntityInstanced* Entity, int SubGameModel, const FEBasicCamera* CurrentCamera);
+		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const FEBasicCamera* CurrentCamera);
 
 		FETexture* DepthPyramid = nullptr;
 		bool bUseOcclusionCulling = true;

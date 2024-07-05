@@ -394,166 +394,77 @@ void FERenderer::LoadUniformBlocks()
 	}
 }
 
-void FERenderer::RenderEntityInstanced(FEEntityInstanced* EntityInstanced, FEBasicCamera* CurrentCamera, float** Frustum, const bool bShadowMap, const bool bReloadUniformBlocks, const int ComponentIndex)
+void FERenderer::RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap, bool bReloadUniformBlocks)
 {
 	if (bReloadUniformBlocks)
 		LoadUniformBlocks();
 
-	if (ComponentIndex != -1)
+	GPUCulling(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera);
+
+	FEGameModel* CurrentGameModel = GameModelComponent.GameModel;
+	FEShader* OriginalShader = CurrentGameModel->GetMaterial()->Shader;
+	if (OriginalShader->GetName() == "FEPBRShader")
 	{
-		GPUCulling(EntityInstanced, static_cast<int>(ComponentIndex), CurrentCamera);
-
-		FEGameModel* CurrentGameModel = EntityInstanced->Prefab->Components[ComponentIndex]->GameModel;
-
-		FEShader* OriginalShader = CurrentGameModel->GetMaterial()->Shader;
-		if (OriginalShader->GetName() == "FEPBRShader")
+		if (ShaderToForce)
 		{
-			if (ShaderToForce)
-			{
-				CurrentGameModel->GetMaterial()->Shader = ShaderToForce;
-			}
-			else
-			{
-				CurrentGameModel->GetMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-			}
-		}
-
-		CurrentGameModel->GetMaterial()->Bind();
-		const FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[ComponentIndex]->Transform);
-		LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
-		CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
-
-		EntityInstanced->Render(static_cast<int>(ComponentIndex));
-
-		CurrentGameModel->GetMaterial()->UnBind();
-		if (OriginalShader->GetName() == "FEPBRShader")
-		{
-			CurrentGameModel->GetMaterial()->Shader = OriginalShader;
-			if (CurrentGameModel->GetBillboardMaterial() != nullptr)
-				CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
-		}
-
-		// Billboards part
-		if (CurrentGameModel->GetBillboardMaterial() != nullptr)
-		{
-			FEMaterial* RegularBillboardMaterial = CurrentGameModel->GetBillboardMaterial();
-			if (bShadowMap)
-			{
-				ShadowMapMaterialInstanced->SetAlbedoMap(RegularBillboardMaterial->GetAlbedoMap());
-				CurrentGameModel->SetBillboardMaterial(ShadowMapMaterialInstanced);
-			}
-
-			OriginalShader = CurrentGameModel->GetMaterial()->Shader;
-			if (OriginalShader->GetName() == "FEPBRShader")
-			{
-				if (ShaderToForce)
-				{
-					CurrentGameModel->GetBillboardMaterial()->Shader = ShaderToForce;
-				}
-				else
-				{
-					CurrentGameModel->GetBillboardMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-				}
-			}
-
-			CurrentGameModel->GetBillboardMaterial()->Bind();
-			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
-			CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
-
-			EntityInstanced->RenderOnlyBillbords(CurrentCamera->GetPosition());
-
-			CurrentGameModel->GetBillboardMaterial()->UnBind();
-			if (OriginalShader->GetName() == "FEPBRShader")
-				CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
-
-			if (bShadowMap)
-			{
-				CurrentGameModel->SetBillboardMaterial(RegularBillboardMaterial);
-			}
-		}
-
-		return;
-	}
-
-	for (size_t i = 0; i < EntityInstanced->Prefab->Components.size(); i++)
-	{
-		GPUCulling(EntityInstanced, static_cast<int>(i), CurrentCamera);
-
-		FEGameModel* CurrentGameModel = EntityInstanced->Prefab->Components[i]->GameModel;
-
-		FEShader* OriginalShader = CurrentGameModel->GetMaterial()->Shader;
-		if (OriginalShader->GetName() == "FEPBRShader")
-		{
-			if (ShaderToForce)
-			{
-				CurrentGameModel->GetMaterial()->Shader = ShaderToForce;
-			}
-			else
-			{
-				CurrentGameModel->GetMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-			}
-		}
-
-		CurrentGameModel->GetMaterial()->Bind();
-		// Temporary staff, until we will have proper transform hierarchy
-		if (EntityInstanced->Prefab->Components.size() == 1)
-		{
-			LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
+			CurrentGameModel->GetMaterial()->Shader = ShaderToForce;
 		}
 		else
 		{
-			FETransformComponent TempTransform = EntityInstanced->Transform.Combine(EntityInstanced->Prefab->Components[i]->Transform);
-			LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TempTransform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
+			CurrentGameModel->GetMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 		}
-		CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
+	}
 
-		EntityInstanced->Render(static_cast<int>(i));
+	CurrentGameModel->GetMaterial()->Bind();
+	LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
 
-		CurrentGameModel->GetMaterial()->UnBind();
+	INSTANCED_RENDERING_SYSTEM.Render(TransformComponent, GameModelComponent, InstancedComponent);
+
+	CurrentGameModel->GetMaterial()->UnBind();
+	if (OriginalShader->GetName() == "FEPBRShader")
+	{
+		CurrentGameModel->GetMaterial()->Shader = OriginalShader;
+		if (CurrentGameModel->GetBillboardMaterial() != nullptr)
+			CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
+	}
+
+	// Billboards part
+	if (CurrentGameModel->GetBillboardMaterial() != nullptr)
+	{
+		FEMaterial* RegularBillboardMaterial = CurrentGameModel->GetBillboardMaterial();
+		if (bShadowMap)
+		{
+			ShadowMapMaterialInstanced->SetAlbedoMap(RegularBillboardMaterial->GetAlbedoMap());
+			CurrentGameModel->SetBillboardMaterial(ShadowMapMaterialInstanced);
+		}
+
+		OriginalShader = CurrentGameModel->GetMaterial()->Shader;
 		if (OriginalShader->GetName() == "FEPBRShader")
 		{
-			CurrentGameModel->GetMaterial()->Shader = OriginalShader;
-			if (CurrentGameModel->GetBillboardMaterial() != nullptr)
-				CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
+			if (ShaderToForce)
+			{
+				CurrentGameModel->GetBillboardMaterial()->Shader = ShaderToForce;
+			}
+			else
+			{
+				CurrentGameModel->GetBillboardMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
+			}
 		}
 
-		// Billboards part
-		if (CurrentGameModel->GetBillboardMaterial() != nullptr)
+		CurrentGameModel->GetBillboardMaterial()->Bind();
+		LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+		CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
+
+		INSTANCED_RENDERING_SYSTEM.RenderOnlyBillbords(GameModelComponent, InstancedComponent);
+
+		CurrentGameModel->GetBillboardMaterial()->UnBind();
+		if (OriginalShader->GetName() == "FEPBRShader")
+			CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
+
+		if (bShadowMap)
 		{
-			FEMaterial* RegularBillboardMaterial = CurrentGameModel->GetBillboardMaterial();
-			if (bShadowMap)
-			{
-				ShadowMapMaterialInstanced->SetAlbedoMap(RegularBillboardMaterial->GetAlbedoMap());
-				CurrentGameModel->SetBillboardMaterial(ShadowMapMaterialInstanced);
-			}
-
-			OriginalShader = CurrentGameModel->GetMaterial()->Shader;
-			if (OriginalShader->GetName() == "FEPBRShader")
-			{
-				if (ShaderToForce)
-				{
-					CurrentGameModel->GetBillboardMaterial()->Shader = ShaderToForce;
-				}
-				else
-				{
-					CurrentGameModel->GetBillboardMaterial()->Shader = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-				}
-			}
-
-			CurrentGameModel->GetBillboardMaterial()->Bind();
-			LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &EntityInstanced->Transform, EntityInstanced->IsReceivingShadows(), EntityInstanced->IsUniformLighting());
-			CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
-
-			EntityInstanced->RenderOnlyBillbords(CurrentCamera->GetPosition());
-
-			CurrentGameModel->GetBillboardMaterial()->UnBind();
-			if (OriginalShader->GetName() == "FEPBRShader")
-				CurrentGameModel->GetBillboardMaterial()->Shader = OriginalShader;
-
-			if (bShadowMap)
-			{
-				CurrentGameModel->SetBillboardMaterial(RegularBillboardMaterial);
-			}
+			CurrentGameModel->SetBillboardMaterial(RegularBillboardMaterial);
 		}
 	}
 }
@@ -568,39 +479,17 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 	if (bClearActiveInSimplifiedRendering)
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	// FIX ME! No instanced rendering
-	entt::basic_group GameModelGroup = SCENE.Registry.group<FETransformComponent>(entt::get<FEGameModelComponent>);
+	// No instanced rendering for now.
+	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedRenderingComponent>);
 	for (entt::entity CurrentEntity : GameModelGroup)
 	{
-		auto& [TransformComponent, GameModelComponent] = GameModelGroup.get<FETransformComponent, FEGameModelComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
 			RenderGameModelComponentForward(GameModelComponent, TransformComponent, CurrentCamera);
 		}
 	}
-
-	//auto EntityIterator = SCENE.EntityMap.begin();
-	//while (EntityIterator != SCENE.EntityMap.end())
-	//{
-	//	auto entity = EntityIterator->second;
-
-	//	if (entity->IsVisible() && entity->IsPostprocessApplied())
-	//	{
-	//		if (entity->GetType() == FE_ENTITY)
-	//		{
-	//			//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-	//			RenderEntityForward(entity, CurrentCamera);
-	//		}
-	//		else if (entity->GetType() == FE_ENTITY_INSTANCED)
-	//		{
-	//			//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-	//			//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
-	//		}
-	//	}
-
-	//	EntityIterator++;
-	//}
 
 	// ********* RENDER INSTANCED LINE *********
 	/*FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
@@ -711,7 +600,6 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	FEShader* ShaderInstancedPBR = RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
 	FEShader* ShaderTerrain = RESOURCE_MANAGER.GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 
-	// Test new ECS.
 	// group<Component_TYPE> group takes ownership of the Component_TYPE.
 	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
 
@@ -731,7 +619,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 			for (size_t i = 0; i < static_cast<size_t>(Light->ActiveCascades); i++)
 			{
-				// put camera to the position of light
+				// Put camera to the position of light.
 				CurrentCamera->ProjectionMatrix = Light->CascadeData[i].ProjectionMat;
 				CurrentCamera->ViewMatrix = Light->CascadeData[i].ViewMat;
 
@@ -758,7 +646,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 					ItTerrain++;
 				}
 
-				// FIX ME! No instanced rendering and no prefab support.
+				// FIX ME! No prefab support.
 				for (entt::entity CurrentEntity : GameModelGroup)
 				{
 					auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
@@ -766,58 +654,35 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 					if (!GameModelComponent.IsCastShadows() || !GameModelComponent.IsVisible())
 						continue;
 
+					FENewEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
 					FEMaterial* OriginalMaterial = GameModelComponent.GameModel->Material;
-					GameModelComponent.GameModel->Material = ShadowMapMaterial;
-					ShadowMapMaterial->SetAlbedoMap(OriginalMaterial->GetAlbedoMap());
-					// If material have submaterial.
+					
+					FEMaterial* ShadowMapMaterialToUse = !Entity->HasComponent<FEInstancedRenderingComponent>() ? ShadowMapMaterial : ShadowMapMaterialInstanced;
+					GameModelComponent.GameModel->Material = ShadowMapMaterialToUse;
+					ShadowMapMaterialToUse->SetAlbedoMap(OriginalMaterial->GetAlbedoMap());
+
 					if (OriginalMaterial->GetAlbedoMap(1) != nullptr)
 					{
-						ShadowMapMaterial->SetAlbedoMap(OriginalMaterial->GetAlbedoMap(1), 1);
-						ShadowMapMaterial->GetAlbedoMap(1)->Bind(1);
+						ShadowMapMaterialToUse->SetAlbedoMap(OriginalMaterial->GetAlbedoMap(1), 1);
+						ShadowMapMaterialToUse->GetAlbedoMap(1)->Bind(1);
 					}
 
-					RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera,  false);
+					if (!Entity->HasComponent<FEInstancedRenderingComponent>())
+					{
+						RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera, false);
+					}
+					else if (Entity->HasComponent<FEInstancedRenderingComponent>())
+					{
+						FEInstancedRenderingComponent& InstancedComponent = Entity->GetComponent<FEInstancedRenderingComponent>();
+						RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera, Light->CascadeData[i].Frustum, true, false);
+					}
 
 					GameModelComponent.GameModel->Material = OriginalMaterial;
 					for (size_t k = 0; k < ShadowMapMaterial->Textures.size(); k++)
 					{
-						ShadowMapMaterial->Textures[k] = nullptr;
-						ShadowMapMaterial->TextureBindings[k] = -1;
-
-						ShadowMapMaterialInstanced->Textures[k] = nullptr;
-						ShadowMapMaterialInstanced->TextureBindings[k] = -1;
+						ShadowMapMaterialToUse->Textures[k] = nullptr;
+						ShadowMapMaterialToUse->TextureBindings[k] = -1;
 					}
-					
-					//else if (Entity->GetType() == FE_ENTITY_INSTANCED)
-					//{
-					//	std::vector<FEMaterial*> OriginalMaterials;
-					//	FEEntityInstanced* CurrentEntity = reinterpret_cast<FEEntityInstanced*>(Entity);
-					//	for (size_t j = 0; j < CurrentEntity->Prefab->Components.size(); j++)
-					//	{
-					//		OriginalMaterials.push_back(CurrentEntity->Prefab->Components[j]->GameModel->Material);
-
-					//		CurrentEntity->Prefab->Components[j]->GameModel->Material = ShadowMapMaterialInstanced;
-					//		ShadowMapMaterialInstanced->SetAlbedoMap(OriginalMaterials.back()->GetAlbedoMap());
-					//		// if material have submaterial
-					//		if (OriginalMaterials.back()->GetAlbedoMap(1) != nullptr)
-					//		{
-					//			ShadowMapMaterialInstanced->SetAlbedoMap(OriginalMaterials.back()->GetAlbedoMap(1), 1);
-					//			ShadowMapMaterialInstanced->GetAlbedoMap(1)->Bind(1);
-					//		}
-					//		
-					//		RenderEntityInstanced(CurrentEntity, CurrentCamera, Light->CascadeData[i].Frustum, true, false, static_cast<int>(j));
-					//		
-					//		Entity->Prefab->Components[j]->GameModel->Material = OriginalMaterials[j];
-					//		for (size_t k = 0; k < ShadowMapMaterial->Textures.size(); k++)
-					//		{
-					//			ShadowMapMaterial->Textures[k] = nullptr;
-					//			ShadowMapMaterial->TextureBindings[k] = -1;
-
-					//			ShadowMapMaterialInstanced->Textures[k] = nullptr;
-					//			ShadowMapMaterialInstanced->TextureBindings[k] = -1;
-					//		}
-					//	}
-					//}
 				}
 
 				//auto it = SCENE.EntityMap.begin();
@@ -941,25 +806,25 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	UpdateGPUCullingFrustum(CurrentCamera->Frustum, CurrentCamera->GetPosition());
 
-
-	// FIX ME! No instanced rendering and no prefab support.
+	// FIX ME! No prefab support.
 	for (entt::entity CurrentEntity : GameModelGroup)
 	{
 		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
 
-		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
+		if (!GameModelComponent.IsVisible() || !GameModelComponent.IsPostprocessApplied())
+			continue;
+
+		FENewEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
+		if (!Entity->HasComponent<FEInstancedRenderingComponent>())
 		{
-			//if (GameModelComponent.OldStyleEntity->GetType() == FE_ENTITY)
-			//{
-				ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-				RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera);
-				//RenderEntity(GameModelComponent.OldStyleEntity, CurrentCamera);
-			//}
-			//else if (GameModelComponent.OldStyleEntity->GetType() == FE_ENTITY_INSTANCED)
-			//{
-			//	ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-			//	RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(GameModelComponent.OldStyleEntity), CurrentCamera, CurrentCamera->Frustum, false);
-			//}
+			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
+			RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera);
+		}
+		else if (Entity->HasComponent<FEInstancedRenderingComponent>())
+		{
+
+			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+			RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, Entity->GetComponent<FEInstancedRenderingComponent>(), CurrentCamera, CurrentCamera->Frustum, false);
 		}
 	}
 
@@ -1211,14 +1076,22 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 	SceneToTextureFB->Bind();
 
-	// FIX ME! No instanced rendering and no prefab support.
+	// FIX ME! No prefab support.
 	for (entt::entity CurrentEntity : GameModelGroup)
 	{
 		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
 
-		if (GameModelComponent.IsVisible() && !GameModelComponent.IsPostprocessApplied())
+		if (!GameModelComponent.IsVisible() || GameModelComponent.IsPostprocessApplied())
+			continue;
+
+		FENewEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
+		if (!Entity->HasComponent<FEInstancedRenderingComponent>())
 		{
 			RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera);
+		}
+		else if (Entity->HasComponent<FEInstancedRenderingComponent>())
+		{
+			RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, Entity->GetComponent<FEInstancedRenderingComponent>(), CurrentCamera, CurrentCamera->Frustum, false);
 		}
 	}
 
@@ -2033,12 +1906,12 @@ void FERenderer::UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPositi
 	FE_GL_ERROR(glUnmapNamedBuffer(FrustumInfoBuffer));
 }
 
-void FERenderer::GPUCulling(FEEntityInstanced* Entity, const int SubGameModel, const FEBasicCamera* CurrentCamera)
+void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const FEBasicCamera* CurrentCamera)
 {
 	if (bFreezeCulling)
 		return;
 
-	Entity->CheckDirtyFlag(SubGameModel);
+	INSTANCED_RENDERING_SYSTEM.CheckDirtyFlag(TransformComponent, GameModelComponent, InstancedComponent);
 
 	FrustumCullingShader->Start();
 
@@ -2054,36 +1927,21 @@ void FERenderer::GPUCulling(FEEntityInstanced* Entity, const int SubGameModel, c
 
 	FrustumCullingShader->LoadDataToGPU();
 
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, Entity->Renderers[SubGameModel]->SourceDataBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Entity->Renderers[SubGameModel]->PositionsBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, InstancedComponent.SourceDataBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, InstancedComponent.PositionsBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, Entity->Renderers[SubGameModel]->LODBuffers[0]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, Entity->Renderers[SubGameModel]->AABBSizesBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, InstancedComponent.LODBuffers[0]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, InstancedComponent.AABBSizesBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, CullingLODCountersBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, Entity->Renderers[SubGameModel]->LODInfoBuffer));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, Entity->Renderers[SubGameModel]->LODBuffers[1]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, Entity->Renderers[SubGameModel]->LODBuffers[2]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, Entity->Renderers[SubGameModel]->LODBuffers[3]));
-	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, Entity->Renderers[SubGameModel]->IndirectDrawInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, InstancedComponent.LODInfoBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, InstancedComponent.LODBuffers[1]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, InstancedComponent.LODBuffers[2]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, InstancedComponent.LODBuffers[3]));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, InstancedComponent.IndirectDrawInfoBuffer));
 
 	DepthPyramid->Bind(0);
-	/*FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, depthPyramid));*/
-
-	FrustumCullingShader->Dispatch(static_cast<GLuint>(ceil(Entity->InstanceCount / 64.0f)), 1, 1);
+	FrustumCullingShader->Dispatch(static_cast<GLuint>(ceil(InstancedComponent.InstanceCount / 64.0f)), 1, 1);
 	FE_GL_ERROR(glMemoryBarrier(GL_ALL_BARRIER_BITS));
-
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 7, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 8, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, 0));
-	//FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, 0));
 }
 
 std::unordered_map<std::string, std::function<FETexture* ()>> FERenderer::GetDebugOutputTextures()
@@ -2344,39 +2202,17 @@ void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture,
 
 	LoadUniformBlocks();
 
-	// FIX ME! No instanced rendering
-	entt::basic_group GameModelGroup = SCENE.Registry.group<FETransformComponent>(entt::get<FEGameModelComponent>);
+	// No instanced rendering for now.
+	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedRenderingComponent>);
 	for (entt::entity CurrentEntity : GameModelGroup)
 	{
-		auto& [TransformComponent, GameModelComponent] = GameModelGroup.get<FETransformComponent, FEGameModelComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
 			RenderGameModelComponentForward(GameModelComponent, TransformComponent, CurrentCamera);
 		}
 	}
-
-	//auto EntityIterator = scene.EntityMap.begin();
-	//while (EntityIterator != scene.EntityMap.end())
-	//{
-	//	auto entity = EntityIterator->second;
-
-	//	if (entity->IsVisible() && entity->IsPostprocessApplied())
-	//	{
-	//		if (entity->GetType() == FE_ENTITY)
-	//		{
-	//			//ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-	//			RenderEntityForward(entity, CurrentCamera);
-	//		}
-	//		else if (entity->GetType() == FE_ENTITY_INSTANCED)
-	//		{
-	//			//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-	//			//RenderEntityInstanced(reinterpret_cast<FEEntityInstanced*>(entity), CurrentCamera, CurrentCamera->GetFrustumPlanes(), false);
-	//		}
-	//	}
-
-	//	EntityIterator++;
-	//}
 
 	SceneToVRTextureFB->UnBind();
 	LastRenderedResult = SceneToVRTextureFB;

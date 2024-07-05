@@ -1,5 +1,6 @@
 #include "FEScene.h"
 #include "FENewEntity.h"
+#include "Components/Systems/FEInstancedRenderingSystem.h"
 using namespace FocalEngine;
 
 FEScene* FEScene::Instance = nullptr;
@@ -69,53 +70,6 @@ void FEScene::AddEntityToEntityMap(FEEntity* Entity)
 	EntityMap[Entity->GetObjectID()] = Entity;
 }
 
-FEEntity* FEScene::AddEmptyEntity(std::string Name, std::string ForceObjectID)
-{
-	if (Name.empty())
-		Name = "UnnamedEntity";
-
-	FEEntity* NewEntity = new FEEntity();
-	if (!ForceObjectID.empty())
-		NewEntity->SetID(ForceObjectID);
-	NewEntity->SetName(Name);
-
-	AddEntityToEntityMap(NewEntity);
-	return NewEntity;
-}
-
-FEEntity* FEScene::AddEntity(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
-{
-	if (Name.empty())
-		Name = "unnamedEntity";
-
-	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(GameModel, Name, ForceObjectID);
-	AddEntityToEntityMap(NewEntity);
-	return NewEntity;
-}
-
-FEEntity* FEScene::AddEntity(FEPrefab* Prefab, std::string Name, const std::string ForceObjectID)
-{
-	if (Name.empty())
-		Name = "unnamedEntity";
-
-	FEEntity* NewEntity = RESOURCE_MANAGER.CreateEntity(Prefab, Name, ForceObjectID);
-	AddEntityToEntityMap(NewEntity);
-	return NewEntity;
-}
-
-bool FEScene::AddEntity(FEEntity* NewEntity)
-{
-	if (NewEntity == nullptr)
-		return false;
-
-	if (NewEntity->Prefab == nullptr)
-		return false;
-
-	AddEntityToEntityMap(NewEntity);
-
-	return true;
-}
-
 FEEntity* FEScene::GetEntity(const std::string ID)
 {
 	if (EntityMap.find(ID) == EntityMap.end())
@@ -164,6 +118,9 @@ void FEScene::DeleteNewEntity(std::string ID)
 		return;
 
 	const FENewEntity* NewEntityToDelete = NewEntityMap[ID];
+	entt::entity EnTTEntityToDelete = NewEntityToDelete->EnTTEntity;
+	EnttToEntity.erase(EnTTEntityToDelete);
+
 	delete NewEntityToDelete;
 	NewEntityMap.erase(ID);
 }
@@ -283,21 +240,9 @@ void FEScene::Clear()
 	}
 	TerrainMap.clear();
 
-	// Force clear registry
+	// Force clear registry.
 	Registry = entt::registry{};
-	//Registry.clear();
-
-	/*Registry.
-	Registry.each([&](auto entityID){
-		Registry.destroy(entityID);
-	
-	});
-
-	Registry.all_of<FENewEntity>().each([this](entt::entity Entity)
-	{
-		Registry.destroy(Entity);
-	});*/
-	
+	ReInitializeObservers();
 
 	bSceneGraphInitialization = true;
 	SceneGraph.Clear();
@@ -501,7 +446,7 @@ void FEScene::SetSelectMode(FEEntityInstanced* EntityInstanced, const bool NewVa
 		if (CurrentRenderableComponent.OldStyleEntity->GetType() != FE_ENTITY_INSTANCED)
 			continue;
 
-		reinterpret_cast<FEEntityInstanced*>(CurrentRenderableComponent.OldStyleEntity)->SetSelectMode(false);
+		reinterpret_cast<FEEntityInstanced*>(CurrentRenderableComponent.OldStyleEntity)->SetIndividualSelectMode(false);
 	}*/
 
 	/*auto EntityIterator = EntityMap.begin();
@@ -513,7 +458,7 @@ void FEScene::SetSelectMode(FEEntityInstanced* EntityInstanced, const bool NewVa
 			continue;
 		}
 
-		reinterpret_cast<FEEntityInstanced*>(EntityIterator->second)->SetSelectMode(false);
+		reinterpret_cast<FEEntityInstanced*>(EntityIterator->second)->SetIndividualSelectMode(false);
 		EntityIterator++;
 	}*/
 
@@ -546,8 +491,9 @@ void FEScene::DeleteLight(const std::string ID)
 FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name)
 {
 	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
-	NewVirtualUIContext->CanvasEntity = AddEntity(NewVirtualUIContext->CanvasPrefab, Name + "_Virtual_UI_Canvas");
-	NewVirtualUIContext->CanvasEntity->SetUniformLighting(true);
+	NewVirtualUIContext->CanvasEntity = AddNewStyleEntity(Name + "_Virtual_UI_Canvas");
+	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
+	GameModelComponent.SetUniformLighting(true);
 	VirtualUIContextMap[NewVirtualUIContext->GetObjectID()] = NewVirtualUIContext;
 	return NewVirtualUIContext;
 }
@@ -852,31 +798,24 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		std::vector<FEPrefab*> Prefabs = GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex)->second;
 		if (Prefabs.size() == 1)
 		{
-			FEEntity* NewEntity = AddEntity(Prefabs[0], NodeName);
-			FENewEntity* NewNewEntity = AddNewStyleEntity();
-			NewNewEntity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
-			NewNewEntity->SetName(Node.Name);
-			NewNewEntity->GetComponent<FETransformComponent>().SetPosition(Node.Translation);
-			NewNewEntity->GetComponent<FETransformComponent>().RotateByQuaternion(Node.Rotation);
-			NewNewEntity->GetComponent<FETransformComponent>().SetScale(Node.Scale);
+			FENewEntity* NewEntity = AddNewStyleEntity();
+			NewEntity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
+			NewEntity->SetName(Node.Name);
+			NewEntity->GetComponent<FETransformComponent>().SetPosition(Node.Translation);
+			NewEntity->GetComponent<FETransformComponent>().RotateByQuaternion(Node.Rotation);
+			NewEntity->GetComponent<FETransformComponent>().SetScale(Node.Scale);
 
 			// Problem is that currently we can not have entity without prefab
 			// Later we should add support for entities without prefabs
-			FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewNewEntity->GetObjectID());
+			FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewEntity->GetObjectID());
 			NewNaiveSceneEntityID = AddedNode->GetObjectID();
 			SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID, false);
-
-			Result.push_back(NewEntity);
 		}
 		else
 		{
 			FENaiveSceneGraphNode* FirstNode = nullptr;
 
 			FENewEntity* DummyEntity = AddNewStyleEntity();
-			//FEEntity* DummyEntity = new FEEntity();
-			//DummyEntity->SetVisibility(false);
-			// Because this entity was created directly we need to add EntityIterator to entity map in order EntityIterator to be saved.
-			//EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
 			DummyEntity->SetName(Node.Name);
 			FETransformComponent& Transform = DummyEntity->GetComponent<FETransformComponent>();
 			Transform.SetPosition(Node.Translation);
@@ -893,17 +832,14 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 				std::string CurrentNodeName = NodeName;
 				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
 
-				FEEntity* NewEntity = AddEntity(Prefabs[i], CurrentNodeName);
-				FENewEntity* NewNewEntity = AddNewStyleEntity();
-				NewNewEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
-				NewNewEntity->SetName(Node.Name);
+				FENewEntity* NewEntity = AddNewStyleEntity();
+				NewEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
+				NewEntity->SetName(Node.Name);
 				// Problem is that currently we can not have entity without prefab
 				// Later we should add support for entities without prefabs
-				FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewNewEntity->GetObjectID());
+				FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewEntity->GetObjectID());
 				NewNaiveSceneEntityID = AddedNode->GetObjectID();
 				SceneGraph.MoveNode(NewNaiveSceneEntityID, FirstNode->GetObjectID(), false);
-
-				Result.push_back(NewEntity);
 			}
 		}
 	}
@@ -1066,29 +1002,20 @@ FENewEntity* FEScene::AddNewStyleEntity(std::string Name, std::string ForceObjec
 	NewEntity->SetName(Name);
 
 	NewEntityMap[NewEntity->GetObjectID()] = NewEntity;
+	EnttToEntity[NewEntity->EnTTEntity] = NewEntity;
 
 	return NewEntity;
 }
 
-//FENewEntity* FEScene::GetNewStyleEntityByOldStyleID(std::string OldStyleID)
-//{
-//	entt::basic_view RenderableView = Registry.view<FERenderableComponent>();
-//	for (entt::entity CurrentEntity : RenderableView)
-//	{
-//		FERenderableComponent& CurrentRenderableComponent = RenderableView.get<FERenderableComponent>(CurrentEntity);
-//
-//		if (CurrentRenderableComponent.OldStyleEntity->GetObjectID() == OldStyleID)
-//		{
-//			auto it = NewEntityMap.begin();
-//			while (it != NewEntityMap.end())
-//			{
-//				if (it->second->EnTTEntity == CurrentEntity)
-//					return it->second;
-//
-//				it++;
-//			}
-//		}
-//	}
-//
-//	return nullptr;
-//}
+FENewEntity* FEScene::GetEntityByEnTT(entt::entity ID)
+{
+	if (EnttToEntity.find(ID) == EnttToEntity.end())
+		return nullptr;
+
+	return EnttToEntity[ID];
+}
+
+void FEScene::ReInitializeObservers()
+{
+	INSTANCED_RENDERING_SYSTEM.InitializeObserver();
+}

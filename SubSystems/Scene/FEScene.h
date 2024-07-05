@@ -17,14 +17,10 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FEngine;
 		friend class FENewEntity;
+		friend class FEInstancedSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
-		// Temporary solution for the editor.
-		FEEntity* AddEmptyEntity(std::string Name = "", std::string ForceObjectID = "");
-		FEEntity* AddEntity(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
-		FEEntity* AddEntity(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
-		bool AddEntity(FEEntity* NewEntity);
 		FEEntity* GetEntity(std::string ID);
 		std::vector<FENewEntity*> GetEntityByName(std::string Name);
 		std::vector<std::string> GetEntityList();
@@ -34,7 +30,6 @@ namespace FocalEngine
 		FENewEntity* GetNewStyleEntity(std::string ID);
 		FENewEntity* AddNewStyleEntity(std::string Name = "", std::string ForceObjectID = "", FEEntity* OldStyleEntity = nullptr);
 		std::vector<std::string> GetNewEntityList();
-		//FENewEntity* GetNewStyleEntityByOldStyleID(std::string OldStyleID);
 
 		FEEntityInstanced* AddEntityInstanced(FEPrefab* Prefab, std::string Name = "", std::string ForceObjectID = "");
 		FEEntityInstanced* AddEntityInstanced(FEGameModel* GameModel, std::string Name = "", std::string ForceObjectID = "");
@@ -74,11 +69,14 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FEEntity*> EntityMap;
 		std::unordered_map<std::string, FENewEntity*> NewEntityMap;
+		std::unordered_map<entt::entity, FENewEntity*> EnttToEntity;
 		std::unordered_map<std::string, FETerrain*> TerrainMap;
 		std::unordered_map<std::string, FEVirtualUIContext*> VirtualUIContextMap;
 
 		void AddEntityToEntityMap(FEEntity* Entity);
 		//void AddEntityToSceneGraph(FEEntity* Entity);
+
+		FENewEntity* GetEntityByEnTT(entt::entity ID);
 
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
@@ -86,6 +84,8 @@ namespace FocalEngine
 		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
 		void UpdateSceneGraph();
 		bool bSceneGraphInitialization = true;
+
+		void ReInitializeObservers();
 	};
 
 	#define SCENE FEScene::getInstance()

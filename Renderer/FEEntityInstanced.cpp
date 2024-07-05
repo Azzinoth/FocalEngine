@@ -2,85 +2,82 @@
 
 using namespace FocalEngine;
 
-float FESpawnInfo::GetMinScale()
-{
-	return MinScale;
-}
+//float FESpawnInfo::GetMinScale()
+//{
+//	return MinScale;
+//}
+//
+//void FESpawnInfo::SetMinScale(const float NewValue)
+//{
+//	if (NewValue >= MaxScale)
+//		return;
+//
+//	MinScale = NewValue;
+//}
+//
+//float FESpawnInfo::GetMaxScale()
+//{
+//	return MaxScale;
+//}
+//
+//void FESpawnInfo::SetMaxScale(const float NewValue)
+//{
+//	if (NewValue <= MinScale)
+//		return;
+//
+//	MaxScale = NewValue;
+//}
+//
+//float FESpawnInfo::GetPositionDeviation()
+//{
+//	const int IntegerPart = rand() % static_cast<int>(Radius);
+//	const float FractionalPart = static_cast<float>((rand() % 100) / 100.0f);
+//	float result = static_cast<float>(IntegerPart) + FractionalPart;
+//
+//	result -= Radius / 2.0f;
+//
+//	return result;
+//}
+//
+//float FESpawnInfo::GetScaleDeviation()
+//{
+//	const float FinalDeviation = MinScale + ((static_cast<float>(rand() % static_cast<int>((MaxScale - MinScale) * 10000)) / 10000.0f));
+//	return FinalDeviation;
+//}
+//
+//int FESpawnInfo::GetRotaionDeviation(const glm::vec3 Axis)
+//{
+//	if (Axis.x > 0.0f)
+//	{
+//		const int RotationAngle = static_cast<int>(360 * RotationDeviation.x);
+//		if (RotationAngle == 0)
+//			return 0;
+//		return rand() % RotationAngle;
+//	}
+//	else if (Axis.y > 0.0f)
+//	{
+//		const int RotationAngle = static_cast<int>(360 * RotationDeviation.y);
+//		if (RotationAngle == 0)
+//			return 0;
+//		return rand() % RotationAngle;
+//	}
+//	else
+//	{
+//		const int RotationAngle = static_cast<int>(360 * RotationDeviation.z);
+//		if (RotationAngle == 0)
+//			return 0;
+//		return rand() % RotationAngle;
+//	}
+//}
 
-void FESpawnInfo::SetMinScale(const float NewValue)
-{
-	if (NewValue >= MaxScale)
-		return;
-
-	MinScale = NewValue;
-}
-
-float FESpawnInfo::GetMaxScale()
-{
-	return MaxScale;
-}
-
-void FESpawnInfo::SetMaxScale(const float NewValue)
-{
-	if (NewValue <= MinScale)
-		return;
-
-	MaxScale = NewValue;
-}
-
-float FESpawnInfo::GetPositionDeviation()
-{
-	const int IntegerPart = rand() % static_cast<int>(Radius);
-	const float FractionalPart = static_cast<float>((rand() % 100) / 100.0f);
-	float result = static_cast<float>(IntegerPart) + FractionalPart;
-
-	result -= Radius / 2.0f;
-
-	return result;
-	//return (rand() % int(radius * 100)) / 100.0f - radius / 2.0f;
-}
-
-float FESpawnInfo::GetScaleDeviation()
-{
-	//float finalDeviation = ((float(rand() % int(scaleDeviation * 10000)) / 10000.0f) - scaleDeviation / 2.0f);
-
-	//float minScale = 0.5f;
-	//float maxScale = 1.5f;
-	const float FinalDeviation = MinScale + ((static_cast<float>(rand() % static_cast<int>((MaxScale - MinScale) * 10000)) / 10000.0f));
-
-	return FinalDeviation;
-}
-
-int FESpawnInfo::GetRotaionDeviation(const glm::vec3 Axis)
-{
-	if (Axis.x > 0.0f)
-	{
-		const int rot = static_cast<int>(360 * RotationDeviation.x);
-		if (rot == 0)
-			return 0;
-		return rand() % rot;
-	}
-	else if (Axis.y > 0.0f)
-	{
-		const int rot = static_cast<int>(360 * RotationDeviation.y);
-		if (rot == 0)
-			return 0;
-		return rand() % rot;
-	}
-	else
-	{
-		const int rot = static_cast<int>(360 * RotationDeviation.z);
-		if (rot == 0)
-			return 0;
-		return rand() % rot;
-	}
-}
-
+//-
 FEInstanceModification::FEInstanceModification()
 {
 
 }
 
+
+//-
 FEEntityInstanced::FEEntityInstanced(FEPrefab* Prefab, const std::string Name) : FEEntity(Prefab, Name)
 {
 	SetType(FE_ENTITY_INSTANCED);
@@ -94,6 +91,7 @@ FEEntityInstanced::FEEntityInstanced(FEPrefab* Prefab, const std::string Name) :
 	Transform.SetScale(glm::vec3(1.0f));
 }
 
+//
 void FEEntityInstanced::InitRender(const int Index)
 {
 	Renderers[Index] = new FEGameModelInstancedRenderer;
@@ -130,10 +128,11 @@ void FEEntityInstanced::InitRender(const int Index)
 
 FEEntityInstanced::~FEEntityInstanced()
 {
-	delete[] Renderers.back()->LODCounts;
+	delete[] Renderers.back()->LODCounts; //
 	delete[] Renderers.back()->IndirectDrawsInfo;
 }
 
+//
 void FEEntityInstanced::Render(const int SubGameModel)
 {
 	if (InstanceCount == 0)
@@ -207,6 +206,7 @@ void FEEntityInstanced::Render(const int SubGameModel)
 	}
 }
 
+//
 void FEEntityInstanced::RenderOnlyBillbords(glm::vec3 CameraPosition)
 {
 	for (size_t i = 0; i < Renderers.size(); i++)
@@ -250,6 +250,7 @@ void FEEntityInstanced::RenderOnlyBillbords(glm::vec3 CameraPosition)
 	}
 }
 
+//
 void FEEntityInstanced::UpdateBuffers()
 {
 	for (size_t i = 0; i < Prefab->Components.size(); i++)
@@ -325,6 +326,7 @@ void FEEntityInstanced::UpdateBuffers()
 	GetAABB();
 }
 
+//
 void FEEntityInstanced::Clear()
 {
 	InstanceCount = 0;
@@ -351,6 +353,7 @@ void FEEntityInstanced::Clear()
 	Modifications.clear();
 }
 
+//
 void FEEntityInstanced::AddInstanceInternal(const glm::mat4 InstanceMatrix)
 {
 	for (size_t i = 0; i < Prefab->Components.size(); i++)
@@ -370,6 +373,7 @@ void FEEntityInstanced::AddInstanceInternal(const glm::mat4 InstanceMatrix)
 	SetDirtyFlag(true);
 }
 
+//
 void FEEntityInstanced::AddInstances(const glm::mat4* InstanceMatrix, const size_t Count)
 {
 	for (size_t i = 0; i < Prefab->Components.size(); i++)
@@ -402,6 +406,7 @@ void FEEntityInstanced::AddInstances(const glm::mat4* InstanceMatrix, const size
 	SetDirtyFlag(true);
 }
 
+//
 FEAABB FEEntityInstanced::GetAABB()
 {
 	if (Transform.bDirtyFlag)
@@ -429,11 +434,13 @@ FEAABB FEEntityInstanced::GetAABB()
 	return EntityAABB;
 }
 
+//
 int FEEntityInstanced::GetInstanceCount()
 {
 	return static_cast<int>(InstanceCount);
 }
 
+//
 void FEEntityInstanced::UpdateMatrices()
 {
 	for (size_t i = 0; i < Renderers.size(); i++)
@@ -456,10 +463,9 @@ void FEEntityInstanced::UpdateMatrices()
 		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, Renderers[i]->PositionsBuffer));
 		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstanceCount * sizeof(float) * 3, Renderers[i]->InstancePositions.data(), GL_DYNAMIC_DRAW));
 	}
-
-	//initializeGPUCulling();
 }
 
+//
 bool FEEntityInstanced::Populate(FESpawnInfo SpawnInfo)
 {
 	if (SpawnInfo.Radius <= 0.0f || SpawnInfo.ObjectCount < 1 || SpawnInfo.ObjectCount > 1000000 || Prefab == nullptr)
@@ -548,11 +554,13 @@ bool FEEntityInstanced::Populate(FESpawnInfo SpawnInfo)
 	return true;
 }
 
+//
 FETerrain* FEEntityInstanced::GetSnappedToTerrain()
 {
 	return TerrainToSnap;
 }
 
+//
 void FEEntityInstanced::UpdateSelectModeAABBData()
 {
 	InstancedAABB.clear();
@@ -566,11 +574,13 @@ void FEEntityInstanced::UpdateSelectModeAABBData()
 	SetDirtyFlag(true);
 }
 
+//
 bool FEEntityInstanced::IsSelectMode()
 {
 	return bSelectionMode;
 }
 
+//
 void FEEntityInstanced::SetSelectMode(const bool NewValue)
 {
 	if (NewValue)
@@ -579,6 +589,7 @@ void FEEntityInstanced::SetSelectMode(const bool NewValue)
 	bSelectionMode = NewValue;
 }
 
+//
 void FEEntityInstanced::DeleteInstance(const size_t InstanceIndex)
 {
 	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->InstancedMatrices.size())
@@ -612,6 +623,7 @@ void FEEntityInstanced::DeleteInstance(const size_t InstanceIndex)
 	SetDirtyFlag(true);
 }
 
+//
 glm::mat4 FEEntityInstanced::GetTransformedInstancedMatrix(const size_t InstanceIndex)
 {
 	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size())
@@ -620,6 +632,7 @@ glm::mat4 FEEntityInstanced::GetTransformedInstancedMatrix(const size_t Instance
 	return Renderers[0]->TransformedInstancedMatrices[InstanceIndex];
 }
 
+//
 void FEEntityInstanced::ModifyInstance(const size_t InstanceIndex, glm::mat4 NewMatrix)
 {
 	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size())
@@ -653,16 +666,19 @@ void FEEntityInstanced::ModifyInstance(const size_t InstanceIndex, glm::mat4 New
 	SetDirtyFlag(true);
 }
 
+//
 int FEEntityInstanced::GetSpawnModificationCount()
 {
 	return static_cast<int>(Modifications.size());
 }
 
+//
 std::vector<FEInstanceModification> FEEntityInstanced::GetSpawnModifications()
 {
 	return Modifications;
 }
 
+//
 void FEEntityInstanced::AddInstance(const glm::mat4 InstanceMatrix)
 {
 	AddInstanceInternal(glm::inverse(Transform.TransformMatrix) * InstanceMatrix);
@@ -680,6 +696,7 @@ void FEEntityInstanced::AddInstance(const glm::mat4 InstanceMatrix)
 	SetDirtyFlag(true);
 }
 
+//
 bool FEEntityInstanced::TryToSnapInstance(const size_t InstanceIndex)
 {
 	if (InstanceIndex < 0 || InstanceIndex >= Renderers[0]->TransformedInstancedMatrices.size() || TerrainToSnap == nullptr)
@@ -706,6 +723,7 @@ bool FEEntityInstanced::TryToSnapInstance(const size_t InstanceIndex)
 	return true;
 }
 
+//
 void FEEntityInstanced::InitializeGPUCulling()
 {
 	for (size_t i = 0; i < Prefab->Components.size(); i++)
@@ -814,17 +832,20 @@ void FEEntityInstanced::InitializeGPUCulling()
 	}
 }
 
+//
 void FEEntityInstanced::SnapToTerrain(FETerrain* Terrain, float(FETerrain::* GetTerrainY)(glm::vec2))
 {
 	TerrainToSnap = Terrain;
 	this->GetTerrainY = GetTerrainY;
 }
 
+//
 void FEEntityInstanced::UnSnapFromTerrain()
 {
 	TerrainToSnap = nullptr;
 }
 
+// -
 void FEEntityInstanced::ClearRenderers()
 {
 	if (Prefab->Components.size() > Renderers.size())
@@ -846,6 +867,7 @@ void FEEntityInstanced::ClearRenderers()
 	}
 }
 
+//
 void FEEntityInstanced::CheckDirtyFlag(const int SubGameModel)
 {
 	if (Renderers[SubGameModel]->LastFramePrefab != Prefab || Prefab->IsDirty())
@@ -869,7 +891,6 @@ void FEEntityInstanced::CheckDirtyFlag(const int SubGameModel)
 		UpdateBuffers();
 		SetDirtyFlag(false);
 		InitializeGPUCulling();
-		//prefab->components[subGameModel]->gameModel->bDirtyFlag = false;
 		Prefab->SetDirtyFlag(false);
 		for (int i = 0; i < Prefab->ComponentsCount(); i++)
 		{
@@ -884,27 +905,32 @@ void FEEntityInstanced::CheckDirtyFlag(const int SubGameModel)
 	}
 }
 
+//
 void FEEntityInstanced::ConnectToTerrainLayer(FETerrain* Terrain, const int LayerIndex, float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int))
 {
 	this->GetTerrainLayerIntensity = GetTerrainLayerIntensity;
 	TerrainLayer = LayerIndex;
 }
 
+//
 int FEEntityInstanced::GetTerrainLayer()
 {
 	return TerrainLayer;
 }
 
+//
 void FEEntityInstanced::UnConnectFromTerrainLayer()
 {
 	TerrainLayer = -1;
 }
 
+//
 float FEEntityInstanced::GetMinimalLayerIntensity()
 {
 	return MinLayerIntensity;
 }
 
+//
 void FEEntityInstanced::SetMinimalLayerIntensity(float NewValue)
 {
 	if (NewValue < 0.0001f)

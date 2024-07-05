@@ -19,6 +19,11 @@ bool FEngine::IsNotTerminated()
 	return APPLICATION.IsNotTerminated();
 }
 
+void FEngine::SystemsUpdate()
+{
+	INSTANCED_RENDERING_SYSTEM.Update();
+}
+
 void FEngine::BeginFrame(const bool InternalCall)
 {
 	if (!APPLICATION.IsNotTerminated())
@@ -51,6 +56,9 @@ void FEngine::BeginFrame(const bool InternalCall)
 		}
 	}
 #endif
+
+	// Maybe this should be moved to another place.
+	SystemsUpdate();
 }
 
 void FEngine::Render(const bool InternalCall)

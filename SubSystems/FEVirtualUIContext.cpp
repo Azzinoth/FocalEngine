@@ -22,8 +22,6 @@ FEVirtualUIContext::FEVirtualUIContext(int Width, int Height, FEMesh* SampleMesh
 	CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	CanvasGameModel = RESOURCE_MANAGER.CreateGameModel(CanvasMesh, CanvasMaterial);
 	RESOURCE_MANAGER.MakeGameModelStandard(CanvasGameModel);
-	CanvasPrefab = RESOURCE_MANAGER.CreatePrefab(CanvasGameModel);
-	RESOURCE_MANAGER.MakePrefabStandard(CanvasPrefab);
 
 	Framebuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, Width, Height, false);
 	VirtualUI = APPLICATION.AddVirtualUI(Framebuffer->FBO, Width, Height);
@@ -86,9 +84,9 @@ void FEVirtualUIContext::UpdateCanvasTrianglePositions()
 {
 	for (size_t i = 0; i < OriginalMeshTrianglePositions.size(); i++)
 	{
-		TransformedMeshTrianglePositions[i][0] = glm::vec3(CanvasEntity->Transform.GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][0], 1.0f));
-		TransformedMeshTrianglePositions[i][1] = glm::vec3(CanvasEntity->Transform.GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][1], 1.0f));
-		TransformedMeshTrianglePositions[i][2] = glm::vec3(CanvasEntity->Transform.GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][2], 1.0f));
+		TransformedMeshTrianglePositions[i][0] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][0], 1.0f));
+		TransformedMeshTrianglePositions[i][1] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][1], 1.0f));
+		TransformedMeshTrianglePositions[i][2] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][2], 1.0f));
 	}
 }
 
@@ -514,42 +512,42 @@ FEWindow* FEVirtualUIContext::GetWindowToListen() const
 
 glm::vec3 FEVirtualUIContext::GetPosition() const
 {
-	return CanvasEntity->Transform.GetPosition();
+	return CanvasEntity->GetComponent<FETransformComponent>().GetPosition();
 }
 
 void FEVirtualUIContext::SetPosition(glm::vec3 NewPosition)
 {
-	CanvasEntity->Transform.SetPosition(NewPosition);
+	CanvasEntity->GetComponent<FETransformComponent>().SetPosition(NewPosition);
 }
 
 glm::vec3 FEVirtualUIContext::GetRotation() const
 {
-	return CanvasEntity->Transform.GetRotation();
+	return CanvasEntity->GetComponent<FETransformComponent>().GetRotation();
 }
 
 void FEVirtualUIContext::SetRotation(glm::vec3 NewRotation)
 {
-	CanvasEntity->Transform.SetRotation(NewRotation);
+	CanvasEntity->GetComponent<FETransformComponent>().SetRotation(NewRotation);
 }
 
 glm::vec3 FEVirtualUIContext::GetScale() const
 {
-	return CanvasEntity->Transform.GetScale();
+	return CanvasEntity->GetComponent<FETransformComponent>().GetScale();
 }
 
 void FEVirtualUIContext::SetScale(glm::vec3 NewScale)
 {
-	CanvasEntity->Transform.SetScale(NewScale);
+	CanvasEntity->GetComponent<FETransformComponent>().SetScale(NewScale);
 }
 
 bool FEVirtualUIContext::IsVisible() const
 {
-	return CanvasEntity->IsVisible();
+	return CanvasEntity->GetComponent<FEGameModelComponent>().IsVisible();
 }
 
 void FEVirtualUIContext::SetVisibility(bool NewValue)
 {
-	CanvasEntity->SetVisibility(NewValue);
+	CanvasEntity->GetComponent<FEGameModelComponent>().SetVisibility(NewValue);
 }
 
 void FEVirtualUIContext::ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady)

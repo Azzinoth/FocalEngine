@@ -4,10 +4,11 @@
 #define FEENTITYINSTANCED_H
 
 #include "FEEntity.h"
+#include "../SubSystems/Scene/Components/FEInstancedRenderingComponent.h"
 
 namespace FocalEngine
 {
-	enum FE_INSTANCED_ENTITY_CHANGES_TYPE
+	/*enum FE_INSTANCED_CHANGES_TYPE
 	{
 		FE_CHANGE_NONE = 0,
 		FE_CHANGE_DELETED = 1,
@@ -17,12 +18,12 @@ namespace FocalEngine
 
 	struct FEInstanceModification
 	{
-		FE_INSTANCED_ENTITY_CHANGES_TYPE Type = FE_CHANGE_NONE;
+		FE_INSTANCED_CHANGES_TYPE Type = FE_CHANGE_NONE;
 		int Index = -1;
 		glm::mat4 Modification;
 
 		FEInstanceModification();
-		FEInstanceModification(const FE_INSTANCED_ENTITY_CHANGES_TYPE Type, const int Index, const glm::mat4 Modification) : Type(Type), Index(Index), Modification(Modification) {};
+		FEInstanceModification(const FE_INSTANCED_CHANGES_TYPE Type, const int Index, const glm::mat4 Modification) : Type(Type), Index(Index), Modification(Modification) {};
 	};
 
 	struct FESpawnInfo
@@ -55,7 +56,7 @@ namespace FocalEngine
 		unsigned int FirstIndex;
 		unsigned int BaseVertex;
 		unsigned int BaseInstance;
-	};
+	};*/
 
 	class FEEntityInstanced;
 	class FEGameModelInstancedRenderer
@@ -64,7 +65,6 @@ namespace FocalEngine
 		friend FEEntityInstanced;
 
 		std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
-
 		std::vector<glm::vec3> InstancePositions;
 		int* LODCounts;
 

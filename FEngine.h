@@ -128,6 +128,8 @@ namespace FocalEngine
 		std::vector<void(*)(double, double)> ClientMouseScrollCallbacks;
 
 		FEBasicCamera* CurrentCamera = nullptr;
+
+		void SystemsUpdate();
 	};
 
 	#define ENGINE FEngine::getInstance()
