@@ -2,16 +2,51 @@
 using namespace FocalEngine;
 
 FEInstancedSystem* FEInstancedSystem::Instance = nullptr;
-FEInstancedSystem::FEInstancedSystem() {};
-FEInstancedSystem::~FEInstancedSystem() {};
-
-void FEInstancedSystem::InitializeObserver()
+FEInstancedSystem::FEInstancedSystem()
 {
-	delete Observer;
-	Observer = new entt::observer{ SCENE.Registry, entt::collector.group<FEInstancedRenderingComponent>() };
+	RegisterOnComponentCallbacks();
+	SCENE.AddOnSceneClearCallback(std::bind(&FEInstancedSystem::OnSceneClear, this));
 }
 
-void FEInstancedSystem::InitializeBuffers(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::RegisterOnComponentCallbacks()
+{
+	SCENE.RegisterOnComponentConstructCallback<FEInstancedComponent>(OnMyComponentAdded);
+	SCENE.RegisterOnComponentDestroyCallback<FEInstancedComponent>(OnMyComponentDestroy);
+}
+
+void FEInstancedSystem::OnSceneClear()
+{
+	RegisterOnComponentCallbacks();
+}
+
+void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
+{
+	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+		return;
+
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
+	INSTANCED_RENDERING_SYSTEM.InitializeBuffers(GameModelComponent, InstancedComponent);
+}
+
+// There should be third system to manage that.
+#include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
+void FEInstancedSystem::OnMyComponentDestroy(FEEntity* Entity)
+{
+	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+		return;
+
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
+	if (InstancedComponent.TerrainToSnap != nullptr)
+	{
+		TERRAIN_SYSTEM.UnSnapInstancedEntity(InstancedComponent.TerrainToSnap, Entity);
+	}
+}
+
+FEInstancedSystem::~FEInstancedSystem() {};
+
+void FEInstancedSystem::InitializeBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	InstancedComponent.LODCounts = new int[GameModelComponent.GameModel->GetMaxLODCount()];
 
@@ -44,7 +79,7 @@ void FEInstancedSystem::InitializeBuffers(FEGameModelComponent& GameModelCompone
 	InstancedComponent.InstancedMatricesLOD.resize(GameModelComponent.GameModel->GetMaxLODCount());
 }
 
-void FEInstancedSystem::InitializeGPUCullingBuffers(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::InitializeGPUCullingBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	if (InstancedComponent.SourceDataBuffer != 0)
 	{
@@ -150,7 +185,7 @@ void FEInstancedSystem::InitializeGPUCullingBuffers(FEGameModelComponent& GameMo
 	FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0));
 }
 
-void FEInstancedSystem::UpdateBuffers(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::UpdateBuffers(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -160,11 +195,11 @@ void FEInstancedSystem::UpdateBuffers(FENewEntity* EntityWithInstancedComponent)
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	UpdateBuffers(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::UpdateBuffers(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::UpdateBuffers(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	if (InstancedComponent.InstancedBuffer != 0)
 	{
@@ -237,7 +272,7 @@ void FEInstancedSystem::UpdateBuffers(FETransformComponent& TransformComponent, 
 	GetAABB(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::AddInstanceInternal(FENewEntity* EntityWithInstancedComponent, const glm::mat4 InstanceMatrix)
+void FEInstancedSystem::AddInstanceInternal(FEEntity* EntityWithInstancedComponent, const glm::mat4 InstanceMatrix)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -247,11 +282,11 @@ void FEInstancedSystem::AddInstanceInternal(FENewEntity* EntityWithInstancedComp
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	AddInstanceInternal(TransformComponent, GameModelComponent, InstancedComponent, InstanceMatrix);
 }
 
-void FEInstancedSystem::AddInstanceInternal(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, glm::mat4 InstanceMatrix)
+void FEInstancedSystem::AddInstanceInternal(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix)
 {
 	InstancedComponent.InstancedAABBSizes.push_back(-FEAABB(GameModelComponent.GameModel->GetMesh()->GetAABB(), InstanceMatrix).GetLongestAxisLength());
 	InstancedComponent.InstancedMatrices.push_back(InstanceMatrix);
@@ -267,7 +302,7 @@ void FEInstancedSystem::AddInstanceInternal(FETransformComponent& TransformCompo
 	InstancedComponent.bDirtyFlag = true;
 }
 
-void FEInstancedSystem::AddInstances(FENewEntity* EntityWithInstancedComponent, const glm::mat4* InstanceMatrix, size_t Count)
+void FEInstancedSystem::AddInstances(FEEntity* EntityWithInstancedComponent, const glm::mat4* InstanceMatrix, size_t Count)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -277,11 +312,11 @@ void FEInstancedSystem::AddInstances(FENewEntity* EntityWithInstancedComponent, 
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	AddInstances(TransformComponent, GameModelComponent, InstancedComponent, InstanceMatrix, Count);
 }
 
-void FEInstancedSystem::AddInstances(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const glm::mat4* InstanceMatrix, size_t Count)
+void FEInstancedSystem::AddInstances(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const glm::mat4* InstanceMatrix, size_t Count)
 {
 	const size_t StartIndex = InstancedComponent.InstancedAABBSizes.size();
 
@@ -309,7 +344,7 @@ void FEInstancedSystem::AddInstances(FETransformComponent& TransformComponent, F
 	InstancedComponent.bDirtyFlag = true;
 }
 
-FEAABB FEInstancedSystem::GetAABB(FENewEntity* EntityWithInstancedComponent)
+FEAABB FEInstancedSystem::GetAABB(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return FEAABB();
@@ -319,11 +354,11 @@ FEAABB FEInstancedSystem::GetAABB(FENewEntity* EntityWithInstancedComponent)
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	return GetAABB(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::UpdateMatrices(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::UpdateMatrices(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -333,11 +368,11 @@ void FEInstancedSystem::UpdateMatrices(FENewEntity* EntityWithInstancedComponent
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	UpdateMatrices(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::UpdateMatrices(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::UpdateMatrices(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {	
 	if (InstancedComponent.InstancedMatrices.size() != InstancedComponent.TransformedInstancedMatrices.size())
 	{
@@ -358,10 +393,8 @@ void FEInstancedSystem::UpdateMatrices(FETransformComponent& TransformComponent,
 	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, InstancedComponent.InstanceCount * sizeof(float) * 3, InstancedComponent.InstancePositions.data(), GL_DYNAMIC_DRAW));
 }
 
-FEAABB FEInstancedSystem::GetAABB(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+FEAABB FEInstancedSystem::GetAABB(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
-	CheckObserver();
-
 	FEAABB Result = InstancedComponent.AllInstancesAABB.Transform(TransformComponent.GetTransformMatrix());
 	if (TransformComponent.IsDirty())
 	{
@@ -372,7 +405,7 @@ FEAABB FEInstancedSystem::GetAABB(FETransformComponent& TransformComponent, FEGa
 	return Result;
 }
 
-void FEInstancedSystem::Render(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::Render(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -382,11 +415,11 @@ void FEInstancedSystem::Render(FENewEntity* EntityWithInstancedComponent)
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	Render(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::Render(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::Render(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	if (InstancedComponent.InstanceCount == 0)
 		return;
@@ -456,7 +489,7 @@ void FEInstancedSystem::Render(FETransformComponent& TransformComponent, FEGameM
 	}
 }
 
-void FEInstancedSystem::RenderOnlyBillbords(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::RenderOnlyBillbords(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -465,11 +498,11 @@ void FEInstancedSystem::RenderOnlyBillbords(FENewEntity* EntityWithInstancedComp
 		return;
 
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	RenderOnlyBillbords(GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::RenderOnlyBillbords(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::RenderOnlyBillbords(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	for (size_t j = 0; j < GameModelComponent.GameModel->GetMaxLODCount(); j++)
 	{
@@ -509,7 +542,7 @@ void FEInstancedSystem::RenderOnlyBillbords(FEGameModelComponent& GameModelCompo
 	}
 }
 
-void FEInstancedSystem::AddIndividualInstance(FENewEntity* EntityWithInstancedComponent, glm::mat4 InstanceMatrix)
+void FEInstancedSystem::AddIndividualInstance(FEEntity* EntityWithInstancedComponent, glm::mat4 InstanceMatrix)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -519,14 +552,12 @@ void FEInstancedSystem::AddIndividualInstance(FENewEntity* EntityWithInstancedCo
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	AddIndividualInstance(TransformComponent, GameModelComponent, InstancedComponent, InstanceMatrix);
 }
 
-void FEInstancedSystem::AddIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, glm::mat4 InstanceMatrix)
+void FEInstancedSystem::AddIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix)
 {
-	CheckObserver();
-
 	AddInstanceInternal(TransformComponent, GameModelComponent, InstancedComponent, glm::inverse(TransformComponent.GetTransformMatrix()) * InstanceMatrix);
 
 	if (InstancedComponent.IndividualInstancedAABB.empty())
@@ -542,7 +573,7 @@ void FEInstancedSystem::AddIndividualInstance(FETransformComponent& TransformCom
 	InstancedComponent.bDirtyFlag = true;
 }
 
-bool FEInstancedSystem::TryToSnapIndividualInstance(FENewEntity* EntityWithInstancedComponent, size_t InstanceIndex)
+bool FEInstancedSystem::TryToSnapIndividualInstance(FEEntity* EntityWithInstancedComponent, size_t InstanceIndex)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return false;
@@ -552,27 +583,31 @@ bool FEInstancedSystem::TryToSnapIndividualInstance(FENewEntity* EntityWithInsta
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	return TryToSnapIndividualInstance(TransformComponent, GameModelComponent, InstancedComponent, InstanceIndex);
 }
 
-bool FEInstancedSystem::TryToSnapIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, size_t InstanceIndex)
+// Not elegant solution, I need third system to handle this.
+#include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
+bool FEInstancedSystem::TryToSnapIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, size_t InstanceIndex)
 {
-	CheckObserver();
-
 	if (InstanceIndex < 0 || InstanceIndex >= InstancedComponent.TransformedInstancedMatrices.size() || InstancedComponent.TerrainToSnap == nullptr)
 		return false;
 
 	if (!IsIndividualSelectMode(InstancedComponent))
 		return false;
 
-	const float Y = std::invoke(InstancedComponent.GetTerrainY, InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][2]));
+	const float Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][2]));
 	if (Y == -FLT_MAX)
 		return false;
 
-	const float LayerIntensity = std::invoke(InstancedComponent.GetTerrainLayerIntensity, InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][2]), InstancedComponent.TerrainLayer);
-	if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
-		return false;
+	if (InstancedComponent.TerrainLayer != -1)
+	{
+		FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
+		const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][2]), InstancedComponent.TerrainLayer);
+		if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
+			return false;
+	}
 
 	if (abs(InstancedComponent.TransformedInstancedMatrices[InstanceIndex][3][1] - Y) < 0.01f)
 		return true;
@@ -584,7 +619,7 @@ bool FEInstancedSystem::TryToSnapIndividualInstance(FETransformComponent& Transf
 	return true;
 }
 
-void FEInstancedSystem::DeleteIndividualInstance(FENewEntity* EntityWithInstancedComponent, const size_t InstanceIndex)
+void FEInstancedSystem::DeleteIndividualInstance(FEEntity* EntityWithInstancedComponent, const size_t InstanceIndex)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -593,19 +628,16 @@ void FEInstancedSystem::DeleteIndividualInstance(FENewEntity* EntityWithInstance
 		return;
 
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	DeleteIndividualInstance(GameModelComponent, InstancedComponent, InstanceIndex);
 }
 
-void FEInstancedSystem::DeleteIndividualInstance(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const size_t InstanceIndex)
+void FEInstancedSystem::DeleteIndividualInstance(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const size_t InstanceIndex)
 {
-	CheckObserver();
-
 	if (InstanceIndex < 0 || InstanceIndex >= InstancedComponent.InstancedMatrices.size())
 		return;
 
 	InstancedComponent.Modifications.push_back(FEInstanceModification(FE_CHANGE_DELETED, static_cast<int>(InstanceIndex), glm::mat4()));
-
 	InstancedComponent.InstanceCount--;
 
 	InstancedComponent.InstancedAABBSizes.erase(InstancedComponent.InstancedAABBSizes.begin() + InstanceIndex);
@@ -630,7 +662,7 @@ void FEInstancedSystem::DeleteIndividualInstance(FEGameModelComponent& GameModel
 	InstancedComponent.bDirtyFlag = true;
 }
 
-void FEInstancedSystem::ModifyIndividualInstance(FENewEntity* EntityWithInstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix)
+void FEInstancedSystem::ModifyIndividualInstance(FEEntity* EntityWithInstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -640,14 +672,12 @@ void FEInstancedSystem::ModifyIndividualInstance(FENewEntity* EntityWithInstance
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	ModifyIndividualInstance(TransformComponent, GameModelComponent, InstancedComponent, InstanceIndex, NewMatrix);
 }
 
-void FEInstancedSystem::ModifyIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix)
+void FEInstancedSystem::ModifyIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix)
 {
-	CheckObserver();
-
 	if (InstanceIndex < 0 || InstanceIndex >= InstancedComponent.TransformedInstancedMatrices.size())
 		return;
 
@@ -676,37 +706,12 @@ void FEInstancedSystem::ModifyIndividualInstance(FETransformComponent& Transform
 	InstancedComponent.bDirtyFlag = true;
 }
 
-void FEInstancedSystem::CheckObserver()
-{
-	if (Observer == nullptr)
-		return;
-
-	// Get changes from last frame.
-	for (const auto EnTTEntity : *Observer)
-	{
-		FENewEntity* Entity = SCENE.GetEntityByEnTT(EnTTEntity);
-		// This should not happen, but just in case.
-		if (Entity == nullptr)
-			continue;
-
-		// This should not happen, but just in case.
-		if (!Entity->HasComponent<FEGameModelComponent>())
-			continue;
-
-		FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
-		FEInstancedRenderingComponent& InstancedComponent = Entity->GetComponent<FEInstancedRenderingComponent>();
-		InitializeBuffers(GameModelComponent, InstancedComponent);
-	}
-
-	Observer->clear();
-}
-
 void FEInstancedSystem::Update()
 {
-	CheckObserver();
+	//CheckObserver();
 }
 
-void FEInstancedSystem::ClearInstance(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::ClearInstance(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -716,14 +721,12 @@ void FEInstancedSystem::ClearInstance(FENewEntity* EntityWithInstancedComponent)
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	ClearInstance(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::ClearInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::ClearInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
-	CheckObserver();
-
 	InstancedComponent.Clear();
 
 	InstancedComponent.LODCounts = new int[GameModelComponent.GameModel->GetMaxLODCount()];
@@ -735,7 +738,7 @@ void FEInstancedSystem::ClearInstance(FETransformComponent& TransformComponent, 
 	TransformComponent.SetScale(glm::vec3(1.0f));
 }
 
-bool FEInstancedSystem::PopulateInstance(FENewEntity* EntityWithInstancedComponent, FESpawnInfo SpawnInfo)
+bool FEInstancedSystem::PopulateInstance(FEEntity* EntityWithInstancedComponent, FESpawnInfo SpawnInfo)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return false;
@@ -745,14 +748,12 @@ bool FEInstancedSystem::PopulateInstance(FENewEntity* EntityWithInstancedCompone
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	return PopulateInstance(TransformComponent, GameModelComponent, InstancedComponent, SpawnInfo);
 }
 
-bool FEInstancedSystem::PopulateInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, FESpawnInfo SpawnInfo)
+bool FEInstancedSystem::PopulateInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, FESpawnInfo SpawnInfo)
 {
-	CheckObserver();
-
 	if (SpawnInfo.Radius <= 0.0f || SpawnInfo.ObjectCount < 1 || SpawnInfo.ObjectCount > 1000000 || GameModelComponent.GameModel == nullptr)
 		return false;
 
@@ -780,12 +781,16 @@ bool FEInstancedSystem::PopulateInstance(FETransformComponent& TransformComponen
 
 		if (InstancedComponent.TerrainToSnap != nullptr)
 		{
-			
-			Y = std::invoke(InstancedComponent.GetTerrainY, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
+			Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
+			//Y = InstancedComponent.TerrainToSnap->GetHeightAt(glm::vec2(Position.x + X, Position.z + Z));
+			//Y = std::invoke(InstancedComponent.GetTerrainY, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
 			if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
 			{
-				const float LayerIntensity = std::invoke(InstancedComponent.GetTerrainLayerIntensity, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+				FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
+				const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+				//const float LayerIntensity = InstancedComponent.TerrainToSnap->GetLayerIntensityAt(glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+				//const float LayerIntensity = std::invoke(InstancedComponent.GetTerrainLayerIntensity, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 				if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
 					Y = -FLT_MAX;
 			}
@@ -795,11 +800,16 @@ bool FEInstancedSystem::PopulateInstance(FETransformComponent& TransformComponen
 			{
 				X = SpawnInfo.GetPositionDeviation();
 				Z = SpawnInfo.GetPositionDeviation();
-				Y = std::invoke(InstancedComponent.GetTerrainY, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
+				Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
+				//Y = InstancedComponent.TerrainToSnap->GetHeightAt(glm::vec2(Position.x + X, Position.z + Z));
+				//Y = std::invoke(InstancedComponent.GetTerrainY, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
 				if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
 				{
-					const float LayerIntensity = std::invoke(InstancedComponent.GetTerrainLayerIntensity, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+					FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
+					const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+					//const float LayerIntensity = InstancedComponent.TerrainToSnap->GetLayerIntensityAt(glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
+					//const float LayerIntensity = std::invoke(InstancedComponent.GetTerrainLayerIntensity, InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 					if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
 						Y = -FLT_MAX;
 				}
@@ -842,7 +852,7 @@ bool FEInstancedSystem::PopulateInstance(FETransformComponent& TransformComponen
 	return true;
 }
 
-void FEInstancedSystem::CheckDirtyFlag(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::CheckDirtyFlag(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -852,11 +862,11 @@ void FEInstancedSystem::CheckDirtyFlag(FENewEntity* EntityWithInstancedComponent
 
 	FETransformComponent& TransformComponent = EntityWithInstancedComponent->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	CheckDirtyFlag(TransformComponent, GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::CheckDirtyFlag(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::CheckDirtyFlag(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	if (InstancedComponent.LastFrameGameModel != GameModelComponent.GameModel || GameModelComponent.GameModel->IsDirty())
 	{
@@ -884,7 +894,7 @@ void FEInstancedSystem::CheckDirtyFlag(FETransformComponent& TransformComponent,
 	}
 }
 
-void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FENewEntity* EntityWithInstancedComponent)
+void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return;
@@ -893,14 +903,12 @@ void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FENewEntity* EntityWi
 		return;
 
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	UpdateIndividualSelectModeAABBData(GameModelComponent, InstancedComponent);
 }
 
-void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent)
+void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
-	CheckObserver();
-
 	InstancedComponent.IndividualInstancedAABB.clear();
 	InstancedComponent.IndividualInstancedAABB.resize(InstancedComponent.InstanceCount);
 
@@ -912,7 +920,7 @@ void FEInstancedSystem::UpdateIndividualSelectModeAABBData(FEGameModelComponent&
 	InstancedComponent.bDirtyFlag = true;
 }
 
-bool FEInstancedSystem::IsIndividualSelectMode(FENewEntity* EntityWithInstancedComponent)
+bool FEInstancedSystem::IsIndividualSelectMode(FEEntity* EntityWithInstancedComponent)
 {
 	if (EntityWithInstancedComponent == nullptr)
 		return false;
@@ -920,19 +928,17 @@ bool FEInstancedSystem::IsIndividualSelectMode(FENewEntity* EntityWithInstancedC
 	if (!EntityWithInstancedComponent->HasComponent<FEGameModelComponent>())
 		return false;
 
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	return IsIndividualSelectMode(InstancedComponent);
 }
 
-bool FEInstancedSystem::IsIndividualSelectMode(FEInstancedRenderingComponent& InstancedComponent)
+bool FEInstancedSystem::IsIndividualSelectMode(FEInstancedComponent& InstancedComponent)
 {
 	return InstancedComponent.bSelectionMode;
 }
 
-void FEInstancedSystem::SetIndividualSelectMode(FENewEntity* EntityWithInstancedComponent, const bool NewValue)
+void FEInstancedSystem::SetIndividualSelectMode(FEEntity* EntityWithInstancedComponent, const bool NewValue)
 {
-	CheckObserver();
-
 	if (EntityWithInstancedComponent == nullptr)
 		return;
 
@@ -940,14 +946,12 @@ void FEInstancedSystem::SetIndividualSelectMode(FENewEntity* EntityWithInstanced
 		return;
 
 	FEGameModelComponent& GameModelComponent = EntityWithInstancedComponent->GetComponent<FEGameModelComponent>();
-	FEInstancedRenderingComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedRenderingComponent>();
+	FEInstancedComponent& InstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
 	SetIndividualSelectMode(GameModelComponent, InstancedComponent, NewValue);
 }
 
-void FEInstancedSystem::SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const bool NewValue)
+void FEInstancedSystem::SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const bool NewValue)
 {
-	CheckObserver();
-
 	if (NewValue)
 		UpdateIndividualSelectModeAABBData(GameModelComponent, InstancedComponent);
 

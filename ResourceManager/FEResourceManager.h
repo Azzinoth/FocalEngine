@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Renderer/FEPostProcess.h"
-#include "../Renderer/FETerrain.h"
+#include "../SubSystems/Scene/FEEntity.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
@@ -9,15 +9,13 @@
 
 namespace FocalEngine
 {
-	class FEngine;
-	class FEScene;
-	class FERenderer;
-
 	class FEResourceManager
 	{
-		friend FEngine;
-		friend FEScene;
-		friend FERenderer;
+		friend class FEngine;
+		friend class FEScene;
+		friend class FERenderer;
+		friend class FETerrainSystem;
+		friend class FESkyDomeSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -41,8 +39,6 @@ namespace FocalEngine
 		FETexture* LoadFETextureUnmanaged(const char* FileName, std::string Name = "");
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureAsync(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
-		FETexture* LoadPNGHeightmap(const char* FileName, FETerrain* Terrain, std::string Name = "");
-		FETexture* LoadFEHeightmap(const char* FileName, FETerrain* Terrain, std::string Name = "");
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
 		unsigned char* ResizeTextureRawData(FETexture* SourceTexture, size_t TargetWidth, size_t TargetHeight, int FiltrationLevel = 0);
@@ -61,6 +57,7 @@ namespace FocalEngine
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
+		FETexture* CreateBlankHightMapTexture(std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
 
 		FETexture* ImportTexture(const char* FileName);
@@ -113,14 +110,6 @@ namespace FocalEngine
 		bool MakePrefabStandard(FEPrefab* Prefab);
 		void DeletePrefab(const FEPrefab* Prefab);
 
-		FETerrain* CreateTerrain(bool bCreateHeightMap = true, std::string Name = "", std::string ForceObjectID = "");
-		void ActivateTerrainVacantLayerSlot(FETerrain* Terrain, FEMaterial* Material);
-		void LoadTerrainLayerMask(const char* FileName, FETerrain* Terrain, size_t LayerIndex);
-		void SaveTerrainLayerMask(const char* FileName, const FETerrain* Terrain, size_t LayerIndex);
-		void FillTerrainLayerMask(const FETerrain* Terrain, size_t LayerIndex);
-		void ClearTerrainLayerMask(const FETerrain* Terrain, size_t LayerIndex);
-		void DeleteTerrainLayerMask(FETerrain* Terrain, size_t LayerIndex);
-
 		void Clear();
 		void LoadStandardMeshes();
 		void LoadStandardMaterial();
@@ -157,16 +146,13 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEPrefab*> StandardPrefabs;
 
 		std::string GetFileNameFromFilePath(std::string FilePath);
-		FEEntity* CreateEntity(FEGameModel* GameModel, std::string Name, std::string ForceObjectID = "");
-		FEEntity* CreateEntity(FEPrefab* Prefab, std::string Name, std::string ForceObjectID = "");
-
-		void InitTerrainEditTools(FETerrain* Terrain);
+		//FEEntity* CreateEntity(FEGameModel* GameModel, std::string Name, std::string ForceObjectID = "");
+		//FEEntity* CreateEntity(FEPrefab* Prefab, std::string Name, std::string ForceObjectID = "");
 
 		std::string FreeObjectName(FE_OBJECT_TYPE ObjectType);
 
 		GLint MaxColorAttachments = 1;
 
-		void FillTerrainLayerMaskWithRawData(const unsigned char* RawData, const FETerrain* Terrain, size_t LayerIndex);
 		void CreateMaterialsFromOBJData(std::vector<FEObject*>& ResultArray);
 
 		static void LoadTextureFileAsyncCallBack(void* OutputData);

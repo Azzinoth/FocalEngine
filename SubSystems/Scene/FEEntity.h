@@ -2,22 +2,21 @@
 
 #include "../Renderer/FEFramebuffer.h"
 #include "../Renderer/FEPrefab.h"
-
 #include "Components/FEComponents.h"
 #include "entt.hpp"
 
 namespace FocalEngine
 {
 	class FEScene;
-	class FENewEntity : public FEObject
+	class FEEntity : public FEObject
 	{
 		friend class FEEntityInstanced;
 		friend class FERenderer;
 		friend class FEResourceManager;
 		friend class FEScene;
 
-		FENewEntity(entt::entity AssignedEnTTEntity, FEScene* Scene);
-		~FENewEntity();
+		FEEntity(entt::entity AssignedEnTTEntity, FEScene* Scene);
+		~FEEntity();
 		
 		entt::entity EnTTEntity = entt::null;
 		FEScene* Scene = nullptr;
@@ -27,12 +26,6 @@ namespace FocalEngine
 		template<typename T, typename... Args>
 		T& AddComponent(Args&&... args)
 		{
-			/*if (GetName() == "TransformationXGizmoEntity")
-			{
-				int y = 0;
-				y++;
-			}*/
-
 			if (HasComponent<T>())
 			{
 				LOG.Add("Component already exists in entity!", "FE_LOG_ECS", FE_LOG_WARNING);

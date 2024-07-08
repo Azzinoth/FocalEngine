@@ -148,6 +148,8 @@ namespace FocalEngine
 		friend class FEResourceManager;
 		friend class FENaiveSceneGraphNode;
 		friend class FEScene;
+		friend class FETerrainSystem;
+		friend class FESkyDomeSystem;
 	public:
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();

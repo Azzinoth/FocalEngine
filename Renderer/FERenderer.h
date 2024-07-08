@@ -4,8 +4,9 @@
 #define FERENDERER_H
 
 #include "../SubSystems/Scene/FEScene.h"
-#include "../SubSystems/Scene/FENewEntity.h"
 #include "../SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
+#include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
+#include "../SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 
 namespace FocalEngine
 {
@@ -67,8 +68,9 @@ namespace FocalEngine
 		// It should be done as system, and only ocassionally throught this function.
 		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
-		void RenderTerrain(FETerrain* Terrain, const FEBasicCamera* CurrentCamera);
+		void RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
+		void RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCamera* CurrentCamera);
+		void RenderTerrainComponent(FETransformComponent& TransformComponent, FETerrainComponent& TerrainComponent, const FEBasicCamera* CurrentCamera);
 		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
 
 		std::vector<std::string> GetPostProcessList();
@@ -123,13 +125,6 @@ namespace FocalEngine
 
 		float GetDistanceFogGradient();
 		void SetDistanceFogGradient(float NewValue);
-
-		// *********** Sky ***********
-		bool IsSkyEnabled();
-		void SetSkyEnabled(bool NewValue);
-
-		float GetDistanceToSky();
-		void SetDistanceToSky(float NewValue);
 
 		float TestTime = 0.0f;
 		float LastTestTime = 0.0f;
@@ -230,10 +225,6 @@ namespace FocalEngine
 		FEBasicCamera* EngineMainCamera = nullptr;
 		glm::dvec3 MouseRay = glm::dvec3(0.0);
 
-		void UpdateTerrainBrush(FETerrain* Terrain);
-
-		FEEntity* SkyDome = nullptr;
-
 		float DistanceFogDensity = 0.007f;
 		float DistanceFogGradient = 2.5f;
 		bool bDistanceFogEnabled = false;
@@ -251,7 +242,7 @@ namespace FocalEngine
 		GLuint CullingLODCountersBuffer = 0;
 
 		void UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPosition);
-		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedRenderingComponent& InstancedComponent, const FEBasicCamera* CurrentCamera);
+		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const FEBasicCamera* CurrentCamera);
 
 		FETexture* DepthPyramid = nullptr;
 		bool bUseOcclusionCulling = true;

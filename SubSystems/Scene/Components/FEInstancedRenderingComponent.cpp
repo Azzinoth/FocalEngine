@@ -31,11 +31,11 @@ float FESpawnInfo::GetPositionDeviation()
 {
 	const int IntegerPart = rand() % static_cast<int>(Radius);
 	const float FractionalPart = static_cast<float>((rand() % 100) / 100.0f);
-	float result = static_cast<float>(IntegerPart) + FractionalPart;
+	float Result = static_cast<float>(IntegerPart) + FractionalPart;
 
-	result -= Radius / 2.0f;
+	Result -= Radius / 2.0f;
 
-	return result;
+	return Result;
 }
 
 float FESpawnInfo::GetScaleDeviation()
@@ -69,22 +69,22 @@ int FESpawnInfo::GetRotaionDeviation(const glm::vec3 Axis)
 	}
 }
 
-FEInstancedRenderingComponent::FEInstancedRenderingComponent()
+FEInstancedComponent::FEInstancedComponent()
 {
 
 }
 
-FEInstancedRenderingComponent::~FEInstancedRenderingComponent()
+FEInstancedComponent::~FEInstancedComponent()
 {
 	//delete[] LODCounts;
 }
 
-size_t FEInstancedRenderingComponent::GetInstanceCount()
+size_t FEInstancedComponent::GetInstanceCount()
 {
 	return InstanceCount;
 }
 
-void FEInstancedRenderingComponent::Clear()
+void FEInstancedComponent::Clear()
 {
 	InstanceCount = 0;
 
@@ -98,22 +98,22 @@ void FEInstancedRenderingComponent::Clear()
 	Modifications.clear();
 }
 
-FETerrain* FEInstancedRenderingComponent::GetSnappedToTerrain()
+FEEntity* FEInstancedComponent::GetSnappedToTerrain()
 {
 	return TerrainToSnap;
 }
 
-int FEInstancedRenderingComponent::GetTerrainLayer()
+int FEInstancedComponent::GetTerrainLayer()
 {
 	return TerrainLayer;
 }
 
-float FEInstancedRenderingComponent::GetMinimalLayerIntensityToSpawn()
+float FEInstancedComponent::GetMinimalLayerIntensityToSpawn()
 {
 	return MinLayerIntensityToSpawn;
 }
 
-void FEInstancedRenderingComponent::SetMinimalLayerIntensityToSpawn(float NewValue)
+void FEInstancedComponent::SetMinimalLayerIntensityToSpawn(float NewValue)
 {
 	if (NewValue < 0.0001f)
 		NewValue = 0.0001f;
@@ -124,30 +124,28 @@ void FEInstancedRenderingComponent::SetMinimalLayerIntensityToSpawn(float NewVal
 	MinLayerIntensityToSpawn = NewValue;
 }
 
-void FEInstancedRenderingComponent::SnapToTerrain(FETerrain* Terrain, float(FETerrain::* GetTerrainY)(glm::vec2))
+void FEInstancedComponent::SnapToTerrain(FEEntity* Terrain)
 {
 	TerrainToSnap = Terrain;
-	this->GetTerrainY = GetTerrainY;
 }
 
-void FEInstancedRenderingComponent::UnSnapFromTerrain()
+void FEInstancedComponent::UnSnapFromTerrain()
 {
 	TerrainToSnap = nullptr;
 }
 
-void FEInstancedRenderingComponent::ConnectToTerrainLayer(FETerrain* Terrain, int LayerIndex, float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int))
+void FEInstancedComponent::ConnectToTerrainLayer(FEEntity* Terrain, int LayerIndex)
 {
 	TerrainToSnap = Terrain;
 	TerrainLayer = LayerIndex;
-	this->GetTerrainLayerIntensity = GetTerrainLayerIntensity;
 }
 
-void FEInstancedRenderingComponent::UnConnectFromTerrainLayer()
+void FEInstancedComponent::UnConnectFromTerrainLayer()
 {
 	TerrainLayer = -1;
 }
 
-glm::mat4 FEInstancedRenderingComponent::GetTransformedInstancedMatrix(size_t InstanceIndex)
+glm::mat4 FEInstancedComponent::GetTransformedInstancedMatrix(size_t InstanceIndex)
 {
 	if (InstanceIndex < 0 || InstanceIndex >= TransformedInstancedMatrices.size())
 		return glm::identity<glm::mat4>();
@@ -155,12 +153,12 @@ glm::mat4 FEInstancedRenderingComponent::GetTransformedInstancedMatrix(size_t In
 	return TransformedInstancedMatrices[InstanceIndex];
 }
 
-size_t FEInstancedRenderingComponent::GetSpawnModificationCount()
+size_t FEInstancedComponent::GetSpawnModificationCount()
 {
 	return Modifications.size();
 }
 
-std::vector<FEInstanceModification> FEInstancedRenderingComponent::GetSpawnModifications()
+std::vector<FEInstanceModification> FEInstancedComponent::GetSpawnModifications()
 {
 	return Modifications;
 }

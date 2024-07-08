@@ -157,10 +157,10 @@ std::string FEFileSystem::PWSTRtoString(const PWSTR WString)
 	char* SzTo = new char[WFileName.length() + 1];
 	SzTo[WFileName.size()] = '\0';
 	WideCharToMultiByte(CP_ACP, 0, WFileName.c_str(), -1, SzTo, static_cast<int>(WFileName.length()), nullptr, nullptr);
-	std::string result = SzTo;
+	std::string Result = SzTo;
 	delete[] SzTo;
 
-	return result;
+	return Result;
 }
 
 void FEFileSystem::ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, const int FilterCount)

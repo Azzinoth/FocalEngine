@@ -5,7 +5,7 @@
 
 namespace FocalEngine
 {
-	class FENewEntity;
+	class FEEntity;
 	class FENaiveSceneGraphNode : public FEObject
 	{
 		friend class FENaiveSceneGraph;
@@ -25,7 +25,7 @@ namespace FocalEngine
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
 		std::vector<FENaiveSceneGraphNode*> GetRecursiveChildren();
 
-		FENewEntity* GetNewStyleEntity();
+		FEEntity* GetNewStyleEntity();
 
 		Json::Value ToJson();
 		void FromJson(Json::Value Root);
@@ -35,7 +35,7 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
-		FENewEntity* NewStyleEntity = nullptr;
+		FEEntity* Entity = nullptr;
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
 		void ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);

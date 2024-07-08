@@ -171,10 +171,6 @@ file(GLOB CoreExtensions_SRC
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
-	"Renderer/FEEntity.cpp"
-	"Renderer/FEEntity.h"
-	"Renderer/FEEntityInstanced.cpp"
-	"Renderer/FEEntityInstanced.h"
 	"Renderer/FEPrefab.cpp"
 	"Renderer/FEPrefab.h"
 	"Renderer/FEFramebuffer.cpp"
@@ -198,8 +194,6 @@ file(GLOB Renderer_SRC
 	"Renderer/FEShader.inl"
 	"Renderer/FETexture.cpp"
 	"Renderer/FETexture.h"
-	"Renderer/FETerrain.cpp"
-	"Renderer/FETerrain.h"
 )
 
 # *************** RESOURCE MANAGER ***************
@@ -236,11 +230,19 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEGameModelComponent.h"
 	"SubSystems/Scene/Components/FEInstancedRenderingComponent.cpp"
 	"SubSystems/Scene/Components/FEInstancedRenderingComponent.h"
+	"SubSystems/Scene/Components/FETerrainComponent.cpp"
+	"SubSystems/Scene/Components/FETerrainComponent.h"
+	"SubSystems/Scene/Components/FESkyDomeComponent.cpp"
+	"SubSystems/Scene/Components/FESkyDomeComponent.h"
 )
 
 file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
 	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
+	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
+	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
 )
 
 # *************** SCENE ***************
@@ -254,8 +256,8 @@ file(GLOB Scene_SRC
 	"SubSystems/Scene/FENaiveSceneGraph.h"
 	"SubSystems/Scene/FENaiveSceneGraphNode.cpp"
 	"SubSystems/Scene/FENaiveSceneGraphNode.h"
-	"SubSystems/Scene/FENewEntity.cpp"
-	"SubSystems/Scene/FENewEntity.h"
+	"SubSystems/Scene/FEEntity.cpp"
+	"SubSystems/Scene/FEEntity.h"
 )
 
 # *************** SUB_SYSTEM ***************

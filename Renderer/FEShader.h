@@ -84,19 +84,13 @@ namespace FocalEngine
 		std::string Name;
 	};
 
-	class FEMaterial;
-	class FERenderer;
-	class FEPostProcess;
-	class FEngine;
-	class FEResourceManager;
-
 	class FEShader : public FEObject
 	{
-		friend FEMaterial;
-		friend FERenderer;
-		friend FEPostProcess;
-		friend FEngine;
-		friend FEResourceManager;
+		friend class FEMaterial;
+		friend class FERenderer;
+		friend class FEPostProcess;
+		friend class FEngine;
+		friend class FEResourceManager;
 	public:
 		FEShader(std::string Name, const char* VertexText, const char* FragmentText,
 			const char* TessControlText = nullptr, const char* TessEvalText = nullptr,

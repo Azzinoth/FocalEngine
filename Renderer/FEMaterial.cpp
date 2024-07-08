@@ -496,7 +496,7 @@ void FEMaterial::ClearAllTexturesInfo()
 
 bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 {
-	bool result = false;
+	bool Result = false;
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (Textures[i] == nullptr)
@@ -504,12 +504,12 @@ bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 
 		if (Textures[i]->GetObjectID() == Texture->GetObjectID())
 		{
-			result = true;
-			return result;
+			Result = true;
+			return Result;
 		}
 	}
 
-	return result;
+	return Result;
 }
 
 bool FEMaterial::IsCompackPacking()
@@ -593,14 +593,14 @@ void FEMaterial::ClearTextureBinding(const int Index, const int SubMaterial, con
 
 int FEMaterial::GetUsedTexturesCount() const
 {
-	int result = 0;
+	int Result = 0;
 	for (size_t i = 0; i < Textures.size(); i++)
 	{
 		if (Textures[i] != nullptr)
-			result++;
+			Result++;
 	}
 
-	return result;
+	return Result;
 }
 
 float FEMaterial::GetDisplacementMapIntensity() const

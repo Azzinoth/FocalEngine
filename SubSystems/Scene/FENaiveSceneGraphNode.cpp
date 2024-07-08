@@ -1,5 +1,4 @@
 #include "FENaiveSceneGraphNode.h"
-#include "FENewEntity.h"
 using namespace FocalEngine;
 
 FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_ENTITY, Name) {}
@@ -185,9 +184,9 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetRecursiveChildren(
 //	return OldStyleEntity;
 //}
 
-FENewEntity* FENaiveSceneGraphNode::GetNewStyleEntity()
+FEEntity* FENaiveSceneGraphNode::GetNewStyleEntity()
 {
-	return NewStyleEntity;
+	return Entity;
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()
@@ -232,7 +231,7 @@ Json::Value FENaiveSceneGraphNode::ToJson()
 	Node["ID"] = GetObjectID();
 	// Only root node does not have ParentID
 	Node["ParentID"] = Parent->GetObjectID();
-	Node["NewEntityID"] = NewStyleEntity->GetObjectID();
+	Node["NewEntityID"] = Entity->GetObjectID();
 
 	Json::Value ChildrenArray;
 	for (size_t i = 0; i < Children.size(); i++)
@@ -250,8 +249,8 @@ void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 	SetID(Root["ID"].asString());
 	std::string NewEntityID = Root["NewEntityID"].asString();
 
-	NewStyleEntity = reinterpret_cast<FENewEntity*>(OBJECT_MANAGER.GetFEObject(NewEntityID));
-	if (NewStyleEntity == nullptr)
+	Entity = reinterpret_cast<FEEntity*>(OBJECT_MANAGER.GetFEObject(NewEntityID));
+	if (Entity == nullptr)
 		LOG.Add("FENaiveSceneGraphNode::FromJson: Could not find entity with ID: " + NewEntityID, "FE_LOG_LOADING", FE_LOG_ERROR);
 }
 
@@ -259,7 +258,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByNewEntityID(std::string 
 {
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		if (Children[i]->NewStyleEntity->GetObjectID() == NewEntityID)
+		if (Children[i]->Entity->GetObjectID() == NewEntityID)
 			return Children[i];
 	}
 

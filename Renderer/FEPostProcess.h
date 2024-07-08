@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FEEntity.h"
+#include "FEFramebuffer.h"
+#include "FEPrefab.h"
 
 namespace FocalEngine
 {

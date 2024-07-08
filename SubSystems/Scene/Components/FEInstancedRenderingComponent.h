@@ -53,22 +53,24 @@ namespace FocalEngine
 		unsigned int BaseInstance;
 	};
 
-	struct FEInstancedRenderingComponent
+	class FEEntity;
+
+	struct FEInstancedComponent
 	{
+		friend class FETerrainSystem;
 		friend class FEInstancedSystem;
 		friend class FERenderer;
-		// FIX ME! Temporary
-		friend class FETerrain;
+		friend class FEScene;
 
-		FEInstancedRenderingComponent();
-		~FEInstancedRenderingComponent();
+		FEInstancedComponent();
+		FEInstancedComponent(FEInstancedComponent& Other) = default;
+		~FEInstancedComponent();
 
 		void Clear();
 
 		size_t GetInstanceCount();
 
-		// Later there should be a component for this
-		FETerrain* GetSnappedToTerrain();
+		FEEntity* GetSnappedToTerrain();
 		int GetTerrainLayer();
 
 		// Later there should be a component for this
@@ -91,20 +93,16 @@ namespace FocalEngine
 		// Editor functionality, should not be here
 		bool bSelectionMode = false;
 
-		// Later there should be a component for this
-		FETerrain* TerrainToSnap = nullptr;
+		FEEntity* TerrainToSnap = nullptr;
+
 		int TerrainLayer = -1;
 		float MinLayerIntensityToSpawn = 0.4f;
-		float(FETerrain::* GetTerrainY)(glm::vec2);
-		float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int);
 
-		void SnapToTerrain(FETerrain* Terrain, float(FETerrain::* GetTerrainY)(glm::vec2));
+		void SnapToTerrain(FEEntity* Terrain);
 		void UnSnapFromTerrain();
 
-		void ConnectToTerrainLayer(FETerrain* Terrain, int LayerIndex, float(FETerrain::* GetTerrainLayerIntensity)(glm::vec2, int));
+		void ConnectToTerrainLayer(FEEntity* Terrain, int LayerIndex);
 		void UnConnectFromTerrainLayer();
-
-		// Later there should be a component for this END
 
 		// ******************* RENDERING *******************
 		std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;

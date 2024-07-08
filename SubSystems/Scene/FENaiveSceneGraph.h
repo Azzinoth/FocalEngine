@@ -13,7 +13,7 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* GetRoot() const;
 
-		std::string AddNode(FENewEntity* Entity, bool bPreserveWorldTransform = true);
+		std::string AddNode(FEEntity* Entity, bool bPreserveWorldTransform = true);
 		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
 		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);

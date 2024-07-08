@@ -1,5 +1,4 @@
 #include "FENaiveSceneGraph.h"
-#include "FENewEntity.h"
 using namespace FocalEngine;
 
 FENaiveSceneGraph::FENaiveSceneGraph()
@@ -40,7 +39,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByNewEntityID(std::string NewEntityID)
 {
-	if (Root->NewStyleEntity->GetObjectID() == NewEntityID)
+	if (Root->Entity->GetObjectID() == NewEntityID)
 		return Root;
 
 	return Root->GetChildByNewEntityID(NewEntityID);
@@ -51,7 +50,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID
 	return GetNodeByNewEntityID(EntityID);
 }
 
-std::string FENaiveSceneGraph::AddNode(FENewEntity* Entity, bool bPreserveWorldTransform)
+std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
 {
 	FENaiveSceneGraphNode* NewNode = nullptr;
 	NewNode = GetNodeByNewEntityID(Entity->GetObjectID());
@@ -63,7 +62,7 @@ std::string FENaiveSceneGraph::AddNode(FENewEntity* Entity, bool bPreserveWorldT
 	}
 
 	NewNode = new FENaiveSceneGraphNode(Entity->GetName());
-	NewNode->NewStyleEntity = Entity;
+	NewNode->Entity = Entity;
 	Root->AddChild(NewNode, bPreserveWorldTransform);
 
 	return NewNode->GetObjectID();

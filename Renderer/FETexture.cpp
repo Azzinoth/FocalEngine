@@ -124,30 +124,30 @@ void FETexture::EraseFromOnDeleteCallBackList(const std::string ObjectID)
 
 std::string FETexture::TextureInternalFormatToString(const GLint InternalFormat)
 {
-	std::string result;
+	std::string Result;
 
 	if (InternalFormat == GL_RGBA)
 	{
-		result += "GL_RGBA";
+		Result += "GL_RGBA";
 	}
 	else if (InternalFormat == GL_RED)
 	{
-		result += "GL_RED";
+		Result += "GL_RED";
 	}
 	else if (InternalFormat == GL_R16)
 	{
-		result += "GL_R16";
+		Result += "GL_R16";
 	}
 	else if (InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
 	{
-		result += "GL_COMPRESSED_RGBA_S3TC_DXT5_EXT";
+		Result += "GL_COMPRESSED_RGBA_S3TC_DXT5_EXT";
 	}
 	else if (InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		result += "GL_COMPRESSED_RGBA_S3TC_DXT1_EXT";
+		Result += "GL_COMPRESSED_RGBA_S3TC_DXT1_EXT";
 	}
 	
-	return result;
+	return Result;
 }
 
 std::vector<GLuint> FETexture::NoDeletingList = std::vector<GLuint>();
@@ -158,7 +158,7 @@ void FETexture::AddToNoDeletingList(const GLuint TextureID)
 
 unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 {
-	unsigned char* result = nullptr;
+	unsigned char* Result = nullptr;
 	if (RawDataSize != nullptr)
 		*RawDataSize = 0;
 
@@ -169,8 +169,8 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
 		InternalFormat != GL_RGBA16F)
 	{
-		LOG.Add("FETexture::getRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
-		return result;
+		LOG.Add("FETexture::GetRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return Result;
 	}
 
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
@@ -180,38 +180,38 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 4 * sizeof(unsigned short);
-		result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
+		Result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_R16)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 2;
-		result = new unsigned char[GetWidth() * GetHeight() * 2];
+		Result = new unsigned char[GetWidth() * GetHeight() * 2];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_RED)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight();
-		result = new unsigned char[GetWidth() * GetHeight()];
+		Result = new unsigned char[GetWidth() * GetHeight()];
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 4;
-		result = new unsigned char[GetWidth() * GetHeight() * 4];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, result));
+		Result = new unsigned char[GetWidth() * GetHeight() * 4];
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Result));
 	}
 
-	return result;
+	return Result;
 }
 
 void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
