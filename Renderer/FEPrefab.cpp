@@ -30,7 +30,7 @@ void FEPrefab::UpdateAABB()
 	{
 		if (Components[i]->GameModel == nullptr || Components[i]->GameModel->Mesh == nullptr)
 			continue;
-		AABB = AABB.Merge(Components[i]->GameModel->Mesh->GetAABB().Transform(Components[i]->Transform.GetTransformMatrix()));
+		AABB = AABB.Merge(Components[i]->GameModel->Mesh->GetAABB().Transform(Components[i]->Transform.GetWorldMatrix()));
 	}
 }
 

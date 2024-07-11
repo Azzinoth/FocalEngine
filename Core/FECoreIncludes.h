@@ -19,6 +19,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.inl"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
 
 #include "jsoncpp/json/json.h"
 
@@ -27,6 +28,7 @@
 #include <random>
 
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
+#define RADIANS_TOANGLE_COF 180.0f / glm::pi<float>()
 
 #ifdef FE_DEBUG_ENABLED
 	#define FE_GL_ERROR(glCall)            \

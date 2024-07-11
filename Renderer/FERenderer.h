@@ -3,7 +3,7 @@
 #ifndef FERENDERER_H
 #define FERENDERER_H
 
-#include "../SubSystems/Scene/FEScene.h"
+#include "../SubSystems/Scene/Components/Systems/FELightSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"

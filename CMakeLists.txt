@@ -177,8 +177,6 @@ file(GLOB Renderer_SRC
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
 	"Renderer/FEGameModel.h"
-	"Renderer/FELight.cpp"
-	"Renderer/FELight.h"
 	"Renderer/FELine.cpp"
 	"Renderer/FELine.h"
 	"Renderer/FEMaterial.cpp"
@@ -226,10 +224,12 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FETagComponent.h"
 	"SubSystems/Scene/Components/FETransformComponent.cpp"
 	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FELightComponent.cpp"
+	"SubSystems/Scene/Components/FELightComponent.h"
 	"SubSystems/Scene/Components/FEGameModelComponent.cpp"
 	"SubSystems/Scene/Components/FEGameModelComponent.h"
-	"SubSystems/Scene/Components/FEInstancedRenderingComponent.cpp"
-	"SubSystems/Scene/Components/FEInstancedRenderingComponent.h"
+	"SubSystems/Scene/Components/FEInstancedComponent.cpp"
+	"SubSystems/Scene/Components/FEInstancedComponent.h"
 	"SubSystems/Scene/Components/FETerrainComponent.cpp"
 	"SubSystems/Scene/Components/FETerrainComponent.h"
 	"SubSystems/Scene/Components/FESkyDomeComponent.cpp"
@@ -237,6 +237,8 @@ file(GLOB Scene_Components_SRC
 )
 
 file(GLOB Scene_Component_Systems_SRC
+	"SubSystems/Scene/Components/Systems/FELightSystem.h"
+	"SubSystems/Scene/Components/Systems/FELightSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
 	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
@@ -249,6 +251,7 @@ file(GLOB Scene_Component_Systems_SRC
 
 file(GLOB Scene_SRC
 	"SubSystems/Scene/FEScene.cpp"
+	"SubSystems/Scene/FEScene.inl"
 	"SubSystems/Scene/FEScene.h"
 	"SubSystems/Scene/FETransformComponent.cpp"
 	"SubSystems/Scene/FETransformComponent.h"

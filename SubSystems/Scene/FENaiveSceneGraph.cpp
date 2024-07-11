@@ -3,14 +3,12 @@ using namespace FocalEngine;
 
 FENaiveSceneGraph::FENaiveSceneGraph()
 {
-	//Root = new FENaiveSceneGraphNode();
 }
 
 void FENaiveSceneGraph::Clear()
 {
 	bClearing = true;
 	DeleteNode(Root);
-	//Root = new FENaiveSceneGraphNode();
 	bClearing = false;
 }
 
@@ -37,23 +35,18 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
 	return Root->GetChild(ID);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByNewEntityID(std::string NewEntityID)
-{
-	if (Root->Entity->GetObjectID() == NewEntityID)
-		return Root;
-
-	return Root->GetChildByNewEntityID(NewEntityID);
-}
-
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID)
 {
-	return GetNodeByNewEntityID(EntityID);
+	if (Root->Entity->GetObjectID() == EntityID)
+		return Root;
+
+	return Root->GetChildByEntityID(EntityID);
 }
 
 std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
 {
 	FENaiveSceneGraphNode* NewNode = nullptr;
-	NewNode = GetNodeByNewEntityID(Entity->GetObjectID());
+	NewNode = GetNodeByEntityID(Entity->GetObjectID());
 	if (NewNode != nullptr)
 	{
 		LOG.Add("Entity already exists in the scene graph", "FE_LOG_SCENE", FE_LOG_WARNING);

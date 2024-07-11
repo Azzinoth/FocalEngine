@@ -307,6 +307,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterialInstanced);
 
 	// Early initialization of the systems.
+	LIGHT_SYSTEM;
 	INSTANCED_RENDERING_SYSTEM;
 	TERRAIN_SYSTEM;
 	SKY_DOME_SYSTEM;

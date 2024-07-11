@@ -38,12 +38,6 @@ namespace FocalEngine
 		template<typename T>
 		T& GetComponent()
 		{
-			//if (GetName() == "TransformationXGizmoEntity")
-			//{
-			//	int y = 0;
-			//	y++;
-			//}
-
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
@@ -70,8 +64,5 @@ namespace FocalEngine
 
 			GetRegistry().remove<T>(EnTTEntity);
 		}
-
-	protected:
-		
 	};
 }

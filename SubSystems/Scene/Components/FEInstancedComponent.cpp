@@ -1,4 +1,4 @@
-#include "FEInstancedRenderingComponent.h"
+#include "FEInstancedComponent.h"
 using namespace FocalEngine;
 
 float FESpawnInfo::GetMinScale()

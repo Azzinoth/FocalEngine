@@ -3,7 +3,6 @@
 #include "../ResourceManager/FEResourceManager.h"
 #include "../CoreExtensions/FEFreeCamera.h"
 #include "../CoreExtensions/FEModelViewCamera.h"
-#include "../Renderer/FELight.h"
 #include "../Renderer/FELine.h"
 #include "../FEVirtualUIContext.h"
 #include "FENaiveSceneGraph.h"
@@ -25,40 +24,21 @@ namespace FocalEngine
 		void AddOnSceneClearCallback(std::function<void()> Callback);
 
 		template<typename T>
-		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback)
-		{
-			OnComponentConstructCallbacks[std::type_index(typeid(T))] = std::move(Callback);
-			Registry.on_construct<T>().connect<&FEScene::OnComponentConstructWrapper<T>>();
-		}
-
+		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback);
 		template<typename T>
-		void RegisterOnComponentDestroyCallback(std::function<void(FEEntity*)> Callback)
-		{
-			OnComponentDestroyCallbacks[std::type_index(typeid(T))] = std::move(Callback);
-			Registry.on_destroy<T>().connect<&FEScene::OnComponentDestroyWrapper<T>>();
-		}
-
+		void RegisterOnComponentDestroyCallback(std::function<void(FEEntity*)> Callback);
 		template<typename T>
-		void RegisterOnComponentUpdateCallback(std::function<void(FEEntity*)> Callback)
-		{
-			OnComponentUpdateCallbacks[std::type_index(typeid(T))] = std::move(Callback);
-			Registry.on_update<T>().connect<&FEScene::OnComponentUpdateWrapper<T>>();
-		}
+		void RegisterOnComponentUpdateCallback(std::function<void(FEEntity*)> Callback);
 
+		FEEntity* GetEntity(std::string ID);
+		FEEntity* AddEntity(std::string Name = "", std::string ForceObjectID = "");
+		std::vector<std::string> GetEntityIDList();
+		template<typename T>
+		std::vector<std::string> GetEntityIDListWith();
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
-		void DeleteNewEntity(std::string ID);
-		void DeleteNewEntity(FEEntity* Entity);
 
-		FEEntity* GetNewStyleEntity(std::string ID);
-		FEEntity* AddNewStyleEntity(std::string Name = "", std::string ForceObjectID = "");
-		std::vector<std::string> GetNewEntityList();
-
-		FELight* AddLight(FE_OBJECT_TYPE LightType, std::string Name, std::string ForceObjectID = "");
-		FELight* GetLight(std::string ID);
-		std::vector<std::string> GetLightsList();
-		void DeleteLight(std::string ID);
-
-		std::vector<std::string> GetTerrainList();
+		void DeleteEntity(std::string ID);
+		void DeleteEntity(FEEntity* Entity);
 
 		FEVirtualUIContext* AddVirtualUIContext(int Width = 1280, int Height = 720, FEMesh* SampleMesh = nullptr, std::string Name = "UnNamed");
 		FEVirtualUIContext* GetVirtualUIContext(std::string ID);
@@ -80,42 +60,15 @@ namespace FocalEngine
 		entt::registry Registry;
 
 		template<typename T>
-		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity)
-		{
-			FEEntity* Entity = FEScene::getInstance().GetEntityByEnTT(EnTTEntity);
-			if (Entity != nullptr)
-			{
-				auto MapIterator = FEScene::getInstance().OnComponentConstructCallbacks.find(std::type_index(typeid(T)));
-				if (MapIterator != FEScene::getInstance().OnComponentConstructCallbacks.end())
-					MapIterator->second(Entity);
-			}
-		}
+		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity);
 		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentConstructCallbacks;
 
 		template<typename T>
-		static void OnComponentDestroyWrapper(entt::registry& Registry, entt::entity EnTTEntity)
-		{
-			FEEntity* Entity = FEScene::getInstance().GetEntityByEnTT(EnTTEntity);
-			if (Entity != nullptr)
-			{
-				auto MapIterator = FEScene::getInstance().OnComponentDestroyCallbacks.find(std::type_index(typeid(T)));
-				if (MapIterator != FEScene::getInstance().OnComponentDestroyCallbacks.end())
-					MapIterator->second(Entity);
-			}
-		}
+		static void OnComponentDestroyWrapper(entt::registry& Registry, entt::entity EnTTEntity);
 		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentDestroyCallbacks;
 
 		template<typename T>
-		static void OnComponentUpdateWrapper(entt::registry& Registry, entt::entity EnTTEntity)
-		{
-			FEEntity* Entity = FEScene::getInstance().GetEntityByEnTT(EnTTEntity);
-			if (Entity != nullptr)
-			{
-				auto MapIterator = FEScene::getInstance().OnComponentUpdateCallbacks.find(std::type_index(typeid(T)));
-				if (MapIterator != FEScene::getInstance().OnComponentUpdateCallbacks.end())
-					MapIterator->second(Entity);
-			}
-		}
+		static void OnComponentUpdateWrapper(entt::registry& Registry, entt::entity EnTTEntity);
 		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentUpdateCallbacks;
 
 		std::vector<std::function<void()>> OnSceneClearCallbacks;
@@ -135,6 +88,8 @@ namespace FocalEngine
 		void UpdateSceneGraph();
 		bool bSceneGraphInitialization = true;
 	};
+
+#include "FEScene.inl"
 
 	#define SCENE FEScene::getInstance()
 }

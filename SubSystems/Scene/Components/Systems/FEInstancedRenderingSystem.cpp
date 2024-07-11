@@ -290,7 +290,7 @@ void FEInstancedSystem::AddInstanceInternal(FETransformComponent& TransformCompo
 {
 	InstancedComponent.InstancedAABBSizes.push_back(-FEAABB(GameModelComponent.GameModel->GetMesh()->GetAABB(), InstanceMatrix).GetLongestAxisLength());
 	InstancedComponent.InstancedMatrices.push_back(InstanceMatrix);
-	InstancedComponent.TransformedInstancedMatrices.push_back(TransformComponent.GetTransformMatrix() * InstanceMatrix);
+	InstancedComponent.TransformedInstancedMatrices.push_back(TransformComponent.GetWorldMatrix() * InstanceMatrix);
 	InstancedComponent.InstancePositions.push_back(InstancedComponent.TransformedInstancedMatrices.back()[3]);
 
 	for (size_t j = 0; j < GameModelComponent.GameModel->GetMaxLODCount(); j++)
@@ -330,7 +330,7 @@ void FEInstancedSystem::AddInstances(FETransformComponent& TransformComponent, F
 	{
 		InstancedComponent.InstancedAABBSizes[j] = -FEAABB(OriginalAABB, InstanceMatrix[j]).GetLongestAxisLength();
 		InstancedComponent.InstancedMatrices[j] = InstanceMatrix[j];
-		InstancedComponent.TransformedInstancedMatrices[j] = TransformComponent.GetTransformMatrix() * InstanceMatrix[j];
+		InstancedComponent.TransformedInstancedMatrices[j] = TransformComponent.GetWorldMatrix() * InstanceMatrix[j];
 
 		InstancedComponent.InstancePositions[j] = InstancedComponent.TransformedInstancedMatrices[j][3];
 		InstancedComponent.InstanceCount++;
@@ -382,7 +382,7 @@ void FEInstancedSystem::UpdateMatrices(FETransformComponent& TransformComponent,
 
 	for (size_t i = 0; i < InstancedComponent.InstancedMatrices.size(); i++)
 	{
-		InstancedComponent.TransformedInstancedMatrices[i] = TransformComponent.GetTransformMatrix() * InstancedComponent.InstancedMatrices[i];
+		InstancedComponent.TransformedInstancedMatrices[i] = TransformComponent.GetWorldMatrix() * InstancedComponent.InstancedMatrices[i];
 		InstancedComponent.InstancePositions[i] = InstancedComponent.TransformedInstancedMatrices[i][3];
 	}
 
@@ -395,7 +395,7 @@ void FEInstancedSystem::UpdateMatrices(FETransformComponent& TransformComponent,
 
 FEAABB FEInstancedSystem::GetAABB(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
-	FEAABB Result = InstancedComponent.AllInstancesAABB.Transform(TransformComponent.GetTransformMatrix());
+	FEAABB Result = InstancedComponent.AllInstancesAABB.Transform(TransformComponent.GetWorldMatrix());
 	if (TransformComponent.IsDirty())
 	{
 		UpdateMatrices(TransformComponent, GameModelComponent, InstancedComponent);
@@ -558,7 +558,7 @@ void FEInstancedSystem::AddIndividualInstance(FEEntity* EntityWithInstancedCompo
 
 void FEInstancedSystem::AddIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix)
 {
-	AddInstanceInternal(TransformComponent, GameModelComponent, InstancedComponent, glm::inverse(TransformComponent.GetTransformMatrix()) * InstanceMatrix);
+	AddInstanceInternal(TransformComponent, GameModelComponent, InstancedComponent, glm::inverse(TransformComponent.GetWorldMatrix()) * InstanceMatrix);
 
 	if (InstancedComponent.IndividualInstancedAABB.empty())
 	{
@@ -697,7 +697,7 @@ void FEInstancedSystem::ModifyIndividualInstance(FETransformComponent& Transform
 	}
 
 	InstancedComponent.TransformedInstancedMatrices[InstanceIndex] = NewMatrix;
-	InstancedComponent.InstancedMatrices[InstanceIndex] = glm::inverse(TransformComponent.GetTransformMatrix()) * NewMatrix;
+	InstancedComponent.InstancedMatrices[InstanceIndex] = glm::inverse(TransformComponent.GetWorldMatrix()) * NewMatrix;
 
 	if (InstancedComponent.IndividualInstancedAABB.size() > InstanceIndex)
 		InstancedComponent.IndividualInstancedAABB[InstanceIndex] = FEAABB(GameModelComponent.GameModel->GetMesh()->GetAABB(), NewMatrix);
@@ -879,7 +879,6 @@ void FEInstancedSystem::CheckDirtyFlag(FETransformComponent& TransformComponent,
 
 	if (InstancedComponent.bDirtyFlag)
 	{
-		//ClearRenderers();
 		UpdateBuffers(TransformComponent, GameModelComponent, InstancedComponent);
 		InstancedComponent.bDirtyFlag = false;
 		InitializeGPUCullingBuffers(GameModelComponent, InstancedComponent);

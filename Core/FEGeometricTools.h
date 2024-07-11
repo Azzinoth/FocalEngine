@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Core/FECoreIncludes.h"
-#include <glm/gtx/matrix_decompose.hpp>
 
 namespace FocalEngine
 {

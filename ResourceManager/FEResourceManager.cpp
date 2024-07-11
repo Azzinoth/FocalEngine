@@ -1032,29 +1032,6 @@ FEMaterial* FEResourceManager::CreateMaterial(std::string Name, const std::strin
 	return Materials[NewMaterial->GetObjectID()];
 }
 
-//FEEntity* FEResourceManager::CreateEntity(FEGameModel* GameModel, const std::string Name, const std::string ForceObjectID)
-//{
-//	if (GameModel == nullptr)
-//		GameModel = StandardGameModels["67251E393508013ZV579315F"];
-//
-//	FEPrefab* TempPrefab = CreatePrefab(GameModel, GameModel->GetName());
-//	FEEntity* NewEntity = new FEEntity(TempPrefab, Name);
-//	if (!ForceObjectID.empty())
-//		NewEntity->SetID(ForceObjectID);
-//	return NewEntity;
-//}
-//
-//FEEntity* FEResourceManager::CreateEntity(FEPrefab* Prefab, const std::string Name, const std::string ForceObjectID)
-//{
-//	if (Prefab == nullptr)
-//		Prefab = new FEPrefab(StandardGameModels["67251E393508013ZV579315F"], Name);
-//
-//	FEEntity* NewEntity = new FEEntity(Prefab, Name);
-//	if (!ForceObjectID.empty())
-//		NewEntity->SetID(ForceObjectID);
-//	return NewEntity;
-//}
-
 std::vector<std::string> FEResourceManager::GetMaterialList()
 {
 	FE_MAP_TO_STR_VECTOR(Materials)

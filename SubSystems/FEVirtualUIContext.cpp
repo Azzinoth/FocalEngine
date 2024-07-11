@@ -84,9 +84,9 @@ void FEVirtualUIContext::UpdateCanvasTrianglePositions()
 {
 	for (size_t i = 0; i < OriginalMeshTrianglePositions.size(); i++)
 	{
-		TransformedMeshTrianglePositions[i][0] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][0], 1.0f));
-		TransformedMeshTrianglePositions[i][1] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][1], 1.0f));
-		TransformedMeshTrianglePositions[i][2] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetTransformMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][2], 1.0f));
+		TransformedMeshTrianglePositions[i][0] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetWorldMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][0], 1.0f));
+		TransformedMeshTrianglePositions[i][1] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetWorldMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][1], 1.0f));
+		TransformedMeshTrianglePositions[i][2] = glm::vec3(CanvasEntity->GetComponent<FETransformComponent>().GetWorldMatrix() * glm::vec4(OriginalMeshTrianglePositions[i][2], 1.0f));
 	}
 }
 

@@ -1,23 +1,20 @@
 #pragma once
-#include "../Core/FEObject.h"
-#include "../ResourceManager/FEResourceManager.h"
 
+#include "../ResourceManager/FEResourceManager.h"
 
 namespace FocalEngine
 {
-	class FEEntity;
 	class FENaiveSceneGraphNode : public FEObject
 	{
 		friend class FENaiveSceneGraph;
 		friend class FEScene;
 	public:
-
 		FENaiveSceneGraphNode* GetParent();
 
 		void AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		void DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		FENaiveSceneGraphNode* GetChild(std::string ID);
-		FENaiveSceneGraphNode* GetChildByNewEntityID(std::string NewEntityID);
+		FENaiveSceneGraphNode* GetChildByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
 		size_t GetImediateChildrenCount();
 		size_t GetRecursiveChildCount();
@@ -25,7 +22,7 @@ namespace FocalEngine
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
 		std::vector<FENaiveSceneGraphNode*> GetRecursiveChildren();
 
-		FEEntity* GetNewStyleEntity();
+		FEEntity* GetEntity();
 
 		Json::Value ToJson();
 		void FromJson(Json::Value Root);

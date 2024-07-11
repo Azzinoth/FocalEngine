@@ -7,70 +7,12 @@ FEScene* FEScene::Instance = nullptr;
 FEScene::FEScene()
 {
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = AddNewStyleEntity("SceneRoot");
+	NewRoot->Entity = AddEntity("SceneRoot");
 	SceneGraph.InitializeRoot(NewRoot);
 	bSceneGraphInitialization = false;
 }
 
-FELight* FEScene::AddLight(const FE_OBJECT_TYPE LightType, std::string Name, const std::string ForceObjectID)
-{
-	if (Name.empty())
-		Name = "unnamedLight";
-
-	if (LightType == FE_DIRECTIONAL_LIGHT)
-	{
-		FEDirectionalLight* NewLight = new FEDirectionalLight();
-		if (!ForceObjectID.empty())
-			NewLight->SetID(ForceObjectID);
-		NewLight->SetName(Name);
-
-		NewLight->CascadeData[0].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		NewLight->CascadeData[1].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		NewLight->CascadeData[2].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		NewLight->CascadeData[3].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-
-		// to clear cascades framebuffer
-		NewLight->SetCastShadows(false);
-		NewLight->SetCastShadows(true);
-
-		return NewLight;
-	}
-	else if (LightType == FE_SPOT_LIGHT)
-	{
-		FESpotLight* NewLight = new FESpotLight();
-		if (!ForceObjectID.empty())
-			NewLight->SetID(ForceObjectID);
-		NewLight->SetName(Name);
-
-		return NewLight;
-	}
-	else if (LightType == FE_POINT_LIGHT)
-	{
-		FEPointLight* NewLight = new FEPointLight();
-		if (!ForceObjectID.empty())
-			NewLight->SetID(ForceObjectID);
-		NewLight->SetName(Name);
-
-		return NewLight;
-	}
-
-	return nullptr;
-}
-
-//void FEScene::AddEntityToEntityMap(FEEntity* Entity)
-//{
-//	EntityMap[Entity->GetObjectID()] = Entity;
-//}
-
-//FEEntity* FEScene::GetEntity(const std::string ID)
-//{
-//	if (EntityMap.find(ID) == EntityMap.end())
-//		return nullptr;
-//
-//	return EntityMap[ID];
-//}
-
-FEEntity* FEScene::GetNewStyleEntity(std::string ID)
+FEEntity* FEScene::GetEntity(std::string ID)
 {
 	if (EntityMap.find(ID) == EntityMap.end())
 		return nullptr;
@@ -94,25 +36,15 @@ std::vector<FEEntity*> FEScene::GetEntityByName(const std::string Name)
 	return Result;
 }
 
-//void FEScene::DeleteEntity(const std::string ID)
-//{
-//	if (EntityMap.find(ID) == EntityMap.end())
-//		return;
-//
-//	const FEEntity* EntityToDelete = EntityMap[ID];
-//	delete EntityToDelete;
-//	EntityMap.erase(ID);
-//}
-
-void FEScene::DeleteNewEntity(std::string ID)
+void FEScene::DeleteEntity(std::string ID)
 {
 	if (EntityMap.find(ID) == EntityMap.end())
 		return;
 
-	DeleteNewEntity(EntityMap[ID]);
+	DeleteEntity(EntityMap[ID]);
 }
 
-void FEScene::DeleteNewEntity(FEEntity* Entity)
+void FEScene::DeleteEntity(FEEntity* Entity)
 {
 	if (Entity == nullptr)
 		return;
@@ -122,7 +54,7 @@ void FEScene::DeleteNewEntity(FEEntity* Entity)
 
 	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
 
-	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByNewEntityID(EntityID);
+	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(EntityID);
 	SceneGraph.DeleteNode(GraphNode);
 
 	delete Entity;
@@ -131,120 +63,20 @@ void FEScene::DeleteNewEntity(FEEntity* Entity)
 	EnttToEntity.erase(EnTTEntityToDelete);
 }
 
-//std::vector<std::string> FEScene::GetEntityList()
-//{
-//	FE_MAP_TO_STR_VECTOR(EntityMap)
-//}
-
-std::vector<std::string> FEScene::GetNewEntityList()
+std::vector<std::string> FEScene::GetEntityIDList()
 {
 	FE_MAP_TO_STR_VECTOR(EntityMap)
 }
 
-FELight* FEScene::GetLight(const std::string ID)
-{
-	if (OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
-		return reinterpret_cast<FEDirectionalLight*>(OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT][ID]);
-
-	if (OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
-		return reinterpret_cast<FESpotLight*>(OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT][ID]);
-
-	if (OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
-		return reinterpret_cast<FEPointLight*>(OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT][ID]);
-	
-	return nullptr;
-}
-
-std::vector<std::string> FEScene::GetLightsList()
-{
-	std::vector<std::string> Result;
-	auto iterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
-	{
-		Result.push_back(iterator->first);
-		iterator++;
-	}
-
-	iterator = OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
-	{
-		Result.push_back(iterator->first);
-		iterator++;
-	}
-
-	iterator = OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
-	{
-		Result.push_back(iterator->first);
-		iterator++;
-	}
-
-	return Result;
-}
-
 void FEScene::Clear()
 {
-	auto NewEntityIterator = EntityMap.begin();
-	while (NewEntityIterator != EntityMap.end())
-	{
-		delete NewEntityIterator->second;
-		NewEntityIterator++;
-	}
-	EntityMap.clear();
-
-	/*auto EntityIterator = EntityMap.begin();
+	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
 		delete EntityIterator->second;
 		EntityIterator++;
 	}
-	EntityMap.clear();*/
-
-	std::vector<FEObject*> AllLights;
-	auto iterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
-	{
-		AllLights.push_back(iterator->second);
-		iterator++;
-	}
-
-	iterator = OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
-	{
-		AllLights.push_back(iterator->second);
-		iterator++;
-	}
-
-	iterator = OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].begin();
-	while (iterator != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
-	{
-		AllLights.push_back(iterator->second);
-		iterator++;
-	}
-
-	for (size_t i = 0; i < AllLights.size(); i++)
-	{
-		if (AllLights[i]->GetType() == FE_DIRECTIONAL_LIGHT)
-		{
-			delete reinterpret_cast<FEDirectionalLight*>(AllLights[i]);
-		}
-		else if (AllLights[i]->GetType() == FE_POINT_LIGHT)
-		{
-			delete reinterpret_cast<FEPointLight*>(AllLights[i]);
-		}
-		else if (AllLights[i]->GetType() == FE_SPOT_LIGHT)
-		{
-			delete reinterpret_cast<FESpotLight*>(AllLights[i]);
-		}
-	}
-
-	/*auto TerrainIterator = TerrainMap.begin();
-	while (TerrainIterator != TerrainMap.end())
-	{
-		delete TerrainIterator->second;
-		TerrainIterator++;
-	}
-	TerrainMap.clear();*/
+	EntityMap.clear();
 
 	// Force clear registry.
 	Registry = entt::registry{};
@@ -253,7 +85,7 @@ void FEScene::Clear()
 	bSceneGraphInitialization = true;
 	SceneGraph.Clear();
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = AddNewStyleEntity("SceneRoot");
+	NewRoot->Entity = AddEntity("SceneRoot");
 	SceneGraph.InitializeRoot(NewRoot);
 	bSceneGraphInitialization = false;
 }
@@ -295,43 +127,10 @@ void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 	}*/
 }
 
-std::vector<std::string> FEScene::GetTerrainList()
-{
-	std::vector<std::string> Result;
-	entt::basic_view TerrainView = Registry.view<FETerrainComponent>();
-	for (entt::entity CurrentEntity : TerrainView)
-		Result.push_back(EnttToEntity[CurrentEntity]->GetObjectID());
-
-	return Result;
-}
-
-void FEScene::DeleteLight(const std::string ID)
-{
-	if (OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
-	{
-		OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].erase(ID);
-		return;
-	}
-	
-	if (OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
-	{
-		OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].erase(ID);
-		return;
-	}
-
-	if (OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].find(ID) != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
-	{
-		OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].erase(ID);
-		return;
-	}
-
-	return;
-}
-
 FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name)
 {
 	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
-	NewVirtualUIContext->CanvasEntity = AddNewStyleEntity(Name + "_Virtual_UI_Canvas");
+	NewVirtualUIContext->CanvasEntity = AddEntity(Name + "_Virtual_UI_Canvas");
 	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
 	GameModelComponent.SetUniformLighting(true);
 	VirtualUIContextMap[NewVirtualUIContext->GetObjectID()] = NewVirtualUIContext;
@@ -612,96 +411,56 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 {
 	std::vector<FEObject*> Result;
 
-	int GLTFMesheToPrefabIndex = -1;
-	GLTFMesheToPrefabIndex = Node.Mesh;
+	int GLTFMeshToPrefabIndex = -1;
+	GLTFMeshToPrefabIndex = Node.Mesh;
 
-	std::string NewNaiveSceneEntityID = "";
+	std::string NodeName = "Unnamed Entity";
+	if (!NodeName.empty())
+		NodeName = Node.Name;
+	FEEntity* Entity = AddEntity(NodeName);
 
-	if (GLTFMesheToPrefabIndex != -1)
+	FETransformComponent& Transform = Entity->GetComponent<FETransformComponent>();
+	Transform.SetPosition(Node.Translation);
+	Transform./*RotateByQuaternion*/SetQuaternion(Node.Rotation);
+	Transform.SetScale(Node.Scale);
+
+	FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+	SceneGraph.MoveNode(AddedNode->GetObjectID(), ParentID, false);
+
+	if (GLTFMeshToPrefabIndex != -1)
 	{
-		if (GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex) == GLTFMeshesToPrefabMap.end())
+		if (GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex) == GLTFMeshesToPrefabMap.end())
 		{
 			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-			//continue;
 		}
 
-		if (GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex)->second.empty())
+		if (GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex)->second.empty())
 		{
 			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
-			//continue;
 		}
 
-		std::string NodeName = "Unnamed Node";
-		if (!NodeName.empty())
-			NodeName = Node.Name;
-
-		std::vector<FEPrefab*> Prefabs = GLTFMeshesToPrefabMap.find(GLTFMesheToPrefabIndex)->second;
+		std::vector<FEPrefab*> Prefabs = GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex)->second;
 		if (Prefabs.size() == 1)
 		{
-			FEEntity* NewEntity = AddNewStyleEntity();
-			NewEntity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
-			NewEntity->SetName(Node.Name);
-			NewEntity->GetComponent<FETransformComponent>().SetPosition(Node.Translation);
-			NewEntity->GetComponent<FETransformComponent>().RotateByQuaternion(Node.Rotation);
-			NewEntity->GetComponent<FETransformComponent>().SetScale(Node.Scale);
-
-			// Problem is that currently we can not have entity without prefab
-			// Later we should add support for entities without prefabs
-			FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewEntity->GetObjectID());
-			NewNaiveSceneEntityID = AddedNode->GetObjectID();
-			SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID, false);
+			Entity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
 		}
 		else
 		{
-			FENaiveSceneGraphNode* FirstNode = nullptr;
-
-			FEEntity* DummyEntity = AddNewStyleEntity();
-			DummyEntity->SetName(Node.Name);
-			FETransformComponent& Transform = DummyEntity->GetComponent<FETransformComponent>();
-			Transform.SetPosition(Node.Translation);
-			Transform.RotateByQuaternion(Node.Rotation);
-			Transform.SetScale(Node.Scale);
-			NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
-			FirstNode = SceneGraph.GetNode(NewNaiveSceneEntityID);
-
-			SceneGraph.MoveNode(FirstNode->GetObjectID(), ParentID, false);
-			Result.push_back(DummyEntity);
-
 			for (size_t i = 0; i < Prefabs.size(); i++)
 			{
 				std::string CurrentNodeName = NodeName;
 				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
 
-				FEEntity* NewEntity = AddNewStyleEntity();
-				NewEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
-				NewEntity->SetName(Node.Name);
-				// Problem is that currently we can not have entity without prefab
-				// Later we should add support for entities without prefabs
-				FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByNewEntityID(NewEntity->GetObjectID());
-				NewNaiveSceneEntityID = AddedNode->GetObjectID();
-				SceneGraph.MoveNode(NewNaiveSceneEntityID, FirstNode->GetObjectID(), false);
+				FEEntity* ChildEntity = AddEntity(CurrentNodeName);
+				ChildEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
+		
+				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetObjectID());
+				SceneGraph.MoveNode(ChildNode->GetObjectID(), AddedNode->GetObjectID(), false);
 			}
 		}
 	}
-	// Currently we are useing this hack to add empty entities
-	else
-	{
-		FEEntity* DummyEntity = AddNewStyleEntity();
-		//FEEntity* DummyEntity = new FEEntity();
-		//DummyEntity->SetVisibility(false);
-		// Because this entity was created directly we need to add EntityIterator to entity map in order EntityIterator to be saved.
-		//EntityMap[DummyEntity->GetObjectID()] = DummyEntity;
-		DummyEntity->SetName(Node.Name);
-		FETransformComponent& Transform = DummyEntity->GetComponent<FETransformComponent>();
-		Transform.SetPosition(Node.Translation);
-		Transform.RotateByQuaternion(Node.Rotation);
-		Transform.SetScale(Node.Scale);
 
-		NewNaiveSceneEntityID = SceneGraph.AddNode(DummyEntity);
-		SceneGraph.MoveNode(NewNaiveSceneEntityID, ParentID);
-
-		Result.push_back(DummyEntity);
-	}
+	Result.push_back(Entity);
 
 	for (size_t i = 0; i < Node.Children.size(); i++)
 	{
@@ -712,7 +471,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		}
 
 		GLTFNodes ChildNode = GLTF.Nodes[Node.Children[i]];
-		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToPrefabMap, NewNaiveSceneEntityID);
+		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToPrefabMap, AddedNode->GetObjectID());
 		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
 	}
 
@@ -721,78 +480,49 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 {
-	if (SubTreeRoot->GetNewStyleEntity() == nullptr)
-	{
+	if (SubTreeRoot->GetEntity() == nullptr)
 		assert(false);
-	}
-
-	//if (SubTreeRoot->GetOldStyleEntity() != nullptr)
-	//{
-	//	if (SubTreeRoot->GetName() == "transformationXGizmoEntity")
-	//	{
-	//		int y = 0;
-	//		y++;
-	//	}
-	//}
 	
-
-	FETransformComponent& CurrentTransform = SubTreeRoot->GetNewStyleEntity()->GetComponent<FETransformComponent>();
-	CurrentTransform.bIsInSceneGraph = true;
-
+	FETransformComponent& CurrentTransform = SubTreeRoot->GetEntity()->GetComponent<FETransformComponent>();
 	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SCENE.SceneGraph.GetRoot())
 	{
 		CurrentTransform.Update();
 		CurrentTransform.WorldSpaceMatrix = CurrentTransform.LocalSpaceMatrix;
 	}
 
+	// FIX ME! instanced position should be updated if parent(or terrain) is updated.
+	// right now it is not updated.
+	
+	//bool bWasDirty = CurrentTransform.IsDirty();
+	//CurrentTransform.SetDirtyFlag(false);
 	auto Children = SubTreeRoot->GetChildren();
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		FETransformComponent& ChildTransform = Children[i]->GetNewStyleEntity()->GetComponent<FETransformComponent>();
-
-		if (Children[i]->GetName() == "TransformationXGizmoEntity")
+		static float PrevFrame = 0;
+		if (Children[i]->GetEntity()->GetName() == "testCube2")
 		{
+			float CurrentWorldY = Children[i]->GetEntity()->GetComponent<FETransformComponent>().GetPosition(false)[1];
+
+			// DELETE ME !
+			if (abs(PrevFrame - CurrentWorldY) > 0.0001f)
+			{
+				int y = 0;
+				y++;
+				PrevFrame = CurrentWorldY;
+			}
+
 			int y = 0;
 			y++;
 		}
 
+		FETransformComponent& ChildTransform = Children[i]->GetEntity()->GetComponent<FETransformComponent>();
+
 		ChildTransform.Update();
 		ChildTransform.WorldSpaceMatrix = CurrentTransform.WorldSpaceMatrix * ChildTransform.LocalSpaceMatrix;
+		//if (CurrentTransform.IsDirty())
+		//	ChildTransform.SetDirtyFlag(true);
 		TransformUpdate(Children[i]);
 	}
-
-	// Old way when some nodes could be without entities
-	/*FEEntity* Entity = reinterpret_cast<FEEntity*>(SubTreeRoot->GetOldStyleEntity());
-	if (Entity == nullptr)
-	{
-		auto Children = SubTreeRoot->GetChildren();
-		for (size_t i = 0; i < Children.size(); i++)
-		{
-			TransformUpdate(Children[i]);
-		}
-		return;
-	}
-
-	Entity->Transform.bIsInSceneGraph = true;
-
-	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SCENE.SceneGraph.GetRoot())
-	{
-		Entity->Transform.Update();
-		Entity->Transform.WorldSpaceMatrix = Entity->Transform.LocalSpaceMatrix;
-	}
-
-	FETransformComponent& ParentTransform = Entity->Transform;
-
-	auto Children = SubTreeRoot->GetChildren();
-	for (size_t i = 0; i < Children.size(); i++)
-	{
-		FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(Children[i]->GetOldStyleEntity());
-		FETransformComponent& ChildTransform = ChildEntity->Transform;
-
-		ChildTransform.Update();
-		ChildTransform.WorldSpaceMatrix = ParentTransform.WorldSpaceMatrix * ChildTransform.LocalSpaceMatrix;
-		TransformUpdate(Children[i]);
-	}*/
 }
 
 void FEScene::UpdateSceneGraph()
@@ -800,51 +530,28 @@ void FEScene::UpdateSceneGraph()
 	TransformUpdate(SceneGraph.GetRoot());
 }
 
-FEEntity* FEScene::AddNewStyleEntity(std::string Name, std::string ForceObjectID/*, FEEntity* OldStyleEntity*/)
+FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
 {
 	if (Name.empty())
-		Name = "UnnamedNewEntity";
+		Name = "Unnamed Entity";
 
-	//if (OldStyleEntity != nullptr)
-	//{
-	//	FEEntity* AlreadyInList = GetEntityByName(OldStyleEntity->GetName())[0];
-	//	//FEEntity* AlreadyInList = GetNewStyleEntityByOldStyleID(OldStyleEntity->GetObjectID());
-	//	if (AlreadyInList != nullptr)
-	//		return AlreadyInList;
-	//}
-
-	FEEntity* NewEntity = new FEEntity(Registry.create(), this);
-	NewEntity->SetName(Name);
-	NewEntity->AddComponent<FETagComponent>();
-	NewEntity->AddComponent<FETransformComponent>();
-	//if (OldStyleEntity != nullptr)
-	//{
-	//	NewEntity->AddComponent<FEGameModelComponent>(OldStyleEntity->Prefab->GetComponent(0)->GameModel);
-	//	NewEntity->SetName(OldStyleEntity->GetName());
-	//	SceneGraph.AddNode(NewEntity);
-
-	//	/*FENaiveSceneGraphNode* GraphNode = SCENE.SceneGraph.GetNodeByNewEntityID(OldStyleEntity->GetObjectID());
-	//	if (GraphNode != nullptr)
-	//	{
-	//		GraphNode->Entity = NewEntity;
-	//	}*/
-	//}
-	//else
-	//{
-		if (!bSceneGraphInitialization)
-		{
-			SceneGraph.AddNode(NewEntity);
-		}
-	//}
+	FEEntity* Entity = new FEEntity(Registry.create(), this);
+	Entity->SetName(Name);
+	Entity->AddComponent<FETagComponent>();
+	Entity->AddComponent<FETransformComponent>();
+	if (!bSceneGraphInitialization)
+	{
+		SceneGraph.AddNode(Entity);
+	}
 
 	if (!ForceObjectID.empty())
-		NewEntity->SetID(ForceObjectID);
-	NewEntity->SetName(Name);
+		Entity->SetID(ForceObjectID);
+	Entity->SetName(Name);
 
-	EntityMap[NewEntity->GetObjectID()] = NewEntity;
-	EnttToEntity[NewEntity->EnTTEntity] = NewEntity;
+	EntityMap[Entity->GetObjectID()] = Entity;
+	EnttToEntity[Entity->EnTTEntity] = Entity;
 
-	return NewEntity;
+	return Entity;
 }
 
 FEEntity* FEScene::GetEntityByEnTT(entt::entity ID)

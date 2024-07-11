@@ -122,7 +122,7 @@ FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity)
 		Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMin()[2]),
 						glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMax()[2]));
 	
-		TerrainComponent.FinalAABB = Result.Transform(Transform.GetTransformMatrix());
+		TerrainComponent.FinalAABB = Result.Transform(Transform.GetWorldMatrix());
 	
 		TerrainComponent.XSize = TerrainComponent.FinalAABB.GetMax()[0] - TerrainComponent.FinalAABB.GetMin()[0];
 		TerrainComponent.ZSize = TerrainComponent.FinalAABB.GetMax()[2] - TerrainComponent.FinalAABB.GetMin()[2];
@@ -335,7 +335,7 @@ void FETerrainSystem::SnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* Ent
 
 	if (!EntityToSnap->HasComponent<FEInstancedComponent>())
 	{
-		LOG.Add("FETerrainSystem::SnapInstancedEntity EntityToSnap does not have FEInstancedRenderingComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::SnapInstancedEntity EntityToSnap does not have FEInstancedComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -619,7 +619,7 @@ void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEE
 
 	if (!EntityWithInstancedComponent->HasComponent<FEInstancedComponent>())
 	{
-		LOG.Add("FETerrainSystem::ConnectInstancedEntityToLayer EntityWithInstancedComponent does not have FEInstancedRenderingComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::ConnectInstancedEntityToLayer EntityWithInstancedComponent does not have FEInstancedComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 

@@ -18,9 +18,9 @@ namespace FocalEngine
 		FE_ENTITY = 6,
 		FE_TERRAIN = 7,
 		FE_ENTITY_INSTANCED = 8,
-		FE_DIRECTIONAL_LIGHT = 9,
-		FE_POINT_LIGHT = 10,
-		FE_SPOT_LIGHT = 11,
+		FE_DIRECTIONAL_LIGHT_DEPRECATED = 9,
+		FE_POINT_LIGHT_DEPRECATED = 10,
+		FE_SPOT_LIGHT_DEPRECATED = 11,
 		FE_CAMERA = 12,
 		FE_FRAME_BUFFER = 13,
 		FE_POST_PROCESS = 14,
@@ -87,17 +87,17 @@ namespace FocalEngine
 			{
 				return "FE_ENTITY_INSTANCED";
 			}
-			case FocalEngine::FE_DIRECTIONAL_LIGHT:
+			case FocalEngine::FE_DIRECTIONAL_LIGHT_DEPRECATED:
 			{
-				return "FE_DIRECTIONAL_LIGHT";
+				return "FE_DIRECTIONAL_LIGHT_DEPRECATED";
 			}
-			case FocalEngine::FE_POINT_LIGHT:
+			case FocalEngine::FE_POINT_LIGHT_DEPRECATED:
 			{
-				return "FE_POINT_LIGHT";
+				return "FE_POINT_LIGHT_DEPRECATED";
 			}
-			case FocalEngine::FE_SPOT_LIGHT:
+			case FocalEngine::FE_SPOT_LIGHT_DEPRECATED:
 			{
-				return "FE_SPOT_LIGHT";
+				return "FE_SPOT_LIGHT_DEPRECATED";
 			}
 			case FocalEngine::FE_CAMERA:
 			{

@@ -146,8 +146,6 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEPrefab*> StandardPrefabs;
 
 		std::string GetFileNameFromFilePath(std::string FilePath);
-		//FEEntity* CreateEntity(FEGameModel* GameModel, std::string Name, std::string ForceObjectID = "");
-		//FEEntity* CreateEntity(FEPrefab* Prefab, std::string Name, std::string ForceObjectID = "");
 
 		std::string FreeObjectName(FE_OBJECT_TYPE ObjectType);
 

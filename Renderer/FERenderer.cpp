@@ -168,7 +168,7 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 	}
 
 	if (Shader->GetParameter("FEWorldMatrix") != nullptr)
-		Shader->UpdateParameterData("FEWorldMatrix", Transform->GetTransformMatrix());
+		Shader->UpdateParameterData("FEWorldMatrix", Transform->GetWorldMatrix());
 
 	if (Shader->GetParameter("FEViewMatrix") != nullptr)
 		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
@@ -177,7 +177,7 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
 
 	if (Shader->GetParameter("FEPVMMatrix") != nullptr)
-		Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Transform->GetTransformMatrix());
+		Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Transform->GetWorldMatrix());
 
 	if (Shader->GetParameter("FECameraPosition") != nullptr)
 		Shader->UpdateParameterData("FECameraPosition", CurrentCamera->GetPosition());
@@ -285,62 +285,48 @@ void FERenderer::LoadUniformBlocks()
 	FEDirectionalLightShaderInfo DirectionalLightInfo;
 
 	int Index = 0;
-	auto LightIterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (LightIterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
+	std::vector< std::string> LightsIDList = SCENE.GetEntityIDListWith<FELightComponent>();
+	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{
-		FEDirectionalLight* Light = reinterpret_cast<FEDirectionalLight*>(LightIterator->second);
+		FEEntity* LightEntity = SCENE.GetEntity(LightsIDList[i]);
+		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
+		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
 
-		DirectionalLightInfo.Position = glm::vec4(Light->Transform.GetPosition(), 0.0f);
-		DirectionalLightInfo.Color = glm::vec4(Light->GetColor() * Light->GetIntensity(), 0.0f);
-		DirectionalLightInfo.Direction = glm::vec4(Light->GetDirection(), 0.0f);
-		DirectionalLightInfo.CSM0 = Light->CascadeData[0].ProjectionMat * Light->CascadeData[0].ViewMat;
-		DirectionalLightInfo.CSM1 = Light->CascadeData[1].ProjectionMat * Light->CascadeData[1].ViewMat;
-		DirectionalLightInfo.CSM2 = Light->CascadeData[2].ProjectionMat * Light->CascadeData[2].ViewMat;
-		DirectionalLightInfo.CSM3 = Light->CascadeData[3].ProjectionMat * Light->CascadeData[3].ViewMat;
-		DirectionalLightInfo.CSMSizes = glm::vec4(Light->CascadeData[0].Size, Light->CascadeData[1].Size, Light->CascadeData[2].Size, Light->CascadeData[3].Size);
-		DirectionalLightInfo.ActiveCascades = Light->ActiveCascades;
-		DirectionalLightInfo.BiasFixed = Light->ShadowBias;
-		if (!Light->bStaticShadowBias)
-			DirectionalLightInfo.BiasFixed = -1.0f;
-		DirectionalLightInfo.BiasVariableIntensity = Light->ShadowBiasVariableIntensity;
-		DirectionalLightInfo.Intensity = Light->GetIntensity();
+		if (LightComponent.GetType() == FE_DIRECTIONAL_LIGHT)
+		{
+			DirectionalLightInfo.Position = glm::vec4(TransformComponent.GetPosition(), 0.0f);
+			DirectionalLightInfo.Color = glm::vec4(LightComponent.GetColor() * LightComponent.GetIntensity(), 0.0f);
+			DirectionalLightInfo.Direction = glm::vec4(LIGHT_SYSTEM.GetDirection(LightEntity), 0.0f);
+			DirectionalLightInfo.CSM0 = LightComponent.CascadeData[0].ProjectionMat * LightComponent.CascadeData[0].ViewMat;
+			DirectionalLightInfo.CSM1 = LightComponent.CascadeData[1].ProjectionMat * LightComponent.CascadeData[1].ViewMat;
+			DirectionalLightInfo.CSM2 = LightComponent.CascadeData[2].ProjectionMat * LightComponent.CascadeData[2].ViewMat;
+			DirectionalLightInfo.CSM3 = LightComponent.CascadeData[3].ProjectionMat * LightComponent.CascadeData[3].ViewMat;
+			DirectionalLightInfo.CSMSizes = glm::vec4(LightComponent.CascadeData[0].Size, LightComponent.CascadeData[1].Size, LightComponent.CascadeData[2].Size, LightComponent.CascadeData[3].Size);
+			DirectionalLightInfo.ActiveCascades = LightComponent.ActiveCascades;
+			DirectionalLightInfo.BiasFixed = LightComponent.ShadowBias;
+			if (!LightComponent.bStaticShadowBias)
+				DirectionalLightInfo.BiasFixed = -1.0f;
+			DirectionalLightInfo.BiasVariableIntensity = LightComponent.ShadowBiasVariableIntensity;
+			DirectionalLightInfo.Intensity = LightComponent.GetIntensity();
+		}
+		else if (LightComponent.GetType() == FE_SPOT_LIGHT)
+		{
+			Info[Index].TypeAndAngles = glm::vec4(LightComponent.GetType(),
+												  glm::cos(glm::radians(LightComponent.GetSpotAngle())),
+												  glm::cos(glm::radians(LightComponent.GetSpotAngleOuter())),
+												  0.0f);
 
-		Info[Index].Position = glm::vec4(Light->Transform.GetPosition(), 0.0f);
-		Info[Index].Color = glm::vec4(Light->GetColor() * Light->GetIntensity(), 0.0f);
+			Info[Index].Direction = glm::vec4(LIGHT_SYSTEM.GetDirection(LightEntity), 0.0f);
+		}
+		else if (LightComponent.GetType() == FE_POINT_LIGHT)
+		{
+			Info[Index].TypeAndAngles = glm::vec4(LightComponent.GetType(), 0.0f, 0.0f, 0.0f);
+		}
+
+		Info[Index].Position = glm::vec4(TransformComponent.GetPosition(), 0.0f);
+		Info[Index].Color = glm::vec4(LightComponent.GetColor() * LightComponent.GetIntensity(), 0.0f);
 
 		Index++;
-		LightIterator++;
-	}
-
-	LightIterator = OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].begin();
-	while (LightIterator != OBJECT_MANAGER.ObjectsByType[FE_SPOT_LIGHT].end())
-	{
-		FESpotLight* Light = reinterpret_cast<FESpotLight*>(LightIterator->second);
-
-		Info[Index].TypeAndAngles = glm::vec3(Light->GetType(),
-											  glm::cos(glm::radians(Light->GetSpotAngle())),
-											  glm::cos(glm::radians(Light->GetSpotAngleOuter())));
-
-		Info[Index].Direction = glm::vec4(Light->GetDirection(), 0.0f);
-
-		Info[Index].Position = glm::vec4(Light->Transform.GetPosition(), 0.0f);
-		Info[Index].Color = glm::vec4(Light->GetColor() * Light->GetIntensity(), 0.0f);
-
-		Index++;
-		LightIterator++;
-	}
-
-	LightIterator = OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].begin();
-	while (LightIterator != OBJECT_MANAGER.ObjectsByType[FE_POINT_LIGHT].end())
-	{
-		FEPointLight* Light = reinterpret_cast<FEPointLight*>(LightIterator->second);
-		Info[Index].TypeAndAngles = glm::vec3(Light->GetType(), 0.0f, 0.0f);
-
-		Info[Index].Position = glm::vec4(Light->Transform.GetPosition(), 0.0f);
-		Info[Index].Color = glm::vec4(Light->GetColor() * Light->GetIntensity(), 0.0f);
-
-		Index++;
-		LightIterator++;
 	}
 
 	//#fix only standardShaders uniforms buffers are filled.
@@ -359,10 +345,10 @@ void FERenderer::LoadUniformBlocks()
 				if (IteratorBlock->second == GL_INVALID_INDEX)
 					IteratorBlock->second = UniformBufferForLights;
 				// adding 4 because vec3 in shader buffer will occupy 16 bytes not 12.
-				const size_t SizeOfFELightShaderInfo = sizeof(FELightShaderInfo) + 4;
+				const size_t SizeOfFELightShaderInfo = sizeof(FELightShaderInfo);// +4;
 				FE_GL_ERROR(glBindBuffer(GL_UNIFORM_BUFFER, IteratorBlock->second));
 
-				//FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeOfFELightShaderInfo * info.size(), &info));
+				//FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, 0, SizeOfFELightShaderInfo * Info.size(), &Info));
 				for (size_t j = 0; j < Info.size(); j++)
 				{
 					FE_GL_ERROR(glBufferSubData(GL_UNIFORM_BUFFER, j * SizeOfFELightShaderInfo, SizeOfFELightShaderInfo, &Info[j]));
@@ -562,18 +548,23 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	// and we need to set correct light position
 	//#fix it should update view matrices for each cascade!
 
-	auto LightIterator = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (LightIterator != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
-	{
-		FEDirectionalLight* Light = reinterpret_cast<FEDirectionalLight*>(LightIterator->second);
-		if (Light->IsCastShadows())
+	std::vector< std::string> LightsIDList = SCENE.GetEntityIDListWith<FELightComponent>();
+	for (size_t i = 0; i < LightsIDList.size(); i++)
+	{	
+		FEEntity* LightEntity = SCENE.GetEntity(LightsIDList[i]);
+		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
+		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
+
+		if (LightComponent.GetType() != FE_DIRECTIONAL_LIGHT)
+			continue;
+
+		if (LightComponent.IsCastShadows())
 		{
-			Light->UpdateCascades(CurrentCamera->Fov, CurrentCamera->AspectRatio,
-								  CurrentCamera->NearPlane, CurrentCamera->FarPlane, 
-								  CurrentCamera->ViewMatrix, CurrentCamera->GetForward(),
-								  CurrentCamera->GetRight(), CurrentCamera->GetUp());
+			LIGHT_SYSTEM.UpdateCascades(LightEntity, CurrentCamera->Fov, CurrentCamera->AspectRatio,
+													 CurrentCamera->NearPlane, CurrentCamera->FarPlane,
+													 CurrentCamera->ViewMatrix, CurrentCamera->GetForward(),
+													 CurrentCamera->GetRight(), CurrentCamera->GetUp());
 		}
-		LightIterator++;
 	}
 
 	LoadUniformBlocks();
@@ -596,13 +587,18 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
 	entt::basic_view TerrainView = SCENE.Registry.view<FETerrainComponent, FETransformComponent>();
 
-	auto ItLight = OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].begin();
-	while (ItLight != OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].end())
+	for (std::string EntityID: LightsIDList)
 	{
-		FEDirectionalLight* Light = reinterpret_cast<FEDirectionalLight*>(ItLight->second);
-		if (Light->IsCastShadows())
+		FEEntity* LightEntity = SCENE.GetEntity(EntityID);
+		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
+		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
+
+		if (LightComponent.GetType() != FE_DIRECTIONAL_LIGHT)
+			continue;
+
+		if (LightComponent.IsCastShadows())
 		{
-			const float ShadowsBlurFactor = Light->GetShadowBlurFactor();
+			const float ShadowsBlurFactor = LightComponent.GetShadowBlurFactor();
 			ShaderPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
 			ShaderInstancedPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
 
@@ -610,17 +606,17 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 			const glm::mat4 OldViewMatrix = CurrentCamera->GetViewMatrix();
 			const glm::mat4 OldProjectionMatrix = CurrentCamera->GetProjectionMatrix();
 
-			for (size_t i = 0; i < static_cast<size_t>(Light->ActiveCascades); i++)
+			for (size_t i = 0; i < static_cast<size_t>(LightComponent.ActiveCascades); i++)
 			{
 				// Put camera to the position of light.
-				CurrentCamera->ProjectionMatrix = Light->CascadeData[i].ProjectionMat;
-				CurrentCamera->ViewMatrix = Light->CascadeData[i].ViewMat;
+				CurrentCamera->ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
+				CurrentCamera->ViewMatrix = LightComponent.CascadeData[i].ViewMat;
 
-				FE_GL_ERROR(glViewport(0, 0, Light->CascadeData[i].FrameBuffer->GetWidth(), Light->CascadeData[i].FrameBuffer->GetHeight()));
+				FE_GL_ERROR(glViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight()));
 
-				UpdateGPUCullingFrustum(Light->CascadeData[i].Frustum, CurrentCamera->GetPosition());
+				UpdateGPUCullingFrustum(LightComponent.CascadeData[i].Frustum, CurrentCamera->GetPosition());
 
-				Light->CascadeData[i].FrameBuffer->Bind();
+				LightComponent.CascadeData[i].FrameBuffer->Bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
 
 				for (auto [Entity, TerrainComponent, TransformComponent] : TerrainView.each())
@@ -661,7 +657,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 					else if (Entity->HasComponent<FEInstancedComponent>())
 					{
 						FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
-						RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera, Light->CascadeData[i].Frustum, true, false);
+						RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera, LightComponent.CascadeData[i].Frustum, true, false);
 					}
 
 					GameModelComponent.GameModel->Material = OriginalMaterial;
@@ -672,16 +668,16 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 					}
 				}
 
-				Light->CascadeData[i].FrameBuffer->UnBind();
+				LightComponent.CascadeData[i].FrameBuffer->UnBind();
 				switch (i)
 				{
-					case 0: CSM0 = Light->CascadeData[i].FrameBuffer->GetDepthAttachment();
+					case 0: CSM0 = LightComponent.CascadeData[i].FrameBuffer->GetDepthAttachment();
 						break;
-					case 1: CSM1 = Light->CascadeData[i].FrameBuffer->GetDepthAttachment();
+					case 1: CSM1 = LightComponent.CascadeData[i].FrameBuffer->GetDepthAttachment();
 						break;
-					case 2: CSM2 = Light->CascadeData[i].FrameBuffer->GetDepthAttachment();
+					case 2: CSM2 = LightComponent.CascadeData[i].FrameBuffer->GetDepthAttachment();
 						break;
-					case 3: CSM3 = Light->CascadeData[i].FrameBuffer->GetDepthAttachment();
+					case 3: CSM3 = LightComponent.CascadeData[i].FrameBuffer->GetDepthAttachment();
 						break;
 					default:
 						break;
@@ -696,7 +692,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 			break;
 		}
 
-		ItLight++;
+		//ItLight++;
 	}
 
 	bUseOcclusionCulling = PreviousState;
@@ -1065,155 +1061,8 @@ void FERenderer::TakeScreenshot(const char* FileName, const int Width, const int
 	RESOURCE_MANAGER.SaveFETexture(TempTexture, FileName);
 	RESOURCE_MANAGER.DeleteFETexture(TempTexture);
 
-	//RESOURCE_MANAGER.saveFETexture(fileName, pixels, width, height);
 	delete[] pixels;
 }
-
-//void FERenderer::RenderEntity(const FEEntity* Entity, const FEBasicCamera* CurrentCamera, const bool bReloadUniformBlocks, const int ComponentIndex)
-//{
-//	if (Entity->IsWireframeMode())
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-//
-//	if (bReloadUniformBlocks)
-//		LoadUniformBlocks();
-//
-//	if (Entity->GetName() == "TransformationXGizmoEntity")
-//	{
-//		int y = 0;
-//		y++;
-//	}
-//
-//	if (ComponentIndex == -1)
-//	{
-//		for (size_t i = 0; i < Entity->Prefab->Components.size(); i++)
-//		{
-//			if (Entity->Prefab->Components[i]->GameModel == nullptr)
-//			{
-//				LOG.Add("Trying to draw Entity with GameModel that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
-//				continue;
-//			}
-//
-//			if (Entity->Prefab->Components[i]->GameModel->Material == nullptr)
-//			{
-//				LOG.Add("Trying to draw Entity with Material that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
-//				continue;
-//			}
-//
-//			if (Entity->Prefab->Components[i]->GameModel->Material->Shader == nullptr)
-//			{
-//				LOG.Add("Trying to draw Entity with Shader that is nullptr in FERenderer::RenderEntity", "FE_LOG_RENDERING", FE_LOG_ERROR);
-//				continue;
-//			}
-//				
-//			FEShader* OriginalShader = Entity->Prefab->Components[i]->GameModel->Material->Shader;
-//			if (OriginalShader == nullptr)
-//				continue;
-//
-//			if (ShaderToForce)
-//			{
-//				if (OriginalShader->GetName() == "FEPBRShader")
-//					Entity->Prefab->Components[i]->GameModel->Material->Shader = ShaderToForce;
-//			}
-//
-//			Entity->Prefab->Components[i]->GameModel->Material->Bind();
-//			FETransformComponent TempTransform;
-//			if (Entity->Prefab->Components.size() == 1)
-//			{
-//				TempTransform = Entity->Transform;
-//			}
-//			else
-//			{
-//				TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[i]->Transform);
-//			}
-//			// Test new ECS.
-//			FEEntity* NewEntity = SCENE.GetNewStyleEntityByOldStyleID(Entity->GetObjectID());
-//			if (NewEntity != nullptr)
-//				TempTransform = NewEntity->GetComponent<FETransformComponent>();
-//
-//			LoadStandardParams(Entity->Prefab->Components[i]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[i]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
-//			Entity->Prefab->Components[i]->GameModel->Material->Shader->LoadDataToGPU();
-//
-//			FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[i]->GameModel->Mesh->GetVaoID()));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
-//
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
-//				FE_GL_ERROR(glDrawElements(GL_TRIANGLES, Entity->Prefab->Components[i]->GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
-//			if ((Entity->Prefab->Components[i]->GameModel->Mesh->VertexAttributes & FE_INDEX) != FE_INDEX)
-//				FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, Entity->Prefab->Components[i]->GameModel->Mesh->GetVertexCount()));
-//
-//			FE_GL_ERROR(glBindVertexArray(0));
-//
-//			Entity->Prefab->Components[i]->GameModel->Material->UnBind();
-//
-//			if (ShaderToForce)
-//			{
-//				if (OriginalShader->GetName() == "FEPBRShader")
-//					Entity->Prefab->Components[i]->GameModel->Material->Shader = OriginalShader;
-//			}
-//		}
-//	}
-//	else
-//	{
-//		FEShader* OriginalShader = Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader;
-//		if (ShaderToForce)
-//		{
-//			if (OriginalShader->GetName() == "FEPBRShader")
-//				Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader = ShaderToForce;
-//		}
-//
-//		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Bind();
-//
-//		// Temporary staff, until we will have proper transform hierarchy
-//		if (Entity->Prefab->Components.size() == 1)
-//		{
-//			// Test new ECS.
-//			FETransformComponent TempTransform = Entity->Transform;
-//			FEEntity* NewEntity = SCENE.GetNewStyleEntityByOldStyleID(Entity->GetObjectID());
-//			if (NewEntity != nullptr)
-//				TempTransform = NewEntity->GetComponent<FETransformComponent>();
-//			LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
-//		}
-//		else
-//		{
-//			// FIX ME!
-//			const FETransformComponent TempTransform = Entity->Transform.Combine(Entity->Prefab->Components[ComponentIndex]->Transform);
-//			LoadStandardParams(Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader, CurrentCamera, Entity->Prefab->Components[ComponentIndex]->GameModel->Material, &TempTransform, Entity->IsReceivingShadows(), Entity->IsUniformLighting());
-//		}
-//		
-//		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader->LoadDataToGPU();
-//
-//		FE_GL_ERROR(glBindVertexArray(Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->GetVaoID()));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
-//
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
-//			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
-//		if ((Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->VertexAttributes & FE_INDEX) != FE_INDEX)
-//			FE_GL_ERROR(glDrawArrays(GL_TRIANGLES, 0, Entity->Prefab->Components[ComponentIndex]->GameModel->Mesh->GetVertexCount()));
-//
-//		FE_GL_ERROR(glBindVertexArray(0));
-//
-//		Entity->Prefab->Components[ComponentIndex]->GameModel->Material->UnBind();
-//
-//		if (ShaderToForce)
-//		{
-//			if (OriginalShader->GetName() == "FEPBRShader")
-//				Entity->Prefab->Components[ComponentIndex]->GameModel->Material->Shader = OriginalShader;
-//		}
-//	}
-//
-//	if (Entity->IsWireframeMode())
-//		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-//}
 
 void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
 {
@@ -1414,26 +1263,31 @@ void FERenderer::RenderTerrainComponent(FETransformComponent& TransformComponent
 	TerrainComponent.Shader->UpdateParameterData("LODlevel", TerrainComponent.LODLevel);
 	TerrainComponent.Shader->UpdateParameterData("hightMapShift", TerrainComponent.HightMapShift);
 
-	static glm::vec3 PivotPosition = TransformComponent.GetPosition();
-	PivotPosition = TransformComponent.GetPosition();
+	glm::vec3 PivotPosition = TransformComponent.GetPosition();
 	TerrainComponent.ScaleFactor = 1.0f * TerrainComponent.ChunkPerSide;
 
 	static int PVMHash = static_cast<int>(std::hash<std::string>{}("FEPVMMatrix"));
 	static int WorldMatrixHash = static_cast<int>(std::hash<std::string>{}("FEWorldMatrix"));
 	static int HightMapShiftHash = static_cast<int>(std::hash<std::string>{}("hightMapShift"));
 
-	const bool bWasDirty = TransformComponent.bDirtyFlag;
 	TerrainComponent.Shader->LoadDataToGPU();
+	FETransformComponent OldState = TransformComponent;
 	for (size_t i = 0; i < TerrainComponent.ChunkPerSide; i++)
 	{
 		for (size_t j = 0; j < TerrainComponent.ChunkPerSide; j++)
 		{
+			// Kind of hacky code
+			// Revert to old state to avoid any changes in TransformComponent.
+			TransformComponent = OldState;
+			glm::mat4 ParentMatrix = TransformComponent.GetParentMatrix();
+			// Use here SetWorldPosition instead to avoid usage of LocalSpaceMatrix directly.
 			TransformComponent.SetPosition(glm::vec3(PivotPosition.x + i * 64.0f * TransformComponent.Scale[0], PivotPosition.y, PivotPosition.z + j * 64.0f * TransformComponent.Scale[2]));
+			// Not to wait for scene hierarchy update.
+			TransformComponent.WorldSpaceMatrix = ParentMatrix * TransformComponent.GetLocalMatrix();
 
-			// Because we are doing local changes, we need read LocalSpaceMatrix.
-			TerrainComponent.Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * TransformComponent.LocalSpaceMatrix);
+			TerrainComponent.Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * TransformComponent.GetWorldMatrix());
 			if (TerrainComponent.Shader->GetParameter("FEWorldMatrix") != nullptr)
-				TerrainComponent.Shader->UpdateParameterData("FEWorldMatrix", TransformComponent.LocalSpaceMatrix);
+				TerrainComponent.Shader->UpdateParameterData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
 			TerrainComponent.Shader->UpdateParameterData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
 			TerrainComponent.Shader->LoadMatrix(PVMHash, *static_cast<glm::mat4*>(TerrainComponent.Shader->GetParameter("FEPVMMatrix")->Data));
@@ -1447,10 +1301,8 @@ void FERenderer::RenderTerrainComponent(FETransformComponent& TransformComponent
 		}
 	}
 	TerrainComponent.Shader->Stop();
-	TransformComponent.SetPosition(PivotPosition);
-
-	if (!bWasDirty)
-		TransformComponent.bDirtyFlag = false;
+	// Revert to old state to avoid any changes in TransformComponent.
+	TransformComponent = OldState;
 
 	if (TerrainComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

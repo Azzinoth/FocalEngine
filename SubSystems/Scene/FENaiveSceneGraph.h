@@ -43,9 +43,6 @@ namespace FocalEngine
 
 		std::vector<FENaiveSceneGraphNode*> GetAllNodes();
 
-		//FENaiveSceneGraphNode* GetNodeByOldEntityID(std::string OldEntityID);
-		FENaiveSceneGraphNode* GetNodeByNewEntityID(std::string NewEntityID);
-
 		void InitializeRoot(FENaiveSceneGraphNode* NewRoot);
 	};
 }
