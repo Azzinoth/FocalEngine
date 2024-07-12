@@ -6,10 +6,14 @@ FEScene* FEScene::Instance = nullptr;
 
 FEScene::FEScene()
 {
-	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = AddEntity("SceneRoot");
-	SceneGraph.InitializeRoot(NewRoot);
-	bSceneGraphInitialization = false;
+	// Hack to initialize SceneGraph only once.
+	// It would be removed when FEScene will not be a singleton.
+	static bool bIsFirst = true;
+	if (bIsFirst)
+	{
+		bIsFirst = false;
+		SceneGraph.Initialize();
+	}
 }
 
 FEEntity* FEScene::GetEntity(std::string ID)
@@ -82,12 +86,7 @@ void FEScene::Clear()
 	Registry = entt::registry{};
 	ReRegisterOnComponentCallbacks();
 
-	bSceneGraphInitialization = true;
 	SceneGraph.Clear();
-	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = AddEntity("SceneRoot");
-	SceneGraph.InitializeRoot(NewRoot);
-	bSceneGraphInitialization = false;
 }
 
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
@@ -485,7 +484,7 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 		assert(false);
 	
 	FETransformComponent& CurrentTransform = SubTreeRoot->GetEntity()->GetComponent<FETransformComponent>();
-	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SCENE.SceneGraph.GetRoot())
+	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SceneGraph.GetRoot())
 	{
 		CurrentTransform.Update();
 		CurrentTransform.WorldSpaceMatrix = CurrentTransform.LocalSpaceMatrix;
@@ -511,6 +510,19 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 
 FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
 {
+	FEEntity* Result = AddEntityOrphan(Name, ForceObjectID);
+	SceneGraph.AddNode(Result, false);
+
+	return Result;
+}
+
+FEEntity* FEScene::AddEntityOrphan(std::string Name, std::string ForceObjectID)
+{
+	return AddEntityInternal(Name, ForceObjectID);
+}
+
+FEEntity* FEScene::AddEntityInternal(std::string Name, std::string ForceObjectID)
+{
 	if (Name.empty())
 		Name = "Unnamed Entity";
 
@@ -518,10 +530,6 @@ FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
 	Entity->SetName(Name);
 	Entity->AddComponent<FETagComponent>();
 	Entity->AddComponent<FETransformComponent>();
-	if (!bSceneGraphInitialization)
-	{
-		SceneGraph.AddNode(Entity, false);
-	}
 
 	if (!ForceObjectID.empty())
 		Entity->SetID(ForceObjectID);

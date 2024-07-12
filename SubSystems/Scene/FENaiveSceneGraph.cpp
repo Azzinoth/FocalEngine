@@ -1,6 +1,8 @@
 #include "FENaiveSceneGraph.h"
 using namespace FocalEngine;
 
+#include "FEScene.h"
+
 FENaiveSceneGraph::FENaiveSceneGraph()
 {
 }
@@ -9,11 +11,14 @@ void FENaiveSceneGraph::Clear()
 {
 	bClearing = true;
 	DeleteNode(Root);
+	Initialize();
 	bClearing = false;
 }
 
-void FENaiveSceneGraph::InitializeRoot(FENaiveSceneGraphNode* NewRoot)
+void FENaiveSceneGraph::Initialize()
 {
+	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
+	NewRoot->Entity = SCENE.AddEntityOrphan("SceneRoot");
 	Root = NewRoot;
 }
 

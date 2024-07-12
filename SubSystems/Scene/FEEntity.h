@@ -18,7 +18,7 @@ namespace FocalEngine
 		~FEEntity();
 		
 		entt::entity EnTTEntity = entt::null;
-		FEScene* Scene = nullptr;
+		FEScene* ParentScene = nullptr;
 
 		entt::registry& GetRegistry();
 	public:

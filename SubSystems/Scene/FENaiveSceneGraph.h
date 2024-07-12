@@ -31,6 +31,8 @@ namespace FocalEngine
 		Json::Value ToJson();
 		void FromJson(Json::Value Root);
 	private:
+		FEScene* ParentScene = nullptr;
+
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;
 
@@ -43,6 +45,6 @@ namespace FocalEngine
 
 		std::vector<FENaiveSceneGraphNode*> GetAllNodes();
 
-		void InitializeRoot(FENaiveSceneGraphNode* NewRoot);
+		void Initialize();
 	};
 }

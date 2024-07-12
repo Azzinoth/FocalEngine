@@ -5,15 +5,15 @@ using namespace FocalEngine;
 FEEntity::FEEntity(entt::entity AssignedEnTTEntity, FEScene* Scene) : FEObject(FE_OBJECT_TYPE::FE_NEW_ENTITY, "Unnamed Entity")
 {
 	EnTTEntity = AssignedEnTTEntity;
-	this->Scene = Scene;
+	ParentScene = Scene;
 }
 
 entt::registry& FEEntity::GetRegistry()
 {
-	return Scene->Registry;
+	return ParentScene->Registry;
 }
 
 FEEntity::~FEEntity()
 {
-	Scene->Registry.destroy(EnTTEntity);
+	ParentScene->Registry.destroy(EnTTEntity);
 }
