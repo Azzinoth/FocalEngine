@@ -103,6 +103,9 @@ glm::vec3 FETransformComponent::GetScale(bool bLocalSpace) const
 
 glm::mat4 FETransformComponent::GetParentMatrix() const
 {
+	if (bSceneIndependent)
+		return glm::identity<glm::mat4>();
+
 	// We assume that WorldSpaceMatrix was set in the previous frame like this:
 	// WorldSpaceMatrix = ParentWorldSpace * LocalSpaceMatrix;
 	// Therefore, we can use it to extract ParentWorldSpace.
@@ -135,9 +138,9 @@ void FETransformComponent::SetPosition(const glm::vec3 NewPosition, bool bLocalS
 		glm::vec3 CurrentWorldPosition = GetPosition(bLocalSpace);
 		glm::vec3 Difference = NewPosition - CurrentWorldPosition;
 
-		MoveAlongAxis(glm::vec3(1, 0, 0), Difference.x);
-		MoveAlongAxis(glm::vec3(0, 1, 0), Difference.y);
-		MoveAlongAxis(glm::vec3(0, 0, 1), Difference.z);
+		MoveAlongAxis(glm::vec3(1, 0, 0), Difference.x, bLocalSpace);
+		MoveAlongAxis(glm::vec3(0, 1, 0), Difference.y, bLocalSpace);
+		MoveAlongAxis(glm::vec3(0, 0, 1), Difference.z, bLocalSpace);
 	}
 
 	SetDirtyFlag(true);
@@ -162,8 +165,8 @@ void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& 
 		glm::dvec3 DoubleTranslation;
 		glm::dvec3 DoubleSkew;
 		glm::dvec4 DoublePerspective;
-		glm::dmat4 DoubleNewChildLocalMatrix = GetParentMatrix();
-		bool Success = glm::decompose(DoubleNewChildLocalMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
+		glm::dmat4 ParentMatrix = GetParentMatrix();
+		bool Success = glm::decompose(ParentMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
 		if (Success)
 		{
 			FinalAxis = glm::inverse(glm::quat(DoubleRotation)) * glm::vec3(Axis);
@@ -302,9 +305,18 @@ void FETransformComponent::Update()
 
 glm::mat4 FETransformComponent::GetWorldMatrix() const
 {
-	// Check if it is the first frame and the scene hierarchy has not been updated.
+	if (bSceneIndependent)
+		return LocalSpaceMatrix;
+
+	//FIX ME! This is a temporary solution also it is not working as expected with entities that are in origin.
+	// Later it should be avoided because of performance issues.
+	// 
+	// If component is not part of scene hierarchy or it was not updated in the previous frame, we should intervene.
+	// To preserve expected behavior.
 	if (GEOMETRY.IsEpsilonEqual(WorldSpaceMatrix, glm::identity<glm::mat4>()))
+	{
 		return WorldSpaceMatrix * LocalSpaceMatrix;
+	}
 
 	return WorldSpaceMatrix;
 }
@@ -353,4 +365,14 @@ bool FETransformComponent::IsUniformScalingSet() const
 void FETransformComponent::SetUniformScaling(const bool NewValue)
 {
 	bUniformScaling = NewValue;
+}
+
+bool FETransformComponent::IsSceneIndependent() const
+{
+	return bSceneIndependent;
+}
+
+void FETransformComponent::SetSceneIndependent(bool NewValue)
+{
+	bSceneIndependent = NewValue;
 }

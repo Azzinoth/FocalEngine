@@ -3,7 +3,6 @@
 #include "../Renderer/FEFramebuffer.h"
 #include "../Renderer/FEPrefab.h"
 #include "Components/FEComponents.h"
-#include "entt.hpp"
 
 namespace FocalEngine
 {
@@ -24,15 +23,26 @@ namespace FocalEngine
 		entt::registry& GetRegistry();
 	public:
 		template<typename T, typename... Args>
-		T& AddComponent(Args&&... args)
+		bool AddComponent(Args&&... args)
 		{
 			if (HasComponent<T>())
 			{
 				LOG.Add("Component already exists in entity!", "FE_LOG_ECS", FE_LOG_WARNING);
-				return GetComponent<T>();
+				return false;
 			}
 
-			return GetRegistry().emplace<T>(EnTTEntity, std::forward<Args>(args)...);
+			if (COMPONENTS_TOOL.ComponentIDToInfo.find(entt::type_id<T>().hash()) == COMPONENTS_TOOL.ComponentIDToInfo.end())
+				return false;
+
+			std::string ErrorMessage;
+			if (!COMPONENTS_TOOL.ComponentIDToInfo[entt::type_id<T>().hash()].IsCompatible(GetComponentsInfoList(), &ErrorMessage))
+			{
+				LOG.Add("Can not add component: " + ErrorMessage, "FE_LOG_ECS", FE_LOG_ERROR);
+				return false;
+			}
+
+			GetRegistry().emplace<T>(EnTTEntity, std::forward<Args>(args)...);
+			return true;
 		}
 
 		template<typename T>
@@ -41,7 +51,8 @@ namespace FocalEngine
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
-				return AddComponent<T>();
+				// FIX ME! Should make it return nullptr pointer not throw exception
+				throw std::runtime_error("Component does not exist in entity");
 			}
 
 			return GetRegistry().get<T>(EnTTEntity);
@@ -63,6 +74,27 @@ namespace FocalEngine
 			}
 
 			GetRegistry().remove<T>(EnTTEntity);
+		}
+
+		std::vector<FEComponentTypeInfo> GetComponentsInfoList()
+		{
+			std::vector<FEComponentTypeInfo> Result;
+
+			// Loop through all components types
+			for (auto&& CurrentComponent : GetRegistry().storage())
+			{
+				entt::id_type ComponentID = CurrentComponent.first;
+				// Add only components that current entity has
+				if (auto& Storage = CurrentComponent.second; Storage.contains(EnTTEntity))
+				{
+					if (COMPONENTS_TOOL.ComponentIDToInfo.find(ComponentID) != COMPONENTS_TOOL.ComponentIDToInfo.end())
+					{
+						Result.push_back(COMPONENTS_TOOL.ComponentIDToInfo[ComponentID]);
+					}
+				}
+			}
+
+			return Result;
 		}
 	};
 }

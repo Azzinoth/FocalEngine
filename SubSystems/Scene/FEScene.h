@@ -52,7 +52,7 @@ namespace FocalEngine
 
 		std::vector<FEObject*> ImportAsset(std::string FileName);
 		
-
+		void Update();
 		FENaiveSceneGraph SceneGraph;
 	private:
 		SINGLETON_PRIVATE_PART(FEScene)
@@ -85,7 +85,6 @@ namespace FocalEngine
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
 
 		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
-		void UpdateSceneGraph();
 		bool bSceneGraphInitialization = true;
 	};
 

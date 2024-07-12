@@ -131,7 +131,8 @@ FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* 
 {
 	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
 	NewVirtualUIContext->CanvasEntity = AddEntity(Name + "_Virtual_UI_Canvas");
-	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
+	NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
+	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->GetComponent<FEGameModelComponent>();
 	GameModelComponent.SetUniformLighting(true);
 	VirtualUIContextMap[NewVirtualUIContext->GetObjectID()] = NewVirtualUIContext;
 	return NewVirtualUIContext;
@@ -498,23 +499,6 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 	auto Children = SubTreeRoot->GetChildren();
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		static float PrevFrame = 0;
-		if (Children[i]->GetEntity()->GetName() == "testCube2")
-		{
-			float CurrentWorldY = Children[i]->GetEntity()->GetComponent<FETransformComponent>().GetPosition(false)[1];
-
-			// DELETE ME !
-			if (abs(PrevFrame - CurrentWorldY) > 0.0001f)
-			{
-				int y = 0;
-				y++;
-				PrevFrame = CurrentWorldY;
-			}
-
-			int y = 0;
-			y++;
-		}
-
 		FETransformComponent& ChildTransform = Children[i]->GetEntity()->GetComponent<FETransformComponent>();
 
 		ChildTransform.Update();
@@ -523,11 +507,6 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 		//	ChildTransform.SetDirtyFlag(true);
 		TransformUpdate(Children[i]);
 	}
-}
-
-void FEScene::UpdateSceneGraph()
-{
-	TransformUpdate(SceneGraph.GetRoot());
 }
 
 FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
@@ -541,7 +520,7 @@ FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
 	Entity->AddComponent<FETransformComponent>();
 	if (!bSceneGraphInitialization)
 	{
-		SceneGraph.AddNode(Entity);
+		SceneGraph.AddNode(Entity, false);
 	}
 
 	if (!ForceObjectID.empty())
@@ -575,4 +554,9 @@ void FEScene::ReRegisterOnComponentCallbacks()
 
 	for (size_t i = 0; i < OnSceneClearCallbacks.size(); i++)
 		OnSceneClearCallbacks[i]();
+}
+
+void FEScene::Update()
+{
+	TransformUpdate(SceneGraph.GetRoot());
 }

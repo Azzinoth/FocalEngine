@@ -43,8 +43,12 @@ namespace FocalEngine
 
 		bool IsUniformScalingSet() const;
 		void SetUniformScaling(bool NewValue);
+
+		bool IsSceneIndependent() const;
+		void SetSceneIndependent(bool NewValue);
 	private:
 		bool bDirtyFlag = false;
+		bool bSceneIndependent = false;
 
 		glm::mat4 WorldSpaceMatrix = glm::identity<glm::mat4>();
 		glm::mat4 LocalSpaceMatrix = glm::identity<glm::mat4>();

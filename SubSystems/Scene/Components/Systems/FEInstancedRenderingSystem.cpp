@@ -21,7 +21,7 @@ void FEInstancedSystem::OnSceneClear()
 
 void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
 {
-	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 
 	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
@@ -33,7 +33,7 @@ void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 void FEInstancedSystem::OnMyComponentDestroy(FEEntity* Entity)
 {
-	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 
 	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();

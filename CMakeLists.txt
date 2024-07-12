@@ -220,6 +220,7 @@ file(GLOB Core_SRC
 
 file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEComponents.h"
+	"SubSystems/Scene/Components/FEComponents.cpp"
 	"SubSystems/Scene/Components/FETagComponent.cpp"
 	"SubSystems/Scene/Components/FETagComponent.h"
 	"SubSystems/Scene/Components/FETransformComponent.cpp"

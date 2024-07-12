@@ -528,7 +528,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 {
 	LastRenderedResult = nullptr;
 
-	SCENE.UpdateSceneGraph();
+	SCENE.Update();
 
 	if (bVRActive)
 		return;
