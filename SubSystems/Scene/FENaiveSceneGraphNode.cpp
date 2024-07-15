@@ -1,7 +1,7 @@
 #include "FENaiveSceneGraphNode.h"
 using namespace FocalEngine;
 
-FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_ENTITY, Name) {}
+FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_GRAPH_NODE, Name) {}
 FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 {
 	for (size_t i = 0; i < Children.size(); i++)

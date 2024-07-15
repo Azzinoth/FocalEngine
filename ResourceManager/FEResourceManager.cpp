@@ -1729,14 +1729,14 @@ bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* N
 	return true;
 }
 
-FETexture* FEResourceManager::CreateBlankHightMapTexture(std::string Name)
+FETexture* FEResourceManager::CreateBlankHightMapTexture(int Width, int Height, std::string Name)
 {
 	if (Name.empty())
 		Name = "UnnamedHeightMap";
 
 	FETexture* NewTexture = CreateTexture(Name);
-	NewTexture->Width = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
-	NewTexture->Height = FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION;
+	NewTexture->Width = Width;
+	NewTexture->Height = Height;
 	NewTexture->InternalFormat = GL_R16;
 	NewTexture->MagFilter = FE_LINEAR;
 	NewTexture->FileName = "NULL";

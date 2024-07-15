@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../ResourceManager/FEResourceManager.h"
+#include "FEEntity.h"
 
 namespace FocalEngine
 {

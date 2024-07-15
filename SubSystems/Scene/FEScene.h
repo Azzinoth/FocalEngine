@@ -1,5 +1,6 @@
 #pragma once
 
+#include"FEEntity.h"
 #include "../ResourceManager/FEResourceManager.h"
 #include "../CoreExtensions/FEFreeCamera.h"
 #include "../CoreExtensions/FEModelViewCamera.h"
@@ -14,10 +15,11 @@ namespace FocalEngine
 {
 	class FEScene
 	{
+		friend class FEEntity;
+		friend class FESceneManager;
+		friend class FEInstancedSystem;
 		friend class FERenderer;
 		friend class FEngine;
-		friend class FEEntity;
-		friend class FEInstancedSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEScene)
 
@@ -26,7 +28,7 @@ namespace FocalEngine
 		template<typename T>
 		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback);
 		template<typename T>
-		void RegisterOnComponentDestroyCallback(std::function<void(FEEntity*)> Callback);
+		void RegisterOnComponentDestroyCallback(std::function<void(FEEntity*, bool)> Callback);
 		template<typename T>
 		void RegisterOnComponentUpdateCallback(std::function<void(FEEntity*)> Callback);
 
@@ -60,6 +62,8 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEScene)
 
 		entt::registry Registry;
+		bool bIsSceneClearing = false;
+		bool bActive = false;
 
 		template<typename T>
 		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity);
@@ -67,7 +71,7 @@ namespace FocalEngine
 
 		template<typename T>
 		static void OnComponentDestroyWrapper(entt::registry& Registry, entt::entity EnTTEntity);
-		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentDestroyCallbacks;
+		std::unordered_map<std::type_index, std::function<void(FEEntity*, bool)>> OnComponentDestroyCallbacks;
 
 		template<typename T>
 		static void OnComponentUpdateWrapper(entt::registry& Registry, entt::entity EnTTEntity);

@@ -5,10 +5,18 @@ void FEScene::RegisterOnComponentConstructCallback(std::function<void(FEEntity*)
 {
 	OnComponentConstructCallbacks[std::type_index(typeid(T))] = std::move(Callback);
 	Registry.on_construct<T>().connect<&FEScene::OnComponentConstructWrapper<T>>();
+	//Registry.on_construct<T>().connect<std::bind(&FEScene::OnComponentConstructWrapper<T>, this)>();
+
+
+	/*Registry.on_construct<T>().connect([this](entt::registry& registry, entt::entity entity) {
+		this->OnComponentConstructWrapper<T>(registry, entity);
+	});*/
+
+	//Registry.on_construct<T>().connect<&FEScene::OnComponentConstructWrapper<T>, FEScene>(*this);
 }
 
 template<typename T>
-void FEScene::RegisterOnComponentDestroyCallback(std::function<void(FEEntity*)> Callback)
+void FEScene::RegisterOnComponentDestroyCallback(std::function<void(FEEntity*, bool)> Callback)
 {
 	OnComponentDestroyCallbacks[std::type_index(typeid(T))] = std::move(Callback);
 	Registry.on_destroy<T>().connect<&FEScene::OnComponentDestroyWrapper<T>>();
@@ -52,7 +60,7 @@ static void FEScene::OnComponentDestroyWrapper(entt::registry& Registry, entt::e
 	{
 		auto MapIterator = FEScene::getInstance().OnComponentDestroyCallbacks.find(std::type_index(typeid(T)));
 		if (MapIterator != FEScene::getInstance().OnComponentDestroyCallbacks.end())
-			MapIterator->second(Entity);
+			MapIterator->second(Entity, FEScene::getInstance().bIsSceneClearing);
 	}
 }
 

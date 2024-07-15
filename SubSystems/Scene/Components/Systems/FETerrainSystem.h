@@ -1,17 +1,8 @@
 #pragma once
-#include "../../Scene/FEScene.h"
+#include "../../Scene/FESceneManager.h"
 
 namespace FocalEngine
 {
-	/*struct FEDrawElementsIndirectCommand
-	{
-		unsigned int Count;
-		unsigned int PrimCount;
-		unsigned int FirstIndex;
-		unsigned int BaseVertex;
-		unsigned int BaseInstance;
-	};*/
-
 	class FETerrainSystem
 	{
 		friend class FEScene;
@@ -21,7 +12,7 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FETerrainSystem)
 
 		static void OnMyComponentAdded(FEEntity* Entity);
-		static void OnMyComponentDestroy(FEEntity* Entity);
+		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 		void OnSceneClear();
 

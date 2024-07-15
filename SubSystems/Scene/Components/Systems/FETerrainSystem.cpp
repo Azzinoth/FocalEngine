@@ -82,8 +82,11 @@ void FETerrainSystem::OnMyComponentAdded(FEEntity* Entity)
 	TerrainComponent.Shader = RESOURCE_MANAGER.GetShaderByName("FETerrainShader")[0];
 }
 
-void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity)
+void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
+	if (bIsSceneClearing)
+		return;
+
 	if (Entity == nullptr || !Entity->HasComponent<FETerrainComponent>())
 		return;
 

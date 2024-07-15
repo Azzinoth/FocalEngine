@@ -1,6 +1,9 @@
 #include "FEVirtualUI.h"
 #include "../ResourceManager/FEResourceManager.h"
 
+// FIX ME!
+#include "Scene/FEEntity.h"
+
 namespace FocalEngine
 {
 	// Not designed to work with canvases a lot more complex than a plane.

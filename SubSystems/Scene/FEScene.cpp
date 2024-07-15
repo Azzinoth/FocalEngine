@@ -74,6 +74,8 @@ std::vector<std::string> FEScene::GetEntityIDList()
 
 void FEScene::Clear()
 {
+	bIsSceneClearing = true;
+
 	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
@@ -87,6 +89,8 @@ void FEScene::Clear()
 	ReRegisterOnComponentCallbacks();
 
 	SceneGraph.Clear();
+
+	bIsSceneClearing = false;
 }
 
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
@@ -527,7 +531,6 @@ FEEntity* FEScene::AddEntityInternal(std::string Name, std::string ForceObjectID
 		Name = "Unnamed Entity";
 
 	FEEntity* Entity = new FEEntity(Registry.create(), this);
-	Entity->SetName(Name);
 	Entity->AddComponent<FETagComponent>();
 	Entity->AddComponent<FETransformComponent>();
 

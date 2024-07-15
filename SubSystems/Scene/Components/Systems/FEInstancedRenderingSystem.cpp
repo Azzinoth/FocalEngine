@@ -31,8 +31,11 @@ void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
 
 // There should be third system to manage that.
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
-void FEInstancedSystem::OnMyComponentDestroy(FEEntity* Entity)
+void FEInstancedSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
+	if (bIsSceneClearing)
+		return;
+
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 

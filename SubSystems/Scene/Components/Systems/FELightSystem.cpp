@@ -12,6 +12,9 @@ void FELightSystem::RegisterOnComponentCallbacks()
 {
 	SCENE.RegisterOnComponentConstructCallback<FELightComponent>(OnMyComponentAdded);
 	SCENE.RegisterOnComponentDestroyCallback<FELightComponent>(OnMyComponentDestroy);
+
+
+	SCENE_MANAGER.RegisterOnComponentConstructCallback<FELightComponent>(OnMyComponentAdded);
 }
 
 void FELightSystem::OnSceneClear()
@@ -38,7 +41,7 @@ void FELightSystem::OnMyComponentAdded(FEEntity* Entity)
 	}
 }
 
-void FELightSystem::OnMyComponentDestroy(FEEntity* Entity)
+void FELightSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FELightComponent>())
 		return;

@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Scene/FEScene.h"
+#include "../../Scene/FESceneManager.h"
 
 namespace FocalEngine
 {
@@ -12,7 +12,7 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FESkyDomeSystem)
 
 		static void OnMyComponentAdded(FEEntity* Entity);
-		static void OnMyComponentDestroy(FEEntity* Entity);
+		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 		void OnSceneClear();
 

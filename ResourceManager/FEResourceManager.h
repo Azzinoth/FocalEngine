@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Renderer/FEPostProcess.h"
-#include "../SubSystems/Scene/FEEntity.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
@@ -57,7 +56,7 @@ namespace FocalEngine
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
-		FETexture* CreateBlankHightMapTexture(std::string Name = "");
+		FETexture* CreateBlankHightMapTexture(int Width, int Height, std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
 
 		FETexture* ImportTexture(const char* FileName);

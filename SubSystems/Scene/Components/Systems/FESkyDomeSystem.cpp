@@ -46,8 +46,11 @@ void FESkyDomeSystem::OnMyComponentAdded(FEEntity* Entity)
 		return;
 }
 
-void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity)
+void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
+	if (bIsSceneClearing)
+		return;
+
 	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 }

@@ -27,8 +27,8 @@ namespace FocalEngine
 		FE_TERRAIN_LAYER = 15,
 		FE_PREFAB = 16,
 		FE_VIRTUAL_UI_CONTEXT = 17,
-		FE_SCENE_ENTITY = 18,
-		FE_NEW_ENTITY = 19
+		FE_SCENE_GRAPH_NODE = 18,
+		FE_SCENE = 19
 	};
 
 	class FEObjectManager
@@ -38,6 +38,7 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FEResourceManager;
 		friend class FEScene;
+		friend class FESceneManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
 		FEObject* GetFEObject(std::string ID);
@@ -119,13 +120,13 @@ namespace FocalEngine
 			{
 				return "FE_VIRTUAL_UI_CONTEXT";
 			}
-			case FocalEngine::FE_SCENE_ENTITY:
+			case FocalEngine::FE_SCENE_GRAPH_NODE:
 			{
-				return "FE_SCENE_ENTITY";
+				return "FE_SCENE_GRAPH_NODE";
 			}
-			case FocalEngine::FE_NEW_ENTITY:
+			case FocalEngine::FE_SCENE:
 			{
-				return "FE_NEW_ENTITY";
+				return "FE_SCENE";
 			}
 			default:
 				break;
