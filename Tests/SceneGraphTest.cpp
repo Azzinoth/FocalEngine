@@ -7,91 +7,94 @@ using namespace FocalEngine;
 
 TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 {
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
 	// Get root node from the scene returns valid node.
-	FENaiveSceneGraphNode* RootNode = SCENE.SceneGraph.GetRoot();
+	FENaiveSceneGraphNode* RootNode = CurrentScene->SceneGraph.GetRoot();
 	ASSERT_NE(RootNode, nullptr);
 
 	// Root node can be found by its ID.
-	FENaiveSceneGraphNode* RootNodeByID = SCENE.SceneGraph.GetNode(RootNode->GetObjectID());
+	FENaiveSceneGraphNode* RootNodeByID = CurrentScene->SceneGraph.GetNode(RootNode->GetObjectID());
 	ASSERT_EQ(RootNode, RootNodeByID);
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Root node can not be deleted.
-	SCENE.SceneGraph.DeleteNode(RootNode);
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	ASSERT_NE(SCENE.SceneGraph.GetNode(RootNode->GetObjectID()), nullptr);
+	CurrentScene->SceneGraph.DeleteNode(RootNode);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	ASSERT_NE(CurrentScene->SceneGraph.GetNode(RootNode->GetObjectID()), nullptr);
 
-	// Add a new node to the scene.
-	FEEntity* Node_A = SCENE.AddEntity("Node_A");
+	// Add a new node to the CurrentScene->
+	FEEntity* Node_A = CurrentScene->AddEntity("Node_A");
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 1);
+	std::string Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 1);
 
 	// New node could be found by its ID.
-	FENaiveSceneGraphNode* NodeByID = SCENE.SceneGraph.GetNode(Node_A_ID);
+	FENaiveSceneGraphNode* NodeByID = CurrentScene->SceneGraph.GetNode(Node_A_ID);
 	ASSERT_NE(NodeByID, nullptr);
 
 	// Delete the new node.
-	SCENE.SceneGraph.DeleteNode(NodeByID);
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+	CurrentScene->SceneGraph.DeleteNode(NodeByID);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Check that deleted node can not be found.
-	ASSERT_EQ(SCENE.SceneGraph.GetNode(Node_A_ID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(Node_A_ID), nullptr);
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST(SceneGraph, Check_For_Cycles)
 {
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Create a few nodes.
-	FEEntity* Node_A = SCENE.AddEntity("Node_A");
-	FEEntity* Node_B = SCENE.AddEntity("Node_B");
-	FEEntity* Node_C = SCENE.AddEntity("Node_C");
+	FEEntity* Node_A = CurrentScene->AddEntity("Node_A");
+	FEEntity* Node_B = CurrentScene->AddEntity("Node_B");
+	FEEntity* Node_C = CurrentScene->AddEntity("Node_C");
 
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 3);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SCENE.SceneGraph.GetNodeByEntityID(Node_B->GetObjectID())->GetObjectID();
-	std::string Node_C_ID = SCENE.SceneGraph.GetNodeByEntityID(Node_C->GetObjectID())->GetObjectID();
+	std::string Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
+	std::string Node_B_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_B->GetObjectID())->GetObjectID();
+	std::string Node_C_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_C->GetObjectID())->GetObjectID();
 
-	FENaiveSceneGraphNode* NodeA = SCENE.SceneGraph.GetNode(Node_A_ID);
-	FENaiveSceneGraphNode* NodeB = SCENE.SceneGraph.GetNode(Node_B_ID);
-	FENaiveSceneGraphNode* NodeC = SCENE.SceneGraph.GetNode(Node_C_ID);
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNode(Node_A_ID);
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNode(Node_B_ID);
+	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNode(Node_C_ID);
 
 	// Create a valid hierarchy.
-	SCENE.SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID());
-	SCENE.SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID());
+	CurrentScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID());
+	CurrentScene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID());
 
 	// Check that there are no cycles in this valid hierarchy.
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeA));
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeB));
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeC));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeB));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeC));
 
 	// Try to create a cycle.
-	ASSERT_FALSE(SCENE.SceneGraph.MoveNode(NodeA->GetObjectID(), NodeC->GetObjectID()));
+	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetObjectID(), NodeC->GetObjectID()));
 
 	// Verify that the cycle was not created.
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeA));
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeB));
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeC));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeB));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeC));
 
 	// Try to create a self-cycle.
-	ASSERT_FALSE(SCENE.SceneGraph.MoveNode(NodeA->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetObjectID(), NodeA->GetObjectID()));
 
 	// Verify that the self-cycle was not created.
-	ASSERT_FALSE(SCENE.SceneGraph.HasCycle(NodeA));
+	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_GetNodeCount_AND_ChildCount_Functions)
 {
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Check root node (0)
 	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
@@ -154,19 +157,20 @@ TEST_F(SceneGraphTest, Check_GetNodeCount_AND_ChildCount_Functions)
 		ASSERT_EQ(Nodes[i]->GetRecursiveChildCount(), 0);
 	}
 
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_MoveNode_Function)
 {
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// First simple move
-	ASSERT_TRUE(SCENE.SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[10]->GetObjectID()));
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[10]->GetObjectID()));
 	ASSERT_EQ(Nodes[5]->GetImediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[5]->GetRecursiveChildCount(), 0);
 	ASSERT_EQ(Nodes[10]->GetImediateChildrenCount(), 2);
@@ -177,8 +181,8 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 	srand(RANDOM_SEED);
 	for (size_t i = 0; i < RANDOM_ACTIONS_ITERATIONS; i++)
 	{
-		size_t RandomIndexOfNodeToMove = rand() % SCENE.SceneGraph.GetNodeCount();
-		size_t RandomIndexOfNewParent = rand() % SCENE.SceneGraph.GetNodeCount();
+		size_t RandomIndexOfNodeToMove = rand() % CurrentScene->SceneGraph.GetNodeCount();
+		size_t RandomIndexOfNewParent = rand() % CurrentScene->SceneGraph.GetNodeCount();
 
 		size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
 		size_t NodeToMoveRecursiveChildCount = Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
@@ -186,8 +190,8 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 		size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount();
 		size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
-		bool bParentWasDescendant = SCENE.SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
-		if (SCENE.SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
+		bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
+		if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
 		{
 			// If node was moved, check if the counts are correct.
 			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
@@ -214,18 +218,41 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 		}
 
 		// Check if the scene graph still have same number of nodes.
-		ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+		ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 	}
 
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
-	SCENE.Clear();
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, Check_Node_AddChild_Function)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+
+	// Try to add a child that is nullptr
+	Nodes[0]->AddChild(nullptr);
+	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+
+	// Try to add a child to it self
+	Nodes[0]->AddChild(Nodes[0]);
+	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+
+	// Try to add a child that is already a child
+	Nodes[0]->AddChild(Nodes[1]);
+	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 {
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	const size_t MaxNodes = 10000;
 
@@ -233,12 +260,12 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 	for (size_t i = 0; i < RANDOM_ACTIONS_ITERATIONS; i++)
 	{
 		size_t RandomAction = rand() % 3;
-		while ((SCENE.SceneGraph.GetNodeCount() >= MaxNodes && RandomAction == 0) ||
-			(SCENE.SceneGraph.GetNodeCount() == 0 && RandomAction != 0))
+		while ((CurrentScene->SceneGraph.GetNodeCount() >= MaxNodes && RandomAction == 0) ||
+			(CurrentScene->SceneGraph.GetNodeCount() == 0 && RandomAction != 0))
 		{
 			RandomAction = rand() % 2;
 		}
-		size_t OldNodeCount = SCENE.SceneGraph.GetNodeCount();
+		size_t OldNodeCount = CurrentScene->SceneGraph.GetNodeCount();
 
 		// Add a new node
 		if (RandomAction == 0)
@@ -246,17 +273,17 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			size_t AmountOfNodesToAdd = rand() % 5 + 1;
 			for (size_t i = 0; i < AmountOfNodesToAdd; i++)
 			{
-				FEEntity* Entity = SCENE.AddEntity("Node_" + std::to_string(SCENE.SceneGraph.GetNodeCount()));
-				Nodes.push_back(SCENE.SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+				FEEntity* Entity = CurrentScene->AddEntity("Node_" + std::to_string(CurrentScene->SceneGraph.GetNodeCount()));
+				Nodes.push_back(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
 			}
 
-			ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), OldNodeCount + AmountOfNodesToAdd);
+			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount + AmountOfNodesToAdd);
 		}
 		// Move a node
 		else if (RandomAction == 1)
 		{
-			size_t RandomIndexOfNodeToMove = rand() % SCENE.SceneGraph.GetNodeCount();
-			size_t RandomIndexOfNewParent = rand() % SCENE.SceneGraph.GetNodeCount();
+			size_t RandomIndexOfNodeToMove = rand() % CurrentScene->SceneGraph.GetNodeCount();
+			size_t RandomIndexOfNewParent = rand() % CurrentScene->SceneGraph.GetNodeCount();
 
 			size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
 			size_t NodeToMoveRecursiveChildCount = Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
@@ -264,8 +291,8 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount();
 			size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
-			bool bParentWasDescendant = SCENE.SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
-			if (SCENE.SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
+			bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
+			if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
 			{
 				// If node was moved, check if the counts are correct.
 				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
@@ -292,12 +319,12 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			}
 
 			// Check if the scene graph still have same number of nodes.
-			ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), OldNodeCount);
+			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount);
 		}
 		// Delete a node
 		else if (RandomAction == 2)
 		{
-			size_t RandomIndexOfNodeToDelete = rand() % SCENE.SceneGraph.GetNodeCount();
+			size_t RandomIndexOfNodeToDelete = rand() % CurrentScene->SceneGraph.GetNodeCount();
 			FENaiveSceneGraphNode* Parent = Nodes[RandomIndexOfNodeToDelete]->GetParent();
 			size_t ParentChildrenCount = Parent->GetImediateChildrenCount();
 			size_t ParentRecursiveChildCount = Parent->GetRecursiveChildCount();
@@ -321,85 +348,87 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			}
 			ASSERT_EQ(Nodes.size(), OldNodeCount - NodeToDeleteRecursiveChildCount - 1);
 
-			SCENE.SceneGraph.DeleteNode(NodeToDelete);
+			CurrentScene->SceneGraph.DeleteNode(NodeToDelete);
 
 			// Check if the counts are correct.
 			ASSERT_EQ(Parent->GetImediateChildrenCount(), ParentChildrenCount - 1);
 			ASSERT_EQ(Parent->GetRecursiveChildCount(), ParentRecursiveChildCount - NodeToDeleteRecursiveChildCount - 1);
 
-			ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), OldNodeCount - NodeToDeleteRecursiveChildCount - 1);
+			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount - NodeToDeleteRecursiveChildCount - 1);
 		}
 	}
 
-	//test = SCENE.SceneGraph.ToJson().toStyledString();
+	//test = CurrentScene->SceneGraph.ToJson().toStyledString();
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_IsDescendant_Function)
 {
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Test direct parent-child relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[1]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[2]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[3]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[1]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[2]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[3]));
 
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[4]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[5]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[6]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[4]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[6]));
 
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[15], Nodes[24]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[15], Nodes[24]));
 
 	// Test grandparent relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[5]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[8]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[12]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[8]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[12]));
 
 	// Test great-grandparent relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[2], Nodes[26]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[3], Nodes[29]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[2], Nodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[3], Nodes[29]));
 
 	// Test long-distance relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[23]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[24]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[25]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[26]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[27]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[28]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[29]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[23]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[24]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[25]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[27]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[28]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[29]));
 
 	// Test non-descendant relationships
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[25]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[7]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[3]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[25]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[7]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[3]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[2], Nodes[24]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[2], Nodes[10]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[2], Nodes[23]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[2], Nodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[2], Nodes[10]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[2], Nodes[23]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[1], Nodes[2]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[2], Nodes[1]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[1], Nodes[2]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[2], Nodes[1]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[23], Nodes[24]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[24], Nodes[23]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[23], Nodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[24], Nodes[23]));
 
 	// Test self-relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(Nodes[0], Nodes[0]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], Nodes[0]));
 
 	// Test with null nodes
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(nullptr, Nodes[0]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(Nodes[0], nullptr));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(nullptr, nullptr));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(nullptr, Nodes[0]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], nullptr));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(nullptr, nullptr));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Position_Inheritance_Propagation)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
 
@@ -424,12 +453,13 @@ TEST_F(SceneGraphTest, Check_Position_Inheritance_Propagation)
 	//Output += "glm::dvec3 ExpectedScale = glm::dvec3(" + std::to_string(ActualScale.x) + ", " + std::to_string(ActualScale.y) + ", " + std::to_string(ActualScale.z) + ");\n";
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualPosition, ExpectedPosition));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Rotation_Inheritance_Propagation)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
 
@@ -451,12 +481,13 @@ TEST_F(SceneGraphTest, Check_Rotation_Inheritance_Propagation)
 	GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildTransformMatrix, ActualPosition, ActualRotation, ActualScale);
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualRotation, ExpectedRotation));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Scale_Inheritance_Propagation)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
 
@@ -477,12 +508,13 @@ TEST_F(SceneGraphTest, Check_Scale_Inheritance_Propagation)
 	GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildTransformMatrix, ActualPosition, ActualRotation, ActualScale);
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualScale, ExpectedScale));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Tiny)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -524,12 +556,13 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Tiny)
 	
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Small)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -557,12 +590,13 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Small)
 	glm::mat4 ActualMatrix = Entity_13->GetComponent<FETransformComponent>().GetWorldMatrix();
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Medium)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -592,31 +626,31 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Medium)
 	glm::mat4 ActualMatrix = Entity_25->GetComponent<FETransformComponent>().GetWorldMatrix();
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 void SceneGraphTest::SetUp() {}
 
 void SceneGraphTest::TearDown()
 {
-	SCENE.Clear();
+	//SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
-std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraph(size_t NodeCount)
+std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraph(FEScene* SceneToWorkWith, size_t NodeCount)
 {
 	std::vector<FENaiveSceneGraphNode*> Nodes;
 	for (size_t i = 0; i < NodeCount; i++)
 	{
-		FEEntity* Entity = SCENE.AddEntity("Node_" + std::to_string(i));
-		Nodes.push_back(SCENE.SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+		FEEntity* Entity = SceneToWorkWith->AddEntity("Node_" + std::to_string(i));
+		Nodes.push_back(SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
 	}
 
 	return Nodes;
 }
 
-std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize()
+std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize(FEScene* SceneToWorkWith)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(6);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(SceneToWorkWith, 6);
 
 
 	// Create a hierarchy:
@@ -628,17 +662,17 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize()
     //         4   2
 	//              \
 	//               3
-	SCENE.SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[1]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[2]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[2]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
 
 	return Nodes;
 }
 
-std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphSmallSize()
+std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphSmallSize(FEScene* SceneToWorkWith)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(15);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(SceneToWorkWith, 15);
 
 	// Create a hierarchy:
 	//
@@ -652,33 +686,33 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphSmallSize(
 	//      / \       / \
     //     11 12     13 14
 
-	SCENE.SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[1]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[5]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[5]->GetObjectID(), Nodes[1]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[6]->GetObjectID(), Nodes[2]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[6]->GetObjectID(), Nodes[2]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[7]->GetObjectID(), Nodes[3]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[8]->GetObjectID(), Nodes[4]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[7]->GetObjectID(), Nodes[3]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[8]->GetObjectID(), Nodes[4]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[9]->GetObjectID(), Nodes[6]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[10]->GetObjectID(), Nodes[6]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[9]->GetObjectID(), Nodes[6]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[10]->GetObjectID(), Nodes[6]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[11]->GetObjectID(), Nodes[7]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[12]->GetObjectID(), Nodes[7]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[11]->GetObjectID(), Nodes[7]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[12]->GetObjectID(), Nodes[7]->GetObjectID());
 
-	SCENE.SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[9]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[9]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[9]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[9]->GetObjectID());
 
 	return Nodes;
 }
 
-std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphMediumSize()
+std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphMediumSize(FEScene* SceneToWorkWith)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(30);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(SceneToWorkWith, 30);
 
 	// Create a hierarchy:
 	//
@@ -693,47 +727,47 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphMediumSize
     //  23    24    25    26      27 28  29
 
 	// Level 1
-	SCENE.SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[0]->GetObjectID());
 
 	// Level 2
 	for (int i = 1; i <= 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			SCENE.SceneGraph.MoveNode(Nodes[3 * i + j + 1]->GetObjectID(), Nodes[i]->GetObjectID());
+			SceneToWorkWith->SceneGraph.MoveNode(Nodes[3 * i + j + 1]->GetObjectID(), Nodes[i]->GetObjectID());
 		}
 	}
 
 	// Level 3
-	SCENE.SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[4]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[4]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[5]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[16]->GetObjectID(), Nodes[7]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[17]->GetObjectID(), Nodes[8]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[18]->GetObjectID(), Nodes[9]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[19]->GetObjectID(), Nodes[10]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[20]->GetObjectID(), Nodes[11]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[21]->GetObjectID(), Nodes[12]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[22]->GetObjectID(), Nodes[12]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[4]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[4]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[5]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[16]->GetObjectID(), Nodes[7]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[17]->GetObjectID(), Nodes[8]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[18]->GetObjectID(), Nodes[9]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[19]->GetObjectID(), Nodes[10]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[20]->GetObjectID(), Nodes[11]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[21]->GetObjectID(), Nodes[12]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[22]->GetObjectID(), Nodes[12]->GetObjectID());
 
 	// Level 4
-	SCENE.SceneGraph.MoveNode(Nodes[23]->GetObjectID(), Nodes[13]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[24]->GetObjectID(), Nodes[15]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[25]->GetObjectID(), Nodes[16]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[26]->GetObjectID(), Nodes[18]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[27]->GetObjectID(), Nodes[20]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[28]->GetObjectID(), Nodes[21]->GetObjectID());
-	SCENE.SceneGraph.MoveNode(Nodes[29]->GetObjectID(), Nodes[22]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[23]->GetObjectID(), Nodes[13]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[24]->GetObjectID(), Nodes[15]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[25]->GetObjectID(), Nodes[16]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[26]->GetObjectID(), Nodes[18]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[27]->GetObjectID(), Nodes[20]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[28]->GetObjectID(), Nodes[21]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[29]->GetObjectID(), Nodes[22]->GetObjectID());
 
 	return Nodes;
 }
 
-void SceneGraphTest::TestTransformationComponentAfterChildAdded(const std::string& ComponentType, const glm::vec3& InitialParentTransform, const glm::vec3& InitialChildTransform)
+void SceneGraphTest::TestTransformationComponentAfterChildAdded(FEScene* SceneToWorkWith, const std::string& ComponentType, const glm::vec3& InitialParentTransform, const glm::vec3& InitialChildTransform)
 {
-	FEEntity* Entity_A = SCENE.AddEntity("A");
-	FEEntity* Entity_B = SCENE.AddEntity("B");
+	FEEntity* Entity_A = SceneToWorkWith->AddEntity("A");
+	FEEntity* Entity_B = SceneToWorkWith->AddEntity("B");
 
 	// Set transformations based on type
 	if (ComponentType == "POSITION")
@@ -753,10 +787,10 @@ void SceneGraphTest::TestTransformationComponentAfterChildAdded(const std::strin
 	}
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
+	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
 
-	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -810,10 +844,10 @@ bool SceneGraphTest::ValidateTransformConsistency(const FETransformComponent& Tr
 	return true;
 }
 
-void SceneGraphTest::TestTransformationAfterChildAdded(const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
+void SceneGraphTest::TestTransformationAfterChildAdded(FEScene* SceneToWorkWith, const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
 {
-	FEEntity* Entity_A = SCENE.AddEntity("A");
-	FEEntity* Entity_B = SCENE.AddEntity("B");
+	FEEntity* Entity_A = SceneToWorkWith->AddEntity("A");
+	FEEntity* Entity_B = SceneToWorkWith->AddEntity("B");
 
 	Entity_A->GetComponent<FETransformComponent>().SetPosition(InitialParentTransform.GetPosition());
 	Entity_B->GetComponent<FETransformComponent>().SetPosition(InitialChildTransform.GetPosition());
@@ -825,10 +859,10 @@ void SceneGraphTest::TestTransformationAfterChildAdded(const FETransformComponen
 	Entity_B->GetComponent<FETransformComponent>().SetScale(InitialChildTransform.GetScale());
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
+	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
 
-	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -860,10 +894,10 @@ void SceneGraphTest::TestTransformationAfterChildAdded(const FETransformComponen
 	}
 }
 
-void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(const std::string& ComponentType, const glm::vec3& InitialParentTransform, const glm::vec3& InitialChildTransform)
+void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(FEScene* SceneToWorkWith, const std::string& ComponentType, const glm::vec3& InitialParentTransform, const glm::vec3& InitialChildTransform)
 {
-	FEEntity* Entity_A = SCENE.AddEntity("A");
-	FEEntity* Entity_B = SCENE.AddEntity("B");
+	FEEntity* Entity_A = SceneToWorkWith->AddEntity("A");
+	FEEntity* Entity_B = SceneToWorkWith->AddEntity("B");
 
 	// Set transformations based on type
 	if (ComponentType == "POSITION")
@@ -883,11 +917,11 @@ void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(const st
 	}
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
+	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
 
-	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
-	SCENE.SceneGraph.MoveNode(Node_B_ID, SCENE.SceneGraph.GetRoot()->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetObjectID());
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -914,10 +948,10 @@ void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(const st
 	}
 }
 
-void SceneGraphTest::TestTransformationAfterChildChangedParent(const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
+void SceneGraphTest::TestTransformationAfterChildChangedParent(FEScene* SceneToWorkWith, const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
 {
-	FEEntity* Entity_A = SCENE.AddEntity("A");
-	FEEntity* Entity_B = SCENE.AddEntity("B");
+	FEEntity* Entity_A = SceneToWorkWith->AddEntity("A");
+	FEEntity* Entity_B = SceneToWorkWith->AddEntity("B");
 
 	Entity_A->GetComponent<FETransformComponent>().SetPosition(InitialParentTransform.GetPosition());
 	Entity_B->GetComponent<FETransformComponent>().SetPosition(InitialChildTransform.GetPosition());
@@ -929,11 +963,11 @@ void SceneGraphTest::TestTransformationAfterChildChangedParent(const FETransform
 	Entity_B->GetComponent<FETransformComponent>().SetScale(InitialChildTransform.GetScale());
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SCENE.SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
+	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
 
-	SCENE.SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
-	SCENE.SceneGraph.MoveNode(Node_B_ID, SCENE.SceneGraph.GetRoot()->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetObjectID());
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -954,14 +988,16 @@ void SceneGraphTest::TestTransformationAfterChildChangedParent(const FETransform
 
 TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 {
-	TestTransformationComponentAfterChildAdded("POSITION", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.0f, -1.0f, -1.0f));
-	TestTransformationComponentAfterChildAdded("POSITION", glm::vec3(-34.6f, 20.4f, -23.5f), glm::vec3(4.5f, -2.7f, -13.3f));
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
 
-	TestTransformationComponentAfterChildAdded("ROTATION", glm::vec3(glm::radians(5.0f), glm::radians(145.0f), glm::radians(45.0f)), glm::vec3(glm::radians(-65.0f), glm::radians(15.0f), glm::radians(90.0f)));
-	TestTransformationComponentAfterChildAdded("ROTATION", glm::vec3(glm::radians(-46.23f), glm::radians(175.12f), glm::radians(90.0f)), glm::vec3(glm::radians(-162.6f), glm::radians(-27.23f), glm::radians(90.0f)));
+	TestTransformationComponentAfterChildAdded(CurrentScene, "POSITION", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.0f, -1.0f, -1.0f));
+	TestTransformationComponentAfterChildAdded(CurrentScene, "POSITION", glm::vec3(-34.6f, 20.4f, -23.5f), glm::vec3(4.5f, -2.7f, -13.3f));
 
-	TestTransformationComponentAfterChildAdded("SCALE", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 2.0f, 1.5f));
-	TestTransformationComponentAfterChildAdded("SCALE", glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(2.0f, 2.0f, 2.0f));
+	TestTransformationComponentAfterChildAdded(CurrentScene, "ROTATION", glm::vec3(glm::radians(5.0f), glm::radians(145.0f), glm::radians(45.0f)), glm::vec3(glm::radians(-65.0f), glm::radians(15.0f), glm::radians(90.0f)));
+	TestTransformationComponentAfterChildAdded(CurrentScene, "ROTATION", glm::vec3(glm::radians(-46.23f), glm::radians(175.12f), glm::radians(90.0f)), glm::vec3(glm::radians(-162.6f), glm::radians(-27.23f), glm::radians(90.0f)));
+
+	TestTransformationComponentAfterChildAdded(CurrentScene, "SCALE", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 2.0f, 1.5f));
+	TestTransformationComponentAfterChildAdded(CurrentScene, "SCALE", glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(2.0f, 2.0f, 2.0f));
 
 	// For more complex transformations uniform scaling is used.
 	FETransformComponent ParentTransform;
@@ -974,16 +1010,16 @@ TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 	ChildTransform.SetRotation(glm::vec3(-76.63f, -115.76f, 176.4f));
 	ChildTransform.SetScale(glm::vec3(0.67f, 0.67f, 0.67f));
 
-	TestTransformationAfterChildAdded(ParentTransform, ChildTransform);
+	TestTransformationAfterChildAdded(CurrentScene, ParentTransform, ChildTransform);
 
-	TestTransformationComponentAfterChildChangedParent("POSITION", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.0f, -1.0f, -1.0f));
-	TestTransformationComponentAfterChildChangedParent("POSITION", glm::vec3(-34.6f, 20.4f, -23.5f), glm::vec3(4.5f, -2.7f, -13.3f));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "POSITION", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.0f, -1.0f, -1.0f));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "POSITION", glm::vec3(-34.6f, 20.4f, -23.5f), glm::vec3(4.5f, -2.7f, -13.3f));
 
-	TestTransformationComponentAfterChildChangedParent("ROTATION", glm::vec3(glm::radians(5.0f), glm::radians(145.0f), glm::radians(45.0f)), glm::vec3(glm::radians(-65.0f), glm::radians(15.0f), glm::radians(90.0f)));
-	TestTransformationComponentAfterChildChangedParent("ROTATION", glm::vec3(glm::radians(-46.23f), glm::radians(175.12f), glm::radians(90.0f)), glm::vec3(glm::radians(-162.6f), glm::radians(-27.23f), glm::radians(90.0f)));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "ROTATION", glm::vec3(glm::radians(5.0f), glm::radians(145.0f), glm::radians(45.0f)), glm::vec3(glm::radians(-65.0f), glm::radians(15.0f), glm::radians(90.0f)));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "ROTATION", glm::vec3(glm::radians(-46.23f), glm::radians(175.12f), glm::radians(90.0f)), glm::vec3(glm::radians(-162.6f), glm::radians(-27.23f), glm::radians(90.0f)));
 
-	TestTransformationComponentAfterChildChangedParent("SCALE", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 2.0f, 1.5f));
-	TestTransformationComponentAfterChildChangedParent("SCALE", glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(2.0f, 2.0f, 2.0f));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "SCALE", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.5f, 2.0f, 1.5f));
+	TestTransformationComponentAfterChildChangedParent(CurrentScene, "SCALE", glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(2.0f, 2.0f, 2.0f));
 
 	// For more complex transformations uniform scaling is used.
 	ParentTransform.SetPosition(glm::vec3(54.6f, -167.2f, -83.9f));
@@ -994,15 +1030,16 @@ TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 	ChildTransform.SetRotation(glm::vec3(-76.63f, -115.76f, 176.4f));
 	ChildTransform.SetScale(glm::vec3(0.67f, 0.67f, 0.67f));
 
-	TestTransformationAfterChildChangedParent(ParentTransform, ChildTransform);
+	TestTransformationAfterChildChangedParent(CurrentScene, ParentTransform, ChildTransform);
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
 
 TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 {
-	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Save IDs of the entities
 	std::vector<std::string> EntityIDs;
@@ -1018,10 +1055,10 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 		NodeIDs.push_back(Node->GetObjectID());
 	}
 
-	// Save the scene.
+	// Save the scene
 	std::string FilePath = "SceneGraphTest_Check_Save_Load_Simple.txt";
 	
-	Json::Value SceneHierarchy = SCENE.SceneGraph.ToJson();
+	Json::Value SceneHierarchy = CurrentScene->SceneGraph.ToJson();
 	Json::StreamWriterBuilder Builder;
 	const std::string JsonFile = Json::writeString(Builder, SceneHierarchy);
 
@@ -1030,18 +1067,18 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	SceneFile << JsonFile;
 	SceneFile.close();
 
-	SCENE.Clear();
+	CurrentScene->Clear();
 	Nodes.clear();
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// ****************************** Load the scene ******************************
 
 	// Before we load the scene, we need to create the entities.
 	for (size_t i = 0; i < 30; i++)
 	{
-		FEEntity* Entity = SCENE.AddEntity("Node_" + std::to_string(i), EntityIDs[i]);
+		FEEntity* Entity = CurrentScene->AddEntity("Node_" + std::to_string(i), EntityIDs[i]);
 		// Delete this entity from the scene graph.
-		SCENE.SceneGraph.DeleteNode(SCENE.SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+		CurrentScene->SceneGraph.DeleteNode(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
 	}
 
 	std::ifstream LoadSceneFile;
@@ -1056,15 +1093,15 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	const std::unique_ptr<Json::CharReader> Reader(ReadBuilder.newCharReader());
 	ASSERT_TRUE(Reader->parse(FileData.c_str(), FileData.c_str() + FileData.size(), &Root, &Err));
 		
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 0);
-	SCENE.SceneGraph.FromJson(Root);
-	ASSERT_EQ(SCENE.SceneGraph.GetNodeCount(), 30);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	CurrentScene->SceneGraph.FromJson(Root);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Retrieve the nodes with IDs of original nodes.
 	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
 	for (const std::string& NodeID : NodeIDs)
 	{
-		LoadedNodes.push_back(SCENE.SceneGraph.GetNode(NodeID));
+		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNode(NodeID));
 		ASSERT_NE(LoadedNodes.back(), nullptr);
 	}
 
@@ -1076,48 +1113,292 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 
 	// Check if the hierarchy is correct.
 	// Test direct parent-child relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[1]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[2]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[3]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[1]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[2]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[3]));
 
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[4]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[5]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[6]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[4]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[6]));
 
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[15], LoadedNodes[24]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[15], LoadedNodes[24]));
 
 	// Test grandparent relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[5]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[8]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[12]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[8]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[12]));
 
 	// Test great-grandparent relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[26]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[3], LoadedNodes[29]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[3], LoadedNodes[29]));
 
 	// Test long-distance relationship
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[23]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[24]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[25]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[26]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[27]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[28]));
-	ASSERT_TRUE(SCENE.SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[29]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[23]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[24]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[25]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[27]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[28]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[29]));
 
 	// Test non-descendant relationships
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[25]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[7]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[3]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[25]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[7]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[3]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[24]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[10]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[23]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[10]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[23]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[2]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[1]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[2]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[1]));
 
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
-	ASSERT_FALSE(SCENE.SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
 
-	SCENE.Clear();
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.AddScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+
+	// Save IDs of the entities
+	std::vector<std::string> EntityIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+	}
+
+	// Save IDs of the nodes
+	std::vector<std::string> NodeIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		NodeIDs.push_back(Node->GetObjectID());
+	}
+
+	// Save the scene
+	std::string FilePath = "SceneGraphTest_Check_Save_Load_Simple.txt";
+
+	Json::Value SceneHierarchy = CurrentScene->SceneGraph.ToJson();
+	Json::StreamWriterBuilder Builder;
+	const std::string JsonFile = Json::writeString(Builder, SceneHierarchy);
+
+	std::ofstream SceneFile;
+	SceneFile.open("SceneGraphTest_Check_Save_Load_Simple.txt");
+	SceneFile << JsonFile;
+	SceneFile.close();
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	Nodes.clear();
+	CurrentScene = SCENE_MANAGER.AddScene("TestScene_2");
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	// ****************************** Load the scene ******************************
+
+	// Before we load the scene, we need to create the entities.
+	for (size_t i = 0; i < 30; i++)
+	{
+		FEEntity* Entity = CurrentScene->AddEntity("Node_" + std::to_string(i), EntityIDs[i]);
+		// Delete this entity from the scene graph.
+		CurrentScene->SceneGraph.DeleteNode(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+	}
+
+	std::ifstream LoadSceneFile;
+	LoadSceneFile.open("SceneGraphTest_Check_Save_Load_Simple.txt");
+	std::string FileData((std::istreambuf_iterator<char>(LoadSceneFile)), std::istreambuf_iterator<char>());
+	LoadSceneFile.close();
+
+	Json::Value Root;
+	JSONCPP_STRING Err;
+	Json::CharReaderBuilder ReadBuilder;
+
+	const std::unique_ptr<Json::CharReader> Reader(ReadBuilder.newCharReader());
+	ASSERT_TRUE(Reader->parse(FileData.c_str(), FileData.c_str() + FileData.size(), &Root, &Err));
+
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+	CurrentScene->SceneGraph.FromJson(Root);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+
+	// Retrieve the nodes with IDs of original nodes.
+	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
+	for (const std::string& NodeID : NodeIDs)
+	{
+		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNode(NodeID));
+		ASSERT_NE(LoadedNodes.back(), nullptr);
+	}
+
+	// Check that scene nodes bound to correct entities.
+	for (size_t i = 0; i < 30; i++)
+	{
+		ASSERT_EQ(LoadedNodes[i]->GetEntity()->GetObjectID(), EntityIDs[i]);
+	}
+
+	// Check if the hierarchy is correct.
+	// Test direct parent-child relationship
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[1]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[2]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[3]));
+
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[4]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[6]));
+
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[15], LoadedNodes[24]));
+
+	// Test grandparent relationship
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[5]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[8]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[12]));
+
+	// Test great-grandparent relationship
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[3], LoadedNodes[29]));
+
+	// Test long-distance relationship
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[23]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[24]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[25]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[26]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[27]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[28]));
+	ASSERT_TRUE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[0], LoadedNodes[29]));
+
+	// Test non-descendant relationships
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[25]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[7]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[3]));
+
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[10]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[23]));
+
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[1], LoadedNodes[2]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[2], LoadedNodes[1]));
+
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
+	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+void AddNodeAndChildsToVector(std::vector<FENaiveSceneGraphNode*>& VectorToAdd, FENaiveSceneGraphNode* Node)
+{
+	VectorToAdd.push_back(Node);
+	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
+	for (size_t i = 0; i < Node->GetImediateChildrenCount(); i++)
+	{
+		AddNodeAndChildsToVector(VectorToAdd, Childrens[i]);
+	}
+}
+
+bool CheckEntityParentScene(FEScene* Scene, FENaiveSceneGraphNode* Node)
+{
+	if (Node == nullptr)
+		return false;
+
+	if (Node->GetEntity() == nullptr)
+		return false;
+
+	if (Node->GetEntity()->GetParentScene() != Scene)
+		return false;
+
+	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
+	for (size_t i = 0; i < Node->GetImediateChildrenCount(); i++)
+	{
+		if (!CheckEntityParentScene(Scene, Childrens[i]))
+			return false;
+	}
+
+	return true;
+}
+
+TEST_F(SceneGraphTest, Check_SceneNodes_Import)
+{
+	FEScene* FirstScene = SCENE_MANAGER.AddScene("TestScene_1");
+	ASSERT_EQ(FirstScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> FirstNodes = PopulateSceneGraphMediumSize(FirstScene);
+	for (size_t i = 0; i < FirstNodes.size(); i++)
+		FirstNodes[i]->SetName("S1_" + FirstNodes[i]->GetName());
+	size_t FirstNodeCount = 30;
+	ASSERT_EQ(FirstScene->SceneGraph.GetNodeCount(), FirstNodeCount);
+
+	FEScene* SecondScene = SCENE_MANAGER.AddScene("TestScene_2");
+	ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), 0);
+	std::vector<FENaiveSceneGraphNode*> SecondNodes = PopulateSceneGraphSmallSize(SecondScene);
+	for (size_t i = 0; i < SecondNodes.size(); i++)
+		SecondNodes[i]->SetName("S2_" + SecondNodes[i]->GetName());
+	size_t SecondNodeCount = 15;
+	ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), SecondNodeCount);
+
+	srand(RANDOM_SEED);
+	for (size_t i = 0; i < RANDOM_ACTIONS_ITERATIONS / 20; i++)
+	{
+		bool bImportFromSecondToFirst = rand() % 2;
+		FEScene* SourceScene = bImportFromSecondToFirst ? SecondScene : FirstScene;
+		FEScene* DestinationScene = bImportFromSecondToFirst ? FirstScene : SecondScene;
+		std::vector<FENaiveSceneGraphNode*>* SourceNodes = bImportFromSecondToFirst ? &SecondNodes : &FirstNodes;
+		std::vector<FENaiveSceneGraphNode*>* DestinationNodes = bImportFromSecondToFirst ? &FirstNodes : &SecondNodes;
+
+		size_t BeforeImportNodeCountInSource = SourceScene->SceneGraph.GetNodeCount();
+		size_t BeforeImportNodeCountInDestination = DestinationScene->SceneGraph.GetNodeCount();
+
+		size_t RandomIndexOfNodeToMove = rand() % SourceScene->SceneGraph.GetNodeCount();
+		size_t RandomIndexOfNewParent = rand() % DestinationScene->SceneGraph.GetNodeCount();
+
+		size_t NodeToMoveChildrenCount = (*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
+		size_t NodeToMoveRecursiveChildCount = (*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
+
+		size_t NewParentChildrenCount = (*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount();
+		size_t NewParentRecursiveChildCount = (*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount();
+
+		size_t NodesAdded = NodeToMoveRecursiveChildCount + 1;
+
+		FEEntity* ImportedEntity = DestinationScene->ImportEntity((*SourceNodes)[RandomIndexOfNodeToMove]->GetEntity(), (*DestinationNodes)[RandomIndexOfNewParent]);
+		FENaiveSceneGraphNode* ImportedNode = nullptr;
+		if (ImportedEntity)
+			ImportedNode = DestinationScene->SceneGraph.GetNodeByEntityID(ImportedEntity->GetObjectID());
+
+		if (ImportedNode)
+		{
+			ImportedNode->SetName("Imported_" + ImportedNode->GetName());
+			// If node was imported, check if the counts are correct.
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
+			ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), BeforeImportNodeCountInSource);
+
+			ASSERT_EQ(DestinationScene->SceneGraph.GetNodeCount(), BeforeImportNodeCountInDestination + (NodeToMoveRecursiveChildCount + 1));
+
+			FirstNodeCount += bImportFromSecondToFirst ? NodesAdded : 0;
+			SecondNodeCount += bImportFromSecondToFirst ? 0 : NodesAdded;
+
+			// Check that all entities are bound to the correct scene.
+			ASSERT_TRUE(CheckEntityParentScene(FirstScene, FirstScene->SceneGraph.GetRoot()));
+			ASSERT_TRUE(CheckEntityParentScene(SecondScene, SecondScene->SceneGraph.GetRoot()));
+
+			// Then adjust DestinationNodes
+			AddNodeAndChildsToVector((*DestinationNodes), ImportedNode);
+
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount + 1);
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount + NodeToMoveRecursiveChildCount + 1);
+		}
+		else
+		{
+			// If node was not imported, check if the counts are the same.
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
+
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount);
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
+		}
+
+		ASSERT_EQ(FirstScene->SceneGraph.GetNodeCount(), FirstNodeCount);
+		ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), SecondNodeCount);
+	}
+
+	ASSERT_EQ(FirstScene->SceneGraph.GetNodeCount(), FirstNodeCount);
+	ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), SecondNodeCount);
+	SCENE_MANAGER.DeleteScene(FirstScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SecondScene->GetObjectID());
 }

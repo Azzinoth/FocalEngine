@@ -154,7 +154,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* N
 bool FENaiveSceneGraph::DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName)
 {
 	FENaiveSceneGraphNode* Duplicate = new FENaiveSceneGraphNode(NodeToDuplicate->GetName() + (bAddCopyInName ? "_Copy" : ""));
-	Duplicate->Entity = NodeToDuplicate->Entity->GetParentScene()->DuplicateEntity(NodeToDuplicate->Entity);
+	Duplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity);
 	Parent->AddChild(Duplicate);
 
 	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)
