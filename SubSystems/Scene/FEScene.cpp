@@ -1,19 +1,18 @@
 #include "FEScene.h"
-#include "Components/Systems/FEInstancedRenderingSystem.h"
+#include "Components/Systems/FEInstancedSystem.h"
+#include "Components/Systems/FETerrainSystem.h"
+#include "Components/Systems/FESkyDomeSystem.h"
+#include "Components/Systems/FELightSystem.h"
 using namespace FocalEngine;
 
-FEScene* FEScene::Instance = nullptr;
-
-FEScene::FEScene()
+FEScene::FEScene() : FEObject(FE_OBJECT_TYPE::FE_SCENE, "Unnamed Scene")
 {
-	// Hack to initialize SceneGraph only once.
-	// It would be removed when FEScene will not be a singleton.
-	static bool bIsFirst = true;
-	if (bIsFirst)
-	{
-		bIsFirst = false;
-		SceneGraph.Initialize();
-	}
+	SceneGraph.Initialize(this);
+}
+
+FEScene::~FEScene()
+{
+	Clear();
 }
 
 FEEntity* FEScene::GetEntity(std::string ID)
@@ -56,8 +55,6 @@ void FEScene::DeleteEntity(FEEntity* Entity)
 	std::string EntityID = Entity->ID;
 	entt::entity EnTTEntityToDelete = Entity->EnTTEntity;
 
-	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
-
 	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(EntityID);
 	SceneGraph.DeleteNode(GraphNode);
 
@@ -86,8 +83,6 @@ void FEScene::Clear()
 
 	// Force clear registry.
 	Registry = entt::registry{};
-	ReRegisterOnComponentCallbacks();
-
 	SceneGraph.Clear();
 
 	bIsSceneClearing = false;
@@ -552,22 +547,100 @@ FEEntity* FEScene::GetEntityByEnTT(entt::entity ID)
 	return EnttToEntity[ID];
 }
 
-void FEScene::AddOnSceneClearCallback(std::function<void()> Callback)
-{
-	OnSceneClearCallbacks.push_back(Callback);
-}
-
-void FEScene::ReRegisterOnComponentCallbacks()
-{
-	OnComponentConstructCallbacks.clear();
-	OnComponentDestroyCallbacks.clear();
-	OnComponentUpdateCallbacks.clear();
-
-	for (size_t i = 0; i < OnSceneClearCallbacks.size(); i++)
-		OnSceneClearCallbacks[i]();
-}
-
 void FEScene::Update()
 {
 	TransformUpdate(SceneGraph.GetRoot());
+}
+
+FEEntity* FEScene::DuplicateEntity(std::string ID, std::string NewEntityName)
+{
+	if (EntityMap.find(ID) == EntityMap.end())
+		return nullptr;
+
+	return DuplicateEntity(EntityMap[ID], NewEntityName);
+}
+
+FEEntity* FEScene::DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName)
+{
+	if (SourceEntity == nullptr)
+		return nullptr;
+
+	if (NewEntityName.empty())
+		NewEntityName = SourceEntity->GetName() + "_Copy";
+
+	return DuplicateEntityInternal(SourceEntity, NewEntityName);
+}
+
+FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName)
+{
+	FEEntity* NewEntity = AddEntityOrphan(NewEntityName);
+
+	// Mandatory components.
+	NewEntity->GetComponent<FETagComponent>() = SourceEntity->GetComponent<FETagComponent>();
+	NewEntity->GetComponent<FETransformComponent>() = SourceEntity->GetComponent<FETransformComponent>();
+
+	std::vector<FEComponentTypeInfo> ComponentsListInfo = SourceEntity->GetComponentsInfoList();
+	for (size_t i = 0; i < ComponentsListInfo.size(); i++)
+	{
+		if (ComponentsListInfo[i].Name == "Game Model")
+		{
+			if (NewEntity->AddComponent<FEGameModelComponent>())
+			{
+				NewEntity->GetComponent<FEGameModelComponent>() = SourceEntity->GetComponent<FEGameModelComponent>();
+			}
+		}
+
+		if (ComponentsListInfo[i].Name == "Light")
+		{
+			LIGHT_SYSTEM.DuplicateLightComponent(SourceEntity, NewEntity);
+		}
+
+		if (ComponentsListInfo[i].Name == "Instanced")
+		{
+			INSTANCED_RENDERING_SYSTEM.DuplicateInstancedComponent(SourceEntity, NewEntity);
+		}
+
+		if (ComponentsListInfo[i].Name == "Terrain")
+		{
+			TERRAIN_SYSTEM.DuplicateTerrainComponent(SourceEntity, NewEntity);
+		}
+
+		/*if (ComponentsListInfo[i].Name == "Sky Dome")
+		{
+			NewEntity->AddComponent<FESkyDomeComponent>();
+			NewEntity->GetComponent<FESkyDomeComponent>() = SourceEntity->GetComponent<FESkyDomeComponent>();
+		}*/
+	}
+
+	return NewEntity;
+}
+
+FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent)
+{
+	FEEntity* Result = nullptr;
+	if (EntityFromDifferentScene == nullptr)
+	{
+		LOG.Add("EntityFromDifferentScene is nullptr in FEScene::ImportEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	if (EntityFromDifferentScene->GetParentScene() == this)
+	{
+		LOG.Add("EntityFromDifferentScene is already in this scene in FEScene::ImportEntity", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Result;
+	}
+
+	if (TargetParent == nullptr)
+		TargetParent = SceneGraph.GetRoot();
+
+	FENaiveSceneGraphNode* OriginalNode = EntityFromDifferentScene->GetParentScene()->SceneGraph.GetNodeByEntityID(EntityFromDifferentScene->GetObjectID());
+	FENaiveSceneGraphNode* NewNode = SceneGraph.ImportNode(OriginalNode, TargetParent);
+	if (NewNode == nullptr)
+	{
+		LOG.Add("Failed to import node in FEScene::ImportEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	Result = NewNode->GetEntity();
+	return Result;
 }

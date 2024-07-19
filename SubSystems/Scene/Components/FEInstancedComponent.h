@@ -63,7 +63,7 @@ namespace FocalEngine
 		friend class FEScene;
 
 		FEInstancedComponent();
-		FEInstancedComponent(FEInstancedComponent& Other) = default;
+		FEInstancedComponent(const FEInstancedComponent& Other) = default;
 		~FEInstancedComponent();
 
 		void Clear();

@@ -5,41 +5,6 @@ FESceneManager* FESceneManager::Instance = nullptr;
 
 FESceneManager::FESceneManager()
 {
-	//FEDummyScene* DummyScene = new FEDummyScene();
-	//entt::registry* FirstRegistry = &DummyScene->Registry;
-	//DummySceneMap[DummyScene->ID] = DummyScene;
-	//FEDummyScene* SecondDummyScene = new FEDummyScene();
-	//entt::registry* SecondRegistry = &SecondDummyScene->Registry;
-	//DummySceneMap[SecondDummyScene->ID] = SecondDummyScene;
-	//
-	//if (&DummyScene->Registry != &SecondDummyScene->Registry)
-	//{
-	//	int y =0;
-	//	y++;
-	//	// Do something
-	//}
-
-	//if (&DummyScene->Registry == &DummyScene->Registry)
-	//{
-	//	int y = 0;
-	//	y++;
-	//	// Do something
-	//}
-
-	//if (&SecondDummyScene->Registry == &SecondDummyScene->Registry)
-	//{
-	//	int y = 0;
-	//	y++;
-	//	// Do something
-	//}
-
-	//auto SceneIterator = DummySceneMap.begin();
-	//while (SceneIterator != DummySceneMap.end())
-	//{
-	//	
-
-	//	SceneIterator++;
-	//}
 }
 
 FEScene* FESceneManager::GetScene(std::string ID)
@@ -50,22 +15,52 @@ FEScene* FESceneManager::GetScene(std::string ID)
 	return SceneMap[ID];
 }
 
-FEScene* FESceneManager::AddScene(std::string Name, std::string ForceObjectID)
+FEScene* FESceneManager::AddScene(bool bActive, std::string Name, std::string ForceObjectID)
 {
-	if (Name.empty())
-		Name = "Unnamed Scene";
+	FEScene* Scene = new FEScene();
+	Scene->bActive = bActive;
 
-	/*FEScene* Scene = new FEScene();
-	Scene->SetName(Name);
+	if (Name.empty())
+		Scene->SetName(Name);
 
 	if (!ForceObjectID.empty())
-		Scene->SetID(ForceObjectID);
+		Scene->ID = ForceObjectID;
 
 	SceneMap[Scene->GetObjectID()] = Scene;
+	if (bActive)
+	{
+		ActiveSceneMap[Scene->GetObjectID()] = Scene;
+		RegisterAllComponentCallbacks(Scene);
+	}
 
-	return Scene;*/
+	return Scene;
+}
 
-	return nullptr;
+void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
+{
+	NewScene->Registry.on_construct<FETagComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
+	NewScene->Registry.on_construct<FETransformComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETransformComponent>>();
+	NewScene->Registry.on_construct<FELightComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
+	NewScene->Registry.on_construct<FEGameModelComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
+	NewScene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
+	NewScene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
+	NewScene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
+
+	NewScene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
+	NewScene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
+	NewScene->Registry.on_destroy<FELightComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
+	NewScene->Registry.on_destroy<FEGameModelComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
+	NewScene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
+	NewScene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
+	NewScene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
+
+	NewScene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
+	NewScene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
+	NewScene->Registry.on_update<FELightComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
+	NewScene->Registry.on_update<FEGameModelComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
+	NewScene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
+	NewScene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
+	NewScene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
 }
 
 std::vector<std::string> FESceneManager::GetSceneIDList()
@@ -77,14 +72,14 @@ std::vector<FEScene*> FESceneManager::GetSceneByName(const std::string Name)
 {
 	std::vector<FEScene*> Result;
 
-	/*auto SceneIterator = SceneMap.begin();
+	auto SceneIterator = SceneMap.begin();
 	while (SceneIterator != SceneMap.end())
 	{
 		if (SceneIterator->second->GetName() == Name)
 			Result.push_back(SceneIterator->second);
 
 		SceneIterator++;
-	}*/
+	}
 
 	return Result;
 }
@@ -102,15 +97,50 @@ void FESceneManager::DeleteScene(FEScene* Scene)
 	if (Scene == nullptr)
 		return;
 
-	//std::string SceneID = Scene->GetObjectID();
+	std::string SceneID = Scene->GetObjectID();
+	delete Scene;
 
-	Scene->Clear();
-	//delete Scene;
+	if (ActiveSceneMap.find(SceneID) != ActiveSceneMap.end())
+		ActiveSceneMap.erase(SceneID);
 
-	//SceneMap.erase(SceneID);
+	// Should scene be deactivated?
+	SceneMap.erase(SceneID);
 }
 
 void FESceneManager::Update()
 {
-	
+	auto SceneIterator = ActiveSceneMap.begin();
+	while (SceneIterator != ActiveSceneMap.end())
+	{
+		SceneIterator->second->Update();
+		SceneIterator++;
+	}
+}
+
+std::vector<FEScene*> FESceneManager::GetAllScenes()
+{
+	std::vector<FEScene*> Result;
+
+	auto SceneIterator = SceneMap.begin();
+	while (SceneIterator != SceneMap.end())
+	{
+		Result.push_back(SceneIterator->second);
+		SceneIterator++;
+	}
+
+	return Result;
+}
+
+std::vector<FEScene*> FESceneManager::GetActiveScenes()
+{
+	std::vector<FEScene*> Result;
+
+	auto SceneIterator = ActiveSceneMap.begin();
+	while (SceneIterator != ActiveSceneMap.end())
+	{
+		Result.push_back(SceneIterator->second);
+		SceneIterator++;
+	}
+
+	return Result;
 }

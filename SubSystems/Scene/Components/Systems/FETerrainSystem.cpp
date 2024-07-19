@@ -59,18 +59,12 @@ FETerrainSystem::FETerrainSystem()
 	PlaneMesh = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
 
 	RegisterOnComponentCallbacks();
-	SCENE.AddOnSceneClearCallback(std::bind(&FETerrainSystem::OnSceneClear, this));
 }
 
 void FETerrainSystem::RegisterOnComponentCallbacks()
 {
-	SCENE.RegisterOnComponentConstructCallback<FETerrainComponent>(OnMyComponentAdded);
-	SCENE.RegisterOnComponentDestroyCallback<FETerrainComponent>(OnMyComponentDestroy);
-}
-
-void FETerrainSystem::OnSceneClear()
-{
-	RegisterOnComponentCallbacks();
+	SCENE_MANAGER.RegisterOnComponentConstructCallback<FETerrainComponent>(OnMyComponentAdded);
+	SCENE_MANAGER.RegisterOnComponentDestroyCallback<FETerrainComponent>(OnMyComponentDestroy);
 }
 
 void FETerrainSystem::OnMyComponentAdded(FEEntity* Entity)
@@ -82,15 +76,49 @@ void FETerrainSystem::OnMyComponentAdded(FEEntity* Entity)
 	TerrainComponent.Shader = RESOURCE_MANAGER.GetShaderByName("FETerrainShader")[0];
 }
 
-void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
+void FETerrainSystem::DuplicateTerrainComponent(FEEntity* EntityWithTerrainComponent, FEEntity* NewEntity)
 {
-	if (bIsSceneClearing)
+	if (EntityWithTerrainComponent == nullptr || NewEntity == nullptr)
 		return;
 
+	if (!EntityWithTerrainComponent->HasComponent<FETerrainComponent>())
+		return;
+
+	FETerrainComponent& OriginalTerrainComponent = EntityWithTerrainComponent->GetComponent<FETerrainComponent>();
+	NewEntity->AddComponent<FETerrainComponent>();
+
+	FETerrainComponent& NewTerrainComponent = NewEntity->GetComponent<FETerrainComponent>();
+	NewTerrainComponent = OriginalTerrainComponent;
+
+	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		if (OriginalTerrainComponent.Layers[i] != nullptr)
+		{
+			NewTerrainComponent.Layers[i] = new FETerrainLayer(OriginalTerrainComponent.Layers[i]->GetName());
+			NewTerrainComponent.Layers[i]->Material = OriginalTerrainComponent.Layers[i]->Material;
+		}
+	}
+
+	InitTerrainEditTools(NewEntity);
+}
+
+void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
+{
 	if (Entity == nullptr || !Entity->HasComponent<FETerrainComponent>())
 		return;
 
 	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
+	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
+	{
+		delete TerrainComponent.Layers[i];
+		TerrainComponent.Layers[i] = nullptr;
+	}
+
+	FE_GL_ERROR(glDeleteBuffers(1, &TerrainComponent.GPULayersDataBuffer));
+
+	if (bIsSceneClearing)
+		return;
+	
 	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
 	{
 		FEInstancedComponent& InstancedComponent = TerrainComponent.SnapedInstancedEntities[i]->GetComponent<FEInstancedComponent>();
@@ -157,20 +185,8 @@ bool FETerrainSystem::IsBrushActive()
 	return bBrushActive;
 }
 
-void FETerrainSystem::SetBrushActive(FEEntity* TerrainEntity, const bool NewValue)
+void FETerrainSystem::SetBrushActive(const bool NewValue)
 {
-	if (!NewValue)
-	{
-		TerrainEntityWithActiveBrush = nullptr;
-	}
-	else
-	{
-		if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
-			return;
-
-		TerrainEntityWithActiveBrush = TerrainEntity;
-	}
-
 	bBrushActive = NewValue;
 }
 
@@ -179,8 +195,20 @@ FE_TERRAIN_BRUSH_MODE FETerrainSystem::GetBrushMode()
 	return BrushMode;
 }
 
-void FETerrainSystem::SetBrushMode(const FE_TERRAIN_BRUSH_MODE NewValue)
+void FETerrainSystem::SetBrushMode(FEEntity* TerrainEntity, const FE_TERRAIN_BRUSH_MODE NewValue)
 {
+	if (NewValue == FE_TERRAIN_BRUSH_NONE)
+	{
+		TerrainEntityWithBrushModeOn = nullptr;
+	}
+	else
+	{
+		if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
+			return;
+
+		TerrainEntityWithBrushModeOn = TerrainEntity;
+	}
+
 	BrushMode = NewValue;
 }
 
@@ -347,7 +375,7 @@ void FETerrainSystem::SnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* Ent
 }
 
 // There should be third system to manage that.
-#include "../SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
+#include "../SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 void FETerrainSystem::UpdateSnapedInstancedEntities(FEEntity* TerrainEntity)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
@@ -396,10 +424,10 @@ void FETerrainSystem::UnSnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* E
 
 void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 MouseRayDirection)
 {
-	if (TerrainEntityWithActiveBrush == nullptr)
+	if (TerrainEntityWithBrushModeOn == nullptr)
 		return;
 
-	FETerrainComponent& TerrainComponent = TerrainEntityWithActiveBrush->GetComponent<FETerrainComponent>();
+	FETerrainComponent& TerrainComponent = TerrainEntityWithBrushModeOn->GetComponent<FETerrainComponent>();
 
 	if (TerrainComponent.BrushVisualFB == nullptr)
 		return;
@@ -429,19 +457,19 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 		if (std::chrono::duration_cast<std::chrono::duration<float>>(std::chrono::system_clock::now() - LastChangesTimeStamp).count() * 1000.0f > WaitBeforeUpdateMs)
 		{
 			bCPUHeightInfoDirtyFlag = false;
-			UpdateCPUHeightInfo(TerrainEntityWithActiveBrush);
-			UpdateSnapedInstancedEntities(TerrainEntityWithActiveBrush);
+			UpdateCPUHeightInfo(TerrainEntityWithBrushModeOn);
+			UpdateSnapedInstancedEntities(TerrainEntityWithBrushModeOn);
 		}
 	}
 
 	const float Range = TerrainComponent.GetXSize() * 2.0f;
-	const glm::dvec3 CurrentTerrainPoint = GetPointOnTerrain(TerrainEntityWithActiveBrush, MouseRayStart, MouseRayDirection, 0, Range);
+	const glm::dvec3 CurrentTerrainPoint = GetPointOnTerrain(TerrainEntityWithBrushModeOn, MouseRayStart, MouseRayDirection, 0, Range);
 
 	float LocalX = static_cast<float>(CurrentTerrainPoint.x);
 	float LocalZ = static_cast<float>(CurrentTerrainPoint.z);
 
-	LocalX -= GetAABB(TerrainEntityWithActiveBrush).GetMin()[0];
-	LocalZ -= GetAABB(TerrainEntityWithActiveBrush).GetMin()[2];
+	LocalX -= GetAABB(TerrainEntityWithBrushModeOn).GetMin()[0];
+	LocalZ -= GetAABB(TerrainEntityWithBrushModeOn).GetMin()[2];
 
 	LocalX = LocalX / TerrainComponent.GetXSize();
 	LocalZ = LocalZ / TerrainComponent.GetZSize();
@@ -599,7 +627,7 @@ void FETerrainSystem::UpdateCPUHeightInfo(FEEntity* TerrainEntity)
 	delete[] RawData;
 }
 
-void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEEntity* EntityWithInstancedComponent, const int LayerIndex)
+void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEEntity* EntityWithTerrainComponent, const int LayerIndex)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
@@ -620,18 +648,18 @@ void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEE
 		return;
 	}
 
-	if (!EntityWithInstancedComponent->HasComponent<FEInstancedComponent>())
+	if (!EntityWithTerrainComponent->HasComponent<FEInstancedComponent>())
 	{
-		LOG.Add("FETerrainSystem::ConnectInstancedEntityToLayer EntityWithInstancedComponent does not have FEInstancedComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::ConnectInstancedEntityToLayer EntityWithTerrainComponent does not have FEInstancedComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
 	{
-		if (TerrainComponent.SnapedInstancedEntities[i]->GetObjectID() == EntityWithInstancedComponent->GetObjectID())
+		if (TerrainComponent.SnapedInstancedEntities[i]->GetObjectID() == EntityWithTerrainComponent->GetObjectID())
 		{
-			//EntityWithInstancedComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(this, LayerIndex, &FETerrainComponent::GetLayerIntensityAt);
-			EntityWithInstancedComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(TerrainEntity, LayerIndex);
+			//EntityWithTerrainComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(this, LayerIndex, &FETerrainComponent::GetLayerIntensityAt);
+			EntityWithTerrainComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(TerrainEntity, LayerIndex);
 			break;
 		}
 	}
@@ -713,18 +741,6 @@ void FETerrainSystem::InitTerrainEditTools(FEEntity* TerrainEntity)
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
-
-	if (TerrainComponent.BrushOutputFB != nullptr)
-	{
-		delete TerrainComponent.BrushOutputFB;
-		TerrainComponent.BrushOutputFB = nullptr;
-	}
-
-	if (TerrainComponent.BrushVisualFB != nullptr)
-	{
-		delete TerrainComponent.BrushVisualFB;
-		TerrainComponent.BrushVisualFB = nullptr;
-	}
 
 	TerrainComponent.BrushOutputFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, 32, 32);
 	delete TerrainComponent.BrushOutputFB->GetColorAttachment();

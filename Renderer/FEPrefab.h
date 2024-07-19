@@ -24,6 +24,7 @@ namespace FocalEngine
 		friend FEEntityInstanced;
 
 		std::vector<FEPrefabComponent*> Components;
+		
 
 		FEAABB AABB;
 		void UpdateAABB();
@@ -43,6 +44,9 @@ namespace FocalEngine
 
 		bool UsesMaterial(std::string MaterialID) const;
 		bool UsesGameModel(std::string GameModelID) const;
+
+		// FIX ME! That should replace FEPrefabComponent
+		FEScene* Scene = nullptr;
 	};
 }
 

@@ -17,7 +17,8 @@ namespace FocalEngine
 		void OnSceneClear();
 
 		static FEGameModel* SkyDomeGameModel;
-		static FEGameModelComponent* SkyDomeGameModelComponent;
+
+		bool bEnabled = true;
 	public:
 		SINGLETON_PUBLIC_PART(FESkyDomeSystem)
 

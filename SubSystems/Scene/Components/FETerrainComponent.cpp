@@ -34,16 +34,7 @@ FETerrainComponent::FETerrainComponent()
 	OldGPULayersData.resize(FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS);
 }
 
-FETerrainComponent::~FETerrainComponent()
-{
-	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
-	{
-		delete Layers[i];
-		Layers[i] = nullptr;
-	}
-
-	FE_GL_ERROR(glDeleteBuffers(1, &GPULayersDataBuffer));
-}
+FETerrainComponent::~FETerrainComponent() {}
 
 bool FETerrainComponent::IsVisible()
 {

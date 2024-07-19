@@ -35,7 +35,7 @@ namespace FocalEngine
 				return false;
 
 			std::string ErrorMessage;
-			if (!COMPONENTS_TOOL.ComponentIDToInfo[entt::type_id<T>().hash()].IsCompatible(GetComponentsInfoList(), &ErrorMessage))
+			if (!COMPONENTS_TOOL.ComponentIDToInfo[entt::type_id<T>().hash()].IsCompatible(this, &ErrorMessage))
 			{
 				LOG.Add("Can not add component: " + ErrorMessage, "FE_LOG_ECS", FE_LOG_ERROR);
 				return false;
@@ -95,6 +95,11 @@ namespace FocalEngine
 			}
 
 			return Result;
+		}
+
+		FEScene* GetParentScene()
+		{
+			return ParentScene;
 		}
 	};
 }

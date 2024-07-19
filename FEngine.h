@@ -129,7 +129,7 @@ namespace FocalEngine
 
 		FEBasicCamera* CurrentCamera = nullptr;
 
-		void SystemsUpdate();
+		void InternalUpdate();
 	};
 
 	#define ENGINE FEngine::getInstance()

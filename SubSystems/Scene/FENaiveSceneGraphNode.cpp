@@ -36,6 +36,16 @@ void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeT
 
 void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
+	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
+		return;
+
+	// Check if the child is already in the children list
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		if (Children[i] == NodeToAdd)
+			return;
+	}
+
 	if (bPreserveWorldTransform)
 		ApplyTransformHierarchy(NodeToAdd);
 

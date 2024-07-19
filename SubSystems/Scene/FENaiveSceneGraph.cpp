@@ -5,20 +5,22 @@ using namespace FocalEngine;
 
 FENaiveSceneGraph::FENaiveSceneGraph()
 {
+	
 }
 
 void FENaiveSceneGraph::Clear()
 {
 	bClearing = true;
 	DeleteNode(Root);
-	Initialize();
+	Initialize(ParentScene);
 	bClearing = false;
 }
 
-void FENaiveSceneGraph::Initialize()
+void FENaiveSceneGraph::Initialize(FEScene* Scene)
 {
+	ParentScene = Scene;
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = SCENE.AddEntityOrphan("SceneRoot");
+	NewRoot->Entity = ParentScene->AddEntityOrphan("SceneRoot");
 	Root = NewRoot;
 }
 
@@ -85,28 +87,117 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bo
 	// Temporarily detach the node.
 	// With temporary detach, bPreserveWorldTransform could be a problem.
 	DetachNode(NodeToMove, bPreserveWorldTransform);
-	AddNode(NewParent, NodeToMove, bPreserveWorldTransform);
+	AddNodeInternal(NewParent, NodeToMove, bPreserveWorldTransform);
 
 	// Check for cycles
 	if (HasCycle(GetRoot()))
 	{
 		// If a cycle is created, revert the change
 		DetachNode(NodeToMove, bPreserveWorldTransform);
-		AddNode(OldParent, NodeToMove, bPreserveWorldTransform);
+		AddNodeInternal(OldParent, NodeToMove, bPreserveWorldTransform);
 		return false;
 	}
 
 	return true;
 }
 
-void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
+FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName)
+{
+	FENaiveSceneGraphNode* NodeToDuplicate = GetNode(NodeIDToDuplicate);
+	FENaiveSceneGraphNode* NewParent = GetNode(NewParentID);
+
+	if (NodeToDuplicate == nullptr || NewParent == nullptr)
+		return nullptr;
+
+	return DuplicateNode(NodeToDuplicate, NewParent, bAddCopyInName);
+}
+
+FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName)
+{
+	if (NodeToDuplicate == nullptr || NewParent == nullptr)
+		return nullptr;
+
+	FENaiveSceneGraphNode* OriginalParent = NodeToDuplicate->GetParent();
+
+	// Try to duplicate the node.
+	bool bDuplicationSuccess = true;
+	FENaiveSceneGraphNode* TopMostDuplicate = new FENaiveSceneGraphNode(NodeToDuplicate->GetName() + (bAddCopyInName ? "_Copy" : ""));
+	TopMostDuplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity);
+	NewParent->AddChild(TopMostDuplicate);
+
+	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)
+	{
+		if (!DuplicateNodeInternal(TopMostDuplicate, NodeToDuplicate->GetChildren()[i], bAddCopyInName))
+		{
+			bDuplicationSuccess = false;
+			break;
+		}
+	}
+
+	if (!bDuplicationSuccess)
+	{
+		DeleteNode(TopMostDuplicate);
+		return nullptr;
+	}
+
+	// Check for cycles
+	if (HasCycle(GetRoot()))
+	{
+		// If a cycle is created, delete duplicated node
+		DeleteNode(TopMostDuplicate);
+		return nullptr;
+	}
+
+	return TopMostDuplicate;
+}
+
+bool FENaiveSceneGraph::DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName)
+{
+	FENaiveSceneGraphNode* Duplicate = new FENaiveSceneGraphNode(NodeToDuplicate->GetName() + (bAddCopyInName ? "_Copy" : ""));
+	Duplicate->Entity = NodeToDuplicate->Entity->GetParentScene()->DuplicateEntity(NodeToDuplicate->Entity);
+	Parent->AddChild(Duplicate);
+
+	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)
+	{
+		if (!DuplicateNodeInternal(Duplicate, NodeToDuplicate->GetChildren()[i], bAddCopyInName))
+			return false;
+	}
+
+	return true;
+}
+
+void FENaiveSceneGraph::AddNodeInternal(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
 	Root->AddChild(NodeToAdd, bPreserveWorldTransform);
 }
 
-void FENaiveSceneGraph::AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
+void FENaiveSceneGraph::AddNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
 	Parent->AddChild(NodeToAdd, bPreserveWorldTransform);
+}
+
+FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent)
+{
+	FENaiveSceneGraphNode* Result = nullptr;
+	if (NodeFromDifferentSceneGraph == nullptr)
+	{
+		LOG.Add("NodeFromDifferentSceneGraph is nullptr in FENaiveSceneGraph::ImportEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+	
+	FEEntity* EntityFromDifferentScene = NodeFromDifferentSceneGraph->Entity;
+	if (EntityFromDifferentScene->GetParentScene() == ParentScene)
+	{
+		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Result;
+	}
+
+	if (TargetParent == nullptr)
+		TargetParent = GetRoot();
+
+	Result = DuplicateNode(NodeFromDifferentSceneGraph, TargetParent, false);
+
+	return Result;
 }
 
 void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
@@ -118,6 +209,7 @@ void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
 		return;
 
 	DetachNode(NodeToDelete);
+	// FIX ME! Delete entity
 	delete NodeToDelete;
 }
 

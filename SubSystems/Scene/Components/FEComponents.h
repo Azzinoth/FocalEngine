@@ -20,6 +20,7 @@ namespace FocalEngine
         std::vector<FEComponentTypeInfo> IncompatibleWith;
         std::vector<FEComponentTypeInfo> RequiredComponents;
         std::vector<std::vector<FEComponentTypeInfo>> IncompatibleCombinations;
+        int MaxSceneComponentCount = -1;
 
         FEComponentTypeInfo();
         FEComponentTypeInfo(const std::string& name, const std::type_info& type);
@@ -29,7 +30,7 @@ namespace FocalEngine
 			return *Type == *other.Type;
 		}
 
-        bool IsCompatible(std::vector<FEComponentTypeInfo>& CurrentlyExistingComponents, std::string* ErrorMessage = nullptr);
+        bool IsCompatible(FEEntity* ProspectParentEntity, std::string* ErrorMessage = nullptr);
     };
 
     class FEComponentsTools
@@ -39,10 +40,12 @@ namespace FocalEngine
         friend class FEEntity;
 
         std::map<entt::id_type, FEComponentTypeInfo> ComponentIDToInfo;
+        std::map<const std::type_info*, std::function<std::vector<std::string>(FEScene*)>> FunctionsToGetEntityIDListWith;
     public:
         SINGLETON_PUBLIC_PART(FEComponentsTools)
 
         std::vector<FEComponentTypeInfo> GetComponentInfoList();
+        std::vector<std::string> GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo);
     };
 
 #define COMPONENTS_TOOL FEComponentsTools::getInstance()

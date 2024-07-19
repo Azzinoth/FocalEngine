@@ -19,8 +19,9 @@ bool FEngine::IsNotTerminated()
 	return APPLICATION.IsNotTerminated();
 }
 
-void FEngine::SystemsUpdate()
+void FEngine::InternalUpdate()
 {
+	SCENE_MANAGER.Update();
 	INSTANCED_RENDERING_SYSTEM.Update();
 }
 
@@ -57,16 +58,29 @@ void FEngine::BeginFrame(const bool InternalCall)
 	}
 #endif
 
-	// Maybe this should be moved to another place.
-	SystemsUpdate();
+	// FIX ME ! That should not be here.
+	ENGINE.CurrentCamera->Move(static_cast<float>(CPUTime + GPUTime));
+	InternalUpdate();
 }
 
 void FEngine::Render(const bool InternalCall)
 {
 	RENDERER.EngineMainCamera = ENGINE.CurrentCamera;
 	RENDERER.MouseRay = ENGINE.ConstructMouseRay();
-	ENGINE.CurrentCamera->Move(static_cast<float>(CPUTime + GPUTime));
-	RENDERER.Render(CurrentCamera);
+
+	// FIX ME! Experimental
+	if (SCENE_MANAGER.TestScene != nullptr)
+	{
+		RENDERER.Render(SCENE_MANAGER.TestScene, CurrentCamera);
+	}
+	else
+	{
+		std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+		for (size_t i = 0; i < ActiveScenes.size(); i++)
+		{
+			RENDERER.Render(ActiveScenes[i], CurrentCamera);
+		}
+	}
 
 	if (bVRActive)
 	{

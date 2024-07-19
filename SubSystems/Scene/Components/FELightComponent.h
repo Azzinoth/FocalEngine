@@ -42,13 +42,15 @@ namespace FocalEngine
 		friend FERenderer;
 	public:
 		FECascadeData();
+		FECascadeData(const FECascadeData& Other);
+		void operator=(const FECascadeData& Other);
 		~FECascadeData();
 
 		float Size;
 		glm::mat4 ProjectionMat;
 		glm::mat4 ViewMat;
 		FEFramebuffer* FrameBuffer = nullptr;
-		float** Frustum;
+		float** Frustum = nullptr;
 	};
 
 	struct FELightComponent

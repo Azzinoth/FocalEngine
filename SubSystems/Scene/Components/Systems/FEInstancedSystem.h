@@ -21,13 +21,16 @@ namespace FocalEngine
 		
 		SINGLETON_PRIVATE_PART(FEInstancedSystem)
 
+		bool bInternalAdd = false;
+
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
-		void OnSceneClear();
 
 		void InitializeBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
 		void InitializeGPUCullingBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+
+		void DuplicateInstancedComponent(FEEntity* EntityWithInstancedComponent, FEEntity* NewEntity);
 
 		void AddInstanceInternal(FEEntity* EntityWithInstancedComponent, glm::mat4 InstanceMatrix);
 		void AddInstanceInternal(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix);

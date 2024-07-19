@@ -240,8 +240,8 @@ file(GLOB Scene_Components_SRC
 file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FELightSystem.h"
 	"SubSystems/Scene/Components/Systems/FELightSystem.cpp"
-	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
-	"SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
+	"SubSystems/Scene/Components/Systems/FEInstancedSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"

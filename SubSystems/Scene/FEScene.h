@@ -7,30 +7,21 @@
 #include "../Renderer/FELine.h"
 #include "../FEVirtualUIContext.h"
 #include "FENaiveSceneGraph.h"
-
 #include <typeindex>
 #include "entt.hpp"
 
 namespace FocalEngine
 {
-	class FEScene
+	class FEScene : public FEObject
 	{
 		friend class FEEntity;
+		friend class FENaiveSceneGraph;
 		friend class FESceneManager;
 		friend class FEInstancedSystem;
 		friend class FERenderer;
 		friend class FEngine;
 	public:
-		SINGLETON_PUBLIC_PART(FEScene)
-
-		void AddOnSceneClearCallback(std::function<void()> Callback);
-
-		template<typename T>
-		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback);
-		template<typename T>
-		void RegisterOnComponentDestroyCallback(std::function<void(FEEntity*, bool)> Callback);
-		template<typename T>
-		void RegisterOnComponentUpdateCallback(std::function<void(FEEntity*)> Callback);
+		FEScene();
 
 		FEEntity* GetEntity(std::string ID);
 		FEEntity* AddEntity(std::string Name = "", std::string ForceObjectID = "");
@@ -40,6 +31,11 @@ namespace FocalEngine
 		template<typename T>
 		std::vector<std::string> GetEntityIDListWith();
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
+
+		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
+		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");
+
+		FEEntity* ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent = nullptr);
 
 		void DeleteEntity(std::string ID);
 		void DeleteEntity(FEEntity* Entity);
@@ -59,26 +55,11 @@ namespace FocalEngine
 		void Update();
 		FENaiveSceneGraph SceneGraph;
 	private:
-		SINGLETON_PRIVATE_PART(FEScene)
+		~FEScene();
 
 		entt::registry Registry;
 		bool bIsSceneClearing = false;
-		bool bActive = false;
-
-		template<typename T>
-		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity);
-		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentConstructCallbacks;
-
-		template<typename T>
-		static void OnComponentDestroyWrapper(entt::registry& Registry, entt::entity EnTTEntity);
-		std::unordered_map<std::type_index, std::function<void(FEEntity*, bool)>> OnComponentDestroyCallbacks;
-
-		template<typename T>
-		static void OnComponentUpdateWrapper(entt::registry& Registry, entt::entity EnTTEntity);
-		std::unordered_map<std::type_index, std::function<void(FEEntity*)>> OnComponentUpdateCallbacks;
-
-		std::vector<std::function<void()>> OnSceneClearCallbacks;
-		void ReRegisterOnComponentCallbacks();
+		bool bActive = true;
 
 		std::unordered_map<entt::entity, FEEntity*> EnttToEntity;
 		std::unordered_map<std::string, FEEntity*> EntityMap;
@@ -92,9 +73,8 @@ namespace FocalEngine
 
 		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
 		FEEntity* AddEntityInternal(std::string Name = "", std::string ForceObjectID = "");
+
+		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
 	};
-
 #include "FEScene.inl"
-
-	#define SCENE FEScene::getInstance()
 }

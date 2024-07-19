@@ -276,7 +276,7 @@ void FERenderer::AddPostProcess(FEPostProcess* NewPostProcess, const bool NoProc
 	}
 }
 
-void FERenderer::LoadUniformBlocks()
+void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 {
 	std::vector<FELightShaderInfo> Info;
 	Info.resize(FE_MAX_LIGHTS);
@@ -285,10 +285,10 @@ void FERenderer::LoadUniformBlocks()
 	FEDirectionalLightShaderInfo DirectionalLightInfo;
 
 	int Index = 0;
-	std::vector< std::string> LightsIDList = SCENE.GetEntityIDListWith<FELightComponent>();
+	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWith<FELightComponent>();
 	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{
-		FEEntity* LightEntity = SCENE.GetEntity(LightsIDList[i]);
+		FEEntity* LightEntity = CurrentScene->GetEntity(LightsIDList[i]);
 		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
 		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
 
@@ -372,10 +372,17 @@ void FERenderer::LoadUniformBlocks()
 	}
 }
 
-void FERenderer::RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap, bool bReloadUniformBlocks)
 {
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
+		return;
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
+
 	if (bReloadUniformBlocks)
-		LoadUniformBlocks();
+		LoadUniformBlocks(Entity->ParentScene);
 
 	GPUCulling(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera);
 
@@ -447,8 +454,11 @@ void FERenderer::RenderGameModelComponentWithInstanced(FETransformComponent& Tra
 	}
 }
 
-void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
+void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 {
+	if (CurrentScene == nullptr || CurrentCamera == nullptr)
+		return;
+
 	CurrentCamera->UpdateFrustumPlanes();
 
 	SceneToTextureFB->Bind();
@@ -458,43 +468,20 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	// No instanced rendering for now.
-	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
-	for (entt::entity CurrentEntity : GameModelGroup)
+	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
+	for (entt::entity CurrentEnTTEntity : GameModelGroup)
 	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEnTTEntity);
+
+		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(CurrentEnTTEntity);
+		if (CurrentEntity == nullptr)
+			continue;
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
-			RenderGameModelComponentForward(GameModelComponent, TransformComponent, CurrentCamera);
+			RenderGameModelComponentForward(CurrentEntity, CurrentCamera);
 		}
 	}
-
-	// ********* RENDER INSTANCED LINE *********
-	/*FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-	InstancedLineShader->Start();
-	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
-	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
-	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
-	InstancedLineShader->LoadDataToGPU();
-
-	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glEnableVertexAttribArray(1));
-	FE_GL_ERROR(glEnableVertexAttribArray(2));
-	FE_GL_ERROR(glEnableVertexAttribArray(3));
-	FE_GL_ERROR(glEnableVertexAttribArray(4));
-	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glDisableVertexAttribArray(1));
-	FE_GL_ERROR(glDisableVertexAttribArray(2));
-	FE_GL_ERROR(glDisableVertexAttribArray(3));
-	FE_GL_ERROR(glDisableVertexAttribArray(4));
-	FE_GL_ERROR(glBindVertexArray(0));
-	InstancedLineShader->Stop();*/
-	// ********* RENDER INSTANCED LINE END *********
 
 	SceneToTextureFB->UnBind();
 	FinalScene = SceneToTextureFB->GetColorAttachment();
@@ -524,18 +511,19 @@ void FERenderer::SimplifiedRender(FEBasicCamera* CurrentCamera)
 	FinalScene->UnBind();
 }
 
-void FERenderer::Render(FEBasicCamera* CurrentCamera)
+void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 {
-	LastRenderedResult = nullptr;
+	if (CurrentScene == nullptr || CurrentCamera == nullptr)
+		return;
 
-	SCENE.Update();
+	LastRenderedResult = nullptr;
 
 	if (bVRActive)
 		return;
 
 	if (bSimplifiedRendering)
 	{
-		SimplifiedRender(CurrentCamera);
+		SimplifiedRender(CurrentScene, CurrentCamera);
 		return;
 	}
 
@@ -548,10 +536,10 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	// and we need to set correct light position
 	//#fix it should update view matrices for each cascade!
 
-	std::vector< std::string> LightsIDList = SCENE.GetEntityIDListWith<FELightComponent>();
+	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWith<FELightComponent>();
 	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{	
-		FEEntity* LightEntity = SCENE.GetEntity(LightsIDList[i]);
+		FEEntity* LightEntity = CurrentScene->GetEntity(LightsIDList[i]);
 		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
 		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
 
@@ -567,7 +555,7 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		}
 	}
 
-	LoadUniformBlocks();
+	LoadUniformBlocks(CurrentScene);
 
 	// ********* GENERATE SHADOW MAPS *********
 	const bool PreviousState = bUseOcclusionCulling;
@@ -584,12 +572,12 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	FEShader* ShaderTerrain = RESOURCE_MANAGER.GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 
 	// group<Component_TYPE> group takes ownership of the Component_TYPE.
-	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
-	entt::basic_view TerrainView = SCENE.Registry.view<FETerrainComponent, FETransformComponent>();
+	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
+	entt::basic_view TerrainView = CurrentScene->Registry.view<FETerrainComponent, FETransformComponent>();
 
 	for (std::string EntityID: LightsIDList)
 	{
-		FEEntity* LightEntity = SCENE.GetEntity(EntityID);
+		FEEntity* LightEntity = CurrentScene->GetEntity(EntityID);
 		FETransformComponent& TransformComponent = LightEntity->GetComponent<FETransformComponent>();
 		FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();
 
@@ -619,25 +607,29 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 				LightComponent.CascadeData[i].FrameBuffer->Bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
 
-				for (auto [Entity, TerrainComponent, TransformComponent] : TerrainView.each())
+				for (auto [EnTTEntity, TerrainComponent, TransformComponent] : TerrainView.each())
 				{
+					FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+					if (Entity == nullptr)
+						continue;
+
 					if (!TerrainComponent.IsCastingShadows() || !TerrainComponent.IsVisible())
 						continue;
 
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
-					RenderTerrainComponent(TransformComponent, TerrainComponent, CurrentCamera);
+					RenderTerrainComponent(Entity, CurrentCamera);
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 				}
 
 				// FIX ME! No prefab support.
-				for (entt::entity CurrentEntity : GameModelGroup)
+				for (entt::entity EnTTEntity : GameModelGroup)
 				{
-					auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
+					auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
 					if (!GameModelComponent.IsCastShadows() || !GameModelComponent.IsVisible())
 						continue;
 
-					FEEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
+					FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 					FEMaterial* OriginalMaterial = GameModelComponent.GameModel->Material;
 					
 					FEMaterial* ShadowMapMaterialToUse = !Entity->HasComponent<FEInstancedComponent>() ? ShadowMapMaterial : ShadowMapMaterialInstanced;
@@ -652,12 +644,11 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 
 					if (!Entity->HasComponent<FEInstancedComponent>())
 					{
-						RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera, false);
+						RenderGameModelComponent(Entity, CurrentCamera, false);
 					}
 					else if (Entity->HasComponent<FEInstancedComponent>())
 					{
-						FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
-						RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera, LightComponent.CascadeData[i].Frustum, true, false);
+						RenderGameModelComponentWithInstanced(Entity, CurrentCamera, LightComponent.CascadeData[i].Frustum, true, false);
 					}
 
 					GameModelComponent.GameModel->Material = OriginalMaterial;
@@ -719,31 +710,31 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	UpdateGPUCullingFrustum(CurrentCamera->Frustum, CurrentCamera->GetPosition());
 
 	// FIX ME! No prefab support.
-	for (entt::entity CurrentEntity : GameModelGroup)
+	for (entt::entity EnTTEntity : GameModelGroup)
 	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
 		if (!GameModelComponent.IsVisible() || !GameModelComponent.IsPostprocessApplied())
 			continue;
 
-		FEEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-			RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera);
+			RenderGameModelComponent(Entity, CurrentCamera);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
 
 			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-			RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, Entity->GetComponent<FEInstancedComponent>(), CurrentCamera, CurrentCamera->Frustum, false);
+			RenderGameModelComponentWithInstanced(Entity, CurrentCamera, CurrentCamera->Frustum, false);
 		}
 	}
 
 	// It is not renderer work to update interaction ray.
 	// It should be done in the input update.
-	auto VirtualUIIterator = SCENE.VirtualUIContextMap.begin();
-	while (VirtualUIIterator != SCENE.VirtualUIContextMap.end())
+	auto VirtualUIIterator = CurrentScene->VirtualUIContextMap.begin();
+	while (VirtualUIIterator != CurrentScene->VirtualUIContextMap.end())
 	{
 		auto VirtualUIContext = VirtualUIIterator->second;
 		if (VirtualUIContext->bMouseMovePassThrough)
@@ -752,12 +743,16 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 		VirtualUIIterator++;
 	}
 
-	for (auto [Entity, TerrainComponent, TransformComponent] : TerrainView.each())
+	for (auto [EnTTEntity, TerrainComponent, TransformComponent] : TerrainView.each())
 	{
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
 		if (!TerrainComponent.IsVisible())
 			continue;
 
-		RenderTerrainComponent(TransformComponent, TerrainComponent, CurrentCamera);
+		RenderTerrainComponent(Entity, CurrentCamera);
 	}
 
 	GBuffer->GFrameBuffer->UnBind();
@@ -852,13 +847,22 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	// ********* RENDER INSTANCED LINE END *********
 
 	// ********* RENDER SKY *********
-	entt::basic_view SkyDomeView = SCENE.Registry.view<FESkyDomeComponent, FETransformComponent>();
-	for (auto [Entity, SkyDomeComponent, TransformComponent] : SkyDomeView.each())
+	entt::basic_view SkyDomeView = CurrentScene->Registry.view<FESkyDomeComponent, FETransformComponent>();
+	for (auto [EnTTEntity, SkyDomeComponent, TransformComponent] : SkyDomeView.each())
 	{
-		if (!SKY_DOME_SYSTEM.IsEnabled())
+		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (CurrentEntity == nullptr)
 			continue;
 
-		RenderGameModelComponent(*SKY_DOME_SYSTEM.SkyDomeGameModelComponent, TransformComponent, CurrentCamera);
+		if (!SKY_DOME_SYSTEM.IsEnabled())
+		{
+			CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(false);
+			break;
+		}
+
+		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(true);
+		RenderGameModelComponent(CurrentEntity, CurrentCamera);
+		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(false);
 		// Only one sky dome is supported.
 		break;
 	}
@@ -971,21 +975,21 @@ void FERenderer::Render(FEBasicCamera* CurrentCamera)
 	SceneToTextureFB->Bind();
 
 	// FIX ME! No prefab support.
-	for (entt::entity CurrentEntity : GameModelGroup)
+	for (entt::entity EnTTEntity : GameModelGroup)
 	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
 		if (!GameModelComponent.IsVisible() || GameModelComponent.IsPostprocessApplied())
 			continue;
 
-		FEEntity* Entity = SCENE.GetEntityByEnTT(CurrentEntity);
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponent(GameModelComponent, TransformComponent, CurrentCamera);
+			RenderGameModelComponent(Entity, CurrentCamera);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponentWithInstanced(TransformComponent, GameModelComponent, Entity->GetComponent<FEInstancedComponent>(), CurrentCamera, CurrentCamera->Frustum, false);
+			RenderGameModelComponentWithInstanced(Entity, CurrentCamera, CurrentCamera->Frustum, false);
 		}
 	}
 	
@@ -1064,13 +1068,19 @@ void FERenderer::TakeScreenshot(const char* FileName, const int Width, const int
 	delete[] pixels;
 }
 
-void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
 {
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
+		return;
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+
 	if (GameModelComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	if (bReloadUniformBlocks)
-		LoadUniformBlocks();
+		LoadUniformBlocks(Entity->ParentScene);
 
 	FEGameModel* GameModel = GameModelComponent.GameModel;
 	if (GameModel == nullptr)
@@ -1117,10 +1127,16 @@ void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelCompone
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void FERenderer::RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
 {
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
+		return;
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+
 	if (bReloadUniformBlocks)
-		LoadUniformBlocks();
+		LoadUniformBlocks(Entity->ParentScene);
 
 	FEGameModel* GameModel = GameModelComponent.GameModel;
 	if (GameModel == nullptr)
@@ -1185,11 +1201,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCa
 
 	FETransformComponent& TransformComponent = TerrainEntity->GetComponent<FETransformComponent>();
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
-	RenderTerrainComponent(TransformComponent, TerrainComponent, CurrentCamera);
-}
-
-void FERenderer::RenderTerrainComponent(FETransformComponent& TransformComponent, FETerrainComponent& TerrainComponent, const FEBasicCamera* CurrentCamera)
-{
+	
 	if (TerrainComponent.Shader == nullptr)
 	{
 		LOG.Add("FERenderer::RenderTerrainComponent TerrainComponent does not have valid Shader", "FE_LOG_RENDERING", FE_LOG_WARNING);
@@ -1868,30 +1880,33 @@ void FERenderer::UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH)
 	}
 }
 
-void FERenderer::RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/)
+void FERenderer::RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 {
-	if (SceneToVRTextureFB == nullptr)
+	if (CurrentScene == nullptr || CurrentCamera == nullptr || SceneToVRTextureFB == nullptr)
 		return;
 
 	// glViewPort and Frame buffer already are set.
 	CurrentCamera->UpdateFrustumPlanes();
-	FEScene& scene = SCENE;
 
 	SceneToVRTextureFB->Bind();
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	LoadUniformBlocks();
+	LoadUniformBlocks(CurrentScene);
 
 	// No instanced rendering for now.
-	entt::basic_group GameModelGroup = SCENE.Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
-	for (entt::entity CurrentEntity : GameModelGroup)
+	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
+	for (entt::entity CurrentEnTTEntity : GameModelGroup)
 	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEnTTEntity);
+
+		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(CurrentEnTTEntity);
+		if (CurrentEntity == nullptr)
+			continue;
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
-			RenderGameModelComponentForward(GameModelComponent, TransformComponent, CurrentCamera);
+			RenderGameModelComponentForward(CurrentEntity, CurrentCamera);
 		}
 	}
 

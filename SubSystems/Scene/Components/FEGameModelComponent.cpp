@@ -6,6 +6,28 @@ FEGameModelComponent::FEGameModelComponent(FEGameModel* GameModelToSet)
 	GameModel = GameModelToSet;
 }
 
+FEGameModelComponent::FEGameModelComponent(const FEGameModelComponent& Other)
+{
+	GameModel = Other.GameModel;
+	bVisible = Other.bVisible;
+	bCastShadows = Other.bCastShadows;
+	bReceiveShadows = Other.bReceiveShadows;
+	bUniformLighting = Other.bUniformLighting;
+	bApplyPostprocess = Other.bApplyPostprocess;
+	bWireframeMode = Other.bWireframeMode;
+}
+
+void FEGameModelComponent::operator=(const FEGameModelComponent& Other)
+{
+	GameModel = Other.GameModel;
+	bVisible = Other.bVisible;
+	bCastShadows = Other.bCastShadows;
+	bReceiveShadows = Other.bReceiveShadows;
+	bUniformLighting = Other.bUniformLighting;
+	bApplyPostprocess = Other.bApplyPostprocess;
+	bWireframeMode = Other.bWireframeMode;
+}
+
 bool FEGameModelComponent::IsVisible() const
 {
 	return bVisible;

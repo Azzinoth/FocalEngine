@@ -3,7 +3,6 @@ using namespace FocalEngine;
 
 FESkyDomeSystem* FESkyDomeSystem::Instance = nullptr;
 FEGameModel* FESkyDomeSystem::SkyDomeGameModel = nullptr;
-FEGameModelComponent* FESkyDomeSystem::SkyDomeGameModelComponent = nullptr;
 
 FESkyDomeSystem::FESkyDomeSystem()
 {
@@ -23,16 +22,13 @@ FESkyDomeSystem::FESkyDomeSystem()
 	SkyDomeGameModel->SetID("17271E603508013IO77931TY");
 	RESOURCE_MANAGER.MakeGameModelStandard(SkyDomeGameModel);
 
-	SkyDomeGameModelComponent = new FEGameModelComponent(SkyDomeGameModel);
-
 	RegisterOnComponentCallbacks();
-	SCENE.AddOnSceneClearCallback(std::bind(&FESkyDomeSystem::OnSceneClear, this));
 }
 
 void FESkyDomeSystem::RegisterOnComponentCallbacks()
 {
-	SCENE.RegisterOnComponentConstructCallback<FESkyDomeComponent>(OnMyComponentAdded);
-	SCENE.RegisterOnComponentDestroyCallback<FESkyDomeComponent>(OnMyComponentDestroy);
+	SCENE_MANAGER.RegisterOnComponentConstructCallback<FESkyDomeComponent>(OnMyComponentAdded);
+	SCENE_MANAGER.RegisterOnComponentDestroyCallback<FESkyDomeComponent>(OnMyComponentDestroy);
 }
 
 void FESkyDomeSystem::OnSceneClear()
@@ -44,6 +40,9 @@ void FESkyDomeSystem::OnMyComponentAdded(FEEntity* Entity)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FESkyDomeComponent>())
 		return;
+
+	Entity->AddComponent<FEGameModelComponent>(SkyDomeGameModel);
+	Entity->GetComponent<FEGameModelComponent>().SetVisibility(false);
 }
 
 void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
@@ -59,12 +58,12 @@ FESkyDomeSystem::~FESkyDomeSystem() {};
 
 bool FESkyDomeSystem::IsEnabled()
 {
-	return SkyDomeGameModelComponent->IsVisible();
+	return bEnabled;
 }
 
 void FESkyDomeSystem::SetEnabled(bool NewValue)
 {
-	SkyDomeGameModelComponent->SetVisibility(NewValue);
+	bEnabled = NewValue;
 }
 
 void FESkyDomeSystem::AddToEntity(FEEntity* EntityToAdd)

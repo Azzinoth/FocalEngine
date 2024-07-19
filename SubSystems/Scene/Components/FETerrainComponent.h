@@ -14,7 +14,7 @@ namespace FocalEngine
 	class FETerrainLayer
 	{
 		friend class FETerrainComponent;
-		friend class FEResourceManager;
+		friend class FETerrainSystem;
 
 		std::string Name;
 		FEMaterial* Material = nullptr;
@@ -47,7 +47,7 @@ namespace FocalEngine
 		friend class FETerrainSystem;
 	public:
 		FETerrainComponent();
-		FETerrainComponent(FETerrainComponent& Other) = default;
+		FETerrainComponent(const FETerrainComponent& Other) = default;
 		~FETerrainComponent();
 
 		bool IsVisible();

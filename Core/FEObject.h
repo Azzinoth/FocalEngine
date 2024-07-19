@@ -149,6 +149,7 @@ namespace FocalEngine
 		friend class FEResourceManager;
 		friend class FENaiveSceneGraphNode;
 		friend class FEScene;
+		friend class FESceneManager;
 		friend class FETerrainSystem;
 		friend class FESkyDomeSystem;
 	public:

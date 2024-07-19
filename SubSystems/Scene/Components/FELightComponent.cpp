@@ -207,8 +207,49 @@ FECascadeData::FECascadeData()
 	}
 }
 
+FECascadeData::FECascadeData(const FECascadeData& Other)
+{
+	Size = Other.Size;
+	ProjectionMat = Other.ProjectionMat;
+	ViewMat = Other.ViewMat;
+	FrameBuffer = Other.FrameBuffer;
+
+	Frustum = new float* [6];
+	for (size_t i = 0; i < 6; i++)
+	{
+		Frustum[i] = new float[4];
+	}
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			Frustum[i][j] = Other.Frustum[i][j];
+		}
+	}
+}
+
+void FECascadeData::operator=(const FECascadeData& Other)
+{
+	Size = Other.Size;
+	ProjectionMat = Other.ProjectionMat;
+	ViewMat = Other.ViewMat;
+	FrameBuffer = Other.FrameBuffer;
+
+	for (size_t i = 0; i < 6; i++)
+	{
+		for (size_t j = 0; j < 4; j++)
+		{
+			Frustum[i][j] = Other.Frustum[i][j];
+		}
+	}
+}
+
 FECascadeData::~FECascadeData()
 {
+	if (Frustum == nullptr)
+		return;
+	
 	for (size_t i = 0; i < 6; i++)
 	{
 		delete[] Frustum[i];

@@ -14,7 +14,8 @@ namespace FocalEngine
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
-		void OnSceneClear();
+
+		void DuplicateTerrainComponent(FEEntity* EntityWithTerrainComponent, FEEntity* NewEntity);
 
 		// ********************************** PointOnTerrain **********************************
 		glm::dvec3 BinarySearch(FEEntity* TerrainEntity, int Count, float Start, float Finish, glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection);
@@ -24,7 +25,7 @@ namespace FocalEngine
 		// ********************************** PointOnTerrain END **********************************
 
 		// **************************** TERRAIN EDITOR TOOLS ****************************
-		FEEntity* TerrainEntityWithActiveBrush = nullptr;
+		FEEntity* TerrainEntityWithBrushModeOn = nullptr;
 
 		bool bBrushActive = false;
 		FE_TERRAIN_BRUSH_MODE BrushMode = FE_TERRAIN_BRUSH_NONE;
@@ -84,10 +85,10 @@ namespace FocalEngine
 		void SetBrushIntensity(float NewValue);
 
 		bool IsBrushActive();
-		void SetBrushActive(FEEntity* TerrainEntity, bool NewValue);
+		void SetBrushActive(bool NewValue);
 
 		FE_TERRAIN_BRUSH_MODE GetBrushMode();
-		void SetBrushMode(FE_TERRAIN_BRUSH_MODE NewValue);
+		void SetBrushMode(FEEntity* TerrainEntity, FE_TERRAIN_BRUSH_MODE NewValue);
 
 		size_t GetBrushLayerIndex();
 		void SetBrushLayerIndex(size_t NewValue);

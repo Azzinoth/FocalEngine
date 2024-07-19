@@ -5,40 +5,60 @@ FELightSystem* FELightSystem::Instance = nullptr;
 FELightSystem::FELightSystem()
 {
 	RegisterOnComponentCallbacks();
-	SCENE.AddOnSceneClearCallback(std::bind(&FELightSystem::OnSceneClear, this));
 }
 
 void FELightSystem::RegisterOnComponentCallbacks()
 {
-	SCENE.RegisterOnComponentConstructCallback<FELightComponent>(OnMyComponentAdded);
-	SCENE.RegisterOnComponentDestroyCallback<FELightComponent>(OnMyComponentDestroy);
-
-
 	SCENE_MANAGER.RegisterOnComponentConstructCallback<FELightComponent>(OnMyComponentAdded);
-}
-
-void FELightSystem::OnSceneClear()
-{
-	RegisterOnComponentCallbacks();
+	SCENE_MANAGER.RegisterOnComponentDestroyCallback<FELightComponent>(OnMyComponentDestroy);
 }
 
 void FELightSystem::OnMyComponentAdded(FEEntity* Entity)
 {
+	if (LIGHT_SYSTEM.bInternalAdd)
+		return;
+
 	if (Entity == nullptr || !Entity->HasComponent<FELightComponent>())
 		return;
 
 	FELightComponent& LightComponent = Entity->GetComponent<FELightComponent>();
 	if (LightComponent.GetType() == FE_DIRECTIONAL_LIGHT)
 	{
-		LightComponent.CascadeData[0].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		LightComponent.CascadeData[1].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		LightComponent.CascadeData[2].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-		LightComponent.CascadeData[3].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
-
-		// To clear cascades framebuffers.
-		LightComponent.SetCastShadows(false);
-		LightComponent.SetCastShadows(true);
+		LIGHT_SYSTEM.DirectionalLightInitialization(LightComponent);
 	}
+}
+
+void FELightSystem::DirectionalLightInitialization(FELightComponent& LightComponent)
+{
+	if (LightComponent.GetType() != FE_DIRECTIONAL_LIGHT)
+		return;
+
+	LightComponent.CascadeData[0].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+	LightComponent.CascadeData[1].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+	LightComponent.CascadeData[2].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+	LightComponent.CascadeData[3].FrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_DEPTH_ATTACHMENT, 1024 * 2, 1024 * 2);
+
+	// To clear cascades framebuffers.
+	LightComponent.SetCastShadows(false);
+	LightComponent.SetCastShadows(true);
+}
+
+void FELightSystem::DuplicateLightComponent(FEEntity* EntityWithLightComponent, FEEntity* NewEntity)
+{
+	if (EntityWithLightComponent == nullptr || NewEntity == nullptr || !EntityWithLightComponent->HasComponent<FELightComponent>())
+		return;
+
+	FELightComponent& LightComponent = EntityWithLightComponent->GetComponent<FELightComponent>();
+
+	bInternalAdd = true;
+	NewEntity->AddComponent<FELightComponent>(LightComponent.GetType());
+	bInternalAdd = false;
+	FELightComponent& NewLightComponent = NewEntity->GetComponent<FELightComponent>();
+
+	NewLightComponent = LightComponent;
+
+	if (LightComponent.GetType() == FE_DIRECTIONAL_LIGHT)
+		DirectionalLightInitialization(NewLightComponent);
 }
 
 void FELightSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)

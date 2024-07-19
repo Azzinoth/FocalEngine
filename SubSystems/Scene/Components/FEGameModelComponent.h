@@ -7,6 +7,8 @@ namespace FocalEngine
 	{
 		FEGameModelComponent() {};
 		FEGameModelComponent(FEGameModel* GameModelToSet);
+		FEGameModelComponent(const FEGameModelComponent& Other);
+		void operator=(const FEGameModelComponent& Other);
 
 		bool IsVisible() const;
 		void SetVisibility(bool NewValue);

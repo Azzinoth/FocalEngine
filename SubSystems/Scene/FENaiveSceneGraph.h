@@ -7,16 +7,21 @@ namespace FocalEngine
 	class FENaiveSceneGraph
 	{
 		friend class FEScene;
-	public:
+
 		FENaiveSceneGraph();
 		~FENaiveSceneGraph();
-
+	public:
 		FENaiveSceneGraphNode* GetRoot() const;
 
 		std::string AddNode(FEEntity* Entity, bool bPreserveWorldTransform = true);
 		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
 		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
+		FENaiveSceneGraphNode* DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName = true);
+		FENaiveSceneGraphNode* DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName = true);
+
+		FENaiveSceneGraphNode* ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent = nullptr);
+
 		size_t GetNodeCount();
 
 		bool IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant);
@@ -36,8 +41,8 @@ namespace FocalEngine
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root;
 
-		void AddNode(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
-		void AddNode(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
+		void AddNodeInternal(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
+		void AddNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
 
         bool HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 							  std::unordered_set<FENaiveSceneGraphNode*>& Visited,
@@ -45,6 +50,8 @@ namespace FocalEngine
 
 		std::vector<FENaiveSceneGraphNode*> GetAllNodes();
 
-		void Initialize();
+		void Initialize(FEScene* Scene);
+
+		bool DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName = true);
 	};
 }

@@ -4,7 +4,7 @@
 #define FERENDERER_H
 
 #include "../SubSystems/Scene/Components/Systems/FELightSystem.h"
-#include "../SubSystems/Scene/Components/Systems/FEInstancedRenderingSystem.h"
+#include "../SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 
@@ -63,14 +63,14 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FERenderer)
 
-		void Render(FEBasicCamera* CurrentCamera);
+		void Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
 		// FIX ME! It is closer to what it should be, but still not perfect.
 		// It should be done as system, and only ocassionally throught this function.
-		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentForward(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentForward(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
 		void RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCamera* CurrentCamera);
-		void RenderTerrainComponent(FETransformComponent& TransformComponent, FETerrainComponent& TerrainComponent, const FEBasicCamera* CurrentCamera);
+		
 		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
 
 		std::vector<std::string> GetPostProcessList();
@@ -165,7 +165,7 @@ namespace FocalEngine
 		void UpdateSSAO(const FEBasicCamera* CurrentCamera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
-		void SimplifiedRender(FEBasicCamera* CurrentCamera);
+		void SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
 
 		// *********** VR Rendering ***********
 
@@ -174,7 +174,7 @@ namespace FocalEngine
 		int VRScreenW = 0;
 		int VRScreenH = 0;
 		FEFramebuffer* SceneToVRTextureFB = nullptr;
-		void RenderVR(FEBasicCamera* CurrentCamera/*, uint32_t ColorTexture, uint32_t DepthTexture*/);
+		void RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
 
 		void UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH);
 
@@ -195,7 +195,7 @@ namespace FocalEngine
 
 		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
 		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows, const bool IsUniformLighting = false);
-		void LoadUniformBlocks();
+		void LoadUniformBlocks(FEScene* CurrentScene);
 
 		void StandardFBInit(int WindowWidth, int WindowHeight);
 		void TakeScreenshot(const char* FileName, int Width, int Height);

@@ -1,26 +1,23 @@
-#include "FEInstancedRenderingSystem.h"
+#include "FEInstancedSystem.h"
 using namespace FocalEngine;
 
 FEInstancedSystem* FEInstancedSystem::Instance = nullptr;
 FEInstancedSystem::FEInstancedSystem()
 {
 	RegisterOnComponentCallbacks();
-	SCENE.AddOnSceneClearCallback(std::bind(&FEInstancedSystem::OnSceneClear, this));
 }
 
 void FEInstancedSystem::RegisterOnComponentCallbacks()
 {
-	SCENE.RegisterOnComponentConstructCallback<FEInstancedComponent>(OnMyComponentAdded);
-	SCENE.RegisterOnComponentDestroyCallback<FEInstancedComponent>(OnMyComponentDestroy);
-}
-
-void FEInstancedSystem::OnSceneClear()
-{
-	RegisterOnComponentCallbacks();
+	SCENE_MANAGER.RegisterOnComponentConstructCallback<FEInstancedComponent>(OnMyComponentAdded);
+	SCENE_MANAGER.RegisterOnComponentDestroyCallback<FEInstancedComponent>(OnMyComponentDestroy);
 }
 
 void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
 {
+	if (INSTANCED_RENDERING_SYSTEM.bInternalAdd)
+		return;
+
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 
@@ -273,6 +270,28 @@ void FEInstancedSystem::UpdateBuffers(FETransformComponent& TransformComponent, 
 	
 	TransformComponent.SetDirtyFlag(true);
 	GetAABB(TransformComponent, GameModelComponent, InstancedComponent);
+}
+
+void FEInstancedSystem::DuplicateInstancedComponent(FEEntity* EntityWithInstancedComponent, FEEntity* NewEntity)
+{
+	if (EntityWithInstancedComponent == nullptr || NewEntity == nullptr)
+		return;
+
+	if (!EntityWithInstancedComponent->HasComponent<FEGameModelComponent>() || !NewEntity->HasComponent<FEGameModelComponent>())
+		return;
+
+	if (!EntityWithInstancedComponent->HasComponent<FEInstancedComponent>())
+		return;
+
+	FEInstancedComponent& OriginalInstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
+	bInternalAdd = true;
+	NewEntity->AddComponent<FEInstancedComponent>();
+	bInternalAdd = false;
+
+	FEGameModelComponent& GameModelComponent = NewEntity->GetComponent<FEGameModelComponent>();
+	FEInstancedComponent& NewInstancedComponent = NewEntity->GetComponent<FEInstancedComponent>();
+	NewInstancedComponent = OriginalInstancedComponent;
+	INSTANCED_RENDERING_SYSTEM.InitializeBuffers(GameModelComponent, NewInstancedComponent);
 }
 
 void FEInstancedSystem::AddInstanceInternal(FEEntity* EntityWithInstancedComponent, const glm::mat4 InstanceMatrix)

@@ -102,8 +102,8 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 {
 	SwapChainFB->Bind();
 
-	const uint32_t colorTexture = reinterpret_cast<const XrSwapchainImageOpenGLKHR*>(SwapChainImage)->image;
-	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexture, 0));
+	const uint32_t ColorTexture = reinterpret_cast<const XrSwapchainImageOpenGLKHR*>(SwapChainImage)->image;
+	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorTexture, 0));
 
 	glViewport(static_cast<GLint>(LayerView.subImage.imageRect.offset.x),
 			   static_cast<GLint>(LayerView.subImage.imageRect.offset.y),
@@ -130,7 +130,9 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	CurrentCamera->ViewMatrix = CurrentViewMatrix;
 
 	bValidSwapChain = true;
-	RENDERER.RenderVR(CurrentCamera);
+	// FIX ME! Temporary solution, only supports one scene
+	FEScene* CurrentScene = SCENE_MANAGER.GetActiveScenes()[0];
+	RENDERER.RenderVR(CurrentScene, CurrentCamera);
 	bValidSwapChain = false;
 }
 

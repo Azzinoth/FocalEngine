@@ -1,29 +1,45 @@
 #include "FEComponents.h"
+#include "../FEScene.h"
 using namespace FocalEngine;
 
 FEComponentsTools* FEComponentsTools::Instance = nullptr;
 FEComponentsTools::FEComponentsTools()
 {
-	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] = FEComponentTypeInfo("Tag", typeid(FETagComponent));
-	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = FEComponentTypeInfo("Transform", typeid(FETransformComponent));
-	ComponentIDToInfo[entt::type_id<FELightComponent>().hash()] = FEComponentTypeInfo("Light", typeid(FELightComponent));
-	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = FEComponentTypeInfo("Game Model", typeid(FEGameModelComponent));
-	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] = FEComponentTypeInfo("Instanced", typeid(FEInstancedComponent));
-	ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] = FEComponentTypeInfo("Terrain", typeid(FETerrainComponent));
-	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] = FEComponentTypeInfo("SkyDome", typeid(FESkyDomeComponent));
+	FEComponentTypeInfo TagComponentInfo("Tag", typeid(FETagComponent));
+	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETagComponent>(); };
+	TagComponentInfo.IncompatibleWith.push_back({ TagComponentInfo });
+	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] = TagComponentInfo;
 
+	FEComponentTypeInfo TransformComponentInfo("Transform", typeid(FETransformComponent));
+	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETransformComponent>(); };
+	TransformComponentInfo.IncompatibleWith.push_back({ TransformComponentInfo });
+	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
 
-	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FELightComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FELightComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] });
-	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] });
-	//ComponentIDToInfo[entt::type_id<FELightComponent>().hash()].RequiredComponents.push_back({ ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] });
-	//ComponentIDToInfo[entt::type_id<FELightComponent>().hash()].RequiredComponents.push_back({ ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] });
-	//ComponentIDToInfo[entt::type_id<FELightComponent>().hash()].IncompatibleCombinations.push_back({ { ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] }, { ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] } });
-	//ComponentIDToInfo[entt::type_id<FELightComponent>().hash()].IncompatibleWith.push_back({ ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] });
+	FEComponentTypeInfo LightComponentInfo("Light", typeid(FELightComponent));
+	FunctionsToGetEntityIDListWith[LightComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FELightComponent>(); };
+	LightComponentInfo.IncompatibleWith.push_back({ LightComponentInfo });
+	ComponentIDToInfo[entt::type_id<FELightComponent>().hash()] = LightComponentInfo;
+
+	FEComponentTypeInfo GameModelComponentInfo("Game Model", typeid(FEGameModelComponent));
+	FunctionsToGetEntityIDListWith[GameModelComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEGameModelComponent>(); };
+	GameModelComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
+	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = GameModelComponentInfo;
+
+	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
+	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEInstancedComponent>(); };
+	InstancedComponentInfo.IncompatibleWith.push_back({ InstancedComponentInfo });
+	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] = InstancedComponentInfo;
+
+	FEComponentTypeInfo TerrainComponentInfo("Terrain", typeid(FETerrainComponent));
+	FunctionsToGetEntityIDListWith[TerrainComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETerrainComponent>(); };
+	TerrainComponentInfo.IncompatibleWith.push_back({ TerrainComponentInfo });
+	ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] = TerrainComponentInfo;
+
+	FEComponentTypeInfo SkyDomeComponentInfo("SkyDome", typeid(FESkyDomeComponent));
+	FunctionsToGetEntityIDListWith[SkyDomeComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FESkyDomeComponent>(); };
+	SkyDomeComponentInfo.IncompatibleWith.push_back({ SkyDomeComponentInfo });
+	SkyDomeComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
+	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] = SkyDomeComponentInfo;
 }
 
 std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()
@@ -35,11 +51,57 @@ std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()
 	return Result;
 }
 
-bool FEComponentTypeInfo::IsCompatible(std::vector<FEComponentTypeInfo>& CurrentlyExistingComponents, std::string* ErrorMessage)
+std::vector<std::string> FEComponentsTools::GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo)
+{
+	if (FunctionsToGetEntityIDListWith.find(ComponentInfo.Type) == FunctionsToGetEntityIDListWith.end())
+	{
+		LOG.Add("Function to get entity id list with component not found in FEComponentsTools::GetEntityIDListWithComponent", "FE_LOG_ECS", FE_LOG_ERROR);
+		return {};
+	}
+
+	return FunctionsToGetEntityIDListWith[ComponentInfo.Type](CurrentScene);
+}
+
+bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::string* ErrorMessage)
 {
 	std::string LocalErrorMessage;
 	if (ErrorMessage != nullptr)
 		*ErrorMessage = "";
+
+	if (ProspectParentEntity == nullptr)
+	{
+		LOG.Add("ProspectParentEntity is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
+		if (ErrorMessage != nullptr)
+			*ErrorMessage = "ProspectParentEntity is nullptr";
+
+		return false;
+	}
+
+	if (ProspectParentEntity->GetParentScene() == nullptr)
+	{
+		LOG.Add("ProspectParentEntity parent scene is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
+		if (ErrorMessage != nullptr)
+			*ErrorMessage = "ProspectParentEntity parent scene is nullptr";
+
+		return false;
+	}
+
+	FEScene* ParentScene = ProspectParentEntity->GetParentScene();
+	if (MaxSceneComponentCount != -1)
+	{
+		size_t CurrentComponentCount = COMPONENTS_TOOL.GetEntityIDListWithComponent(ParentScene, *this).size();
+		if (CurrentComponentCount >= MaxSceneComponentCount)
+		{
+			LOG.Add("Max component count reached in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_WARNING);
+
+			if (ErrorMessage != nullptr)
+				*ErrorMessage = "Max component count reached";
+
+			return false;
+		}
+	}
+
+	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = ProspectParentEntity->GetComponentsInfoList();
 
 	// Check if any of the existing components are incompatible
 	for (const auto& ExistingComponent : CurrentlyExistingComponents)
