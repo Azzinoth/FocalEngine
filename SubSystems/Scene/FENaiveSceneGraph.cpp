@@ -20,7 +20,7 @@ void FENaiveSceneGraph::Initialize(FEScene* Scene)
 {
 	ParentScene = Scene;
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = ParentScene->AddEntityOrphan("SceneRoot");
+	NewRoot->Entity = ParentScene->CreateEntityOrphan("SceneRoot");
 	Root = NewRoot;
 }
 

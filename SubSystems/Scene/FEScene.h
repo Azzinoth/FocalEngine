@@ -24,9 +24,9 @@ namespace FocalEngine
 		FEScene();
 
 		FEEntity* GetEntity(std::string ID);
-		FEEntity* AddEntity(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
 		// Entity will not be added to the scene graph, use with caution.
-		FEEntity* AddEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
 		std::vector<std::string> GetEntityIDList();
 		template<typename T>
 		std::vector<std::string> GetEntityIDListWith();
@@ -72,7 +72,7 @@ namespace FocalEngine
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
 
 		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
-		FEEntity* AddEntityInternal(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntityInternal(std::string Name = "", std::string ForceObjectID = "");
 
 		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
 	};

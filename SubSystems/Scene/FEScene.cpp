@@ -128,7 +128,7 @@ void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name)
 {
 	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
-	NewVirtualUIContext->CanvasEntity = AddEntity(Name + "_Virtual_UI_Canvas");
+	NewVirtualUIContext->CanvasEntity = CreateEntity(Name + "_Virtual_UI_Canvas");
 	NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
 	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->GetComponent<FEGameModelComponent>();
 	GameModelComponent.SetUniformLighting(true);
@@ -416,7 +416,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	std::string NodeName = "Unnamed Entity";
 	if (!NodeName.empty())
 		NodeName = Node.Name;
-	FEEntity* Entity = AddEntity(NodeName);
+	FEEntity* Entity = CreateEntity(NodeName);
 
 	FETransformComponent& Transform = Entity->GetComponent<FETransformComponent>();
 	Transform.SetPosition(Node.Translation);
@@ -450,7 +450,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 				std::string CurrentNodeName = NodeName;
 				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
 
-				FEEntity* ChildEntity = AddEntity(CurrentNodeName);
+				FEEntity* ChildEntity = CreateEntity(CurrentNodeName);
 				ChildEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
 		
 				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetObjectID());
@@ -507,20 +507,20 @@ void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
 	}
 }
 
-FEEntity* FEScene::AddEntity(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntity(std::string Name, std::string ForceObjectID)
 {
-	FEEntity* Result = AddEntityOrphan(Name, ForceObjectID);
+	FEEntity* Result = CreateEntityOrphan(Name, ForceObjectID);
 	SceneGraph.AddNode(Result, false);
 
 	return Result;
 }
 
-FEEntity* FEScene::AddEntityOrphan(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntityOrphan(std::string Name, std::string ForceObjectID)
 {
-	return AddEntityInternal(Name, ForceObjectID);
+	return CreateEntityInternal(Name, ForceObjectID);
 }
 
-FEEntity* FEScene::AddEntityInternal(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntityInternal(std::string Name, std::string ForceObjectID)
 {
 	if (Name.empty())
 		Name = "Unnamed Entity";
@@ -573,7 +573,7 @@ FEEntity* FEScene::DuplicateEntity(FEEntity* SourceEntity, std::string NewEntity
 
 FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName)
 {
-	FEEntity* NewEntity = AddEntityOrphan(NewEntityName);
+	FEEntity* NewEntity = CreateEntityOrphan(NewEntityName);
 
 	// Mandatory components.
 	NewEntity->GetComponent<FETagComponent>() = SourceEntity->GetComponent<FETagComponent>();
