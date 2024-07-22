@@ -21,33 +21,38 @@ void FEFreeCamera::Move(const float DeltaTime)
 	glm::normalize(Right);
 	glm::normalize(Forward);
 
+	glm::vec3 CurrentPosition = TestTransform.GetPosition();
+
 	if (bLeftKeyPressed)
 	{
-		Position.x -= Right.x;
-		Position.y -= Right.y;
-		Position.z -= Right.z;
+		CurrentPosition.x -= Right.x;
+		CurrentPosition.y -= Right.y;
+		CurrentPosition.z -= Right.z;
 	}
 
 	if (bUpKeyPressed)
 	{
-		Position.x += Forward.x;
-		Position.y += Forward.y;
-		Position.z += Forward.z;
+		CurrentPosition.x += Forward.x;
+		CurrentPosition.y += Forward.y;
+		CurrentPosition.z += Forward.z;
 	}
 
 	if (bRightKeyPressed)
 	{
-		Position.x += Right.x;
-		Position.y += Right.y;
-		Position.z += Right.z;
+		CurrentPosition.x += Right.x;
+		CurrentPosition.y += Right.y;
+		CurrentPosition.z += Right.z;
 	}
 
 	if (bDownKeyPressed)
 	{
-		Position.x -= Forward.x;
-		Position.y -= Forward.y;
-		Position.z -= Forward.z;
+		CurrentPosition.x -= Forward.x;
+		CurrentPosition.y -= Forward.y;
+		CurrentPosition.z -= Forward.z;
 	}
+
+	// New stuff
+	TestTransform.SetPosition(CurrentPosition);
 
 	UpdateViewMatrix();
 
@@ -123,6 +128,9 @@ void FEFreeCamera::MouseMoveInput(const double Xpos, const double Ypos)
 	if (CurrentMouseYAngle < -89.0f)
 		CurrentMouseYAngle = -89.0f;
 	SetPitch(CurrentMouseYAngle);
+
+	// New stuff
+	TestTransform.SetRotation(glm::vec3(-CurrentMouseYAngle, -CurrentMouseXAngle, 0.0f));
 }
 
 void FEFreeCamera::KeyboardInput(const int Key, int Scancode, const int Action, int Mods)

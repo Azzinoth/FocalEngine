@@ -1,6 +1,7 @@
 #pragma once
 #include "FETagComponent.h"
 #include "FETransformComponent.h"
+#include "FECameraComponent.h"
 #include "FELightComponent.h"
 #include "FEGameModelComponent.h"
 #include "FEInstancedComponent.h"

@@ -14,7 +14,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FESceneManager)
 
 		FEScene* GetScene(std::string ID);
-		FEScene* CreateScene(bool bActive = true, std::string Name = "", std::string ForceObjectID = "");
+		FEScene* CreateScene(std::string Name = "", std::string ForceObjectID = "", bool bActive = true);
 		std::vector<std::string> GetSceneIDList();
 		std::vector<FEScene*> GetSceneByName(std::string Name);
 

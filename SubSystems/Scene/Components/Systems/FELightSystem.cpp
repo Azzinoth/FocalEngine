@@ -93,6 +93,7 @@ glm::vec3 FELightSystem::GetDirection(FEEntity* LightEntity)
 	return LightComponent.Direction;
 }
 
+// FIX ME ! This should take main camera internally, not all the parameters.
 void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float AspectRatio, float NearPlane, float FarPlane, glm::mat4 ViewMatrix, glm::vec3 CameraForward, glm::vec3 CameraRight, glm::vec3 CameraUp)
 {
 	if (LightEntity == nullptr || !LightEntity->HasComponent<FELightComponent>())

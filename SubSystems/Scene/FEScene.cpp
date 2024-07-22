@@ -1,8 +1,10 @@
 #include "FEScene.h"
+#include "Components/Systems/FELightSystem.h"
+#include "Components/Systems/FECameraSystem.h"
 #include "Components/Systems/FEInstancedSystem.h"
 #include "Components/Systems/FETerrainSystem.h"
 #include "Components/Systems/FESkyDomeSystem.h"
-#include "Components/Systems/FELightSystem.h"
+
 using namespace FocalEngine;
 
 FEScene::FEScene() : FEObject(FE_OBJECT_TYPE::FE_SCENE, "Unnamed Scene")

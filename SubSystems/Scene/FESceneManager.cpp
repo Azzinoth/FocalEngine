@@ -15,7 +15,7 @@ FEScene* FESceneManager::GetScene(std::string ID)
 	return SceneMap[ID];
 }
 
-FEScene* FESceneManager::CreateScene(bool bActive, std::string Name, std::string ForceObjectID)
+FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID, bool bActive)
 {
 	FEScene* Scene = new FEScene();
 	Scene->bActive = bActive;

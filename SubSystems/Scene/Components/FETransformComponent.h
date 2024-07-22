@@ -5,6 +5,12 @@
 
 namespace FocalEngine
 {
+	enum FE_COORDIANTE_SPACE_TYPE
+	{
+		FE_LOCAL_SPACE = 0,
+		FE_WORLD_SPACE = 1
+	};
+
 	class FETransformComponent
 	{
 		friend class FEScene;
@@ -16,17 +22,17 @@ namespace FocalEngine
 
 		FETransformComponent Combine(const FETransformComponent& Other) const;
 
-		glm::vec3 GetPosition(bool bLocalSpace = true) const;
-		glm::vec3 GetRotation(bool bLocalSpace = true) const;
-		glm::quat GetQuaternion(bool bLocalSpace = true) const;
-		glm::vec3 GetScale(bool bLocalSpace = true) const;
+		glm::vec3 GetPosition(FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE) const;
+		glm::vec3 GetRotation(FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE) const;
+		glm::quat GetQuaternion(FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE) const;
+		glm::vec3 GetScale(FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE) const;
 
-		void SetPosition(glm::vec3 NewPosition, bool bLocalSpace = true);
-		void SetRotation(glm::vec3 NewRotation, bool bLocalSpace = true);
-		void RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, bool bLocalSpace = true);
-		void SetQuaternion(glm::quat Quaternion, bool bLocalSpace = true);
+		void SetPosition(glm::vec3 NewPosition, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
+		void SetRotation(glm::vec3 NewRotation, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
+		void RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
+		void SetQuaternion(glm::quat Quaternion, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
 		void RotateByQuaternion(glm::quat Quaternion);
-		void SetScale(glm::vec3 NewScale, bool bLocalSpace = true);
+		void SetScale(glm::vec3 NewScale, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
 
 		glm::mat4 GetWorldMatrix() const;
 		// Use this function only if you know what you are doing
@@ -64,6 +70,6 @@ namespace FocalEngine
 		void RotateQuaternion(float Angle, glm::vec3 Axis);
 		glm::mat4 GetParentMatrix() const;
 
-		void MoveAlongAxis(const glm::vec3& Axis, float MovementValue, bool bLocalSpace = true);
+		void MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
 	};
 }

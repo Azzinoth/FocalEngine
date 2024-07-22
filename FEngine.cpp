@@ -21,8 +21,22 @@ bool FEngine::IsNotTerminated()
 
 void FEngine::InternalUpdate()
 {
+	CurrentDeltaTime = CPUTime + GPUTime;
 	SCENE_MANAGER.Update();
+	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 	INSTANCED_RENDERING_SYSTEM.Update();
+
+	// FIX ME! Need proper INPUT system.
+	ENGINE.MouseScrollXOffset = 0.0;
+	ENGINE.MouseScrollYOffset = 0.0;
+
+	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
+	{
+		if (OnAfterUpdateCallbacks[i] == nullptr)
+			continue;
+
+		OnAfterUpdateCallbacks[i]();
+	}
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
@@ -59,7 +73,7 @@ void FEngine::BeginFrame(const bool InternalCall)
 #endif
 
 	// FIX ME ! That should not be here.
-	ENGINE.CurrentCamera->Move(static_cast<float>(CPUTime + GPUTime));
+	ENGINE.CurrentCamera->Move(static_cast<float>(CurrentDeltaTime));
 	InternalUpdate();
 }
 
@@ -321,6 +335,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterialInstanced);
 
 	// Early initialization of the systems.
+	CAMERA_SYSTEM;
 	LIGHT_SYSTEM;
 	INSTANCED_RENDERING_SYSTEM;
 	TERRAIN_SYSTEM;
@@ -411,8 +426,14 @@ void FEngine::MouseMoveCallback(double Xpos, double Ypos)
 		ENGINE.ClientMouseMoveCallbacks[i](Xpos, Ypos);
 	}
 
+	// FIX ME! Need proper INPUT system.
+	ENGINE.LastFrameMouseX = ENGINE.MouseX;
+	ENGINE.LastFrameMouseY = ENGINE.MouseY;
+
+	// FIX ME! It should be here.
 	ENGINE.CurrentCamera->MouseMoveInput(Xpos, Ypos);
 
+	// FIX ME! Need proper INPUT system.
 	ENGINE.MouseX = Xpos;
 	ENGINE.MouseY = Ypos;
 }
@@ -426,14 +447,54 @@ void FEngine::KeyButtonCallback(const int Key, const int Scancode, const int Act
 		ENGINE.ClientKeyButtonCallbacks[i](Key, Scancode, Action, Mods);
 	}
 
+	// FIX ME! Need proper INPUT system.
+	if (Key == GLFW_KEY_A && Action == GLFW_PRESS)
+	{
+		ENGINE.bAKeyPressed = true;
+	}
+	else if (Key == GLFW_KEY_A && Action == GLFW_RELEASE)
+	{
+		ENGINE.bAKeyPressed = false;
+	}
+
+	if (Key == GLFW_KEY_W && Action == GLFW_PRESS)
+	{
+		ENGINE.bWKeyPressed = true;
+	}
+	else if (Key == GLFW_KEY_W && Action == GLFW_RELEASE)
+	{
+		ENGINE.bWKeyPressed = false;
+	}
+
+	if (Key == GLFW_KEY_S && Action == GLFW_PRESS)
+	{
+		ENGINE.bSKeyPressed = true;
+	}
+	else if (Key == GLFW_KEY_S && Action == GLFW_RELEASE)
+	{
+		ENGINE.bSKeyPressed = false;
+	}
+
+	if (Key == GLFW_KEY_D && Action == GLFW_PRESS)
+	{
+		ENGINE.bDKeyPressed = true;
+	}
+	else if (Key == GLFW_KEY_D && Action == GLFW_RELEASE)
+	{
+		ENGINE.bDKeyPressed = false;
+	}
+
+	// FIX ME! It should be here.
 	ENGINE.CurrentCamera->KeyboardInput(Key, Scancode, Action, Mods);
 }
 
+// FIX ME! It should be here.
 void FEngine::SetCamera(FEBasicCamera* NewCamera)
 {
 	CurrentCamera = NewCamera;
 }
 
+// FIX ME! It should be here.
 FEBasicCamera* FEngine::GetCamera()
 {
 	return CurrentCamera;
@@ -558,6 +619,8 @@ int FEngine::GetRenderTargetHeight()
 
 void FEngine::RenderTargetResize()
 {
+	CAMERA_SYSTEM.RenderTargetResize(ENGINE.RenderTargetW, ENGINE.RenderTargetH);
+	// FIX ME! It should be here.
 	ENGINE.CurrentCamera->SetAspectRatio(static_cast<float>(ENGINE.RenderTargetW) / static_cast<float>(ENGINE.RenderTargetH));
 
 	RENDERER.RenderTargetResize(ENGINE.RenderTargetW, ENGINE.RenderTargetH);
@@ -689,11 +752,17 @@ void FEngine::RenderTargetCenterForCamera(FEFreeCamera* Camera)
 		ShiftY = RenderTargetYShift + ypos;
 	}
 	
+	// FIX ME! It should not be here.
 	Camera->SetRenderTargetCenterX(CenterX);
 	Camera->SetRenderTargetCenterY(CenterY);
-
 	Camera->SetRenderTargetShiftX(ShiftX);
 	Camera->SetRenderTargetShiftY(ShiftY);
+
+	// FIX ME! It should not be here.
+	CAMERA_SYSTEM.RenderTargetCenterX = CenterX;
+	CAMERA_SYSTEM.RenderTargetCenterY = CenterY;
+	CAMERA_SYSTEM.RenderTargetShiftX = ShiftX;
+	CAMERA_SYSTEM.RenderTargetShiftY = ShiftY;
 }
 
 void FEngine::DropCallback(const int Count, const char** Paths)
@@ -715,6 +784,10 @@ void FEngine::AddDropCallback(void(*Func)(int, const char**))
 
 void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
 {
+	// FIX ME! Need proper INPUT system.
+	ENGINE.MouseScrollXOffset = Xoffset;
+	ENGINE.MouseScrollYOffset = Yoffset;
+
 	for (size_t i = 0; i < ENGINE.ClientMouseScrollCallbacks.size(); i++)
 	{
 		if (ENGINE.ClientMouseScrollCallbacks[i] == nullptr)
@@ -802,4 +875,23 @@ bool FEngine::IsVRInitializedCorrectly()
 bool FEngine::IsVREnabled()
 {
 	return bVRActive;
+}
+
+void FEngine::SetMousePosition(int X, int Y)
+{
+	glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X, Y);
+	if (RenderTargetMode == FE_CUSTOM_MODE)
+	{
+		X -= RenderTargetXShift;
+		Y -= RenderTargetYShift;
+	}
+
+	// FIX ME! Need proper INPUT system.
+	ENGINE.MouseX = X;
+	ENGINE.MouseY = Y;
+}
+
+void FEngine::AddOnAfterUpdateCallback(std::function<void()> Callback)
+{
+	OnAfterUpdateCallbacks.push_back(Callback);
 }

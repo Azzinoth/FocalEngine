@@ -3,6 +3,7 @@
 #ifndef FERENDERER_H
 #define FERENDERER_H
 
+#include "../SubSystems/Scene/Components/Systems/FECameraSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FELightSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
@@ -64,12 +65,10 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
-		// FIX ME! It is closer to what it should be, but still not perfect.
-		// It should be done as system, and only ocassionally throught this function.
-		void RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentForward(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap = false, bool bReloadUniformBlocks = false);
-		void RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCamera* CurrentCamera);
+		void RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentWithInstanced(FEEntity* Entity, float** Frustum, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false);
+		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera = nullptr);
 		
 		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
 
@@ -162,7 +161,7 @@ namespace FocalEngine
 
 		FEGBuffer* GBuffer = nullptr;
 		FESSAO* SSAO;
-		void UpdateSSAO(const FEBasicCamera* CurrentCamera);
+		void UpdateSSAO();
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 		void SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
@@ -193,8 +192,8 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
-		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
-		void LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, bool IsReceivingShadows, const bool IsUniformLighting = false);
+		void LoadStandardParams(FEShader* Shader, FEMaterial* Material, const FETransformComponent* Transform, FEEntity* ForceCamera = nullptr, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
+		void LoadStandardParams(FEShader* Shader, bool IsReceivingShadows, FEEntity* ForceCamera = nullptr, const bool IsUniformLighting = false);
 		void LoadUniformBlocks(FEScene* CurrentScene);
 
 		void StandardFBInit(int WindowWidth, int WindowHeight);
@@ -241,8 +240,8 @@ namespace FocalEngine
 		GLuint FrustumInfoBuffer = 0;
 		GLuint CullingLODCountersBuffer = 0;
 
-		void UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPosition);
-		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const FEBasicCamera* CurrentCamera);
+		void UpdateGPUCullingFrustum();
+		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
 
 		FETexture* DepthPyramid = nullptr;
 		bool bUseOcclusionCulling = true;
@@ -263,6 +262,13 @@ namespace FocalEngine
 
 		FEFramebuffer* LastRenderedResult = nullptr;
 		std::vector<std::function<void()>> AfterRenderCallbacks;
+
+		// FIX ME! Temporary
+		FEScene* CurrentScene = nullptr;
+		std::string LastRenderedSceneID;
+		std::string LastRenderedCameraID;
+
+		FEEntity* TryToGetLastUsedCameraEntity();
 	};
 
 	#define RENDERER FERenderer::getInstance()

@@ -5,11 +5,9 @@
 
 namespace FocalEngine
 {
-	class FERenderer;
-
 	class FEBasicCamera : public FEObject
 	{
-		friend FERenderer;
+		friend class FERenderer;
 		friend class FEOpenXRRendering;
 	public:
 		FEBasicCamera(std::string Name);
@@ -71,6 +69,8 @@ namespace FocalEngine
 		virtual void SetMovementSpeed(float NewValue);
 
 		int GetCameraType() const;
+
+		FETransformComponent TestTransform;
 	protected:
 		bool bIsInputActive = true;
 
@@ -79,16 +79,19 @@ namespace FocalEngine
 		float FarPlane = 15000.0f;
 		float AspectRatio = 1.0f;
 
-		float Yaw = 0.0f;
+		// Start with this variables commented out.
+		/*float Yaw = 0.0f;
 		float Pitch = 0.0f;
-		float Roll = 0.0f;
+		float Roll = 0.0f;*/
 
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
 
 		float MovementSpeed = 10.0f;
 
-		glm::vec3 Position = glm::vec3(0.0f);
+		// Proceed with this variable commented out.
+		//glm::vec3 Position = glm::vec3(0.0f);
+		
 		glm::mat4 ViewMatrix;
 		glm::mat4 ProjectionMatrix;
 

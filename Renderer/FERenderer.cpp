@@ -153,7 +153,7 @@ void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
 	DepthPyramid->Height = WindowHeight;
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, FEMaterial* Material, const FETransformComponent* Transform, const bool IsReceivingShadows, const bool IsUniformLighting)
+void FERenderer::LoadStandardParams(FEShader* Shader, FEMaterial* Material, const FETransformComponent* Transform, FEEntity* ForceCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
 {
 	static int FETextureBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureBindings[0]"));
 	static int FETextureChannelsBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureChannels[0]"));
@@ -167,26 +167,37 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 		}
 	}
 
+	//  FIX ME!
+	FEEntity* CameraEntityToUse = ForceCamera;
+	if (ForceCamera == nullptr)
+	{
+		CameraEntityToUse = TryToGetLastUsedCameraEntity();
+		if (CameraEntityToUse == nullptr)
+			return;
+	}
+	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
+
 	if (Shader->GetParameter("FEWorldMatrix") != nullptr)
 		Shader->UpdateParameterData("FEWorldMatrix", Transform->GetWorldMatrix());
 
 	if (Shader->GetParameter("FEViewMatrix") != nullptr)
-		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+		Shader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
 	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
-		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
 	if (Shader->GetParameter("FEPVMMatrix") != nullptr)
-		Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * Transform->GetWorldMatrix());
+		Shader->UpdateParameterData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
 
 	if (Shader->GetParameter("FECameraPosition") != nullptr)
-		Shader->UpdateParameterData("FECameraPosition", CurrentCamera->GetPosition());
+		Shader->UpdateParameterData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
 	if (Shader->GetParameter("FEGamma") != nullptr)
-		Shader->UpdateParameterData("FEGamma", CurrentCamera->GetGamma());
+		Shader->UpdateParameterData("FEGamma", CurrentCameraComponent.GetGamma());
 
 	if (Shader->GetParameter("FEExposure") != nullptr)
-		Shader->UpdateParameterData("FEExposure", CurrentCamera->GetExposure());
+		Shader->UpdateParameterData("FEExposure", CurrentCameraComponent.GetExposure());
 
 	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
 		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
@@ -225,22 +236,34 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* Curre
 	}
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, const FEBasicCamera* CurrentCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
+void FERenderer::LoadStandardParams(FEShader* Shader, const bool IsReceivingShadows, FEEntity* ForceCamera, const bool IsUniformLighting)
 {
+	//  FIX ME!
+	FEEntity* CameraEntityToUse = ForceCamera;
+	if (ForceCamera == nullptr)
+	{
+		CameraEntityToUse = TryToGetLastUsedCameraEntity();
+		if (CameraEntityToUse == nullptr)
+			return;
+	}
+	//  FIX ME!
+	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
+
 	if (Shader->GetParameter("FEViewMatrix") != nullptr)
-		Shader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+		Shader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
 	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
-		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
+		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
 	if (Shader->GetParameter("FECameraPosition") != nullptr)
-		Shader->UpdateParameterData("FECameraPosition", CurrentCamera->GetPosition());
+		Shader->UpdateParameterData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
 	if (Shader->GetParameter("FEGamma") != nullptr)
-		Shader->UpdateParameterData("FEGamma", CurrentCamera->GetGamma());
+		Shader->UpdateParameterData("FEGamma", CurrentCameraComponent.GetGamma());
 
 	if (Shader->GetParameter("FEExposure") != nullptr)
-		Shader->UpdateParameterData("FEExposure", CurrentCamera->GetExposure());
+		Shader->UpdateParameterData("FEExposure", CurrentCameraComponent.GetExposure());
 
 	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
 		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
@@ -372,7 +395,7 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 	}
 }
 
-void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasicCamera* CurrentCamera, float** Frustum, bool bShadowMap, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, float** Frustum, FEEntity* ForceCamera, bool bShadowMap, bool bReloadUniformBlocks)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
@@ -384,7 +407,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasic
 	if (bReloadUniformBlocks)
 		LoadUniformBlocks(Entity->ParentScene);
 
-	GPUCulling(TransformComponent, GameModelComponent, InstancedComponent, CurrentCamera);
+	GPUCulling(TransformComponent, GameModelComponent, InstancedComponent);
 
 	FEGameModel* CurrentGameModel = GameModelComponent.GameModel;
 	FEShader* OriginalShader = CurrentGameModel->GetMaterial()->Shader;
@@ -401,7 +424,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasic
 	}
 
 	CurrentGameModel->GetMaterial()->Bind();
-	LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentCamera, CurrentGameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentGameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
 	CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
 
 	INSTANCED_RENDERING_SYSTEM.Render(TransformComponent, GameModelComponent, InstancedComponent);
@@ -438,7 +461,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEBasic
 		}
 
 		CurrentGameModel->GetBillboardMaterial()->Bind();
-		LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentCamera, CurrentGameModel->GetBillboardMaterial(), &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+		LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentGameModel->GetBillboardMaterial(), &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
 		CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
 
 		INSTANCED_RENDERING_SYSTEM.RenderOnlyBillbords(GameModelComponent, InstancedComponent);
@@ -479,7 +502,8 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentC
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
-			RenderGameModelComponentForward(CurrentEntity, CurrentCamera);
+			// FIX ME! CAMERA
+			RenderGameModelComponentForward(CurrentEntity, nullptr);
 		}
 	}
 
@@ -493,7 +517,8 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentC
 
 	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 	ScreenQuadShader->Start();
-	LoadStandardParams(ScreenQuadShader, CurrentCamera, true);
+	// FIX ME! CAMERA
+	LoadStandardParams(ScreenQuadShader, true);
 	ScreenQuadShader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
@@ -516,6 +541,18 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	if (CurrentScene == nullptr || CurrentCamera == nullptr)
 		return;
 
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(CurrentScene);
+	if (MainCameraEntity == nullptr)
+		return;
+
+	//  FIX ME!
+	this->CurrentScene = CurrentScene;
+	LastRenderedSceneID = CurrentScene->GetObjectID();
+	LastRenderedCameraID = MainCameraEntity->GetObjectID();
+
+	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = MainCameraEntity->GetComponent<FETransformComponent>();
+
 	LastRenderedResult = nullptr;
 
 	if (bVRActive)
@@ -527,6 +564,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		return;
 	}
 
+	CurrentCameraComponent.UpdateFrustumPlanes();
 	CurrentCamera->UpdateFrustumPlanes();
 
 	LastTestTime = TestTime;
@@ -548,10 +586,10 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 		if (LightComponent.IsCastShadows())
 		{
-			LIGHT_SYSTEM.UpdateCascades(LightEntity, CurrentCamera->Fov, CurrentCamera->AspectRatio,
-													 CurrentCamera->NearPlane, CurrentCamera->FarPlane,
-													 CurrentCamera->ViewMatrix, CurrentCamera->GetForward(),
-													 CurrentCamera->GetRight(), CurrentCamera->GetUp());
+			LIGHT_SYSTEM.UpdateCascades(LightEntity, CurrentCameraComponent.GetFOV(), CurrentCameraComponent.GetAspectRatio(),
+										CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane(),
+										CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetForward(),
+										CurrentCameraComponent.GetRight(), CurrentCameraComponent.GetUp());
 		}
 	}
 
@@ -590,19 +628,19 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 			ShaderPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
 			ShaderInstancedPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
 
-			const glm::vec3 OldCameraPosition = CurrentCamera->GetPosition();
-			const glm::mat4 OldViewMatrix = CurrentCamera->GetViewMatrix();
-			const glm::mat4 OldProjectionMatrix = CurrentCamera->GetProjectionMatrix();
+			const glm::vec3 OldCameraPosition = CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE);
+			const glm::mat4 OldViewMatrix = CurrentCameraComponent.GetViewMatrix();
+			const glm::mat4 OldProjectionMatrix = CurrentCameraComponent.GetProjectionMatrix();
 
 			for (size_t i = 0; i < static_cast<size_t>(LightComponent.ActiveCascades); i++)
 			{
 				// Put camera to the position of light.
-				CurrentCamera->ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
-				CurrentCamera->ViewMatrix = LightComponent.CascadeData[i].ViewMat;
+				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
+				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMat;
 
 				FE_GL_ERROR(glViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight()));
 
-				UpdateGPUCullingFrustum(LightComponent.CascadeData[i].Frustum, CurrentCamera->GetPosition());
+				UpdateGPUCullingFrustum();
 
 				LightComponent.CascadeData[i].FrameBuffer->Bind();
 				FE_GL_ERROR(glClear(GL_DEPTH_BUFFER_BIT));
@@ -617,7 +655,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 						continue;
 
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
-					RenderTerrainComponent(Entity, CurrentCamera);
+					RenderTerrainComponent(Entity);
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 				}
 
@@ -644,11 +682,11 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 					if (!Entity->HasComponent<FEInstancedComponent>())
 					{
-						RenderGameModelComponent(Entity, CurrentCamera, false);
+						RenderGameModelComponent(Entity, nullptr, false);
 					}
 					else if (Entity->HasComponent<FEInstancedComponent>())
 					{
-						RenderGameModelComponentWithInstanced(Entity, CurrentCamera, LightComponent.CascadeData[i].Frustum, true, false);
+						RenderGameModelComponentWithInstanced(Entity, LightComponent.CascadeData[i].Frustum, nullptr, true, false);
 					}
 
 					GameModelComponent.GameModel->Material = OriginalMaterial;
@@ -675,15 +713,14 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 				}
 			}
 
-			CurrentCamera->SetPosition(OldCameraPosition);
-			CurrentCamera->ViewMatrix = OldViewMatrix;
-			CurrentCamera->ProjectionMatrix = OldProjectionMatrix;
+			CurrentCameraTransformComponent.SetPosition(OldCameraPosition, FE_WORLD_SPACE);
+			CurrentCameraComponent.ViewMatrix = OldViewMatrix;
+			CurrentCameraComponent.ProjectionMatrix = OldProjectionMatrix;
 
 			FE_GL_ERROR(glViewport(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+			//FE_GL_ERROR(glViewport(0, 0, CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
 			break;
 		}
-
-		//ItLight++;
 	}
 
 	bUseOcclusionCulling = PreviousState;
@@ -707,7 +744,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-	UpdateGPUCullingFrustum(CurrentCamera->Frustum, CurrentCamera->GetPosition());
+	UpdateGPUCullingFrustum();
 
 	// FIX ME! No prefab support.
 	for (entt::entity EnTTEntity : GameModelGroup)
@@ -721,13 +758,15 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-			RenderGameModelComponent(Entity, CurrentCamera);
+			// FIX ME! Camera should inffered from the scene.
+			RenderGameModelComponent(Entity);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
 
 			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-			RenderGameModelComponentWithInstanced(Entity, CurrentCamera, CurrentCamera->Frustum, false);
+			// FIX ME! Camera should inffered from the scene.
+			RenderGameModelComponentWithInstanced(Entity, CurrentCamera->Frustum);
 		}
 	}
 
@@ -752,7 +791,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		if (!TerrainComponent.IsVisible())
 			continue;
 
-		RenderTerrainComponent(Entity, CurrentCamera);
+		RenderTerrainComponent(Entity);
 	}
 
 	GBuffer->GFrameBuffer->UnBind();
@@ -765,7 +804,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	GBuffer->ShaderProperties->Bind(4);
 	
 	// ************************************ SSAO ************************************
-	UpdateSSAO(CurrentCamera);
+	UpdateSSAO();
 	// ************************************ SSAO END ************************************
 
 	// ************************************ COPYING DEPTH BUFFER ************************************
@@ -793,7 +832,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	FinalSceneShader->Start();
 	FinalSceneShader->UpdateParameterData("SSAOActive", SSAO->bActive ? 1.0f : 0.0f);
-	LoadStandardParams(FinalSceneShader, CurrentCamera, true);
+	LoadStandardParams(FinalSceneShader, true);
 	FinalSceneShader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
@@ -822,8 +861,8 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	InstancedLineShader->Start();
-	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
-	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
 	InstancedLineShader->LoadDataToGPU();
 
@@ -861,7 +900,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		}
 
 		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(true);
-		RenderGameModelComponent(CurrentEntity, CurrentCamera);
+		RenderGameModelComponent(CurrentEntity);
 		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(false);
 		// Only one sky dome is supported.
 		break;
@@ -886,7 +925,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		for (size_t j = 0; j < Effect.Stages.size(); j++)
 		{
 			Effect.Stages[j]->Shader->Start();
-			LoadStandardParams(Effect.Stages[j]->Shader, CurrentCamera, nullptr, nullptr);
+			LoadStandardParams(Effect.Stages[j]->Shader, nullptr, nullptr);
 			for (size_t k = 0; k < Effect.Stages[j]->StageSpecificUniforms.size(); k++)
 			{
 				FEShaderParam* Param = Effect.Stages[j]->Shader->GetParameter(Effect.Stages[j]->StageSpecificUniforms[k].GetName());
@@ -930,6 +969,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 			else
 			{
 				FE_GL_ERROR(glViewport(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
+				//FE_GL_ERROR(glViewport(0, 0, CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
 			}
 			Effect.IntermediateFramebuffer->Bind();
 
@@ -985,11 +1025,11 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponent(Entity, CurrentCamera);
+			RenderGameModelComponent(Entity);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponentWithInstanced(Entity, CurrentCamera, CurrentCamera->Frustum, false);
+			RenderGameModelComponentWithInstanced(Entity, CurrentCamera->Frustum);
 		}
 	}
 	
@@ -998,7 +1038,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
-	TERRAIN_SYSTEM.UpdateBrush(EngineMainCamera->Position, MouseRay);
+	TERRAIN_SYSTEM.UpdateBrush(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE), MouseRay);
 	// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 	LineCounter = 0;
@@ -1068,7 +1108,7 @@ void FERenderer::TakeScreenshot(const char* FileName, const int Width, const int
 	delete[] pixels;
 }
 
-void FERenderer::RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera, bool bReloadUniformBlocks)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
 		return;
@@ -1097,7 +1137,7 @@ void FERenderer::RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera*
 	}
 
 	GameModel->Material->Bind();
-	LoadStandardParams(GameModel->Material->Shader, CurrentCamera, GameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	LoadStandardParams(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
 	GameModel->Material->Shader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
@@ -1127,7 +1167,7 @@ void FERenderer::RenderGameModelComponent(FEEntity* Entity, const FEBasicCamera*
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, const FEBasicCamera* CurrentCamera, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera, bool bReloadUniformBlocks)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
 		return;
@@ -1161,7 +1201,7 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, const FEBasic
 	}
 
 	GameModel->Material->Bind();
-	LoadStandardParams(GameModel->Material->Shader, CurrentCamera, GameModel->Material, &TransformComponent, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	LoadStandardParams(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
 	GameModel->Material->Shader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
@@ -1185,7 +1225,7 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, const FEBasic
 		GameModel->Material->Shader = OriginalShader;
 }
 
-void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCamera* CurrentCamera)
+void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera)
 {
 	if (TerrainEntity == nullptr)
 	{
@@ -1250,7 +1290,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCa
 	}
 
 	TerrainComponent.Shader->Start();
-	LoadStandardParams(TerrainComponent.Shader, CurrentCamera, nullptr, &TransformComponent, TerrainComponent.IsReceivingShadows());
+	LoadStandardParams(TerrainComponent.Shader, nullptr, &TransformComponent, ForceCamera, TerrainComponent.IsReceivingShadows());
 	// ************ Load materials data for all Terrain layers ************
 
 	const int LayersUsed = TerrainComponent.LayersUsed();
@@ -1297,7 +1337,19 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, const FEBasicCa
 			// Not to wait for scene hierarchy update.
 			TransformComponent.WorldSpaceMatrix = ParentMatrix * TransformComponent.GetLocalMatrix();
 
-			TerrainComponent.Shader->UpdateParameterData("FEPVMMatrix", CurrentCamera->GetProjectionMatrix() * CurrentCamera->GetViewMatrix() * TransformComponent.GetWorldMatrix());
+			//  FIX ME!
+			FEEntity* CameraEntityToUse = ForceCamera;
+			if (ForceCamera == nullptr)
+			{
+				CameraEntityToUse = TryToGetLastUsedCameraEntity();
+				if (CameraEntityToUse == nullptr)
+					return;
+			}
+			//  FIX ME!
+			FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+			FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
+
+			TerrainComponent.Shader->UpdateParameterData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * TransformComponent.GetWorldMatrix());
 			if (TerrainComponent.Shader->GetParameter("FEWorldMatrix") != nullptr)
 				TerrainComponent.Shader->UpdateParameterData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
 			TerrainComponent.Shader->UpdateParameterData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
@@ -1577,29 +1629,38 @@ void FERenderer::ForceShader(FEShader* Shader)
 	ShaderToForce = Shader;
 }
 
-void FERenderer::UpdateGPUCullingFrustum(float** Frustum, glm::vec3 CameraPosition)
+void FERenderer::UpdateGPUCullingFrustum()
 {
 	float* FrustumBufferData = static_cast<float*>(glMapNamedBufferRange(FrustumInfoBuffer, 0, sizeof(float) * (32),
 	                                                                     GL_MAP_WRITE_BIT |
 	                                                                     GL_MAP_INVALIDATE_BUFFER_BIT |
 	                                                                     GL_MAP_UNSYNCHRONIZED_BIT));
 
+	//  FIX ME!
+	FEEntity* CameraEntityToUse = TryToGetLastUsedCameraEntity();
+	if (CameraEntityToUse == nullptr)
+		return;
+	
+	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
+	std::vector<std::vector<float>> CurrentFrustum = CurrentCameraComponent.GetFrustumPlanes();
+
 	for (size_t i = 0; i < 6; i++)
 	{
-		FrustumBufferData[i * 4] = Frustum[i][0];
-		FrustumBufferData[i * 4 + 1] = Frustum[i][1];
-		FrustumBufferData[i * 4 + 2] = Frustum[i][2];
-		FrustumBufferData[i * 4 + 3] = Frustum[i][3];
+		FrustumBufferData[i * 4] = CurrentFrustum[i][0];
+		FrustumBufferData[i * 4 + 1] = CurrentFrustum[i][1];
+		FrustumBufferData[i * 4 + 2] = CurrentFrustum[i][2];
+		FrustumBufferData[i * 4 + 3] = CurrentFrustum[i][3];
 	}
 
-	FrustumBufferData[24] = CameraPosition[0];
-	FrustumBufferData[25] = CameraPosition[1];
-	FrustumBufferData[26] = CameraPosition[2];
+	FrustumBufferData[24] = CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE)[0];
+	FrustumBufferData[25] = CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE)[1];
+	FrustumBufferData[26] = CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE)[2];
 
 	FE_GL_ERROR(glUnmapNamedBuffer(FrustumInfoBuffer));
 }
 
-void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const FEBasicCamera* CurrentCamera)
+void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent)
 {
 	if (bFreezeCulling)
 		return;
@@ -1608,14 +1669,21 @@ void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameMode
 
 	FrustumCullingShader->Start();
 
+	//  FIX ME!
+	FEEntity* CameraEntityToUse = TryToGetLastUsedCameraEntity();
+	if (CameraEntityToUse == nullptr)
+		return;
+	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
+
 #ifdef USE_OCCLUSION_CULLING
-	FrustumCullingShader->UpdateParameterData("FEProjectionMatrix", CurrentCamera->GetProjectionMatrix());
-	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCamera->GetViewMatrix());
+	FrustumCullingShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 	FrustumCullingShader->UpdateParameterData("useOcclusionCulling", bUseOcclusionCulling);
 	// It should be last frame size!
 	const glm::vec2 RenderTargetSize = glm::vec2(GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
 	FrustumCullingShader->UpdateParameterData("renderTargetSize", RenderTargetSize);
-	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCamera->NearPlane, CurrentCamera->FarPlane));
+	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane()));
 #endif // USE_OCCLUSION_CULLING
 
 	FrustumCullingShader->LoadDataToGPU();
@@ -1703,7 +1771,7 @@ void FERenderer::SetOcclusionCullingEnabled(const bool NewValue)
 	bUseOcclusionCulling = NewValue;
 }
 
-void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
+void FERenderer::UpdateSSAO()
 {
 	if (!SSAO->bActive)
 		return;
@@ -1721,7 +1789,7 @@ void FERenderer::UpdateSSAO(const FEBasicCamera* CurrentCamera)
 	SSAO->Shader->UpdateParameterData("SmallDetailsWeight", SSAO->SmallDetailsWeight);
 	
 	SSAO->Shader->Start();
-	LoadStandardParams(SSAO->Shader, CurrentCamera, true);
+	LoadStandardParams(SSAO->Shader, true, nullptr);
 	SSAO->Shader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
@@ -1906,7 +1974,8 @@ void FERenderer::RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
-			RenderGameModelComponentForward(CurrentEntity, CurrentCamera);
+			// FIX ME! CAMERA
+			RenderGameModelComponentForward(CurrentEntity);
 		}
 	}
 
@@ -2074,6 +2143,21 @@ bool FERenderer::IsClearActiveInSimplifiedRendering()
 void FERenderer::SetClearActiveInSimplifiedRendering(bool NewValue)
 {
 	bClearActiveInSimplifiedRendering = NewValue;
+}
+
+FEEntity* FERenderer::TryToGetLastUsedCameraEntity()
+{
+	if (LastRenderedCameraID.empty())
+		return nullptr;
+	
+	FEObject* LastRenderedCamera = OBJECT_MANAGER.GetFEObject(LastRenderedCameraID);
+	if (LastRenderedCamera == nullptr)
+	{
+		LastRenderedCameraID = "";
+		return nullptr;
+	}
+
+	return reinterpret_cast<FEEntity*>(LastRenderedCamera);
 }
 
 FEFramebuffer* FERenderer::GetLastRenderedResult()

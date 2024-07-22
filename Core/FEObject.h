@@ -16,8 +16,9 @@ namespace FocalEngine
 		FE_MATERIAL = 4,
 		FE_GAMEMODEL = 5,
 		FE_ENTITY = 6,
-		FE_TERRAIN = 7,
-		FE_ENTITY_INSTANCED = 8,
+		// FIX ME! Remove these deprecated types.
+		FE_TERRAIN_DEPRECATED = 7,
+		FE_ENTITY_INSTANCED_DEPRECATED = 8,
 		FE_DIRECTIONAL_LIGHT_DEPRECATED = 9,
 		FE_POINT_LIGHT_DEPRECATED = 10,
 		FE_SPOT_LIGHT_DEPRECATED = 11,
@@ -80,13 +81,13 @@ namespace FocalEngine
 			{
 				return "FE_ENTITY";
 			}
-			case FocalEngine::FE_TERRAIN:
+			case FocalEngine::FE_TERRAIN_DEPRECATED:
 			{
-				return "FE_TERRAIN";
+				return "FE_TERRAIN_DEPRECATED";
 			}
-			case FocalEngine::FE_ENTITY_INSTANCED:
+			case FocalEngine::FE_ENTITY_INSTANCED_DEPRECATED:
 			{
-				return "FE_ENTITY_INSTANCED";
+				return "FE_ENTITY_INSTANCED_DEPRECATED";
 			}
 			case FocalEngine::FE_DIRECTIONAL_LIGHT_DEPRECATED:
 			{

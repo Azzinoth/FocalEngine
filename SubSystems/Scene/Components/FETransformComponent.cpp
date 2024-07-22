@@ -34,9 +34,9 @@ FETransformComponent::~FETransformComponent()
 {
 }
 
-glm::vec3 FETransformComponent::GetPosition(bool bLocalSpace) const
+glm::vec3 FETransformComponent::GetPosition(FE_COORDIANTE_SPACE_TYPE SpaceType) const
 {
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotationQuaternion;
@@ -50,9 +50,9 @@ glm::vec3 FETransformComponent::GetPosition(bool bLocalSpace) const
 	return Position;
 }
 
-glm::vec3 FETransformComponent::GetRotation(bool bLocalSpace) const
+glm::vec3 FETransformComponent::GetRotation(FE_COORDIANTE_SPACE_TYPE SpaceType) const
 {
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotationQuaternion;
@@ -69,9 +69,9 @@ glm::vec3 FETransformComponent::GetRotation(bool bLocalSpace) const
 	return RotationAngles;
 }
 
-glm::quat FETransformComponent::GetQuaternion(bool bLocalSpace) const
+glm::quat FETransformComponent::GetQuaternion(FE_COORDIANTE_SPACE_TYPE SpaceType) const
 {
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotationQuaternion;
@@ -85,9 +85,9 @@ glm::quat FETransformComponent::GetQuaternion(bool bLocalSpace) const
 	return RotationQuaternion;
 }
 
-glm::vec3 FETransformComponent::GetScale(bool bLocalSpace) const
+glm::vec3 FETransformComponent::GetScale(FE_COORDIANTE_SPACE_TYPE SpaceType) const
 {
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotationQuaternion;
@@ -113,34 +113,34 @@ glm::mat4 FETransformComponent::GetParentMatrix() const
 	return ParentWorldSpace;
 }
 
-void FETransformComponent::MoveAlongAxis(const glm::vec3& Axis, float MovementValue, bool bLocalSpace)
+void FETransformComponent::MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
 	glm::vec3 NewPosition = GetPosition();
 	glm::vec3 LocalAlternativeAxis = Axis * MovementValue;
 
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 		LocalAlternativeAxis = glm::inverse(GetParentMatrix()) * glm::vec4(LocalAlternativeAxis, 0.0f);
 
 	NewPosition += LocalAlternativeAxis;
 	SetPosition(NewPosition);
 }
 
-void FETransformComponent::SetPosition(const glm::vec3 NewPosition, bool bLocalSpace)
+void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
-	if (bLocalSpace)
+	if (SpaceType == FE_LOCAL_SPACE)
 	{
 		Position = NewPosition;
 		Update();
 	}
 
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
-		glm::vec3 CurrentWorldPosition = GetPosition(bLocalSpace);
+		glm::vec3 CurrentWorldPosition = GetPosition(FE_WORLD_SPACE);
 		glm::vec3 Difference = NewPosition - CurrentWorldPosition;
 
-		MoveAlongAxis(glm::vec3(1, 0, 0), Difference.x, bLocalSpace);
-		MoveAlongAxis(glm::vec3(0, 1, 0), Difference.y, bLocalSpace);
-		MoveAlongAxis(glm::vec3(0, 0, 1), Difference.z, bLocalSpace);
+		MoveAlongAxis(glm::vec3(1, 0, 0), Difference.x, FE_WORLD_SPACE);
+		MoveAlongAxis(glm::vec3(0, 1, 0), Difference.y, FE_WORLD_SPACE);
+		MoveAlongAxis(glm::vec3(0, 0, 1), Difference.z, FE_WORLD_SPACE);
 	}
 
 	SetDirtyFlag(true);
@@ -154,11 +154,11 @@ void FETransformComponent::RotateQuaternion(const float Angle, const glm::vec3 A
 								   Axis.z * sin(Angle / 2)) * RotationQuaternion;
 }
 
-void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, bool bLocalSpace)
+void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
 	glm::vec3 FinalAxis = Axis;
 
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
 		glm::dquat DoubleRotation;
@@ -182,13 +182,12 @@ void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& 
 	Update();
 }
 
-void FETransformComponent::SetRotation(const glm::vec3 NewRotation, bool bLocalSpace)
+void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
 	if (RotationAngles == NewRotation)
 		return;
 
-	glm::vec3 CurrentWorldRotation = GetRotation(false);
-	if (bLocalSpace)
+	if (SpaceType == FE_LOCAL_SPACE)
 	{
 		RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
 		RotateQuaternion(static_cast<float>(NewRotation.x) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
@@ -198,22 +197,22 @@ void FETransformComponent::SetRotation(const glm::vec3 NewRotation, bool bLocalS
 		RotationAngles = NewRotation;
 		Update();
 	}
-	
-	if (!bLocalSpace)
+	else if (SpaceType == FE_WORLD_SPACE)
 	{
+		glm::vec3 CurrentWorldRotation = GetRotation(FE_WORLD_SPACE);
 		glm::vec3 Difference = NewRotation - CurrentWorldRotation;
-		RotateAroundAxis(glm::vec3(1, 0, 0), Difference.x, bLocalSpace);
-		RotateAroundAxis(glm::vec3(0, 1, 0), Difference.y, bLocalSpace);
-		RotateAroundAxis(glm::vec3(0, 0, 1), Difference.z, bLocalSpace);
+		RotateAroundAxis(glm::vec3(1, 0, 0), Difference.x, FE_WORLD_SPACE);
+		RotateAroundAxis(glm::vec3(0, 1, 0), Difference.y, FE_WORLD_SPACE);
+		RotateAroundAxis(glm::vec3(0, 0, 1), Difference.z, FE_WORLD_SPACE);
 	}
 	
 	SetDirtyFlag(true);
 }
 
-void FETransformComponent::SetQuaternion(glm::quat Quaternion, bool bLocalSpace)
+void FETransformComponent::SetQuaternion(glm::quat Quaternion, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
 	glm::mat4 ParentMatrix;
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		// It is important to get ParentMatrix before Update().
 		ParentMatrix = GetParentMatrix();
@@ -229,7 +228,7 @@ void FETransformComponent::SetQuaternion(glm::quat Quaternion, bool bLocalSpace)
 	RotationAngles = NewRotationAngle;
 	Update();
 
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		// If we did not have scene hierarchy, we can just set LocalSpaceMatrix
 		// But since we have it, we need to calculate LocalSpaceMatrix to sustain the new world rotation.
@@ -264,10 +263,10 @@ void FETransformComponent::RotateByQuaternion(const glm::quat Quaternion)
 	SetDirtyFlag(true);
 }
 
-void FETransformComponent::SetScale(const glm::vec3 NewScale, bool bLocalSpace)
+void FETransformComponent::SetScale(const glm::vec3 NewScale, FE_COORDIANTE_SPACE_TYPE SpaceType)
 {
 	glm::mat4 ParentMatrix;
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		// It is important to get ParentMatrix before Update().
 		ParentMatrix = GetParentMatrix();
@@ -276,7 +275,7 @@ void FETransformComponent::SetScale(const glm::vec3 NewScale, bool bLocalSpace)
 	Scale = NewScale;
 	Update();
 
-	if (!bLocalSpace)
+	if (SpaceType == FE_WORLD_SPACE)
 	{
 		// If we did not have a scene hierarchy, we could just set LocalSpaceMatrix.
 		// But since we have it, we need to calculate LocalSpaceMatrix to sustain the new world scale.

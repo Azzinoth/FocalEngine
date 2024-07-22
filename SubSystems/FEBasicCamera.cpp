@@ -3,7 +3,7 @@ using namespace FocalEngine;
 
 FEBasicCamera::FEBasicCamera(const std::string Name) : FEObject(FE_CAMERA, Name)
 {
-	Yaw = 0.0f;
+	//Yaw = 0.0f;
 	UpdateAll();
 
 	Frustum = new float*[6];
@@ -24,45 +24,53 @@ FEBasicCamera::~FEBasicCamera()
 
 float FEBasicCamera::GetYaw()
 {
-	return Yaw;
+	return TestTransform.GetRotation().x;
 }
 
 void FEBasicCamera::SetYaw(const float NewYaw)
 {
-	Yaw = NewYaw;
+	glm::vec3 CurrentRotation = TestTransform.GetRotation();
+	TestTransform.SetRotation(glm::vec3(NewYaw, CurrentRotation.y, CurrentRotation.z));
+	//Yaw = NewYaw;
 	UpdateViewMatrix();
 }
 
 float FEBasicCamera::GetPitch()
 {
-	return Pitch;
+	return TestTransform.GetRotation().y;
 }
 
 void FEBasicCamera::SetPitch(const float NewPitch)
 {
-	Pitch = NewPitch;
+	glm::vec3 CurrentRotation = TestTransform.GetRotation();
+	TestTransform.SetRotation(glm::vec3(CurrentRotation.x, NewPitch, CurrentRotation.z));
+	//Pitch = NewPitch;
 	UpdateViewMatrix();
 }
 
 float FEBasicCamera::GetRoll()
 {
-	return Roll;
+	return TestTransform.GetRotation().z;
+	//return Roll;
 }
 
 void FEBasicCamera::SetRoll(const float NewRoll)
 {
-	Roll = NewRoll;
+	glm::vec3 CurrentRotation = TestTransform.GetRotation();
+	TestTransform.SetRotation(glm::vec3(CurrentRotation.x, CurrentRotation.y, NewRoll));
+	//Roll = NewRoll;
 	UpdateViewMatrix();
 }
 
 glm::vec3 FEBasicCamera::GetPosition() const
 {
-	return Position;
+	return TestTransform.GetPosition();
 }
 
 void FEBasicCamera::SetPosition(const glm::vec3 NewPosition)
 {
-	Position = NewPosition;
+	TestTransform.SetPosition(NewPosition);
+	//Position = NewPosition;
 	UpdateViewMatrix();
 }
 
@@ -77,9 +85,42 @@ void FEBasicCamera::SetAspectRatio(const float NewAspectRatio)
 	UpdateProjectionMatrix();
 }
 
+void RotateQuaternion(glm::quat& CurrentQuat, const float Angle, const glm::vec3 Axis)
+{
+	CurrentQuat = glm::quat(cos(Angle / 2),
+							Axis.x * sin(Angle / 2),
+							Axis.y * sin(Angle / 2),
+							Axis.z * sin(Angle / 2)) * CurrentQuat;
+}
+
 void FEBasicCamera::UpdateViewMatrix()
 {
-	ViewMatrix = glm::mat4(1.0f);
+	//ViewMatrix = glm::identity<glm::mat4>();
+	//ViewMatrix = glm::translate(ViewMatrix, Position);
+
+	//glm::quat RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
+	//RotateQuaternion(RotationQuaternion, - GetPitch() * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+	//RotateQuaternion(RotationQuaternion, - GetYaw()   * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+	//RotateQuaternion(RotationQuaternion, - GetRoll()  * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+	//ViewMatrix *= glm::toMat4(RotationQuaternion);
+	//glm::vec3 Scale = glm::vec3(1.0f);
+	//ViewMatrix = glm::scale(ViewMatrix, glm::vec3(Scale[0], Scale[1], Scale[2]));
+
+	//// That is new.
+	//ViewMatrix = glm::inverse(ViewMatrix);
+
+
+
+
+
+
+	TestTransform.Update();
+	ViewMatrix = glm::inverse(TestTransform.GetLocalMatrix());
+
+	
+
+
+	/*ViewMatrix = glm::mat4(1.0f);
 
 	ViewMatrix = glm::rotate(ViewMatrix, GetPitch() * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
 	ViewMatrix = glm::rotate(ViewMatrix, GetYaw() * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
@@ -88,7 +129,7 @@ void FEBasicCamera::UpdateViewMatrix()
 	const glm::vec3 CameraPosition = GetPosition();
 	const glm::vec3 NegativeCameraPosition = -CameraPosition;
 
-	ViewMatrix = glm::translate(ViewMatrix, NegativeCameraPosition);
+	ViewMatrix = glm::translate(ViewMatrix, NegativeCameraPosition);*/
 }
 
 glm::mat4 FEBasicCamera::GetViewMatrix() const
@@ -182,14 +223,14 @@ void FocalEngine::FEBasicCamera::Reset()
 	FarPlane = 5000.0f;
 	AspectRatio = 1.0f;
 
-	Yaw = 0.0f;
+	/*Yaw = 0.0f;
 	Pitch = 0.0f;
-	Roll = 0.0f;
+	Roll = 0.0f;*/
 
 	Gamma = 2.2f;
 	Exposure = 1.0f;
 
-	Position = glm::vec3(0.0f);
+	//Position = glm::vec3(0.0f);
 
 	UpdateAll();
 }

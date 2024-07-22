@@ -225,6 +225,8 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FETagComponent.h"
 	"SubSystems/Scene/Components/FETransformComponent.cpp"
 	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FECameraComponent.cpp"
+	"SubSystems/Scene/Components/FECameraComponent.h"
 	"SubSystems/Scene/Components/FELightComponent.cpp"
 	"SubSystems/Scene/Components/FELightComponent.h"
 	"SubSystems/Scene/Components/FEGameModelComponent.cpp"
@@ -238,6 +240,8 @@ file(GLOB Scene_Components_SRC
 )
 
 file(GLOB Scene_Component_Systems_SRC
+	"SubSystems/Scene/Components/Systems/FECameraSystem.h"
+	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FELightSystem.h"
 	"SubSystems/Scene/Components/Systems/FELightSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"

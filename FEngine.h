@@ -13,6 +13,8 @@ namespace FocalEngine
 
 	class FEngine
 	{
+		//FIX ME! It should not be here.
+		friend class FECameraSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEngine)
 
@@ -80,6 +82,8 @@ namespace FocalEngine
 		bool EnableVR();
 		bool IsVRInitializedCorrectly();
 		bool IsVREnabled();
+
+		void AddOnAfterUpdateCallback(std::function<void()> Callback);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -88,6 +92,9 @@ namespace FocalEngine
 		std::string WindowTitle;
 
 		double CPUTime, GPUTime;
+		double CurrentDeltaTime;
+
+		// FIX ME! Need proper INPUT system.
 		double MouseX, MouseY;
 
 		bool bSimplifiedRendering = false;
@@ -127,9 +134,23 @@ namespace FocalEngine
 		static void MouseScrollCallback(double Xoffset, double Yoffset);
 		std::vector<void(*)(double, double)> ClientMouseScrollCallbacks;
 
+		// FIX ME! Need proper INPUT system.
+		bool bAKeyPressed = false;
+		bool bWKeyPressed = false;
+		bool bSKeyPressed = false;
+		bool bDKeyPressed = false;
+		double LastFrameMouseX = 0.0;
+		double LastFrameMouseY = 0.0;
+		double MouseScrollXOffset = 0.0;
+		double MouseScrollYOffset = 0.0;
+
+		void SetMousePosition(int X, int Y);
+
+		//FIX ME! It should not be here.
 		FEBasicCamera* CurrentCamera = nullptr;
 
 		void InternalUpdate();
+		std::vector<std::function<void()>> OnAfterUpdateCallbacks;
 	};
 
 	#define ENGINE FEngine::getInstance()

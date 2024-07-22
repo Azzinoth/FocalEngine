@@ -15,6 +15,11 @@ FEComponentsTools::FEComponentsTools()
 	TransformComponentInfo.IncompatibleWith.push_back({ TransformComponentInfo });
 	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
 
+	FEComponentTypeInfo CameraComponentInfo("Camera", typeid(FECameraComponent));
+	FunctionsToGetEntityIDListWith[CameraComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FECameraComponent>(); };
+	CameraComponentInfo.IncompatibleWith.push_back({ CameraComponentInfo });
+	ComponentIDToInfo[entt::type_id<FECameraComponent>().hash()] = CameraComponentInfo;
+
 	FEComponentTypeInfo LightComponentInfo("Light", typeid(FELightComponent));
 	FunctionsToGetEntityIDListWith[LightComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FELightComponent>(); };
 	LightComponentInfo.IncompatibleWith.push_back({ LightComponentInfo });

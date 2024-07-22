@@ -76,11 +76,13 @@ void FEModelViewCamera::UpdateViewMatrix()
 {
 	ViewMatrix = glm::mat4(1.0f);
 
-	Position = PolarToCartesian(CurrentPolarAngle, CurrentAzimutAngle, DistanceToModel);
-	ViewMatrix = glm::lookAt(Position, glm::vec3(0.0f), glm::vec3(0, 1, 0));
+	glm::vec3 NewPosition = PolarToCartesian(CurrentPolarAngle, CurrentAzimutAngle, DistanceToModel);
+	ViewMatrix = glm::lookAt(NewPosition, glm::vec3(0.0f), glm::vec3(0, 1, 0));
 
 	ViewMatrix = glm::translate(ViewMatrix, -TrackingObjectPosition);
-	Position += TrackingObjectPosition;
+	NewPosition += TrackingObjectPosition;
+
+	TestTransform.SetPosition(NewPosition);
 }
 
 double FEModelViewCamera::GetDistanceToModel()

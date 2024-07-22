@@ -1931,11 +1931,11 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		{
 			return Result;
 		}
-		case FocalEngine::FE_TERRAIN:
+		case FocalEngine::FE_TERRAIN_DEPRECATED:
 		{
 			return Result;
 		}
-		case FocalEngine::FE_ENTITY_INSTANCED:
+		case FocalEngine::FE_ENTITY_INSTANCED_DEPRECATED:
 		{
 			return Result;
 		}
