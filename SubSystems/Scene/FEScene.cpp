@@ -1,9 +1,5 @@
 #include "FEScene.h"
-#include "Components/Systems/FELightSystem.h"
-#include "Components/Systems/FECameraSystem.h"
-#include "Components/Systems/FEInstancedSystem.h"
-#include "Components/Systems/FETerrainSystem.h"
-#include "Components/Systems/FESkyDomeSystem.h"
+#include "Components/Systems/FEComponentSystems.h"
 
 using namespace FocalEngine;
 
@@ -479,36 +475,6 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	return Result;
 }
 
-void FEScene::TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot)
-{
-	if (SubTreeRoot->GetEntity() == nullptr)
-		assert(false);
-	
-	FETransformComponent& CurrentTransform = SubTreeRoot->GetEntity()->GetComponent<FETransformComponent>();
-	if (SubTreeRoot->GetParent() == nullptr || SubTreeRoot->GetParent() == SceneGraph.GetRoot())
-	{
-		CurrentTransform.Update();
-		CurrentTransform.WorldSpaceMatrix = CurrentTransform.LocalSpaceMatrix;
-	}
-
-	// FIX ME! instanced position should be updated if parent(or terrain) is updated.
-	// right now it is not updated.
-	
-	//bool bWasDirty = CurrentTransform.IsDirty();
-	//CurrentTransform.SetDirtyFlag(false);
-	auto Children = SubTreeRoot->GetChildren();
-	for (size_t i = 0; i < Children.size(); i++)
-	{
-		FETransformComponent& ChildTransform = Children[i]->GetEntity()->GetComponent<FETransformComponent>();
-
-		ChildTransform.Update();
-		ChildTransform.WorldSpaceMatrix = CurrentTransform.WorldSpaceMatrix * ChildTransform.LocalSpaceMatrix;
-		//if (CurrentTransform.IsDirty())
-		//	ChildTransform.SetDirtyFlag(true);
-		TransformUpdate(Children[i]);
-	}
-}
-
 FEEntity* FEScene::CreateEntity(std::string Name, std::string ForceObjectID)
 {
 	FEEntity* Result = CreateEntityOrphan(Name, ForceObjectID);
@@ -528,15 +494,15 @@ FEEntity* FEScene::CreateEntityInternal(std::string Name, std::string ForceObjec
 		Name = "Unnamed Entity";
 
 	FEEntity* Entity = new FEEntity(Registry.create(), this);
-	Entity->AddComponent<FETagComponent>();
-	Entity->AddComponent<FETransformComponent>();
-
 	if (!ForceObjectID.empty())
 		Entity->SetID(ForceObjectID);
 	Entity->SetName(Name);
 
 	EntityMap[Entity->GetObjectID()] = Entity;
 	EnttToEntity[Entity->EnTTEntity] = Entity;
+
+	Entity->AddComponent<FETagComponent>();
+	Entity->AddComponent<FETransformComponent>();
 
 	return Entity;
 }
@@ -551,7 +517,7 @@ FEEntity* FEScene::GetEntityByEnTT(entt::entity ID)
 
 void FEScene::Update()
 {
-	TransformUpdate(SceneGraph.GetRoot());
+
 }
 
 FEEntity* FEScene::DuplicateEntity(std::string ID, std::string NewEntityName)
@@ -612,6 +578,11 @@ FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string N
 			NewEntity->AddComponent<FESkyDomeComponent>();
 			NewEntity->GetComponent<FESkyDomeComponent>() = SourceEntity->GetComponent<FESkyDomeComponent>();
 		}*/
+
+		if (ComponentsListInfo[i].Name == "Camera")
+		{
+			CAMERA_SYSTEM.DuplicateCameraComponent(SourceEntity, NewEntity);
+		}
 	}
 
 	return NewEntity;

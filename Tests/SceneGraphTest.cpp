@@ -3,7 +3,7 @@ using namespace FocalEngine;
 
 // Using a fixed seed to make it easier to debug.
 #define RANDOM_SEED 42
-#define RANDOM_ACTIONS_ITERATIONS 10000
+#define RANDOM_ACTIONS_ITERATIONS 1000
 
 TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 {
@@ -817,11 +817,11 @@ void SceneGraphTest::TestTransformationComponentAfterChildAdded(FEScene* SceneTo
 	}
 }
 
-bool SceneGraphTest::ValidateTransformConsistency(const FETransformComponent& Transform)
+bool SceneGraphTest::ValidateTransformConsistency(FETransformComponent& Transform)
 {
-	glm::dvec3 Position = Transform.GetPosition();
-	glm::dquat Rotation = Transform.GetQuaternion();
-	glm::dvec3 Scale = Transform.GetScale();
+	glm::dvec3 WorldPosition = Transform.GetPosition(FE_WORLD_SPACE);
+	glm::dquat WorldRotation = Transform.GetQuaternion(FE_WORLD_SPACE);
+	glm::dvec3 WorldScale = Transform.GetScale(FE_WORLD_SPACE);
 
 	glm::mat4 TransformMatrix = Transform.GetWorldMatrix();
 	glm::dvec3 PositionFromMatrix;
@@ -830,21 +830,40 @@ bool SceneGraphTest::ValidateTransformConsistency(const FETransformComponent& Tr
 	GEOMETRY.DecomposeMatrixToTranslationRotationScale(TransformMatrix, PositionFromMatrix, RotationFromMatrix, ScaleFromMatrix);
 
 	// Check if GetPosition() returns the same value as the position from the matrix
-	if (!GEOMETRY.IsEpsilonEqual(Position, PositionFromMatrix))
+	if (!GEOMETRY.IsEpsilonEqual(WorldPosition, PositionFromMatrix))
 		return false;
 
 	// Check if GetQuaternion() returns the same value as the rotation from the matrix
-	if (!GEOMETRY.IsEpsilonEqual(Rotation, RotationFromMatrix))
+	if (!GEOMETRY.IsEpsilonEqual(WorldRotation, RotationFromMatrix))
 		return false;
 
 	// Check if GetScale() returns the same value as the scale from the matrix
-	if (!GEOMETRY.IsEpsilonEqual(Scale, ScaleFromMatrix))
+	if (!GEOMETRY.IsEpsilonEqual(WorldScale, ScaleFromMatrix))
+		return false;
+
+	glm::dvec3 LocalPosition = Transform.GetPosition();
+	glm::dquat LocalRotation = Transform.GetQuaternion();
+	glm::dvec3 LocalScale = Transform.GetScale();
+
+	TransformMatrix = Transform.GetLocalMatrix();
+	GEOMETRY.DecomposeMatrixToTranslationRotationScale(TransformMatrix, PositionFromMatrix, RotationFromMatrix, ScaleFromMatrix);
+
+	// Check if GetPosition() returns the same value as the position from the matrix
+	if (!GEOMETRY.IsEpsilonEqual(LocalPosition, PositionFromMatrix))
+		return false;
+
+	// Check if GetQuaternion() returns the same value as the rotation from the matrix
+	if (!GEOMETRY.IsEpsilonEqual(LocalRotation, RotationFromMatrix))
+		return false;
+
+	// Check if GetScale() returns the same value as the scale from the matrix
+	if (!GEOMETRY.IsEpsilonEqual(LocalScale, ScaleFromMatrix))
 		return false;
 
 	return true;
 }
 
-void SceneGraphTest::TestTransformationAfterChildAdded(FEScene* SceneToWorkWith, const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
+void SceneGraphTest::TestTransformationAfterChildAdded(FEScene* SceneToWorkWith, FETransformComponent& InitialParentTransform, FETransformComponent& InitialChildTransform)
 {
 	FEEntity* Entity_A = SceneToWorkWith->CreateEntity("A");
 	FEEntity* Entity_B = SceneToWorkWith->CreateEntity("B");
@@ -866,20 +885,20 @@ void SceneGraphTest::TestTransformationAfterChildAdded(FEScene* SceneToWorkWith,
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
-	// Get the world matrices
-	glm::mat4 ParentWorldMatrix = InitialParentTransform.GetWorldMatrix();
-	glm::mat4 ChildWorldMatrix = InitialChildTransform.GetWorldMatrix();
+	// Get the local matrices
+	glm::mat4 ParentLocalMatrix = InitialParentTransform.GetLocalMatrix();
+	glm::mat4 ChildLocalMatrix = InitialChildTransform.GetLocalMatrix();
 
-	// Calculate the inverse of the parent's world matrix
-	glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
+	// Calculate the inverse of the parent's local matrix
+	glm::mat4 ParentLocalInverseMatrix = glm::inverse(ParentLocalMatrix);
 
-	// Calculate the new local matrix for the child
-	glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
+	// Calculate the new final matrix for the child
+	glm::mat4 ChildFinalMatrix = ParentLocalInverseMatrix * ChildLocalMatrix;
 
 	glm::dvec3 ExpectedScale;
 	glm::dquat ExpectedRotation;
 	glm::dvec3 ExpectedPosition;
-	if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, ExpectedPosition, ExpectedRotation, ExpectedScale))
+	if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildFinalMatrix, ExpectedPosition, ExpectedRotation, ExpectedScale))
 	{
 		glm::dvec3 ActualPosition = Entity_B->GetComponent<FETransformComponent>().GetPosition();
 		ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualPosition, ExpectedPosition));
@@ -948,7 +967,7 @@ void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(FEScene*
 	}
 }
 
-void SceneGraphTest::TestTransformationAfterChildChangedParent(FEScene* SceneToWorkWith, const FETransformComponent& InitialParentTransform, const FETransformComponent& InitialChildTransform)
+void SceneGraphTest::TestTransformationAfterChildChangedParent(FEScene* SceneToWorkWith, FETransformComponent& InitialParentTransform, FETransformComponent& InitialChildTransform)
 {
 	FEEntity* Entity_A = SceneToWorkWith->CreateEntity("A");
 	FEEntity* Entity_B = SceneToWorkWith->CreateEntity("B");

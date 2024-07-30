@@ -122,7 +122,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* N
 	// Try to duplicate the node.
 	bool bDuplicationSuccess = true;
 	FENaiveSceneGraphNode* TopMostDuplicate = new FENaiveSceneGraphNode(NodeToDuplicate->GetName() + (bAddCopyInName ? "_Copy" : ""));
-	TopMostDuplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity);
+	TopMostDuplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity, bAddCopyInName ? "" : NodeToDuplicate->Entity->GetName());
 	NewParent->AddChild(TopMostDuplicate);
 
 	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)

@@ -2,8 +2,6 @@
 
 #include"FEEntity.h"
 #include "../ResourceManager/FEResourceManager.h"
-#include "../CoreExtensions/FEFreeCamera.h"
-#include "../CoreExtensions/FEModelViewCamera.h"
 #include "../Renderer/FELine.h"
 #include "../FEVirtualUIContext.h"
 #include "FENaiveSceneGraph.h"
@@ -20,6 +18,7 @@ namespace FocalEngine
 		friend class FEInstancedSystem;
 		friend class FERenderer;
 		friend class FEngine;
+		friend class FETransformSystem;
 	public:
 		FEScene();
 
@@ -30,6 +29,8 @@ namespace FocalEngine
 		std::vector<std::string> GetEntityIDList();
 		template<typename T>
 		std::vector<std::string> GetEntityIDListWith();
+		template<typename T>
+		std::vector<FEEntity*> GetEntityListWith();
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
 
 		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
@@ -71,9 +72,7 @@ namespace FocalEngine
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
 
-		void TransformUpdate(FENaiveSceneGraphNode* SubTreeRoot);
 		FEEntity* CreateEntityInternal(std::string Name = "", std::string ForceObjectID = "");
-
 		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
 	};
 #include "FEScene.inl"

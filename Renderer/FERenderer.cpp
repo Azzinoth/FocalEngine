@@ -1,4 +1,7 @@
 #include "FERenderer.h"
+// FIX ME! It should not be here.
+// need correct INPUT_SYSTEM
+#include "../FEngine.h"
 using namespace FocalEngine;
 
 FERenderer* FERenderer::Instance = nullptr;
@@ -9,6 +12,19 @@ FERenderer::FERenderer()
 
 void FERenderer::Init()
 {
+	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str());
+	RESOURCE_MANAGER.Shaders.erase(RENDERER.InstancedLineShader->GetObjectID());
+	RENDERER.InstancedLineShader->SetID("7E0826291010377D564F6115"/*"instancedLine"*/);
+	RESOURCE_MANAGER.Shaders[RENDERER.InstancedLineShader->GetObjectID()] = RENDERER.InstancedLineShader;
+
+	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str()).c_str());
+	RESOURCE_MANAGER.Shaders.erase(FEScreenQuadShader->GetObjectID());
+	FEScreenQuadShader->SetID("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+	RESOURCE_MANAGER.Shaders[FEScreenQuadShader->GetObjectID()] = FEScreenQuadShader;
+	RESOURCE_MANAGER.MakeShaderStandard(FEScreenQuadShader);
+
 	if (bSimplifiedRendering)
 	{
 		// Because of VR
@@ -112,48 +128,94 @@ void FERenderer::Init()
 																	  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
 
 		ComputeDepthPyramidDownSample->UpdateParameterData("scaleDownBy", 2);
+
+		FEPostProcess::ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+		FEPostProcess::ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+
+		FEShader* BloomThresholdShader =
+			RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(BloomThresholdShader->GetObjectID());
+		BloomThresholdShader->SetID("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/);
+		RESOURCE_MANAGER.Shaders[BloomThresholdShader->GetObjectID()] = BloomThresholdShader;
+
+		FEShader* BloomBlurShader =
+			RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(BloomBlurShader->GetObjectID());
+		BloomBlurShader->SetID("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
+		RESOURCE_MANAGER.Shaders[BloomBlurShader->GetObjectID()] = BloomBlurShader;
+
+		FEShader* BloomCompositionShader =
+			RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(BloomCompositionShader->GetObjectID());
+		BloomCompositionShader->SetID("1833272551376C2E5645200E"/*"FEBloomComposition"*/);
+		RESOURCE_MANAGER.Shaders[BloomCompositionShader->GetObjectID()] = BloomCompositionShader;
+
+		FEShader* GammaHDRShader =
+			RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
+				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(GammaHDRShader->GetObjectID());
+		GammaHDRShader->SetID("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/);
+		RESOURCE_MANAGER.Shaders[GammaHDRShader->GetObjectID()] = GammaHDRShader;
+
+		FEShader* FEFXAAShader =
+			RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
+				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(FEFXAAShader->GetObjectID());
+		FEFXAAShader->SetID("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/);
+		RESOURCE_MANAGER.Shaders[FEFXAAShader->GetObjectID()] = FEFXAAShader;
+
+		FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
+			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(DOFShader->GetObjectID());
+		DOFShader->SetID("7800253C244442155D0F3C7B"/*"DOF"*/);
+		RESOURCE_MANAGER.Shaders[DOFShader->GetObjectID()] = DOFShader;
+
+		FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
+			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str());
+		RESOURCE_MANAGER.Shaders.erase(ChromaticAberrationShader->GetObjectID());
+		ChromaticAberrationShader->SetID("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
+		RESOURCE_MANAGER.Shaders[ChromaticAberrationShader->GetObjectID()] = ChromaticAberrationShader;
+
+		FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
+			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str());
+
+		RESOURCE_MANAGER.Shaders.erase(FESSAOShader->GetObjectID());
+		FESSAOShader->SetID("1037115B676E383E36345079"/*"FESSAOShader"*/);
+		RESOURCE_MANAGER.Shaders[FESSAOShader->GetObjectID()] = FESSAOShader;
+
+		RESOURCE_MANAGER.MakeShaderStandard(FESSAOShader);
+
+		FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str());
+
+		RESOURCE_MANAGER.Shaders.erase(FESSAOBlurShader->GetObjectID());
+		FESSAOBlurShader->SetID("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
+		RESOURCE_MANAGER.Shaders[FESSAOBlurShader->GetObjectID()] = FESSAOBlurShader;
+
+		RESOURCE_MANAGER.MakeShaderStandard(FESSAOBlurShader);
 	}
+
+	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial");
+	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str()).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
+	RENDERER.ShadowMapMaterial->Shader->SetID("7C41565B2E2B05321A182D89"/*"FEShadowMapShader"*/);
+
+	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterial->Shader);
+	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterial);
+
+	RENDERER.ShadowMapMaterialInstanced = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterialInstanced");
+	RENDERER.ShadowMapMaterialInstanced->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str()).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
+	RENDERER.ShadowMapMaterialInstanced->Shader->SetID("5634765B2E2A05321A182D1A"/*"FEShadowMapShaderInstanced"*/);
+
+	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterialInstanced->Shader);
+	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterialInstanced);
 }
 
-void FERenderer::StandardFBInit(const int WindowWidth, const int WindowHeight)
-{
-	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, WindowWidth, WindowHeight);
-
-	if (bSimplifiedRendering)
-		return;
-
-	GBuffer = new FEGBuffer(SceneToTextureFB);
-	SSAO = new FESSAO(SceneToTextureFB);
-	DebugOutputTextures["SSAO FrameBuffer"] = []() { return RENDERER.SSAO->FB->GetColorAttachment(); };
-
-	DebugOutputTextures["albedoRenderTarget"] = []() { return RENDERER.GBuffer->Albedo; };
-	DebugOutputTextures["positionsRenderTarget"] = []() { return RENDERER.GBuffer->Positions; };
-	DebugOutputTextures["normalsRenderTarget"] = []() { return RENDERER.GBuffer->Normals; };
-	DebugOutputTextures["materialPropertiesRenderTarget"] = []() { return RENDERER.GBuffer->MaterialProperties; };
-	DebugOutputTextures["shaderPropertiesRenderTarget"] = []() { return RENDERER.GBuffer->ShaderProperties; };
-
-	DebugOutputTextures["CSM0"] = []() { return RENDERER.CSM0; };
-	DebugOutputTextures["CSM1"] = []() { return RENDERER.CSM1; };
-	DebugOutputTextures["CSM2"] = []() { return RENDERER.CSM2; };
-	DebugOutputTextures["CSM3"] = []() { return RENDERER.CSM3; };
-
-	DepthPyramid = RESOURCE_MANAGER.CreateTexture();
-	RESOURCE_MANAGER.Textures.erase(DepthPyramid->GetObjectID());
-
-	DepthPyramid->Bind();
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-
-	const int MaxDimention = std::max(WindowWidth, WindowHeight);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
-	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, WindowWidth, WindowHeight));
-	DepthPyramid->Width = WindowWidth;
-	DepthPyramid->Height = WindowHeight;
-}
-
-void FERenderer::LoadStandardParams(FEShader* Shader, FEMaterial* Material, const FETransformComponent* Transform, FEEntity* ForceCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
+void FERenderer::LoadStandardParams(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* ForceCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
 {
 	static int FETextureBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureBindings[0]"));
 	static int FETextureChannelsBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureChannels[0]"));
@@ -272,30 +334,60 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const bool IsReceivingShad
 		Shader->UpdateParameterData("FEUniformLighting", IsUniformLighting);
 }
 
-void FERenderer::AddPostProcess(FEPostProcess* NewPostProcess, const bool NoProcessing)
+//void FERenderer::AddPostProcess(FEPostProcess* NewPostProcess, const bool NoProcessing)
+//{
+//	PostProcessEffects.push_back(NewPostProcess);
+//
+//	if (NoProcessing)
+//		return;
+//
+//	for (size_t i = 0; i < PostProcessEffects.back()->Stages.size(); i++)
+//	{
+//		PostProcessEffects.back()->Stages[i]->InTexture.resize(PostProcessEffects.back()->Stages[i]->InTextureSource.size());
+//		//to-do: change when out texture could be different resolution or/and format.
+//		//#fix
+//		if (i == PostProcessEffects.back()->Stages.size() - 1)
+//		{
+//			PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(SceneToTextureFB->GetColorAttachment());
+//		}
+//		else
+//		{
+//			const int FinalW = PostProcessEffects.back()->ScreenWidth;
+//			const int FinalH = PostProcessEffects.back()->ScreenHeight;
+//			PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(SceneToTextureFB->GetColorAttachment(), FinalW, FinalH);
+//		}
+//
+//		PostProcessEffects.back()->TexturesToDelete.push_back(PostProcessEffects.back()->Stages[i]->OutTexture);
+//	}
+//}
+
+void FERenderer::AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing)
 {
-	PostProcessEffects.push_back(NewPostProcess);
+	if (CameraRenderingData == nullptr)
+		return;
+
+	CameraRenderingData->PostProcessEffects.push_back(NewPostProcess);
 
 	if (NoProcessing)
 		return;
 
-	for (size_t i = 0; i < PostProcessEffects.back()->Stages.size(); i++)
+	for (size_t i = 0; i < CameraRenderingData->PostProcessEffects.back()->Stages.size(); i++)
 	{
-		PostProcessEffects.back()->Stages[i]->InTexture.resize(PostProcessEffects.back()->Stages[i]->InTextureSource.size());
+		CameraRenderingData->PostProcessEffects.back()->Stages[i]->InTexture.resize(CameraRenderingData->PostProcessEffects.back()->Stages[i]->InTextureSource.size());
 		//to-do: change when out texture could be different resolution or/and format.
 		//#fix
-		if (i == PostProcessEffects.back()->Stages.size() - 1)
+		if (i == CameraRenderingData->PostProcessEffects.back()->Stages.size() - 1)
 		{
-			PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(SceneToTextureFB->GetColorAttachment());
+			CameraRenderingData->PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(CameraRenderingData->SceneToTextureFB->GetColorAttachment());
 		}
 		else
 		{
-			const int FinalW = PostProcessEffects.back()->ScreenWidth;
-			const int FinalH = PostProcessEffects.back()->ScreenHeight;
-			PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(SceneToTextureFB->GetColorAttachment(), FinalW, FinalH);
+			const int FinalW = CameraRenderingData->PostProcessEffects.back()->ScreenWidth;
+			const int FinalH = CameraRenderingData->PostProcessEffects.back()->ScreenHeight;
+			CameraRenderingData->PostProcessEffects.back()->Stages[i]->OutTexture = RESOURCE_MANAGER.CreateSameFormatTexture(CameraRenderingData->SceneToTextureFB->GetColorAttachment(), FinalW, FinalH);
 		}
 
-		PostProcessEffects.back()->TexturesToDelete.push_back(PostProcessEffects.back()->Stages[i]->OutTexture);
+		CameraRenderingData->PostProcessEffects.back()->TexturesToDelete.push_back(CameraRenderingData->PostProcessEffects.back()->Stages[i]->OutTexture);
 	}
 }
 
@@ -395,7 +487,7 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 	}
 }
 
-void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, float** Frustum, FEEntity* ForceCamera, bool bShadowMap, bool bReloadUniformBlocks)
+void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera, bool bShadowMap, bool bReloadUniformBlocks)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>() || !Entity->HasComponent<FEInstancedComponent>())
 		return;
@@ -477,14 +569,23 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, float**
 	}
 }
 
-void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
+void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 {
-	if (CurrentScene == nullptr || CurrentCamera == nullptr)
+	if (CurrentScene == nullptr)
 		return;
 
-	CurrentCamera->UpdateFrustumPlanes();
+	if (CurrentScene == nullptr)
+		return;
 
-	SceneToTextureFB->Bind();
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(CurrentScene);
+	if (MainCameraEntity == nullptr)
+		return;
+
+	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
+	FETransformComponent& CurrentCameraTransformComponent = MainCameraEntity->GetComponent<FETransformComponent>();
+	CurrentCameraComponent.UpdateFrustumPlanes();
+
+	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
 	
 	if (bClearActiveInSimplifiedRendering)
@@ -502,14 +603,13 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentC
 
 		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
 		{
-			// FIX ME! CAMERA
-			RenderGameModelComponentForward(CurrentEntity, nullptr);
+			RenderGameModelComponentForward(CurrentEntity);
 		}
 	}
 
-	SceneToTextureFB->UnBind();
-	FinalScene = SceneToTextureFB->GetColorAttachment();
-	FinalScene->Bind();
+	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
+	CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	CurrentCameraRenderingData->FinalScene->Bind();
 
 	// ********* RENDER FRAME BUFFER TO SCREEN *********
 	glDepthMask(GL_FALSE);
@@ -533,39 +633,457 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentC
 	glDepthFunc(GL_LESS);
 	// ********* RENDER FRAME BUFFER TO SCREEN END *********
 
-	FinalScene->UnBind();
+	CurrentCameraRenderingData->FinalScene->UnBind();
 }
 
-void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
+FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEntity)
 {
-	if (CurrentScene == nullptr || CurrentCamera == nullptr)
+	FECameraRenderingData* Result = nullptr;
+
+	if (CameraEntity == nullptr)
+		return Result;
+
+	if (!CameraEntity->HasComponent<FECameraComponent>())
+		return Result;
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	if (CameraComponent.RenderTargetWidth <= 0 || CameraComponent.RenderTargetHeight <= 0)
+		return Result;
+
+	Result = new FECameraRenderingData();
+	Result->CameraEntity = CameraEntity;
+	Result->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+
+	Result->GBuffer = new FEGBuffer(Result->SceneToTextureFB);
+	Result->SSAO = new FESSAO(Result->SceneToTextureFB);
+
+	Result->DepthPyramid = RESOURCE_MANAGER.CreateTexture();
+	RESOURCE_MANAGER.Textures.erase(Result->DepthPyramid->GetObjectID());
+
+	Result->DepthPyramid->Bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+	const int MaxDimention = std::max(CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	Result->DepthPyramid->Width = CameraComponent.RenderTargetWidth;
+	Result->DepthPyramid->Height = CameraComponent.RenderTargetHeight;
+
+	// ************************************ Bloom ************************************
+	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("Bloom", static_cast<int>(CameraComponent.RenderTargetWidth / 4.0f), static_cast<int>(CameraComponent.RenderTargetHeight / 4.0f));
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
+	BloomEffect->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", 1.0f);
+
+	FEShader* BloomBlurShader = RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	FEShader* BloomCompositionShader = RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/);
+	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, BloomCompositionShader));
+
+	RENDERER.AddPostProcess(Result, BloomEffect);
+	// ************************************ Bloom END ************************************
+
+	// ************************************ Gamma & HDR ************************************
+	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEShader* GammaHDRShader = RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/);
+	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, GammaHDRShader));
+	RENDERER.AddPostProcess(Result, GammaHDR);
+	// ************************************ Gamma & HDR END ************************************
+
+	// ************************************ FXAA ************************************
+	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEShader* FEFXAAShader = RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/);
+	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FEFXAAShader));
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAASpanMax", 8.0f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMin", 1.0f / 128.0f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMul", 0.4f);
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
+	RENDERER.AddPostProcess(Result, FEFXAAEffect);
+
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	Result->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+
+	// ************************************ FXAA END ************************************
+
+	// ************************************ DOF ************************************
+	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEShader* DOFShader = RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/);
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
+	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
+	RENDERER.AddPostProcess(Result, DOFEffect);
+	// ************************************ DOF END ************************************
+
+	// ************************************ Chromatic Aberration ************************************
+	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
+	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
+	ChromaticAberrationEffect->Stages.back()->Shader->UpdateParameterData("intensity", 1.0f);
+	RENDERER.AddPostProcess(Result, ChromaticAberrationEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	Result->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	// ************************************ Chromatic Aberration END ************************************
+
+	return Result;
+}
+
+void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
+{
+	if (CameraEntity == nullptr)
 		return;
 
+	FECameraRenderingData* CurrentData = nullptr;
+	if (CameraRenderingDataMap.find(CameraEntity->GetObjectID()) != CameraRenderingDataMap.end())
+	{
+		CurrentData = GetCameraRenderingData(CameraEntity);
+	}
+	else // If it is fresh camera without rendering data.
+	{
+		CurrentData = GetCameraRenderingData(CameraEntity);
+		return;
+	}
+		
+	FECameraComponent& CameraComponent = CurrentData->CameraEntity->GetComponent<FECameraComponent>();
+	delete CurrentData->SceneToTextureFB;
+	CurrentData->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+
+	/*if (bVRActive)
+	{
+		if (VRScreenW != 0 && VRScreenH != 0)
+		{
+			delete SceneToVRTextureFB;
+			SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
+		}
+	}*/
+
+	if (bSimplifiedRendering)
+		return;
+
+	delete CurrentData->DepthPyramid;
+	CurrentData->DepthPyramid = RESOURCE_MANAGER.CreateTexture();
+	RESOURCE_MANAGER.Textures.erase(CurrentData->DepthPyramid->GetObjectID());
+
+	CurrentData->DepthPyramid->Bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+	const int MaxDimention = std::max(CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	CurrentData->DepthPyramid->Width = CameraComponent.RenderTargetWidth;
+	CurrentData->DepthPyramid->Height = CameraComponent.RenderTargetHeight;
+
+	CurrentData->GBuffer->RenderTargetResize(CurrentData->SceneToTextureFB);
+	CurrentData->SSAO->RenderTargetResize(CurrentData->SceneToTextureFB);
+
+	for (size_t i = 0; i < CurrentData->PostProcessEffects.size(); i++)
+	{
+		// We should delete only internally created frame buffers.
+		// Other wise user created postProcess could create UB.
+		if (CurrentData->PostProcessEffects[i]->GetName() == "Bloom" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "GammaAndHDR" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "FE_FXAA" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "DOF" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "chromaticAberration")
+			delete CurrentData->PostProcessEffects[i];
+	}
+
+	CurrentData->PostProcessEffects.clear();
+
+	// ************************************ Bloom ************************************
+	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("Bloom", static_cast<int>(CameraComponent.RenderTargetWidth / 4.0f), static_cast<int>(CameraComponent.RenderTargetHeight / 4.0f));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/)));
+
+	RENDERER.AddPostProcess(CurrentData, BloomEffect);
+	// ************************************ Bloom END ************************************
+
+	// ************************************ gammaHDR ************************************
+	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/)));
+	RENDERER.AddPostProcess(CurrentData, GammaHDR);
+	// ************************************ gammaHDR END ************************************
+
+	// ************************************ FXAA ************************************
+	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
+	RENDERER.AddPostProcess(CurrentData, FEFXAAEffect);
+
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	// ************************************ FXAA END ************************************
+
+	// ************************************ DOF ************************************
+	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	RENDERER.AddPostProcess(CurrentData, DOFEffect);
+	// ************************************ DOF END ************************************
+
+	// ************************************ chromaticAberrationEffect ************************************
+	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
+	RENDERER.AddPostProcess(CurrentData, ChromaticAberrationEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	// ************************************ chromaticAberrationEffect END ************************************
+}
+
+void FERenderer::OnResizeCameraRenderingData(FECameraRenderingData* CurrentData)
+{
+	FECameraComponent& CameraComponent = CurrentData->CameraEntity->GetComponent<FECameraComponent>();
+	/*if (!CameraComponent.bUseDefaultRenderTargetSize)
+		return;*/
+
+	delete CurrentData->SceneToTextureFB;
+	CurrentData->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+
+	/*if (bVRActive)
+	{
+		if (VRScreenW != 0 && VRScreenH != 0)
+		{
+			delete SceneToVRTextureFB;
+			SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
+		}
+	}*/
+
+	if (bSimplifiedRendering)
+		return;
+
+	delete CurrentData->DepthPyramid;
+	CurrentData->DepthPyramid = RESOURCE_MANAGER.CreateTexture();
+	RESOURCE_MANAGER.Textures.erase(CurrentData->DepthPyramid->GetObjectID());
+
+	CurrentData->DepthPyramid->Bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+
+	const int MaxDimention = std::max(CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	CurrentData->DepthPyramid->Width = CameraComponent.RenderTargetWidth;
+	CurrentData->DepthPyramid->Height = CameraComponent.RenderTargetHeight;
+
+	CurrentData->GBuffer->RenderTargetResize(CurrentData->SceneToTextureFB);
+	CurrentData->SSAO->RenderTargetResize(CurrentData->SceneToTextureFB);
+
+	for (size_t i = 0; i < CurrentData->PostProcessEffects.size(); i++)
+	{
+		// We should delete only internally created frame buffers.
+		// Other wise user created postProcess could create UB.
+		if (CurrentData->PostProcessEffects[i]->GetName() == "Bloom" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "GammaAndHDR" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "FE_FXAA" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "DOF" ||
+			CurrentData->PostProcessEffects[i]->GetName() == "chromaticAberration")
+			delete CurrentData->PostProcessEffects[i];
+	}
+
+	CurrentData->PostProcessEffects.clear();
+
+	// ************************************ Bloom ************************************
+	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("Bloom", static_cast<int>(CameraComponent.RenderTargetWidth / 4.0f), static_cast<int>(CameraComponent.RenderTargetHeight / 4.0f));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+
+	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/)));
+
+	RENDERER.AddPostProcess(CurrentData, BloomEffect);
+	// ************************************ Bloom END ************************************
+
+	// ************************************ gammaHDR ************************************
+	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/)));
+	RENDERER.AddPostProcess(CurrentData, GammaHDR);
+	// ************************************ gammaHDR END ************************************
+
+	// ************************************ FXAA ************************************
+	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
+	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
+	RENDERER.AddPostProcess(CurrentData, FEFXAAEffect);
+
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	// ************************************ FXAA END ************************************
+
+	// ************************************ DOF ************************************
+	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
+	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	RENDERER.AddPostProcess(CurrentData, DOFEffect);
+	// ************************************ DOF END ************************************
+
+	// ************************************ chromaticAberrationEffect ************************************
+	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
+	RENDERER.AddPostProcess(CurrentData, ChromaticAberrationEffect);
+	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
+	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
+	// ************************************ chromaticAberrationEffect END ************************************
+}
+
+FECameraRenderingData* FERenderer::GetCameraRenderingData(FEEntity* CameraEntity)
+{
+	// FIX ME! Track last frame camera size.
+	if (CameraRenderingDataMap.find(CameraEntity->GetObjectID()) != CameraRenderingDataMap.end())
+	{
+		return CameraRenderingDataMap[CameraEntity->GetObjectID()];
+	}
+	else
+	{
+		FECameraRenderingData* Result = CreateCameraRenderingData(CameraEntity);
+		if (Result != nullptr)
+		{
+			CameraRenderingDataMap[CameraEntity->GetObjectID()] = Result;
+			return CameraRenderingDataMap[CameraEntity->GetObjectID()];
+		}
+		else
+		{
+			return nullptr;
+		}
+	}
+}
+
+FETexture* FERenderer::GetCameraResult(FEEntity* CameraEntity)
+{
+	FETexture* Result = nullptr;
+
+	if (CameraEntity == nullptr)
+		return Result;
+
+	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(CameraEntity);
+	if (CameraRenderingData == nullptr)
+		return Result;
+
+	if (CameraRenderingData->FinalScene != nullptr)
+	{
+		Result = CameraRenderingData->FinalScene;
+	}
+	else if (CameraRenderingData->SceneToTextureFB->GetColorAttachment() != nullptr)
+	{
+		Result = CameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	}
+
+	return Result;
+}
+
+void FERenderer::Render(FEScene* CurrentScene)
+{
+	if (CurrentScene == nullptr)
+		return;
+
+	//  FIX ME!
 	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(CurrentScene);
 	if (MainCameraEntity == nullptr)
 		return;
 
-	//  FIX ME!
-	this->CurrentScene = CurrentScene;
+	CurrentCameraRenderingData = GetCameraRenderingData(MainCameraEntity);
+	if (CurrentCameraRenderingData == nullptr)
+		return;
+
+	UpdateShadersForCamera(CurrentCameraRenderingData);
 	LastRenderedSceneID = CurrentScene->GetObjectID();
 	LastRenderedCameraID = MainCameraEntity->GetObjectID();
 
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 	FETransformComponent& CurrentCameraTransformComponent = MainCameraEntity->GetComponent<FETransformComponent>();
 
-	LastRenderedResult = nullptr;
+	FEViewport* CurrentViewport = CAMERA_SYSTEM.GetMainCameraViewport(CurrentScene);
+	if (CurrentViewport != nullptr)
+	{
+		glm::ivec2 ViewportPosition = glm::ivec2(CurrentViewport->GetX(), CurrentViewport->GetY());
+		glm::ivec2 ViewportSize = glm::ivec2(CurrentViewport->GetWidth(), CurrentViewport->GetHeight());
+
+		MouseRay = GEOMETRY.CreateMouseRayToWorld(ENGINE.GetMouseX(), ENGINE.GetMouseY(),
+			CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetProjectionMatrix(),
+			ViewportPosition, ViewportSize);
+	}
 
 	if (bVRActive)
 		return;
 
 	if (bSimplifiedRendering)
 	{
-		SimplifiedRender(CurrentScene, CurrentCamera);
+		SimplifiedRender(CurrentScene);
 		return;
 	}
 
 	CurrentCameraComponent.UpdateFrustumPlanes();
-	CurrentCamera->UpdateFrustumPlanes();
 
 	LastTestTime = TestTime;
 	TestTime = 0.0f;
@@ -573,7 +1091,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	// there is only 1 directional light, sun.
 	// and we need to set correct light position
 	//#fix it should update view matrices for each cascade!
-
+	FEEntity* DirectionalLightEntity = nullptr;
 	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWith<FELightComponent>();
 	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{	
@@ -591,6 +1109,9 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 										CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetForward(),
 										CurrentCameraComponent.GetRight(), CurrentCameraComponent.GetUp());
 		}
+
+		DirectionalLightEntity = LightEntity;
+		break;
 	}
 
 	LoadUniformBlocks(CurrentScene);
@@ -638,7 +1159,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
 				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMat;
 
-				FE_GL_ERROR(glViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight()));
+				SetViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight());
 
 				UpdateGPUCullingFrustum();
 
@@ -668,7 +1189,11 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 						continue;
 
 					FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+					if (GameModelComponent.GameModel == nullptr)
+						continue;
 					FEMaterial* OriginalMaterial = GameModelComponent.GameModel->Material;
+					if (OriginalMaterial == nullptr)
+						continue;
 					
 					FEMaterial* ShadowMapMaterialToUse = !Entity->HasComponent<FEInstancedComponent>() ? ShadowMapMaterial : ShadowMapMaterialInstanced;
 					GameModelComponent.GameModel->Material = ShadowMapMaterialToUse;
@@ -686,7 +1211,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 					}
 					else if (Entity->HasComponent<FEInstancedComponent>())
 					{
-						RenderGameModelComponentWithInstanced(Entity, LightComponent.CascadeData[i].Frustum, nullptr, true, false);
+						RenderGameModelComponentWithInstanced(Entity, nullptr, true, false);
 					}
 
 					GameModelComponent.GameModel->Material = OriginalMaterial;
@@ -717,8 +1242,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 			CurrentCameraComponent.ViewMatrix = OldViewMatrix;
 			CurrentCameraComponent.ProjectionMatrix = OldProjectionMatrix;
 
-			FE_GL_ERROR(glViewport(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
-			//FE_GL_ERROR(glViewport(0, 0, CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
+			SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 			break;
 		}
 	}
@@ -727,7 +1251,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	// ********* GENERATE SHADOW MAPS END *********
 	
 	// in current version only shadows from one directional light is supported.
-	if (!OBJECT_MANAGER.ObjectsByType[FE_DIRECTIONAL_LIGHT].empty())
+	if (DirectionalLightEntity != nullptr)
 	{
 		if (CSM0) CSM0->Bind(FE_CSM_UNIT);
 		if (CSM1) CSM1->Bind(FE_CSM_UNIT + 1);
@@ -737,7 +1261,8 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 	// ********* RENDER SCENE *********
 
-	GBuffer->GFrameBuffer->Bind();
+	SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
+	CurrentCameraRenderingData->GBuffer->GFrameBuffer->Bind();
 
 	const unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
 	glDrawBuffers(6, attachments);
@@ -758,26 +1283,24 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-			// FIX ME! Camera should inffered from the scene.
 			RenderGameModelComponent(Entity);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
 
 			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-			// FIX ME! Camera should inffered from the scene.
-			RenderGameModelComponentWithInstanced(Entity, CurrentCamera->Frustum);
+			RenderGameModelComponentWithInstanced(Entity);
 		}
 	}
 
-	// It is not renderer work to update interaction ray.
+	// FIX ME! It is not renderer work to update interaction ray.
 	// It should be done in the input update.
 	auto VirtualUIIterator = CurrentScene->VirtualUIContextMap.begin();
 	while (VirtualUIIterator != CurrentScene->VirtualUIContextMap.end())
 	{
 		auto VirtualUIContext = VirtualUIIterator->second;
 		if (VirtualUIContext->bMouseMovePassThrough)
-			VirtualUIContext->UpdateInteractionRay(CurrentCamera->GetPosition(), RENDERER.MouseRay);
+			VirtualUIContext->UpdateInteractionRay(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE), MouseRay);
 
 		VirtualUIIterator++;
 	}
@@ -794,34 +1317,34 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		RenderTerrainComponent(Entity);
 	}
 
-	GBuffer->GFrameBuffer->UnBind();
+	CurrentCameraRenderingData->GBuffer->GFrameBuffer->UnBind();
 	ForceShader(nullptr);
 
-	GBuffer->Albedo->Bind(0);
-	GBuffer->Normals->Bind(1);
-	GBuffer->MaterialProperties->Bind(2);
-	GBuffer->Positions->Bind(3);
-	GBuffer->ShaderProperties->Bind(4);
+	CurrentCameraRenderingData->GBuffer->Albedo->Bind(0);
+	CurrentCameraRenderingData->GBuffer->Normals->Bind(1);
+	CurrentCameraRenderingData->GBuffer->MaterialProperties->Bind(2);
+	CurrentCameraRenderingData->GBuffer->Positions->Bind(3);
+	CurrentCameraRenderingData->GBuffer->ShaderProperties->Bind(4);
 	
 	// ************************************ SSAO ************************************
 	UpdateSSAO();
 	// ************************************ SSAO END ************************************
 
 	// ************************************ COPYING DEPTH BUFFER ************************************
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, GBuffer->GFrameBuffer->FBO);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, SceneToTextureFB->FBO); // write to default framebuffer
-	glBlitFramebuffer(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight(),
-					  0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight(),
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, CurrentCameraRenderingData->GBuffer->GFrameBuffer->FBO);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, CurrentCameraRenderingData->SceneToTextureFB->FBO); // write to default framebuffer
+	glBlitFramebuffer(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight(),
+					  0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight(),
 					  GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 	// ************************************ COPYING DEPTH BUFFER END ************************************
 
-	GBuffer->Albedo->Bind(0);
-	GBuffer->Normals->Bind(1);
-	GBuffer->MaterialProperties->Bind(2);
-	GBuffer->Positions->Bind(3);
-	GBuffer->ShaderProperties->Bind(4);
-	SSAO->FB->GetColorAttachment()->Bind(5);
-	SceneToTextureFB->Bind();
+	CurrentCameraRenderingData->GBuffer->Albedo->Bind(0);
+	CurrentCameraRenderingData->GBuffer->Normals->Bind(1);
+	CurrentCameraRenderingData->GBuffer->MaterialProperties->Bind(2);
+	CurrentCameraRenderingData->GBuffer->Positions->Bind(3);
+	CurrentCameraRenderingData->GBuffer->ShaderProperties->Bind(4);
+	CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->Bind(5);
+	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 
 	const unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
 	glDrawBuffers(3, attachments_);
@@ -831,7 +1354,7 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	FinalSceneShader->Start();
-	FinalSceneShader->UpdateParameterData("SSAOActive", SSAO->bActive ? 1.0f : 0.0f);
+	FinalSceneShader->UpdateParameterData("SSAOActive", CurrentCameraComponent.IsSSAOEnabled() ? 1.0f : 0.0f);
 	LoadStandardParams(FinalSceneShader, true);
 	FinalSceneShader->LoadDataToGPU();
 
@@ -841,11 +1364,11 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	GBuffer->Albedo->UnBind();
-	GBuffer->Normals->UnBind();
-	GBuffer->MaterialProperties->UnBind();
-	GBuffer->Positions->UnBind();
-	GBuffer->ShaderProperties->UnBind();
+	CurrentCameraRenderingData->GBuffer->Albedo->UnBind();
+	CurrentCameraRenderingData->GBuffer->Normals->UnBind();
+	CurrentCameraRenderingData->GBuffer->MaterialProperties->UnBind();
+	CurrentCameraRenderingData->GBuffer->Positions->UnBind();
+	CurrentCameraRenderingData->GBuffer->ShaderProperties->UnBind();
 
 	FinalSceneShader->Stop();
 
@@ -854,35 +1377,35 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	glDepthFunc(GL_LESS);
 
 	// ********* RENDER INSTANCED LINE *********
-	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
+	////FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	//FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+	//FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	//FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	InstancedLineShader->Start();
-	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
-	InstancedLineShader->LoadDataToGPU();
+	//InstancedLineShader->Start();
+	//InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	//InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	//InstancedLineShader->UpdateParameterData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
+	//InstancedLineShader->LoadDataToGPU();
 
-	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glEnableVertexAttribArray(1));
-	FE_GL_ERROR(glEnableVertexAttribArray(2));
-	FE_GL_ERROR(glEnableVertexAttribArray(3));
-	FE_GL_ERROR(glEnableVertexAttribArray(4));
-	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glDisableVertexAttribArray(1));
-	FE_GL_ERROR(glDisableVertexAttribArray(2));
-	FE_GL_ERROR(glDisableVertexAttribArray(3));
-	FE_GL_ERROR(glDisableVertexAttribArray(4));
-	FE_GL_ERROR(glBindVertexArray(0));
-	InstancedLineShader->Stop();
+	//FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+	//FE_GL_ERROR(glEnableVertexAttribArray(0));
+	//FE_GL_ERROR(glEnableVertexAttribArray(1));
+	//FE_GL_ERROR(glEnableVertexAttribArray(2));
+	//FE_GL_ERROR(glEnableVertexAttribArray(3));
+	//FE_GL_ERROR(glEnableVertexAttribArray(4));
+	//FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+	//FE_GL_ERROR(glDisableVertexAttribArray(0));
+	//FE_GL_ERROR(glDisableVertexAttribArray(1));
+	//FE_GL_ERROR(glDisableVertexAttribArray(2));
+	//FE_GL_ERROR(glDisableVertexAttribArray(3));
+	//FE_GL_ERROR(glDisableVertexAttribArray(4));
+	//FE_GL_ERROR(glBindVertexArray(0));
+	//InstancedLineShader->Stop();
 
-	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	FE_GL_ERROR(glCullFace(GL_BACK));*/
+	///*FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	//FE_GL_ERROR(glCullFace(GL_BACK));*/
 	// ********* RENDER INSTANCED LINE END *********
 
 	// ********* RENDER SKY *********
@@ -906,22 +1429,22 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		break;
 	}
 	// ********* RENDER SCENE END *********
-	SceneToTextureFB->UnBind();
+	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 
 	//Generate the mipmaps of colorAttachment
-	SceneToTextureFB->GetColorAttachment()->Bind();
+	CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment()->Bind();
 	glGenerateMipmap(GL_TEXTURE_2D);
 	
 	// ********* POST_PROCESS EFFECTS *********
 	// Because we render post process effects with screen quad
 	// we will turn off write to depth buffer in order to get clear DB to be able to render additional objects
 	glDepthMask(GL_FALSE);
-	FinalScene = SceneToTextureFB->GetColorAttachment();
-	FETexture* PrevStageTex = SceneToTextureFB->GetColorAttachment();
+	CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	FETexture* PrevStageTex = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 
-	for (size_t i = 0; i < PostProcessEffects.size(); i++)
+	for (size_t i = 0; i < CurrentCameraRenderingData->PostProcessEffects.size(); i++)
 	{
-		FEPostProcess& Effect = *PostProcessEffects[i];
+		FEPostProcess& Effect = *CurrentCameraRenderingData->PostProcessEffects[i];
 		for (size_t j = 0; j < Effect.Stages.size(); j++)
 		{
 			Effect.Stages[j]->Shader->Start();
@@ -946,12 +1469,12 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 				}
 				else if (Effect.Stages[j]->InTextureSource[k] == FE_POST_PROCESS_SCENE_HDR_COLOR)
 				{
-					Effect.Stages[j]->InTexture[k] = SceneToTextureFB->GetColorAttachment();
+					Effect.Stages[j]->InTexture[k] = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 					Effect.Stages[j]->InTexture[k]->Bind(static_cast<int>(k));
 				}
 				else if (Effect.Stages[j]->InTextureSource[k] == FE_POST_PROCESS_SCENE_DEPTH)
 				{
-					Effect.Stages[j]->InTexture[k] = SceneToTextureFB->GetDepthAttachment();
+					Effect.Stages[j]->InTexture[k] = CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment();
 					Effect.Stages[j]->InTexture[k]->Bind(static_cast<int>(k));
 				}
 				else if (Effect.Stages[j]->InTextureSource[k] == FE_POST_PROCESS_OWN_TEXTURE)
@@ -962,14 +1485,13 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 
 			FETexture* OrdinaryColorAttachment = Effect.IntermediateFramebuffer->GetColorAttachment();
 			Effect.IntermediateFramebuffer->SetColorAttachment(Effect.Stages[j]->OutTexture);
-			if (Effect.Stages[j]->OutTexture->Width != SceneToTextureFB->GetWidth())
+			if (Effect.Stages[j]->OutTexture->Width != CurrentCameraRenderingData->SceneToTextureFB->GetWidth())
 			{
-				FE_GL_ERROR(glViewport(0, 0, Effect.Stages[j]->OutTexture->Width, Effect.Stages[j]->OutTexture->Height));
+				SetViewport(0, 0, Effect.Stages[j]->OutTexture->Width, Effect.Stages[j]->OutTexture->Height);
 			}
 			else
 			{
-				FE_GL_ERROR(glViewport(0, 0, SceneToTextureFB->GetWidth(), SceneToTextureFB->GetHeight()));
-				//FE_GL_ERROR(glViewport(0, 0, CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
+				SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 			}
 			Effect.IntermediateFramebuffer->Bind();
 
@@ -993,14 +1515,20 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		}
 	}
 
-	for (int i = static_cast<int>(PostProcessEffects.size() - 1); i >= 0; i--)
+	// Rendering the last effect to the default screen buffer.
+	for (int i = static_cast<int>(CurrentCameraRenderingData->PostProcessEffects.size() - 1); i >= 0; i--)
 	{
-		FEPostProcess& Effect = *PostProcessEffects[i];
+		FEPostProcess& Effect = *CurrentCameraRenderingData->PostProcessEffects[i];
 		
 		if (Effect.bActive)
 		{
-			Effect.RenderResult();
-			FinalScene = Effect.Stages.back()->OutTexture;
+			if (CurrentCameraRenderingData->CameraEntity->GetComponent<FECameraComponent>().Viewport == ENGINE.GetDefaultViewport())
+				Effect.RenderResult();
+			// TO_DO: With introduction of multiple scenes\cameras, this code probably should be changed.
+			// Temporary solution, now Engine will not render to default screen buffer, user would be responsible for it.
+			// Maybe use ENGINE.GetRenderTargetMode() to determine if it should render to default screen buffer.
+			//Effect.RenderResult();
+			CurrentCameraRenderingData->FinalScene = Effect.Stages.back()->OutTexture;
 			break;
 		}
 	}
@@ -1009,10 +1537,10 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	// ********* SCREEN SPACE EFFECTS END *********
 
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI *********
-	FETexture* OriginalColorAttachment = SceneToTextureFB->GetColorAttachment();
-	SceneToTextureFB->SetColorAttachment(FinalScene);
+	FETexture* OriginalColorAttachment = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(CurrentCameraRenderingData->FinalScene);
 
-	SceneToTextureFB->Bind();
+	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 
 	// FIX ME! No prefab support.
 	for (entt::entity EnTTEntity : GameModelGroup)
@@ -1029,12 +1557,12 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponentWithInstanced(Entity, CurrentCamera->Frustum);
+			RenderGameModelComponentWithInstanced(Entity);
 		}
 	}
 	
-	SceneToTextureFB->UnBind();
-	SceneToTextureFB->SetColorAttachment(OriginalColorAttachment);
+	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
+	CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(OriginalColorAttachment);
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
@@ -1047,31 +1575,33 @@ void FERenderer::Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 #ifdef USE_OCCLUSION_CULLING
 
 	ComputeTextureCopy->Start();
-	ComputeTextureCopy->UpdateParameterData("textureSize", glm::vec2(RENDERER.DepthPyramid->GetWidth(), RENDERER.DepthPyramid->GetHeight()));
+	ComputeTextureCopy->UpdateParameterData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()));
 	ComputeTextureCopy->LoadDataToGPU();
 
-	RENDERER.SceneToTextureFB->GetDepthAttachment()->Bind(0);
-	glBindImageTexture(1, RENDERER.DepthPyramid->GetTextureID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+	CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(0);
+	glBindImageTexture(1, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-	ComputeTextureCopy->Dispatch(static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetWidth()) / 32.0f)), static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetHeight()) / 32.0f)), 1);
+	ComputeTextureCopy->Dispatch(static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetWidth()) / 32.0f)), static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetHeight()) / 32.0f)), 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	const size_t MipCount = static_cast<size_t>(floor(log2(std::max(RENDERER.DepthPyramid->GetWidth(), RENDERER.DepthPyramid->GetHeight()))) + 1);
+	const size_t MipCount = static_cast<size_t>(floor(log2(std::max(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()))) + 1);
 	for (size_t i = 0; i < MipCount; i++)
 	{
 		const float DownScale = static_cast<float>(pow(2.0f, i));
 
 		ComputeDepthPyramidDownSample->Start();
-		ComputeDepthPyramidDownSample->UpdateParameterData("textureSize", glm::vec2(RENDERER.DepthPyramid->GetWidth() / DownScale, RENDERER.DepthPyramid->GetHeight() / DownScale));
+		ComputeDepthPyramidDownSample->UpdateParameterData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth() / DownScale, CurrentCameraRenderingData->DepthPyramid->GetHeight() / DownScale));
 		ComputeDepthPyramidDownSample->LoadDataToGPU();
-		glBindImageTexture(0, RENDERER.DepthPyramid->GetTextureID(), static_cast<GLint>(i), GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
-		glBindImageTexture(1, RENDERER.DepthPyramid->GetTextureID(), static_cast<GLint>(i + 1), GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
+		glBindImageTexture(0, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), static_cast<GLint>(i), GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+		glBindImageTexture(1, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), static_cast<GLint>(i + 1), GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
-		ComputeDepthPyramidDownSample->Dispatch(static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetWidth() / DownScale) / 32.0f)), static_cast<unsigned>(ceil(float(RENDERER.DepthPyramid->GetHeight() / DownScale) / 32.0f)), 1);
+		ComputeDepthPyramidDownSample->Dispatch(static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetWidth() / DownScale) / 32.0f)), static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetHeight() / DownScale) / 32.0f)), 1);
 		glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 	}
 #endif // USE_OCCLUSION_CULLING
 	// **************************** DEPTH PYRAMID END ****************************
+
+	CurrentCameraRenderingData = nullptr;
 }
 
 FEPostProcess* FERenderer::GetPostProcessEffect(const std::string ID)
@@ -1115,6 +1645,9 @@ void FERenderer::RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamer
 
 	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+
+	if (GameModelComponent.GameModel == nullptr || GameModelComponent.GameModel->Mesh == nullptr || GameModelComponent.GameModel->Material == nullptr)
+		return;
 
 	if (GameModelComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -1388,55 +1921,54 @@ void FERenderer::DrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, 
 	LineCounter++;
 }
 
-bool FERenderer::IsDistanceFogEnabled()
+void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 {
-	return bDistanceFogEnabled;
-}
+	if (CameraData == nullptr)
+		return;
 
-void FERenderer::SetDistanceFogEnabled(const bool NewValue)
-{
-	if (bDistanceFogEnabled == false && NewValue == true)
+	FECameraComponent& CameraComponent = CameraData->CameraEntity->GetComponent<FECameraComponent>();
+	
+	// **************************** Bloom ********************************
+	CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", CameraComponent.GetBloomThreshold());
+
+	*static_cast<float*>(CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniforms[1].Data) = CameraComponent.GetBloomSize();
+	*static_cast<float*>(CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniforms[1].Data) = CameraComponent.GetBloomSize();
+	// **************************** Bloom END ****************************
+
+	// **************************** FXAA ********************************
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAASpanMax", CameraComponent.GetFXAASpanMax());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMin", CameraComponent.GetFXAAReduceMin());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMul", CameraComponent.GetFXAAReduceMul());
+	// **************************** FXAA END ****************************
+
+	// **************************** Depth of Field ********************************
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("depthThreshold", CameraComponent.GetDOFNearDistance());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("depthThreshold", CameraComponent.GetDOFNearDistance());
+
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+
+
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
+
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+	// **************************** Depth of Field END ****************************
+
+	// **************************** Chromatic Aberration ********************************
+	CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateParameterData("intensity", CameraComponent.GetChromaticAberrationIntensity());
+	// **************************** Chromatic Aberration END ****************************
+
+	// **************************** Distance Fog ********************************
+
+	if (CameraComponent.IsDistanceFogEnabled())
 	{
-		if (DistanceFogDensity <= 0.0f)
-			DistanceFogDensity = 0.007f;
-		if (DistanceFogGradient <= 0.0f)
-			DistanceFogGradient = 2.5f;
-	}
-	bDistanceFogEnabled = NewValue;
-	UpdateFogInShaders();
-}
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", CameraComponent.GetDistanceFogDensity());
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", CameraComponent.GetDistanceFogGradient());
 
-float FERenderer::GetDistanceFogDensity()
-{
-	return DistanceFogDensity;
-}
-
-void FERenderer::SetDistanceFogDensity(const float NewValue)
-{
-	DistanceFogDensity = NewValue;
-	UpdateFogInShaders();
-}
-
-float FERenderer::GetDistanceFogGradient()
-{
-	return DistanceFogGradient;
-}
-
-void FERenderer::SetDistanceFogGradient(const float NewValue)
-{
-	DistanceFogGradient = NewValue;
-	UpdateFogInShaders();
-}
-
-void FERenderer::UpdateFogInShaders()
-{
-	if (bDistanceFogEnabled)
-	{
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", DistanceFogDensity);
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", DistanceFogGradient);
-
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", DistanceFogDensity);
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", DistanceFogGradient);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", CameraComponent.GetDistanceFogDensity());
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", CameraComponent.GetDistanceFogGradient());
 	}
 	else
 	{
@@ -1446,161 +1978,7 @@ void FERenderer::UpdateFogInShaders()
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", -1.0f);
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", -1.0f);
 	}
-}
-
-float FERenderer::GetChromaticAberrationIntensity()
-{
-	if (GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->Stages[0]->Shader->
-		GetParameter("intensity")->Data);
-}
-
-void FERenderer::SetChromaticAberrationIntensity(const float NewValue)
-{
-	if (GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/) == nullptr)
-		return;
-	GetPostProcessEffect("506D804162647749060C3E68"/*"chromaticAberration"*/)->Stages[0]->Shader->UpdateParameterData("intensity", NewValue);
-}
-
-float FERenderer::GetDOFNearDistance()
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->
-		GetParameter("depthThreshold")->Data);
-}
-
-void FERenderer::SetDOFNearDistance(const float NewValue)
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("depthThreshold", NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("depthThreshold", NewValue);
-}
-
-float FERenderer::GetDOFFarDistance()
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->
-		GetParameter("depthThresholdFar")->Data);
-}
-
-void FERenderer::SetDOFFarDistance(const float NewValue)
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("depthThresholdFar", NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("depthThresholdFar", NewValue);
-}
-
-float FERenderer::GetDOFStrength()
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->
-		GetParameter("blurSize")->Data);
-}
-
-void FERenderer::SetDOFStrength(const float NewValue)
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("blurSize", NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("blurSize", NewValue);
-}
-
-float FERenderer::GetDOFDistanceDependentStrength()
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->
-		GetParameter("intMult")->Data);
-}
-
-void FERenderer::SetDOFDistanceDependentStrength(const float NewValue)
-{
-	if (GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/) == nullptr)
-		return;
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[0]->Shader->UpdateParameterData("intMult", NewValue);
-	GetPostProcessEffect("217C4E80482B6C650D7B492F"/*"DOF"*/)->Stages[1]->Shader->UpdateParameterData("intMult", NewValue);
-}
-
-float FERenderer::GetBloomThreshold()
-{
-	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[0]->Shader->GetParameter(
-		"thresholdBrightness")->Data);
-}
-
-void FERenderer::SetBloomThreshold(const float NewValue)
-{
-	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
-		return;
-	GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", NewValue);
-}
-
-float FERenderer::GetBloomSize()
-{
-	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[1]->StageSpecificUniforms[1].
-		Data);
-}
-
-void FERenderer::SetBloomSize(const float NewValue)
-{
-	if (GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/) == nullptr)
-		return;
-	*static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[1]->StageSpecificUniforms[1].Data) = NewValue;
-	*static_cast<float*>(GetPostProcessEffect("451C48791871283D372C5938"/*"bloom"*/)->Stages[2]->StageSpecificUniforms[1].Data) = NewValue;
-}
-
-float FERenderer::GetFXAASpanMax()
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->
-		GetParameter("FXAASpanMax")->Data);
-}
-
-void FERenderer::SetFXAASpanMax(const float NewValue)
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAASpanMax", NewValue);
-}
-
-float FERenderer::GetFXAAReduceMin()
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->
-		GetParameter("FXAAReduceMin")->Data);
-}
-
-void FERenderer::SetFXAAReduceMin(const float NewValue)
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAAReduceMin", NewValue);
-}
-
-float FERenderer::GetFXAAReduceMul()
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return 0.0f;
-	return *static_cast<float*>(GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->
-		GetParameter("FXAAReduceMul")->Data);
-}
-
-void FERenderer::SetFXAAReduceMul(const float NewValue)
-{
-	if (GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/) == nullptr)
-		return;
-	GetPostProcessEffect("0A3F10643F06525D70016070"/*"FE_FXAA"*/)->Stages[0]->Shader->UpdateParameterData("FXAAReduceMul", NewValue);
+	// **************************** Distance Fog END ****************************
 }
 
 void FERenderer::DrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
@@ -1665,6 +2043,9 @@ void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameMode
 	if (bFreezeCulling)
 		return;
 
+	if (CurrentCameraRenderingData == nullptr)
+		return;
+
 	INSTANCED_RENDERING_SYSTEM.CheckDirtyFlag(TransformComponent, GameModelComponent, InstancedComponent);
 
 	FrustumCullingShader->Start();
@@ -1681,7 +2062,7 @@ void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameMode
 	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 	FrustumCullingShader->UpdateParameterData("useOcclusionCulling", bUseOcclusionCulling);
 	// It should be last frame size!
-	const glm::vec2 RenderTargetSize = glm::vec2(GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
+	const glm::vec2 RenderTargetSize = glm::vec2(CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
 	FrustumCullingShader->UpdateParameterData("renderTargetSize", RenderTargetSize);
 	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane()));
 #endif // USE_OCCLUSION_CULLING
@@ -1690,6 +2071,7 @@ void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameMode
 
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, InstancedComponent.SourceDataBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, InstancedComponent.PositionsBuffer));
+	// TO DO: Check if frustum is updated for each camera.
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, InstancedComponent.LODBuffers[0]));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, InstancedComponent.AABBSizesBuffer));
@@ -1700,7 +2082,7 @@ void FERenderer::GPUCulling(FETransformComponent& TransformComponent, FEGameMode
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 9, InstancedComponent.LODBuffers[3]));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, InstancedComponent.IndirectDrawInfoBuffer));
 
-	DepthPyramid->Bind(0);
+	CurrentCameraRenderingData->DepthPyramid->Bind(0);
 	FrustumCullingShader->Dispatch(static_cast<GLuint>(ceil(InstancedComponent.InstanceCount / 64.0f)), 1, 1);
 	FE_GL_ERROR(glMemoryBarrier(GL_ALL_BARRIER_BITS));
 }
@@ -1712,53 +2094,7 @@ std::unordered_map<std::string, std::function<FETexture* ()>> FERenderer::GetDeb
 
 void FERenderer::RenderTargetResize(const int NewWidth, const int NewHeight)
 {
-	delete SceneToTextureFB;
-	SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, NewWidth, NewHeight);
-
-	if (bVRActive)
-	{
-		if (VRScreenW != 0 && VRScreenH != 0)
-		{
-			delete SceneToVRTextureFB;
-			SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
-		}
-	}
-
-	if (bSimplifiedRendering)
-		return;
-
-	delete DepthPyramid;
-	DepthPyramid = RESOURCE_MANAGER.CreateTexture();
-	RESOURCE_MANAGER.Textures.erase(DepthPyramid->GetObjectID());
-
-	DepthPyramid->Bind();
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-
-	const int MaxDimention = std::max(NewWidth, NewHeight);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
-	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, NewWidth, NewHeight));
-	DepthPyramid->Width = NewWidth;
-	DepthPyramid->Height = NewHeight;
-
-	GBuffer->RenderTargetResize(SceneToTextureFB);
-	SSAO->RenderTargetResize(SceneToTextureFB);
-	
-	for (size_t i = 0; i < PostProcessEffects.size(); i++)
-	{
-		// We should delete only internally created frame buffers.
-		// Other wise user created postProcess could create UB.
-		if (PostProcessEffects[i]->GetName() == "bloom" || 
-			PostProcessEffects[i]->GetName() == "GammaAndHDR" ||
-			PostProcessEffects[i]->GetName() == "FE_FXAA" || 
-			PostProcessEffects[i]->GetName() == "DOF" || 
-			PostProcessEffects[i]->GetName() == "chromaticAberration")
-		delete PostProcessEffects[i];
-	}
-
-	PostProcessEffects.clear();
+	//OnResizeCameraRenderingDataUpdate();
 }
 
 bool FERenderer::IsOcclusionCullingEnabled()
@@ -1773,24 +2109,28 @@ void FERenderer::SetOcclusionCullingEnabled(const bool NewValue)
 
 void FERenderer::UpdateSSAO()
 {
-	if (!SSAO->bActive)
+	if (CurrentCameraRenderingData == nullptr)
 		return;
 
-	SSAO->FB->Bind();
-	if (SSAO->Shader == nullptr)
-		SSAO->Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+	FECameraComponent& CameraComponent = CurrentCameraRenderingData->CameraEntity->GetComponent<FECameraComponent>();
+	if (!CameraComponent.IsSSAOEnabled())
+		return;
 
-	SSAO->Shader->UpdateParameterData("SampleCount", SSAO->SampleCount);
+	CurrentCameraRenderingData->SSAO->FB->Bind();
+	if (CurrentCameraRenderingData->SSAO->Shader == nullptr)
+		CurrentCameraRenderingData->SSAO->Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
+
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SampleCount", CameraComponent.GetSSAOSampleCount());
 	
-	SSAO->Shader->UpdateParameterData("SmallDetails", SSAO->bSmallDetails ? 1.0f : 0.0f);
-	SSAO->Shader->UpdateParameterData("Bias", SSAO->Bias);
-	SSAO->Shader->UpdateParameterData("Radius", SSAO->Radius);
-	SSAO->Shader->UpdateParameterData("RadiusSmallDetails", SSAO->RadiusSmallDetails);
-	SSAO->Shader->UpdateParameterData("SmallDetailsWeight", SSAO->SmallDetailsWeight);
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SmallDetails", CameraComponent.IsSSAOSmallDetailsEnabled() ? 1.0f : 0.0f);
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("Bias", CameraComponent.GetSSAOBias());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("Radius", CameraComponent.GetSSAORadius());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("RadiusSmallDetails", CameraComponent.GetSSAORadiusSmallDetails());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SmallDetailsWeight", CameraComponent.GetSSAOSmallDetailsWeight());
 	
-	SSAO->Shader->Start();
-	LoadStandardParams(SSAO->Shader, true, nullptr);
-	SSAO->Shader->LoadDataToGPU();
+	CurrentCameraRenderingData->SSAO->Shader->Start();
+	LoadStandardParams(CurrentCameraRenderingData->SSAO->Shader, true, nullptr);
+	CurrentCameraRenderingData->SSAO->Shader->LoadDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1798,9 +2138,9 @@ void FERenderer::UpdateSSAO()
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	SSAO->Shader->Stop();
+	CurrentCameraRenderingData->SSAO->Shader->Stop();
 
-	if (SSAO->bBlured)
+	if (CameraComponent.IsSSAOResultBlured())
 	{
 		// First blur stage
 		FEShader* BlurShader = RESOURCE_MANAGER.GetShader("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
@@ -1812,9 +2152,9 @@ void FERenderer::UpdateSSAO()
 
 		BlurShader->LoadDataToGPU();
 
-		SSAO->FB->GetColorAttachment()->Bind(0);
-		SceneToTextureFB->GetDepthAttachment()->Bind(1);
-		GBuffer->Normals->Bind(2);
+		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->Bind(0);
+		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		CurrentCameraRenderingData->GBuffer->Normals->Bind(2);
 		FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 		FE_GL_ERROR(glEnableVertexAttribArray(0));
 		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, 0));
@@ -1829,9 +2169,9 @@ void FERenderer::UpdateSSAO()
 
 		BlurShader->LoadDataToGPU();
 
-		SSAO->FB->GetColorAttachment()->Bind(0);
-		SceneToTextureFB->GetDepthAttachment()->Bind(1);
-		GBuffer->Normals->Bind(2);
+		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->Bind(0);
+		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		CurrentCameraRenderingData->GBuffer->Normals->Bind(2);
 		FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 		FE_GL_ERROR(glEnableVertexAttribArray(0));
 		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, 0));
@@ -1840,95 +2180,9 @@ void FERenderer::UpdateSSAO()
 
 		BlurShader->Stop();
 
-		SSAO->FB->GetColorAttachment()->UnBind();
-		SSAO->FB->UnBind();
+		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->UnBind();
+		CurrentCameraRenderingData->SSAO->FB->UnBind();
 	}
-}
-
-bool FERenderer::IsSSAOEnabled()
-{
-	return SSAO->bActive;
-}
-
-void FERenderer::SetSSAOEnabled(const bool NewValue)
-{
-	SSAO->bActive = NewValue;
-}
-
-int FERenderer::GetSSAOSampleCount()
-{
-	return SSAO->SampleCount;
-}
-
-void FERenderer::SetSSAOSampleCount(int NewValue)
-{
-	if (NewValue < 1)
-		NewValue = 1;
-
-	if (NewValue > 64)
-		NewValue = 64;
-
-	SSAO->SampleCount = NewValue;
-}
-
-bool FERenderer::IsSSAOSmallDetailsEnabled()
-{
-	return SSAO->bSmallDetails;
-}
-
-void FERenderer::SetSSAOSmallDetailsEnabled(const bool NewValue)
-{
-	SSAO->bSmallDetails = NewValue;
-}
-
-bool FERenderer::IsSSAOResultBlured()
-{
-	return SSAO->bBlured;
-}
-
-void FERenderer::SetSSAOResultBlured(const bool NewValue)
-{
-	SSAO->bBlured = NewValue;
-}
-
-float FERenderer::GetSSAOBias()
-{
-	return SSAO->Bias;
-}
-
-void FERenderer::SetSSAOBias(const float NewValue)
-{
-	SSAO->Bias = NewValue;
-}
-
-float FERenderer::GetSSAORadius()
-{
-	return SSAO->Radius;
-}
-
-void FERenderer::SetSSAORadius(const float NewValue)
-{
-	SSAO->Radius = NewValue;
-}
-
-float FERenderer::GetSSAORadiusSmallDetails()
-{
-	return SSAO->RadiusSmallDetails;
-}
-
-void FERenderer::SetSSAORadiusSmallDetails(const float NewValue)
-{
-	SSAO->RadiusSmallDetails = NewValue;
-}
-
-float FERenderer::GetSSAOSmallDetailsWeight()
-{
-	return SSAO->SmallDetailsWeight;
-}
-
-void FERenderer::SetSSAOSmallDetailsWeight(const float NewValue)
-{
-	SSAO->SmallDetailsWeight = NewValue;
 }
 
 void FERenderer::InitVR(int VRScreenW, int VRScreenH)
@@ -1948,13 +2202,10 @@ void FERenderer::UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH)
 	}
 }
 
-void FERenderer::RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
+void FERenderer::RenderVR(FEScene* CurrentScene)
 {
-	if (CurrentScene == nullptr || CurrentCamera == nullptr || SceneToVRTextureFB == nullptr)
+	if (CurrentScene == nullptr || SceneToVRTextureFB == nullptr)
 		return;
-
-	// glViewPort and Frame buffer already are set.
-	CurrentCamera->UpdateFrustumPlanes();
 
 	SceneToVRTextureFB->Bind();
 	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
@@ -1980,7 +2231,6 @@ void FERenderer::RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera)
 	}
 
 	SceneToVRTextureFB->UnBind();
-	LastRenderedResult = SceneToVRTextureFB;
 
 	for (size_t i = 0; i < AfterRenderCallbacks.size(); i++)
 	{
@@ -2160,9 +2410,21 @@ FEEntity* FERenderer::TryToGetLastUsedCameraEntity()
 	return reinterpret_cast<FEEntity*>(LastRenderedCamera);
 }
 
-FEFramebuffer* FERenderer::GetLastRenderedResult()
+void FERenderer::SetViewport(int X, int Y, int Width, int Height)
 {
-	return LastRenderedResult;
+	SetViewport(glm::ivec4(X, Y, Width, Height));
+}
+
+void FERenderer::SetViewport(glm::ivec4 ViewPortData)
+{
+	FE_GL_ERROR(glViewport(ViewPortData.x, ViewPortData.y, ViewPortData.z, ViewPortData.w));
+}
+
+glm::ivec4 FERenderer::GetViewport()
+{
+	glm::ivec4 Viewport;
+	FE_GL_ERROR(glGetIntegerv(GL_VIEWPORT, &Viewport[0]));
+	return Viewport;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

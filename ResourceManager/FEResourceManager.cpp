@@ -1845,8 +1845,6 @@ FEPostProcess* FEResourceManager::CreatePostProcess(const int ScreenWidth, const
 
 	NewPostProcess->ScreenWidth = ScreenWidth;
 	NewPostProcess->ScreenHeight = ScreenHeight;
-	NewPostProcess->ScreenQuad = GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
-	NewPostProcess->ScreenQuadShader = GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 	// Currently postProcess is not using intermediateFramebuffer colorAttachment directly.
 	NewPostProcess->IntermediateFramebuffer = CreateFramebuffer(0, ScreenWidth, ScreenHeight);
 
@@ -1946,24 +1944,43 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 	}
 }
 
-FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ExampleTexture, const int DifferentW, const int DifferentH, const bool bUnManaged, const std::string Name)
+FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ReferenceTexture, const int DifferentW, const int DifferentH, const bool bUnManaged, const std::string Name)
 {
-	if (ExampleTexture == nullptr)
+	if (ReferenceTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::CreateSameFormatTexture called with nullptr pointer as exampleTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::CreateSameFormatTexture called with nullptr pointer as ReferenceTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (DifferentW == 0 && DifferentH == 0)
-		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, ExampleTexture->Height, bUnManaged, Name);
+		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, ReferenceTexture->Width, ReferenceTexture->Height, bUnManaged, Name);
 	
 	if (DifferentW != 0 && DifferentH == 0)
-		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, ExampleTexture->Height, bUnManaged, Name);
+		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, DifferentW, ReferenceTexture->Height, bUnManaged, Name);
 	
 	if (DifferentW == 0 && DifferentH != 0)
-		return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, ExampleTexture->Width, DifferentH, bUnManaged, Name);
+		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, ReferenceTexture->Width, DifferentH, bUnManaged, Name);
 	
-	return CreateTexture(ExampleTexture->InternalFormat, ExampleTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
+	return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
+}
+
+// TO-DO: Ensure all formats are supported.
+FETexture* FEResourceManager::CreateCopyOfTexture(FETexture* ReferenceTexture, bool bUnManaged, std::string Name)
+{
+	FETexture* Result = nullptr;
+	if (ReferenceTexture == nullptr)
+	{
+		LOG.Add("FEResourceManager::CreateCopyOfTexture called with nullptr pointer as ReferenceTexture", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return Result;
+	}
+
+	unsigned char* ReferenceRawData = ReferenceTexture->GetRawData();
+	Result = CreateSameFormatTexture(ReferenceTexture, 0, 0, bUnManaged, Name);
+
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
+	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, Result->InternalFormat, Result->Width, Result->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
+
+	return Result;
 }
 
 void FEResourceManager::AddTextureToManaged(FETexture* Texture)

@@ -106,6 +106,7 @@ namespace FocalEngine
 		void CalculateTangents(const std::vector<int>& Indices, const std::vector<float>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
 		void CalculateTangents(const std::vector<int>& Indices, const std::vector<double>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
 
+		glm::dvec3 CreateMouseRayToWorld(const double MouseScreenX, const double MouseScreenY, const glm::dmat4 ViewMatrix, const glm::dmat4 ProjectionMatrix, const glm::ivec2 ViewportPosition, const glm::ivec2 ViewportSize) const;
 		bool RaysIntersection(const glm::vec3& FirstRayOrigin, const glm::vec3& FirstRayDirection, const glm::vec3& SecondRayOrigin, const glm::vec3& SecondRayDirection, float& FirstRayParametricIntersection, float& SecondRayParametricIntersection) const;
 
 		bool IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint = nullptr, float* U = nullptr, float* V = nullptr);

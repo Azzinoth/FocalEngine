@@ -1337,3 +1337,20 @@ std::vector<glm::dvec3> FEGeometry::GetIntersectionPoints(FEAABB& AABB, std::vec
 
 	return Result;
 }
+
+glm::dvec3 FEGeometry::CreateMouseRayToWorld(const double MouseScreenX, const double MouseScreenY, const glm::dmat4 ViewMatrix, const glm::dmat4 ProjectionMatrix, const glm::ivec2 ViewportPosition, const glm::ivec2 ViewportSize) const
+{
+	glm::dvec2 NormalizedMouseCoordinates;
+	NormalizedMouseCoordinates.x = (2.0f * (MouseScreenX - ViewportPosition.x)) / ViewportSize.x - 1;
+	NormalizedMouseCoordinates.y = 1.0f - (2.0f * ((MouseScreenY - ViewportPosition.y))) / ViewportSize.y;
+
+	const glm::dvec4 ClipCoordinates = glm::dvec4(NormalizedMouseCoordinates.x, NormalizedMouseCoordinates.y, -1.0, 1.0);
+	glm::dvec4 EyeCoordinates = glm::inverse(ProjectionMatrix) * ClipCoordinates;
+	EyeCoordinates.z = -1.0f;
+	EyeCoordinates.w = 0.0f;
+
+	glm::dvec3 WorldRay = glm::inverse(ViewMatrix) * EyeCoordinates;
+	WorldRay = glm::normalize(WorldRay);
+
+	return WorldRay;
+}

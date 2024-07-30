@@ -1,4 +1,5 @@
 #include "FETransformComponent.h"
+#include "../FEScene.h"
 using namespace FocalEngine;
 
 FETransformComponent::FETransformComponent()
@@ -28,6 +29,62 @@ FETransformComponent::FETransformComponent(glm::mat4 Matrix)
 	RotationAngles = glm::eulerAngles(RotationQuaternion) * 180.0f / glm::pi<float>();
 
 	Update();
+}
+
+void FETransformComponent::CopyFrom(const FETransformComponent& Other, bool bOmitParentEntity)
+{
+	if (!bOmitParentEntity)
+		ParentEntity = Other.ParentEntity;
+
+	bDirtyFlag = Other.bDirtyFlag;
+	bSceneIndependent = Other.bSceneIndependent;
+
+	WorldSpaceMatrix = Other.WorldSpaceMatrix;
+	LocalSpaceMatrix = Other.LocalSpaceMatrix;
+
+	Position = Other.Position;
+
+	RotationQuaternion = Other.RotationQuaternion;
+	RotationAngles = Other.RotationAngles;
+
+	bUniformScaling = Other.bUniformScaling;
+	Scale = Other.Scale;
+}
+
+FETransformComponent::FETransformComponent(const FETransformComponent& Other)
+{
+	if (this == &Other)
+		return;
+
+	if (this->ParentEntity == nullptr || this->ParentEntity == Other.ParentEntity)
+	{
+		// Copy everything.
+		CopyFrom(Other);
+	}
+	else
+	{
+		// Copy everything except parent entity.
+		CopyFrom(Other, true);
+	}
+}
+
+FETransformComponent& FETransformComponent::operator=(const FETransformComponent& Other)
+{
+	if (this == &Other)
+		return *this;
+
+	if (this->ParentEntity == nullptr || this->ParentEntity == Other.ParentEntity)
+	{
+		// Copy everything.
+		CopyFrom(Other);
+	}
+	else
+	{
+		// Copy everything except parent entity.
+		CopyFrom(Other, true);
+	}
+
+	return *this;
 }
 
 FETransformComponent::~FETransformComponent()
@@ -302,19 +359,42 @@ void FETransformComponent::Update()
 	LocalSpaceMatrix = glm::scale(LocalSpaceMatrix, glm::vec3(Scale[0], Scale[1], Scale[2]));
 }
 
-glm::mat4 FETransformComponent::GetWorldMatrix() const
+glm::mat4 FETransformComponent::GetWorldMatrix()
 {
 	if (bSceneIndependent)
 		return LocalSpaceMatrix;
 
-	//FIX ME! This is a temporary solution also it is not working as expected with entities that are in origin.
-	// Later it should be avoided because of performance issues.
-	// 
-	// If component is not part of scene hierarchy or it was not updated in the previous frame, we should intervene.
-	// To preserve expected behavior.
-	if (GEOMETRY.IsEpsilonEqual(WorldSpaceMatrix, glm::identity<glm::mat4>()))
+	////FIX ME! This is a temporary solution also it is not working as expected with entities that are in origin.
+	//// Later it should be avoided because of performance issues.
+	//// 
+	//// If component is not part of scene hierarchy or it was not updated in the previous frame, we should intervene.
+	//// To preserve expected behavior.
+	//if (GEOMETRY.IsEpsilonEqual(WorldSpaceMatrix, glm::identity<glm::mat4>()))
+	//{
+	//	return WorldSpaceMatrix * LocalSpaceMatrix;
+	//}
+
+	if (ParentEntity != nullptr)
 	{
-		return WorldSpaceMatrix * LocalSpaceMatrix;
+		FEScene* ParentScene = ParentEntity->GetParentScene();
+		FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(ParentEntity->GetObjectID());
+		if (ParentNode != nullptr)
+		{
+			// If this is root node or parent is root node, then world space matrix is equal to local space matrix.
+			if (ParentNode->GetParent() == nullptr || ParentNode->GetParent() == ParentScene->SceneGraph.GetRoot())
+			{
+				WorldSpaceMatrix = LocalSpaceMatrix;
+				//return LocalSpaceMatrix;
+			}
+		}
+		else
+		{
+			LOG.Add("Parent entity is not in the scene graph!", "FE_LOG_ECS", FE_LOG_ERROR);
+		}
+	}
+	else
+	{
+		LOG.Add("Parent entity is not set for transform component!", "FE_LOG_ECS", FE_LOG_ERROR);
 	}
 
 	return WorldSpaceMatrix;

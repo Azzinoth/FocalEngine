@@ -55,7 +55,8 @@ namespace FocalEngine
 		bool MakeTextureStandard(FETexture* Texture);
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
-		FETexture* CreateSameFormatTexture(FETexture* ExampleTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
+		FETexture* CreateSameFormatTexture(FETexture* ReferenceTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
+		FETexture* CreateCopyOfTexture(FETexture* ReferenceTexture, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateBlankHightMapTexture(int Width, int Height, std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
 

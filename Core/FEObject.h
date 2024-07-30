@@ -22,7 +22,7 @@ namespace FocalEngine
 		FE_DIRECTIONAL_LIGHT_DEPRECATED = 9,
 		FE_POINT_LIGHT_DEPRECATED = 10,
 		FE_SPOT_LIGHT_DEPRECATED = 11,
-		FE_CAMERA = 12,
+		FE_CAMERA_DEPRECATED = 12,
 		FE_FRAME_BUFFER = 13,
 		FE_POST_PROCESS = 14,
 		FE_TERRAIN_LAYER = 15,
@@ -101,9 +101,9 @@ namespace FocalEngine
 			{
 				return "FE_SPOT_LIGHT_DEPRECATED";
 			}
-			case FocalEngine::FE_CAMERA:
+			case FocalEngine::FE_CAMERA_DEPRECATED:
 			{
-				return "FE_CAMERA";
+				return "FE_CAMERA_DEPRECATED";
 			}
 			case FocalEngine::FE_FRAME_BUFFER:
 			{
@@ -139,6 +139,7 @@ namespace FocalEngine
 	class FEObject
 	{
 		friend class FEngine;
+		friend class FERenderer;
 		friend class FEShader;
 		friend class FEMesh;
 		friend class FETexture;

@@ -3,11 +3,7 @@
 #ifndef FERENDERER_H
 #define FERENDERER_H
 
-#include "../SubSystems/Scene/Components/Systems/FECameraSystem.h"
-#include "../SubSystems/Scene/Components/Systems/FELightSystem.h"
-#include "../SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
-#include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
-#include "../SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
+#include "../SubSystems/Scene/Components/Systems/FEComponentSystems.h"
 
 namespace FocalEngine
 {
@@ -45,85 +41,50 @@ namespace FocalEngine
 
 		FEFramebuffer* FB = nullptr;
 		FEShader* Shader = nullptr;
+	};
 
-		bool bActive = true;
-		int SampleCount = 16;
+	// TO-DO: That is very non GPU memory efficient way to support multiple cameras.
+	struct FECameraRenderingData
+	{
+		friend class FERenderer;
+		FEEntity* CameraEntity = nullptr;
+		FEFramebuffer* SceneToTextureFB = nullptr;
+		FEGBuffer* GBuffer = nullptr;
+		FESSAO* SSAO = nullptr;
+		FETexture* DepthPyramid = nullptr;
+		std::vector<FEPostProcess*> PostProcessEffects;
 
-		bool bSmallDetails = true;
-		bool bBlured = true;
+		FETexture* FinalScene = nullptr;
 
-		float Bias = 0.013f;
-		float Radius = 10.0f;
-		float RadiusSmallDetails = 0.4f;
-		float SmallDetailsWeight = 0.2f;
+		~FECameraRenderingData()
+		{
+			delete SceneToTextureFB;
+			delete GBuffer;
+			delete SSAO;
+			delete DepthPyramid;
+		}
 	};
 	
 	class FERenderer
 	{
 		friend FEngine;
+		friend FECameraSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FERenderer)
 
-		void Render(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
+		void Render(FEScene* CurrentScene);
 		void RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FEEntity* Entity, float** Frustum, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false);
 		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera = nullptr);
 		
-		void AddPostProcess(FEPostProcess* NewPostProcess, bool NoProcessing = false);
-
 		std::vector<std::string> GetPostProcessList();
 		FEPostProcess* GetPostProcessEffect(std::string ID);
 
-		//#fix postProcess
-		FEFramebuffer* SceneToTextureFB = nullptr;
-		FETexture* FinalScene = nullptr;
+		FETexture* GetCameraResult(FEEntity* CameraEntity);
 		std::vector<FEPostProcess*> PostProcessEffects;
 
 		void DrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
-		// *********** Anti-Aliasing(FXAA) ***********
-		float GetFXAASpanMax();
-		void SetFXAASpanMax(float NewValue);
-
-		float GetFXAAReduceMin();
-		void SetFXAAReduceMin(float NewValue);
-
-		float GetFXAAReduceMul();
-		void SetFXAAReduceMul(float NewValue);
-
-		// *********** Bloom ***********
-		float GetBloomThreshold();
-		void SetBloomThreshold(float NewValue);
-
-		float GetBloomSize();
-		void SetBloomSize(float NewValue);
-
-		// *********** Depth of Field ***********
-		float GetDOFNearDistance();
-		void SetDOFNearDistance(float NewValue);
-
-		float GetDOFFarDistance();
-		void SetDOFFarDistance(float NewValue);
-
-		float GetDOFStrength();
-		void SetDOFStrength(float NewValue);
-
-		float GetDOFDistanceDependentStrength();
-		void SetDOFDistanceDependentStrength(float NewValue);
-
-		// *********** Chromatic Aberration ***********
-		float GetChromaticAberrationIntensity();
-		void SetChromaticAberrationIntensity(float NewValue);
-
-		// *********** Distance fog ***********
-		bool IsDistanceFogEnabled();
-		void SetDistanceFogEnabled(bool NewValue);
-
-		float GetDistanceFogDensity();
-		void SetDistanceFogDensity(float NewValue);
-
-		float GetDistanceFogGradient();
-		void SetDistanceFogGradient(float NewValue);
 
 		float TestTime = 0.0f;
 		float LastTestTime = 0.0f;
@@ -134,37 +95,10 @@ namespace FocalEngine
 		bool IsOcclusionCullingEnabled();
 		void SetOcclusionCullingEnabled(bool NewValue);
 
-		// *********** SSAO ***********
-		bool IsSSAOEnabled();
-		void SetSSAOEnabled(bool NewValue);
-
-		int GetSSAOSampleCount();
-		void SetSSAOSampleCount(int NewValue);
-
-		bool IsSSAOSmallDetailsEnabled();
-		void SetSSAOSmallDetailsEnabled(bool NewValue);
-
-		bool IsSSAOResultBlured();
-		void SetSSAOResultBlured(bool NewValue);
-
-		float GetSSAOBias();
-		void SetSSAOBias(float NewValue);
-
-		float GetSSAORadius();
-		void SetSSAORadius(float NewValue);
-
-		float GetSSAORadiusSmallDetails();
-		void SetSSAORadiusSmallDetails(float NewValue);
-
-		float GetSSAOSmallDetailsWeight();
-		void SetSSAOSmallDetailsWeight(float NewValue);
-
-		FEGBuffer* GBuffer = nullptr;
-		FESSAO* SSAO;
 		void UpdateSSAO();
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
-		void SimplifiedRender(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
+		void SimplifiedRender(FEScene* CurrentScene);
 
 		// *********** VR Rendering ***********
 
@@ -173,7 +107,7 @@ namespace FocalEngine
 		int VRScreenW = 0;
 		int VRScreenH = 0;
 		FEFramebuffer* SceneToVRTextureFB = nullptr;
-		void RenderVR(FEScene* CurrentScene, FEBasicCamera* CurrentCamera);
+		void RenderVR(FEScene* CurrentScene);
 
 		void UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH);
 
@@ -185,18 +119,23 @@ namespace FocalEngine
 		bool CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target);
 
 		void AddAfterRenderCallback(std::function<void()> Callback);
-		FEFramebuffer* GetLastRenderedResult();
 
 		bool IsClearActiveInSimplifiedRendering();
 		void SetClearActiveInSimplifiedRendering(bool NewValue);
+
+		void SetViewport(int X, int Y, int Width, int Height);
+		void SetViewport(glm::ivec4 ViewPortData);
+		glm::ivec4 GetViewport();
+
+		FECameraRenderingData* GetCameraRenderingData(FEEntity* CameraEntity);
+		void AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing = false);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
-		void LoadStandardParams(FEShader* Shader, FEMaterial* Material, const FETransformComponent* Transform, FEEntity* ForceCamera = nullptr, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
+		void LoadStandardParams(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* ForceCamera = nullptr, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
 		void LoadStandardParams(FEShader* Shader, bool IsReceivingShadows, FEEntity* ForceCamera = nullptr, const bool IsUniformLighting = false);
 		void LoadUniformBlocks(FEScene* CurrentScene);
 
-		void StandardFBInit(int WindowWidth, int WindowHeight);
 		void TakeScreenshot(const char* FileName, int Width, int Height);
 
 		FEMaterial* ShadowMapMaterial;
@@ -221,13 +160,7 @@ namespace FocalEngine
 		GLuint InstancedLineVAO = 0;
 		GLenum InstancedLineBuffer = 0;
 
-		FEBasicCamera* EngineMainCamera = nullptr;
 		glm::dvec3 MouseRay = glm::dvec3(0.0);
-
-		float DistanceFogDensity = 0.007f;
-		float DistanceFogGradient = 2.5f;
-		bool bDistanceFogEnabled = false;
-		void UpdateFogInShaders();
 
 		FEShader* ShaderToForce = nullptr;
 		void ForceShader(FEShader* Shader);
@@ -243,7 +176,6 @@ namespace FocalEngine
 		void UpdateGPUCullingFrustum();
 		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
 
-		FETexture* DepthPyramid = nullptr;
 		bool bUseOcclusionCulling = true;
 		// *********** GPU Culling END ***********
 
@@ -260,15 +192,20 @@ namespace FocalEngine
 
 		// *********** VR Rendering END ***********
 
-		FEFramebuffer* LastRenderedResult = nullptr;
 		std::vector<std::function<void()>> AfterRenderCallbacks;
 
 		// FIX ME! Temporary
-		FEScene* CurrentScene = nullptr;
 		std::string LastRenderedSceneID;
 		std::string LastRenderedCameraID;
-
 		FEEntity* TryToGetLastUsedCameraEntity();
+
+		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
+		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
+		void OnResizeCameraRenderingData(FECameraRenderingData* CurrentData);
+		void OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity);
+		
+		FECameraRenderingData* CurrentCameraRenderingData = nullptr;
+		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
 	};
 
 	#define RENDERER FERenderer::getInstance()

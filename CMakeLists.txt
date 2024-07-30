@@ -161,13 +161,6 @@ file(GLOB ComputeShaders_SRC
 	"CoreExtensions/ComputeShaders/FE_ComputeDepthPyramidDownSample_CS.glsl"
 )
 
-file(GLOB CoreExtensions_SRC
-	"CoreExtensions/FEFreeCamera.cpp"
-	"CoreExtensions/FEFreeCamera.h"
-	"CoreExtensions/FEModelViewCamera.cpp"
-	"CoreExtensions/FEModelViewCamera.h"
-)
-
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
@@ -240,16 +233,19 @@ file(GLOB Scene_Components_SRC
 )
 
 file(GLOB Scene_Component_Systems_SRC
-	"SubSystems/Scene/Components/Systems/FECameraSystem.h"
-	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FETransformSystem.h"
+	"SubSystems/Scene/Components/Systems/FETransformSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FELightSystem.h"
 	"SubSystems/Scene/Components/Systems/FELightSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FECameraSystem.h"
+	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEComponentSystems.h"
 )
 
 # *************** SCENE ***************
@@ -340,7 +336,6 @@ list(APPEND ALL_SOURCE_FILES
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
 			${Core_SRC}
-			${CoreExtensions_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
 			# *************** RESOURCE MANAGER ***************
@@ -399,7 +394,6 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_FXAA" FILES ${FE
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection" FILES ${FE_GammaAndHDRCorrection_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
 source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${ComputeShaders_SRC})
-source_group("Source Files/CoreExtensions" FILES ${CoreExtensions_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************

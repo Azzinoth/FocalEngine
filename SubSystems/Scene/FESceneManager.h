@@ -33,10 +33,16 @@ namespace FocalEngine
 		std::vector<FEScene*> GetAllScenes();
 		std::vector<FEScene*> GetActiveScenes();
 
+		void ActivateScene(std::string ID);
+		void ActivateScene(FEScene* Scene);
+
+		void DeactivateScene(std::string ID);
+		void DeactivateScene(FEScene* Scene);
+
 		void RegisterAllComponentCallbacks(FEScene* NewScene);
 
-		// FIX ME! Experimental
-		FEScene* TestScene = nullptr;
+		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "");
+		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "");
 	private:
 		SINGLETON_PRIVATE_PART(FESceneManager)
 

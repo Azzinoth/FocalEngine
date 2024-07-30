@@ -5,12 +5,6 @@
 
 namespace FocalEngine
 {
-	enum FE_RENDER_TARGET_MODE
-	{
-		FE_GLFW_MODE = 0,
-		FE_CUSTOM_MODE = 1,
-	};
-
 	class FEngine
 	{
 		//FIX ME! It should not be here.
@@ -28,20 +22,13 @@ namespace FocalEngine
 		bool IsNotTerminated();
 		void Terminate();
 
-		void SetCamera(FEBasicCamera* NewCamera);
-		FEBasicCamera* GetCamera();
-
 		void SetWindowCaption(std::string NewCaption);
-		void AddRenderTargetResizeCallback(void(*Func)(int, int));
 		void AddWindowResizeCallback(void(*Func)(int, int));
 		void AddWindowCloseCallback(void(*Func)());
 		void AddKeyCallback(void(*Func)(int, int, int, int));
 		void AddMouseButtonCallback(void(*Func)(int, int, int));
 		void AddMouseMoveCallback(void(*Func)(double, double));
 		void AddDropCallback(void(*Func)(int, const char**));
-
-		int GetWindowWidth();
-		int GetWindowHeight();
 
 		void RenderTo(FEFramebuffer* RenderTo);
 
@@ -51,23 +38,7 @@ namespace FocalEngine
 		FEPostProcess* CreatePostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
 		void TakeScreenshot(const char* FileName);
 
-		void ResetCamera();
-
-		glm::dvec3 ConstructMouseRay();
-
-		inline FE_RENDER_TARGET_MODE GetRenderTargetMode();
-		void SetRenderTargetMode(FE_RENDER_TARGET_MODE NewMode);
-
-		inline int GetRenderTargetWidth();
-		void SetRenderTargetSize(int Width, int Height);
-		inline int GetRenderTargetHeight();
-
-		inline int GetRenderTargetXShift();
-		void SetRenderTargetXShift(int NewRenderTargetXShift);
-		inline int GetRenderTargetYShift();
-		void SetRenderTargetYShift(int NewRenderTargetYShift);
-
-		void RenderTargetCenterForCamera(FEFreeCamera* Camera);
+		FEViewport* GetDefaultViewport();
 
 		glm::vec4 GetClearColor();
 		void SetClearColor(glm::vec4 ClearColor);
@@ -84,12 +55,18 @@ namespace FocalEngine
 		bool IsVREnabled();
 
 		void AddOnAfterUpdateCallback(std::function<void()> Callback);
+
+		// FIX ME! Need proper INPUT system.
+		double GetMouseX();
+		double GetMouseY();
+
+		std::string AddViewport(ImGuiWindow* ImGuiWindowPointer);
+		std::string AddViewport(FEWindow* FEWindowPointer);
+
+		void AddOnViewportMovedCallback(std::function<void(std::string)> Callback);
+		void AddOnViewportResizeCallback(std::function<void(std::string)> Callback);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
-
-		int WindowW;
-		int WindowH;
-		std::string WindowTitle;
 
 		double CPUTime, GPUTime;
 		double CurrentDeltaTime;
@@ -102,19 +79,10 @@ namespace FocalEngine
 		bool bVRInitializedCorrectly = false;
 		bool bVRActive = false;
 
+		// FIX ME! It should be part of camera system.
 		const glm::vec4 DefaultClearColor = glm::vec4(0.55f, 0.73f, 0.87f, 1.0f);
 		const glm::vec4 DefaultGammaCorrectedClearColor = glm::vec4(pow(0.55f, -2.2f), pow(0.73f, -2.2f), pow(0.87f, -2.2f), 1.0f);
 		glm::vec4 CurrentClearColor = DefaultGammaCorrectedClearColor;
-
-		static FE_RENDER_TARGET_MODE RenderTargetMode;
-		int RenderTargetW;
-		int RenderTargetH;
-		static int RenderTargetXShift;
-		static int RenderTargetYShift;
-		static void RenderTargetResize();
-
-		std::vector<void(*)(int, int)> ClientRenderTargetResizeCallbacks;
-		//void(*clientRenderTargetResizeCallbackImpl)(int, int) = nullptr;
 
 		static void WindowResizeCallback(int Width, int Height);
 		std::vector<void(*)(int, int)> ClientWindowResizeCallbacks;
@@ -144,13 +112,18 @@ namespace FocalEngine
 		double MouseScrollXOffset = 0.0;
 		double MouseScrollYOffset = 0.0;
 
-		void SetMousePosition(int X, int Y);
-
-		//FIX ME! It should not be here.
-		FEBasicCamera* CurrentCamera = nullptr;
+		void SetMousePosition(int X, int Y, bool bScreenPosition = true);
 
 		void InternalUpdate();
 		std::vector<std::function<void()>> OnAfterUpdateCallbacks;
+
+		std::vector<FEViewport*> Viewports;
+		std::vector<std::function<void(std::string)>> OnViewportMovedCallbacks;
+		std::vector<std::function<void(std::string)>> OnViewportResizeCallbacks;
+
+		FEViewport* GetViewport(std::string ViewportID);
+		void ViewportCheckForModification();
+		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
 	};
 
 	#define ENGINE FEngine::getInstance()

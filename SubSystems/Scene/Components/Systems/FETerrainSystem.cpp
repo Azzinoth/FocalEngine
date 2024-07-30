@@ -1,4 +1,5 @@
 #include "FETerrainSystem.h"
+#include "../../Renderer/FERenderer.h"
 using namespace FocalEngine;
 
 FETerrainSystem* FETerrainSystem::Instance = nullptr;
@@ -199,14 +200,14 @@ void FETerrainSystem::SetBrushMode(FEEntity* TerrainEntity, const FE_TERRAIN_BRU
 {
 	if (NewValue == FE_TERRAIN_BRUSH_NONE)
 	{
-		TerrainEntityWithBrushModeOn = nullptr;
+		TerrainEntityIDWithBrushModeOn = "";
 	}
 	else
 	{
 		if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 			return;
 
-		TerrainEntityWithBrushModeOn = TerrainEntity;
+		TerrainEntityIDWithBrushModeOn = TerrainEntity->GetObjectID();
 	}
 
 	BrushMode = NewValue;
@@ -424,9 +425,17 @@ void FETerrainSystem::UnSnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* E
 
 void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dvec3 MouseRayDirection)
 {
-	if (TerrainEntityWithBrushModeOn == nullptr)
+	if (TerrainEntityIDWithBrushModeOn.empty())
 		return;
 
+	FEObject* TerrainObject = OBJECT_MANAGER.GetFEObject(TerrainEntityIDWithBrushModeOn);
+	if (TerrainObject == nullptr)
+	{
+		TerrainEntityIDWithBrushModeOn = "";
+		return;
+	}
+
+	FEEntity* TerrainEntityWithBrushModeOn = reinterpret_cast<FEEntity*>(OBJECT_MANAGER.GetFEObject(TerrainEntityIDWithBrushModeOn));
 	FETerrainComponent& TerrainComponent = TerrainEntityWithBrushModeOn->GetComponent<FETerrainComponent>();
 
 	if (TerrainComponent.BrushVisualFB == nullptr)
@@ -497,7 +506,7 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 		if (BrushMode == FE_TERRAIN_BRUSH_LAYER_DRAW)
 		{
 			TerrainComponent.LayerMaps[0]->Bind(0);
-			FE_GL_ERROR(glViewport(0, 0, TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight()));
+			RENDERER.SetViewport(0, 0, TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight());
 
 			BrushOutputShader->UpdateParameterData("brushIntensity", BrushIntensity * 5.0f);
 			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex()));
@@ -540,7 +549,7 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 			BrushOutputShader->LoadDataToGPU();
 			TerrainComponent.HeightMap->Bind(0);
 
-			FE_GL_ERROR(glViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight()));
+			RENDERER.SetViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight());
 
 			FE_GL_ERROR(glBindVertexArray(PlaneMesh->GetVaoID()));
 			FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -565,7 +574,7 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 	BrushVisualShader->Start();
 
 	BrushVisualShader->LoadDataToGPU();
-	FE_GL_ERROR(glViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight()));
+	RENDERER.SetViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight());
 
 	FE_GL_ERROR(glBindVertexArray(PlaneMesh->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));

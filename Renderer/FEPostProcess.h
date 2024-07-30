@@ -46,8 +46,8 @@ namespace FocalEngine
 		FEPostProcess(std::string Name);
 
 		int ScreenWidth, ScreenHeight;
-		FEMesh* ScreenQuad;
-		FEShader* ScreenQuadShader;
+		static FEMesh* ScreenQuad;
+		static FEShader* ScreenQuadShader;
 		FETexture* InTexture = nullptr;
 		FETexture* FinalTexture = nullptr;
 

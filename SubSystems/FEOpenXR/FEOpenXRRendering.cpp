@@ -105,10 +105,10 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	const uint32_t ColorTexture = reinterpret_cast<const XrSwapchainImageOpenGLKHR*>(SwapChainImage)->image;
 	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorTexture, 0));
 
-	glViewport(static_cast<GLint>(LayerView.subImage.imageRect.offset.x),
-			   static_cast<GLint>(LayerView.subImage.imageRect.offset.y),
-			   static_cast<GLsizei>(LayerView.subImage.imageRect.extent.width),
-			   static_cast<GLsizei>(LayerView.subImage.imageRect.extent.height));
+	RENDERER.SetViewport(static_cast<int>(LayerView.subImage.imageRect.offset.x),
+						 static_cast<int>(LayerView.subImage.imageRect.offset.y),
+						 static_cast<int>(LayerView.subImage.imageRect.extent.width),
+						 static_cast<int>(LayerView.subImage.imageRect.extent.height));
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -124,15 +124,16 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	CurrentViewMatrix *= glm::toMat4(EyeOrientation);
 	CurrentViewMatrix = glm::inverse(CurrentViewMatrix);
 
-	static FEBasicCamera* CurrentCamera = new FEBasicCamera("VRCamera");
-	CurrentCamera->SetPosition(EyePosition);
-	CurrentCamera->ProjectionMatrix = CurrentProjectionMatrix;
-	CurrentCamera->ViewMatrix = CurrentViewMatrix;
+	// FIX ME!
+	//static FEBasicCamera* CurrentCamera = new FEBasicCamera("VRCamera");
+	//CurrentCamera->SetPosition(EyePosition);
+	//CurrentCamera->ProjectionMatrix = CurrentProjectionMatrix;
+	//CurrentCamera->ViewMatrix = CurrentViewMatrix;
 
 	bValidSwapChain = true;
 	// FIX ME! Temporary solution, only supports one scene
 	FEScene* CurrentScene = SCENE_MANAGER.GetActiveScenes()[0];
-	RENDERER.RenderVR(CurrentScene, CurrentCamera);
+	RENDERER.RenderVR(CurrentScene);
 	bValidSwapChain = false;
 }
 
@@ -156,7 +157,7 @@ bool FEOpenXRRendering::RenderLayer(XrTime PredictedDisplayTime, std::vector<XrC
 	}
 	ProjectionLayerViews.resize(ViewCountOutput);
 
-	// Render view to the appropriate part of the swapchain image.
+	// Update view to the appropriate part of the swapchain image.
 	for (uint32_t i = 0; i < ViewCountOutput; i++)
 	{
 		XrSwapchainImageAcquireInfo AcquireInfo{ XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };

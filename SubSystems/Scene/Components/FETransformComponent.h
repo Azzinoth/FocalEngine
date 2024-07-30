@@ -15,9 +15,12 @@ namespace FocalEngine
 	{
 		friend class FEScene;
 		friend class FERenderer;
+		friend class FETransformSystem;
 	public:
 		FETransformComponent();
 		FETransformComponent(glm::mat4 Matrix);
+		FETransformComponent(const FETransformComponent& Other);
+		FETransformComponent& operator=(const FETransformComponent& Other);
 		~FETransformComponent();
 
 		FETransformComponent Combine(const FETransformComponent& Other) const;
@@ -34,7 +37,7 @@ namespace FocalEngine
 		void RotateByQuaternion(glm::quat Quaternion);
 		void SetScale(glm::vec3 NewScale, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
 
-		glm::mat4 GetWorldMatrix() const;
+		glm::mat4 GetWorldMatrix();
 		// Use this function only if you know what you are doing
 		// Usually, it is used to forcefully set the world matrix before the scene update occurs
 		void ForceSetWorldMatrix(glm::mat4 NewMatrix);
@@ -53,6 +56,8 @@ namespace FocalEngine
 		bool IsSceneIndependent() const;
 		void SetSceneIndependent(bool NewValue);
 	private:
+		FEEntity* ParentEntity = nullptr;
+
 		bool bDirtyFlag = false;
 		bool bSceneIndependent = false;
 
@@ -71,5 +76,7 @@ namespace FocalEngine
 		glm::mat4 GetParentMatrix() const;
 
 		void MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
+
+		void CopyFrom(const FETransformComponent& Other, bool bOmitParentEntity = false);
 	};
 }

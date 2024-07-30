@@ -2,9 +2,6 @@
 using namespace FocalEngine;
 
 FEngine* FEngine::Instance = nullptr;
-FE_RENDER_TARGET_MODE FEngine::RenderTargetMode = FE_GLFW_MODE;
-int FEngine::RenderTargetXShift = 0;
-int FEngine::RenderTargetYShift = 0;
 
 FEngine::FEngine()
 {
@@ -22,13 +19,16 @@ bool FEngine::IsNotTerminated()
 void FEngine::InternalUpdate()
 {
 	CurrentDeltaTime = CPUTime + GPUTime;
-	SCENE_MANAGER.Update();
-	CAMERA_SYSTEM.Update(CurrentDeltaTime);
+
+	ViewportCheckForModification();
+	
 	INSTANCED_RENDERING_SYSTEM.Update();
+	SCENE_MANAGER.Update();
 
 	// FIX ME! Need proper INPUT system.
 	ENGINE.MouseScrollXOffset = 0.0;
 	ENGINE.MouseScrollYOffset = 0.0;
+	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{
@@ -37,6 +37,10 @@ void FEngine::InternalUpdate()
 
 		OnAfterUpdateCallbacks[i]();
 	}
+
+	// Instead of updating TRANSFORM_SYSTEM in the beginning of the frame, we update it here.
+	// To ensure that all the other systems are updated before the TRANSFORM_SYSTEM will kick in.
+	TRANSFORM_SYSTEM.Update();
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
@@ -72,37 +76,21 @@ void FEngine::BeginFrame(const bool InternalCall)
 	}
 #endif
 
-	// FIX ME ! That should not be here.
-	ENGINE.CurrentCamera->Move(static_cast<float>(CurrentDeltaTime));
 	InternalUpdate();
 }
 
 void FEngine::Render(const bool InternalCall)
 {
-	RENDERER.EngineMainCamera = ENGINE.CurrentCamera;
-	RENDERER.MouseRay = ENGINE.ConstructMouseRay();
-
-	// FIX ME! Experimental
-	if (SCENE_MANAGER.TestScene != nullptr)
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
-		RENDERER.Render(SCENE_MANAGER.TestScene, CurrentCamera);
-	}
-	else
-	{
-		std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
-		for (size_t i = 0; i < ActiveScenes.size(); i++)
-		{
-			RENDERER.Render(ActiveScenes[i], CurrentCamera);
-		}
+		RENDERER.Render(ActiveScenes[i]);
 	}
 
 	if (bVRActive)
 	{
 		OpenXR_MANAGER.Update();
-		glViewport(static_cast<GLint>(0.0),
-					static_cast<GLint>(0.0),
-					static_cast<GLsizei>(ENGINE.GetRenderTargetWidth()),
-					static_cast<GLsizei>(ENGINE.GetRenderTargetHeight()));
+		RENDERER.SetViewport(0, 0, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
 	}
 
 	APPLICATION.GetMainWindow()->Render();
@@ -120,29 +108,16 @@ void FEngine::EndFrame(const bool InternalCall)
 
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
 {
-	WindowW = Width;
-	WindowH = Height;
-	this->WindowTitle = WindowTitle;
-
-	APPLICATION.AddWindow(Width, Height, WindowTitle);
+	FEWindow* NewWindow = APPLICATION.AddWindow(Width, Height, WindowTitle);
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnMouseButtonCallback(&FEngine::MouseButtonCallback);
 	APPLICATION.GetMainWindow()->AddOnMouseMoveCallback(&FEngine::MouseMoveCallback);
 	APPLICATION.GetMainWindow()->AddOnKeyCallback(&FEngine::KeyButtonCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
 	APPLICATION.GetMainWindow()->AddOnScrollCallback(&FEngine::MouseScrollCallback);
+	AddViewport(NewWindow);
 
 	SetClearColor(DefaultGammaCorrectedClearColor);
-
-	CurrentCamera = new FEFreeCamera("mainCamera");
-	int FinalWidth, FinalHeight;
-	APPLICATION.GetMainWindow()->GetSize(&FinalWidth, &FinalHeight);
-	
-	WindowW = FinalWidth;
-	WindowH = FinalHeight;
-	RenderTargetW = FinalWidth;
-	RenderTargetH = FinalHeight;
-	CurrentCamera->SetAspectRatio(static_cast<float>(GetRenderTargetWidth()) / static_cast<float>(GetRenderTargetHeight()));
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
 
@@ -150,193 +125,11 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	FE_GL_ERROR(glPatchParameteri(GL_PATCH_VERTICES, 4));
 
 	RENDERER.Init();
-	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
-																				  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(RENDERER.InstancedLineShader->GetObjectID());
-	RENDERER.InstancedLineShader->SetID("7E0826291010377D564F6115"/*"instancedLine"*/);
-	RESOURCE_MANAGER.Shaders[RENDERER.InstancedLineShader->GetObjectID()] = RENDERER.InstancedLineShader;
-
-	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(FEScreenQuadShader->GetObjectID());
-	FEScreenQuadShader->SetID("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
-	RESOURCE_MANAGER.Shaders[FEScreenQuadShader->GetObjectID()] = FEScreenQuadShader;
-	RESOURCE_MANAGER.MakeShaderStandard(FEScreenQuadShader);
-
-	RENDERER.StandardFBInit(GetRenderTargetWidth(), GetRenderTargetHeight());
-	
-	// ************************************ Bloom ************************************
-	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("bloom", static_cast<int>(GetRenderTargetWidth() / 4.0f), static_cast<int>(GetRenderTargetHeight() / 4.0f));
-	BloomEffect->SetID("451C48791871283D372C5938"/*"bloom"*/);
-
-	FEShader* BloomThresholdShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-														  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(BloomThresholdShader->GetObjectID());
-	BloomThresholdShader->SetID("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/);
-	RESOURCE_MANAGER.Shaders[BloomThresholdShader->GetObjectID()] = BloomThresholdShader;
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, BloomThresholdShader));
-	BloomEffect->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", 1.0f);
-
-	FEShader* BloomBlurShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-												     RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(BloomBlurShader->GetObjectID());
-	BloomBlurShader->SetID("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
-	RESOURCE_MANAGER.Shaders[BloomBlurShader->GetObjectID()] = BloomBlurShader;
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-	
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-	FEShader* BloomCompositionShader =
-		RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-														    RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(BloomCompositionShader->GetObjectID());
-	BloomCompositionShader->SetID("1833272551376C2E5645200E"/*"FEBloomComposition"*/);
-	RESOURCE_MANAGER.Shaders[BloomCompositionShader->GetObjectID()] = BloomCompositionShader;
-
-	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, BloomCompositionShader));
-
-	RENDERER.AddPostProcess(BloomEffect);
-	// ************************************ Bloom END ************************************
-
-	// ************************************ gammaHDR ************************************
-	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", GetRenderTargetWidth(), GetRenderTargetHeight());
-	GammaHDR->SetID("2374462A7B0E78141B5F5D79"/*"GammaAndHDR"*/);
-
-	FEShader* GammaHDRShader =
-		RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
-															 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(GammaHDRShader->GetObjectID());
-	GammaHDRShader->SetID("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/);
-	RESOURCE_MANAGER.Shaders[GammaHDRShader->GetObjectID()] = GammaHDRShader;
-
-	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, GammaHDRShader));
-	RENDERER.AddPostProcess(GammaHDR);
-	// ************************************ gammaHDR END ************************************
-
-	// ************************************ FXAA ************************************
-	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", GetRenderTargetWidth(), GetRenderTargetHeight());
-	FEFXAAEffect->SetID("0A3F10643F06525D70016070"/*"FE_FXAA"*/);
-
-	FEShader* FEFXAAShader =
-		RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
-													  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(FEFXAAShader->GetObjectID());
-	FEFXAAShader->SetID("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/);
-	RESOURCE_MANAGER.Shaders[FEFXAAShader->GetObjectID()] = FEFXAAShader;
-
-	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FEFXAAShader));
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAASpanMax", 8.0f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMin", 1.0f / 128.0f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMul", 0.4f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / GetRenderTargetWidth(), 1.0f / GetRenderTargetHeight()));
-	RENDERER.AddPostProcess(FEFXAAEffect);
-
-	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, GetRenderTargetWidth(), GetRenderTargetHeight()));
-
-	// ************************************ FXAA END ************************************
-
-	// ************************************ DOF ************************************
-	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
-	DOFEffect->SetID("217C4E80482B6C650D7B492F"/*"DOF"*/);
-
-	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
-															   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(DOFShader->GetObjectID());
-	DOFShader->SetID("7800253C244442155D0F3C7B"/*"DOF"*/);
-	RESOURCE_MANAGER.Shaders[DOFShader->GetObjectID()] = DOFShader;
-
-	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
-	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
-	RENDERER.AddPostProcess(DOFEffect);
-	// ************************************ DOF END ************************************
-
-	// ************************************ chromaticAberrationEffect ************************************
-	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration");
-	ChromaticAberrationEffect->SetID("506D804162647749060C3E68"/*"chromaticAberration"*/);
-
-	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
-																									 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str());
-	RESOURCE_MANAGER.Shaders.erase(ChromaticAberrationShader->GetObjectID());
-	ChromaticAberrationShader->SetID("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
-	RESOURCE_MANAGER.Shaders[ChromaticAberrationShader->GetObjectID()] = ChromaticAberrationShader;
-	
-	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
-	ChromaticAberrationEffect->Stages.back()->Shader->UpdateParameterData("intensity", 1.0f);
-	RENDERER.AddPostProcess(ChromaticAberrationEffect);
-	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, GetRenderTargetWidth(), GetRenderTargetHeight()));
-	// ************************************ chromaticAberrationEffect END ************************************
-
-	// ************************************ SSAO ************************************
-	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
-																		   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str());
-
-	RESOURCE_MANAGER.Shaders.erase(FESSAOShader->GetObjectID());
-	FESSAOShader->SetID("1037115B676E383E36345079"/*"FESSAOShader"*/);
-	RESOURCE_MANAGER.Shaders[FESSAOShader->GetObjectID()] = FESSAOShader;
-
-	RESOURCE_MANAGER.MakeShaderStandard(FESSAOShader);
-
-	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-																				   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str());
-
-	RESOURCE_MANAGER.Shaders.erase(FESSAOBlurShader->GetObjectID());
-	FESSAOBlurShader->SetID("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
-	RESOURCE_MANAGER.Shaders[FESSAOBlurShader->GetObjectID()] = FESSAOBlurShader;
-
-	RESOURCE_MANAGER.MakeShaderStandard(FESSAOBlurShader);
-	// ************************************ SSAO END ************************************
-
-	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial");
-	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str()).c_str(),
-																							RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
-	RENDERER.ShadowMapMaterial->Shader->SetID("7C41565B2E2B05321A182D89"/*"FEShadowMapShader"*/);
-	
-	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterial->Shader);
-	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterial);
-
-	RENDERER.ShadowMapMaterialInstanced = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterialInstanced");
-	RENDERER.ShadowMapMaterialInstanced->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str()).c_str(),
-																											  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
-	RENDERER.ShadowMapMaterialInstanced->Shader->SetID("5634765B2E2A05321A182D1A"/*"FEShadowMapShaderInstanced"*/);
-	
-	RESOURCE_MANAGER.MakeShaderStandard(RENDERER.ShadowMapMaterialInstanced->Shader);
-	RESOURCE_MANAGER.MakeMaterialStandard(RENDERER.ShadowMapMaterialInstanced);
 
 	// Early initialization of the systems.
-	CAMERA_SYSTEM;
+	TRANSFORM_SYSTEM;
 	LIGHT_SYSTEM;
+	CAMERA_SYSTEM;
 	INSTANCED_RENDERING_SYSTEM;
 	TERRAIN_SYSTEM;
 	SKY_DOME_SYSTEM;
@@ -379,23 +172,12 @@ void FEngine::AddMouseMoveCallback(void(*Func)(double, double))
 
 void FEngine::WindowResizeCallback(const int Width, const int Height)
 {
-	ENGINE.WindowW = Width;
-	ENGINE.WindowH = Height;
-
-	if (RenderTargetMode == FE_GLFW_MODE)
-	{
-		ENGINE.RenderTargetW = Width;
-		ENGINE.RenderTargetH = Height;
-
-		RenderTargetResize();
-	}
-
 	for (size_t i = 0; i < ENGINE.ClientWindowResizeCallbacks.size(); i++)
 	{
 		if (ENGINE.ClientWindowResizeCallbacks[i] == nullptr)
 			continue;
 
-		ENGINE.ClientWindowResizeCallbacks[i](ENGINE.WindowW, ENGINE.WindowH);
+		ENGINE.ClientWindowResizeCallbacks[i](Width, Height);
 	}
 }
 
@@ -412,12 +194,6 @@ void FEngine::MouseButtonCallback(const int Button, const int Action, const int 
 
 void FEngine::MouseMoveCallback(double Xpos, double Ypos)
 {
-	if (RenderTargetMode == FE_CUSTOM_MODE)
-	{
-		Xpos -= RenderTargetXShift;
-		Ypos -= RenderTargetYShift;
-	}
-
 	for (size_t i = 0; i < ENGINE.ClientMouseMoveCallbacks.size(); i++)
 	{
 		if (ENGINE.ClientMouseMoveCallbacks[i] == nullptr)
@@ -429,9 +205,6 @@ void FEngine::MouseMoveCallback(double Xpos, double Ypos)
 	// FIX ME! Need proper INPUT system.
 	ENGINE.LastFrameMouseX = ENGINE.MouseX;
 	ENGINE.LastFrameMouseY = ENGINE.MouseY;
-
-	// FIX ME! It should be here.
-	ENGINE.CurrentCamera->MouseMoveInput(Xpos, Ypos);
 
 	// FIX ME! Need proper INPUT system.
 	ENGINE.MouseX = Xpos;
@@ -483,31 +256,6 @@ void FEngine::KeyButtonCallback(const int Key, const int Scancode, const int Act
 	{
 		ENGINE.bDKeyPressed = false;
 	}
-
-	// FIX ME! It should be here.
-	ENGINE.CurrentCamera->KeyboardInput(Key, Scancode, Action, Mods);
-}
-
-// FIX ME! It should be here.
-void FEngine::SetCamera(FEBasicCamera* NewCamera)
-{
-	CurrentCamera = NewCamera;
-}
-
-// FIX ME! It should be here.
-FEBasicCamera* FEngine::GetCamera()
-{
-	return CurrentCamera;
-}
-
-int FEngine::GetWindowWidth()
-{
-	return WindowW;
-}
-
-int FEngine::GetWindowHeight()
-{
-	return WindowH;
 }
 
 void FEngine::RenderTo(FEFramebuffer* RenderTo)
@@ -532,8 +280,8 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 {
 	if (ScreenWidth < 2 || ScreenHeight < 2)
 	{
-		ScreenWidth = GetRenderTargetWidth();
-		ScreenHeight = GetRenderTargetHeight();
+		ScreenWidth = ENGINE.GetDefaultViewport()->GetWidth();
+		ScreenHeight = ENGINE.GetDefaultViewport()->GetHeight();
 	}
 
 	return RESOURCE_MANAGER.CreatePostProcess(ScreenWidth, ScreenHeight, Name);
@@ -546,223 +294,7 @@ void FEngine::Terminate()
 
 void FEngine::TakeScreenshot(const char* FileName)
 {
-	RENDERER.TakeScreenshot(FileName, GetRenderTargetWidth(), GetRenderTargetHeight());
-}
-
-void FEngine::ResetCamera()
-{
-	CurrentCamera->Reset();
-	CurrentCamera->SetAspectRatio(static_cast<float>(GetRenderTargetWidth()) / static_cast<float>(GetRenderTargetHeight()));
-}
-
-glm::dvec3 FEngine::ConstructMouseRay()
-{
-	glm::dvec2 NormalizedMouseCoords;
-	NormalizedMouseCoords.x = (2.0f * MouseX) / GetRenderTargetWidth() - 1;
-	NormalizedMouseCoords.y = 1.0f - (2.0f * (MouseY)) / GetRenderTargetHeight();
-
-	const glm::dvec4 ClipCoords = glm::dvec4(NormalizedMouseCoords.x, NormalizedMouseCoords.y, -1.0, 1.0);
-	glm::dvec4 EyeCoords = glm::inverse(GetCamera()->GetProjectionMatrix()) * ClipCoords;
-	EyeCoords.z = -1.0f;
-	EyeCoords.w = 0.0f;
-	glm::dvec3 WorldRay = glm::inverse(GetCamera()->GetViewMatrix()) * EyeCoords;
-	WorldRay = glm::normalize(WorldRay);
-
-	return WorldRay;
-}
-
-FE_RENDER_TARGET_MODE FEngine::GetRenderTargetMode()
-{
-	return RenderTargetMode;
-}
-
-void FEngine::SetRenderTargetMode(const FE_RENDER_TARGET_MODE NewMode)
-{
-	if (RenderTargetMode != NewMode && NewMode == FE_GLFW_MODE)
-	{
-		RenderTargetMode = NewMode;
-		int WindowWidth, WindowHeight;
-		APPLICATION.GetMainWindow()->GetSize(&WindowWidth, &WindowHeight);
-		WindowResizeCallback(WindowWidth, WindowHeight);
-	}
-	else
-	{
-		RenderTargetMode = NewMode;
-	}
-}
-
-void FEngine::SetRenderTargetSize(const int Width, const int Height)
-{
-	if (Width <= 0 || Height <= 0 || RenderTargetMode == FE_GLFW_MODE)
-		return;
-
-	bool NeedReInitialization = false;
-	if (RenderTargetW != Width || RenderTargetH != Height)
-		NeedReInitialization = true;
-
-	RenderTargetW = Width;
-	RenderTargetH = Height;
-
-	if (NeedReInitialization)
-		RenderTargetResize();
-}
-
-int FEngine::GetRenderTargetWidth()
-{
-	return RenderTargetW;
-}
-
-int FEngine::GetRenderTargetHeight()
-{
-	return RenderTargetH;
-}
-
-void FEngine::RenderTargetResize()
-{
-	CAMERA_SYSTEM.RenderTargetResize(ENGINE.RenderTargetW, ENGINE.RenderTargetH);
-	// FIX ME! It should be here.
-	ENGINE.CurrentCamera->SetAspectRatio(static_cast<float>(ENGINE.RenderTargetW) / static_cast<float>(ENGINE.RenderTargetH));
-
-	RENDERER.RenderTargetResize(ENGINE.RenderTargetW, ENGINE.RenderTargetH);
-
-	if (!ENGINE.bSimplifiedRendering)
-	{
-		// ************************************ Bloom ************************************
-		FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("bloom", static_cast<int>(ENGINE.RenderTargetW / 4.0f), static_cast<int>(ENGINE.RenderTargetH / 4.0f));
-		BloomEffect->SetID("451C48791871283D372C5938"/*"bloom"*/);
-
-		BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
-
-		BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-
-		BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-
-		BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-		BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-		BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-		BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/)));
-
-		RENDERER.AddPostProcess(BloomEffect);
-		// ************************************ Bloom END ************************************
-
-		// ************************************ gammaHDR ************************************
-		FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", ENGINE.RenderTargetW, ENGINE.RenderTargetH);
-		GammaHDR->SetID("2374462A7B0E78141B5F5D79"/*"GammaAndHDR"*/);
-		GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/)));
-		RENDERER.AddPostProcess(GammaHDR);
-		// ************************************ gammaHDR END ************************************
-
-		// ************************************ FXAA ************************************
-		FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", ENGINE.RenderTargetW, ENGINE.RenderTargetH);
-		FEFXAAEffect->SetID("0A3F10643F06525D70016070"/*"FE_FXAA"*/);
-		FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
-		FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / ENGINE.RenderTargetW, 1.0f / ENGINE.RenderTargetH));
-		RENDERER.AddPostProcess(FEFXAAEffect);
-
-		//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-		RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, ENGINE.RenderTargetW, ENGINE.RenderTargetH));
-		// ************************************ FXAA END ************************************
-
-		// ************************************ DOF ************************************
-		FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF");
-		DOFEffect->SetID("217C4E80482B6C650D7B492F"/*"DOF"*/);
-
-		DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-		DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-		DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-		DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-		RENDERER.AddPostProcess(DOFEffect);
-		// ************************************ DOF END ************************************
-
-		// ************************************ chromaticAberrationEffect ************************************
-		FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration");
-		ChromaticAberrationEffect->SetID("506D804162647749060C3E68"/*"chromaticAberration"*/);
-		ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
-		RENDERER.AddPostProcess(ChromaticAberrationEffect);
-		//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-		RENDERER.PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, ENGINE.RenderTargetW, ENGINE.RenderTargetH));
-		// ************************************ chromaticAberrationEffect END ************************************
-	}
-
-	for (size_t i = 0; i < ENGINE.ClientRenderTargetResizeCallbacks.size(); i++)
-	{
-		if (ENGINE.ClientRenderTargetResizeCallbacks[i] == nullptr)
-			continue;
-		ENGINE.ClientRenderTargetResizeCallbacks[i](ENGINE.RenderTargetW, ENGINE.RenderTargetH);
-	}
-}
-
-void FEngine::AddRenderTargetResizeCallback(void(*Func)(int, int))
-{
-	if (Func != nullptr)
-		ClientRenderTargetResizeCallbacks.push_back(Func);
-}
-
-inline int FEngine::GetRenderTargetXShift()
-{
-	return RenderTargetXShift;
-}
-
-void FEngine::SetRenderTargetXShift(const int NewRenderTargetXShift)
-{
-	RenderTargetXShift = NewRenderTargetXShift;
-}
-
-inline int FEngine::GetRenderTargetYShift()
-{
-	return RenderTargetYShift;
-}
-
-void FEngine::SetRenderTargetYShift(const int NewRenderTargetYShift)
-{
-	RenderTargetYShift = NewRenderTargetYShift;
-}
-
-void FEngine::RenderTargetCenterForCamera(FEFreeCamera* Camera)
-{
-	int CenterX, CenterY = 0;
-	int ShiftX, ShiftY = 0;
-
-	int xpos, ypos;
-	APPLICATION.GetMainWindow()->GetPosition(&xpos, &ypos);
-
-	if (RenderTargetMode == FE_GLFW_MODE)
-	{
-		CenterX = xpos + (WindowW / 2);
-		CenterY = ypos + (WindowH / 2);
-
-		ShiftX = xpos;
-		ShiftY = ypos;
-	}
-	else if (RenderTargetMode == FE_CUSTOM_MODE)
-	{
-		CenterX = xpos + RenderTargetXShift + (RenderTargetW / 2);
-		CenterY = ypos + RenderTargetYShift + (RenderTargetH / 2);
-
-		ShiftX = RenderTargetXShift + xpos;
-		ShiftY = RenderTargetYShift + ypos;
-	}
-	
-	// FIX ME! It should not be here.
-	Camera->SetRenderTargetCenterX(CenterX);
-	Camera->SetRenderTargetCenterY(CenterY);
-	Camera->SetRenderTargetShiftX(ShiftX);
-	Camera->SetRenderTargetShiftY(ShiftY);
-
-	// FIX ME! It should not be here.
-	CAMERA_SYSTEM.RenderTargetCenterX = CenterX;
-	CAMERA_SYSTEM.RenderTargetCenterY = CenterY;
-	CAMERA_SYSTEM.RenderTargetShiftX = ShiftX;
-	CAMERA_SYSTEM.RenderTargetShiftY = ShiftY;
+	RENDERER.TakeScreenshot(FileName, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
 }
 
 void FEngine::DropCallback(const int Count, const char** Paths)
@@ -795,8 +327,6 @@ void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
 
 		ENGINE.ClientMouseScrollCallbacks[i](Xoffset, Yoffset);
 	}
-
-	ENGINE.CurrentCamera->MouseScrollInput(Xoffset, Yoffset);
 }
 
 glm::vec4 FEngine::GetClearColor()
@@ -849,7 +379,7 @@ bool FEngine::EnableVR()
 {
 	if (!bVRInitializedCorrectly)
 	{
-		bVRInitializedCorrectly = OpenXR_MANAGER.Init(WindowTitle);
+		bVRInitializedCorrectly = OpenXR_MANAGER.Init(APPLICATION.GetMainWindow()->GetTitle());
 	}
 
 	if (bVRInitializedCorrectly)
@@ -877,13 +407,17 @@ bool FEngine::IsVREnabled()
 	return bVRActive;
 }
 
-void FEngine::SetMousePosition(int X, int Y)
+void FEngine::SetMousePosition(int X, int Y, bool bScreenPosition)
 {
-	glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X, Y);
-	if (RenderTargetMode == FE_CUSTOM_MODE)
+	if (bScreenPosition)
 	{
-		X -= RenderTargetXShift;
-		Y -= RenderTargetYShift;
+		glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X - APPLICATION.GetMainWindow()->GetXPosition(), Y - APPLICATION.GetMainWindow()->GetYPosition());
+		X -= APPLICATION.GetMainWindow()->GetXPosition();
+		Y -= APPLICATION.GetMainWindow()->GetYPosition();
+	}
+	else
+	{
+		glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X, Y);
 	}
 
 	// FIX ME! Need proper INPUT system.
@@ -894,4 +428,164 @@ void FEngine::SetMousePosition(int X, int Y)
 void FEngine::AddOnAfterUpdateCallback(std::function<void()> Callback)
 {
 	OnAfterUpdateCallbacks.push_back(Callback);
+}
+
+double FEngine::GetMouseX()
+{
+	return MouseX;
+}
+
+double FEngine::GetMouseY()
+{
+	return MouseY;
+}
+
+std::string FEngine::AddViewport(ImGuiWindow* ImGuiWindowPointer)
+{
+	for (size_t i = 0; i < Viewports.size(); i++)
+	{
+		if (Viewports[i]->WindowHandle == ImGuiWindowPointer)
+			return Viewports[i]->ID;
+	}
+
+	FEViewport* NewViewport = new FEViewport();
+	NewViewport->Type = FE_VIEWPORT_IMGUI_WINDOW;
+	NewViewport->WindowHandle = ImGuiWindowPointer;
+	
+	Viewports.push_back(NewViewport);
+	bool bMoved, bResize;
+	ViewportCheckForModificationIndividual(NewViewport, bMoved, bResize);
+
+	return NewViewport->ID;
+}
+
+std::string FEngine::AddViewport(FEWindow* FEWindowPointer)
+{
+	for (size_t i = 0; i < Viewports.size(); i++)
+	{
+		if (Viewports[i]->WindowHandle == FEWindowPointer)
+			return Viewports[i]->ID;
+	}
+
+	FEViewport* NewViewport = new FEViewport();
+	NewViewport->Type = FE_VIEWPORT_FEWINDOW;
+	NewViewport->WindowHandle = FEWindowPointer;
+
+	Viewports.push_back(NewViewport);
+	bool bMoved, bResize;
+	ViewportCheckForModificationIndividual(NewViewport, bMoved, bResize);
+
+	return NewViewport->ID;
+}
+
+FEViewport* FEngine::GetViewport(std::string ViewportID)
+{
+	for (size_t i = 0; i < Viewports.size(); i++)
+	{
+		if (Viewports[i]->ID == ViewportID)
+			return Viewports[i];
+	}
+
+	return nullptr;
+}
+
+void FEngine::ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize)
+{
+	bMoved = false;
+	bResize = false;
+
+	switch (ViewPort->Type)
+	{
+		case FE_VIEWPORT_NULL:
+		 return;
+
+		case FE_VIEWPORT_OS_WINDOW:
+			return;
+
+		case FE_VIEWPORT_GLFW_WINDOW:
+			return;
+		
+		case FE_VIEWPORT_FEWINDOW:
+		{
+			FEWindow* Window = static_cast<FEWindow*>(ViewPort->WindowHandle);
+
+			if (ViewPort->X != Window->GetXPosition() || ViewPort->Y != Window->GetYPosition())
+				bMoved = true;
+
+			ViewPort->X = Window->GetXPosition();
+			ViewPort->Y = Window->GetYPosition();
+
+			if (ViewPort->Width != Window->GetWidth() || ViewPort->Height != Window->GetHeight())
+				bResize = true;
+
+			ViewPort->Width = Window->GetWidth();
+			ViewPort->Height = Window->GetHeight();
+
+			return;
+		}
+
+		case FE_VIEWPORT_IMGUI_WINDOW:
+		{
+			ImGuiWindow* Window = static_cast<ImGuiWindow*>(ViewPort->WindowHandle);
+
+			if (ViewPort->X != static_cast<int>(Window->ContentRegionRect.GetTL().x) || ViewPort->Y != static_cast<int>(Window->ContentRegionRect.GetTL().y))
+				bMoved = true;
+
+			ViewPort->X = static_cast<int>(Window->ContentRegionRect.GetTL().x);
+			ViewPort->Y = static_cast<int>(Window->ContentRegionRect.GetTL().y);
+
+			if (ViewPort->Width != static_cast<int>(Window->ContentRegionRect.GetWidth()) || ViewPort->Height != static_cast<int>(Window->ContentRegionRect.GetHeight()))
+				bResize = true;
+
+			ViewPort->Width = static_cast<int>(Window->ContentRegionRect.GetWidth());
+			ViewPort->Height = static_cast<int>(Window->ContentRegionRect.GetHeight());
+
+			return;
+		}
+	}
+}
+
+void FEngine::AddOnViewportMovedCallback(std::function<void(std::string)> Callback)
+{
+	OnViewportMovedCallbacks.push_back(Callback);
+}
+
+void FEngine::ViewportCheckForModification()
+{
+	for (size_t i = 0; i < Viewports.size(); i++)
+	{
+		bool bMoved, bResize;
+		ViewportCheckForModificationIndividual(Viewports[i], bMoved, bResize);
+
+		if (bMoved)
+		{
+			for (size_t j = 0; j < OnViewportMovedCallbacks.size(); j++)
+			{
+				if (OnViewportMovedCallbacks[j] != nullptr)
+					OnViewportMovedCallbacks[j](Viewports[i]->ID);
+			}
+		}
+
+		if (bResize)
+		{
+			for (size_t j = 0; j < OnViewportResizeCallbacks.size(); j++)
+			{
+				if (OnViewportResizeCallbacks[j] != nullptr)
+					OnViewportResizeCallbacks[j](Viewports[i]->ID);
+			}
+		}
+	}
+}
+
+void FEngine::AddOnViewportResizeCallback(std::function<void(std::string)> Callback)
+{
+	OnViewportResizeCallbacks.push_back(Callback);
+}
+
+FEViewport* FEngine::GetDefaultViewport()
+{
+	if (Viewports.size() == 0)
+		return nullptr;
+
+	return Viewports[0];
 }

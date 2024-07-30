@@ -20,7 +20,7 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 	FEScene* Scene = new FEScene();
 	Scene->bActive = bActive;
 
-	if (Name.empty())
+	if (!Name.empty())
 		Scene->SetName(Name);
 
 	if (!ForceObjectID.empty())
@@ -32,7 +32,7 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 		ActiveSceneMap[Scene->GetObjectID()] = Scene;
 		RegisterAllComponentCallbacks(Scene);
 	}
-
+	
 	return Scene;
 }
 
@@ -40,6 +40,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 {
 	NewScene->Registry.on_construct<FETagComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
 	NewScene->Registry.on_construct<FETransformComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETransformComponent>>();
+	NewScene->Registry.on_construct<FECameraComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
 	NewScene->Registry.on_construct<FELightComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
 	NewScene->Registry.on_construct<FEGameModelComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
 	NewScene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
@@ -48,6 +49,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 
 	NewScene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
 	NewScene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
+	NewScene->Registry.on_destroy<FECameraComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
 	NewScene->Registry.on_destroy<FELightComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
 	NewScene->Registry.on_destroy<FEGameModelComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
 	NewScene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
@@ -56,6 +58,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 
 	NewScene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
 	NewScene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
+	NewScene->Registry.on_update<FECameraComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
 	NewScene->Registry.on_update<FELightComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
 	NewScene->Registry.on_update<FEGameModelComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
 	NewScene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
@@ -107,6 +110,43 @@ void FESceneManager::DeleteScene(FEScene* Scene)
 	SceneMap.erase(SceneID);
 }
 
+void FESceneManager::ActivateScene(std::string ID)
+{
+	if (SceneMap.find(ID) == SceneMap.end())
+		return;
+
+	ActivateScene(SceneMap[ID]);
+}
+
+void FESceneManager::ActivateScene(FEScene* Scene)
+{
+	if (Scene == nullptr || Scene->bActive)
+		return;
+
+	Scene->bActive = true;
+	ActiveSceneMap[Scene->GetObjectID()] = Scene;
+	// FIX ME! Do I need that ?
+	//RegisterAllComponentCallbacks(Scene);
+}
+
+void FESceneManager::DeactivateScene(std::string ID)
+{
+	if (SceneMap.find(ID) == SceneMap.end())
+		return;
+
+	DeactivateScene(SceneMap[ID]);
+}
+
+void FESceneManager::DeactivateScene(FEScene* Scene)
+{
+	if (Scene == nullptr || !Scene->bActive)
+		return;
+
+	Scene->bActive = false;
+	if (ActiveSceneMap.find(Scene->GetObjectID()) != ActiveSceneMap.end())
+		ActiveSceneMap.erase(Scene->GetObjectID());
+}
+
 void FESceneManager::Update()
 {
 	auto SceneIterator = ActiveSceneMap.begin();
@@ -140,6 +180,34 @@ std::vector<FEScene*> FESceneManager::GetActiveScenes()
 	{
 		Result.push_back(SceneIterator->second);
 		SceneIterator++;
+	}
+
+	return Result;
+}
+
+FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName)
+{
+	FEScene* SceneToDuplicate = GetScene(ID);
+	if (SceneToDuplicate == nullptr)
+		return nullptr;
+
+	return DuplicateScene(SceneToDuplicate, NewSceneName);
+}
+
+FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName)
+{
+	//FIX ME! Currently new scene would be active, but should it be?
+	FEScene* Result = CreateScene(NewSceneName, "", true);
+
+	// Import all entities from source scene
+	auto EntityIDList = SourceScene->GetEntityIDList();
+	for (auto EntityID : EntityIDList)
+	{
+		FEEntity* EntityToDuplicate = SourceScene->GetEntity(EntityID);
+		if (SourceScene->SceneGraph.GetRoot()->GetEntity() == EntityToDuplicate)
+			continue;
+
+		Result->ImportEntity(EntityToDuplicate);
 	}
 
 	return Result;

@@ -9,16 +9,6 @@ FECameraComponent::FECameraComponent()
 		Frustum[i].resize(4);
 }
 
-FECameraComponent::FECameraComponent(const FECameraComponent& Other)
-{
-	
-}
-
-void FECameraComponent::operator=(const FECameraComponent& Other)
-{
-	
-}
-
 bool FECameraComponent::IsMainCamera() const
 {
 	return bIsMainCamera;
@@ -61,13 +51,8 @@ void FECameraComponent::SetActive(const bool Active)
 
 bool FECameraComponent::IsInputActive() const
 {
-	return bIsInputActive;
+	return bIsInputGrabingActive;
 }
-
-//void FECameraComponent::SetIsInputActive(const bool Active)
-//{
-//	bIsInputActive = Active;
-//}
 
 float FECameraComponent::GetFOV() const
 {
@@ -249,20 +234,15 @@ int FECameraComponent::GetRenderTargetHeight() const
 
 void FECameraComponent::SetRenderTargetSize(const int Width, const int Height)
 {
-	if (bUseDefaultRenderTargetSize)
+	if (Viewport != nullptr)
 		return;
 
 	SetRenderTargetSizeInternal(Width, Height);
 }
 
-bool FECameraComponent::IsUsingDefaultRenderTargetSize() const
+FEViewport* FECameraComponent::GetViewport() const
 {
-	return bUseDefaultRenderTargetSize;
-}
-
-void FECameraComponent::SetIsUsingDefaultRenderTargetSize(const bool NewValue)
-{
-	bUseDefaultRenderTargetSize = NewValue;
+	return Viewport;
 }
 
 void FECameraComponent::SetRenderTargetSizeInternal(const int Width, const int Height)
@@ -274,14 +254,227 @@ void FECameraComponent::SetRenderTargetSizeInternal(const int Width, const int H
 	RenderTargetHeight = Height;
 
 	AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
-
-	//if (CameraFramebuffer != nullptr)
-	//	delete CameraFramebuffer;
-
-	//CameraFramebuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, Width, Height);
 }
-//
-//FEFramebuffer* FECameraComponent::GetCameraFramebuffer() const
-//{
-//	return CameraFramebuffer;
-//}
+
+float FECameraComponent::GetBloomThreshold()
+{
+	return BloomThreshold;
+}
+
+void FECameraComponent::SetBloomThreshold(float NewValue)
+{
+	BloomThreshold = NewValue;
+}
+
+float FECameraComponent::GetBloomSize()
+{
+	return BloomSize;
+}
+
+void FECameraComponent::SetBloomSize(float NewValue)
+{
+	BloomSize = NewValue;
+}
+
+float FECameraComponent::GetFXAASpanMax()
+{
+	return FXAASpanMax;
+}
+
+void FECameraComponent::SetFXAASpanMax(float NewValue)
+{
+	FXAASpanMax = NewValue;
+}
+
+float FECameraComponent::GetFXAAReduceMin()
+{
+	return FXAAReduceMin;
+}
+
+void FECameraComponent::SetFXAAReduceMin(float NewValue)
+{
+	FXAAReduceMin = NewValue;
+}
+
+float FECameraComponent::GetFXAAReduceMul()
+{
+	return FXAAReduceMul;
+}
+
+void FECameraComponent::SetFXAAReduceMul(float NewValue)
+{
+	FXAAReduceMul = NewValue;
+}
+
+float FECameraComponent::GetDOFNearDistance()
+{
+	return DOFNearDistance;
+}
+
+void FECameraComponent::SetDOFNearDistance(float NewValue)
+{
+	DOFNearDistance = NewValue;
+}
+
+float FECameraComponent::GetDOFFarDistance()
+{
+	return DOFFarDistance;
+}
+
+void FECameraComponent::SetDOFFarDistance(float NewValue)
+{
+	DOFFarDistance = NewValue;
+}
+
+float FECameraComponent::GetDOFStrength()
+{
+	return DOFStrength;
+}
+
+void FECameraComponent::SetDOFStrength(float NewValue)
+{
+	DOFStrength = NewValue;
+}
+
+float FECameraComponent::GetDOFDistanceDependentStrength()
+{
+	return DOFDistanceDependentStrength;
+}
+
+void FECameraComponent::SetDOFDistanceDependentStrength(float NewValue)
+{
+	DOFDistanceDependentStrength = NewValue;
+}
+
+float FECameraComponent::GetChromaticAberrationIntensity()
+{
+	return ChromaticAberrationIntensity;
+}
+
+void FECameraComponent::SetChromaticAberrationIntensity(float NewValue)
+{
+	ChromaticAberrationIntensity = NewValue;
+}
+
+bool FECameraComponent::IsSSAOEnabled()
+{
+	return bSSAOActive;
+}
+
+void FECameraComponent::SetSSAOEnabled(const bool NewValue)
+{
+	bSSAOActive = NewValue;
+}
+
+int FECameraComponent::GetSSAOSampleCount()
+{
+	return SSAOSampleCount;
+}
+
+void FECameraComponent::SetSSAOSampleCount(int NewValue)
+{
+	if (NewValue < 1)
+		NewValue = 1;
+
+	if (NewValue > 64)
+		NewValue = 64;
+
+	SSAOSampleCount = NewValue;
+}
+
+bool FECameraComponent::IsSSAOSmallDetailsEnabled()
+{
+	return bSSAOSmallDetails;
+}
+
+void FECameraComponent::SetSSAOSmallDetailsEnabled(const bool NewValue)
+{
+	bSSAOSmallDetails = NewValue;
+}
+
+bool FECameraComponent::IsSSAOResultBlured()
+{
+	return bSSAOBlured;
+}
+
+void FECameraComponent::SetSSAOResultBlured(const bool NewValue)
+{
+	bSSAOBlured = NewValue;
+}
+
+float FECameraComponent::GetSSAOBias()
+{
+	return SSAOBias;
+}
+
+void FECameraComponent::SetSSAOBias(const float NewValue)
+{
+	SSAOBias = NewValue;
+}
+
+float FECameraComponent::GetSSAORadius()
+{
+	return SSAORadius;
+}
+
+void FECameraComponent::SetSSAORadius(const float NewValue)
+{
+	SSAORadius = NewValue;
+}
+
+float FECameraComponent::GetSSAORadiusSmallDetails()
+{
+	return SSAORadiusSmallDetails;
+}
+
+void FECameraComponent::SetSSAORadiusSmallDetails(const float NewValue)
+{
+	SSAORadiusSmallDetails = NewValue;
+}
+
+float FECameraComponent::GetSSAOSmallDetailsWeight()
+{
+	return SSAOSmallDetailsWeight;
+}
+
+void FECameraComponent::SetSSAOSmallDetailsWeight(const float NewValue)
+{
+	SSAOSmallDetailsWeight = NewValue;
+}
+
+bool FECameraComponent::IsDistanceFogEnabled()
+{
+	return bDistanceFogEnabled;
+}
+
+void FECameraComponent::SetDistanceFogEnabled(const bool NewValue)
+{
+	if (bDistanceFogEnabled == false && NewValue == true)
+	{
+		if (DistanceFogDensity <= 0.0f)
+			DistanceFogDensity = 0.007f;
+		if (DistanceFogGradient <= 0.0f)
+			DistanceFogGradient = 2.5f;
+	}
+	bDistanceFogEnabled = NewValue;
+}
+
+float FECameraComponent::GetDistanceFogDensity()
+{
+	return DistanceFogDensity;
+}
+
+void FECameraComponent::SetDistanceFogDensity(const float NewValue)
+{
+	DistanceFogDensity = NewValue;
+}
+
+float FECameraComponent::GetDistanceFogGradient()
+{
+	return DistanceFogGradient;
+}
+
+void FECameraComponent::SetDistanceFogGradient(const float NewValue)
+{
+	DistanceFogGradient = NewValue;
+}

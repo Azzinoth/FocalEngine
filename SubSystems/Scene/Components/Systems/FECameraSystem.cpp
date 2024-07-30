@@ -6,6 +6,7 @@ FECameraSystem* FECameraSystem::Instance = nullptr;
 FECameraSystem::FECameraSystem()
 {
 	RegisterOnComponentCallbacks();
+	ENGINE.AddOnViewportResizeCallback(OnViewportResize);
 }
 
 void FECameraSystem::RegisterOnComponentCallbacks()
@@ -20,24 +21,61 @@ void FECameraSystem::OnMyComponentAdded(FEEntity* Entity)
 		return;
 
 	FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
-	if (CameraComponent.bUseDefaultRenderTargetSize)
-		CameraComponent.SetRenderTargetSizeInternal(ENGINE.GetRenderTargetWidth(), ENGINE.GetRenderTargetHeight());
+
+	/*if (CameraComponent.Viewport != nullptr)
+	{
+		ENGINE.ViewportCheckForModificationIndividual(CameraComponent.Viewport);
+		CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
+	}*/
 }
 
 void FECameraSystem::DuplicateCameraComponent(FEEntity* EntityWithCameraComponent, FEEntity* NewEntity)
 {
-	/*if (EntityWithCameraComponent == nullptr || NewEntity == nullptr || !EntityWithCameraComponent->HasComponent<FECameraComponent>())
+	if (EntityWithCameraComponent == nullptr || NewEntity == nullptr || !EntityWithCameraComponent->HasComponent<FECameraComponent>())
 		return;
 
-	FECameraComponent& CameraComponent = EntityWithCameraComponent->GetComponent<FECameraComponent>();*/
+	FECameraComponent& OriginalCameraComponent = EntityWithCameraComponent->GetComponent<FECameraComponent>();
+	NewEntity->AddComponent<FECameraComponent>();
+
+	FECameraComponent& NewCameraComponent = NewEntity->GetComponent<FECameraComponent>();
+	NewCameraComponent = OriginalCameraComponent;
+	NewCameraComponent.bIsMainCamera = false;
 }
 
 void FECameraSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
-	/*if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
+	if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
 		return;
 
-	FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();*/
+	FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
+
+	auto DataIterator = RENDERER.CameraRenderingDataMap.begin();
+	while (DataIterator != RENDERER.CameraRenderingDataMap.end())
+	{
+		if (DataIterator->second->CameraEntity == Entity)
+		{
+			delete DataIterator->second;
+			RENDERER.CameraRenderingDataMap.erase(DataIterator);
+			break;
+		}
+		
+		DataIterator++;
+	}
+
+	auto ViewPortIterator = CAMERA_SYSTEM.ViewPortToCameraEntities.begin();
+	while (ViewPortIterator != CAMERA_SYSTEM.ViewPortToCameraEntities.end())
+	{
+		for (size_t i = 0; i < ViewPortIterator->second.size(); i++)
+		{
+			if (ViewPortIterator->second[i] == Entity)
+			{
+				ViewPortIterator->second.erase(ViewPortIterator->second.begin() + i);
+				break;
+			}
+		}
+
+		ViewPortIterator++;
+	}
 }
 
 FECameraSystem::~FECameraSystem() {};
@@ -96,6 +134,30 @@ FEEntity* FECameraSystem::GetMainCameraEntity(FEScene* Scene) const
 	return nullptr;
 }
 
+void FECameraSystem::OnViewportResize(std::string ViewportID)
+{
+	if (ViewportID.empty())
+	{
+		LOG.Add("FECameraSystem::OnViewportResize ViewportID is empty.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	// Check if we are managing that viewport.
+	if (CAMERA_SYSTEM.ViewPortToCameraEntities.find(ViewportID) == CAMERA_SYSTEM.ViewPortToCameraEntities.end())
+		return;
+
+	std::vector<FEEntity*> CameraEntities = CAMERA_SYSTEM.ViewPortToCameraEntities[ViewportID];
+	for (FEEntity* CameraEntity : CameraEntities)
+	{
+		if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+			continue;
+
+		FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+		CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
+		RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
+	}
+}
+
 void FECameraSystem::Update(const double DeltaTime)
 {
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
@@ -123,7 +185,7 @@ void FECameraSystem::SetIsIndividualInputActive(FEEntity* CameraEntity, const bo
 
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 	
-	CameraComponent.bIsInputActive = Active;
+	CameraComponent.bIsInputGrabingActive = Active;
 	if (Active)
 		SetCursorToCenter(CameraComponent);
 }
@@ -132,16 +194,13 @@ void FECameraSystem::SetCursorToCenter(FECameraComponent& Camera)
 {
 	if (APPLICATION.GetMainWindow()->IsInFocus())
 	{
-		Camera.LastMouseX = RenderTargetCenterX;
-		Camera.LastMouseY = RenderTargetCenterY;
+		Camera.LastMouseX = Camera.RenderTargetCenterX;
+		Camera.LastMouseY = Camera.RenderTargetCenterY;
 
 		ENGINE.SetMousePosition(Camera.LastMouseX, Camera.LastMouseY);
-		//SetCursorPos(Camera.LastMouseX, Camera.LastMouseY);
 
 		Camera.LastMouseX = static_cast<int>(ENGINE.MouseX);
 		Camera.LastMouseY = static_cast<int>(ENGINE.MouseY);
-		//Camera.LastMouseX = Camera.LastMouseX - RenderTargetShiftX;
-		//Camera.LastMouseY = Camera.LastMouseY - RenderTargetShiftY;
 	}
 }
 
@@ -157,10 +216,33 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 
 	// FIX ME! This is temporary
+	if (CameraComponent.Viewport != nullptr)
+	{
+		int MainWindowXPosition, MainWindowYPosition;
+		APPLICATION.GetMainWindow()->GetPosition(&MainWindowXPosition, &MainWindowYPosition);
+
+		int CenterX = MainWindowXPosition + CameraComponent.Viewport->X + (CameraComponent.Viewport->Width / 2);
+		int CenterY = MainWindowYPosition + CameraComponent.Viewport->Y + (CameraComponent.Viewport->Height / 2);
+
+		int ShiftX = MainWindowXPosition + CameraComponent.Viewport->X;
+		int ShiftY = MainWindowYPosition + CameraComponent.Viewport->Y;
+
+		CameraComponent.RenderTargetCenterX = CenterX;
+		CameraComponent.RenderTargetCenterY = CenterY;
+
+		// Check for stale data.
+		if (CameraComponent.RenderTargetWidth != CameraComponent.Viewport->GetWidth() || CameraComponent.RenderTargetHeight != CameraComponent.Viewport->GetHeight())
+		{
+			CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
+			RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
+		}
+	}
+
+	// FIX ME! This is temporary
 	const int MouseX = static_cast<int>(ENGINE.MouseX);
 	const int MouseY = static_cast<int>(ENGINE.MouseY);
 
-	if (CameraComponent.bIsInputActive && DeltaTime > 0.0)
+	if (CameraComponent.bIsInputGrabingActive && DeltaTime > 0.0)
 	{
 		// FIX ME! This is temporary
 		if (CameraComponent.Type == 0)
@@ -175,7 +257,6 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 			glm::normalize(Forward);
 
 			glm::vec3 CurrentPosition = TransformComponent.GetPosition();
-
 
 			if (ENGINE.bAKeyPressed)
 			{
@@ -213,20 +294,15 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 
 			if (CameraComponent.LastMouseX < MouseX || abs(CameraComponent.LastMouseX - MouseX) > CameraComponent.CorrectionToSensitivity)
 			{
-				CameraComponent.CurrentMouseXAngle -= (MouseX - CameraComponent.LastMouseX) * 0.15f;
+				CameraComponent.CurrentMouseXAngle -= (MouseX - CameraComponent.LastMouseX) * 0.15f * static_cast<float>((DeltaTime / 5.0));
 				SetCursorToCenter(CameraComponent);
 			}
 
 			if (CameraComponent.LastMouseY < MouseY || abs(CameraComponent.LastMouseY - MouseY) > CameraComponent.CorrectionToSensitivity)
 			{
-				CameraComponent.CurrentMouseYAngle -= (MouseY - CameraComponent.LastMouseY) * 0.15f;
+				CameraComponent.CurrentMouseYAngle -= (MouseY - CameraComponent.LastMouseY) * 0.15f * static_cast<float>((DeltaTime / 5.0));
 				SetCursorToCenter(CameraComponent);
 			}
-
-			if (CameraComponent.CurrentMouseYAngle > 89.0f)
-				CameraComponent.CurrentMouseYAngle = -89.0f;
-			if (CameraComponent.CurrentMouseYAngle < -89.0f)
-				CameraComponent.CurrentMouseYAngle = 89.0f;
 
 			TransformComponent.SetRotation(glm::vec3(CameraComponent.CurrentMouseYAngle, CameraComponent.CurrentMouseXAngle, 0.0f));
 		}
@@ -260,17 +336,14 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 		}
 	}
 
-	if (CameraComponent.Type == 1 && !CameraComponent.bIsInputActive)
+	if (CameraComponent.Type == 1 && !CameraComponent.bIsInputGrabingActive)
 	{
 		CameraComponent.LastMouseX = MouseX;
 		CameraComponent.LastMouseY = MouseY;
-		return;
 	}
 
 	if (CameraComponent.Type == 0)
 	{
-		//TransformComponent.Update();
-		//TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
 		CameraComponent.ViewMatrix = glm::inverse(TransformComponent.GetWorldMatrix());
 	}
 	else if (CameraComponent.Type == 1)
@@ -288,28 +361,6 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	CameraComponent.ProjectionMatrix = glm::perspective(glm::radians(CameraComponent.FOV), CameraComponent.AspectRatio, CameraComponent.NearPlane, CameraComponent.FarPlane);
 }
 
-void FECameraSystem::RenderTargetResize(int Width, int Height)
-{
-	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
-	for (FEScene* Scene : ActiveScenes)
-	{
-		std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWith<FECameraComponent>();
-		for (const std::string& EntityID : EntitiesWithCameraComponent)
-		{
-			FEEntity* Entity = Scene->GetEntity(EntityID);
-			if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
-				continue;
-
-			FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
-
-			if (CameraComponent.bUseDefaultRenderTargetSize)
-				CameraComponent.SetRenderTargetSizeInternal(Width, Height);
-			
-			IndividualUpdate(Entity, 0.0);
-		}
-	}
-}
-
 glm::dvec3 FECameraSystem::PolarToCartesian(double PolarAngle, double AzimutAngle, const double R)
 {
 	PolarAngle *= glm::pi<double>() / 180.0;
@@ -320,4 +371,58 @@ glm::dvec3 FECameraSystem::PolarToCartesian(double PolarAngle, double AzimutAngl
 	const double Z = R * cos(PolarAngle);
 
 	return glm::dvec3(X, Z, Y);
+}
+
+bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID)
+{
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::SetCameraViewport CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (ViewportID.empty())
+	{
+		LOG.Add("FECameraSystem::SetCameraViewport ViewportID is empty.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEViewport* Viewport = ENGINE.GetViewport(ViewportID);
+
+	if (Viewport == nullptr)
+	{
+		LOG.Add("FECameraSystem::SetCameraViewport Viewport was not found with such ViewportID.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	CameraComponent.Viewport = Viewport;
+
+	ViewPortToCameraEntities[Viewport->ID].push_back(CameraEntity);
+
+	IndividualUpdate(CameraEntity, 0.0);
+	return true;
+}
+
+FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
+{
+	if (Scene == nullptr)
+	{
+		LOG.Add("FECameraSystem::GetMainCameraViewport Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWith<FECameraComponent>();
+	for (const std::string& EntityID : EntitiesWithCameraComponent)
+	{
+		FEEntity* Entity = Scene->GetEntity(EntityID);
+		if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
+			continue;
+
+		FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
+		if (CameraComponent.bIsMainCamera)
+			return CameraComponent.Viewport;
+	}
+
+	return nullptr;
 }

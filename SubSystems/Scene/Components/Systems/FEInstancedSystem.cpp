@@ -730,7 +730,7 @@ void FEInstancedSystem::ModifyIndividualInstance(FETransformComponent& Transform
 
 void FEInstancedSystem::Update()
 {
-	//CheckObserver();
+	
 }
 
 void FEInstancedSystem::ClearInstance(FEEntity* EntityWithInstancedComponent)

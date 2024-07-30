@@ -17,21 +17,22 @@ namespace FocalEngine
 		
 		void DuplicateCameraComponent(FEEntity* EntityWithCameraComponent, FEEntity* NewEntity);
 
-		void RenderTargetResize(int Width, int Height);
 		void Update(const double DeltaTime);
 
 		// FIX ME! This is temporary
 		void SetCursorToCenter(FECameraComponent& Camera);
-		int RenderTargetCenterX = 0;
-		int RenderTargetCenterY = 0;
-		int RenderTargetShiftX = 0;
-		int RenderTargetShiftY = 0;
 		glm::dvec3 PolarToCartesian(double PolarAngle, double AzimutAngle, const double R);
+
+		std::unordered_map<std::string, std::vector<FEEntity*>> ViewPortToCameraEntities;
+		static void OnViewportResize(std::string ViewportID);
 	public:
 		SINGLETON_PUBLIC_PART(FECameraSystem)
 
 		void SetMainCamera(FEEntity* CameraEntity);
 		FEEntity* GetMainCameraEntity(FEScene* Scene) const;
+		FEViewport* GetMainCameraViewport(FEScene* Scene) const;
+
+		bool SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID);
 
 		void SetIsIndividualInputActive(FEEntity* CameraEntity, const bool Active);
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
