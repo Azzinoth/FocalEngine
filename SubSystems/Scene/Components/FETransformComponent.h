@@ -19,8 +19,6 @@ namespace FocalEngine
 	public:
 		FETransformComponent();
 		FETransformComponent(glm::mat4 Matrix);
-		FETransformComponent(const FETransformComponent& Other);
-		FETransformComponent& operator=(const FETransformComponent& Other);
 		~FETransformComponent();
 
 		FETransformComponent Combine(const FETransformComponent& Other) const;
@@ -56,6 +54,9 @@ namespace FocalEngine
 		bool IsSceneIndependent() const;
 		void SetSceneIndependent(bool NewValue);
 	private:
+		FETransformComponent(const FETransformComponent& Other);
+		FETransformComponent& operator=(const FETransformComponent& Other);
+
 		FEEntity* ParentEntity = nullptr;
 
 		bool bDirtyFlag = false;

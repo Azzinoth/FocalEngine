@@ -1095,9 +1095,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	// Before we load the scene, we need to create the entities.
 	for (size_t i = 0; i < 30; i++)
 	{
-		FEEntity* Entity = CurrentScene->CreateEntity("Node_" + std::to_string(i), EntityIDs[i]);
-		// Delete this entity from the scene graph.
-		CurrentScene->SceneGraph.DeleteNode(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+		FEEntity* Entity = CurrentScene->CreateEntityOrphan("Node_" + std::to_string(i), EntityIDs[i]);
 	}
 
 	std::ifstream LoadSceneFile;
@@ -1219,9 +1217,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	// Before we load the scene, we need to create the entities.
 	for (size_t i = 0; i < 30; i++)
 	{
-		FEEntity* Entity = CurrentScene->CreateEntity("Node_" + std::to_string(i), EntityIDs[i]);
-		// Delete this entity from the scene graph.
-		CurrentScene->SceneGraph.DeleteNode(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+		FEEntity* Entity = CurrentScene->CreateEntityOrphan("Node_" + std::to_string(i), EntityIDs[i]);
 	}
 
 	std::ifstream LoadSceneFile;
@@ -1317,11 +1313,14 @@ bool CheckEntityParentScene(FEScene* Scene, FENaiveSceneGraphNode* Node)
 	if (Node == nullptr)
 		return false;
 
-	if (Node->GetEntity() == nullptr)
-		return false;
+	if (Node != Scene->SceneGraph.GetRoot())
+	{
+		if (Node->GetEntity() == nullptr)
+			return false;
 
-	if (Node->GetEntity()->GetParentScene() != Scene)
-		return false;
+		if (Node->GetEntity()->GetParentScene() != Scene)
+			return false;
+	}
 
 	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
 	for (size_t i = 0; i < Node->GetImediateChildrenCount(); i++)
@@ -1420,4 +1419,97 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 	ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), SecondNodeCount);
 	SCENE_MANAGER.DeleteScene(FirstScene->GetObjectID());
 	SCENE_MANAGER.DeleteScene(SecondScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene");
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+
+	// Save IDs of the entities
+	std::vector<std::string> EntityIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+	}
+
+	// Save IDs of the nodes
+	std::vector<std::string> NodeIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		NodeIDs.push_back(Node->GetObjectID());
+	}
+
+	int NodeCount = 30;
+	// ************ Delete entity without children ************
+	std::string EntityToDeleteID = Nodes[27]->GetEntity()->GetObjectID();
+	std::string NodeToDeleteID = Nodes[27]->GetObjectID();
+
+	ASSERT_EQ(Nodes[20]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
+	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
+
+	CurrentScene->DeleteEntity(Nodes[27]->GetEntity());
+
+	// Check if the entity and the node are deleted.
+	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+
+	// Basic check if the hierarchy is correct.
+	NodeCount--;
+	ASSERT_EQ(Nodes[20]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
+	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
+
+	// ************ Delete entity with one children ************
+	EntityToDeleteID = Nodes[16]->GetEntity()->GetObjectID();
+	NodeToDeleteID = Nodes[16]->GetObjectID();
+
+	std::string ChildEntityToDeleteID = Nodes[25]->GetEntity()->GetObjectID();
+	std::string ChildNodeToDeleteID = Nodes[25]->GetObjectID();
+
+	CurrentScene->DeleteEntity(Nodes[16]->GetEntity());
+	
+	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+
+	ASSERT_EQ(CurrentScene->GetEntity(ChildEntityToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(ChildNodeToDeleteID), nullptr);
+
+	// Basic check if the hierarchy is correct.
+	NodeCount -= 2;
+	ASSERT_EQ(Nodes[7]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
+	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
+
+	// ************ Delete entity that have subtree as children ************
+	EntityToDeleteID = Nodes[1]->GetEntity()->GetObjectID();
+	NodeToDeleteID = Nodes[1]->GetObjectID();
+
+	std::vector<std::string> ChildEntitiesToDelete;
+	std::vector<std::string> ChildNodesToDelete;
+
+	std::vector<FENaiveSceneGraphNode*> AllChildrens = Nodes[1]->GetRecursiveChildren();
+	for (FENaiveSceneGraphNode* Child : AllChildrens)
+	{
+		ChildEntitiesToDelete.push_back(Child->GetEntity()->GetObjectID());
+		ChildNodesToDelete.push_back(Child->GetObjectID());
+	}
+
+	CurrentScene->DeleteEntity(Nodes[1]->GetEntity());
+
+	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+
+	for (size_t i = 0; i < ChildEntitiesToDelete.size(); i++)
+	{
+		ASSERT_EQ(CurrentScene->GetEntity(ChildEntitiesToDelete[i]), nullptr);
+		ASSERT_EQ(CurrentScene->SceneGraph.GetNode(ChildNodesToDelete[i]), nullptr);
+	}
+
+	// Basic check if the hierarchy is correct.
+	NodeCount -= 1 + AllChildrens.size();
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
+	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 }

@@ -72,14 +72,16 @@ int FEPrefab::ComponentsCount() const
 	return static_cast<int>(Components.size());
 }
 
-void FEPrefab::AddComponent(FEGameModel* GameModel, const FETransformComponent Transform)
+void FEPrefab::AddComponent(FEGameModel* GameModel, const FETransformComponent& Transform)
 {
 	if (GameModel == nullptr)
 		return;
 
 	Components.push_back(new FEPrefabComponent());
 	Components.back()->GameModel = GameModel;
-	Components.back()->Transform = Transform;
+	Components.back()->Transform.SetPosition(Transform.GetPosition());
+	Components.back()->Transform.SetRotation(Transform.GetRotation());
+	Components.back()->Transform.SetScale(Transform.GetScale());
 
 	SetDirtyFlag(true);
 }

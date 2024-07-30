@@ -11,8 +11,6 @@ namespace FocalEngine
 		
 		SINGLETON_PRIVATE_PART(FETransformSystem)
 
-		//bool bInternalAdd = false;
-
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
@@ -21,6 +19,8 @@ namespace FocalEngine
 		void UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot);
 	public:
 		SINGLETON_PUBLIC_PART(FETransformSystem)
+
+		void DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* NewEntity);
 	};
 
 #define TRANSFORM_SYSTEM FETransformSystem::getInstance()

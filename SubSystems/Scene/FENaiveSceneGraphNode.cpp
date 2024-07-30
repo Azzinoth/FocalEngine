@@ -1,9 +1,16 @@
 #include "FENaiveSceneGraphNode.h"
+#include "FEScene.h"
 using namespace FocalEngine;
 
 FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_GRAPH_NODE, Name) {}
 FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 {
+	if (Entity != nullptr)
+	{
+		Entity->GetParentScene()->UnRegisterEntity(Entity);
+		delete Entity;
+	}
+
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		delete Children[i];
@@ -13,6 +20,9 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 
 void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
+	if (NodeToWorkOn == nullptr)
+		return;
+
 	FETransformComponent& ChildTransform = NodeToWorkOn->GetEntity()->GetComponent<FETransformComponent>();
 	glm::mat4 ChildWorldMatrix = ChildTransform.GetWorldMatrix();
 	glm::mat4 ParentWorldMatrix = GetEntity()->GetComponent<FETransformComponent>().GetWorldMatrix();
@@ -46,7 +56,7 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 			return;
 	}
 
-	if (bPreserveWorldTransform)
+	if (bPreserveWorldTransform && GetEntity() != nullptr)
 		ApplyTransformHierarchy(NodeToAdd);
 
 	Children.push_back(NodeToAdd);

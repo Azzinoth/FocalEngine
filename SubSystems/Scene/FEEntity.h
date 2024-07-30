@@ -13,6 +13,8 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FEResourceManager;
 		friend class FEScene;
+		friend class FENaiveSceneGraphNode;
+		friend class FENaiveSceneGraph;
 
 		FEEntity(entt::entity AssignedEnTTEntity, FEScene* Scene);
 		~FEEntity();

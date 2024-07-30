@@ -41,10 +41,28 @@ void FETransformSystem::Update()
 	}
 }
 
+void FETransformSystem::DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* NewEntity)
+{
+	if (SourceEntity == nullptr || NewEntity == nullptr)
+		return;
+
+	NewEntity->GetComponent<FETransformComponent>() = SourceEntity->GetComponent<FETransformComponent>();
+	NewEntity->GetComponent<FETransformComponent>().ParentEntity = NewEntity;
+}
+
 void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 {
+	// If it is root node, then work only on children
 	if (SubTreeRoot->GetEntity() == nullptr)
-		assert(false);
+	{
+		auto Children = SubTreeRoot->GetChildren();
+		for (size_t i = 0; i < Children.size(); i++)
+		{
+			UpdateInternal(Children[i]);
+		}
+
+		return;
+	}
 
 	FEScene* CurrentScene = SubTreeRoot->GetEntity()->GetParentScene();
 

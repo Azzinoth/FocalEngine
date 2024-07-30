@@ -35,7 +35,7 @@ namespace FocalEngine
 		~FEPrefab();
 
 		int ComponentsCount() const;
-		void AddComponent(FEGameModel* GameModel, FETransformComponent Transform = FETransformComponent());
+		void AddComponent(FEGameModel* GameModel, const FETransformComponent& Transform);
 		FEPrefabComponent* GetComponent(int Index) const;
 		void RemoveComponent(const FEGameModel* GameModel);
 		void RemoveComponent(int Index);

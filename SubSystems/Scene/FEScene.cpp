@@ -48,15 +48,32 @@ void FEScene::DeleteEntity(std::string ID)
 void FEScene::DeleteEntity(FEEntity* Entity)
 {
 	if (Entity == nullptr)
+	{
+		LOG.Add("Call of FEScene::DeleteEntity with nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
 		return;
+	}
+
+	std::string EntityID = Entity->ID;
+	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(EntityID);
+	if (GraphNode == nullptr)
+	{
+		LOG.Add("Entity does not have a graph node in FEScene::DeleteEntity", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	SceneGraph.DeleteNode(GraphNode);
+}
+
+void FEScene::UnRegisterEntity(FEEntity* Entity)
+{
+	if (Entity == nullptr)
+	{
+		LOG.Add("Call of FEScene::UnRegisterEntity with nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
 
 	std::string EntityID = Entity->ID;
 	entt::entity EnTTEntityToDelete = Entity->EnTTEntity;
-
-	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(EntityID);
-	SceneGraph.DeleteNode(GraphNode);
-
-	delete Entity;
 
 	EntityMap.erase(EntityID);
 	EnttToEntity.erase(EnTTEntityToDelete);
@@ -71,6 +88,9 @@ void FEScene::Clear()
 {
 	bIsSceneClearing = true;
 
+	SceneGraph.Clear();
+
+	// Some entities could be not in the scene graph, so we need to delete them manually.
 	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
@@ -78,10 +98,10 @@ void FEScene::Clear()
 		EntityIterator++;
 	}
 	EntityMap.clear();
+	EnttToEntity.clear();
 
 	// Force clear registry.
 	Registry = entt::registry{};
-	SceneGraph.Clear();
 
 	bIsSceneClearing = false;
 }
@@ -418,7 +438,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 	FETransformComponent& Transform = Entity->GetComponent<FETransformComponent>();
 	Transform.SetPosition(Node.Translation);
-	Transform./*RotateByQuaternion*/SetQuaternion(Node.Rotation);
+	Transform.SetQuaternion(Node.Rotation);
 	Transform.SetScale(Node.Scale);
 
 	FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
@@ -545,7 +565,7 @@ FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string N
 
 	// Mandatory components.
 	NewEntity->GetComponent<FETagComponent>() = SourceEntity->GetComponent<FETagComponent>();
-	NewEntity->GetComponent<FETransformComponent>() = SourceEntity->GetComponent<FETransformComponent>();
+	TRANSFORM_SYSTEM.DuplicateTransformComponent(SourceEntity, NewEntity);
 
 	std::vector<FEComponentTypeInfo> ComponentsListInfo = SourceEntity->GetComponentsInfoList();
 	for (size_t i = 0; i < ComponentsListInfo.size(); i++)

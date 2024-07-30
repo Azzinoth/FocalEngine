@@ -20,7 +20,6 @@ void FENaiveSceneGraph::Initialize(FEScene* Scene)
 {
 	ParentScene = Scene;
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
-	NewRoot->Entity = ParentScene->CreateEntityOrphan("SceneRoot");
 	Root = NewRoot;
 }
 
@@ -44,9 +43,6 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID)
 {
-	if (Root->Entity->GetObjectID() == EntityID)
-		return Root;
-
 	return Root->GetChildByEntityID(EntityID);
 }
 
@@ -209,7 +205,6 @@ void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
 		return;
 
 	DetachNode(NodeToDelete);
-	// FIX ME! Delete entity
 	delete NodeToDelete;
 }
 
@@ -299,7 +294,7 @@ Json::Value FENaiveSceneGraph::ToJson()
 {
 	Json::Value Root;
 	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
-	// Remove root node
+	// Remove root node. It is not needed in serialization
 	AllNodes.erase(AllNodes.begin());
 
 	for (size_t i = 0; i < AllNodes.size(); i++)

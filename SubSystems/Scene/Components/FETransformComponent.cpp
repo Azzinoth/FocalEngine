@@ -33,8 +33,7 @@ FETransformComponent::FETransformComponent(glm::mat4 Matrix)
 
 void FETransformComponent::CopyFrom(const FETransformComponent& Other, bool bOmitParentEntity)
 {
-	if (!bOmitParentEntity)
-		ParentEntity = Other.ParentEntity;
+	ParentEntity = Other.ParentEntity;
 
 	bDirtyFlag = Other.bDirtyFlag;
 	bSceneIndependent = Other.bSceneIndependent;
@@ -56,16 +55,7 @@ FETransformComponent::FETransformComponent(const FETransformComponent& Other)
 	if (this == &Other)
 		return;
 
-	if (this->ParentEntity == nullptr || this->ParentEntity == Other.ParentEntity)
-	{
-		// Copy everything.
-		CopyFrom(Other);
-	}
-	else
-	{
-		// Copy everything except parent entity.
-		CopyFrom(Other, true);
-	}
+	CopyFrom(Other);
 }
 
 FETransformComponent& FETransformComponent::operator=(const FETransformComponent& Other)
@@ -73,16 +63,7 @@ FETransformComponent& FETransformComponent::operator=(const FETransformComponent
 	if (this == &Other)
 		return *this;
 
-	if (this->ParentEntity == nullptr || this->ParentEntity == Other.ParentEntity)
-	{
-		// Copy everything.
-		CopyFrom(Other);
-	}
-	else
-	{
-		// Copy everything except parent entity.
-		CopyFrom(Other, true);
-	}
+	CopyFrom(Other);
 
 	return *this;
 }

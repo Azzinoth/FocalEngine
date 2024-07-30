@@ -13,6 +13,7 @@ namespace FocalEngine
 	class FEScene : public FEObject
 	{
 		friend class FEEntity;
+		friend class FENaiveSceneGraphNode;
 		friend class FENaiveSceneGraph;
 		friend class FESceneManager;
 		friend class FEInstancedSystem;
@@ -71,6 +72,8 @@ namespace FocalEngine
 
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
 		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
+
+		void UnRegisterEntity(FEEntity* Entity);
 
 		FEEntity* CreateEntityInternal(std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
