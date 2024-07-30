@@ -712,15 +712,10 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	FEShader* FEFXAAShader = RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/);
 	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FEFXAAShader));
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAASpanMax", 8.0f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMin", 1.0f / 128.0f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAAReduceMul", 0.4f);
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
 	RENDERER.AddPostProcess(Result, FEFXAAEffect);
 
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	Result->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
-
 	// ************************************ FXAA END ************************************
 
 	// ************************************ DOF ************************************
@@ -728,20 +723,9 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FEShader* DOFShader = RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/);
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
 	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("blurSize", 2.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThreshold", 0.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("depthThresholdFar", 9000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zNear", 0.1f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("zFar", 5000.0f);
-	DOFEffect->Stages.back()->Shader->UpdateParameterData("intMult", 100.0f);
+
 	RENDERER.AddPostProcess(Result, DOFEffect);
 	// ************************************ DOF END ************************************
 
@@ -749,7 +733,6 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/);
 	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, ChromaticAberrationShader));
-	ChromaticAberrationEffect->Stages.back()->Shader->UpdateParameterData("intensity", 1.0f);
 	RENDERER.AddPostProcess(Result, ChromaticAberrationEffect);
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
 	Result->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
@@ -849,130 +832,15 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 	RENDERER.AddPostProcess(CurrentData, BloomEffect);
 	// ************************************ Bloom END ************************************
 
-	// ************************************ gammaHDR ************************************
+	// ************************************ Gamma & HDR ************************************
 	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/)));
 	RENDERER.AddPostProcess(CurrentData, GammaHDR);
-	// ************************************ gammaHDR END ************************************
+	// ************************************ Gamma & HDR END ************************************
 
 	// ************************************ FXAA ************************************
 	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
-	RENDERER.AddPostProcess(CurrentData, FEFXAAEffect);
-
-	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
-	// ************************************ FXAA END ************************************
-
-	// ************************************ DOF ************************************
-	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	RENDERER.AddPostProcess(CurrentData, DOFEffect);
-	// ************************************ DOF END ************************************
-
-	// ************************************ chromaticAberrationEffect ************************************
-	FEPostProcess* ChromaticAberrationEffect = ENGINE.CreatePostProcess("chromaticAberration", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-	ChromaticAberrationEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0 }, RESOURCE_MANAGER.GetShader("9A41665B5E2B05321A332D09"/*"chromaticAberrationShader"*/)));
-	RENDERER.AddPostProcess(CurrentData, ChromaticAberrationEffect);
-	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
-	CurrentData->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
-	// ************************************ chromaticAberrationEffect END ************************************
-}
-
-void FERenderer::OnResizeCameraRenderingData(FECameraRenderingData* CurrentData)
-{
-	FECameraComponent& CameraComponent = CurrentData->CameraEntity->GetComponent<FECameraComponent>();
-	/*if (!CameraComponent.bUseDefaultRenderTargetSize)
-		return;*/
-
-	delete CurrentData->SceneToTextureFB;
-	CurrentData->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-
-	/*if (bVRActive)
-	{
-		if (VRScreenW != 0 && VRScreenH != 0)
-		{
-			delete SceneToVRTextureFB;
-			SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
-		}
-	}*/
-
-	if (bSimplifiedRendering)
-		return;
-
-	delete CurrentData->DepthPyramid;
-	CurrentData->DepthPyramid = RESOURCE_MANAGER.CreateTexture();
-	RESOURCE_MANAGER.Textures.erase(CurrentData->DepthPyramid->GetObjectID());
-
-	CurrentData->DepthPyramid->Bind();
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-
-	const int MaxDimention = std::max(CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
-	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight));
-	CurrentData->DepthPyramid->Width = CameraComponent.RenderTargetWidth;
-	CurrentData->DepthPyramid->Height = CameraComponent.RenderTargetHeight;
-
-	CurrentData->GBuffer->RenderTargetResize(CurrentData->SceneToTextureFB);
-	CurrentData->SSAO->RenderTargetResize(CurrentData->SceneToTextureFB);
-
-	for (size_t i = 0; i < CurrentData->PostProcessEffects.size(); i++)
-	{
-		// We should delete only internally created frame buffers.
-		// Other wise user created postProcess could create UB.
-		if (CurrentData->PostProcessEffects[i]->GetName() == "Bloom" ||
-			CurrentData->PostProcessEffects[i]->GetName() == "GammaAndHDR" ||
-			CurrentData->PostProcessEffects[i]->GetName() == "FE_FXAA" ||
-			CurrentData->PostProcessEffects[i]->GetName() == "DOF" ||
-			CurrentData->PostProcessEffects[i]->GetName() == "chromaticAberration")
-			delete CurrentData->PostProcessEffects[i];
-	}
-
-	CurrentData->PostProcessEffects.clear();
-
-	// ************************************ Bloom ************************************
-	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("Bloom", static_cast<int>(CameraComponent.RenderTargetWidth / 4.0f), static_cast<int>(CameraComponent.RenderTargetHeight / 4.0f));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
-
-	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/)));
-
-	RENDERER.AddPostProcess(CurrentData, BloomEffect);
-	// ************************************ Bloom END ************************************
-
-	// ************************************ gammaHDR ************************************
-	FEPostProcess* GammaHDR = ENGINE.CreatePostProcess("GammaAndHDR", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-	GammaHDR->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("3417497A5E0C0C2A07456E44"/*"FEGammaAndHDRShader"*/)));
-	RENDERER.AddPostProcess(CurrentData, GammaHDR);
-	// ************************************ gammaHDR END ************************************
-
-	// ************************************ FXAA ************************************
-	FEPostProcess* FEFXAAEffect = ENGINE.CreatePostProcess("FE_FXAA", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
-	FEFXAAEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("1E69744A10604C2A1221426B"/*"FEFXAAShader"*/)));
-	FEFXAAEffect->Stages.back()->Shader->UpdateParameterData("FXAATextuxelSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
 	RENDERER.AddPostProcess(CurrentData, FEFXAAEffect);
 
 	//#fix for now after gamma correction I assume that texture output should be GL_RGB but in future it should be changeable.
@@ -1939,6 +1807,7 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAASpanMax", CameraComponent.GetFXAASpanMax());
 	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMin", CameraComponent.GetFXAAReduceMin());
 	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMul", CameraComponent.GetFXAAReduceMul());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAATextureSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
 	// **************************** FXAA END ****************************
 
 	// **************************** Depth of Field ********************************
@@ -1948,12 +1817,17 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
 	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
 
-
 	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
 	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
 
 	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
 	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("zNear", CameraComponent.GetNearPlane());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("zNear", CameraComponent.GetNearPlane());
+
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("zFar", CameraComponent.GetFarPlane());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("zFar", CameraComponent.GetFarPlane());
 	// **************************** Depth of Field END ****************************
 
 	// **************************** Chromatic Aberration ********************************
