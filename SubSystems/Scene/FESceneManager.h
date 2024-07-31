@@ -21,6 +21,11 @@ namespace FocalEngine
 		void DeleteScene(std::string ID);
 		void DeleteScene(FEScene* Scene);
 
+		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "");
+		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "");
+
+		bool ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent = nullptr);
+
 		template<typename T>
 		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback);
 		template<typename T>
@@ -40,9 +45,6 @@ namespace FocalEngine
 		void DeactivateScene(FEScene* Scene);
 
 		void RegisterAllComponentCallbacks(FEScene* NewScene);
-
-		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "");
-		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "");
 	private:
 		SINGLETON_PRIVATE_PART(FESceneManager)
 

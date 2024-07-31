@@ -652,16 +652,16 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize(F
 {
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraph(SceneToWorkWith, 6);
 
-
 	// Create a hierarchy:
 	//
-	//           0  
+    //           0   5
 	//           | 
-    //           1   
+	//           1   
 	//          / \   
-    //         4   2
+	//         4   2
 	//              \
 	//               3
+
 	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
 	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[1]->GetObjectID());
 	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[2]->GetObjectID());
@@ -1509,7 +1509,148 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	}
 
 	// Basic check if the hierarchy is correct.
-	NodeCount -= 1 + AllChildrens.size();
+	NodeCount -= 1 + static_cast<int>(AllChildrens.size());
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, Simple_Check_Of_Scene_Duplication)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene");
+	PopulateSceneGraphMediumSize(CurrentScene);
+	// In this function we will populate Nodes vector in a little bit different way.
+	// It should be same way as we will use for duplicated scene.
+	std::vector<FENaiveSceneGraphNode*> Nodes = CurrentScene->SceneGraph.GetRoot()->GetRecursiveChildren();
+
+	// Save IDs of the entities
+	std::vector<std::string> EntityIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+	}
+
+	// Save IDs of the nodes
+	std::vector<std::string> NodeIDs;
+	for (FENaiveSceneGraphNode* Node : Nodes)
+	{
+		NodeIDs.push_back(Node->GetObjectID());
+	}
+
+	FEScene* DuplicatedScene = SCENE_MANAGER.DuplicateScene(CurrentScene->GetObjectID(), "TestScene_Duplicated");
+	std::vector<FENaiveSceneGraphNode*> DuplicatedNodes = DuplicatedScene->SceneGraph.GetRoot()->GetRecursiveChildren();
+
+	// Save IDs of the entities
+	std::vector<std::string> DuplicatedEntityIDs;
+	for (FENaiveSceneGraphNode* Node : DuplicatedNodes)
+	{
+		DuplicatedEntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+	}
+
+	// Save IDs of the nodes
+	std::vector<std::string> DuplicatedNodeIDs;
+	for (FENaiveSceneGraphNode* Node : DuplicatedNodes)
+	{
+		DuplicatedNodeIDs.push_back(Node->GetObjectID());
+	}
+
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
+	ASSERT_EQ(DuplicatedScene->SceneGraph.GetNodeCount(), 30);
+
+	ASSERT_EQ(Nodes.size(), DuplicatedNodes.size());
+	ASSERT_EQ(EntityIDs.size(), DuplicatedEntityIDs.size());
+	ASSERT_EQ(NodeIDs.size(), DuplicatedNodeIDs.size());
+
+	CheckEntityParentScene(CurrentScene, CurrentScene->SceneGraph.GetRoot());
+	CheckEntityParentScene(DuplicatedScene, DuplicatedScene->SceneGraph.GetRoot());
+
+	// First will check if nodes and entities have different IDs.
+	// Also if objects are resided in different memory locations.
+	for (size_t i = 0; i < Nodes.size(); i++)
+	{
+		ASSERT_NE(NodeIDs[i], DuplicatedNodeIDs[i]);
+		ASSERT_NE(EntityIDs[i], DuplicatedEntityIDs[i]);
+
+		ASSERT_NE(Nodes[i], DuplicatedNodes[i]);
+		ASSERT_NE(Nodes[i]->GetEntity(), DuplicatedNodes[i]->GetEntity());
+	}
+
+	// Check if the hierarchy is correct.
+	for (size_t i = 0; i < Nodes.size(); i++)
+	{
+		ASSERT_EQ(Nodes[i]->GetImediateChildrenCount(), DuplicatedNodes[i]->GetImediateChildrenCount());
+		ASSERT_EQ(Nodes[i]->GetRecursiveChildCount(), DuplicatedNodes[i]->GetRecursiveChildCount());
+
+		for (size_t j = 0; j < Nodes.size(); j++)
+		{
+			bool bOriginalIsDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[i], Nodes[j]);
+			bool bDuplicatedIsDescendant = DuplicatedScene->SceneGraph.IsDescendant(DuplicatedNodes[i], DuplicatedNodes[j]);
+			ASSERT_EQ(bOriginalIsDescendant, bDuplicatedIsDescendant);
+		}
+	}
+	
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(DuplicatedScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
+{
+	FEScene* TargetScene = SCENE_MANAGER.CreateScene("TargetScene");
+	std::vector<FENaiveSceneGraphNode*> TargetNodes = PopulateSceneGraphMediumSize(TargetScene);
+	ASSERT_EQ(TargetScene->SceneGraph.GetNodeCount(), 30);
+
+	FEScene* SourceScene = SCENE_MANAGER.CreateScene("SourceScene");
+	std::vector<FENaiveSceneGraphNode*> SourceNodes = PopulateSceneGraphTinySize(SourceScene);
+	ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), 6);
+
+	ASSERT_TRUE(SCENE_MANAGER.ImportSceneAsNode(SourceScene, TargetScene, TargetNodes[11]));
+
+	// Check if source scene is still valid.
+	ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), 6);
+	ASSERT_TRUE(SourceScene->SceneGraph.IsDescendant(SourceNodes[0], SourceNodes[1]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[1], SourceNodes[0]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[0], SourceNodes[5]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[5], SourceNodes[0]));
+	ASSERT_TRUE(SourceScene->SceneGraph.IsDescendant(SourceNodes[1], SourceNodes[2]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[2], SourceNodes[1]));
+	ASSERT_TRUE(SourceScene->SceneGraph.IsDescendant(SourceNodes[1], SourceNodes[4]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[4], SourceNodes[1]));
+	ASSERT_TRUE(SourceScene->SceneGraph.IsDescendant(SourceNodes[2], SourceNodes[3]));
+	ASSERT_FALSE(SourceScene->SceneGraph.IsDescendant(SourceNodes[3], SourceNodes[2]));
+	
+	// Check if target scene is what we expected.
+	ASSERT_EQ(TargetScene->SceneGraph.GetNodeCount(), 36);
+	ASSERT_EQ(TargetNodes[11]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(TargetNodes[11]->GetRecursiveChildCount(), 8);
+
+	CheckEntityParentScene(SourceScene, SourceScene->SceneGraph.GetRoot());
+	CheckEntityParentScene(TargetScene, TargetScene->SceneGraph.GetRoot());
+
+	std::vector<FENaiveSceneGraphNode*> Childrens = TargetNodes[11]->GetRecursiveChildren();
+	int FoundChildrenCount = 0;
+	for (size_t i = 0; i < Childrens.size(); i++)
+	{
+		if (Childrens[i]->GetName() == "Node_0")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_1")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_2")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_3")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_4")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_5")
+			FoundChildrenCount++;
+
+		if (Childrens[i]->GetName() == "Node_20")
+			FoundChildrenCount++;
+		if (Childrens[i]->GetName() == "Node_27")
+			FoundChildrenCount++;
+	}
+	ASSERT_EQ(FoundChildrenCount, 8);
+
+	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
 }

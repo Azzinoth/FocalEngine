@@ -199,16 +199,36 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	//FIX ME! Currently new scene would be active, but should it be?
 	FEScene* Result = CreateScene(NewSceneName, "", true);
 
-	// Import all entities from source scene
-	auto EntityIDList = SourceScene->GetEntityIDList();
-	for (auto EntityID : EntityIDList)
+	// Get children of the root entity and import them.
+	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
+	for (auto RootChildren : RootChildrens)
 	{
-		FEEntity* EntityToDuplicate = SourceScene->GetEntity(EntityID);
-		if (SourceScene->SceneGraph.GetRoot()->GetEntity() == EntityToDuplicate)
-			continue;
-
+		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
 		Result->ImportEntity(EntityToDuplicate);
 	}
 
 	return Result;
+}
+
+bool FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent)
+{
+	if (SourceScene == nullptr || TargetScene == nullptr)
+	{
+		LOG.Add("FESceneManager::ImportSceneAsNode: SourceScene or TargetScene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Get children of the root entity and import them.
+	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
+	for (auto RootChildren : RootChildrens)
+	{
+		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
+		if (TargetScene->ImportEntity(EntityToDuplicate, TargetParent) == nullptr)
+		{
+			LOG.Add("FESceneManager::ImportSceneAsNode: Failed to import entity.", "FE_LOG_ECS", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
 }
