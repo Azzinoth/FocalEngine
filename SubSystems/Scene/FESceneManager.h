@@ -45,6 +45,10 @@ namespace FocalEngine
 		void DeactivateScene(FEScene* Scene);
 
 		void RegisterAllComponentCallbacks(FEScene* NewScene);
+
+		// Checks if two scene graph hierarchies are equivalent.
+		// It will not check entities, only the hierarchy structure.
+		bool AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* FirstStaringNode, FENaiveSceneGraphNode* SecondStartingNode, bool bCheckNames = false);
 	private:
 		SINGLETON_PRIVATE_PART(FESceneManager)
 

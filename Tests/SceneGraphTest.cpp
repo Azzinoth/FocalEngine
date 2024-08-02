@@ -1654,3 +1654,47 @@ TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
 	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
 	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
 }
+
+TEST_F(SceneGraphTest, Simple_Check_Of_AreSceneGraphHierarchiesEquivalent)
+{
+	FEScene* FirstMediumSizeScene = SCENE_MANAGER.CreateScene("FirstMediumSizeScene");
+	std::vector<FENaiveSceneGraphNode*> FirstMediumSizeSceneNodes = PopulateSceneGraphMediumSize(FirstMediumSizeScene);
+	ASSERT_EQ(FirstMediumSizeScene->SceneGraph.GetNodeCount(), 30);
+
+	FEScene* SecondMediumSizeScene = SCENE_MANAGER.CreateScene("SecondMediumSizeScene");
+	std::vector<FENaiveSceneGraphNode*> SecondMediumSizeSceneNodes = PopulateSceneGraphMediumSize(SecondMediumSizeScene);
+	ASSERT_EQ(SecondMediumSizeScene->SceneGraph.GetNodeCount(), 30);
+
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
+
+	// Change the name of the first node in the second scene.
+	SecondMediumSizeSceneNodes[0]->SetName("Node_0_Changed");
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
+	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+
+	SecondMediumSizeSceneNodes[0]->SetName("Node_0");
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+	SecondMediumSizeSceneNodes[10]->SetName("Node_10_Changed");
+	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+	SecondMediumSizeSceneNodes[10]->SetName("Node_10");
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+
+	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetObjectID(), FirstMediumSizeSceneNodes[29]->GetObjectID());
+	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
+	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+
+	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetObjectID(), FirstMediumSizeSceneNodes[11]->GetObjectID());
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
+
+	// Nodes are different, but they have same hierarchy.
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[10], SecondMediumSizeSceneNodes[20]));
+	// But names are different.
+	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[10], SecondMediumSizeSceneNodes[20], true));
+
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[15], SecondMediumSizeSceneNodes[15]));
+	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[15], SecondMediumSizeSceneNodes[15], true));
+
+	SCENE_MANAGER.DeleteScene(FirstMediumSizeScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SecondMediumSizeScene->GetObjectID());
+}

@@ -258,6 +258,7 @@ file(GLOB Scene_SRC
 	"SubSystems/Scene/FEScene.inl"
 	"SubSystems/Scene/FEScene.h"
 	"SubSystems/Scene/FENaiveSceneGraph.cpp"
+	"SubSystems/Scene/FENaiveSceneGraph.inl"
 	"SubSystems/Scene/FENaiveSceneGraph.h"
 	"SubSystems/Scene/FENaiveSceneGraphNode.cpp"
 	"SubSystems/Scene/FENaiveSceneGraphNode.h"

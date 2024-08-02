@@ -232,3 +232,23 @@ bool FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScen
 
 	return true;
 }
+
+bool FESceneManager::AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* FirstStaringNode, FENaiveSceneGraphNode* SecondStartingNode, bool bCheckNames)
+{
+	if (FirstStaringNode == nullptr || SecondStartingNode == nullptr)
+		return FirstStaringNode == SecondStartingNode; // Both null is considered equivalent
+
+	if (FirstStaringNode->GetChildren().size() != SecondStartingNode->GetChildren().size())
+		return false;
+
+	if (bCheckNames && FirstStaringNode->GetName() != SecondStartingNode->GetName())
+		return false;
+
+	for (size_t i = 0; i < FirstStaringNode->GetChildren().size(); i++)
+	{
+		if (!AreSceneGraphHierarchiesEquivalent(FirstStaringNode->GetChildren()[i], SecondStartingNode->GetChildren()[i], bCheckNames))
+			return false;
+	}
+
+	return true;
+}

@@ -31,6 +31,14 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetNodeByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
+		// Will return first parent node that has the specified component
+		template<typename T>
+		FENaiveSceneGraphNode* GetFirstParentNodeWithComponent(FENaiveSceneGraphNode* Node);
+
+		// Will return first child node that has the specified component
+		template<typename T>
+		FENaiveSceneGraphNode* GetFirstChildNodeWithComponent(FENaiveSceneGraphNode* Node);
+
 		void Clear();
 
 		Json::Value ToJson();
