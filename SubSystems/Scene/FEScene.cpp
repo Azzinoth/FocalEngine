@@ -64,19 +64,10 @@ void FEScene::DeleteEntity(FEEntity* Entity)
 	SceneGraph.DeleteNode(GraphNode);
 }
 
-void FEScene::UnRegisterEntity(FEEntity* Entity)
+void FEScene::ClearEntityRecords(std::string EntityID, entt::entity EnttEntity)
 {
-	if (Entity == nullptr)
-	{
-		LOG.Add("Call of FEScene::UnRegisterEntity with nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
-		return;
-	}
-
-	std::string EntityID = Entity->ID;
-	entt::entity EnTTEntityToDelete = Entity->EnTTEntity;
-
 	EntityMap.erase(EntityID);
-	EnttToEntity.erase(EnTTEntityToDelete);
+	EnttToEntity.erase(EnttEntity);
 }
 
 std::vector<std::string> FEScene::GetEntityIDList()
@@ -608,7 +599,7 @@ FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string N
 	return NewEntity;
 }
 
-FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent)
+FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
 	FEEntity* Result = nullptr;
 	if (EntityFromDifferentScene == nullptr)
@@ -627,7 +618,7 @@ FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveScene
 		TargetParent = SceneGraph.GetRoot();
 
 	FENaiveSceneGraphNode* OriginalNode = EntityFromDifferentScene->GetParentScene()->SceneGraph.GetNodeByEntityID(EntityFromDifferentScene->GetObjectID());
-	FENaiveSceneGraphNode* NewNode = SceneGraph.ImportNode(OriginalNode, TargetParent);
+	FENaiveSceneGraphNode* NewNode = SceneGraph.ImportNode(OriginalNode, TargetParent, Filter);
 	if (NewNode == nullptr)
 	{
 		LOG.Add("Failed to import node in FEScene::ImportEntity", "FE_LOG_ECS", FE_LOG_ERROR);

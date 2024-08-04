@@ -16,4 +16,5 @@ entt::registry& FEEntity::GetRegistry()
 FEEntity::~FEEntity()
 {
 	ParentScene->Registry.destroy(EnTTEntity);
+	ParentScene->ClearEntityRecords(GetObjectID(), EnTTEntity);
 }

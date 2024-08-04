@@ -6,3 +6,4 @@
 #include "FEInstancedSystem.h"
 #include "FETerrainSystem.h"
 #include "FESkyDomeSystem.h"
+#include "FEPrefabInstanceSystem.h"

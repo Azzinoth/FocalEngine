@@ -867,7 +867,9 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 
 FECameraRenderingData* FERenderer::GetCameraRenderingData(FEEntity* CameraEntity)
 {
-	// FIX ME! Track last frame camera size.
+	if (CameraEntity == nullptr)
+		return nullptr;
+
 	if (CameraRenderingDataMap.find(CameraEntity->GetObjectID()) != CameraRenderingDataMap.end())
 	{
 		return CameraRenderingDataMap[CameraEntity->GetObjectID()];
@@ -1135,6 +1137,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 	const unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
 	glDrawBuffers(6, attachments);
 
+	glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
+	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	UpdateGPUCullingFrustum();

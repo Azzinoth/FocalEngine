@@ -24,7 +24,7 @@ namespace FocalEngine
 		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "");
 		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "");
 
-		bool ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent = nullptr);
+		std::vector<FENaiveSceneGraphNode*> ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool (FEEntity*)> Filter = nullptr);
 
 		template<typename T>
 		void RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback);

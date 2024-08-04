@@ -230,6 +230,8 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FETerrainComponent.h"
 	"SubSystems/Scene/Components/FESkyDomeComponent.cpp"
 	"SubSystems/Scene/Components/FESkyDomeComponent.h"
+	"SubSystems/Scene/Components/FEPrefabInstanceComponent.h"
+	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
 )
 
 file(GLOB Scene_Component_Systems_SRC
@@ -245,6 +247,8 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.h"
+	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEComponentSystems.h"
 )
 

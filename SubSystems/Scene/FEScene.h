@@ -33,7 +33,7 @@ namespace FocalEngine
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
 		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");
-		FEEntity* ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent = nullptr);
+		FEEntity* ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
 		void DeleteEntity(std::string ID);
 		void DeleteEntity(FEEntity* Entity);
 
@@ -58,7 +58,7 @@ namespace FocalEngine
 
 		// Internal Entity Management
 		FEEntity* GetEntityByEnTT(entt::entity ID);
-		void UnRegisterEntity(FEEntity* Entity);
+		void ClearEntityRecords(std::string EntityID, entt::entity EnttEntity);
 		FEEntity* CreateEntityInternal(std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
 

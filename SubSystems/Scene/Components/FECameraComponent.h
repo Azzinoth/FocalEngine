@@ -63,6 +63,8 @@ namespace FocalEngine
 
 	struct FECameraComponent
 	{
+#define DEFAULT_CAMERA_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
+
 		friend class FECameraSystem;
 		friend class FERenderer;
 
@@ -85,6 +87,9 @@ namespace FocalEngine
 		bool IsInputActive() const;
 
 		FEViewport* GetViewport() const;
+
+		glm::vec4 GetClearColor() const;
+		void SetClearColor(glm::vec4 NewClearColor);
 
 		float GetFOV() const;
 		void SetFOV(const float FOV);
@@ -203,6 +208,8 @@ namespace FocalEngine
 		//bool bUseDefaultRenderTargetSize = true;
 
 		FEViewport* Viewport = nullptr;
+
+		glm::vec4 ClearColor = DEFAULT_CAMERA_CLEAR_COLOR;
 
 		int RenderTargetWidth = 0;
 		int RenderTargetHeight = 0;

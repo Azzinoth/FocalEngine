@@ -172,7 +172,7 @@ void FENaiveSceneGraph::AddNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSc
 	Parent->AddChild(NodeToAdd, bPreserveWorldTransform);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent)
+FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
 	FENaiveSceneGraphNode* Result = nullptr;
 	if (NodeFromDifferentSceneGraph == nullptr)
@@ -187,6 +187,9 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* Node
 		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_LOG_ECS", FE_LOG_WARNING);
 		return Result;
 	}
+
+	if (Filter != nullptr && !Filter(EntityFromDifferentScene))
+		return Result;
 
 	if (TargetParent == nullptr)
 		TargetParent = GetRoot();

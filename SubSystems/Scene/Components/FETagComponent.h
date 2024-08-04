@@ -5,8 +5,12 @@ namespace FocalEngine
 {
 	struct FETagComponent
 	{
-		std::string Tag = "";
 		FETagComponent() {};
 		FETagComponent(std::string TagToSet);
+
+		std::string GetTag() const;
+		void SetTag(std::string NewTag);
+	private:
+		std::string Tag = "";
 	};
 }

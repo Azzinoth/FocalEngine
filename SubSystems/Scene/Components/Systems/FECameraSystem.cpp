@@ -186,7 +186,7 @@ void FECameraSystem::SetIsIndividualInputActive(FEEntity* CameraEntity, const bo
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 	
 	CameraComponent.bIsInputGrabingActive = Active;
-	if (Active)
+	if (Active && CameraComponent.Type == 0)
 		SetCursorToCenter(CameraComponent);
 }
 
@@ -233,8 +233,11 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 		// Check for stale data.
 		if (CameraComponent.RenderTargetWidth != CameraComponent.Viewport->GetWidth() || CameraComponent.RenderTargetHeight != CameraComponent.Viewport->GetHeight())
 		{
-			CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
-			RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
+			if (CameraComponent.Viewport->GetWidth() != 0 && CameraComponent.Viewport->GetHeight() != 0)
+			{
+				CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
+				RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
+			}
 		}
 	}
 
@@ -348,14 +351,23 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	}
 	else if (CameraComponent.Type == 1)
 	{
-		// FIX ME! It should be controlled through the FETransform component with a script.
 		CameraComponent.ViewMatrix = glm::mat4(1.0f);
 
-		glm::vec3 NewPosition = PolarToCartesian(CameraComponent.CurrentPolarAngle, CameraComponent.CurrentAzimutAngle, CameraComponent.DistanceToModel);
-		CameraComponent.ViewMatrix = glm::lookAt(NewPosition, glm::vec3(0.0f), glm::vec3(0, 1, 0));
+		glm::dvec3 NewPosition = PolarToCartesian(CameraComponent.CurrentPolarAngle, CameraComponent.CurrentAzimutAngle, CameraComponent.DistanceToModel);
+		CameraComponent.ViewMatrix = glm::lookAt(NewPosition, glm::dvec3(0.0f), glm::dvec3(0, 1, 0));
 
 		CameraComponent.ViewMatrix = glm::translate(CameraComponent.ViewMatrix, -CameraComponent.TrackingObjectPosition);
 		NewPosition += CameraComponent.TrackingObjectPosition;
+
+		glm::dvec3 Position;
+		glm::dquat Rotation;
+		glm::dvec3 Scale;
+		GEOMETRY.DecomposeMatrixToTranslationRotationScale(CameraComponent.ViewMatrix, Position, Rotation, Scale);
+
+		// We need to udpate TransformComponent position and rotation.
+		TransformComponent.SetPosition(NewPosition);
+		TransformComponent.SetQuaternion(Rotation);
+		TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
 	}
 	
 	CameraComponent.ProjectionMatrix = glm::perspective(glm::radians(CameraComponent.FOV), CameraComponent.AspectRatio, CameraComponent.NearPlane, CameraComponent.FarPlane);

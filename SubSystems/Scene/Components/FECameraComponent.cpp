@@ -94,6 +94,16 @@ void FECameraComponent::SetAspectRatio(const float AspectRatio)
 	this->AspectRatio = AspectRatio;
 }
 
+glm::vec4 FECameraComponent::GetClearColor() const
+{
+	return ClearColor;
+}
+
+void FECameraComponent::SetClearColor(glm::vec4 NewClearColor)
+{
+	ClearColor = NewClearColor;
+}
+
 float FECameraComponent::GetGamma() const
 {
 	return Gamma;

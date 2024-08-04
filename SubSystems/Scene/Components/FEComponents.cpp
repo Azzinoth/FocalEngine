@@ -45,6 +45,11 @@ FEComponentsTools::FEComponentsTools()
 	SkyDomeComponentInfo.IncompatibleWith.push_back({ SkyDomeComponentInfo });
 	SkyDomeComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
 	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] = SkyDomeComponentInfo;
+
+	FEComponentTypeInfo PrefabInstanceComponentInfo("Prefab Instance", typeid(FEPrefabInstanceComponent));
+	FunctionsToGetEntityIDListWith[PrefabInstanceComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEPrefabInstanceComponent>(); };
+	PrefabInstanceComponentInfo.IncompatibleWith.push_back({ PrefabInstanceComponentInfo });
+	ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()] = PrefabInstanceComponentInfo;
 }
 
 std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()

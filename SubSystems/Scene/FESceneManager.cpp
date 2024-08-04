@@ -46,6 +46,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
 	NewScene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
+	NewScene->Registry.on_construct<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEPrefabInstanceComponent>>();
 
 	NewScene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
 	NewScene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
@@ -55,6 +56,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
 	NewScene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
+	NewScene->Registry.on_destroy<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEPrefabInstanceComponent>>();
 
 	NewScene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
 	NewScene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
@@ -64,6 +66,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
 	NewScene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
+	NewScene->Registry.on_update<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEPrefabInstanceComponent>>();
 }
 
 std::vector<std::string> FESceneManager::GetSceneIDList()
@@ -210,12 +213,13 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	return Result;
 }
 
-bool FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent)
+std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
+	std::vector<FENaiveSceneGraphNode*> Result;
 	if (SourceScene == nullptr || TargetScene == nullptr)
 	{
 		LOG.Add("FESceneManager::ImportSceneAsNode: SourceScene or TargetScene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
-		return false;
+		return Result;
 	}
 
 	// Get children of the root entity and import them.
@@ -223,14 +227,22 @@ bool FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScen
 	for (auto RootChildren : RootChildrens)
 	{
 		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
-		if (TargetScene->ImportEntity(EntityToDuplicate, TargetParent) == nullptr)
+		FEEntity* NewChildEntity = TargetScene->ImportEntity(EntityToDuplicate, TargetParent, Filter);
+		if (NewChildEntity != nullptr)
 		{
-			LOG.Add("FESceneManager::ImportSceneAsNode: Failed to import entity.", "FE_LOG_ECS", FE_LOG_ERROR);
-			return false;
+			FENaiveSceneGraphNode* NewChildNode = TargetScene->SceneGraph.GetNodeByEntityID(NewChildEntity->GetObjectID());
+			if (NewChildNode != nullptr)
+			{
+				Result.push_back(NewChildNode);
+			}	
+			else
+			{
+				LOG.Add("FESceneManager::ImportSceneAsNode: Failed to get new node.", "FE_LOG_ECS", FE_LOG_ERROR);
+			}
 		}
 	}
 
-	return true;
+	return Result;
 }
 
 bool FESceneManager::AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* FirstStaringNode, FENaiveSceneGraphNode* SecondStartingNode, bool bCheckNames)

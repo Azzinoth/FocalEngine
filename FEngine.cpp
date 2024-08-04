@@ -24,10 +24,6 @@ void FEngine::InternalUpdate()
 	
 	INSTANCED_RENDERING_SYSTEM.Update();
 	SCENE_MANAGER.Update();
-
-	// FIX ME! Need proper INPUT system.
-	ENGINE.MouseScrollXOffset = 0.0;
-	ENGINE.MouseScrollYOffset = 0.0;
 	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
@@ -41,6 +37,10 @@ void FEngine::InternalUpdate()
 	// Instead of updating TRANSFORM_SYSTEM in the beginning of the frame, we update it here.
 	// To ensure that all the other systems are updated before the TRANSFORM_SYSTEM will kick in.
 	TRANSFORM_SYSTEM.Update();
+
+	// FIX ME! Need proper INPUT system.
+	ENGINE.MouseScrollXOffset = 0.0;
+	ENGINE.MouseScrollYOffset = 0.0;
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
@@ -116,8 +116,6 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
 	APPLICATION.GetMainWindow()->AddOnScrollCallback(&FEngine::MouseScrollCallback);
 	AddViewport(NewWindow);
-
-	SetClearColor(DefaultGammaCorrectedClearColor);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
 
@@ -327,17 +325,6 @@ void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
 
 		ENGINE.ClientMouseScrollCallbacks[i](Xoffset, Yoffset);
 	}
-}
-
-glm::vec4 FEngine::GetClearColor()
-{
-	return CurrentClearColor;
-}
-
-void FEngine::SetClearColor(glm::vec4 ClearColor)
-{
-	CurrentClearColor = ClearColor;
-	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 }
 
 bool FEngine::IsSimplifiedRenderingModeActive()

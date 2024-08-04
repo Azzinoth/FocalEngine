@@ -201,7 +201,6 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
-		//void OnResizeCameraRenderingData(FECameraRenderingData* CurrentData);
 		void OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
 		FECameraRenderingData* CurrentCameraRenderingData = nullptr;

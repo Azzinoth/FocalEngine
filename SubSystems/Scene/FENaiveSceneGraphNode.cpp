@@ -6,10 +6,7 @@ FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCE
 FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 {
 	if (Entity != nullptr)
-	{
-		Entity->GetParentScene()->UnRegisterEntity(Entity);
 		delete Entity;
-	}
 
 	for (size_t i = 0; i < Children.size(); i++)
 	{

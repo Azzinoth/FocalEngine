@@ -7,6 +7,7 @@
 #include "FEInstancedComponent.h"
 #include "FETerrainComponent.h"
 #include "FESkyDomeComponent.h"
+#include "FEPrefabInstanceComponent.h"
 
 #include "entt.hpp"
 
