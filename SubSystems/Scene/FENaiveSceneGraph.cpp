@@ -345,3 +345,25 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 		}
 	}
 }
+
+FEAABB FENaiveSceneGraph::GetNodeAABB(FEAABB& CumulativeAABB, FENaiveSceneGraphNode* TargetNode, std::function<bool(FEEntity*)> Filter)
+{
+	if (TargetNode == nullptr)
+		return CumulativeAABB;
+
+	if (TargetNode != Root)
+	{
+		if (Filter != nullptr && !Filter(TargetNode->GetEntity()))
+			return CumulativeAABB;
+
+		FEEntity* Entity = TargetNode->GetEntity();
+		FEScene* Scene = Entity->GetParentScene();
+		FEAABB NodeAABB = Scene->GetEntityAABB(Entity);
+		CumulativeAABB = CumulativeAABB.Merge(NodeAABB);
+	}
+		
+	for (size_t i = 0; i < TargetNode->Children.size(); i++)
+		CumulativeAABB = CumulativeAABB.Merge(GetNodeAABB(CumulativeAABB, TargetNode->GetChildren()[i], Filter));
+
+	return CumulativeAABB;
+}

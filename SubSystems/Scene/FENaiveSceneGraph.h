@@ -43,6 +43,8 @@ namespace FocalEngine
 
 		Json::Value ToJson();
 		void FromJson(Json::Value Root);
+
+		FEAABB GetNodeAABB(FEAABB& CumulativeAABB, FENaiveSceneGraphNode* TargetNode = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
 	private:
 		FEScene* ParentScene = nullptr;
 
@@ -62,4 +64,5 @@ namespace FocalEngine
 
 		bool DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName = true);
 	};
+#include "FENaiveSceneGraph.inl"
 }

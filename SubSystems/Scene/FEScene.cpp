@@ -628,3 +628,58 @@ FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveScene
 	Result = NewNode->GetEntity();
 	return Result;
 }
+
+FEAABB FEScene::GetEntityAABB(std::string ID)
+{
+	if (EntityMap.find(ID) == EntityMap.end())
+	{
+		LOG.Add("Entity with ID: " + ID + " not found in FEScene::GetEntityAABB", "FE_LOG_ECS", FE_LOG_WARNING);
+		return FEAABB();
+	}
+
+	return GetEntityAABB(EntityMap[ID]);
+}
+
+FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
+{
+	FEAABB Result;
+
+	if (Entity == nullptr)
+	{
+		LOG.Add("Call of FEScene::GetEntityAABB with nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Result;
+	}
+
+	if (Entity->HasComponent<FEGameModelComponent>())
+	{
+		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GameModel;
+		Result = GameModel->GetMesh()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+	}
+
+	if (Entity->HasComponent<FEInstancedComponent>())
+	{
+		Result = INSTANCED_RENDERING_SYSTEM.GetAABB(Entity);
+	}
+
+	if (Entity->HasComponent<FETerrainComponent>())
+	{
+		Result = TERRAIN_SYSTEM.GetAABB(Entity);
+	}
+
+	// If entity has no renderable components, we can have FEAABB with zero volume.
+	// But with position.
+	if (Result.GetVolume() == 0)
+	{
+		Result.Min = Entity->GetComponent<FETransformComponent>().GetPosition();
+		Result.Max = Entity->GetComponent<FETransformComponent>().GetPosition();
+	}
+
+	return Result;
+}
+
+FEAABB FEScene::GetSceneAABB(std::function<bool(FEEntity*)> Filter)
+{
+	FEAABB Result;
+	SceneGraph.GetNodeAABB(Result, SceneGraph.GetRoot(), Filter);
+	return Result;
+}

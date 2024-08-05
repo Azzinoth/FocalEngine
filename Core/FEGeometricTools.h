@@ -4,17 +4,13 @@
 
 namespace FocalEngine
 {
-	class FEEntity;
-	class FEEntityInstanced;
-	class FETerrain;
-	class FEResourceManager;
-
 	class FEAABB
 	{
-		friend FEEntity;
-		friend FEEntityInstanced;
-		friend FETerrain;
-		friend FEResourceManager;
+		friend class FEEntity;
+		friend class FEEntityInstanced;
+		friend class FETerrain;
+		friend class FEResourceManager;
+		friend class FEScene;
 	public:
 		FEAABB();
 		FEAABB(glm::vec3 Min, glm::vec3 Max);

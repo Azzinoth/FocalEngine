@@ -10,11 +10,13 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetFirstParentNodeWithComponent(FENaiv
 	while (CurrentNode->GetParent() != nullptr)
 	{
 		CurrentNode = CurrentNode->GetParent();
+		if (CurrentNode->GetEntity() == nullptr)
+			return nullptr;
+
 		if (CurrentNode->GetEntity()->HasComponent<T>())
-		{
 			return CurrentNode;
-		}
 	}
+
 	return nullptr;
 }
 

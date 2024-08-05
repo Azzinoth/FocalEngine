@@ -40,7 +40,7 @@ void FEPrefabInstanceSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsScen
 
 FEPrefabInstanceSystem::~FEPrefabInstanceSystem() {};
 
-bool FEPrefabInstanceSystem::IsPrefabInstanceValid(FEEntity* Entity)
+bool FEPrefabInstanceSystem::IsPrefabInstanceUnmodified(FEEntity* Entity)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEPrefabInstanceComponent>())
 		return false;
@@ -52,13 +52,47 @@ bool FEPrefabInstanceSystem::IsPrefabInstanceValid(FEEntity* Entity)
 
 	FEScene* EntityScene = Entity->GetParentScene();
 	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
-	bool bHieraraichalEquivalence = SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(Prefab->Scene->SceneGraph.GetRoot(), EntitySceneGraphNode, true);
-	if (!bHieraraichalEquivalence)
+
+	// Because root node in prefab scene is always empty, and in working scene it's not, we need to skip it
+	std::vector<FENaiveSceneGraphNode*> ChildNodesToCheck = EntitySceneGraphNode->GetChildren();
+	std::vector<FENaiveSceneGraphNode*> PrefabChildNodesToCheck = Prefab->Scene->SceneGraph.GetRoot()->GetChildren();
+	if (ChildNodesToCheck.size() != PrefabChildNodesToCheck.size())
 		return false;
+
+	for (size_t i = 0; i < PrefabChildNodesToCheck.size(); i++)
+	{
+		bool bHieraraichalEquivalence = SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(PrefabChildNodesToCheck[i], ChildNodesToCheck[i], true);
+		if (!bHieraraichalEquivalence)
+			return false;
+
+	}
 
 	// TODO: Check each node for equivalent components
 
 
 
 	return true;
+}
+
+bool FEPrefabInstanceSystem::IsPartOfPrefabInstance(FEEntity* Entity)
+{
+	return GetParentPrefabInstanceIfAny(Entity) != nullptr;
+}
+
+FEEntity* FEPrefabInstanceSystem::GetParentPrefabInstanceIfAny(FEEntity* Entity)
+{
+	if (Entity == nullptr)
+		return nullptr;
+
+	if (Entity->HasComponent<FEPrefabInstanceComponent>())
+		return Entity;
+
+	FEScene* EntityScene = Entity->GetParentScene();
+	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+
+	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
+	if (ResultNode != nullptr)
+		return ResultNode->GetEntity();
+
+	return nullptr;
 }

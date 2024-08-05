@@ -16,11 +16,14 @@ namespace FocalEngine
 		void RegisterOnComponentCallbacks();
 
 		void DuplicatePrefabInstanceComponent(FEEntity* EntityToWorkWith, FEEntity* NewEntity);
-		bool IsPrefabInstanceValid(FEEntity* Entity);
+		
 	public:
 		SINGLETON_PUBLIC_PART(FEPrefabInstanceSystem)
 
+		bool IsPartOfPrefabInstance(FEEntity* Entity);
+		FEEntity* GetParentPrefabInstanceIfAny(FEEntity* Entity);
 
+		bool IsPrefabInstanceUnmodified(FEEntity* Entity);
 	};
 
 #define PREFAB_INSTANCE_SYSTEM FEPrefabInstanceSystem::getInstance()

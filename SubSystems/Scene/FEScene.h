@@ -37,6 +37,10 @@ namespace FocalEngine
 		void DeleteEntity(std::string ID);
 		void DeleteEntity(FEEntity* Entity);
 
+		FEAABB GetEntityAABB(std::string ID);
+		FEAABB GetEntityAABB(FEEntity* Entity);
+		FEAABB GetSceneAABB(std::function<bool(FEEntity*)> Filter = nullptr);
+
 		// Virtual UI Context Management
 		FEVirtualUIContext* AddVirtualUIContext(int Width = 1280, int Height = 720, FEMesh* SampleMesh = nullptr, std::string Name = "UnNamed");
 		FEVirtualUIContext* GetVirtualUIContext(std::string ID);

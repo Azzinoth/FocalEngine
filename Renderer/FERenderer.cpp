@@ -1249,35 +1249,35 @@ void FERenderer::Render(FEScene* CurrentScene)
 	glDepthFunc(GL_LESS);
 
 	// ********* RENDER INSTANCED LINE *********
-	////FE_GL_ERROR(glDisable(GL_CULL_FACE));
+	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
 
-	//FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	//FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-	//FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-	//InstancedLineShader->Start();
-	//InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	//InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	//InstancedLineShader->UpdateParameterData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
-	//InstancedLineShader->LoadDataToGPU();
+	InstancedLineShader->Start();
+	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
+	InstancedLineShader->LoadDataToGPU();
 
-	//FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
-	//FE_GL_ERROR(glEnableVertexAttribArray(0));
-	//FE_GL_ERROR(glEnableVertexAttribArray(1));
-	//FE_GL_ERROR(glEnableVertexAttribArray(2));
-	//FE_GL_ERROR(glEnableVertexAttribArray(3));
-	//FE_GL_ERROR(glEnableVertexAttribArray(4));
-	//FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
-	//FE_GL_ERROR(glDisableVertexAttribArray(0));
-	//FE_GL_ERROR(glDisableVertexAttribArray(1));
-	//FE_GL_ERROR(glDisableVertexAttribArray(2));
-	//FE_GL_ERROR(glDisableVertexAttribArray(3));
-	//FE_GL_ERROR(glDisableVertexAttribArray(4));
-	//FE_GL_ERROR(glBindVertexArray(0));
-	//InstancedLineShader->Stop();
+	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glEnableVertexAttribArray(1));
+	FE_GL_ERROR(glEnableVertexAttribArray(2));
+	FE_GL_ERROR(glEnableVertexAttribArray(3));
+	FE_GL_ERROR(glEnableVertexAttribArray(4));
+	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glDisableVertexAttribArray(1));
+	FE_GL_ERROR(glDisableVertexAttribArray(2));
+	FE_GL_ERROR(glDisableVertexAttribArray(3));
+	FE_GL_ERROR(glDisableVertexAttribArray(4));
+	FE_GL_ERROR(glBindVertexArray(0));
+	InstancedLineShader->Stop();
 
-	///*FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	//FE_GL_ERROR(glCullFace(GL_BACK));*/
+	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
+	FE_GL_ERROR(glCullFace(GL_BACK));*/
 	// ********* RENDER INSTANCED LINE END *********
 
 	// ********* RENDER SKY *********
