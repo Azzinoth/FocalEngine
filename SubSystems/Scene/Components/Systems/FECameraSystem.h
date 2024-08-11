@@ -25,6 +25,9 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, std::vector<FEEntity*>> ViewPortToCameraEntities;
 		static void OnViewportResize(std::string ViewportID);
+
+		static Json::Value CameraComponentToJson(FEEntity* Entity);
+		static void CameraComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FECameraSystem)
 

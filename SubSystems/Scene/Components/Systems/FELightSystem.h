@@ -19,6 +19,9 @@ namespace FocalEngine
 
 		void DirectionalLightInitialization(FELightComponent& LightComponent);
 		void DuplicateLightComponent(FEEntity* EntityWithLightComponent, FEEntity* NewEntity);
+
+		static Json::Value LightComponentToJson(FEEntity* Entity);
+		static void LightComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FELightSystem)
 

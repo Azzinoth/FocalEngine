@@ -88,12 +88,24 @@ void FEInstancedComponent::Clear()
 {
 	InstanceCount = 0;
 
-	delete[] LODCounts;
+	for (size_t i = 0; i < InstancedElementsData.size(); i++)
+	{
+		delete[] InstancedElementsData[i]->LODCounts;
 
+		InstancedElementsData[i]->InstancedAABBSizes.resize(0);
+		InstancedElementsData[i]->InstancedMatrices.resize(0);
+		InstancedElementsData[i]->TransformedInstancedMatrices.resize(0);
+		InstancedElementsData[i]->InstancePositions.resize(0);
+
+		delete InstancedElementsData[i];
+	}
+	InstancedElementsData.resize(0);
+
+	/*delete[] LODCounts;
 	InstancedAABBSizes.resize(0);
 	InstancedMatrices.resize(0);
 	TransformedInstancedMatrices.resize(0);
-	InstancePositions.resize(0);
+	InstancePositions.resize(0);*/
 
 	Modifications.clear();
 }
@@ -147,10 +159,10 @@ void FEInstancedComponent::UnConnectFromTerrainLayer()
 
 glm::mat4 FEInstancedComponent::GetTransformedInstancedMatrix(size_t InstanceIndex)
 {
-	if (InstanceIndex < 0 || InstanceIndex >= TransformedInstancedMatrices.size())
+	if (InstanceIndex < 0 || InstanceIndex >= InstancedElementsData[0]->TransformedInstancedMatrices.size())
 		return glm::identity<glm::mat4>();
 
-	return TransformedInstancedMatrices[InstanceIndex];
+	return InstancedElementsData[0]->TransformedInstancedMatrices[InstanceIndex];
 }
 
 size_t FEInstancedComponent::GetSpawnModificationCount()

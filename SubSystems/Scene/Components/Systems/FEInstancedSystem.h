@@ -3,16 +3,6 @@
 
 namespace FocalEngine
 {
-	// FIX ME!
-	/*struct FEDrawElementsIndirectCommand
-	{
-		unsigned int Count;
-		unsigned int PrimCount;
-		unsigned int FirstIndex;
-		unsigned int BaseVertex;
-		unsigned int BaseInstance;
-	};*/
-
 	class FEInstancedSystem
 	{
 		friend class FEScene;
@@ -23,60 +13,59 @@ namespace FocalEngine
 
 		bool bInternalAdd = false;
 
+		std::vector<std::pair<std::string, std::string>> EnitityIDListToInitialize;
+
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 
-		void InitializeBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
-		void InitializeGPUCullingBuffers(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void InitializeBuffers(FEEntity* Entity);
+		void InitializeBuffer(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
+		void InitializeGPUCullingBuffers(FEEntity* Entity);
+		void InitializeGPUCullingBuffer(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
 
 		void DuplicateInstancedComponent(FEEntity* EntityWithInstancedComponent, FEEntity* NewEntity);
 
-		void AddInstanceInternal(FEEntity* EntityWithInstancedComponent, glm::mat4 InstanceMatrix);
-		void AddInstanceInternal(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix);
+		bool PopulateInstanceInternal(FEEntity* Entity, FEGameModelComponent& GameModelComponent, FESpawnInfo SpawnInfo);
+
+		void AddInstanceInternal(FEEntity* Entity, glm::mat4 InstanceMatrix);
+		void AddInstanceInternal(FEEntity* Entity, FEGameModelComponent& GameModelComponent, glm::mat4 InstanceMatrix, size_t BufferIndex = 0);
 		void AddInstances(FEEntity* EntityWithInstancedComponent, const glm::mat4* InstanceMatrix, size_t Count);
-		void AddInstances(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const glm::mat4* InstanceMatrix, size_t Count);
+		void AddInstances(FEEntity* Entity, FEGameModelComponent& GameModelComponent, const glm::mat4* InstanceMatrix, size_t Count, size_t BufferIndex = 0);
 
-		void UpdateBuffers(FEEntity* EntityWithInstancedComponent);
-		void UpdateBuffers(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void UpdateBuffers(FEEntity* Entity);
+		void UpdateBuffer(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
 
-		void UpdateMatrices(FEEntity* EntityWithInstancedComponent);
-		void UpdateMatrices(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void UpdateMatrices(FEEntity* Entity);
+		void UpdateMatrix(FEEntity* Entity, size_t BufferIndex = 0);
 
 		void Update();
 
-		void Render(FEEntity* EntityWithInstancedComponent);
-		void Render(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void Render(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
+		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, size_t BufferIndex = 0);
 
-		void RenderOnlyBillbords(FEEntity* EntityWithInstancedComponent);
-		void RenderOnlyBillbords(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void RenderOnlyBillbords(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex);
+		void RenderOnlyBillbordsInternal(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
 
-		void CheckDirtyFlag(FEEntity* EntityWithInstancedComponent);
-		void CheckDirtyFlag(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void CheckDirtyFlag(FEEntity* Entity);
+
+		static Json::Value InstanceComponentToJson(FEEntity* Entity);
+		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FEInstancedSystem)
 
-		void AddIndividualInstance(FEEntity* EntityWithInstancedComponent, glm::mat4 InstanceMatrix);
-		void AddIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, glm::mat4 InstanceMatrix);
+		void AddIndividualInstance(FEEntity* Entity, glm::mat4 InstanceMatrix);
+		void DeleteIndividualInstance(FEEntity* Entity, const size_t InstanceIndex);
+		void ModifyIndividualInstance(FEEntity* Entity, const size_t InstanceIndex, glm::mat4 NewMatrix);
 
-		void DeleteIndividualInstance(FEEntity* EntityWithInstancedComponent, const size_t InstanceIndex);
-		void DeleteIndividualInstance(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const size_t InstanceIndex);
+		bool TryToSnapIndividualInstance(FEEntity* Entity, size_t InstanceIndex);
 
-		void ModifyIndividualInstance(FEEntity* EntityWithInstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix);
-		void ModifyIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const size_t InstanceIndex, glm::mat4 NewMatrix);
+		void ClearInstance(FEEntity* Entity);
 
-		bool TryToSnapIndividualInstance(FEEntity* EntityWithInstancedComponent, size_t InstanceIndex);
-		bool TryToSnapIndividualInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, size_t InstanceIndex);
+		FEAABB GetAABB(FEEntity* Entity);
 
-		void ClearInstance(FEEntity* EntityWithInstancedComponent);
-		void ClearInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
-
-		FEAABB GetAABB(FEEntity* EntityWithInstancedComponent);
-		FEAABB GetAABB(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
-
-		bool PopulateInstance(FEEntity* EntityWithInstancedComponent, FESpawnInfo SpawnInfo);
-		bool PopulateInstance(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, FESpawnInfo SpawnInfo);
-
+		bool PopulateInstance(FEEntity* Entity, FESpawnInfo SpawnInfo);
+		
 		void UpdateIndividualSelectModeAABBData(FEEntity* EntityWithInstancedComponent);
 		void UpdateIndividualSelectModeAABBData(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
 
@@ -85,6 +74,19 @@ namespace FocalEngine
 
 		void SetIndividualSelectMode(FEEntity* EntityWithInstancedComponent, const bool NewValue);
 		void SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const bool NewValue);
+
+		FEEntity* GetEntityWithGameModelComponent(std::string EntityID)
+		{
+			FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
+			if (Object == nullptr || Object->GetType() != FE_ENTITY)
+				return nullptr;
+
+			FEEntity* Entity = reinterpret_cast<FEEntity*>(Object);
+			if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
+				return nullptr;
+
+			return Entity;
+		}
 	};
 
 #define INSTANCED_RENDERING_SYSTEM FEInstancedSystem::getInstance()

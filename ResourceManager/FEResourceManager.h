@@ -6,6 +6,8 @@
 #include "FEGLTFLoader.h"
 #include "Config.h"
 
+#define ENGINE_RESOURCE_TAG "ENGINE_PRIVATE_RESOURCE"
+
 namespace FocalEngine
 {
 	class FEResourceManager
@@ -15,6 +17,7 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FETerrainSystem;
 		friend class FESkyDomeSystem;
+		friend class FEVirtualUIContext;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -22,11 +25,10 @@ namespace FocalEngine
 							   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
 							   const char* GeometryText = nullptr, const char* ComputeText = nullptr, std::string ForceObjectID = "");
 
-		bool MakeShaderStandard(FEShader* Shader);
 		FEShader* GetShader(std::string ShaderID);
 		std::vector<FEShader*> GetShaderByName(std::string Name);
 		std::vector<std::string> GetShadersList();
-		std::vector<std::string> GetStandardShadersList();
+		std::vector<std::string> GetEnginePrivateShadersList();
 		void DeleteShader(const FEShader* Shader);
 		bool ReplaceShader(std::string OldShaderID, FEShader* NewShader);
 		std::string LoadGLSL(const char* FileName);
@@ -52,7 +54,6 @@ namespace FocalEngine
 		std::vector<std::string> GetTextureList();
 		FETexture* GetTexture(std::string ID);
 		std::vector<FETexture*> GetTextureByName(std::string Name);
-		bool MakeTextureStandard(FETexture* Texture);
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateSameFormatTexture(FETexture* ReferenceTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
@@ -73,10 +74,9 @@ namespace FocalEngine
 							  std::string Name = "");
 
 		void DeleteFEMesh(const FEMesh* Mesh);
-		bool MakeMeshStandard(FEMesh* Mesh);
 
 		std::vector<std::string> GetMeshList();
-		std::vector<std::string> GetStandardMeshList();
+		std::vector<std::string> GetEnginePrivateMeshList();
 		FEMesh* GetMesh(std::string ID);
 		std::vector<FEMesh*> GetMeshByName(std::string Name);
 		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
@@ -87,27 +87,24 @@ namespace FocalEngine
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
 		std::vector<std::string> GetMaterialList();
-		std::vector<std::string> GetStandardMaterialList();
+		std::vector<std::string> GetEnginePrivateMaterialList();
 		FEMaterial* GetMaterial(std::string ID);
 		std::vector<FEMaterial*> GetMaterialByName(std::string Name);
 		FEMaterial* CreateMaterial(std::string Name = "", std::string ForceObjectID = "");
-		bool MakeMaterialStandard(FEMaterial* Material);
 		void DeleteMaterial(const FEMaterial* Material);
 
 		std::vector<std::string> GetGameModelList();
-		std::vector<std::string> GetStandardGameModelList();
+		std::vector<std::string> GetEnginePrivateGameModelList();
 		FEGameModel* GetGameModel(std::string ID);
 		std::vector<FEGameModel*> GetGameModelByName(std::string Name);
 		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string ForceObjectID = "");
-		bool MakeGameModelStandard(FEGameModel* GameModel);
 		void DeleteGameModel(const FEGameModel* GameModel);
 
 		std::vector<std::string> GetPrefabList();
-		std::vector<std::string> GetStandardPrefabList();
+		std::vector<std::string> GetEnginePrivatePrefabList();
 		FEPrefab* GetPrefab(std::string ID);
 		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
-		FEPrefab* CreatePrefab(FEGameModel* GameModel = nullptr, std::string Name = "", std::string ForceObjectID = "");
-		bool MakePrefabStandard(FEPrefab* Prefab);
+		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "");
 		void DeletePrefab(const FEPrefab* Prefab);
 
 		void Clear();
@@ -116,34 +113,34 @@ namespace FocalEngine
 		void LoadStandardGameModels();
 		void LoadStandardPrefabs();
 
-		void ReSaveStandardTextures();
+		void ReSaveEnginePrivateTextures();
 		void ReSaveStandardMeshes();
 
 		std::string GetDefaultResourcesFolder();
+
+		// Returns true if the tag was set, false if the tag was not set.
+		bool SetTag(FEObject* Object, std::string NewTag);
+
+		Json::Value SaveFEObjectPart(FEObject* Object);
+		FEObjectLoadedData LoadFEObjectPart(Json::Value Root);
+
+		std::vector<std::string> GetTagsThatWillPreventDeletion();
+		void AddTagThatWillPreventDeletion(std::string Tag);
+		void RemoveTagThatWillPreventDeletion(std::string Tag);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
 		std::unordered_map<std::string, FEShader*> Shaders;
-		std::unordered_map<std::string, FEShader*> StandardShaders;
+		std::unordered_map<std::string, FETexture*> Textures;
+		std::unordered_map<std::string, FEMaterial*> Materials;
+		std::unordered_map<std::string, FEMesh*> Meshes;
+		std::unordered_map<std::string, FEGameModel*> GameModels;
+		std::unordered_map<std::string, FEPrefab*> Prefabs;
 
 		FETexture* CreateTexture(std::string Name = "", std::string ForceObjectID = "");
 		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
 
 		FEPostProcess* CreatePostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
-		std::unordered_map<std::string, FETexture*> Textures;
-		std::unordered_map<std::string, FETexture*> StandardTextures;
-
-		std::unordered_map<std::string, FEMaterial*> Materials;
-		std::unordered_map<std::string, FEMaterial*> StandardMaterials;
-
-		std::unordered_map<std::string, FEMesh*> Meshes;
-		std::unordered_map<std::string, FEMesh*> StandardMeshes;
-
-		std::unordered_map<std::string, FEGameModel*> GameModels;
-		std::unordered_map<std::string, FEGameModel*> StandardGameModels;
-
-		std::unordered_map<std::string, FEPrefab*> Prefabs;
-		std::unordered_map<std::string, FEPrefab*> StandardPrefabs;
 
 		std::string GetFileNameFromFilePath(std::string FilePath);
 
@@ -157,7 +154,18 @@ namespace FocalEngine
 
 		std::string EngineFolder = std::string(ENGINE_FOLDER) + "/";
 		std::string ResourcesFolder = EngineFolder + "/Resources/";
-	};
 
-	#define RESOURCE_MANAGER FEResourceManager::getInstance()
+		std::vector<std::string> TagsThatWillPreventDeletion = { ENGINE_RESOURCE_TAG };
+
+		template<typename T>
+		void ClearResource(std::unordered_map<std::string, T*>& ResourceMap);
+
+		void SetTagIternal(FEObject* Object, std::string NewTag);
+
+		template<typename T>
+		std::vector<std::string> GetResourceIDListByTag(const std::unordered_map<std::string, T*>& Resources, const std::string& Tag);
+	};
+#include "FEResourceManager.inl"
+
+#define RESOURCE_MANAGER FEResourceManager::getInstance()
 }

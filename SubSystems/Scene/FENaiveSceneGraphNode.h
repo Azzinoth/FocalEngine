@@ -25,7 +25,7 @@ namespace FocalEngine
 
 		FEEntity* GetEntity();
 
-		Json::Value ToJson();
+		Json::Value ToJson(std::function<bool(FEEntity*)> ChildFilter = nullptr);
 		void FromJson(Json::Value Root);
 	private:
 		FENaiveSceneGraphNode(std::string Name = "Unnamed NaiveSceneNode");

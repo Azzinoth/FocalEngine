@@ -27,9 +27,17 @@ namespace FocalEngine
 		FE_POST_PROCESS = 14,
 		FE_TERRAIN_LAYER = 15,
 		FE_PREFAB = 16,
-		FE_VIRTUAL_UI_CONTEXT = 17,
+		FE_VIRTUAL_UI_CONTEXT_DEPRECATED = 17,
 		FE_SCENE_GRAPH_NODE = 18,
 		FE_SCENE = 19
+	};
+
+	struct FEObjectLoadedData
+	{
+		std::string ID;
+		FE_OBJECT_TYPE Type = FE_NULL;
+		std::string Tag;
+		std::string Name;
 	};
 
 	class FEObjectManager
@@ -43,11 +51,19 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
 		FEObject* GetFEObject(std::string ID);
+		// Takes open file stream and saves the object part of the file.
+		void SaveFEObjectPart(std::fstream& OpenedFile, FEObject* Object);
+		// Takes open file stream and loads the object part of the file, also returns bytes read.
+		FEObjectLoadedData LoadFEObjectPart(std::fstream& OpenedFile);
+		// Takes file data as char* and loads the object part, also returns bytes read.
+		FEObjectLoadedData LoadFEObjectPart(char* FileData, int& CurrentShift);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjectManager)
 		std::unordered_map<std::string, FEObject*> AllObjects;
 		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
 	};
+
+#define OBJECT_MANAGER FEObjectManager::getInstance()
 
 	static std::string FEObjectTypeToString(const FE_OBJECT_TYPE Type)
 	{
@@ -117,7 +133,7 @@ namespace FocalEngine
 			{
 				return "FE_PREFAB";
 			}
-			case FocalEngine::FE_VIRTUAL_UI_CONTEXT:
+			case FocalEngine::FE_VIRTUAL_UI_CONTEXT_DEPRECATED:
 			{
 				return "FE_VIRTUAL_UI_CONTEXT";
 			}
@@ -138,6 +154,7 @@ namespace FocalEngine
 
 	class FEObject
 	{
+		friend class FEObjectManager;
 		friend class FEngine;
 		friend class FERenderer;
 		friend class FEShader;
@@ -161,6 +178,8 @@ namespace FocalEngine
 		std::string GetObjectID() const;
 		FE_OBJECT_TYPE GetType() const;
 
+		std::string GetTag() const;
+
 		bool IsDirty() const;
 		void SetDirtyFlag(bool NewValue);
 
@@ -172,18 +191,19 @@ namespace FocalEngine
 	private:
 		std::string ID;
 		FE_OBJECT_TYPE Type = FE_NULL;
+		std::string Tag = "";
 		bool bDirtyFlag = false;
 
 		std::string Name;
 		int NameHash = 0;
 		void SetID(std::string NewValue);
+		void SetTag(std::string NewValue);
 		void SetType(FE_OBJECT_TYPE NewValue);
+
 	protected:
 		std::vector<std::string> CallListOnDeleteFEObject;
 		virtual void ProcessOnDeleteCallbacks(std::string DeletingFEObject);
 	};
-
-	#define OBJECT_MANAGER FEObjectManager::getInstance()
 }
 
 #endif FEOBJECT_H

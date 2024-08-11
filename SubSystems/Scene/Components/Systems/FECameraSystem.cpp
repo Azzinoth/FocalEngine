@@ -7,6 +7,9 @@ FECameraSystem::FECameraSystem()
 {
 	RegisterOnComponentCallbacks();
 	ENGINE.AddOnViewportResizeCallback(OnViewportResize);
+
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FECameraComponent>(CameraComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FECameraComponent>(CameraComponentFromJson);
 }
 
 void FECameraSystem::RegisterOnComponentCallbacks()
@@ -437,4 +440,136 @@ FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
 	}
 
 	return nullptr;
+}
+
+
+Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
+{
+	Json::Value Root;
+	if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::CameraComponentToJson Entity is nullptr or does not have FECameraComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Root;
+	}
+	FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
+
+	Root["bIsMainCamera"] = CameraComponent.bIsMainCamera;
+	// It should not be here.
+	Root["Type"] = CameraComponent.Type;
+	Root["DistanceToModel"] = CameraComponent.DistanceToModel;
+	Root["CurrentPolarAngle"] = CameraComponent.CurrentPolarAngle;
+	Root["CurrentAzimutAngle"] = CameraComponent.CurrentAzimutAngle;
+	Root["MovementSpeed"] = CameraComponent.MovementSpeed;
+	
+	Root["ClearColor"]["R"] = CameraComponent.ClearColor.x;
+	Root["ClearColor"]["G"] = CameraComponent.ClearColor.y;
+	Root["ClearColor"]["B"] = CameraComponent.ClearColor.z;
+	Root["ClearColor"]["A"] = CameraComponent.ClearColor.w;
+
+	Root["FOV"] = CameraComponent.FOV;
+	Root["NearPlane"] = CameraComponent.NearPlane;
+	Root["FarPlane"] = CameraComponent.FarPlane;
+	Root["AspectRatio"] = CameraComponent.AspectRatio;
+
+	// *********** Gamma Correction & Exposure ***********
+	Root["Gamma Correction & Exposure"]["Gamma"] = CameraComponent.GetGamma();
+	Root["Gamma Correction & Exposure"]["Exposure"] = CameraComponent.GetExposure();
+	// *********** Anti-Aliasing(FXAA) ***********
+	Root["Anti-Aliasing(FXAA)"]["FXAASpanMax"] = CameraComponent.GetFXAASpanMax();
+	Root["Anti-Aliasing(FXAA)"]["FXAAReduceMin"] = CameraComponent.GetFXAAReduceMin();
+	Root["Anti-Aliasing(FXAA)"]["FXAAReduceMul"] = CameraComponent.GetFXAAReduceMul();
+	// *********** Bloom ***********
+	Root["Bloom"]["Threshold Brightness"] = CameraComponent.GetBloomThreshold();
+	Root["Bloom"]["Bloom Size"] = CameraComponent.GetBloomSize();
+	// *********** Depth of Field ***********
+	Root["Depth of Field"]["Near distance"] = CameraComponent.GetDOFNearDistance();
+	Root["Depth of Field"]["Far distance"] = CameraComponent.GetDOFFarDistance();
+	Root["Depth of Field"]["Strength"] = CameraComponent.GetDOFStrength();
+	Root["Depth of Field"]["Distance dependent strength"] = CameraComponent.GetDOFDistanceDependentStrength();
+	// *********** Distance fog ***********
+	Root["Distance fog"]["isDistanceFog Enabled"] = CameraComponent.IsDistanceFogEnabled();
+	Root["Distance fog"]["Density"] = CameraComponent.GetDistanceFogDensity();
+	Root["Distance fog"]["Gradient"] = CameraComponent.GetDistanceFogGradient();
+	// *********** Chromatic Aberration ***********
+	Root["Chromatic Aberration"]["Shift strength"] = CameraComponent.GetChromaticAberrationIntensity();
+	// *********** SSAO ***********
+	Root["SSAO"]["isSSAO Active"] = CameraComponent.IsSSAOEnabled();
+	Root["SSAO"]["Sample Count"] = CameraComponent.GetSSAOSampleCount();
+
+	Root["SSAO"]["Small Details"] = CameraComponent.IsSSAOSmallDetailsEnabled();
+	Root["SSAO"]["Blured"] = CameraComponent.IsSSAOResultBlured();
+
+	Root["SSAO"]["Bias"] = CameraComponent.GetSSAOBias();
+	Root["SSAO"]["Radius"] = CameraComponent.GetSSAORadius();
+	Root["SSAO"]["Radius Small Details"] = CameraComponent.GetSSAORadiusSmallDetails();
+	Root["SSAO"]["Small Details Weight"] = CameraComponent.GetSSAOSmallDetailsWeight();
+
+	// Should that be saved ?
+	//FEViewport* Viewport = nullptr;
+
+	return Root;
+}
+
+void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, Json::Value Root)
+{
+	if (Entity == nullptr)
+	{
+		LOG.Add("FECameraSystem::CameraComponentFromJson Entity is nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	Entity->AddComponent<FECameraComponent>();
+	FECameraComponent& CameraComponent = Entity->GetComponent<FECameraComponent>();
+
+	CameraComponent.bIsMainCamera = Root["bIsMainCamera"].asBool();
+	// It should not be here.
+	CameraComponent.Type = Root["Type"].asInt();
+	CameraComponent.DistanceToModel = Root["DistanceToModel"].asDouble();
+	CameraComponent.CurrentPolarAngle = Root["CurrentPolarAngle"].asDouble();
+	CameraComponent.CurrentAzimutAngle = Root["CurrentAzimutAngle"].asDouble();
+	CameraComponent.MovementSpeed = Root["MovementSpeed"].asFloat();
+
+	CameraComponent.ClearColor.x = Root["ClearColor"]["R"].asFloat();
+	CameraComponent.ClearColor.y = Root["ClearColor"]["G"].asFloat();
+	CameraComponent.ClearColor.z = Root["ClearColor"]["B"].asFloat();
+	CameraComponent.ClearColor.w = Root["ClearColor"]["A"].asFloat();
+
+	CameraComponent.FOV = Root["FOV"].asFloat();
+	CameraComponent.NearPlane = Root["NearPlane"].asFloat();
+	CameraComponent.FarPlane = Root["FarPlane"].asFloat();
+	CameraComponent.AspectRatio = Root["AspectRatio"].asFloat();
+
+	// *********** Gamma Correction & Exposure ***********
+	CameraComponent.SetGamma(Root["Gamma Correction & Exposure"]["Gamma"].asFloat());
+	CameraComponent.SetExposure(Root["Gamma Correction & Exposure"]["Exposure"].asFloat());
+	// *********** Anti-Aliasing(FXAA) ***********
+	CameraComponent.SetFXAASpanMax(Root["Anti-Aliasing(FXAA)"]["FXAASpanMax"].asFloat());
+	CameraComponent.SetFXAAReduceMin(Root["Anti-Aliasing(FXAA)"]["FXAAReduceMin"].asFloat());
+	CameraComponent.SetFXAAReduceMul(Root["Anti-Aliasing(FXAA)"]["FXAAReduceMul"].asFloat());
+	// *********** Bloom ***********
+	CameraComponent.SetBloomThreshold(Root["Bloom"]["Threshold Brightness"].asFloat());
+	CameraComponent.SetBloomSize(Root["Bloom"]["Bloom Size"].asFloat());
+	// *********** Depth of Field ***********
+	CameraComponent.SetDOFNearDistance(Root["Depth of Field"]["Near distance"].asFloat());
+	CameraComponent.SetDOFFarDistance(Root["Depth of Field"]["Far distance"].asFloat());
+	CameraComponent.SetDOFStrength(Root["Depth of Field"]["Strength"].asFloat());
+	CameraComponent.SetDOFDistanceDependentStrength(Root["Depth of Field"]["Distance dependent strength"].asFloat());
+	// *********** Distance fog ***********
+	CameraComponent.SetDistanceFogEnabled(Root["Distance fog"]["isDistanceFog Enabled"].asBool());
+	CameraComponent.SetDistanceFogDensity(Root["Distance fog"]["Density"].asFloat());
+	CameraComponent.SetDistanceFogGradient(Root["Distance fog"]["Gradient"].asFloat());
+	// *********** Chromatic Aberration ***********
+	CameraComponent.SetChromaticAberrationIntensity(Root["Chromatic Aberration"]["Shift strength"].asFloat());
+	// *********** SSAO ***********
+	CameraComponent.SetSSAOEnabled(Root["SSAO"]["isSSAO Active"].asBool());
+	CameraComponent.SetSSAOSampleCount(Root["SSAO"]["Sample Count"].asInt());
+
+	CameraComponent.SetSSAOSmallDetailsEnabled(Root["SSAO"]["Small Details"].asBool());
+	CameraComponent.SetSSAOResultBlured(Root["SSAO"]["Blured"].asBool());
+
+	CameraComponent.SetSSAOBias(Root["SSAO"]["Bias"].asFloat());
+	CameraComponent.SetSSAORadius(Root["SSAO"]["Radius"].asFloat());
+
+	CameraComponent.SetSSAORadiusSmallDetails(Root["SSAO"]["Radius Small Details"].asFloat());
+	CameraComponent.SetSSAOSmallDetailsWeight(Root["SSAO"]["Small Details Weight"].asFloat());
 }

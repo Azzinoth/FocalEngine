@@ -1,118 +1,68 @@
 #include "FEPrefab.h"
+#include "../SubSystems/Scene/FESceneManager.h"
 using namespace FocalEngine;
 
-FEPrefab::FEPrefab() : FEObject(FE_PREFAB, "")
+FEPrefab::FEPrefab(const std::string Name) : FEObject(FE_PREFAB, Name)
 {
-	SetDirtyFlag(true);
-}
-
-FEPrefab::FEPrefab(FEGameModel* GameModel, const std::string Name) : FEObject(FE_PREFAB, Name)
-{
-	Components.push_back(new FEPrefabComponent());
-	Components.back()->GameModel = GameModel;
-
+	SetName(Name);
+	Scene = SCENE_MANAGER.CreateScene(GetName(), "", false);
 	SetDirtyFlag(true);
 }
 
 FEPrefab::~FEPrefab()
 {
-	for (int i = 0; i < Components.size(); i++)
-	{
-		delete Components[i];
-	}
-}
-
-void FEPrefab::UpdateAABB()
-{
-	AABB = FEAABB();
-
-	for (int i = 0; i < Components.size(); i++)
-	{
-		if (Components[i]->GameModel == nullptr || Components[i]->GameModel->Mesh == nullptr)
-			continue;
-		AABB = AABB.Merge(Components[i]->GameModel->Mesh->GetAABB().Transform(Components[i]->Transform.GetWorldMatrix()));
-	}
+	// FIX ME! Should we delete scene here?
 }
 
 FEAABB FEPrefab::GetAABB()
 {
-	if (IsDirty())
-		UpdateAABB();
-
-	return AABB;
+	return Scene->GetSceneAABB();
 }
 
-bool FEPrefab::UsesMaterial(const std::string MaterialID) const
+bool FEPrefab::IsUsingMaterial(const std::string MaterialID) const
 {
-	for (int i = 0; i < Components.size(); i++)
+	if (Scene == nullptr)
+		return false;
+	
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWith<FEGameModelComponent>();
+	for (int i = 0; i < Entities.size(); i++)
 	{
-		if (Components[i]->GameModel->Material->GetObjectID() == MaterialID)
+		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();
+		if (GameModelComponent.GetGameModel()->Material->GetObjectID() == MaterialID)
 			return true;
 
-		if (Components[i]->GameModel->BillboardMaterial != nullptr && Components[i]->GameModel->BillboardMaterial->GetObjectID() == MaterialID)
-			return true;
-	}
-
-	return false;
-}
-
-bool FEPrefab::UsesGameModel(const std::string GameModelID) const
-{
-	for (int i = 0; i < Components.size(); i++)
-	{
-		if (Components[i]->GameModel->GetObjectID() == GameModelID)
+		if (GameModelComponent.GetGameModel()->BillboardMaterial != nullptr && GameModelComponent.GetGameModel()->BillboardMaterial->GetObjectID() == MaterialID)
 			return true;
 	}
 
 	return false;
 }
 
-int FEPrefab::ComponentsCount() const
+bool FEPrefab::IsUsingGameModel(const std::string GameModelID) const
 {
-	return static_cast<int>(Components.size());
-}
+	if (Scene == nullptr)
+		return false;
 
-void FEPrefab::AddComponent(FEGameModel* GameModel, const FETransformComponent& Transform)
-{
-	if (GameModel == nullptr)
-		return;
-
-	Components.push_back(new FEPrefabComponent());
-	Components.back()->GameModel = GameModel;
-	Components.back()->Transform.SetPosition(Transform.GetPosition());
-	Components.back()->Transform.SetRotation(Transform.GetRotation());
-	Components.back()->Transform.SetScale(Transform.GetScale());
-
-	SetDirtyFlag(true);
-}
-
-FEPrefabComponent* FEPrefab::GetComponent(const int Index) const
-{
-	if (Index >= Components.size())
-		return nullptr;
-
-	return Components[Index];
-}
-
-void FEPrefab::RemoveComponent(const FEGameModel* GameModel)
-{
-	for (int i = 0; i < Components.size(); i++)
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWith<FEGameModelComponent>();
+	for (int i = 0; i < Entities.size(); i++)
 	{
-		if (Components[i]->GameModel == GameModel)
-		{
-			RemoveComponent(i);
-			i--;
-		}
+		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();
+		if (GameModelComponent.GetGameModel()->GetObjectID() == GameModelID)
+			return true;
 	}
+
+	return false;
 }
 
-void FEPrefab::RemoveComponent(const int Index)
+FEScene* FEPrefab::GetScene() const
 {
-	if (Index >= Components.size())
-		return;
+	return Scene;
+}
 
-	delete Components[Index];
-	Components.erase(Components.begin() + Index);
+void FEPrefab::SetScene(FEScene* Scene, bool DeleteOldScene)
+{
+	if (DeleteOldScene)
+		SCENE_MANAGER.DeleteScene(this->Scene);
 
-	SetDirtyFlag(true);
+	this->Scene = Scene;
 }

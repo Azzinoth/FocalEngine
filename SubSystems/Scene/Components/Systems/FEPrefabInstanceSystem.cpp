@@ -5,6 +5,8 @@ FEPrefabInstanceSystem* FEPrefabInstanceSystem::Instance = nullptr;
 FEPrefabInstanceSystem::FEPrefabInstanceSystem()
 {
 	RegisterOnComponentCallbacks();
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEPrefabInstanceComponent>(PrefabInstanceComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEPrefabInstanceComponent>(PrefabInstanceComponentFromJson);
 }
 
 void FEPrefabInstanceSystem::RegisterOnComponentCallbacks()
@@ -55,7 +57,7 @@ bool FEPrefabInstanceSystem::IsPrefabInstanceUnmodified(FEEntity* Entity)
 
 	// Because root node in prefab scene is always empty, and in working scene it's not, we need to skip it
 	std::vector<FENaiveSceneGraphNode*> ChildNodesToCheck = EntitySceneGraphNode->GetChildren();
-	std::vector<FENaiveSceneGraphNode*> PrefabChildNodesToCheck = Prefab->Scene->SceneGraph.GetRoot()->GetChildren();
+	std::vector<FENaiveSceneGraphNode*> PrefabChildNodesToCheck = Prefab->GetScene()->SceneGraph.GetRoot()->GetChildren();
 	if (ChildNodesToCheck.size() != PrefabChildNodesToCheck.size())
 		return false;
 
@@ -95,4 +97,44 @@ FEEntity* FEPrefabInstanceSystem::GetParentPrefabInstanceIfAny(FEEntity* Entity)
 		return ResultNode->GetEntity();
 
 	return nullptr;
+}
+
+Json::Value FEPrefabInstanceSystem::PrefabInstanceComponentToJson(FEEntity* Entity)
+{
+	Json::Value Root;
+	if (Entity == nullptr || !Entity->HasComponent<FEPrefabInstanceComponent>())
+	{
+		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentToJson Entity is nullptr or does not have FEPrefabInstanceComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Root;
+	}
+	FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
+
+	Root["PrefabID"] = PrefabInstanceComponent.Prefab->GetObjectID();
+
+	return Root;
+}
+
+void FEPrefabInstanceSystem::PrefabInstanceComponentFromJson(FEEntity* Entity, Json::Value Root)
+{
+	if (Entity == nullptr)
+	{
+		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentFromJson Entity is nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	std::string PrefabID = Root["PrefabID"].asString();
+	if (PrefabID.empty())
+	{
+		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentFromJson PrefabID is empty", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	FEPrefab* Prefab = RESOURCE_MANAGER.GetPrefab(PrefabID);
+	if (Prefab == nullptr)
+	{
+		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentFromJson Prefab is nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	Entity->AddComponent<FEPrefabInstanceComponent>(Prefab);
 }

@@ -24,7 +24,7 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 		Scene->SetName(Name);
 
 	if (!ForceObjectID.empty())
-		Scene->ID = ForceObjectID;
+		Scene->SetID(ForceObjectID);
 
 	SceneMap[Scene->GetObjectID()] = Scene;
 	if (bActive)

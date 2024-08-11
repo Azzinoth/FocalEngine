@@ -5,6 +5,8 @@ FELightSystem* FELightSystem::Instance = nullptr;
 FELightSystem::FELightSystem()
 {
 	RegisterOnComponentCallbacks();
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FELightComponent>(LightComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FELightComponent>(LightComponentFromJson);
 }
 
 void FELightSystem::RegisterOnComponentCallbacks()
@@ -468,4 +470,107 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 																	 MinZ - FarPlane * LightComponent.CSMZDepth, MaxZ + FarPlane * LightComponent.CSMZDepth);
 		}
 	}
+}
+
+Json::Value FELightSystem::LightComponentToJson(FEEntity* Entity)
+{
+	Json::Value Root;
+	if (Entity == nullptr || !Entity->HasComponent<FELightComponent>())
+	{
+		LOG.Add("FELightSystem::LightComponentToJson Entity is nullptr or does not have FELightComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return Root;
+	}
+	FELightComponent& LightComponent = Entity->GetComponent<FELightComponent>();
+
+	Root["Type"] = LightComponent.GetType();
+
+	Root["Color"] = Json::Value();
+	Root["Color"]["R"] = LightComponent.Color.x;
+	Root["Color"]["G"] = LightComponent.Color.y;
+	Root["Color"]["B"] = LightComponent.Color.z;
+	Root["Intensity"] = LightComponent.Intensity;
+	Root["IsEnabled"] = LightComponent.bEnabled;
+
+	Root["CastShadows"] = LightComponent.bCastShadows;
+	Root["IsUsingCascadeShadows"] = LightComponent.bUseCascadeShadows;
+	Root["ActiveCascades"] = LightComponent.ActiveCascades;
+	Root["ShadowCoverage"] = LightComponent.ShadowCoverage;
+	Root["CSMXYDepth"] = LightComponent.CSMXYDepth;
+	Root["CSMZDepth"] = LightComponent.CSMZDepth;
+
+	Root["Static ShadowBias"] = LightComponent.IsStaticShadowBias();
+	Root["ShadowBias"] = LightComponent.GetShadowBias();
+	Root["ShadowBias VariableIntensity"] = LightComponent.GetShadowBiasVariableIntensity();
+	Root["Shadow BlurFactor"] = LightComponent.GetShadowBlurFactor();
+
+	Root["SpotAngle"] = LightComponent.GetSpotAngle();
+	Root["SpotAngle Outer"] = LightComponent.GetSpotAngleOuter();
+	Root["Direction"]["X"] = LightComponent.Direction.x;
+	Root["Direction"]["Y"] = LightComponent.Direction.y;
+	Root["Direction"]["Z"] = LightComponent.Direction.z;
+
+	Root["Range"] = LightComponent.GetRange();
+
+	return Root;
+}
+
+void FELightSystem::LightComponentFromJson(FEEntity* Entity, Json::Value Root)
+{
+	if (Entity == nullptr)
+	{
+		LOG.Add("FELightSystem::LightComponentFromJson Entity is nullptr", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	int LightType = Root["Type"].asInt();
+	FE_LIGHT_TYPE FELightType;
+	switch (LightType)
+	{
+		case 0:
+			FELightType = FE_NULL_LIGHT;
+		break;
+
+		case 1:
+			FELightType = FE_DIRECTIONAL_LIGHT;
+		break;
+
+		case 2:
+			FELightType = FE_POINT_LIGHT;
+		break;
+
+		case 3:
+			FELightType = FE_SPOT_LIGHT;
+		break;
+
+	default:
+		FELightType = FE_NULL_LIGHT;
+		break;
+	}
+
+	Entity->AddComponent<FELightComponent>(FELightType);
+	FELightComponent& LightComponent = Entity->GetComponent<FELightComponent>();
+
+	LightComponent.SetColor(glm::vec3(Root["Color"]["R"].asFloat(), Root["Color"]["G"].asFloat(), Root["Color"]["B"].asFloat()));
+	LightComponent.SetIntensity(Root["Intensity"].asFloat());
+	LightComponent.SetLightEnabled(Root["IsEnabled"].asBool());
+
+	LightComponent.SetCastShadows(Root["CastShadows"].asBool());
+	LightComponent.bUseCascadeShadows = Root["IsUsingCascadeShadows"].asBool();
+	LightComponent.SetActiveCascades(Root["ActiveCascades"].asInt());
+	LightComponent.SetShadowCoverage(Root["ShadowCoverage"].asFloat());
+	LightComponent.SetCSMXYDepth(Root["CSMXYDepth"].asFloat());
+	LightComponent.SetCSMZDepth(Root["CSMZDepth"].asFloat());
+
+	LightComponent.SetIsStaticShadowBias(Root["Static ShadowBias"].asBool());
+	LightComponent.SetShadowBias(Root["ShadowBias"].asFloat());
+	LightComponent.SetShadowBiasVariableIntensity(Root["ShadowBias VariableIntensity"].asBool());
+	LightComponent.SetShadowBlurFactor(Root["Shadow BlurFactor"].asFloat());
+
+	LightComponent.SetSpotAngle(Root["SpotAngle"].asFloat());
+	LightComponent.SetSpotAngleOuter(Root["SpotAngle Outer"].asFloat());
+	LightComponent.Direction.x = Root["Direction"]["X"].asFloat();
+	LightComponent.Direction.y = Root["Direction"]["Y"].asFloat();
+	LightComponent.Direction.z = Root["Direction"]["Z"].asFloat();
+
+	LightComponent.SetRange(Root["Range"].asFloat());
 }

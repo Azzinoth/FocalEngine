@@ -17,15 +17,15 @@ namespace FocalEngine
 		void OnSceneClear();
 
 		static FEGameModel* SkyDomeGameModel;
-
 		bool bEnabled = true;
+
+		static Json::Value SkyDomeComponentToJson(FEEntity* Entity);
+		static void SkyDomeComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FESkyDomeSystem)
 
 		bool IsEnabled();
 		void SetEnabled(bool NewValue);
-
-		void AddToEntity(FEEntity* EntityToAdd);
 	};
 
 #define SKY_DOME_SYSTEM FESkyDomeSystem::getInstance()

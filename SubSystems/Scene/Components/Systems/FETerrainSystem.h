@@ -3,6 +3,8 @@
 
 namespace FocalEngine
 {
+#define TERRAIN_SYSTEM_RESOURCE_TAG "TERRAIN_SYSTEM_PRIVATE_RESOURCE"
+
 	class FETerrainSystem
 	{
 		friend class FEScene;
@@ -52,6 +54,9 @@ namespace FocalEngine
 
 		void InitTerrainEditTools(FEEntity* TerrainEntity);
 		bool UpdateLayerMapsRawData(FEEntity* TerrainEntity);
+
+		static Json::Value TerrainComponentToJson(FEEntity* Entity);
+		static void TerrainComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FETerrainSystem)
 
@@ -94,6 +99,7 @@ namespace FocalEngine
 		void SetBrushLayerIndex(size_t NewValue);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
+		void SetHeightMap(FETexture* HightMap, FEEntity* TerrainEntity);
 		void LoadHeightMap(std::string FileName, FEEntity* TerrainEntity);
 	};
 

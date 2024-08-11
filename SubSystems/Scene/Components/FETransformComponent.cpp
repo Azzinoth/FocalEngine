@@ -345,16 +345,6 @@ glm::mat4 FETransformComponent::GetWorldMatrix()
 	if (bSceneIndependent)
 		return LocalSpaceMatrix;
 
-	////FIX ME! This is a temporary solution also it is not working as expected with entities that are in origin.
-	//// Later it should be avoided because of performance issues.
-	//// 
-	//// If component is not part of scene hierarchy or it was not updated in the previous frame, we should intervene.
-	//// To preserve expected behavior.
-	//if (GEOMETRY.IsEpsilonEqual(WorldSpaceMatrix, glm::identity<glm::mat4>()))
-	//{
-	//	return WorldSpaceMatrix * LocalSpaceMatrix;
-	//}
-
 	if (ParentEntity != nullptr)
 	{
 		FEScene* ParentScene = ParentEntity->GetParentScene();
@@ -365,7 +355,6 @@ glm::mat4 FETransformComponent::GetWorldMatrix()
 			if (ParentNode->GetParent() == nullptr || ParentNode->GetParent() == ParentScene->SceneGraph.GetRoot())
 			{
 				WorldSpaceMatrix = LocalSpaceMatrix;
-				//return LocalSpaceMatrix;
 			}
 		}
 		else

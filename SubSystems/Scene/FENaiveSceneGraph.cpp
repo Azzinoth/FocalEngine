@@ -293,7 +293,7 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetAllNodes()
 	return Root->GetAllNodesInternal();
 }
 
-Json::Value FENaiveSceneGraph::ToJson()
+Json::Value FENaiveSceneGraph::ToJson(std::function<bool(FEEntity*)> Filter)
 {
 	Json::Value Root;
 	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
@@ -301,7 +301,12 @@ Json::Value FENaiveSceneGraph::ToJson()
 	AllNodes.erase(AllNodes.begin());
 
 	for (size_t i = 0; i < AllNodes.size(); i++)
-		Root["Nodes"][AllNodes[i]->GetObjectID()] = AllNodes[i]->ToJson();
+	{
+		if (Filter != nullptr && !Filter(AllNodes[i]->GetEntity()))
+			continue;
+
+		Root["Nodes"][AllNodes[i]->GetObjectID()] = AllNodes[i]->ToJson(Filter);
+	}
 
 	return Root;
 }
@@ -320,6 +325,14 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 		Json::Value NodeData = *NodeIterator;
 
 		FENaiveSceneGraphNode* NewNode = new FENaiveSceneGraphNode(NodeData["Name"].asString());
+
+
+		FEEntity* NewEntity = nullptr;
+		FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(NodeData["Entity"]["FEObjectData"]);
+		// Before passing data to node, we need to create entity
+		NewEntity = ParentScene->CreateEntityOrphan(LoadedObjectData.Name, LoadedObjectData.ID);
+
+		NewNode->Entity = NewEntity;
 		NewNode->FromJson(NodeData);
 		LoadedNodes[NodeID] = NewNode;
 	}

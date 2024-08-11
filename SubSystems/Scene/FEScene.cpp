@@ -101,19 +101,6 @@ void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
 	// Looking if this gameModel is used in some prefab.
 	// to-do: should be done through list of pointers to entities that uses this gameModel.
-	const auto PrefabList = RESOURCE_MANAGER.GetPrefabList();
-	for (size_t i = 0; i < PrefabList.size(); i++)
-	{
-		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabList[i]);
-		for (int j = 0; j < CurrentPrefab->ComponentsCount(); j++)
-		{
-			if (CurrentPrefab->GetComponent(j)->GameModel == GameModel)
-			{
-				CurrentPrefab->GetComponent(j)->GameModel = RESOURCE_MANAGER.GetGameModel(RESOURCE_MANAGER.GetStandardGameModelList()[0]);
-				CurrentPrefab->SetDirtyFlag(true);
-			}
-		}
-	}
 }
 
 // FIX ME!
@@ -310,16 +297,16 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 		Result.push_back(NewMaterial);
 	}
 
-	// Each Primitive need to have Prefab, there could be multiple Primitives in one glTFMesh.
-	std::unordered_map<int, std::vector<FEPrefab*>> GLTFMeshesToPrefabMap;
+	// Each Primitive need to have GameModel, there could be multiple Primitives in one glTFMesh.
+	std::unordered_map<int, std::vector<FEGameModel*>> GLTFMeshesToGameModelMap;
 	for (size_t i = 0; i < GLTF.Meshes.size(); i++)
 	{
-		GLTFMeshesToPrefabMap[static_cast<int>(i)] = std::vector<FEPrefab*>();
-		GLTFMeshesToPrefabMap[static_cast<int>(i)].resize(GLTF.Meshes[i].Primitives.size());
+		GLTFMeshesToGameModelMap[static_cast<int>(i)] = std::vector<FEGameModel*>();
+		GLTFMeshesToGameModelMap[static_cast<int>(i)].resize(GLTF.Meshes[i].Primitives.size());
 
 		for (size_t j = 0; j < GLTF.Meshes[i].Primitives.size(); j++)
 		{
-			GLTFMeshesToPrefabMap[static_cast<int>(i)][j] = nullptr;
+			GLTFMeshesToGameModelMap[static_cast<int>(i)][j] = nullptr;
 
 			if (GLTF.Meshes[i].Primitives[j].RawData.Indices.empty())
 			{
@@ -393,10 +380,12 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 				NewGameModel->SetName(GameModelName);
 				Result.push_back(NewGameModel);
 
-				FEPrefab* NewPrefab = RESOURCE_MANAGER.CreatePrefab(NewGameModel);
-				NewPrefab->SetName(PrefabName);
-				GLTFMeshesToPrefabMap[static_cast<int>(i)][j] = NewPrefab;
-				Result.push_back(NewPrefab);
+				//FEPrefab* NewPrefab = RESOURCE_MANAGER.CreatePrefab(NewGameModel);
+				//NewPrefab->SetName(PrefabName);
+				//GLTFMeshesToGameModelMap[static_cast<int>(i)][j] = NewPrefab;
+				//Result.push_back(NewPrefab);
+
+				GLTFMeshesToGameModelMap[static_cast<int>(i)][j] = NewGameModel;
 			}
 		}
 	}
@@ -407,7 +396,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 
 		for (size_t i = 0; i < SceneToLoad.RootChildren.size(); i++)
 		{
-			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], GLTFMeshesToPrefabMap, SceneGraph.GetRoot()->GetObjectID());
+			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], GLTFMeshesToGameModelMap, SceneGraph.GetRoot()->GetObjectID());
 		}
 	}
 
@@ -415,7 +404,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 	return Result;
 }
 
-std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID)
+std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID)
 {
 	std::vector<FEObject*> Result;
 
@@ -437,30 +426,30 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 	if (GLTFMeshToPrefabIndex != -1)
 	{
-		if (GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex) == GLTFMeshesToPrefabMap.end())
+		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex) == GLTFMeshesToGameModelMap.end())
 		{
 			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
 
-		if (GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex)->second.empty())
+		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second.empty())
 		{
 			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
 
-		std::vector<FEPrefab*> Prefabs = GLTFMeshesToPrefabMap.find(GLTFMeshToPrefabIndex)->second;
-		if (Prefabs.size() == 1)
+		std::vector<FEGameModel*> GameModels = GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second;
+		if (GameModels.size() == 1)
 		{
-			Entity->AddComponent<FEGameModelComponent>(Prefabs[0]->GetComponent(0)->GameModel);
+			Entity->AddComponent<FEGameModelComponent>(GameModels[0]);
 		}
 		else
 		{
-			for (size_t i = 0; i < Prefabs.size(); i++)
+			for (size_t i = 0; i < GameModels.size(); i++)
 			{
 				std::string CurrentNodeName = NodeName;
 				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
 
 				FEEntity* ChildEntity = CreateEntity(CurrentNodeName);
-				ChildEntity->AddComponent<FEGameModelComponent>(Prefabs[i]->GetComponent(0)->GameModel);
+				ChildEntity->AddComponent<FEGameModelComponent>(GameModels[i]);
 		
 				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetObjectID());
 				SceneGraph.MoveNode(ChildNode->GetObjectID(), AddedNode->GetObjectID(), false);
@@ -479,7 +468,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		}
 
 		GLTFNodes ChildNode = GLTF.Nodes[Node.Children[i]];
-		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToPrefabMap, AddedNode->GetObjectID());
+		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetObjectID());
 		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
 	}
 
@@ -652,7 +641,7 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 
 	if (Entity->HasComponent<FEGameModelComponent>())
 	{
-		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GameModel;
+		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GetGameModel();
 		Result = GameModel->GetMesh()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 

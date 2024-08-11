@@ -17,24 +17,33 @@ FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string 
 	return NewTexture;
 }
 
-bool FEResourceManager::MakeTextureStandard(FETexture* Texture)
+bool FEResourceManager::SetTag(FEObject* Object, std::string NewTag)
 {
-	if (Texture == nullptr)
+	if (Object == nullptr)
 	{
-		LOG.Add("texture is nullptr in function FEResourceManager::makeTextureStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Object is nullptr in function FEResourceManager::SetTag.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (StandardTextures.find(Texture->GetObjectID()) == StandardTextures.end())
+	if (NewTag == ENGINE_RESOURCE_TAG)
 	{
-		if (Textures.find(Texture->GetObjectID()) != Textures.end())
-			Textures.erase(Texture->GetObjectID());
-		StandardTextures[Texture->GetObjectID()] = Texture;
-
-		return true;
+		LOG.Add("Can't set tag to ENGINE_RESOURCE_TAG in function FEResourceManager::SetTag.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
 	}
 
-	return false;
+	SetTagIternal(Object, NewTag);
+	return true;
+}
+
+void FEResourceManager::SetTagIternal(FEObject* Object, std::string NewTag)
+{
+	if (Object == nullptr)
+	{
+		LOG.Add("Object is nullptr in function FEResourceManager::SetTagIternal.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	Object->SetTag(NewTag);
 }
 
 FEMesh* FEResourceManager::CreateMesh(const GLuint VaoID, const unsigned int VertexCount, const int VertexBuffersTypes, const FEAABB AABB, std::string Name)
@@ -49,26 +58,6 @@ FEMesh* FEResourceManager::CreateMesh(const GLuint VaoID, const unsigned int Ver
 	return NewMesh;
 }
 
-bool FEResourceManager::MakeMeshStandard(FEMesh* Mesh)
-{
-	if (Mesh == nullptr)
-	{
-		LOG.Add("mesh is nullptr in function FEResourceManager::makeMeshStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (StandardMeshes.find(Mesh->GetObjectID()) == StandardMeshes.end())
-	{
-		if (Meshes.find(Mesh->GetObjectID()) != Meshes.end())
-			Meshes.erase(Mesh->GetObjectID());
-		StandardMeshes[Mesh->GetObjectID()] = Mesh;
-
-		return true;
-	}
-
-	return false;
-}
-
 FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::string Name)
 {
 	std::vector<unsigned char> RawFileData;
@@ -76,14 +65,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	if (!File)
 	{
 		LOG.Add(std::string("Can't load file: ") + FileName + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardTextures.empty())
-		{
-			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
 	File.unsetf(std::ios::skipws);
@@ -97,14 +79,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	if (Error != 0)
 	{
 		LOG.Add(std::string("Can't load file: ") + FileName + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardTextures.empty())
-		{
-			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
 	bool bUsingAlpha = false;
@@ -198,20 +173,11 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 	float Version = FE_TEXTURE_VERSION;
 	File.write((char*)&Version, sizeof(float));
 
-	int ObjectIDSize = static_cast<int>(Texture->GetObjectID().size() + 1);
-	File.write((char*)&ObjectIDSize, sizeof(int));
-	File.write((char*)Texture->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
+	OBJECT_MANAGER.SaveFEObjectPart(File, Texture);
 
 	File.write((char*)&Texture->Width, sizeof(int));
 	File.write((char*)&Texture->Height, sizeof(int));
 	File.write((char*)&Texture->InternalFormat, sizeof(int));
-
-	int NameSize = static_cast<int>(Texture->GetName().size() + 1);
-	File.write((char*)&NameSize, sizeof(int));
-
-	char* TextureName = new char[NameSize];
-	strcpy_s(TextureName, NameSize, Texture->GetName().c_str());
-	File.write((char*)TextureName, sizeof(char) * NameSize);
 
 	if (Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
 	{
@@ -386,11 +352,10 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		// Get info about problematic texture.
 		const FETexture* NotLoadedTexture = Input->NewTexture;
 		// We will spill out error into a log.
-		LOG.Add("FEResourceManager::updateAsyncLoadedResources texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::LoadTextureFileAsyncCallBack texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		// And delete entry for that texture in a general list of textures.
 		// That will prevent TextureIterator from saving in a scene File.
 		RESOURCE_MANAGER.DeleteFETexture(NotLoadedTexture);
-		//textures.erase(notLoadedTexture->getObjectID());
 	}
 	else
 	{
@@ -400,9 +365,9 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		// Game model will updated as a consequences.
 		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialList();
 
-		for (size_t p = 0; p < MaterialList.size(); p++)
+		for (size_t i = 0; i < MaterialList.size(); i++)
 		{
-			FEMaterial* CurrentMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[p]);
+			FEMaterial* CurrentMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[i]);
 			if (CurrentMaterial->IsTextureInList(NewlyCreatedTexture))
 				CurrentMaterial->SetDirtyFlag(true);
 		}
@@ -460,53 +425,47 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	// Version of FETexture File type
 	const float Version = *(float*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
+
+	int Width = 0;
+	int Height = 0;
+	int InternalFormat = 0;
+	char* TextureName = nullptr;
+	std::string NameFromFile;
+
+	char* ObjectID = nullptr;
+	std::string ID;
+
 	if (Version != FE_TEXTURE_VERSION)
 	{
 		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardTextures.empty())
-		{
-			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
-	const int ObjectIDSize = *(int*)(&FileData[CurrentShift]);
-	CurrentShift += 4;
+	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(FileData, CurrentShift);
+	ID = ObjectData.ID;
+	NameFromFile = ObjectData.Name;
 
-	char* ObjectID = new char[ObjectIDSize];
-	strcpy_s(ObjectID, ObjectIDSize, (char*)(&FileData[CurrentShift]));
-	CurrentShift += ObjectIDSize;
-
-	const int width = *(int*)(&FileData[CurrentShift]);
+	Width = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
-	const int height = *(int*)(&FileData[CurrentShift]);
+	Height = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
-	const int InternalFormat = *(int*)(&FileData[CurrentShift]);
+	InternalFormat = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
-	const int NameSize = *(int*)(&FileData[CurrentShift]);
-	CurrentShift += 4;
-
-	char* TextureName = new char[NameSize];
-	strcpy_s(TextureName, NameSize, (char*)(&FileData[CurrentShift]));
-	CurrentShift += NameSize;
 
 	FETexture* NewTexture = nullptr;
 	if (ExistingTexture != nullptr)
 	{
 		NewTexture = ExistingTexture;
-		NewTexture->SetName(TextureName);
+		NewTexture->SetName(NameFromFile);
 		FE_GL_ERROR(glGenTextures(1, &NewTexture->TextureID));
 	}
 	else
 	{
-		NewTexture = CreateTexture(TextureName);
+		NewTexture = CreateTexture(NameFromFile);
 	}
 
-	NewTexture->Width = width;
-	NewTexture->Height = height;
+	NewTexture->Width = Width;
+	NewTexture->Height = Height;
 	NewTexture->InternalFormat = InternalFormat;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
@@ -568,10 +527,10 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	}
 
 	// Overwrite objectID with objectID from File.
-	if (ObjectID != nullptr)
+	if (!ID.empty())
 	{
 		const std::string OldID = NewTexture->GetObjectID();
-		NewTexture->SetID(ObjectID);
+		NewTexture->SetID(ID);
 
 		if (Textures.find(OldID) != Textures.end())
 		{
@@ -580,9 +539,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		}
 	}
 
-	delete[] ObjectID;
-	delete[] TextureName;
-
+	NewTexture->Tag = ObjectData.Tag;
 	return NewTexture;
 }
 
@@ -789,10 +746,12 @@ void FEResourceManager::LoadStandardMeshes()
 		0.625f, 0.25f
 	};
 
-	StandardMeshes["84251E6E0D0801363579317R"] = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
-	Meshes.erase(StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->GetObjectID());
-	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetID("84251E6E0D0801363579317R"/*"cube"*/);
-	StandardMeshes["84251E6E0D0801363579317R"/*"cube"*/]->SetName("FECube");
+	FEMesh* NewMesh = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
+	Meshes.erase(NewMesh->GetObjectID());
+	NewMesh->SetID("84251E6E0D0801363579317R"/*"cube"*/);
+	NewMesh->SetName("FECube");
+	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
+	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
 	std::vector<int> PlaneIndices = {
 		0, 1, 2, 3, 0, 2
@@ -816,28 +775,34 @@ void FEResourceManager::LoadStandardMeshes()
 		0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f
 	};
 
-	StandardMeshes["1Y251E6E6T78013635793156"] = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
-	Meshes.erase(StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->GetObjectID());
-	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
-	StandardMeshes["1Y251E6E6T78013635793156"/*"plane"*/]->SetName("FEPlane");
+	NewMesh = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
+	Meshes.erase(NewMesh->GetObjectID());
+	NewMesh->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
+	NewMesh->SetName("FEPlane");
+	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
+	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
-	StandardMeshes["7F251E3E0D08013E3579315F"] = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
-	Meshes.erase(StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->GetObjectID());
-	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
-	StandardMeshes["7F251E3E0D08013E3579315F"/*"sphere"*/]->SetName("FESphere");
+	NewMesh = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model").c_str(), "sphere");
+	Meshes.erase(NewMesh->GetObjectID());
+	NewMesh->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
+	NewMesh->SetName("FESphere");
+	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
+	Meshes[NewMesh->GetObjectID()] = NewMesh;
 }
 
 FEResourceManager::FEResourceManager()
 {
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
 	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
-	MakeTextureStandard(NoTexture);
+	//MakeTextureStandard(NoTexture);
+	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
 	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
 	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-																	     LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str());
-	NewShader->SetID("5C267A01466A545E7D1A2E66"/*FECombineFrameBuffers*/);
-	MakeShaderStandard(NewShader);
+																LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
+																nullptr, nullptr, nullptr, nullptr,
+																"5C267A01466A545E7D1A2E66");
+	NewShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	LoadStandardMaterial();
 	LoadStandardMeshes();
@@ -890,14 +855,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	if (FileSize < 0)
 	{
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardMeshes.empty())
-		{
-			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 	}
 
 	char* Buffer = new char[4];
@@ -905,31 +863,18 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	// Version of FEMesh File type
 	File.read(Buffer, 4);
 	const float Version = *(float*)Buffer;
+
+	std::string LoadedObjectID;
+	std::string LoadedName;
 	if (Version != FE_MESH_VERSION)
 	{
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardMeshes.empty())
-		{
-			return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 	}
 
-	File.read(Buffer, 4);
-	const int ObjectIDSize = *(int*)Buffer;
-
-	char* ObjectID = new char[ObjectIDSize + 1];
-	File.read(ObjectID, ObjectIDSize);
-	ObjectID[ObjectIDSize] = '\0';
-
-	File.read(Buffer, 4);
-	const int MeshNameSize = *(int*)Buffer;
-	char* MeshName = new char[MeshNameSize + 1];
-	File.read(MeshName, MeshNameSize);
-	MeshName[MeshNameSize] = '\0';
+	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
+	LoadedObjectID = ObjectData.ID;
+	LoadedName = ObjectData.Name;
 	
 	File.read(Buffer, 4);
 	const int VertexCout = *(int*)Buffer;
@@ -992,16 +937,16 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 									(int*)IndexBuffer, IndexCout,
 									nullptr, 0,
 									(float*)MatIndexBuffer, MatIndexCout, MatCount,
-									Name);
+									Name.empty() ? LoadedName : Name);
 
 	const std::string OldID = NewMesh->ID;
-	// overwrite objectID with objectID from File.
-	if (ObjectID != nullptr)
+	// Overwrite ID with Loaded ID.
+	if (!LoadedObjectID.empty())
 	{
-		NewMesh->SetID(ObjectID);
+		NewMesh->SetID(LoadedObjectID);
+		Meshes.erase(OldID);
+		Meshes[NewMesh->GetObjectID()] = NewMesh;
 	}
-
-	delete[] ObjectID;
 
 	delete[] Buffer;
 	delete[] VertexBuffer;
@@ -1012,9 +957,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 
 	NewMesh->AABB = MeshAABB;
 	NewMesh->SetName(Name);
-	
-	Meshes.erase(OldID);
-	Meshes[NewMesh->GetObjectID()] = NewMesh;
+	NewMesh->Tag = ObjectData.Tag;
 
 	return NewMesh;
 }
@@ -1037,23 +980,16 @@ std::vector<std::string> FEResourceManager::GetMaterialList()
 	FE_MAP_TO_STR_VECTOR(Materials)
 }
 
-std::vector<std::string> FEResourceManager::GetStandardMaterialList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateMaterialList()
 {
-	FE_MAP_TO_STR_VECTOR(StandardMaterials)
+	return GetResourceIDListByTag(Materials, ENGINE_RESOURCE_TAG);
 }
 
 FEMaterial* FEResourceManager::GetMaterial(const std::string ID)
 {
 	if (Materials.find(ID) == Materials.end())
-	{
-		if (StandardMaterials.find(ID) != StandardMaterials.end())
-		{
-			return StandardMaterials[ID];
-		}
-
 		return nullptr;
-	}
-
+	
 	return Materials[ID];
 }
 
@@ -1063,17 +999,6 @@ std::vector<FEMaterial*> FEResourceManager::GetMaterialByName(const std::string 
 
 	auto it = Materials.begin();
 	while (it != Materials.end())
-	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
-	}
-
-	it = StandardMaterials.begin();
-	while (it != StandardMaterials.end())
 	{
 		if (it->second->GetName() == Name)
 		{
@@ -1102,151 +1027,96 @@ std::vector<std::string> FEResourceManager::GetMeshList()
 	FE_MAP_TO_STR_VECTOR(Meshes)
 }
 
-std::vector<std::string> FEResourceManager::GetStandardMeshList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateMeshList()
 {
-	FE_MAP_TO_STR_VECTOR(StandardMeshes)
+	return GetResourceIDListByTag(Meshes, ENGINE_RESOURCE_TAG);
 }
 
 FEMesh* FEResourceManager::GetMesh(const std::string ID)
 {
 	if (Meshes.find(ID) == Meshes.end())
-	{
-		if (StandardMeshes.find(ID) != StandardMeshes.end())
-		{
-			return StandardMeshes[ID];
-		}
-
 		return nullptr;
-	}
-	else
-	{
-		return Meshes[ID];
-	}
+	
+	return Meshes[ID];
 }
 
 std::vector<FEMesh*> FEResourceManager::GetMeshByName(const std::string Name)
 {
 	std::vector<FEMesh*> Result;
-
-	auto it = Meshes.begin();
-	while (it != Meshes.end())
+	auto MeshIterator = Meshes.begin();
+	while (MeshIterator != Meshes.end())
 	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
+		if (MeshIterator->second->GetName() == Name)
+			Result.push_back(MeshIterator->second);
 
-		it++;
-	}
-
-	it = StandardMeshes.begin();
-	while (it != StandardMeshes.end())
-	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
+		MeshIterator++;
 	}
 
 	return Result;
 }
 
-bool FEResourceManager::MakeMaterialStandard(FEMaterial* Material)
-{
-	if (Material == nullptr)
-	{
-		LOG.Add("material is nullptr in function FEResourceManager::makeMaterialStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (StandardMaterials.find(Material->GetObjectID()) == StandardMaterials.end())
-	{
-		if (Materials.find(Material->GetObjectID()) != Materials.end())
-			Materials.erase(Material->GetObjectID());
-		StandardMaterials[Material->GetObjectID()] = Material;
-
-		return true;
-	}
-
-	return false;
-}
-
 void FEResourceManager::LoadStandardMaterial()
 {
-	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial");
-	Materials.erase(NewMaterial->GetObjectID());
-	NewMaterial->SetID("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial", "18251A5E0F08013Z3939317U");
+	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str()).c_str(),
-															 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str()).c_str());
-	NewMaterial->Shader->SetID("6917497A5E0C05454876186F");
+															 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str()).c_str(),
+															 nullptr, nullptr, nullptr, nullptr,
+															 "6917497A5E0C05454876186F");
+	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
 
-	MakeShaderStandard(NewMaterial->Shader);
-	const FEShaderParam color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
-	NewMaterial->AddParameter(color);
-	MakeMaterialStandard(NewMaterial);
+	const FEShaderParam Color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
+	NewMaterial->AddParameter(Color);
+	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str()).c_str(),
-															LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str());
-	Shaders.erase(FEPhongShader->GetObjectID());
-	FEPhongShader->SetID("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/);
-	Shaders[FEPhongShader->GetObjectID()] = FEPhongShader;
-
-	MakeShaderStandard(GetShader("4C41665B5E125C2A07456E44"/*"FEPhongShader"*/));
+															LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str(),
+															nullptr, nullptr, nullptr, nullptr,
+															"4C41665B5E125C2A07456E44");
+	FEPhongShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	// ****************************** PBR SHADER ******************************
 	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str()).c_str(),
-													  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str());
+													  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
+													  nullptr, nullptr, nullptr, nullptr,
+													  "0800253C242B05321A332D09");
+
+	PBRShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
-																	LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str()).c_str());
+																	LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str()).c_str(),
+																	nullptr, nullptr, nullptr, nullptr,
+																	"5E45017E664A62273E191500");
 
-	Shaders.erase(PBRShaderForward->GetObjectID());
-	PBRShaderForward->SetID("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-	Shaders[PBRShaderForward->GetObjectID()] = PBRShaderForward;
-
-	MakeShaderStandard(GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/));
+	PBRShaderForward->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
-															        LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str());
+															        LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
+																	nullptr, nullptr, nullptr, nullptr,
+																	"670B01496E202658377A4576");
 
-	Shaders.erase(PBRGBufferShader->GetObjectID());
-	PBRGBufferShader->SetID("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/);
-	Shaders[PBRGBufferShader->GetObjectID()] = PBRGBufferShader;
+	PBRGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
-	MakeShaderStandard(GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
-
-	Shaders.erase(PBRShader->GetObjectID());
-	PBRShader->SetID("0800253C242B05321A332D09"/*"FEPBRShader"*/);
-	Shaders[PBRShader->GetObjectID()] = PBRShader;
-
-	MakeShaderStandard(GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/));
 
 	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
-																		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str());
+																		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
+																		nullptr, nullptr, nullptr, nullptr,
+																		"7C80085C184442155D0F3C7B");
+
+	PBRInstancedShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
-																					  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str());
+																					  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
+																					  nullptr, nullptr, nullptr, nullptr,
+																					  "613830232E12602D6A1D2C17");
 
-	Shaders.erase(PBRInstancedGBufferShader->GetObjectID());
-	PBRInstancedGBufferShader->SetID("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/);
-	Shaders[PBRInstancedGBufferShader->GetObjectID()] = PBRInstancedGBufferShader;
+	PBRInstancedGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
-	MakeShaderStandard(GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/)); 
-
-	Shaders.erase(PBRInstancedShader->GetObjectID());
-	PBRInstancedShader->SetID("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/);
-	Shaders[PBRInstancedShader->GetObjectID()] = PBRInstancedShader;
-
-	MakeShaderStandard(GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/));
-
-	NewMaterial = CreateMaterial("FEPBRBaseMaterial");
-	Materials.erase(NewMaterial->GetObjectID());
-	NewMaterial->SetID("61649B9E0F08013Q3939316C"/*"FEPBRBaseMaterial"*/);
+	NewMaterial = CreateMaterial("FEPBRBaseMaterial", "61649B9E0F08013Q3939316C" /*"FEPBRBaseMaterial"*/);
+	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	NewMaterial->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	NewMaterial->SetAlbedoMap(NoTexture);
-	MakeMaterialStandard(NewMaterial);
+	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	// ****************************** PBR SHADER END ******************************
 
 	// same as FERenderer::updateFogInShaders()
@@ -1262,51 +1132,26 @@ void FEResourceManager::LoadStandardMaterial()
 void FEResourceManager::LoadStandardGameModels()
 {
 	FEGameModel* NewGameModel = new FEGameModel(GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/), GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/), "standardGameModel");
+	GameModels.erase(NewGameModel->GetObjectID());
 	NewGameModel->SetID("67251E393508013ZV579315F");
-	MakeGameModelStandard(NewGameModel);
+	NewGameModel->SetTag(ENGINE_RESOURCE_TAG);
+	GameModels[NewGameModel->GetObjectID()] = NewGameModel;
 }
 
 void FEResourceManager::Clear()
 {
-	auto MaterialIt = Materials.begin();
-	while (MaterialIt != Materials.end())
-	{
-		delete MaterialIt->second;
-		MaterialIt++;
-	}
-	Materials.clear();
+	std::vector<std::reference_wrapper<std::unordered_map<std::string, FEObject*>>> ResourceMapsToClear = {
+		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Materials),
+		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Meshes),
+		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Textures),
+		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(GameModels),
+		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Prefabs)
+	};
 
-	auto MeshIt = Meshes.begin();
-	while (MeshIt != Meshes.end())
+	for (auto& ResourceMap : ResourceMapsToClear)
 	{
-		delete MeshIt->second;
-		MeshIt++;
+		ClearResource(ResourceMap.get());
 	}
-	Meshes.clear();
-
-	auto TextureIt = Textures.begin();
-	while (TextureIt != Textures.end())
-	{
-		delete TextureIt->second;
-		TextureIt++;
-	}
-	Textures.clear();
-
-	auto GameModelIt = GameModels.begin();
-	while (GameModelIt != GameModels.end())
-	{
-		delete GameModelIt->second;
-		GameModelIt++;
-	}
-	GameModels.clear();
-
-	auto PrefabIt = Prefabs.begin();
-	while (PrefabIt != Prefabs.end())
-	{
-		delete PrefabIt->second;
-		PrefabIt++;
-	}
-	Prefabs.clear();
 }
 
 void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
@@ -1315,16 +1160,10 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 	File.open(FileName, std::ios::out | std::ios::binary);
 
 	// Version of FEMesh File type.
-	float version = FE_MESH_VERSION;
-	File.write((char*)&version, sizeof(float));
+	float Version = FE_MESH_VERSION;
+	File.write((char*)&Version, sizeof(float));
 
-	int ObjectIDSize = static_cast<int>(Mesh->GetObjectID().size());
-	File.write((char*)&ObjectIDSize, sizeof(int));
-	File.write((char*)Mesh->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
-
-	int NameSize = static_cast<int>(Mesh->GetName().size());
-	File.write((char*)&NameSize, sizeof(int));
-	File.write((char*)Mesh->GetName().c_str(), sizeof(char) * NameSize);
+	OBJECT_MANAGER.SaveFEObjectPart(File, Mesh);
 
 	int Count = Mesh->GetPositionsCount();
 	float* Positions = new float[Count];
@@ -1472,23 +1311,16 @@ std::vector<std::string> FEResourceManager::GetGameModelList()
 	FE_MAP_TO_STR_VECTOR(GameModels)
 }
 
-std::vector<std::string> FEResourceManager::GetStandardGameModelList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateGameModelList()
 {
-	FE_MAP_TO_STR_VECTOR(StandardGameModels)
+	return GetResourceIDListByTag(GameModels, ENGINE_RESOURCE_TAG);
 }
 
 FEGameModel* FEResourceManager::GetGameModel(const std::string ID)
 {
 	if (GameModels.find(ID) == GameModels.end())
-	{
-		if (StandardGameModels.find(ID) != StandardGameModels.end())
-		{
-			return StandardGameModels[ID];
-		}
-
 		return nullptr;
-	}
-
+	
 	return GameModels[ID];
 }
 
@@ -1496,26 +1328,15 @@ std::vector<FEGameModel*> FEResourceManager::GetGameModelByName(const std::strin
 {
 	std::vector<FEGameModel*> Result;
 
-	auto it = GameModels.begin();
-	while (it != GameModels.end())
+	auto GameModelIterator = GameModels.begin();
+	while (GameModelIterator != GameModels.end())
 	{
-		if (it->second->GetName() == Name)
+		if (GameModelIterator->second->GetName() == Name)
 		{
-			Result.push_back(it->second);
+			Result.push_back(GameModelIterator->second);
 		}
 
-		it++;
-	}
-
-	it = StandardGameModels.begin();
-	while (it != StandardGameModels.end())
-	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
+		GameModelIterator++;
 	}
 
 	return Result;
@@ -1553,26 +1374,6 @@ void FEResourceManager::DeleteGameModel(const FEGameModel* GameModel)
 	delete GameModel;
 }
 
-bool FEResourceManager::MakeGameModelStandard(FEGameModel* GameModel)
-{
-	if (GameModel == nullptr)
-	{
-		LOG.Add("gameModel is nullptr in function FEResourceManager::makeGameModelStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (StandardGameModels.find(GameModel->GetObjectID()) == StandardGameModels.end())
-	{
-		if (GameModels.find(GameModel->GetObjectID()) != GameModels.end())
-			GameModels.erase(GameModel->GetObjectID());
-		StandardGameModels[GameModel->GetObjectID()] = GameModel;
-
-		return true;
-	}
-
-	return false;
-}
-
 FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
 										  const char* TessControlText, const char* TessEvalText,
 										  const char* GeometryText, const char* ComputeText, const std::string ForceObjectID)
@@ -1595,67 +1396,27 @@ FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* Ve
 	return NewShader;
 }
 
-bool FEResourceManager::MakeShaderStandard(FEShader* Shader)
-{
-	if (Shader == nullptr)
-	{
-		LOG.Add("shader is nullptr in function FEResourceManager::makeShaderStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (StandardShaders.find(Shader->GetObjectID()) == StandardShaders.end())
-	{
-		if (Shaders.find(Shader->GetObjectID()) != Shaders.end())
-			Shaders.erase(Shader->GetObjectID());
-		StandardShaders[Shader->GetObjectID()] = Shader;
-
-		return true;
-	}
-
-	return false;
-}
-
 FEShader* FEResourceManager::GetShader(const std::string ShaderID)
 {
 	if (Shaders.find(ShaderID) == Shaders.end())
-	{
-		if (StandardShaders.find(ShaderID) != StandardShaders.end())
-		{
-			return StandardShaders[ShaderID];
-		}
-
 		return nullptr;
-	}
-	else
-	{
-		return Shaders[ShaderID];
-	}
+
+	return Shaders[ShaderID];
 }
 
 std::vector<FEShader*> FEResourceManager::GetShaderByName(const std::string Name)
 {
 	std::vector<FEShader*> Result;
 
-	auto it = Shaders.begin();
-	while (it != Shaders.end())
+	auto ShaderIterator = Shaders.begin();
+	while (ShaderIterator != Shaders.end())
 	{
-		if (it->second->GetName() == Name)
+		if (ShaderIterator->second->GetName() == Name)
 		{
-			Result.push_back(it->second);
+			Result.push_back(ShaderIterator->second);
 		}
 
-		it++;
-	}
-
-	it = StandardShaders.begin();
-	while (it != StandardShaders.end())
-	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
+		ShaderIterator++;
 	}
 
 	return Result;
@@ -1666,9 +1427,9 @@ std::vector<std::string> FEResourceManager::GetShadersList()
 	FE_MAP_TO_STR_VECTOR(Shaders)
 }
 
-std::vector<std::string> FEResourceManager::GetStandardShadersList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateShadersList()
 {
-	FE_MAP_TO_STR_VECTOR(StandardShaders)
+	return GetResourceIDListByTag(Shaders, ENGINE_RESOURCE_TAG);
 }
 
 void FEResourceManager::DeleteShader(const FEShader* Shader)
@@ -1676,26 +1437,22 @@ void FEResourceManager::DeleteShader(const FEShader* Shader)
 	if (Shader == nullptr)
 		return;
 
-	auto it = Materials.begin();
-	while (it != Materials.end())
+	if (Shader->GetTag() == ENGINE_RESOURCE_TAG)
 	{
-		if (it->second->Shader->GetNameHash() == Shader->GetNameHash())
-			it->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
-		
-		it++;
+		LOG.Add("Attempt to delete engine private shader in function FEResourceManager::DeleteShader.", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		return;
 	}
 
-	it = StandardMaterials.begin();
-	while (it != StandardMaterials.end())
+	auto MaterialsIterator = Materials.begin();
+	while (MaterialsIterator != Materials.end())
 	{
-		if (it->second->Shader->GetNameHash() == Shader->GetNameHash())
-			it->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
-
-		it++;
+		if (MaterialsIterator->second->Shader->GetNameHash() == Shader->GetNameHash())
+			MaterialsIterator->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
+		
+		MaterialsIterator++;
 	}
 
 	Shaders.erase(Shader->GetObjectID());
-	StandardShaders.erase(Shader->GetObjectID());
 	delete Shader;
 }
 
@@ -1710,20 +1467,9 @@ bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* N
 
 	if (Shaders.find(OldShaderID) != Shaders.end())
 	{
-		//*(shaders[oldShaderID]) = *newShader;
-		//newShader->setID(oldShaderID);
 		Shaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
 										NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
 										NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
-	}
-	else if (StandardShaders.find(OldShaderID) != StandardShaders.end())
-	{
-		//*(standardShaders[oldShaderID]) = *newShader;
-		//newShader->setID(oldShaderID);
-
-		StandardShaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
-												NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
-												NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
 	}
 
 	return true;
@@ -1862,65 +1608,65 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		}
 		case FocalEngine::FE_SHADER:
 		{
-			const size_t NextID = Shaders.size() > StandardShaders.size() ? Shaders.size() : StandardShaders.size();
+			const size_t NextID = Shaders.size();
 			size_t Index = 0;
-			Result = "shader_" + std::to_string(NextID + Index);
-			while (Shaders.find(Result) != Shaders.end() || StandardShaders.find(Result) != StandardShaders.end())
+			Result = "Shader_" + std::to_string(NextID + Index);
+			while (Shaders.find(Result) != Shaders.end())
 			{
 				Index++;
-				Result = "shader_" + std::to_string(NextID + Index);
+				Result = "Shader_" + std::to_string(NextID + Index);
 			}
 
 			return Result;
 		}
 		case FocalEngine::FE_TEXTURE:
 		{
-			const size_t NextID = Textures.size() > StandardTextures.size() ? Textures.size() : StandardTextures.size();
-			size_t index = 0;
-			Result = "texture_" + std::to_string(NextID + index);
-			while (Textures.find(Result) != Textures.end() || StandardTextures.find(Result) != StandardTextures.end())
+			const size_t NextID = Textures.size();
+			size_t Index = 0;
+			Result = "Texture_" + std::to_string(NextID + Index);
+			while (Textures.find(Result) != Textures.end())
 			{
-				index++;
-				Result = "texture_" + std::to_string(NextID + index);
+				Index++;
+				Result = "Texture_" + std::to_string(NextID + Index);
 			}
 			
 			return Result;
 		}
 		case FocalEngine::FE_MESH:
 		{
-			const size_t NextID = Meshes.size() > StandardMeshes.size() ? Meshes.size() : StandardMeshes.size();
-			size_t index = 0;
-			Result = "mesh_" + std::to_string(NextID + index);
-			while (Meshes.find(Result) != Meshes.end() || StandardMeshes.find(Result) != StandardMeshes.end())
+			const size_t NextID = Meshes.size();
+			size_t Index = 0;
+			Result = "Mesh_" + std::to_string(NextID + Index);
+			while (Meshes.find(Result) != Meshes.end())
 			{
-				index++;
-				Result = "mesh_" + std::to_string(NextID + index);
+				Index++;
+				Result = "Mesh_" + std::to_string(NextID + Index);
 			}
 
 			return Result;
 		}
 		case FocalEngine::FE_MATERIAL:
 		{
-			const size_t NextID = Materials.size() > StandardMaterials.size() ? Materials.size() : StandardMaterials.size();
-			size_t index = 0;
-			Result = "material_" + std::to_string(NextID + index);
-			while (Materials.find(Result) != Materials.end() || StandardMaterials.find(Result) != StandardMaterials.end())
+			const size_t NextID = Materials.size();
+			size_t Index = 0;
+			Result = "Material_" + std::to_string(NextID + Index);
+			while (Materials.find(Result) != Materials.end())
 			{
-				index++;
-				Result = "material_" + std::to_string(NextID + index);
+				Index++;
+				Result = "Material_" + std::to_string(NextID + Index);
 			}
 
 			return Result;
 		}
 		case FocalEngine::FE_GAMEMODEL:
 		{
-			const size_t NextID = GameModels.size() > StandardGameModels.size() ? GameModels.size() : StandardGameModels.size();
-			size_t index = 0;
-			Result = "gameModel_" + std::to_string(NextID + index);
-			while (GameModels.find(Result) != GameModels.end() || StandardGameModels.find(Result) != StandardGameModels.end())
+			const size_t NextID = GameModels.size();
+			size_t Index = 0;
+			Result = "GameModel_" + std::to_string(NextID + Index);
+			while (GameModels.find(Result) != GameModels.end())
 			{
-				index++;
-				Result = "gameModel_" + std::to_string(NextID + index);
+				Index++;
+				Result = "GameModel_" + std::to_string(NextID + Index);
 			}
 
 			return Result;
@@ -2002,21 +1748,23 @@ void FEResourceManager::AddTextureToManaged(FETexture* Texture)
 
 void FEResourceManager::ReSaveStandardMeshes()
 {
-	const std::vector<std::string> StandardMeshes = GetStandardMeshList();
-	for (size_t i = 0; i < StandardMeshes.size(); i++)
+	auto MeshIterator = Meshes.begin();
+	while (MeshIterator != Meshes.end())
 	{
-		FEMesh* CurrentMesh = GetMesh(StandardMeshes[i]);
-		SaveFEMesh(CurrentMesh, (ResourcesFolder + CurrentMesh->GetObjectID() + std::string(".model")).c_str());
+		if (MeshIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
+			SaveFEMesh(MeshIterator->second, (ResourcesFolder + MeshIterator->second->GetObjectID() + std::string(".model")).c_str());
+		MeshIterator++;
 	}
 }
 
-void FEResourceManager::ReSaveStandardTextures()
+void FEResourceManager::ReSaveEnginePrivateTextures()
 {
-	auto it = StandardTextures.begin();
-	while (it != StandardTextures.end())
+	auto TextureIterator = Textures.begin();
+	while (TextureIterator != Textures.end())
 	{
-		SaveFETexture(it->second, (ResourcesFolder + it->second->GetObjectID() + std::string(".texture")).c_str());
-		it++;
+		if (TextureIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
+			SaveFETexture(TextureIterator->second, (ResourcesFolder + TextureIterator->second->GetObjectID() + std::string(".texture")).c_str());
+		TextureIterator++;
 	}
 }
 
@@ -2525,14 +2273,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 	if (RawData == nullptr)
 	{
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadJPGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		if (!StandardTextures.empty())
-		{
-			return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
-		}
-		else
-		{
-			return nullptr;
-		}
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
 	FETexture* NewTexture = CreateTexture(Name);
@@ -2856,22 +2597,15 @@ std::vector<std::string> FEResourceManager::GetPrefabList()
 	FE_MAP_TO_STR_VECTOR(Prefabs)
 }
 
-std::vector<std::string> FEResourceManager::GetStandardPrefabList()
+std::vector<std::string> FEResourceManager::GetEnginePrivatePrefabList()
 {
-	FE_MAP_TO_STR_VECTOR(StandardPrefabs)
+	return GetResourceIDListByTag(Prefabs, ENGINE_RESOURCE_TAG);
 }
 
 FEPrefab* FEResourceManager::GetPrefab(const std::string ID)
 {
 	if (Prefabs.find(ID) == Prefabs.end())
-	{
-		if (StandardPrefabs.find(ID) != StandardPrefabs.end())
-		{
-			return StandardPrefabs[ID];
-		}
-
 		return nullptr;
-	}
 
 	return Prefabs[ID];
 }
@@ -2880,32 +2614,21 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 {
 	std::vector<FEPrefab*> Result;
 
-	auto it = Prefabs.begin();
-	while (it != Prefabs.end())
+	auto PrefabsIterator = Prefabs.begin();
+	while (PrefabsIterator != Prefabs.end())
 	{
-		if (it->second->GetName() == Name)
+		if (PrefabsIterator->second->GetName() == Name)
 		{
-			Result.push_back(it->second);
+			Result.push_back(PrefabsIterator->second);
 		}
 
-		it++;
-	}
-
-	it = StandardPrefabs.begin();
-	while (it != StandardPrefabs.end())
-	{
-		if (it->second->GetName() == Name)
-		{
-			Result.push_back(it->second);
-		}
-
-		it++;
+		PrefabsIterator++;
 	}
 
 	return Result;
 }
 
-FEPrefab* FEResourceManager::CreatePrefab(FEGameModel* GameModel, std::string Name, const std::string ForceObjectID)
+FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
 		Name = "unnamedPrefab";
@@ -2922,33 +2645,7 @@ FEPrefab* FEResourceManager::CreatePrefab(FEGameModel* GameModel, std::string Na
 	}
 
 	Prefabs[NewPrefab->ID]->SetName(Name);
-	if (GameModel != nullptr)
-	{
-		Prefabs[NewPrefab->ID]->Components.push_back(new FEPrefabComponent());
-		Prefabs[NewPrefab->ID]->Components.back()->GameModel = GameModel;
-	}
-	
 	return Prefabs[NewPrefab->ID];
-}
-
-bool FEResourceManager::MakePrefabStandard(FEPrefab* Prefab)
-{
-	if (Prefab == nullptr)
-	{
-		LOG.Add("prefab is nullptr in function FEResourceManager::makePrefabStandard.", "FE_LOG_GENERAL", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (StandardPrefabs.find(Prefab->GetObjectID()) == StandardPrefabs.end())
-	{
-		if (Prefabs.find(Prefab->GetObjectID()) != Prefabs.end())
-			Prefabs.erase(Prefab->GetObjectID());
-		StandardPrefabs[Prefab->GetObjectID()] = Prefab;
-
-		return true;
-	}
-
-	return false;
 }
 
 void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
@@ -2959,9 +2656,9 @@ void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
 
 void FEResourceManager::LoadStandardPrefabs()
 {
-	FEPrefab* NewPrefab = new FEPrefab(GetGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
-	NewPrefab->SetID("4575527C773848040760656F");
-	MakePrefabStandard(NewPrefab);
+	//FEPrefab* NewPrefab = new FEPrefab(GetGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
+	//NewPrefab->SetID("4575527C773848040760656F");
+	//NewPrefab->SetTag(ENGINE_RESOURCE_TAG);
 }
 
 void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize)
@@ -2982,4 +2679,64 @@ void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, in
 	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * Mesh->ColorCount, Colors, GL_STATIC_DRAW));
 	FE_GL_ERROR(glVertexAttribPointer(1/*FE_COLOR*/, 3, GL_FLOAT, false, 0, 0));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
+
+Json::Value FEResourceManager::SaveFEObjectPart(FEObject* Object)
+{
+	Json::Value Root;
+	Root["ID"] = Object->GetObjectID();
+	Root["Tag"] = Object->GetTag();
+	Root["Name"] = Object->GetName();
+	Root["Type"] = Object->GetType();
+
+	return Root;
+}
+
+FEObjectLoadedData FEResourceManager::LoadFEObjectPart(Json::Value Root)
+{
+	FEObjectLoadedData Result;
+
+	if (Root.isMember("ID") && Root["ID"].isString())
+		Result.ID = Root["ID"].asString();
+
+	if (Root.isMember("Tag") && Root["Tag"].isString())
+		Result.Tag = Root["Tag"].asString();
+
+	if (Root.isMember("Name") && Root["Name"].isString())
+		Result.Name = Root["Name"].asString();
+	
+	if (Root.isMember("Type") && Root["Type"].isInt())
+		Result.Type = FE_OBJECT_TYPE(Root["Type"].asInt());
+	
+	return Result;
+}
+
+std::vector<std::string> FEResourceManager::GetTagsThatWillPreventDeletion()
+{
+	std::vector<std::string> Result;
+	for (size_t i = 0; i < TagsThatWillPreventDeletion.size(); i++)
+		Result.push_back(TagsThatWillPreventDeletion[i]);
+
+	return Result;
+}
+
+void FEResourceManager::AddTagThatWillPreventDeletion(std::string Tag)
+{
+	if (std::find(TagsThatWillPreventDeletion.begin(), TagsThatWillPreventDeletion.end(), Tag) == TagsThatWillPreventDeletion.end())
+		TagsThatWillPreventDeletion.push_back(Tag);
+}
+
+void FEResourceManager::RemoveTagThatWillPreventDeletion(std::string Tag)
+{
+	if (Tag == ENGINE_RESOURCE_TAG)
+		return;
+
+	for (size_t i = 0; i < TagsThatWillPreventDeletion.size(); i++)
+	{
+		if (TagsThatWillPreventDeletion[i] == Tag)
+		{
+			TagsThatWillPreventDeletion.erase(TagsThatWillPreventDeletion.begin() + i);
+			return;
+		}
+	}
 }

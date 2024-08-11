@@ -75,14 +75,10 @@ namespace FocalEngine
 		void Render(FEScene* CurrentScene);
 		void RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false, size_t PrefabIndex = 0);
 		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera = nullptr);
 		
-		std::vector<std::string> GetPostProcessList();
-		FEPostProcess* GetPostProcessEffect(std::string ID);
-
 		FETexture* GetCameraResult(FEEntity* CameraEntity);
-		std::vector<FEPostProcess*> PostProcessEffects;
 
 		void DrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
 
@@ -136,7 +132,7 @@ namespace FocalEngine
 		void LoadStandardParams(FEShader* Shader, bool IsReceivingShadows, FEEntity* ForceCamera = nullptr, const bool IsUniformLighting = false);
 		void LoadUniformBlocks(FEScene* CurrentScene);
 
-		void TakeScreenshot(const char* FileName, int Width, int Height);
+		void SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith);
 
 		FEMaterial* ShadowMapMaterial;
 		FEMaterial* ShadowMapMaterialInstanced;
@@ -174,14 +170,13 @@ namespace FocalEngine
 		GLuint CullingLODCountersBuffer = 0;
 
 		void UpdateGPUCullingFrustum();
-		void GPUCulling(FETransformComponent& TransformComponent, FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent);
+		void GPUCulling(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, size_t PrefabIndex = 0);
+		void GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, size_t BufferIndex);
 
 		bool bUseOcclusionCulling = true;
 		// *********** GPU Culling END ***********
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> DebugOutputTextures;
-
-		void RenderTargetResize(int NewWidth, int NewHeight);
 
 		bool bSimplifiedRendering = false;
 		void Init();

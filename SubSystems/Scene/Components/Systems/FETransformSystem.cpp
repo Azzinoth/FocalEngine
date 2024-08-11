@@ -5,6 +5,8 @@ FETransformSystem* FETransformSystem::Instance = nullptr;
 FETransformSystem::FETransformSystem()
 {
 	RegisterOnComponentCallbacks();
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FETransformComponent>(TransfromComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FETransformComponent>(TransfromComponentFromJson);
 }
 
 void FETransformSystem::RegisterOnComponentCallbacks()
@@ -90,4 +92,56 @@ void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 		//	ChildTransform.SetDirtyFlag(true);
 		UpdateInternal(Children[i]);
 	}
+}
+
+Json::Value FETransformSystem::TransfromComponentToJson(FEEntity* Entity)
+{
+	Json::Value Root;
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+
+	glm::vec3 Position = TransformComponent.GetPosition();
+	Root["Position"]["X"] = Position.x;
+	Root["Position"]["Y"] = Position.y;
+	Root["Position"]["Z"] = Position.z;
+
+	glm::quat Rotation = TransformComponent.GetQuaternion();
+	Root["Rotation"]["X"] = Rotation.x;
+	Root["Rotation"]["Y"] = Rotation.y;
+	Root["Rotation"]["Z"] = Rotation.z;
+	Root["Rotation"]["W"] = Rotation.w;
+
+	Root["Scale"]["UniformScaling"] = TransformComponent.IsUniformScalingSet();
+	glm::vec3 Scale = TransformComponent.GetScale();
+	Root["Scale"]["X"] = Scale.x;
+	Root["Scale"]["Y"] = Scale.y;
+	Root["Scale"]["Z"] = Scale.z;
+
+	return Root;
+}
+
+void FETransformSystem::TransfromComponentFromJson(FEEntity* Entity, Json::Value Root)
+{
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+
+	glm::vec3 Position;
+	Position.x = Root["Position"]["X"].asFloat();
+	Position.y = Root["Position"]["Y"].asFloat();
+	Position.z = Root["Position"]["Z"].asFloat();
+	TransformComponent.SetPosition(Position);
+
+	glm::quat Rotation;
+	Rotation.x = Root["Rotation"]["X"].asFloat();
+	Rotation.y = Root["Rotation"]["Y"].asFloat();
+	Rotation.z = Root["Rotation"]["Z"].asFloat();
+	Rotation.w = Root["Rotation"]["W"].asFloat();
+	TransformComponent.SetQuaternion(Rotation);
+
+	bool bUniformScaling = Root["Scale"]["UniformScaling"].asBool();
+	TransformComponent.SetUniformScaling(bUniformScaling);
+
+	glm::vec3 Scale;
+	Scale.x = Root["Scale"]["X"].asFloat();
+	Scale.y = Root["Scale"]["Y"].asFloat();
+	Scale.z = Root["Scale"]["Z"].asFloat();
+	TransformComponent.SetScale(Scale);
 }

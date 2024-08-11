@@ -195,6 +195,7 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
+	"ResourceManager/FEResourceManager.inl"
 	"ResourceManager/FEResourceManager.h"
 	"ResourceManager/Config.h"
 )

@@ -215,18 +215,21 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetAllNodesInternal()
 	return Result;
 }
 
-Json::Value FENaiveSceneGraphNode::ToJson()
+Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFilter)
 {
 	Json::Value Node;
 	Node["Name"] = GetName();
 	Node["ID"] = GetObjectID();
 	// Only root node does not have ParentID
 	Node["ParentID"] = Parent->GetObjectID();
-	Node["EntityID"] = Entity->GetObjectID();
+	Node["Entity"] = Entity->ToJson();
 
 	Json::Value ChildrenArray;
 	for (size_t i = 0; i < Children.size(); i++)
 	{
+		if (ChildFilter != nullptr && !ChildFilter(Children[i]->Entity))
+			continue;
+
 		ChildrenArray[std::to_string(i)]["ID"] = Children[i]->GetObjectID();
 	}
 	Node["Children"] = ChildrenArray;
@@ -236,13 +239,15 @@ Json::Value FENaiveSceneGraphNode::ToJson()
 
 void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 {
+	if (Entity == nullptr)
+	{
+		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
 	SetName(Root["Name"].asString());
 	SetID(Root["ID"].asString());
-	std::string EntityID = Root["EntityID"].asString();
-
-	Entity = reinterpret_cast<FEEntity*>(OBJECT_MANAGER.GetFEObject(EntityID));
-	if (Entity == nullptr)
-		LOG.Add("FENaiveSceneGraphNode::FromJson: Could not find entity with ID: " + EntityID, "FE_LOG_LOADING", FE_LOG_ERROR);
+	Entity->FromJson(Root["Entity"]);
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByEntityID(std::string EntityID)

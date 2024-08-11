@@ -8,11 +8,23 @@ FEComponentsTools::FEComponentsTools()
 	FEComponentTypeInfo TagComponentInfo("Tag", typeid(FETagComponent));
 	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETagComponent>(); };
 	TagComponentInfo.IncompatibleWith.push_back({ TagComponentInfo });
+	TagComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
+		Json::Value Root;
+		FETagComponent& CurrentComponent = ParentEntity->GetComponent<FETagComponent>();
+		Root["Tag"] = CurrentComponent.GetTag();
+		return Root;
+	};
+	TagComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+		FETagComponent& CurrentComponent = ParentEntity->GetComponent<FETagComponent>();
+		CurrentComponent.SetTag(Root["Tag"].asString());
+	};
+	TagComponentInfo.LoadingPriority = 0;
 	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] = TagComponentInfo;
 
 	FEComponentTypeInfo TransformComponentInfo("Transform", typeid(FETransformComponent));
 	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETransformComponent>(); };
 	TransformComponentInfo.IncompatibleWith.push_back({ TransformComponentInfo });
+	TransformComponentInfo.LoadingPriority = 1;
 	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
 
 	FEComponentTypeInfo CameraComponentInfo("Camera", typeid(FECameraComponent));
@@ -28,6 +40,32 @@ FEComponentsTools::FEComponentsTools()
 	FEComponentTypeInfo GameModelComponentInfo("Game Model", typeid(FEGameModelComponent));
 	FunctionsToGetEntityIDListWith[GameModelComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEGameModelComponent>(); };
 	GameModelComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
+	GameModelComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
+		Json::Value Root;
+		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
+		Root["ModelID"] = CurrentComponent.GetGameModel()->GetObjectID();
+
+		Root["bVisible"] = CurrentComponent.IsVisible();
+		Root["bCastShadows"] = CurrentComponent.IsCastShadows();
+		Root["bReceiveShadows"] = CurrentComponent.IsReceivingShadows();
+		Root["bUniformLighting"] = CurrentComponent.IsUniformLighting();
+		Root["bApplyPostprocess"] = CurrentComponent.IsPostprocessApplied();
+		Root["bWireframeMode"] = CurrentComponent.IsWireframeMode();
+
+		return Root;
+	};
+	GameModelComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+		ParentEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(Root["ModelID"].asString()));
+		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
+
+		CurrentComponent.SetVisibility(Root["bVisible"].asBool());
+		CurrentComponent.SetCastShadows(Root["bCastShadows"].asBool());
+		CurrentComponent.SetReceivingShadows(Root["bReceiveShadows"].asBool());
+		CurrentComponent.SetUniformLighting(Root["bUniformLighting"].asBool());
+		CurrentComponent.SetIsPostprocessApplied(Root["bApplyPostprocess"].asBool());
+		CurrentComponent.SetWireframeMode(Root["bWireframeMode"].asBool());
+	};
+	GameModelComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = GameModelComponentInfo;
 
 	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
@@ -49,6 +87,7 @@ FEComponentsTools::FEComponentsTools()
 	FEComponentTypeInfo PrefabInstanceComponentInfo("Prefab Instance", typeid(FEPrefabInstanceComponent));
 	FunctionsToGetEntityIDListWith[PrefabInstanceComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEPrefabInstanceComponent>(); };
 	PrefabInstanceComponentInfo.IncompatibleWith.push_back({ PrefabInstanceComponentInfo });
+	PrefabInstanceComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()] = PrefabInstanceComponentInfo;
 }
 
@@ -70,6 +109,17 @@ std::vector<std::string> FEComponentsTools::GetEntityIDListWithComponent(FEScene
 	}
 
 	return FunctionsToGetEntityIDListWith[ComponentInfo.Type](CurrentScene);
+}
+
+FEComponentTypeInfo* FEComponentsTools::GetComponentInfoByName(std::string Name)
+{
+	for (auto& Component : ComponentIDToInfo)
+	{
+		if (Component.second.Name == Name)
+			return &Component.second;
+	}
+
+	return nullptr;
 }
 
 bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::string* ErrorMessage)
@@ -154,7 +204,6 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 
 			return false;
 		}
-
 	}
 
 	// Check for required components
@@ -175,8 +224,8 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 }
 
 FEComponentTypeInfo::FEComponentTypeInfo() : Name(), Type(nullptr) {}
-FEComponentTypeInfo::FEComponentTypeInfo(const std::string& name, const std::type_info& type)
+FEComponentTypeInfo::FEComponentTypeInfo(const std::string& Name, const std::type_info& Type)
 {
-	Name = name;
-	Type = &type;
+	this->Name = Name;
+	this->Type = &Type;
 }

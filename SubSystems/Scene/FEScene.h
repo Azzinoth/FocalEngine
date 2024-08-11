@@ -68,7 +68,7 @@ namespace FocalEngine
 
 		// Asset Loading
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
-		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEPrefab*>>& GLTFMeshesToPrefabMap, const std::string ParentID);
+		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID);
 
 		// Data Members
 		entt::registry Registry;

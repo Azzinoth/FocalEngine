@@ -1,7 +1,7 @@
 #include "FEVirtualUIContext.h"
 using namespace FocalEngine;
 
-FEVirtualUIContext::FEVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name) : FEObject(FE_VIRTUAL_UI_CONTEXT, Name)
+FEVirtualUIContext::FEVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name) : FEObject(FE_VIRTUAL_UI_CONTEXT_DEPRECATED, Name)
 {
 	if (Width == 0 || Height == 0)
 	{
@@ -18,10 +18,10 @@ FEVirtualUIContext::FEVirtualUIContext(int Width, int Height, FEMesh* SampleMesh
 	MeshTriangleUVs = CanvasMesh->GetTriangleUVs();
 
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();
-	RESOURCE_MANAGER.MakeMaterialStandard(CanvasMaterial);
+	RESOURCE_MANAGER.SetTagIternal(CanvasMaterial, ENGINE_RESOURCE_TAG);
 	CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	CanvasGameModel = RESOURCE_MANAGER.CreateGameModel(CanvasMesh, CanvasMaterial);
-	RESOURCE_MANAGER.MakeGameModelStandard(CanvasGameModel);
+	RESOURCE_MANAGER.SetTagIternal(CanvasGameModel, ENGINE_RESOURCE_TAG);
 
 	Framebuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, Width, Height, false);
 	VirtualUI = APPLICATION.AddVirtualUI(Framebuffer->FBO, Width, Height);

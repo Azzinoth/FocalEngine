@@ -50,8 +50,8 @@
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 28
 #define FE_WIN_32
-#define FE_MESH_VERSION 0.01f
-#define FE_TEXTURE_VERSION 0.01f
+#define FE_MESH_VERSION 0.02f
+#define FE_TEXTURE_VERSION 0.02f
 
 #define FE_SIMD_ENABLED
 

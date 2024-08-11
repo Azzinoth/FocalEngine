@@ -53,7 +53,33 @@ namespace FocalEngine
 		unsigned int BaseInstance;
 	};
 
-	class FEEntity;
+	struct FEInstancedElementData
+	{
+		std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
+		std::vector<glm::vec3> InstancePositions;
+		int* LODCounts = nullptr;
+
+		// GPU Culling
+		GLenum InstancedBuffer = 0;
+		GLenum* LODBuffers = nullptr;
+
+		GLuint SourceDataBuffer = 0;
+		GLuint PositionsBuffer = 0;
+		GLuint AABBSizesBuffer = 0;
+		GLuint LODInfoBuffer = 0;
+
+		FEDrawElementsIndirectCommand* IndirectDrawsInfo;
+		GLuint IndirectDrawInfoBuffer = 0;
+
+		FEAABB AllInstancesAABB;
+		FEGameModel* LastFrameGameModel = nullptr;
+
+		std::vector<glm::mat4> InstancedMatrices;
+		std::vector<glm::mat4> TransformedInstancedMatrices;
+		std::vector<float> InstancedAABBSizes;
+
+		std::string EntityIDWithGameModelComponent = "";
+	};
 
 	struct FEInstancedComponent
 	{
@@ -86,12 +112,19 @@ namespace FocalEngine
 		size_t GetSpawnModificationCount();
 		std::vector<FEInstanceModification> GetSpawnModifications();
 		FESpawnInfo SpawnInfo;
+
+		std::vector<FEInstancedElementData*> InstancedElementsData;
 	private:
 		bool bDirtyFlag = false;
 		size_t InstanceCount = 0;
 
 		// Editor functionality, should not be here
 		bool bSelectionMode = false;
+
+		// Data for postponed spawning
+		std::string PostponedTerrainToSnapID = "";
+		int PostponedTerrainLayer = -1;
+		Json::Value PostponedModificationsData;
 
 		FEEntity* TerrainToSnap = nullptr;
 
@@ -104,31 +137,32 @@ namespace FocalEngine
 		void ConnectToTerrainLayer(FEEntity* Terrain, int LayerIndex);
 		void UnConnectFromTerrainLayer();
 
-		// ******************* RENDERING *******************
-		std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
-		std::vector<glm::vec3> InstancePositions;
-		int* LODCounts = nullptr;
-
-		// GPU Culling
 		FE_CULING_TYPE CullingType = FE_CULLING_LODS;
-		GLenum InstancedBuffer = 0;
-		GLenum* LODBuffers = nullptr;
+		// ******************* RENDERING *******************
+		//std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
+		//std::vector<glm::vec3> InstancePositions;
+		//int* LODCounts = nullptr;
 
-		GLuint SourceDataBuffer = 0;
-		GLuint PositionsBuffer = 0;
-		GLuint AABBSizesBuffer = 0;
-		GLuint LODInfoBuffer = 0;
+		//// GPU Culling
+		//GLenum InstancedBuffer = 0;
+		//GLenum* LODBuffers = nullptr;
 
-		FEDrawElementsIndirectCommand* IndirectDrawsInfo;
-		GLuint IndirectDrawInfoBuffer = 0;
+		//GLuint SourceDataBuffer = 0;
+		//GLuint PositionsBuffer = 0;
+		//GLuint AABBSizesBuffer = 0;
+		//GLuint LODInfoBuffer = 0;
 
-		FEAABB AllInstancesAABB;
-		FEGameModel* LastFrameGameModel = nullptr;
+		//FEDrawElementsIndirectCommand* IndirectDrawsInfo;
+		//GLuint IndirectDrawInfoBuffer = 0;
 
-		std::vector<glm::mat4> InstancedMatrices;
-		std::vector<glm::mat4> TransformedInstancedMatrices;
-		std::vector<float> InstancedAABBSizes;
+		//FEAABB AllInstancesAABB;
+		//FEGameModel* LastFrameGameModel = nullptr;
+
+		//std::vector<glm::mat4> InstancedMatrices;
+		//std::vector<glm::mat4> TransformedInstancedMatrices;
+		//std::vector<float> InstancedAABBSizes;
 		// ******************* RENDERING END *******************
+		
 
 		std::vector<FEInstanceModification> Modifications;
 	};

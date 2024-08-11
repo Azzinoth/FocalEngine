@@ -28,9 +28,11 @@ namespace FocalEngine
 		bool IsWireframeMode() const;
 		void SetWireframeMode(bool NewValue);
 
-		FEGameModel* GameModel = nullptr;
-		
+		FEGameModel* GetGameModel();
+		void SetGameModel(FEGameModel* NewGameModel);
 	private:
+		FEGameModel* GameModel = nullptr;
+
 		bool bVisible = true;
 		bool bCastShadows = true;
 		bool bReceiveShadows = true;

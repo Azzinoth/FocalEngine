@@ -87,3 +87,13 @@ void FEGameModelComponent::SetWireframeMode(bool NewValue)
 {
 	bWireframeMode = NewValue;
 }
+
+FEGameModel* FEGameModelComponent::GetGameModel()
+{
+	return GameModel;
+}
+
+void FEGameModelComponent::SetGameModel(FEGameModel* NewGameModel)
+{
+	GameModel = NewGameModel;
+}

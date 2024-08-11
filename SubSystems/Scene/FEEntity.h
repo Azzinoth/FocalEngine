@@ -23,6 +23,11 @@ namespace FocalEngine
 		FEScene* ParentScene = nullptr;
 
 		entt::registry& GetRegistry();
+
+		Json::Value ToJson();
+		void FromJson(Json::Value Root);
+
+		void SaveComponents(Json::Value& Root);
 	public:
 		template<typename T, typename... Args>
 		bool AddComponent(Args&&... args)

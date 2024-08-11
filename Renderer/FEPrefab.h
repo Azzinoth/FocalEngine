@@ -2,20 +2,10 @@
 
 #ifndef FEPREFAB_H
 #define FEPREFAB_H
-
-// FIX ME! It should not be here.
-#include "../SubSystems/Scene/Components/FETransformComponent.h"
 #include "FEGameModel.h"
 
 namespace FocalEngine
 {
-	struct FEPrefabComponent
-	{
-		// Later it should be FEObject because we could use not only FEGameModel but something like FEAnimation or other classes as components.
-		FEGameModel* GameModel = nullptr;
-		FETransformComponent Transform;
-	};
-
 	class FEPrefab : public FEObject
 	{
 		friend FERenderer;
@@ -23,30 +13,18 @@ namespace FocalEngine
 		friend FEEntity;
 		friend FEEntityInstanced;
 
-		std::vector<FEPrefabComponent*> Components;
-		
-
-		FEAABB AABB;
-		void UpdateAABB();
-		
-		FEPrefab();
+		FEScene* Scene = nullptr;
 	public:
-		FEPrefab(FEGameModel* GameModel, std::string Name = "");
+		FEPrefab(std::string Name = "");
 		~FEPrefab();
-
-		int ComponentsCount() const;
-		void AddComponent(FEGameModel* GameModel, const FETransformComponent& Transform);
-		FEPrefabComponent* GetComponent(int Index) const;
-		void RemoveComponent(const FEGameModel* GameModel);
-		void RemoveComponent(int Index);
 
 		FEAABB GetAABB();
 
-		bool UsesMaterial(std::string MaterialID) const;
-		bool UsesGameModel(std::string GameModelID) const;
+		bool IsUsingMaterial(std::string MaterialID) const;
+		bool IsUsingGameModel(std::string GameModelID) const;
 
-		// FIX ME! That should replace FEPrefabComponent
-		FEScene* Scene = nullptr;
+		void SetScene(FEScene* Scene, bool DeleteOldScene = true);
+		FEScene* GetScene() const;
 	};
 }
 

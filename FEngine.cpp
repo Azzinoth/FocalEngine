@@ -61,7 +61,7 @@ void FEngine::BeginFrame(const bool InternalCall)
 
 #ifdef FE_DEBUG_ENABLED
 	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShadersList();
-	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetStandardShadersList();
+	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetEnginePrivateShadersList();
 	for (size_t i = 0; i < TempList.size(); i++)
 	{
 		ShaderList.push_back(TempList[i]);
@@ -131,6 +131,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	INSTANCED_RENDERING_SYSTEM;
 	TERRAIN_SYSTEM;
 	SKY_DOME_SYSTEM;
+	PREFAB_INSTANCE_SYSTEM;
 }
 
 void FEngine::SetWindowCaption(const std::string NewCaption)
@@ -290,9 +291,9 @@ void FEngine::Terminate()
 	APPLICATION.Close();
 }
 
-void FEngine::TakeScreenshot(const char* FileName)
+void FEngine::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
 {
-	RENDERER.TakeScreenshot(FileName, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
+	RENDERER.SaveScreenshot(FileName, SceneToWorkWith);
 }
 
 void FEngine::DropCallback(const int Count, const char** Paths)
