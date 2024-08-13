@@ -7,13 +7,13 @@ FEOpenXR* FEOpenXR::Instance = nullptr;
 FEOpenXR::FEOpenXR() {}
 FEOpenXR::~FEOpenXR()
 {
-	if (FEOpenXR_INPUT.CurrentInputState.actionSet != XR_NULL_HANDLE)
+	if (FEOpenXR_INPUT.CurrentInputState.ActionSet != XR_NULL_HANDLE)
 	{
 		for (auto hand : { Side::LEFT, Side::RIGHT })
 		{
-			xrDestroySpace(FEOpenXR_INPUT.CurrentInputState.handSpace[hand]);
+			xrDestroySpace(FEOpenXR_INPUT.CurrentInputState.HandSpace[hand]);
 		}
-		xrDestroyActionSet(FEOpenXR_INPUT.CurrentInputState.actionSet);
+		xrDestroyActionSet(FEOpenXR_INPUT.CurrentInputState.ActionSet);
 	}
 
 	for (int i = 0; i < FEOpenXR_RENDERING.SwapChains.size(); i++)
@@ -64,14 +64,14 @@ void FEOpenXR::PollEvents()
 		{
 			XrEventDataEventsLost* event = (XrEventDataEventsLost*)&runtime_event;
 
-			LOG.Add("EVENT: " + std::to_string(event->lostEventCount) + " events data lost!", " OpenXR");
+			LOG.Add("EVENT: " + std::to_string(event->lostEventCount) + " events data lost!", "FE_LOG_OPENXR");
 			// do we care if the runtime loses events?
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
 		{
 			XrEventDataInstanceLossPending* event = (XrEventDataInstanceLossPending*)&runtime_event;
-			LOG.Add("EVENT: instance loss pending at " + std::to_string(event->lossTime) + "! Destroying instance.", " OpenXR");
+			LOG.Add("EVENT: instance loss pending at " + std::to_string(event->lossTime) + "! Destroying instance.", "FE_LOG_OPENXR");
 			session_stopping = true;
 			break;
 		}

@@ -149,7 +149,7 @@ namespace FocalEngine
 		ErrorMsg += "Function: " + std::string(originator) + "\n";
 		ErrorMsg += "Source location: " + std::string(sourceLocation) + "\n";
 
-		LOG.Add(ErrorMsg, "OpenXR");
+		LOG.Add(ErrorMsg, "FE_LOG_OPENXR");
 	}
 
 	static XrResult CheckXrResult(XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr)

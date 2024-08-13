@@ -14,5 +14,6 @@ void main(void)
 	vec3 diffuseColor = diffuseFactor * vec3(2.0, 2.0, 2.0);
 	vec3 ambientColor = vec3(0.55f, 0.73f, 0.87f) * 0.8f;
 
-	out_Color = vec4(baseColor * ambientColor * diffuseColor, 1.0f);
+	// "* 5.0" is temporarily here.
+	out_Color = vec4(baseColor * ambientColor * diffuseColor * 5.0, 1.0f);
 }
