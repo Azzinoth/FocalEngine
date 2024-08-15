@@ -16,20 +16,12 @@ namespace FocalEngine
 		FE_MATERIAL = 4,
 		FE_GAMEMODEL = 5,
 		FE_ENTITY = 6,
-		// FIX ME! Remove these deprecated types.
-		FE_TERRAIN_DEPRECATED = 7,
-		FE_ENTITY_INSTANCED_DEPRECATED = 8,
-		FE_DIRECTIONAL_LIGHT_DEPRECATED = 9,
-		FE_POINT_LIGHT_DEPRECATED = 10,
-		FE_SPOT_LIGHT_DEPRECATED = 11,
-		FE_CAMERA_DEPRECATED = 12,
-		FE_FRAME_BUFFER = 13,
-		FE_POST_PROCESS = 14,
-		FE_TERRAIN_LAYER = 15,
-		FE_PREFAB = 16,
-		FE_VIRTUAL_UI_CONTEXT_DEPRECATED = 17,
-		FE_SCENE_GRAPH_NODE = 18,
-		FE_SCENE = 19
+		FE_FRAME_BUFFER = 7,
+		FE_POST_PROCESS = 8,
+		FE_TERRAIN_LAYER = 9,
+		FE_PREFAB = 10,
+		FE_SCENE_GRAPH_NODE = 11,
+		FE_SCENE = 12
 	};
 
 	struct FEObjectLoadedData
@@ -97,30 +89,6 @@ namespace FocalEngine
 			{
 				return "FE_ENTITY";
 			}
-			case FocalEngine::FE_TERRAIN_DEPRECATED:
-			{
-				return "FE_TERRAIN_DEPRECATED";
-			}
-			case FocalEngine::FE_ENTITY_INSTANCED_DEPRECATED:
-			{
-				return "FE_ENTITY_INSTANCED_DEPRECATED";
-			}
-			case FocalEngine::FE_DIRECTIONAL_LIGHT_DEPRECATED:
-			{
-				return "FE_DIRECTIONAL_LIGHT_DEPRECATED";
-			}
-			case FocalEngine::FE_POINT_LIGHT_DEPRECATED:
-			{
-				return "FE_POINT_LIGHT_DEPRECATED";
-			}
-			case FocalEngine::FE_SPOT_LIGHT_DEPRECATED:
-			{
-				return "FE_SPOT_LIGHT_DEPRECATED";
-			}
-			case FocalEngine::FE_CAMERA_DEPRECATED:
-			{
-				return "FE_CAMERA_DEPRECATED";
-			}
 			case FocalEngine::FE_FRAME_BUFFER:
 			{
 				return "FE_FRAME_BUFFER";
@@ -132,10 +100,6 @@ namespace FocalEngine
 			case FocalEngine::FE_PREFAB:
 			{
 				return "FE_PREFAB";
-			}
-			case FocalEngine::FE_VIRTUAL_UI_CONTEXT_DEPRECATED:
-			{
-				return "FE_VIRTUAL_UI_CONTEXT";
 			}
 			case FocalEngine::FE_SCENE_GRAPH_NODE:
 			{

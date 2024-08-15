@@ -7,6 +7,7 @@ FETransformSystem::FETransformSystem()
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FETransformComponent>(TransfromComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FETransformComponent>(TransfromComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FETransformComponent>(DuplicateTransformComponent);
 }
 
 void FETransformSystem::RegisterOnComponentCallbacks()
@@ -43,13 +44,13 @@ void FETransformSystem::Update()
 	}
 }
 
-void FETransformSystem::DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* NewEntity)
+void FETransformSystem::DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
 {
-	if (SourceEntity == nullptr || NewEntity == nullptr)
+	if (SourceEntity == nullptr || TargetEntity == nullptr)
 		return;
 
-	NewEntity->GetComponent<FETransformComponent>() = SourceEntity->GetComponent<FETransformComponent>();
-	NewEntity->GetComponent<FETransformComponent>().ParentEntity = NewEntity;
+	TargetEntity->GetComponent<FETransformComponent>() = SourceEntity->GetComponent<FETransformComponent>();
+	TargetEntity->GetComponent<FETransformComponent>().ParentEntity = TargetEntity;
 }
 
 void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)

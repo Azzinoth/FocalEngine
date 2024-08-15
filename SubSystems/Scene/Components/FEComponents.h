@@ -8,6 +8,7 @@
 #include "FETerrainComponent.h"
 #include "FESkyDomeComponent.h"
 #include "FEPrefabInstanceComponent.h"
+#include "FEVirtualUIComponent.h"
 
 #include "entt.hpp"
 
@@ -23,6 +24,7 @@ namespace FocalEngine
         std::vector<FEComponentTypeInfo> RequiredComponents;
         std::vector<std::vector<FEComponentTypeInfo>> IncompatibleCombinations;
         int MaxSceneComponentCount = -1;
+		bool bCanNotBeRemoved = false;
         // That variable defines the priority of loading the component. Relevant for the entities components list.
         // The lower the value, the earlier the component will be loaded.
         int LoadingPriority = INT_MAX;
@@ -35,8 +37,10 @@ namespace FocalEngine
 			return *Type == *Other.Type;
 		}
 
-        bool IsCompatible(FEEntity* ProspectParentEntity, std::string* ErrorMessage = nullptr);
+        bool CanBeAddedToEntity(FEEntity* PotentialParentEntity, std::string* ErrorMessage = nullptr);
+		bool CanBeRemovedFromEntity(FEEntity* ParentEntity, std::string* ErrorMessage = nullptr);
 
+        std::function<void(FEEntity*, FEEntity*)> DuplicateComponent = nullptr;
         std::function<Json::Value(FEEntity*)> ToJson = nullptr;
         std::function<void(FEEntity*, Json::Value)> FromJson = nullptr;
     };
@@ -54,6 +58,7 @@ namespace FocalEngine
         friend class FETerrainSystem;
         friend class FESkyDomeSystem;
         friend class FEPrefabInstanceSystem;
+        friend class FEVirtualUISystem;
 
         std::map<entt::id_type, FEComponentTypeInfo> ComponentIDToInfo;
         std::map<const std::type_info*, std::function<std::vector<std::string>(FEScene*)>> FunctionsToGetEntityIDListWith;
@@ -69,12 +74,26 @@ namespace FocalEngine
         {
             ComponentIDToInfo[entt::type_id<T>().hash()].FromJson = Function;
         }
+
+        template<typename T>
+        void RegisterComponentDuplicateFunction(std::function<void(FEEntity*, FEEntity*)> Function)
+		{
+			ComponentIDToInfo[entt::type_id<T>().hash()].DuplicateComponent = Function;
+		}
     public:
         SINGLETON_PUBLIC_PART(FEComponentsTools)
 
         std::vector<FEComponentTypeInfo> GetComponentInfoList();
         std::vector<std::string> GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo);
         FEComponentTypeInfo* GetComponentInfoByName(std::string Name);
+		template<typename T>
+        FEComponentTypeInfo* GetComponentInfo()
+		{
+			return &ComponentIDToInfo[entt::type_id<T>().hash()];
+		}
+
+        void SortComponentsByLoadingPriority(std::vector<FEComponentTypeInfo>& Components);
+        void SortComponentsByLoadingPriority(std::vector<std::string>& ComponentsNames);
     };
 
 #define COMPONENTS_TOOL FEComponentsTools::getInstance()

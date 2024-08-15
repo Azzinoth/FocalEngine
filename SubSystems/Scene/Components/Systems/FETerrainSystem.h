@@ -17,7 +17,7 @@ namespace FocalEngine
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 
-		void DuplicateTerrainComponent(FEEntity* EntityWithTerrainComponent, FEEntity* NewEntity);
+		static void DuplicateTerrainComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		// ********************************** PointOnTerrain **********************************
 		glm::dvec3 BinarySearch(FEEntity* TerrainEntity, int Count, float Start, float Finish, glm::dvec3 MouseRayStart, glm::dvec3 MouseRayDirection);

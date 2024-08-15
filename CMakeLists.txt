@@ -233,9 +233,12 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FESkyDomeComponent.h"
 	"SubSystems/Scene/Components/FEPrefabInstanceComponent.h"
 	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
+	"SubSystems/Scene/Components/FEVirtualUIComponent.h"
+	"SubSystems/Scene/Components/FEVirtualUIComponent.cpp"
 )
 
 file(GLOB Scene_Component_Systems_SRC
+	"SubSystems/Scene/Components/Systems/FEComponentSystems.h"
 	"SubSystems/Scene/Components/Systems/FETransformSystem.h"
 	"SubSystems/Scene/Components/Systems/FETransformSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FELightSystem.h"
@@ -250,7 +253,8 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.h"
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.cpp"
-	"SubSystems/Scene/Components/Systems/FEComponentSystems.h"
+	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.h"
+	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.cpp"
 )
 
 # *************** SCENE ***************
@@ -274,12 +278,8 @@ file(GLOB Scene_SRC
 # *************** SUB_SYSTEM ***************
 
 file(GLOB SubSystems_SRC
-	"SubSystems/FEBasicCamera.cpp"
-	"SubSystems/FEBasicCamera.h"
 	"SubSystems/FEFileSystem.cpp"
 	"SubSystems/FEFileSystem.h"
-	"SubSystems/FEVirtualUIContext.h"
-	"SubSystems/FEVirtualUIContext.cpp"
 )
 
 file(GLOB OpenXR_SRC

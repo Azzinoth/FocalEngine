@@ -368,6 +368,9 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		for (size_t i = 0; i < MaterialList.size(); i++)
 		{
 			FEMaterial* CurrentMaterial = RESOURCE_MANAGER.GetMaterial(MaterialList[i]);
+			if (CurrentMaterial->GetTag() == ENGINE_RESOURCE_TAG)
+				continue;
+
 			if (CurrentMaterial->IsTextureInList(NewlyCreatedTexture))
 				CurrentMaterial->SetDirtyFlag(true);
 		}
@@ -1675,14 +1678,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		{
 			return Result;
 		}
-		case FocalEngine::FE_TERRAIN_DEPRECATED:
-		{
-			return Result;
-		}
-		case FocalEngine::FE_ENTITY_INSTANCED_DEPRECATED:
-		{
-			return Result;
-		}
+
 		default:
 		{
 			return Result;

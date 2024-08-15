@@ -3,7 +3,6 @@
 #include"FEEntity.h"
 #include "../ResourceManager/FEResourceManager.h"
 #include "../Renderer/FELine.h"
-#include "../FEVirtualUIContext.h"
 #include "FENaiveSceneGraph.h"
 #include <typeindex>
 #include "entt.hpp"
@@ -41,12 +40,6 @@ namespace FocalEngine
 		FEAABB GetEntityAABB(FEEntity* Entity);
 		FEAABB GetSceneAABB(std::function<bool(FEEntity*)> Filter = nullptr);
 
-		// Virtual UI Context Management
-		FEVirtualUIContext* AddVirtualUIContext(int Width = 1280, int Height = 720, FEMesh* SampleMesh = nullptr, std::string Name = "UnNamed");
-		FEVirtualUIContext* GetVirtualUIContext(std::string ID);
-		std::vector<std::string> GetVirtualUIContextList();
-		void DeleteVirtualUIContext(std::string ID);
-
 		// Asset Management
 		std::vector<FEObject*> ImportAsset(std::string FileName);
 
@@ -76,7 +69,6 @@ namespace FocalEngine
 		bool bActive = true;
 		std::unordered_map<entt::entity, FEEntity*> EnttToEntity;
 		std::unordered_map<std::string, FEEntity*> EntityMap;
-		std::unordered_map<std::string, FEVirtualUIContext*> VirtualUIContextMap;
 	};
 #include "FEScene.inl"
 }

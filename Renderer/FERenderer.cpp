@@ -908,8 +908,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 		glm::ivec2 ViewportSize = glm::ivec2(CurrentViewport->GetWidth(), CurrentViewport->GetHeight());
 
 		MouseRay = GEOMETRY.CreateMouseRayToWorld(ENGINE.GetMouseX(), ENGINE.GetMouseY(),
-			CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetProjectionMatrix(),
-			ViewportPosition, ViewportSize);
+												  CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetProjectionMatrix(),
+												  ViewportPosition, ViewportSize);
 	}
 
 	if (bVRActive)
@@ -972,6 +972,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
 	entt::basic_view PrefabInstancedView = CurrentScene->Registry.view<FEInstancedComponent, FEPrefabInstanceComponent>();
 	entt::basic_view TerrainView = CurrentScene->Registry.view<FETerrainComponent, FETransformComponent>();
+	entt::basic_view VirtualUIView = CurrentScene->Registry.view<FEVirtualUIComponent, FETransformComponent>();
 
 	for (std::string EntityID: LightsIDList)
 	{
@@ -1178,16 +1179,16 @@ void FERenderer::Render(FEScene* CurrentScene)
 		}
 	}
 
-	// FIX ME! It is not renderer work to update interaction ray.
-	// It should be done in the input update.
-	auto VirtualUIIterator = CurrentScene->VirtualUIContextMap.begin();
-	while (VirtualUIIterator != CurrentScene->VirtualUIContextMap.end())
+	for (auto [EnTTEntity, VirtualUIComponent, TransformComponent] : VirtualUIView.each())
 	{
-		auto VirtualUIContext = VirtualUIIterator->second;
-		if (VirtualUIContext->bMouseMovePassThrough)
-			VirtualUIContext->UpdateInteractionRay(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE), MouseRay);
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
 
-		VirtualUIIterator++;
+		//if (!VirtualUIComponent.IsVisible())
+		//	continue;
+
+		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity);
 	}
 
 	for (auto [EnTTEntity, TerrainComponent, TransformComponent] : TerrainView.each())
@@ -1532,14 +1533,19 @@ void FERenderer::RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamer
 	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
 	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
 
-	if (GameModelComponent.GetGameModel() == nullptr || GameModelComponent.GetGameModel()->Mesh == nullptr || GameModelComponent.GetGameModel()->Material == nullptr)
+	RenderGameModelComponent(GameModelComponent, TransformComponent, Entity->ParentScene, ForceCamera, bReloadUniformBlocks);
+}
+
+void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, FEScene* ParentScene, FEEntity* ForceCamera, bool bReloadUniformBlocks)
+{
+	if (ParentScene == nullptr || GameModelComponent.GetGameModel() == nullptr || GameModelComponent.GetGameModel()->Mesh == nullptr || GameModelComponent.GetGameModel()->Material == nullptr)
 		return;
 
 	if (GameModelComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	if (bReloadUniformBlocks)
-		LoadUniformBlocks(Entity->ParentScene);
+		LoadUniformBlocks(ParentScene);
 
 	FEGameModel* GameModel = GameModelComponent.GetGameModel();
 	if (GameModel == nullptr)

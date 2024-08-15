@@ -7,6 +7,7 @@ FEInstancedSystem::FEInstancedSystem()
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEInstancedComponent>(InstanceComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEInstancedComponent>(InstanceComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEInstancedComponent>(DuplicateInstancedComponent);
 }
 
 void FEInstancedSystem::RegisterOnComponentCallbacks()
@@ -375,25 +376,27 @@ void FEInstancedSystem::UpdateBuffer(FEEntity* Entity, FEGameModelComponent& Gam
 	GetAABB(Entity);
 }
 
-void FEInstancedSystem::DuplicateInstancedComponent(FEEntity* EntityWithInstancedComponent, FEEntity* NewEntity)
+void FEInstancedSystem::DuplicateInstancedComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
 {
-	if (EntityWithInstancedComponent == nullptr || NewEntity == nullptr)
+	if (SourceEntity == nullptr || TargetEntity == nullptr)
 		return;
 
-	if (!EntityWithInstancedComponent->HasComponent<FEGameModelComponent>() || !NewEntity->HasComponent<FEGameModelComponent>())
+	if (!SourceEntity->HasComponent<FEGameModelComponent>() || !TargetEntity->HasComponent<FEGameModelComponent>())
 		return;
 
-	if (!EntityWithInstancedComponent->HasComponent<FEInstancedComponent>())
+	if (!SourceEntity->HasComponent<FEInstancedComponent>())
 		return;
 
-	FEInstancedComponent& OriginalInstancedComponent = EntityWithInstancedComponent->GetComponent<FEInstancedComponent>();
-	bInternalAdd = true;
-	NewEntity->AddComponent<FEInstancedComponent>();
-	bInternalAdd = false;
+	FEInstancedComponent& OriginalInstancedComponent = SourceEntity->GetComponent<FEInstancedComponent>();
+	INSTANCED_RENDERING_SYSTEM.bInternalAdd = true;
+	TargetEntity->AddComponent<FEInstancedComponent>();
+	INSTANCED_RENDERING_SYSTEM.bInternalAdd = false;
 
-	FEInstancedComponent& NewInstancedComponent = NewEntity->GetComponent<FEInstancedComponent>();
+	FEInstancedComponent& NewInstancedComponent = TargetEntity->GetComponent<FEInstancedComponent>();
 	NewInstancedComponent = OriginalInstancedComponent;
-	INSTANCED_RENDERING_SYSTEM.InitializeBuffers(NewEntity);
+	// FIX ME! This is not correct, it should be copied from source entity, but with reinitalized buffers.
+	//NewInstancedComponent.InstancedElementsData.clear();
+	INSTANCED_RENDERING_SYSTEM.InitializeBuffers(TargetEntity);
 }
 
 void FEInstancedSystem::AddInstanceInternal(FEEntity* Entity, const glm::mat4 InstanceMatrix)

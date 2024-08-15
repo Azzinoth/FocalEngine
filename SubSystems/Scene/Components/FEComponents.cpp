@@ -8,15 +8,21 @@ FEComponentsTools::FEComponentsTools()
 	FEComponentTypeInfo TagComponentInfo("Tag", typeid(FETagComponent));
 	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETagComponent>(); };
 	TagComponentInfo.IncompatibleWith.push_back({ TagComponentInfo });
+	TagComponentInfo.bCanNotBeRemoved = true;
 	TagComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
 		FETagComponent& CurrentComponent = ParentEntity->GetComponent<FETagComponent>();
 		Root["Tag"] = CurrentComponent.GetTag();
 		return Root;
 	};
+
 	TagComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
 		FETagComponent& CurrentComponent = ParentEntity->GetComponent<FETagComponent>();
 		CurrentComponent.SetTag(Root["Tag"].asString());
+	};
+
+	TagComponentInfo.DuplicateComponent = [](FEEntity* SourceEntity, FEEntity* TargetEntity) {
+		TargetEntity->GetComponent<FETagComponent>() = SourceEntity->GetComponent<FETagComponent>();
 	};
 	TagComponentInfo.LoadingPriority = 0;
 	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] = TagComponentInfo;
@@ -24,6 +30,7 @@ FEComponentsTools::FEComponentsTools()
 	FEComponentTypeInfo TransformComponentInfo("Transform", typeid(FETransformComponent));
 	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETransformComponent>(); };
 	TransformComponentInfo.IncompatibleWith.push_back({ TransformComponentInfo });
+	TransformComponentInfo.bCanNotBeRemoved = true;
 	TransformComponentInfo.LoadingPriority = 1;
 	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
 
@@ -54,6 +61,7 @@ FEComponentsTools::FEComponentsTools()
 
 		return Root;
 	};
+
 	GameModelComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
 		ParentEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(Root["ModelID"].asString()));
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
@@ -64,6 +72,11 @@ FEComponentsTools::FEComponentsTools()
 		CurrentComponent.SetUniformLighting(Root["bUniformLighting"].asBool());
 		CurrentComponent.SetIsPostprocessApplied(Root["bApplyPostprocess"].asBool());
 		CurrentComponent.SetWireframeMode(Root["bWireframeMode"].asBool());
+	};
+
+	GameModelComponentInfo.DuplicateComponent = [](FEEntity* SourceEntity, FEEntity* TargetEntity) {
+		if (TargetEntity->AddComponent<FEGameModelComponent>())
+			TargetEntity->GetComponent<FEGameModelComponent>() = SourceEntity->GetComponent<FEGameModelComponent>();
 	};
 	GameModelComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = GameModelComponentInfo;
@@ -89,6 +102,13 @@ FEComponentsTools::FEComponentsTools()
 	PrefabInstanceComponentInfo.IncompatibleWith.push_back({ PrefabInstanceComponentInfo });
 	PrefabInstanceComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()] = PrefabInstanceComponentInfo;
+
+	FEComponentTypeInfo VirtualUIComponentInfo("Virtual UI", typeid(FEVirtualUIComponent));
+	FunctionsToGetEntityIDListWith[VirtualUIComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEVirtualUIComponent>(); };
+	VirtualUIComponentInfo.IncompatibleWith.push_back({ VirtualUIComponentInfo });
+	VirtualUIComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
+	VirtualUIComponentInfo.LoadingPriority = 3;
+	ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()] = VirtualUIComponentInfo;
 }
 
 std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()
@@ -122,13 +142,47 @@ FEComponentTypeInfo* FEComponentsTools::GetComponentInfoByName(std::string Name)
 	return nullptr;
 }
 
-bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::string* ErrorMessage)
+void FEComponentsTools::SortComponentsByLoadingPriority(std::vector<FEComponentTypeInfo>& Components)
+{
+	std::sort(Components.begin(), Components.end(), [](const FEComponentTypeInfo& FirstComponent, const FEComponentTypeInfo& SecondComponent) -> bool {
+		int FirstPriority = FirstComponent.LoadingPriority;
+		int SecondPriority = SecondComponent.LoadingPriority;
+
+		bool bResult = FirstPriority < SecondPriority;
+		return bResult;
+	});
+}
+void FEComponentsTools::SortComponentsByLoadingPriority(std::vector<std::string>& ComponentsNames)
+{
+	std::sort(ComponentsNames.begin(), ComponentsNames.end(), [](const std::string& FirstComponent, const std::string& SecondComponent) -> bool {
+
+		if (COMPONENTS_TOOL.GetComponentInfoByName(FirstComponent) == nullptr)
+		{
+			LOG.Add("Component info not found for component: " + FirstComponent, "FE_LOG_ECS", FE_LOG_ERROR);
+			return false;
+		}
+
+		if (COMPONENTS_TOOL.GetComponentInfoByName(SecondComponent) == nullptr)
+		{
+			LOG.Add("Component info not found for component: " + SecondComponent, "FE_LOG_ECS", FE_LOG_ERROR);
+			return false;
+		}
+
+		int FirstPriority = COMPONENTS_TOOL.GetComponentInfoByName(FirstComponent)->LoadingPriority;
+		int SecondPriority = COMPONENTS_TOOL.GetComponentInfoByName(SecondComponent)->LoadingPriority;
+
+		bool bResult = FirstPriority < SecondPriority;
+		return bResult;
+	});
+}
+
+bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, std::string* ErrorMessage)
 {
 	std::string LocalErrorMessage;
 	if (ErrorMessage != nullptr)
 		*ErrorMessage = "";
 
-	if (ProspectParentEntity == nullptr)
+	if (PotentialParentEntity == nullptr)
 	{
 		LOG.Add("ProspectParentEntity is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
 		if (ErrorMessage != nullptr)
@@ -137,7 +191,7 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 		return false;
 	}
 
-	if (ProspectParentEntity->GetParentScene() == nullptr)
+	if (PotentialParentEntity->GetParentScene() == nullptr)
 	{
 		LOG.Add("ProspectParentEntity parent scene is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
 		if (ErrorMessage != nullptr)
@@ -146,7 +200,7 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 		return false;
 	}
 
-	FEScene* ParentScene = ProspectParentEntity->GetParentScene();
+	FEScene* ParentScene = PotentialParentEntity->GetParentScene();
 	if (MaxSceneComponentCount != -1)
 	{
 		size_t CurrentComponentCount = COMPONENTS_TOOL.GetEntityIDListWithComponent(ParentScene, *this).size();
@@ -161,7 +215,7 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 		}
 	}
 
-	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = ProspectParentEntity->GetComponentsInfoList();
+	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = PotentialParentEntity->GetComponentsInfoList();
 
 	// Check if any of the existing components are incompatible
 	for (const auto& ExistingComponent : CurrentlyExistingComponents)
@@ -220,6 +274,58 @@ bool FEComponentTypeInfo::IsCompatible(FEEntity* ProspectParentEntity, std::stri
 		}
 	}
 
+	return true;
+}
+
+bool FEComponentTypeInfo::CanBeRemovedFromEntity(FEEntity* ParentEntity, std::string* ErrorMessage)
+{
+	std::string LocalErrorMessage;
+	if (ErrorMessage != nullptr)
+		*ErrorMessage = "";
+
+	if (bCanNotBeRemoved)
+	{
+		if (ErrorMessage != nullptr)
+			*ErrorMessage = "Can not be removed";
+
+		return false;
+	}
+
+	if (ParentEntity == nullptr)
+	{
+		LOG.Add("ParentEntity is nullptr in FEComponentTypeInfo::CanBeRemovedFromEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		if (ErrorMessage != nullptr)
+			*ErrorMessage = "ParentEntity is nullptr";
+
+		return false;
+	}
+
+	if (ParentEntity->GetParentScene() == nullptr)
+	{
+		LOG.Add("ParentEntity parent scene is nullptr in FEComponentTypeInfo::CanBeRemovedFromEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		if (ErrorMessage != nullptr)
+			*ErrorMessage = "ParentEntity parent scene is nullptr";
+
+		return false;
+	}
+
+	FEScene* ParentScene = ParentEntity->GetParentScene();
+	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = ParentEntity->GetComponentsInfoList();
+	CurrentlyExistingComponents.erase(std::remove(CurrentlyExistingComponents.begin(), CurrentlyExistingComponents.end(), *this), CurrentlyExistingComponents.end());
+
+	// Check if other components are dependent on this one
+	for (const auto& ExistingComponent : CurrentlyExistingComponents)
+	{
+		if (std::find(ExistingComponent.RequiredComponents.begin(), ExistingComponent.RequiredComponents.end(), *this) != ExistingComponent.RequiredComponents.end())
+		{
+			LocalErrorMessage = "Required by " + ExistingComponent.Name;
+			if (ErrorMessage != nullptr)
+				*ErrorMessage = LocalErrorMessage;
+
+			return false;
+		}
+	}
+	
 	return true;
 }
 

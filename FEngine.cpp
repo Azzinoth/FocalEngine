@@ -25,6 +25,7 @@ void FEngine::InternalUpdate()
 	INSTANCED_RENDERING_SYSTEM.Update();
 	SCENE_MANAGER.Update();
 	CAMERA_SYSTEM.Update(CurrentDeltaTime);
+	VIRTUAL_UI_SYSTEM.Update();
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{
@@ -132,6 +133,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	TERRAIN_SYSTEM;
 	SKY_DOME_SYSTEM;
 	PREFAB_INSTANCE_SYSTEM;
+	VIRTUAL_UI_SYSTEM;
 }
 
 void FEngine::SetWindowCaption(const std::string NewCaption)

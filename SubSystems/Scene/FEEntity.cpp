@@ -42,14 +42,7 @@ void FEEntity::FromJson(Json::Value Root)
 {
 	// ID and Name should be set before calling this function
 	std::vector<Json::String> ComponentsList = Root["Components"].getMemberNames();
-	// Sort to make sure that components are loaded in proper order.
-	std::sort(ComponentsList.begin(), ComponentsList.end(), [](const std::string& FirstComponent, const std::string& SecondComponent) -> bool {
-		int FirstPriority = COMPONENTS_TOOL.GetComponentInfoByName(FirstComponent)->LoadingPriority;
-		int SecondPriority = COMPONENTS_TOOL.GetComponentInfoByName(SecondComponent)->LoadingPriority;
-
-		bool bResult = FirstPriority < SecondPriority;
-		return bResult;
-	});
+	COMPONENTS_TOOL.SortComponentsByLoadingPriority(ComponentsList);
 
 	for (size_t i = 0; i < ComponentsList.size(); i++)
 	{

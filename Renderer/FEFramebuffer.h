@@ -13,6 +13,7 @@ namespace FocalEngine
 
 	class FEFramebuffer : public FEObject
 	{
+		friend struct FEVirtualUIComponent;
 		friend class FEVirtualUIContext;
 		friend class FEngine;
 		friend class FEResourceManager;

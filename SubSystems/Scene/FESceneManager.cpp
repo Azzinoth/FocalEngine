@@ -47,6 +47,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
 	NewScene->Registry.on_construct<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEPrefabInstanceComponent>>();
+	NewScene->Registry.on_construct<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEVirtualUIComponent>>();
 
 	NewScene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
 	NewScene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
@@ -57,6 +58,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
 	NewScene->Registry.on_destroy<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEPrefabInstanceComponent>>();
+	NewScene->Registry.on_destroy<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEVirtualUIComponent>>();
 
 	NewScene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
 	NewScene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
@@ -67,6 +69,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 	NewScene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
 	NewScene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
 	NewScene->Registry.on_update<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEPrefabInstanceComponent>>();
+	NewScene->Registry.on_update<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEVirtualUIComponent>>();
 }
 
 std::vector<std::string> FESceneManager::GetSceneIDList()
@@ -128,8 +131,6 @@ void FESceneManager::ActivateScene(FEScene* Scene)
 
 	Scene->bActive = true;
 	ActiveSceneMap[Scene->GetObjectID()] = Scene;
-	// FIX ME! Do I need that ?
-	//RegisterAllComponentCallbacks(Scene);
 }
 
 void FESceneManager::DeactivateScene(std::string ID)

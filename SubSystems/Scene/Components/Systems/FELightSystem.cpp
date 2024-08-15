@@ -7,6 +7,7 @@ FELightSystem::FELightSystem()
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FELightComponent>(LightComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FELightComponent>(LightComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FELightComponent>(DuplicateLightComponent);
 }
 
 void FELightSystem::RegisterOnComponentCallbacks()
@@ -45,22 +46,22 @@ void FELightSystem::DirectionalLightInitialization(FELightComponent& LightCompon
 	LightComponent.SetCastShadows(true);
 }
 
-void FELightSystem::DuplicateLightComponent(FEEntity* EntityWithLightComponent, FEEntity* NewEntity)
+void FELightSystem::DuplicateLightComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
 {
-	if (EntityWithLightComponent == nullptr || NewEntity == nullptr || !EntityWithLightComponent->HasComponent<FELightComponent>())
+	if (SourceEntity == nullptr || TargetEntity == nullptr || !SourceEntity->HasComponent<FELightComponent>())
 		return;
 
-	FELightComponent& LightComponent = EntityWithLightComponent->GetComponent<FELightComponent>();
+	FELightComponent& LightComponent = SourceEntity->GetComponent<FELightComponent>();
 
-	bInternalAdd = true;
-	NewEntity->AddComponent<FELightComponent>(LightComponent.GetType());
-	bInternalAdd = false;
-	FELightComponent& NewLightComponent = NewEntity->GetComponent<FELightComponent>();
+	LIGHT_SYSTEM.bInternalAdd = true;
+	TargetEntity->AddComponent<FELightComponent>(LightComponent.GetType());
+	LIGHT_SYSTEM.bInternalAdd = false;
+	FELightComponent& NewLightComponent = TargetEntity->GetComponent<FELightComponent>();
 
 	NewLightComponent = LightComponent;
 
 	if (LightComponent.GetType() == FE_DIRECTIONAL_LIGHT)
-		DirectionalLightInitialization(NewLightComponent);
+		LIGHT_SYSTEM.DirectionalLightInitialization(NewLightComponent);
 }
 
 void FELightSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)

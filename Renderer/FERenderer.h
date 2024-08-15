@@ -73,7 +73,9 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FERenderer)
 
 		void Render(FEScene* CurrentScene);
+		
 		void RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, FEScene* ParentScene, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
 		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false, size_t PrefabIndex = 0);
 		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera = nullptr);

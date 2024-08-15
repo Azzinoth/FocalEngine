@@ -15,7 +15,7 @@ namespace FocalEngine
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 		
-		void DuplicateCameraComponent(FEEntity* EntityWithCameraComponent, FEEntity* NewEntity);
+		static void DuplicateCameraComponent(FEEntity* EntityWithCameraComponent, FEEntity* NewEntity);
 
 		void Update(const double DeltaTime);
 

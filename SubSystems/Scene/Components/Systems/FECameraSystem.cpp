@@ -10,6 +10,7 @@ FECameraSystem::FECameraSystem()
 
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FECameraComponent>(CameraComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FECameraComponent>(CameraComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FECameraComponent>(DuplicateCameraComponent);
 }
 
 void FECameraSystem::RegisterOnComponentCallbacks()
@@ -32,15 +33,15 @@ void FECameraSystem::OnMyComponentAdded(FEEntity* Entity)
 	}*/
 }
 
-void FECameraSystem::DuplicateCameraComponent(FEEntity* EntityWithCameraComponent, FEEntity* NewEntity)
+void FECameraSystem::DuplicateCameraComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
 {
-	if (EntityWithCameraComponent == nullptr || NewEntity == nullptr || !EntityWithCameraComponent->HasComponent<FECameraComponent>())
+	if (SourceEntity == nullptr || TargetEntity == nullptr || !SourceEntity->HasComponent<FECameraComponent>())
 		return;
 
-	FECameraComponent& OriginalCameraComponent = EntityWithCameraComponent->GetComponent<FECameraComponent>();
-	NewEntity->AddComponent<FECameraComponent>();
+	FECameraComponent& OriginalCameraComponent = SourceEntity->GetComponent<FECameraComponent>();
+	TargetEntity->AddComponent<FECameraComponent>();
 
-	FECameraComponent& NewCameraComponent = NewEntity->GetComponent<FECameraComponent>();
+	FECameraComponent& NewCameraComponent = TargetEntity->GetComponent<FECameraComponent>();
 	NewCameraComponent = OriginalCameraComponent;
 	NewCameraComponent.bIsMainCamera = false;
 }

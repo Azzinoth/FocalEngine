@@ -121,40 +121,6 @@ void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 	}*/
 }
 
-FEVirtualUIContext* FEScene::AddVirtualUIContext(int Width, int Height, FEMesh* SampleMesh, std::string Name)
-{
-	FEVirtualUIContext* NewVirtualUIContext = new FEVirtualUIContext(Width, Height, SampleMesh, Name);
-	NewVirtualUIContext->CanvasEntity = CreateEntity(Name + "_Virtual_UI_Canvas");
-	NewVirtualUIContext->CanvasEntity->AddComponent<FEGameModelComponent>(NewVirtualUIContext->CanvasGameModel);
-	FEGameModelComponent& GameModelComponent = NewVirtualUIContext->CanvasEntity->GetComponent<FEGameModelComponent>();
-	GameModelComponent.SetUniformLighting(true);
-	VirtualUIContextMap[NewVirtualUIContext->GetObjectID()] = NewVirtualUIContext;
-	return NewVirtualUIContext;
-}
-
-FEVirtualUIContext* FEScene::GetVirtualUIContext(const std::string ID)
-{
-	if (VirtualUIContextMap.find(ID) == VirtualUIContextMap.end())
-		return nullptr;
-
-	return VirtualUIContextMap[ID];
-}
-
-std::vector<std::string> FEScene::GetVirtualUIContextList()
-{
-	FE_MAP_TO_STR_VECTOR(VirtualUIContextMap)
-}
-
-void FEScene::DeleteVirtualUIContext(const std::string ID)
-{
-	if (VirtualUIContextMap.find(ID) == VirtualUIContextMap.end())
-		return;
-
-	const FEVirtualUIContext* VirtualUIContextToDelete = VirtualUIContextMap[ID];
-	delete VirtualUIContextToDelete;
-	VirtualUIContextMap.erase(ID);
-}
-
 std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 {
 	std::vector<FEObject*> Result;
@@ -543,46 +509,14 @@ FEEntity* FEScene::DuplicateEntityInternal(FEEntity* SourceEntity, std::string N
 {
 	FEEntity* NewEntity = CreateEntityOrphan(NewEntityName);
 
-	// Mandatory components.
-	NewEntity->GetComponent<FETagComponent>() = SourceEntity->GetComponent<FETagComponent>();
-	TRANSFORM_SYSTEM.DuplicateTransformComponent(SourceEntity, NewEntity);
+	std::vector<FEComponentTypeInfo> List = SourceEntity->GetComponentsInfoList();
+	// Sort to make sure that components are loaded in proper order.
+	COMPONENTS_TOOL.SortComponentsByLoadingPriority(List);
 
-	std::vector<FEComponentTypeInfo> ComponentsListInfo = SourceEntity->GetComponentsInfoList();
-	for (size_t i = 0; i < ComponentsListInfo.size(); i++)
+	for (size_t i = 0; i < List.size(); i++)
 	{
-		if (ComponentsListInfo[i].Name == "Game Model")
-		{
-			if (NewEntity->AddComponent<FEGameModelComponent>())
-			{
-				NewEntity->GetComponent<FEGameModelComponent>() = SourceEntity->GetComponent<FEGameModelComponent>();
-			}
-		}
-
-		if (ComponentsListInfo[i].Name == "Light")
-		{
-			LIGHT_SYSTEM.DuplicateLightComponent(SourceEntity, NewEntity);
-		}
-
-		if (ComponentsListInfo[i].Name == "Instanced")
-		{
-			INSTANCED_RENDERING_SYSTEM.DuplicateInstancedComponent(SourceEntity, NewEntity);
-		}
-
-		if (ComponentsListInfo[i].Name == "Terrain")
-		{
-			TERRAIN_SYSTEM.DuplicateTerrainComponent(SourceEntity, NewEntity);
-		}
-
-		/*if (ComponentsListInfo[i].Name == "Sky Dome")
-		{
-			NewEntity->AddComponent<FESkyDomeComponent>();
-			NewEntity->GetComponent<FESkyDomeComponent>() = SourceEntity->GetComponent<FESkyDomeComponent>();
-		}*/
-
-		if (ComponentsListInfo[i].Name == "Camera")
-		{
-			CAMERA_SYSTEM.DuplicateCameraComponent(SourceEntity, NewEntity);
-		}
+		if (List[i].DuplicateComponent != nullptr)
+			List[i].DuplicateComponent(SourceEntity, NewEntity);
 	}
 
 	return NewEntity;
@@ -655,9 +589,14 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 		Result = TERRAIN_SYSTEM.GetAABB(Entity);
 	}
 
+	if (Entity->HasComponent<FEVirtualUIComponent>())
+	{
+		Result = Entity->GetComponent<FEVirtualUIComponent>().GetAABB();
+	}
+
 	// If entity has no renderable components, we can have FEAABB with zero volume.
 	// But with position.
-	if (Result.GetVolume() == 0)
+	if (Result.GetVolume() == 0 && GEOMETRY.IsEpsilonEqual(Result.GetSize(), glm::vec3(0.0f)))
 	{
 		Result.Min = Entity->GetComponent<FETransformComponent>().GetPosition();
 		Result.Max = Entity->GetComponent<FETransformComponent>().GetPosition();

@@ -20,10 +20,10 @@ namespace FocalEngine
 
 		static Json::Value TransfromComponentToJson(FEEntity* Entity);
 		static void TransfromComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 	public:
 		SINGLETON_PUBLIC_PART(FETransformSystem)
 
-		void DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* NewEntity);
 	};
 
 #define TRANSFORM_SYSTEM FETransformSystem::getInstance()

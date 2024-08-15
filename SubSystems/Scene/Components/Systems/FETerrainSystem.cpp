@@ -56,6 +56,7 @@ FETerrainSystem::FETerrainSystem()
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FETerrainComponent>(TerrainComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FETerrainComponent>(TerrainComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FETerrainComponent>(DuplicateTerrainComponent);
 }
 
 void FETerrainSystem::RegisterOnComponentCallbacks()
@@ -73,18 +74,18 @@ void FETerrainSystem::OnMyComponentAdded(FEEntity* Entity)
 	TerrainComponent.Shader = RESOURCE_MANAGER.GetShaderByName("FETerrainShader")[0];
 }
 
-void FETerrainSystem::DuplicateTerrainComponent(FEEntity* EntityWithTerrainComponent, FEEntity* NewEntity)
+void FETerrainSystem::DuplicateTerrainComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
 {
-	if (EntityWithTerrainComponent == nullptr || NewEntity == nullptr)
+	if (SourceEntity == nullptr || TargetEntity == nullptr)
 		return;
 
-	if (!EntityWithTerrainComponent->HasComponent<FETerrainComponent>())
+	if (!SourceEntity->HasComponent<FETerrainComponent>())
 		return;
 
-	FETerrainComponent& OriginalTerrainComponent = EntityWithTerrainComponent->GetComponent<FETerrainComponent>();
-	NewEntity->AddComponent<FETerrainComponent>();
+	FETerrainComponent& OriginalTerrainComponent = SourceEntity->GetComponent<FETerrainComponent>();
+	TargetEntity->AddComponent<FETerrainComponent>();
 
-	FETerrainComponent& NewTerrainComponent = NewEntity->GetComponent<FETerrainComponent>();
+	FETerrainComponent& NewTerrainComponent = TargetEntity->GetComponent<FETerrainComponent>();
 	NewTerrainComponent = OriginalTerrainComponent;
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
@@ -96,7 +97,7 @@ void FETerrainSystem::DuplicateTerrainComponent(FEEntity* EntityWithTerrainCompo
 		}
 	}
 
-	InitTerrainEditTools(NewEntity);
+	TERRAIN_SYSTEM.InitTerrainEditTools(TargetEntity);
 }
 
 void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)

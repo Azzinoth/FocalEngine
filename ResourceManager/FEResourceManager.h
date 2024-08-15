@@ -18,6 +18,7 @@ namespace FocalEngine
 		friend class FETerrainSystem;
 		friend class FESkyDomeSystem;
 		friend class FEVirtualUIContext;
+		friend class FEVirtualUISystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 

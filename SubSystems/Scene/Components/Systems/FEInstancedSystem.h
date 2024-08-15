@@ -24,7 +24,7 @@ namespace FocalEngine
 		void InitializeGPUCullingBuffers(FEEntity* Entity);
 		void InitializeGPUCullingBuffer(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
 
-		void DuplicateInstancedComponent(FEEntity* EntityWithInstancedComponent, FEEntity* NewEntity);
+		static void DuplicateInstancedComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		bool PopulateInstanceInternal(FEEntity* Entity, FEGameModelComponent& GameModelComponent, FESpawnInfo SpawnInfo);
 
