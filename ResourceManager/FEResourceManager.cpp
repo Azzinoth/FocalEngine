@@ -1478,6 +1478,7 @@ bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* N
 	return true;
 }
 
+// TO-DO: That function should be in TERRAIN_SYSTEM and FEResourceManager should just exepct general settings to create texture.
 FETexture* FEResourceManager::CreateBlankHightMapTexture(int Width, int Height, std::string Name)
 {
 	if (Name.empty())
@@ -1500,6 +1501,9 @@ FETexture* FEResourceManager::CreateBlankHightMapTexture(int Width, int Height, 
 
 	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
 	delete[] RawPixels;
+
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
 	return NewTexture;
 }
@@ -2627,7 +2631,7 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
-		Name = "unnamedPrefab";
+		Name = "Unnamed prefab";
 
 	FEPrefab* NewPrefab = new FEPrefab();
 	if (!ForceObjectID.empty())

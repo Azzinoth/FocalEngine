@@ -5,9 +5,9 @@ using namespace FocalEngine;
 FEComponentsTools* FEComponentsTools::Instance = nullptr;
 FEComponentsTools::FEComponentsTools()
 {
+	// ************************* TAG COMPONENT *************************
 	FEComponentTypeInfo TagComponentInfo("Tag", typeid(FETagComponent));
 	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETagComponent>(); };
-	TagComponentInfo.IncompatibleWith.push_back({ TagComponentInfo });
 	TagComponentInfo.bCanNotBeRemoved = true;
 	TagComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
@@ -26,27 +26,31 @@ FEComponentsTools::FEComponentsTools()
 	};
 	TagComponentInfo.LoadingPriority = 0;
 	ComponentIDToInfo[entt::type_id<FETagComponent>().hash()] = TagComponentInfo;
+	FEComponentTypeInfo& TagInfo = ComponentIDToInfo[entt::type_id<FETagComponent>().hash()];
 
+	// ************************* TRANSFORM COMPONENT *************************
 	FEComponentTypeInfo TransformComponentInfo("Transform", typeid(FETransformComponent));
 	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETransformComponent>(); };
-	TransformComponentInfo.IncompatibleWith.push_back({ TransformComponentInfo });
 	TransformComponentInfo.bCanNotBeRemoved = true;
 	TransformComponentInfo.LoadingPriority = 1;
 	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
+	FEComponentTypeInfo& TransformInfo = ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()];
 
+	// ************************* CAMERA COMPONENT *************************
 	FEComponentTypeInfo CameraComponentInfo("Camera", typeid(FECameraComponent));
 	FunctionsToGetEntityIDListWith[CameraComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FECameraComponent>(); };
-	CameraComponentInfo.IncompatibleWith.push_back({ CameraComponentInfo });
 	ComponentIDToInfo[entt::type_id<FECameraComponent>().hash()] = CameraComponentInfo;
+	FEComponentTypeInfo& CameraInfo = ComponentIDToInfo[entt::type_id<FECameraComponent>().hash()];
 
+	// ************************* LIGHT COMPONENT *************************
 	FEComponentTypeInfo LightComponentInfo("Light", typeid(FELightComponent));
 	FunctionsToGetEntityIDListWith[LightComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FELightComponent>(); };
-	LightComponentInfo.IncompatibleWith.push_back({ LightComponentInfo });
 	ComponentIDToInfo[entt::type_id<FELightComponent>().hash()] = LightComponentInfo;
+	FEComponentTypeInfo& LightInfo = ComponentIDToInfo[entt::type_id<FELightComponent>().hash()];
 
+	// ************************* GAME MODEL COMPONENT *************************
 	FEComponentTypeInfo GameModelComponentInfo("Game Model", typeid(FEGameModelComponent));
 	FunctionsToGetEntityIDListWith[GameModelComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEGameModelComponent>(); };
-	GameModelComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
 	GameModelComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
@@ -80,35 +84,54 @@ FEComponentsTools::FEComponentsTools()
 	};
 	GameModelComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = GameModelComponentInfo;
+	FEComponentTypeInfo& GameModelInfo = ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()];
 
+	// ************************* INSTANCED COMPONENT *************************
 	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
 	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEInstancedComponent>(); };
-	InstancedComponentInfo.IncompatibleWith.push_back({ InstancedComponentInfo });
 	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] = InstancedComponentInfo;
+	FEComponentTypeInfo& InstancedInfo = ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()];
 
+	// ************************* TERRAIN COMPONENT *************************
 	FEComponentTypeInfo TerrainComponentInfo("Terrain", typeid(FETerrainComponent));
 	FunctionsToGetEntityIDListWith[TerrainComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETerrainComponent>(); };
-	TerrainComponentInfo.IncompatibleWith.push_back({ TerrainComponentInfo });
 	ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] = TerrainComponentInfo;
+	FEComponentTypeInfo& TerrainInfo = ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()];
 
+	// ************************* SKY DOME COMPONENT *************************
 	FEComponentTypeInfo SkyDomeComponentInfo("SkyDome", typeid(FESkyDomeComponent));
 	FunctionsToGetEntityIDListWith[SkyDomeComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FESkyDomeComponent>(); };
-	SkyDomeComponentInfo.IncompatibleWith.push_back({ SkyDomeComponentInfo });
-	SkyDomeComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
 	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] = SkyDomeComponentInfo;
+	FEComponentTypeInfo& SkyDomeInfo = ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()];
 
+	// ************************* PREFAB INSTANCE COMPONENT *************************
 	FEComponentTypeInfo PrefabInstanceComponentInfo("Prefab Instance", typeid(FEPrefabInstanceComponent));
 	FunctionsToGetEntityIDListWith[PrefabInstanceComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEPrefabInstanceComponent>(); };
-	PrefabInstanceComponentInfo.IncompatibleWith.push_back({ PrefabInstanceComponentInfo });
 	PrefabInstanceComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()] = PrefabInstanceComponentInfo;
+	FEComponentTypeInfo& PrefabInstanceInfo = ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()];
 
+	// ************************* VIRTUAL UI COMPONENT *************************
 	FEComponentTypeInfo VirtualUIComponentInfo("Virtual UI", typeid(FEVirtualUIComponent));
 	FunctionsToGetEntityIDListWith[VirtualUIComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEVirtualUIComponent>(); };
-	VirtualUIComponentInfo.IncompatibleWith.push_back({ VirtualUIComponentInfo });
-	VirtualUIComponentInfo.IncompatibleWith.push_back({ GameModelComponentInfo });
 	VirtualUIComponentInfo.LoadingPriority = 3;
 	ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()] = VirtualUIComponentInfo;
+	FEComponentTypeInfo& VirtualUIInfo = ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()];
+
+	// Define constraints
+	TagInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {TagInfo} });
+	TransformInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {TransformInfo} });
+	CameraInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {CameraInfo} });
+	LightInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {LightInfo} });
+	GameModelInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {GameModelInfo} });
+
+	InstancedInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {InstancedInfo} });
+	InstancedInfo.Constraints.push_back({ FE_LOGIC_OPERATION::XOR, {GameModelInfo, PrefabInstanceComponentInfo} });
+
+	TerrainInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {TerrainInfo} });
+	SkyDomeInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {SkyDomeInfo} });
+	PrefabInstanceInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {PrefabInstanceInfo} });
+	VirtualUIInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {VirtualUIInfo, GameModelInfo} });
 }
 
 std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()
@@ -176,6 +199,13 @@ void FEComponentsTools::SortComponentsByLoadingPriority(std::vector<std::string>
 	});
 }
 
+FEComponentTypeInfo::FEComponentTypeInfo() : Name(), Type(nullptr) {}
+FEComponentTypeInfo::FEComponentTypeInfo(const std::string& Name, const std::type_info& Type)
+{
+	this->Name = Name;
+	this->Type = &Type;
+}
+
 bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, std::string* ErrorMessage)
 {
 	std::string LocalErrorMessage;
@@ -184,7 +214,7 @@ bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, st
 
 	if (PotentialParentEntity == nullptr)
 	{
-		LOG.Add("ProspectParentEntity is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("ProspectParentEntity is nullptr in FEComponentTypeInfo::CanBeAddedToEntity", "FE_LOG_ECS", FE_LOG_ERROR);
 		if (ErrorMessage != nullptr)
 			*ErrorMessage = "ProspectParentEntity is nullptr";
 
@@ -193,7 +223,7 @@ bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, st
 
 	if (PotentialParentEntity->GetParentScene() == nullptr)
 	{
-		LOG.Add("ProspectParentEntity parent scene is nullptr in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("ProspectParentEntity parent scene is nullptr in FEComponentTypeInfo::CanBeAddedToEntity", "FE_LOG_ECS", FE_LOG_ERROR);
 		if (ErrorMessage != nullptr)
 			*ErrorMessage = "ProspectParentEntity parent scene is nullptr";
 
@@ -206,7 +236,7 @@ bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, st
 		size_t CurrentComponentCount = COMPONENTS_TOOL.GetEntityIDListWithComponent(ParentScene, *this).size();
 		if (CurrentComponentCount >= MaxSceneComponentCount)
 		{
-			LOG.Add("Max component count reached in FEComponentTypeInfo::IsCompatible", "FE_LOG_ECS", FE_LOG_WARNING);
+			LOG.Add("Max component count reached in FEComponentTypeInfo::CanBeAddedToEntity", "FE_LOG_ECS", FE_LOG_WARNING);
 
 			if (ErrorMessage != nullptr)
 				*ErrorMessage = "Max component count reached";
@@ -217,58 +247,24 @@ bool FEComponentTypeInfo::CanBeAddedToEntity(FEEntity* PotentialParentEntity, st
 
 	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = PotentialParentEntity->GetComponentsInfoList();
 
-	// Check if any of the existing components are incompatible
-	for (const auto& ExistingComponent : CurrentlyExistingComponents)
+	// First we are checking if adding this component will not break any restrictions of current component
+	bool bNewComponentEvaluation = EvaluateConstraints(CurrentlyExistingComponents, ErrorMessage);
+	if (!bNewComponentEvaluation)
+		return false;
+
+	// Then we need to check that other components evaluations are not broken by adding this component
+	for (size_t i = 0; i < CurrentlyExistingComponents.size(); i++)
 	{
-		if (std::find(IncompatibleWith.begin(), IncompatibleWith.end(), ExistingComponent) != IncompatibleWith.end())
+		// For each already existing component we need to create a list of components that will be evaluated.
+		// That list should not contain the component that we are currently querying with .EvaluateConstraints.
+		std::vector<FEComponentTypeInfo> NewComponentList = CurrentlyExistingComponents;
+		NewComponentList.erase(NewComponentList.begin() + i);
+		NewComponentList.push_back(*this);
+
+		if (!CurrentlyExistingComponents[i].EvaluateConstraints(NewComponentList, ErrorMessage))
 		{
-			LocalErrorMessage = "Incompatible with " + ExistingComponent.Name;
 			if (ErrorMessage != nullptr)
-				*ErrorMessage = LocalErrorMessage;
-
-			return false;
-		}
-	}
-
-	// Check for incompatible combinations
-	for (const auto& Combination : IncompatibleCombinations)
-	{
-		bool bAllPresent = true;
-		for (const auto& CurrentIncompatiableComponent : Combination)
-		{
-			if (std::find(CurrentlyExistingComponents.begin(), CurrentlyExistingComponents.end(), CurrentIncompatiableComponent) == CurrentlyExistingComponents.end())
-			{
-				bAllPresent = false;
-				break;
-			}
-		}
-
-		if (bAllPresent)
-		{
-			LocalErrorMessage = "Incompatible with combination: ";
-			for (const auto& CurrentIncompatiableComponent : Combination)
-			{
-				LocalErrorMessage += CurrentIncompatiableComponent.Name + ", ";
-			}
-
-			LocalErrorMessage.erase(LocalErrorMessage.end() - 2, LocalErrorMessage.end());
-
-			if (ErrorMessage != nullptr)
-				*ErrorMessage = LocalErrorMessage;
-
-			return false;
-		}
-	}
-
-	// Check for required components
-	for (const auto& RequiredComponent : RequiredComponents)
-	{
-		if (std::find(CurrentlyExistingComponents.begin(), CurrentlyExistingComponents.end(), RequiredComponent) == CurrentlyExistingComponents.end())
-		{
-			LocalErrorMessage = "Requires " + RequiredComponent.Name;
-
-			if (ErrorMessage != nullptr)
-				*ErrorMessage = LocalErrorMessage;
+				*ErrorMessage = "Adding this component will break restrictions of " + CurrentlyExistingComponents[i].Name;
 
 			return false;
 		}
@@ -313,14 +309,19 @@ bool FEComponentTypeInfo::CanBeRemovedFromEntity(FEEntity* ParentEntity, std::st
 	std::vector<FEComponentTypeInfo> CurrentlyExistingComponents = ParentEntity->GetComponentsInfoList();
 	CurrentlyExistingComponents.erase(std::remove(CurrentlyExistingComponents.begin(), CurrentlyExistingComponents.end(), *this), CurrentlyExistingComponents.end());
 
-	// Check if other components are dependent on this one
-	for (const auto& ExistingComponent : CurrentlyExistingComponents)
+	// After we remove the component we need to check if the remaining components are still valid after the removal.
+	// Then we need to check that other components evaluations are not broken by adding this component
+	for (size_t i = 0; i < CurrentlyExistingComponents.size(); i++)
 	{
-		if (std::find(ExistingComponent.RequiredComponents.begin(), ExistingComponent.RequiredComponents.end(), *this) != ExistingComponent.RequiredComponents.end())
+		// For each already existing component we need to create a list of components that will be evaluated.
+		// That list should not contain the component that we are currently querying with .EvaluateConstraints.
+		std::vector<FEComponentTypeInfo> NewComponentList = CurrentlyExistingComponents;
+		NewComponentList.erase(NewComponentList.begin() + i);
+
+		if (!CurrentlyExistingComponents[i].EvaluateConstraints(NewComponentList, ErrorMessage))
 		{
-			LocalErrorMessage = "Required by " + ExistingComponent.Name;
 			if (ErrorMessage != nullptr)
-				*ErrorMessage = LocalErrorMessage;
+				*ErrorMessage = "Removing this component will break restrictions of " + CurrentlyExistingComponents[i].Name;
 
 			return false;
 		}
@@ -329,9 +330,62 @@ bool FEComponentTypeInfo::CanBeRemovedFromEntity(FEEntity* ParentEntity, std::st
 	return true;
 }
 
-FEComponentTypeInfo::FEComponentTypeInfo() : Name(), Type(nullptr) {}
-FEComponentTypeInfo::FEComponentTypeInfo(const std::string& Name, const std::type_info& Type)
+bool FEComponentTypeInfo::EvaluateConstraints(const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards, std::string* ErrorMessage) const
 {
-	this->Name = Name;
-	this->Type = &Type;
+	for (const auto& CurrentConstraint : Constraints)
+	{
+		if (!EvaluateConstraint(CurrentConstraint, ComponentToCheckTowards))
+		{
+			if (ErrorMessage)
+			{
+				*ErrorMessage = "Constraint failed: ";
+				for (const auto& CurrentComponent : CurrentConstraint.Components)
+					*ErrorMessage += CurrentComponent.Name + ", ";
+
+				*ErrorMessage += "with operation " + LogicOperationToString(CurrentConstraint.LogicOperation);
+			}
+			return false;
+		}
+	}
+	return true;
+}
+
+bool FEComponentTypeInfo::EvaluateConstraint(const FEComponentConstraint& Constraint, const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards) const
+{
+	auto ComponentExists = [&ComponentToCheckTowards](const FEComponentTypeInfo& comp) {
+		return std::find(ComponentToCheckTowards.begin(), ComponentToCheckTowards.end(), comp) != ComponentToCheckTowards.end();
+	};
+
+	switch (Constraint.LogicOperation)
+	{
+		case FE_LOGIC_OPERATION::AND:
+			return std::all_of(Constraint.Components.begin(), Constraint.Components.end(), ComponentExists);
+		case FE_LOGIC_OPERATION::OR:
+			return std::any_of(Constraint.Components.begin(), Constraint.Components.end(), ComponentExists);
+		case FE_LOGIC_OPERATION::NOT:
+			return std::none_of(Constraint.Components.begin(), Constraint.Components.end(), ComponentExists);
+		case FE_LOGIC_OPERATION::XOR:
+			return std::count_if(Constraint.Components.begin(), Constraint.Components.end(), ComponentExists) == 1;
+		default:
+			return false;
+	}
+}
+
+std::string FEComponentTypeInfo::LogicOperationToString(FE_LOGIC_OPERATION LogicOperation) const
+{
+	switch (LogicOperation)
+	{
+		case FocalEngine::FE_LOGIC_OPERATION::AND:
+			return "AND";
+		case FocalEngine::FE_LOGIC_OPERATION::OR:
+			return "OR";
+		case FocalEngine::FE_LOGIC_OPERATION::NOT:
+			return "NOT";
+		case FocalEngine::FE_LOGIC_OPERATION::XOR:
+			return "XOR";
+		default:
+			break;
+	}
+
+	return "UNKNOWN";
 }

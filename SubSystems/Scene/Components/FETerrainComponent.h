@@ -60,7 +60,8 @@ namespace FocalEngine
 		void SetReceivingShadows(bool NewValue);
 
 		FEShader* Shader = nullptr;
-		FETexture* HeightMap = nullptr;
+		FETexture* GetHeightMap() const;
+
 		std::vector<FETexture*> LayerMaps;
 		FETexture* ProjectedMap = nullptr;
 
@@ -90,6 +91,9 @@ namespace FocalEngine
 
 		int LayersUsed();
 	private:
+		
+		FETexture* HeightMap = nullptr;
+
 		bool bWireframeMode = false;
 		bool bVisible = true;
 		bool bCastShadows = true;

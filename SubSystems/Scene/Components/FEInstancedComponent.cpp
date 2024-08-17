@@ -101,12 +101,6 @@ void FEInstancedComponent::Clear()
 	}
 	InstancedElementsData.resize(0);
 
-	/*delete[] LODCounts;
-	InstancedAABBSizes.resize(0);
-	InstancedMatrices.resize(0);
-	TransformedInstancedMatrices.resize(0);
-	InstancePositions.resize(0);*/
-
 	Modifications.clear();
 }
 

@@ -393,10 +393,23 @@ void FEInstancedSystem::DuplicateInstancedComponent(FEEntity* SourceEntity, FEEn
 	INSTANCED_RENDERING_SYSTEM.bInternalAdd = false;
 
 	FEInstancedComponent& NewInstancedComponent = TargetEntity->GetComponent<FEInstancedComponent>();
+	// Copy all data from source entity to target entity.
 	NewInstancedComponent = OriginalInstancedComponent;
-	// FIX ME! This is not correct, it should be copied from source entity, but with reinitalized buffers.
-	//NewInstancedComponent.InstancedElementsData.clear();
+	// To allocate new buffers for target entity.
+	NewInstancedComponent.InstancedElementsData.clear();
 	INSTANCED_RENDERING_SYSTEM.InitializeBuffers(TargetEntity);
+
+	// After InitializeBuffers some data still needs to be copied.
+	for (size_t i = 0; i < OriginalInstancedComponent.InstancedElementsData.size(); i++)
+	{
+		NewInstancedComponent.InstancedElementsData[i]->InstancedAABBSizes = OriginalInstancedComponent.InstancedElementsData[i]->InstancedAABBSizes;
+		NewInstancedComponent.InstancedElementsData[i]->InstancedMatrices = OriginalInstancedComponent.InstancedElementsData[i]->InstancedMatrices;
+		NewInstancedComponent.InstancedElementsData[i]->TransformedInstancedMatrices = OriginalInstancedComponent.InstancedElementsData[i]->TransformedInstancedMatrices;
+		NewInstancedComponent.InstancedElementsData[i]->InstancePositions = OriginalInstancedComponent.InstancedElementsData[i]->InstancePositions;
+		NewInstancedComponent.InstancedElementsData[i]->InstancedMatricesLOD = OriginalInstancedComponent.InstancedElementsData[i]->InstancedMatricesLOD;
+
+		NewInstancedComponent.InstancedElementsData[i]->EntityIDWithGameModelComponent = TargetEntity->GetObjectID();
+	}
 }
 
 void FEInstancedSystem::AddInstanceInternal(FEEntity* Entity, const glm::mat4 InstanceMatrix)
@@ -989,7 +1002,18 @@ void FEInstancedSystem::ClearInstance(FEEntity* Entity)
 		return;
 
 	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
-	InstancedComponent.Clear();
+	InstancedComponent.InstanceCount = 0;
+
+	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
+	{
+		delete[] InstancedComponent.InstancedElementsData[i]->LODCounts;
+
+		InstancedComponent.InstancedElementsData[i]->InstancedAABBSizes.resize(0);
+		InstancedComponent.InstancedElementsData[i]->InstancedMatrices.resize(0);
+		InstancedComponent.InstancedElementsData[i]->TransformedInstancedMatrices.resize(0);
+		InstancedComponent.InstancedElementsData[i]->InstancePositions.resize(0);
+	}
+	InstancedComponent.Modifications.clear();
 
 	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
 	{
@@ -999,8 +1023,8 @@ void FEInstancedSystem::ClearInstance(FEEntity* Entity)
 
 		FEGameModelComponent& GameModelComponent = EntityWithGameModel->GetComponent<FEGameModelComponent>();
 		InstancedComponent.InstancedElementsData[i]->LODCounts = new int[GameModelComponent.GetGameModel()->GetMaxLODCount()];
-		for (size_t i = 0; i < GameModelComponent.GetGameModel()->GetMaxLODCount(); i++)
-			InstancedComponent.InstancedElementsData[i]->LODCounts[i] = 0;
+		for (size_t j = 0; j < GameModelComponent.GetGameModel()->GetMaxLODCount(); j++)
+			InstancedComponent.InstancedElementsData[i]->LODCounts[j] = 0;
 
 		InstancedComponent.InstancedElementsData[i]->InstancedMatricesLOD.resize(GameModelComponent.GetGameModel()->GetMaxLODCount());
 	}
@@ -1175,8 +1199,6 @@ void FEInstancedSystem::CheckDirtyFlag(FEEntity* Entity)
 		InitializeGPUCullingBuffers(Entity);
 		// It is not correct to set dirty flags here.
 		//GameModelComponent.GetGameModel()->SetDirtyFlag(false);
-
-
 
 		if (Entity->HasComponent<FEPrefabInstanceComponent>())
 		{

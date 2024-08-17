@@ -81,6 +81,11 @@ float FETerrainComponent::GetHightScale()
 	return HightScale;
 }
 
+FETexture* FETerrainComponent::GetHeightMap() const
+{
+	return HeightMap;
+}
+
 void FETerrainComponent::SetHightScale(const float NewValue)
 {
 	if (NewValue <= 0)

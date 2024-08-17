@@ -14,15 +14,28 @@
 
 namespace FocalEngine
 {
+	enum class FE_LOGIC_OPERATION
+	{
+		AND,
+		OR,
+        NOT,
+        XOR
+	};
+
+    struct FEComponentTypeInfo;
+    struct FEComponentConstraint
+    {
+        FE_LOGIC_OPERATION LogicOperation;
+        std::vector<FEComponentTypeInfo> Components;
+    };
+
     // Define a struct to hold component type information
     struct FEComponentTypeInfo
     {
         std::string Name;
         const std::type_info* Type;
 
-        std::vector<FEComponentTypeInfo> IncompatibleWith;
-        std::vector<FEComponentTypeInfo> RequiredComponents;
-        std::vector<std::vector<FEComponentTypeInfo>> IncompatibleCombinations;
+        std::vector<FEComponentConstraint> Constraints;
         int MaxSceneComponentCount = -1;
 		bool bCanNotBeRemoved = false;
         // That variable defines the priority of loading the component. Relevant for the entities components list.
@@ -43,6 +56,11 @@ namespace FocalEngine
         std::function<void(FEEntity*, FEEntity*)> DuplicateComponent = nullptr;
         std::function<Json::Value(FEEntity*)> ToJson = nullptr;
         std::function<void(FEEntity*, Json::Value)> FromJson = nullptr;
+
+        bool EvaluateConstraints(const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards, std::string* ErrorMessage) const;
+        bool EvaluateConstraint(const FEComponentConstraint& Constraint, const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards) const;
+    private:
+        std::string LogicOperationToString(FE_LOGIC_OPERATION LogicOperation) const;
     };
 
     class FEComponentsTools
