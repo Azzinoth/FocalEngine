@@ -244,6 +244,8 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.h"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.cpp"
+	"SubSystems/Scene/Components/FENativeScriptComponent.h"
+	"SubSystems/Scene/Components/FENativeScriptComponent.cpp"
 )
 
 file(GLOB Scene_Component_Systems_SRC
@@ -264,6 +266,8 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.h"
 	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.cpp"
+	"SubSystems/Scene/Components/Systems/FENativeScriptSystem.h"
+	"SubSystems/Scene/Components/Systems/FENativeScriptSystem.cpp"
 )
 
 # *************** SCENE ***************

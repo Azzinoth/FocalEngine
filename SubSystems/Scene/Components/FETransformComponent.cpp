@@ -31,7 +31,7 @@ FETransformComponent::FETransformComponent(glm::mat4 Matrix)
 	Update();
 }
 
-void FETransformComponent::CopyFrom(const FETransformComponent& Other, bool bOmitParentEntity)
+void FETransformComponent::CopyFrom(const FETransformComponent& Other)
 {
 	ParentEntity = Other.ParentEntity;
 

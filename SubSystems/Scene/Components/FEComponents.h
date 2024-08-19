@@ -9,6 +9,7 @@
 #include "FESkyDomeComponent.h"
 #include "FEPrefabInstanceComponent.h"
 #include "FEVirtualUIComponent.h"
+#include "FENativeScriptComponent.h"
 
 #include "entt.hpp"
 
@@ -63,7 +64,7 @@ namespace FocalEngine
         std::string LogicOperationToString(FE_LOGIC_OPERATION LogicOperation) const;
     };
 
-    class FOCALENGINE_API FEComponentsTools
+    class FEComponentsTools
     {
         SINGLETON_PRIVATE_PART(FEComponentsTools)
 
@@ -77,6 +78,7 @@ namespace FocalEngine
         friend class FESkyDomeSystem;
         friend class FEPrefabInstanceSystem;
         friend class FEVirtualUISystem;
+		friend class FENativeScriptSystem;
 
         std::map<entt::id_type, FEComponentTypeInfo> ComponentIDToInfo;
         std::map<const std::type_info*, std::function<std::vector<std::string>(FEScene*)>> FunctionsToGetEntityIDListWith;

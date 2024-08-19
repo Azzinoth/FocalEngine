@@ -27,6 +27,8 @@ void FEngine::InternalUpdate()
 	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 	VIRTUAL_UI_SYSTEM.Update();
 
+	NATIVE_SCRIPT_SYSTEM.Update();
+
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{
 		if (OnAfterUpdateCallbacks[i] == nullptr)
@@ -134,6 +136,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	SKY_DOME_SYSTEM;
 	PREFAB_INSTANCE_SYSTEM;
 	VIRTUAL_UI_SYSTEM;
+	NATIVE_SCRIPT_SYSTEM;
 }
 
 void FEngine::SetWindowCaption(const std::string NewCaption)

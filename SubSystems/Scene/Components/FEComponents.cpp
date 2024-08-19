@@ -118,6 +118,13 @@ FEComponentsTools::FEComponentsTools()
 	ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()] = VirtualUIComponentInfo;
 	FEComponentTypeInfo& VirtualUIInfo = ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()];
 
+	// ************************* NATIVE SCRIPT COMPONENT *************************
+	FEComponentTypeInfo NativeScriptComponentInfo("Native Script", typeid(FENativeScriptComponent));
+	FunctionsToGetEntityIDListWith[NativeScriptComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FENativeScriptComponent>(); };
+	NativeScriptComponentInfo.LoadingPriority = 4;
+	ComponentIDToInfo[entt::type_id<FENativeScriptComponent>().hash()] = NativeScriptComponentInfo;
+	FEComponentTypeInfo& NativeScriptInfo = ComponentIDToInfo[entt::type_id<FENativeScriptComponent>().hash()];
+
 	// Define constraints
 	TagInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {TagInfo} });
 	TransformInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {TransformInfo} });
@@ -132,6 +139,8 @@ FEComponentsTools::FEComponentsTools()
 	SkyDomeInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {SkyDomeInfo} });
 	PrefabInstanceInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {PrefabInstanceInfo} });
 	VirtualUIInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {VirtualUIInfo, GameModelInfo} });
+	// TO_DO: Maybe somehow allow multiple native script components on one entity.
+	NativeScriptInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {NativeScriptInfo} });
 }
 
 std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()

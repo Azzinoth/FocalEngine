@@ -78,6 +78,6 @@ namespace FocalEngine
 
 		void MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDIANTE_SPACE_TYPE SpaceType = FE_LOCAL_SPACE);
 
-		void CopyFrom(const FETransformComponent& Other, bool bOmitParentEntity = false);
+		void CopyFrom(const FETransformComponent& Other);
 	};
 }

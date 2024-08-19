@@ -8,3 +8,4 @@
 #include "FESkyDomeSystem.h"
 #include "FEPrefabInstanceSystem.h"
 #include "FEVirtualUISystem.h"
+#include "FENativeScriptSystem.h"
