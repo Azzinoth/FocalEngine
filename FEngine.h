@@ -5,7 +5,7 @@
 
 namespace FocalEngine
 {
-	class FEngine
+	class FOCALENGINE_API FEngine
 	{
 		//FIX ME! It should not be here.
 		friend class FECameraSystem;

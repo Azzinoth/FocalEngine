@@ -7,7 +7,7 @@
 namespace FocalEngine
 {
 	class FEScene;
-	class FEEntity : public FEObject
+	class FOCALENGINE_API FEEntity : public FEObject
 	{
 		friend class FEEntityInstanced;
 		friend class FERenderer;

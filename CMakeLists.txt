@@ -12,6 +12,14 @@ project(FocalEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if(MSVC)
+  # Disable C4251 warning
+  add_compile_options(/wd4251)
+
+  # Disable LNK4197 warning
+  add_link_options("/ignore:4197")
+endif()
+
 option(ENABLE_TESTS "Enable tests" OFF)
 
 set(TEST_LIBS)
@@ -203,6 +211,7 @@ file(GLOB ResourceManager_SRC
 # *************** CORE ***************
 
 file(GLOB Core_SRC
+	"Core/FocalEngineAPI.h"
 	"Core/FECoreIncludes.h"
 	"Core/FEGeometricTools.cpp"
 	"Core/FEGeometricTools.h"
@@ -361,35 +370,53 @@ list(APPEND ALL_SOURCE_FILES
 if(ENABLE_TESTS)
     add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
 else()
-    if(FEBASICAPPLICATION_SHARED)
+    if(BUILD_SHARED_LIBS)
 		add_library(FocalEngine SHARED ${ALL_SOURCE_FILES})
 		target_compile_definitions(FocalEngine PRIVATE FOCALENGINE_EXPORTS)
 		target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
 		target_compile_definitions(FocalEngine PUBLIC FOCALENGINE_SHARED)
+
+		set_target_properties(FocalEngine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 	else()
 		add_library(FocalEngine STATIC ${ALL_SOURCE_FILES})
 	endif()
 endif()
 
-# Adjust OpenXRLoader linking based on FEBASICAPPLICATION_SHARED and FEBASICAPPLICATION_STATIC_RUNTIME
-if(FEBASICAPPLICATION_SHARED)
-    if(FEBASICAPPLICATION_STATIC_RUNTIME)
+# Adjust OpenXRLoader linking based on BUILD_SHARED_LIBS and FEBASICAPPLICATION_STATIC_RUNTIME
+if(BUILD_SHARED_LIBS)
+    if(USE_STATIC_RUNTIME)
         message(WARNING "Building a shared library with static runtime is uncommon and may lead to issues.")
-        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Static_runtime/openxr_loaderd.lib CACHE STRING "Debug OpenXRLoader library to link against" FORCE)
-        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Static_runtime/openxr_loader.lib CACHE STRING "Release OpenXRLoader library to link against" FORCE)
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Static_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Static_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Static_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Static_runtime/openxr_loader.dll)
     else()
-        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.lib CACHE STRING "Debug OpenXRLoader library to link against" FORCE)
-        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.lib CACHE STRING "Release OpenXRLoader library to link against" FORCE)
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.dll)
     endif()
 else()
-    if(FEBASICAPPLICATION_STATIC_RUNTIME)
-        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Static_runtime/openxr_loaderd.lib CACHE STRING "Debug OpenXRLoader library to link against" FORCE)
-        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Static_runtime/openxr_loader.lib CACHE STRING "Release OpenXRLoader library to link against" FORCE)
+    if(USE_STATIC_RUNTIME)
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Static_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Static_runtime/openxr_loader.lib)
+
+		# No DLL for static library
+        set(OpenXRLoader_DLL_Debug "")
+        set(OpenXRLoader_DLL_Release "")
     else()
-        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Dynamic_runtime/openxr_loaderd.lib CACHE STRING "Debug OpenXRLoader library to link against" FORCE)
-        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Dynamic_runtime/openxr_loader.lib CACHE STRING "Release OpenXRLoader library to link against" FORCE)
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Dynamic_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Dynamic_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.dll)
     endif()
 endif()
+
+# Set OpenXRLoader_DLL based on the current configuration
+set(OpenXRLoader_DLL $<$<CONFIG:Debug>:${OpenXRLoader_DLL_Debug}>$<$<CONFIG:Release>:${OpenXRLoader_DLL_Release}>)
 
 # Define GLEW_STATIC for static builds
 if(USE_STATIC_RUNTIME)
@@ -408,7 +435,7 @@ target_link_libraries(FocalEngine
 		${TEST_LIBS}
 )
 
-if(FEBASICAPPLICATION_SHARED)
+if(BUILD_SHARED_LIBS)
     target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
 endif()
 
@@ -484,8 +511,37 @@ set(GLEW_INCLUDE_DIR ${GLEW_INCLUDE_DIR} PARENT_SCOPE)
 set(BASICAPP_THIRDPARTY_DIR ${BASICAPP_THIRDPARTY_DIR} PARENT_SCOPE)
 set(BASICAPP_DIR ${BASICAPP_DIR} PARENT_SCOPE)
 
-#if(BUILD_SHARED_LIBS)
-#    set_target_properties(FocalEngine PROPERTIES 
-#        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-#    )
-#endif()
+# Export the BUILD_SHARED_LIBS and USE_STATIC_RUNTIME variables
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS} PARENT_SCOPE)
+set(USE_STATIC_RUNTIME ${USE_STATIC_RUNTIME} PARENT_SCOPE)
+
+# Export the GLEW_LIBRARY and GLFW_LIBRARY variables
+set(GLEW_LIBRARY ${GLEW_LIBRARY} PARENT_SCOPE)
+set(GLFW_LIBRARY ${GLFW_LIBRARY} PARENT_SCOPE)
+
+# Export the OpenXRLoader variable
+set(OpenXRLoader_DLL ${OpenXRLoader_DLL} PARENT_SCOPE)
+
+# If building as DLL, copy necessary DLLs to output directory
+if(BUILD_SHARED_LIBS)
+    add_custom_command(TARGET FocalEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${GLFW_LIB_DIR}/glfw3.dll"
+            "$<TARGET_FILE_DIR:FocalEngine>"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE_DIR:FEBasicApplication>/FEBasicApplication.dll"
+            "$<TARGET_FILE_DIR:FocalEngine>"
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			${OpenXRLoader_DLL}
+			"$<TARGET_FILE_DIR:FocalEngine>"
+    )
+endif()
+
+# If using dynamic runtime, copy necessary DLLs to output directory
+if(NOT USE_STATIC_RUNTIME)
+    add_custom_command(TARGET FocalEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${GLEW_LIB_DIR}/glew32.dll"
+            "$<TARGET_FILE_DIR:FocalEngine>"
+    )
+endif()

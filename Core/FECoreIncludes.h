@@ -3,7 +3,7 @@
 #pragma warning (disable: 4334)     // '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?) in lodepng.cpp
 
 #include "FEBasicApplication.h"
-
+#include "FocalEngineAPI.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>

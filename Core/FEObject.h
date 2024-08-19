@@ -116,7 +116,7 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	class FEObject
+	class FOCALENGINE_API FEObject
 	{
 		friend class FEObjectManager;
 		friend class FEngine;

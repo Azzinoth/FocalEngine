@@ -10,7 +10,7 @@
 
 namespace FocalEngine
 {
-	class FEResourceManager
+	class FOCALENGINE_API FEResourceManager
 	{
 		friend class FEngine;
 		friend class FEScene;
