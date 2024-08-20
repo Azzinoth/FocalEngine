@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FELightSystem
+	class FOCALENGINE_API FELightSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;

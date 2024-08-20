@@ -64,7 +64,7 @@ namespace FocalEngine
         std::string LogicOperationToString(FE_LOGIC_OPERATION LogicOperation) const;
     };
 
-    class FEComponentsTools
+    class FOCALENGINE_API FEComponentsTools
     {
         SINGLETON_PRIVATE_PART(FEComponentsTools)
 

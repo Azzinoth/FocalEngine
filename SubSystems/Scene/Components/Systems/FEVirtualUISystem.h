@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FEVirtualUISystem
+	class FOCALENGINE_API FEVirtualUISystem
 	{
 		friend class FEScene;
 		friend class FERenderer;

@@ -9,7 +9,7 @@
 
 namespace FocalEngine
 {
-	class FEFileSystem
+	class FOCALENGINE_API FEFileSystem
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEFileSystem)

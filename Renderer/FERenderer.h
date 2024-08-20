@@ -65,7 +65,7 @@ namespace FocalEngine
 		}
 	};
 	
-	class FERenderer
+	class FOCALENGINE_API FERenderer
 	{
 		friend FEngine;
 		friend FECameraSystem;

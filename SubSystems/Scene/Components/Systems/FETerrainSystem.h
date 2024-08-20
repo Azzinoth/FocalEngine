@@ -5,7 +5,7 @@ namespace FocalEngine
 {
 #define TERRAIN_SYSTEM_RESOURCE_TAG "TERRAIN_SYSTEM_PRIVATE_RESOURCE"
 
-	class FETerrainSystem
+	class FOCALENGINE_API FETerrainSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;

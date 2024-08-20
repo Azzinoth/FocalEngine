@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FENativeScriptSystem
+	class FOCALENGINE_API FENativeScriptSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;

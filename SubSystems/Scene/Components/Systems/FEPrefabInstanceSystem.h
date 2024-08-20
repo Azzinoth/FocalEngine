@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FEPrefabInstanceSystem
+	class FOCALENGINE_API FEPrefabInstanceSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;

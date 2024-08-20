@@ -32,7 +32,7 @@ namespace FocalEngine
 		std::string Name;
 	};
 
-	class FEObjectManager
+	class FOCALENGINE_API FEObjectManager
 	{
 		friend class FEObject;
 		friend class FEngine;

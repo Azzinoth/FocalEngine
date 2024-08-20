@@ -380,7 +380,12 @@ else()
 		target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
 		target_compile_definitions(FocalEngine PUBLIC FOCALENGINE_SHARED)
 
+		# Some times /GL conflicts with WINDOWS_EXPORT_ALL_SYMBOLS
+		set_target_properties(FocalEngine PROPERTIES COMPILE_OPTIONS "/GL-")
 		set_target_properties(FocalEngine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+		# Disable C4251 warning
+		target_compile_options(FocalEngine PRIVATE /wd4251)
 	else()
 		add_library(FocalEngine STATIC ${ALL_SOURCE_FILES})
 	endif()

@@ -83,7 +83,7 @@ namespace FocalEngine
 		float LongestAxisLength = 0.0f;
 	};
 
-	class FEGeometry
+	class FOCALENGINE_API FEGeometry
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEGeometry)
