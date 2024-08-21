@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEVirtualUISystem
+	class FOCAL_ENGINE_API FEVirtualUISystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -35,5 +35,5 @@ namespace FocalEngine
 		FEEntity* GetParentEntity(FEVirtualUI* VirtualUI);
 	};
 
-#define VIRTUAL_UI_SYSTEM FEVirtualUISystem::getInstance()
+#define VIRTUAL_UI_SYSTEM FEVirtualUISystem::GetInstance()
 }

@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FESkyDomeSystem
+	class FOCAL_ENGINE_API FESkyDomeSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -28,5 +28,5 @@ namespace FocalEngine
 		void SetEnabled(bool NewValue);
 	};
 
-#define SKY_DOME_SYSTEM FESkyDomeSystem::getInstance()
+#define SKY_DOME_SYSTEM FESkyDomeSystem::GetInstance()
 }

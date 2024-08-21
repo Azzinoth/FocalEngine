@@ -7,7 +7,7 @@
 namespace FocalEngine
 {
 	class FEScene;
-	class FOCALENGINE_API FEEntity : public FEObject
+	class FOCAL_ENGINE_API FEEntity : public FEObject
 	{
 		friend class FEEntityInstanced;
 		friend class FERenderer;
@@ -83,30 +83,7 @@ namespace FocalEngine
 			GetRegistry().remove<T>(EnTTEntity);
 		}
 
-		std::vector<FEComponentTypeInfo> GetComponentsInfoList()
-		{
-			std::vector<FEComponentTypeInfo> Result;
-
-			// Loop through all components types
-			for (auto&& CurrentComponent : GetRegistry().storage())
-			{
-				entt::id_type ComponentID = CurrentComponent.first;
-				// Add only components that current entity has
-				if (auto& Storage = CurrentComponent.second; Storage.contains(EnTTEntity))
-				{
-					if (COMPONENTS_TOOL.ComponentIDToInfo.find(ComponentID) != COMPONENTS_TOOL.ComponentIDToInfo.end())
-					{
-						Result.push_back(COMPONENTS_TOOL.ComponentIDToInfo[ComponentID]);
-					}
-				}
-			}
-
-			return Result;
-		}
-
-		FEScene* GetParentScene()
-		{
-			return ParentScene;
-		}
+		std::vector<FEComponentTypeInfo> GetComponentsInfoList();
+		FEScene* GetParentScene();
 	};
 }

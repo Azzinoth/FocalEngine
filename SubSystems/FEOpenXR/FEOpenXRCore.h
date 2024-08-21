@@ -192,5 +192,5 @@ namespace FocalEngine
 		void CreateReferenceSpace();
 	};
 
-#define FEOpenXR_CORE FEOpenXRCore::getInstance()
+#define FEOpenXR_CORE FEOpenXRCore::GetInstance()
 }

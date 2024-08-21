@@ -64,3 +64,29 @@ void FEEntity::FromJson(Json::Value Root)
 		ComponentInfo->FromJson(this, Root["Components"][ComponentName]);
 	}
 }
+
+std::vector<FEComponentTypeInfo> FEEntity::GetComponentsInfoList()
+{
+	std::vector<FEComponentTypeInfo> Result;
+
+	// Loop through all components types
+	for (auto&& CurrentComponent : GetRegistry().storage())
+	{
+		entt::id_type ComponentID = CurrentComponent.first;
+		// Add only components that current entity has
+		if (auto& Storage = CurrentComponent.second; Storage.contains(EnTTEntity))
+		{
+			if (COMPONENTS_TOOL.ComponentIDToInfo.find(ComponentID) != COMPONENTS_TOOL.ComponentIDToInfo.end())
+			{
+				Result.push_back(COMPONENTS_TOOL.ComponentIDToInfo[ComponentID]);
+			}
+		}
+	}
+
+	return Result;
+}
+
+FEScene* FEEntity::GetParentScene()
+{
+	return ParentScene;
+}

@@ -32,7 +32,7 @@ namespace FocalEngine
 		std::string Name;
 	};
 
-	class FOCALENGINE_API FEObjectManager
+	class FOCAL_ENGINE_API FEObjectManager
 	{
 		friend class FEObject;
 		friend class FEngine;
@@ -55,7 +55,7 @@ namespace FocalEngine
 		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
 	};
 
-#define OBJECT_MANAGER FEObjectManager::getInstance()
+#define OBJECT_MANAGER FEObjectManager::GetInstance()
 
 	static std::string FEObjectTypeToString(const FE_OBJECT_TYPE Type)
 	{
@@ -116,7 +116,7 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	class FOCALENGINE_API FEObject
+	class FOCAL_ENGINE_API FEObject
 	{
 		friend class FEObjectManager;
 		friend class FEngine;

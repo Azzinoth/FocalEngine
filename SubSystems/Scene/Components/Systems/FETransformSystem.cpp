@@ -1,7 +1,6 @@
 #include "FETransformSystem.h"
 using namespace FocalEngine;
 
-FETransformSystem* FETransformSystem::Instance = nullptr;
 FETransformSystem::FETransformSystem()
 {
 	RegisterOnComponentCallbacks();

@@ -2,7 +2,6 @@
 #include "../FEScene.h"
 using namespace FocalEngine;
 
-CoreScriptManager* CoreScriptManager::Instance = nullptr;
 CoreScriptManager::CoreScriptManager() {}
 CoreScriptManager::~CoreScriptManager() {}
 

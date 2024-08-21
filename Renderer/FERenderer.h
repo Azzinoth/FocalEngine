@@ -65,7 +65,7 @@ namespace FocalEngine
 		}
 	};
 	
-	class FOCALENGINE_API FERenderer
+	class FOCAL_ENGINE_API FERenderer
 	{
 		friend FEngine;
 		friend FECameraSystem;
@@ -204,7 +204,7 @@ namespace FocalEngine
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
 	};
 
-	#define RENDERER FERenderer::getInstance()
+	#define RENDERER FERenderer::GetInstance()
 }
 
 #endif // FERENDERER_H

@@ -5,7 +5,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEngine
+	class FOCAL_ENGINE_API FEngine
 	{
 		//FIX ME! It should not be here.
 		friend class FECameraSystem;
@@ -118,5 +118,8 @@ namespace FocalEngine
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
 	};
 
-	#define ENGINE FEngine::getInstance()
+	#define ENGINE FEngine::GetInstance()
+
+	//extern FOCAL_ENGINE_API FELOG* GetLog();
+	extern "C" __declspec(dllexport) void* GetLog();
 }

@@ -1,11 +1,11 @@
 #pragma once
 
-#ifdef FOCALENGINE_SHARED
-    #ifdef FOCALENGINE_EXPORTS
-        #define FOCALENGINE_API __declspec(dllexport)
+#ifdef FOCAL_ENGINE_SHARED
+    #ifdef FOCAL_ENGINE_EXPORTS
+        #define FOCAL_ENGINE_API __declspec(dllexport)
     #else
-        #define FOCALENGINE_API __declspec(dllimport)
+        #define FOCAL_ENGINE_API __declspec(dllimport)
     #endif
 #else
-    #define FOCALENGINE_API
+    #define FOCAL_ENGINE_API
 #endif

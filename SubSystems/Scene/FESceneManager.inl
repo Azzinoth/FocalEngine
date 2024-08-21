@@ -1,6 +1,6 @@
 #pragma once
 
-#define SCENE_MANAGER FESceneManager::getInstance()
+#define SCENE_MANAGER FESceneManager::GetInstance()
 
 template<typename T>
 void FESceneManager::RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback)
@@ -30,8 +30,8 @@ template<typename T>
 static void FESceneManager::OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity)
 {
 	entt::registry* RegistryPointer = &Registry;
-	auto SceneIterator = FESceneManager::getInstance().ActiveSceneMap.begin();
-	while (SceneIterator != FESceneManager::getInstance().ActiveSceneMap.end())
+	auto SceneIterator = SCENE_MANAGER.ActiveSceneMap.begin();
+	while (SceneIterator != SCENE_MANAGER.ActiveSceneMap.end())
 	{
 		if (&SceneIterator->second->Registry == RegistryPointer)
 		{
@@ -54,8 +54,8 @@ template<typename T>
 static void FESceneManager::OnComponentDestroyWrapper(entt::registry& Registry, entt::entity EnTTEntity)
 {
 	entt::registry* RegistryPointer = &Registry;
-	auto SceneIterator = FESceneManager::getInstance().ActiveSceneMap.begin();
-	while (SceneIterator != FESceneManager::getInstance().ActiveSceneMap.end())
+	auto SceneIterator = SCENE_MANAGER.ActiveSceneMap.begin();
+	while (SceneIterator != SCENE_MANAGER.ActiveSceneMap.end())
 	{
 		if (&SceneIterator->second->Registry == RegistryPointer)
 		{
@@ -78,8 +78,8 @@ template<typename T>
 static void FESceneManager::OnComponentUpdateWrapper(entt::registry& Registry, entt::entity EnTTEntity)
 {
 	entt::registry* RegistryPointer = &Registry;
-	auto SceneIterator = FESceneManager::getInstance().ActiveSceneMap.begin();
-	while (SceneIterator != FESceneManager::getInstance().ActiveSceneMap.end())
+	auto SceneIterator = SCENE_MANAGER.ActiveSceneMap.begin();
+	while (SceneIterator != SCENE_MANAGER.ActiveSceneMap.end())
 	{
 		if (&SceneIterator->second->Registry == RegistryPointer)
 		{

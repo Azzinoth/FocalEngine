@@ -59,5 +59,5 @@ namespace FocalEngine
 		void RenderLoop();
 	};
 
-#define FEOpenXR_RENDERING FEOpenXRRendering::getInstance()
+#define FEOpenXR_RENDERING FEOpenXRRendering::GetInstance()
 }

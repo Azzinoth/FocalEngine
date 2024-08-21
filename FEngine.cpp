@@ -1,7 +1,10 @@
 #include "FEngine.h"
 using namespace FocalEngine;
 
-FEngine* FEngine::Instance = nullptr;
+extern "C" __declspec(dllexport) void* GetLog()
+{
+	return FELOG::GetInstancePointer();
+}
 
 FEngine::FEngine()
 {

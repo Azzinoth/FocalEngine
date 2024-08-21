@@ -5,7 +5,7 @@ namespace FocalEngine
 {
 #define TERRAIN_SYSTEM_RESOURCE_TAG "TERRAIN_SYSTEM_PRIVATE_RESOURCE"
 
-	class FOCALENGINE_API FETerrainSystem
+	class FOCAL_ENGINE_API FETerrainSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -103,5 +103,5 @@ namespace FocalEngine
 		void LoadHeightMap(std::string FileName, FEEntity* TerrainEntity);
 	};
 
-#define TERRAIN_SYSTEM FETerrainSystem::getInstance()
+#define TERRAIN_SYSTEM FETerrainSystem::GetInstance()
 }

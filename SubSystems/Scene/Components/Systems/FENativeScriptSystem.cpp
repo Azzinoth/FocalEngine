@@ -1,7 +1,6 @@
 #include "FENativeScriptSystem.h"
 using namespace FocalEngine;
 
-FENativeScriptSystem* FENativeScriptSystem::Instance = nullptr;
 FENativeScriptSystem::FENativeScriptSystem()
 {
 	RegisterOnComponentCallbacks();

@@ -4,8 +4,6 @@
 #include "../FEngine.h"
 using namespace FocalEngine;
 
-FERenderer* FERenderer::Instance = nullptr;
-
 FERenderer::FERenderer()
 {
 }

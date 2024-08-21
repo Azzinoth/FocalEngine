@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FETransformSystem
+	class FOCAL_ENGINE_API FETransformSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -26,5 +26,5 @@ namespace FocalEngine
 
 	};
 
-#define TRANSFORM_SYSTEM FETransformSystem::getInstance()
+#define TRANSFORM_SYSTEM FETransformSystem::GetInstance()
 }

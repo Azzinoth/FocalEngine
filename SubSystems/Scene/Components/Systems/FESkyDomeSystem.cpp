@@ -1,7 +1,6 @@
 #include "FESkyDomeSystem.h"
 using namespace FocalEngine;
 
-FESkyDomeSystem* FESkyDomeSystem::Instance = nullptr;
 FEGameModel* FESkyDomeSystem::SkyDomeGameModel = nullptr;
 
 FESkyDomeSystem::FESkyDomeSystem()

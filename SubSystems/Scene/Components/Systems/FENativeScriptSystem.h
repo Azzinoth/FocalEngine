@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FENativeScriptSystem
+	class FOCAL_ENGINE_API FENativeScriptSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -26,5 +26,5 @@ namespace FocalEngine
 		void Init(FEEntity* Entity);
 	};
 
-#define NATIVE_SCRIPT_SYSTEM FENativeScriptSystem::getInstance()
+#define NATIVE_SCRIPT_SYSTEM FENativeScriptSystem::GetInstance()
 }

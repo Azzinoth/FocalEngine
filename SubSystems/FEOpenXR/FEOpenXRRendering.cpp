@@ -2,8 +2,6 @@
 
 using namespace FocalEngine;
 
-FEOpenXRRendering* FEOpenXRRendering::Instance = nullptr;
-
 FEOpenXRRendering::FEOpenXRRendering() {}
 FEOpenXRRendering::~FEOpenXRRendering() {}
 

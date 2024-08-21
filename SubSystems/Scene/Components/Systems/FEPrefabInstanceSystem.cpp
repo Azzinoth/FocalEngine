@@ -1,7 +1,6 @@
 #include "FEPrefabInstanceSystem.h"
 using namespace FocalEngine;
 
-FEPrefabInstanceSystem* FEPrefabInstanceSystem::Instance = nullptr;
 FEPrefabInstanceSystem::FEPrefabInstanceSystem()
 {
 	RegisterOnComponentCallbacks();

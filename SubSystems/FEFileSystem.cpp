@@ -1,6 +1,6 @@
 #include "FEFileSystem.h"
 using namespace FocalEngine;
-FEFileSystem* FEFileSystem::Instance = nullptr;
+
 FEFileSystem::FEFileSystem() {}
 FEFileSystem::~FEFileSystem() {}
 

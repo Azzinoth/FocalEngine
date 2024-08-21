@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FECameraSystem
+	class FOCAL_ENGINE_API FECameraSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -41,5 +41,5 @@ namespace FocalEngine
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
 	};
 
-#define CAMERA_SYSTEM FECameraSystem::getInstance()
+#define CAMERA_SYSTEM FECameraSystem::GetInstance()
 }

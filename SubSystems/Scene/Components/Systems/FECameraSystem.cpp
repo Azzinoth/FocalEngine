@@ -2,7 +2,6 @@
 #include "../FEngine.h"
 using namespace FocalEngine;
 
-FECameraSystem* FECameraSystem::Instance = nullptr;
 FECameraSystem::FECameraSystem()
 {
 	RegisterOnComponentCallbacks();

@@ -1,7 +1,6 @@
 #include "FELightSystem.h"
 using namespace FocalEngine;
 
-FELightSystem* FELightSystem::Instance = nullptr;
 FELightSystem::FELightSystem()
 {
 	RegisterOnComponentCallbacks();

@@ -199,5 +199,5 @@ namespace FocalEngine
 		void RegisterAllControllersInOpenXR();
 	};
 
-#define FEOpenXR_INPUT FEOpenXRInput::getInstance()
+#define FEOpenXR_INPUT FEOpenXRInput::GetInstance()
 }

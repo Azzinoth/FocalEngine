@@ -2,7 +2,6 @@
 #include "../../Renderer/FERenderer.h"
 using namespace FocalEngine;
 
-FETerrainSystem* FETerrainSystem::Instance = nullptr;
 FETerrainSystem::FETerrainSystem()
 {
 	std::string EngineFolder = RESOURCE_MANAGER.EngineFolder;

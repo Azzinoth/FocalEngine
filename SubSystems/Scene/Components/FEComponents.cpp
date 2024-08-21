@@ -2,7 +2,6 @@
 #include "../FEScene.h"
 using namespace FocalEngine;
 
-FEComponentsTools* FEComponentsTools::Instance = nullptr;
 FEComponentsTools::FEComponentsTools()
 {
 	// ************************* TAG COMPONENT *************************

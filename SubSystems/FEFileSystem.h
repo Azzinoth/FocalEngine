@@ -9,7 +9,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEFileSystem
+	class FOCAL_ENGINE_API FEFileSystem
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEFileSystem)
@@ -45,5 +45,5 @@ namespace FocalEngine
 #endif
 	};
 
-	#define FILE_SYSTEM FEFileSystem::getInstance()
+	#define FILE_SYSTEM FEFileSystem::GetInstance()
 }

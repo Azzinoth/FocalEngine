@@ -170,7 +170,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 		return Result;
 	}
 
-	FEGLTFLoader& GLTF = FEGLTFLoader::getInstance();
+	FEGLTFLoader& GLTF = FEGLTFLoader::GetInstance();
 	GLTF.Load(FileName.c_str());
 	std::string Directory = FILE_SYSTEM.GetDirectoryPath(FileName);
 

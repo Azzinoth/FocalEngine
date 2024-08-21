@@ -1,8 +1,6 @@
 #include "FESceneManager.h"
 using namespace FocalEngine;
 
-FESceneManager* FESceneManager::Instance = nullptr;
-
 FESceneManager::FESceneManager()
 {
 }

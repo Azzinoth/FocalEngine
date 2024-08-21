@@ -20,6 +20,7 @@ if(MSVC)
   add_link_options("/ignore:4197")
 endif()
 
+option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
 option(ENABLE_TESTS "Enable tests" OFF)
 
 set(TEST_LIBS)
@@ -375,17 +376,28 @@ if(ENABLE_TESTS)
     add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
 else()
     if(BUILD_SHARED_LIBS)
-		add_library(FocalEngine SHARED ${ALL_SOURCE_FILES})
-		target_compile_definitions(FocalEngine PRIVATE FOCALENGINE_EXPORTS)
-		target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
-		target_compile_definitions(FocalEngine PUBLIC FOCALENGINE_SHARED)
+		if(ENGINE_HEADERS_ONLY)
+			add_library(FocalEngine INTERFACE)
+			target_include_directories(FocalEngine INTERFACE 
+				${CMAKE_CURRENT_SOURCE_DIR}
+				${GLEW_INCLUDE_DIR}
+				${BASICAPP_THIRDPARTY_DIR}
+				${BASICAPP_DIR}
+				${FOCAL_ENGINE_INCLUDES}
+			)
+		else()
+			add_library(FocalEngine SHARED ${ALL_SOURCE_FILES})
+			target_compile_definitions(FocalEngine PRIVATE FOCAL_ENGINE_EXPORTS)
+			target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
+			target_compile_definitions(FocalEngine PUBLIC FOCAL_ENGINE_SHARED)
 
-		# Some times /GL conflicts with WINDOWS_EXPORT_ALL_SYMBOLS
-		set_target_properties(FocalEngine PROPERTIES COMPILE_OPTIONS "/GL-")
-		set_target_properties(FocalEngine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+			# Sometimes /GL conflicts with WINDOWS_EXPORT_ALL_SYMBOLS
+			set_target_properties(FocalEngine PROPERTIES COMPILE_OPTIONS "/GL-")
+			set_target_properties(FocalEngine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
-		# Disable C4251 warning
-		target_compile_options(FocalEngine PRIVATE /wd4251)
+			# Disable C4251 warning
+			target_compile_options(FocalEngine PRIVATE /wd4251)
+		endif()
 	else()
 		add_library(FocalEngine STATIC ${ALL_SOURCE_FILES})
 	endif()
@@ -432,20 +444,41 @@ if(USE_STATIC_RUNTIME)
     add_definitions(-DGLEW_STATIC)
 endif()
 
-target_link_libraries(FocalEngine 
-    PRIVATE 
-        FEBasicApplication
-        ${GLFW_LIBRARY}
-        ${GLEW_LIBRARY}
-        opengl32.lib
-    PUBLIC 
-        debug	  ${OpenXRLoader_Debug}
-        optimized ${OpenXRLoader_Release}
-		${TEST_LIBS}
-)
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ PARENT_SCOPE)
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/)
 
-if(BUILD_SHARED_LIBS)
-    target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
+set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt PARENT_SCOPE)
+set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt)
+
+set(FOCAL_ENGINE_INCLUDES "")
+list(APPEND FOCAL_ENGINE_INCLUDES
+    ${FOCAL_ENGINE_THIRD_PARTY_DIR}
+    ${FOCAL_ENGINE_ENTT_DIR}
+)
+set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
+
+if(NOT ENGINE_HEADERS_ONLY)
+	target_link_libraries(FocalEngine 
+		PRIVATE 
+			FEBasicApplication
+			${GLFW_LIBRARY}
+			${GLEW_LIBRARY}
+			opengl32.lib
+		PUBLIC 
+			debug	  ${OpenXRLoader_Debug}
+			optimized ${OpenXRLoader_Release}
+			${TEST_LIBS}
+	)
+
+	target_include_directories(FocalEngine
+			PUBLIC
+				${GLEW_INCLUDE_DIR}
+				${BASICAPP_THIRDPARTY_DIR}
+				${BASICAPP_DIR}
+				${FOCAL_ENGINE_INCLUDES}
+			PRIVATE
+				${TEST_INCLUDE_FILES}
+	)
 endif()
 
 if(ENABLE_TESTS)
@@ -489,29 +522,6 @@ source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 # set the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngine)
 
-set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ PARENT_SCOPE)
-set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/)
-
-set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt PARENT_SCOPE)
-set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt)
-
-set(FOCAL_ENGINE_INCLUDES "")
-list(APPEND FOCAL_ENGINE_INCLUDES
-    ${FOCAL_ENGINE_THIRD_PARTY_DIR}
-    ${FOCAL_ENGINE_ENTT_DIR}
-)
-set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
-
-include_directories(
-	${GLEW_INCLUDE_DIR}
-	${BASICAPP_THIRDPARTY_DIR}
-	${BASICAPP_DIR}
-	${FOCAL_ENGINE_INCLUDES}
-if(ENABLE_TESTS)
-	${TEST_INCLUDE_FILES}
-endif()
-)
-
 # Re-export of the variables from child projects
 set(GLEW_LIB_DIR ${GLEW_LIB_DIR} PARENT_SCOPE)
 set(GLFW_LIB_DIR ${GLFW_LIB_DIR} PARENT_SCOPE)
@@ -531,26 +541,28 @@ set(GLFW_LIBRARY ${GLFW_LIBRARY} PARENT_SCOPE)
 # Export the OpenXRLoader variable
 set(OpenXRLoader_DLL ${OpenXRLoader_DLL} PARENT_SCOPE)
 
-# If building as DLL, copy necessary DLLs to output directory
-if(BUILD_SHARED_LIBS)
-    add_custom_command(TARGET FocalEngine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${GLFW_LIB_DIR}/glfw3.dll"
-            "$<TARGET_FILE_DIR:FocalEngine>"
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE_DIR:FEBasicApplication>/FEBasicApplication.dll"
-            "$<TARGET_FILE_DIR:FocalEngine>"
-		COMMAND ${CMAKE_COMMAND} -E copy_if_different
-			${OpenXRLoader_DLL}
-			"$<TARGET_FILE_DIR:FocalEngine>"
-    )
-endif()
+if(NOT ENGINE_HEADERS_ONLY)
+	# If building as DLL, copy necessary DLLs to output directory
+	if(BUILD_SHARED_LIBS)
+		add_custom_command(TARGET FocalEngine POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${GLFW_LIB_DIR}/glfw3.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"$<TARGET_FILE_DIR:FEBasicApplication>/FEBasicApplication.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				${OpenXRLoader_DLL}
+				"$<TARGET_FILE_DIR:FocalEngine>"
+		)
+	endif()
 
-# If using dynamic runtime, copy necessary DLLs to output directory
-if(NOT USE_STATIC_RUNTIME)
-    add_custom_command(TARGET FocalEngine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${GLEW_LIB_DIR}/glew32.dll"
-            "$<TARGET_FILE_DIR:FocalEngine>"
-    )
+	# If using dynamic runtime, copy necessary DLLs to output directory
+	if(NOT USE_STATIC_RUNTIME)
+		add_custom_command(TARGET FocalEngine POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${GLEW_LIB_DIR}/glew32.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+		)
+	endif()
 endif()

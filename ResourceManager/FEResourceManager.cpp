@@ -2,8 +2,6 @@
 #include "FEResourceManager.h"
 using namespace FocalEngine;
 
-FEResourceManager* FEResourceManager::Instance = nullptr;
-
 FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
@@ -820,7 +818,7 @@ FEResourceManager::~FEResourceManager()
 
 std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const bool bForceOneMesh)
 {
-	FEObjLoader& OBJLoader = FEObjLoader::getInstance();
+	FEObjLoader& OBJLoader = FEObjLoader::GetInstance();
 	OBJLoader.bForceOneMesh = bForceOneMesh;
 	OBJLoader.ReadFile(FileName);
 
@@ -2326,7 +2324,7 @@ FETexture* FEResourceManager::LoadBMPTexture(const char* FileName, const std::st
 void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& ResultArray)
 {
 	std::unordered_map<std::string, bool> LoadedTextures;
-	const FEObjLoader& OBJLoader = FEObjLoader::getInstance();
+	const FEObjLoader& OBJLoader = FEObjLoader::GetInstance();
 
 	for (size_t i = 0; i < OBJLoader.LoadedObjects.size(); i++)
 	{

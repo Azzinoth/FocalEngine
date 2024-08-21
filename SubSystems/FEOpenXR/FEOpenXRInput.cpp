@@ -2,7 +2,6 @@
 
 using namespace FocalEngine;
 
-FEOpenXRInput* FEOpenXRInput::Instance = nullptr;
 FEOpenXRInput::FEOpenXRInput()
 {
     FEVRControllerActionBindings ValveIndex;

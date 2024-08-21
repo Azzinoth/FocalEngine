@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FELightSystem
+	class FOCAL_ENGINE_API FELightSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -30,5 +30,5 @@ namespace FocalEngine
 		void UpdateCascades(FEEntity* LightEntity, float CameraFov, float AspectRatio, float NearPlane, float FarPlane, glm::mat4 ViewMatrix, glm::vec3 CameraForward, glm::vec3 CameraRight, glm::vec3 CameraUp);
 	};
 
-#define LIGHT_SYSTEM FELightSystem::getInstance()
+#define LIGHT_SYSTEM FELightSystem::GetInstance()
 }

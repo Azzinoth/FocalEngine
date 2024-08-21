@@ -10,7 +10,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEResourceManager
+	class FOCAL_ENGINE_API FEResourceManager
 	{
 		friend class FEngine;
 		friend class FEScene;
@@ -168,5 +168,5 @@ namespace FocalEngine
 	};
 #include "FEResourceManager.inl"
 
-#define RESOURCE_MANAGER FEResourceManager::getInstance()
+#define RESOURCE_MANAGER FEResourceManager::GetInstance()
 }

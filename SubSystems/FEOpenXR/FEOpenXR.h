@@ -20,5 +20,5 @@ namespace FocalEngine
 		void PollEvents();
 	};
 
-#define OpenXR_MANAGER FEOpenXR::getInstance()
+#define OpenXR_MANAGER FEOpenXR::GetInstance()
 }

@@ -1,6 +1,6 @@
 #include "FEGeometricTools.h"
 using namespace FocalEngine;
-FEGeometry* FEGeometry::Instance = nullptr;
+
 FEGeometry::FEGeometry() {}
 FEGeometry::~FEGeometry() {}
 

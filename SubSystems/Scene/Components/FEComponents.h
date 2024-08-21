@@ -64,7 +64,7 @@ namespace FocalEngine
         std::string LogicOperationToString(FE_LOGIC_OPERATION LogicOperation) const;
     };
 
-    class FOCALENGINE_API FEComponentsTools
+    class FOCAL_ENGINE_API FEComponentsTools
     {
         SINGLETON_PRIVATE_PART(FEComponentsTools)
 
@@ -116,5 +116,5 @@ namespace FocalEngine
         void SortComponentsByLoadingPriority(std::vector<std::string>& ComponentsNames);
     };
 
-#define COMPONENTS_TOOL FEComponentsTools::getInstance()
+#define COMPONENTS_TOOL FEComponentsTools::GetInstance()
 }

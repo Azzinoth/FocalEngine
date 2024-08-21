@@ -101,7 +101,7 @@ void FETexture::GPUAllocateTeture(const GLenum Target, const GLint Level, const 
 {
 	FE_GL_ERROR(glTexImage2D(Target, Level, Internalformat, Width, Height, Border, Format, Type, Data));
 #ifdef FE_GPUMEM_ALLOCATION_LOGING
-	FELOG::getInstance().logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
+	FELOG::GetInstance().logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
 #endif
 }
 

@@ -4,7 +4,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FESceneManager
+	class FOCAL_ENGINE_API FESceneManager
 	{
 		friend class FERenderer;
 		friend class FEngine;

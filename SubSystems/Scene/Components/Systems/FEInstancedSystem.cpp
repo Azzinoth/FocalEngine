@@ -1,7 +1,6 @@
 #include "FEInstancedSystem.h"
 using namespace FocalEngine;
 
-FEInstancedSystem* FEInstancedSystem::Instance = nullptr;
 FEInstancedSystem::FEInstancedSystem()
 {
 	RegisterOnComponentCallbacks();

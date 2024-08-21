@@ -3,7 +3,6 @@
 #include "../../../FEngine.h"
 using namespace FocalEngine;
 
-FEVirtualUISystem* FEVirtualUISystem::Instance = nullptr;
 FEVirtualUISystem::FEVirtualUISystem()
 {
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();

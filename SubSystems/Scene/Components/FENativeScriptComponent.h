@@ -31,20 +31,46 @@ namespace FocalEngine
 
 		FEEntity* ParentEntity;
 
-		struct FieldInfo {
-			std::string name;
-			std::string type;
-			std::function<std::any(FENativeScriptCore*)> getter;
-			std::function<void(FENativeScriptCore*, const std::any&)> setter;
-		};
+		
 
-		static std::unordered_map<std::string, std::vector<FieldInfo>>& GetFieldRegistry() {
+		//std::unordered_map<std::string, std::vector<FieldInfo>> MyRegistry;
+
+		//virtual void RegisterFields() {}
+
+		/*static std::unordered_map<std::string, std::vector<FieldInfo>>& GetFieldRegistry() {
 			static std::unordered_map<std::string, std::vector<FieldInfo>> registry;
 			return registry;
-		}
+		}*/
 	};
 
-	class CoreScriptManager
+	//static std::string GetModuleID()
+	//{
+	//	static std::string ModuleID = "Engine";
+	//	return ModuleID;
+	//}
+	//static std::string ModuleID = "Engine";
+
+	struct ModuleInfo
+	{
+		std::string Name;
+		std::string Path;
+		std::string ID;
+	};
+
+	struct ScriptFieldInfo {
+		std::string name;
+		std::string type;
+		std::function<std::any(FENativeScriptCore*)> getter;
+		std::function<void(FENativeScriptCore*, const std::any&)> setter;
+	};
+
+	struct ScriptData
+	{
+		std::function<FENativeScriptCore*()> CreateScript;
+		std::unordered_map<std::string, std::vector<ScriptFieldInfo>> FieldRegistry;
+	};
+
+	class FOCAL_ENGINE_API CoreScriptManager
 	{
 	public:
 		SINGLETON_PUBLIC_PART(CoreScriptManager)
@@ -55,7 +81,14 @@ namespace FocalEngine
 
 		static void RegisterScript(const std::string& name, ScriptCreator creator) {
 			GetRegistry()[name] = creator;
+			GetRegistryNew()[name].CreateScript = creator;
 		}
+
+		static void RegisterScriptNew(const std::string& ModuleID, const std::string& name, ScriptCreator creator) {
+			
+			GetRegistryNewNew()[ModuleID][name].CreateScript = creator;
+		}
+
 
 		static FENativeScriptCore* CreateScript(const std::string& name) {
 			auto it = GetRegistry().find(name);
@@ -65,27 +98,37 @@ namespace FocalEngine
 			return nullptr;
 		}
 
-		std::unordered_map<std::string, ScriptCreator> GetAllScripts() const;/* {
-			return GetRegistry();
-		}*/
+		std::unordered_map<std::string, ScriptCreator> GetAllScripts() const;
 
-	private:
-		SINGLETON_PRIVATE_PART(CoreScriptManager)
+		static std::unordered_map<std::string, std::unordered_map<std::string, ScriptData>>& GetRegistryNewNew() {
+			static std::unordered_map<std::string, std::unordered_map<std::string, ScriptData>> registry;
+			return registry;
+		}
+
+		static std::unordered_map<std::string, ScriptData>& GetRegistryNew() {
+			static std::unordered_map<std::string, ScriptData> registry;
+			return registry;
+		}
 
 		static std::unordered_map<std::string, ScriptCreator>& GetRegistry() {
 			static std::unordered_map<std::string, ScriptCreator> registry;
 			return registry;
 		}
+
+	private:
+		SINGLETON_PRIVATE_PART(CoreScriptManager)
+
+		
 	};
 
-#define CORE_SCRIPT_MANAGER CoreScriptManager::getInstance()
+#define CORE_SCRIPT_MANAGER CoreScriptManager::GetInstance()
 
 
 // Expose functions to query script information
 extern "C" __declspec(dllexport) size_t GetScriptCount();
 extern "C" __declspec(dllexport) char** GetScriptMap();
 
-#define REGISTER_SCRIPT(ScriptClass) \
+#define REGISTER_SCRIPT(ModuleID, ScriptClass) \
     extern "C" __declspec(dllexport) FENativeScriptCore* Create##ScriptClass() { \
         return new ScriptClass(); \
     } \
@@ -93,15 +136,16 @@ extern "C" __declspec(dllexport) char** GetScriptMap();
         struct Register##ScriptClass { \
             Register##ScriptClass() { \
                 CORE_SCRIPT_MANAGER.RegisterScript(#ScriptClass, Create##ScriptClass); \
+				CORE_SCRIPT_MANAGER.RegisterScriptNew(#ModuleID, #ScriptClass, Create##ScriptClass);\
             } \
         } register##ScriptClass; \
     }
 
-#define REGISTER_SCRIPT_FIELD(ScriptClass, FieldType, FieldName) \
+#define REGISTER_SCRIPT_FIELD(ModuleID, ScriptClass, FieldType, FieldName) \
     namespace { \
         struct Register##ScriptClass##FieldName { \
             Register##ScriptClass##FieldName() { \
-                FENativeScriptCore::GetFieldRegistry()[#ScriptClass].push_back({ \
+                CORE_SCRIPT_MANAGER.GetRegistryNewNew()[#ModuleID][#ScriptClass].FieldRegistry[#FieldName].push_back({ \
                     #FieldName, \
                     #FieldType, \
                     [](FENativeScriptCore* base) -> std::any { \
@@ -117,10 +161,12 @@ extern "C" __declspec(dllexport) char** GetScriptMap();
         } register##ScriptClass##FieldName; \
     }
 
+
 	class PlayerScript : public FENativeScriptCore
 	{
-		int test = 0;
+		
 	public:
+		int test = 0;
 		void OnCreate() override
 		{
 			test = -1000;
@@ -135,7 +181,7 @@ extern "C" __declspec(dllexport) char** GetScriptMap();
 		void OnDestroy() override { /* ... */ }
 	};
 
-
+	REGISTER_SCRIPT_FIELD(Engine, PlayerScript, int, test)
 
 	/*class FENativeScriptComponent
 	{

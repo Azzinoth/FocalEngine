@@ -2,8 +2,6 @@
 
 using namespace FocalEngine;
 
-FEOpenXRCore* FEOpenXRCore::Instance = nullptr;
-
 FEOpenXRCore::FEOpenXRCore() {}
 FEOpenXRCore::~FEOpenXRCore() {}
 

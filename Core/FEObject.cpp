@@ -1,8 +1,6 @@
 #include "FEObject.h"
 using namespace FocalEngine;
 
-FEObjectManager* FEObjectManager::Instance = nullptr;
-
 FEObjectManager::FEObjectManager()
 {
 	ObjectsByType.resize(13);

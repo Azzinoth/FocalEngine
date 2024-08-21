@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEPrefabInstanceSystem
+	class FOCAL_ENGINE_API FEPrefabInstanceSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -28,5 +28,5 @@ namespace FocalEngine
 		bool IsPrefabInstanceUnmodified(FEEntity* Entity);
 	};
 
-#define PREFAB_INSTANCE_SYSTEM FEPrefabInstanceSystem::getInstance()
+#define PREFAB_INSTANCE_SYSTEM FEPrefabInstanceSystem::GetInstance()
 }

@@ -3,7 +3,7 @@
 
 namespace FocalEngine
 {
-	class FOCALENGINE_API FEInstancedSystem
+	class FOCAL_ENGINE_API FEInstancedSystem
 	{
 		friend class FEScene;
 		friend class FERenderer;
@@ -89,5 +89,5 @@ namespace FocalEngine
 		}
 	};
 
-#define INSTANCED_RENDERING_SYSTEM FEInstancedSystem::getInstance()
+#define INSTANCED_RENDERING_SYSTEM FEInstancedSystem::GetInstance()
 }

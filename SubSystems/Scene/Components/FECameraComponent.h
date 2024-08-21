@@ -61,7 +61,7 @@ namespace FocalEngine
 		}
 	};
 
-	struct FOCALENGINE_API FECameraComponent
+	struct FOCAL_ENGINE_API FECameraComponent
 	{
 #define DEFAULT_CAMERA_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
 
