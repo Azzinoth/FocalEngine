@@ -2,6 +2,13 @@
 #include "FEResourceManager.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetResourceManager()
+{
+	return FEResourceManager::GetInstancePointer();
+}
+#endif
+
 FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())

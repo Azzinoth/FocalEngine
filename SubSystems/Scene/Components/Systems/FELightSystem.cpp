@@ -1,6 +1,13 @@
 #include "FELightSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetLightSystem()
+{
+	return FELightSystem::GetInstancePointer();
+}
+#endif
+
 FELightSystem::FELightSystem()
 {
 	RegisterOnComponentCallbacks();

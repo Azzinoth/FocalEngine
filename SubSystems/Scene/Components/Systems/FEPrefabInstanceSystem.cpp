@@ -1,6 +1,13 @@
 #include "FEPrefabInstanceSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetPrefabInstanceSystem()
+{
+	return FEPrefabInstanceSystem::GetInstancePointer();
+}
+#endif
+
 FEPrefabInstanceSystem::FEPrefabInstanceSystem()
 {
 	RegisterOnComponentCallbacks();

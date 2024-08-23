@@ -41,5 +41,10 @@ namespace FocalEngine
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
 	};
 
-#define CAMERA_SYSTEM FECameraSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetCameraSystem();
+	#define CAMERA_SYSTEM (*static_cast<FECameraSystem*>(GetCameraSystem()))
+#else
+	#define CAMERA_SYSTEM FECameraSystem::GetInstance()
+#endif
 }

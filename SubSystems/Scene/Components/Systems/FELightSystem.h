@@ -30,5 +30,10 @@ namespace FocalEngine
 		void UpdateCascades(FEEntity* LightEntity, float CameraFov, float AspectRatio, float NearPlane, float FarPlane, glm::mat4 ViewMatrix, glm::vec3 CameraForward, glm::vec3 CameraRight, glm::vec3 CameraUp);
 	};
 
-#define LIGHT_SYSTEM FELightSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetLightSystem();
+	#define LIGHT_SYSTEM (*static_cast<FELightSystem*>(GetLightSystem()))
+#else
+	#define LIGHT_SYSTEM FELightSystem::GetInstance()
+#endif
 }

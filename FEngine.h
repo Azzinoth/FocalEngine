@@ -95,6 +95,7 @@ namespace FocalEngine
 		std::vector<void(*)(double, double)> ClientMouseScrollCallbacks;
 
 		// FIX ME! Need proper INPUT system.
+	public:
 		bool bAKeyPressed = false;
 		bool bWKeyPressed = false;
 		bool bSKeyPressed = false;
@@ -103,6 +104,7 @@ namespace FocalEngine
 		double LastFrameMouseY = 0.0;
 		double MouseScrollXOffset = 0.0;
 		double MouseScrollYOffset = 0.0;
+	private:
 
 		void SetMousePosition(int X, int Y, bool bScreenPosition = true);
 
@@ -118,8 +120,10 @@ namespace FocalEngine
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
 	};
 
-	#define ENGINE FEngine::GetInstance()
-
-	//extern FOCAL_ENGINE_API FELOG* GetLog();
-	extern "C" __declspec(dllexport) void* GetLog();
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetEngine();
+	#define ENGINE (*static_cast<FEngine*>(GetEngine()))
+#else
+	#define ENGINE FELOG::GetInstance()
+#endif
 }

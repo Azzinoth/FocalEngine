@@ -55,7 +55,12 @@ namespace FocalEngine
 		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
 	};
 
-#define OBJECT_MANAGER FEObjectManager::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetObjectManager();
+	#define OBJECT_MANAGER (*static_cast<FEObjectManager*>(GetObjectManager()))
+#else
+	#define OBJECT_MANAGER FEObjectManager::GetInstance()
+#endif
 
 	static std::string FEObjectTypeToString(const FE_OBJECT_TYPE Type)
 	{

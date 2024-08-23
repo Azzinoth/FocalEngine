@@ -89,5 +89,10 @@ namespace FocalEngine
 		}
 	};
 
-#define INSTANCED_RENDERING_SYSTEM FEInstancedSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetInstancedSystem();
+	#define INSTANCED_RENDERING_SYSTEM (*static_cast<FEInstancedSystem*>(GetInstancedSystem()))
+#else
+	#define INSTANCED_RENDERING_SYSTEM FEInstancedSystem::GetInstance()
+#endif
 }

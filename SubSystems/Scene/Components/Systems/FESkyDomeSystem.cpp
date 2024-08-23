@@ -1,6 +1,13 @@
 #include "FESkyDomeSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetSkyDomeSystem()
+{
+	return FESkyDomeSystem::GetInstancePointer();
+}
+#endif
+
 FEGameModel* FESkyDomeSystem::SkyDomeGameModel = nullptr;
 
 FESkyDomeSystem::FESkyDomeSystem()

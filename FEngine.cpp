@@ -1,10 +1,12 @@
 #include "FEngine.h"
 using namespace FocalEngine;
 
-extern "C" __declspec(dllexport) void* GetLog()
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetEngine()
 {
-	return FELOG::GetInstancePointer();
+	return FEngine::GetInstancePointer();
 }
+#endif
 
 FEngine::FEngine()
 {
@@ -30,7 +32,7 @@ void FEngine::InternalUpdate()
 	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 	VIRTUAL_UI_SYSTEM.Update();
 
-	NATIVE_SCRIPT_SYSTEM.Update();
+	NATIVE_SCRIPT_SYSTEM.Update(CurrentDeltaTime);
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{

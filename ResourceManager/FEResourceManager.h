@@ -168,5 +168,10 @@ namespace FocalEngine
 	};
 #include "FEResourceManager.inl"
 
-#define RESOURCE_MANAGER FEResourceManager::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetResourceManager();
+	#define RESOURCE_MANAGER (*static_cast<FEResourceManager*>(GetResourceManager()))
+#else
+	#define RESOURCE_MANAGER FEResourceManager::GetInstance()
+#endif
 }

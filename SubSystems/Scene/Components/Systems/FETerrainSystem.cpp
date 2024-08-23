@@ -2,6 +2,13 @@
 #include "../../Renderer/FERenderer.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetTerrainSystem()
+{
+	return FETerrainSystem::GetInstancePointer();
+}
+#endif
+
 FETerrainSystem::FETerrainSystem()
 {
 	std::string EngineFolder = RESOURCE_MANAGER.EngineFolder;

@@ -121,5 +121,10 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEGeometry)
 	};
 
-#define GEOMETRY FEGeometry::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetGeometry();
+	#define GEOMETRY (*static_cast<FEGeometry*>(GetGeometry()))
+#else
+	#define GEOMETRY FEGeometry::GetInstance()
+#endif
 }

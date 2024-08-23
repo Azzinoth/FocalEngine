@@ -2,6 +2,13 @@
 
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetOpenXRRendering()
+{
+	return FEOpenXRRendering::GetInstancePointer();
+}
+#endif
+
 FEOpenXRRendering::FEOpenXRRendering() {}
 FEOpenXRRendering::~FEOpenXRRendering() {}
 

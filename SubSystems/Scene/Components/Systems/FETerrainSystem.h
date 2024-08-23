@@ -103,5 +103,10 @@ namespace FocalEngine
 		void LoadHeightMap(std::string FileName, FEEntity* TerrainEntity);
 	};
 
-#define TERRAIN_SYSTEM FETerrainSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetTerrainSystem();
+	#define TERRAIN_SYSTEM (*static_cast<FETerrainSystem*>(GetTerrainSystem()))
+#else
+	#define TERRAIN_SYSTEM FETerrainSystem::GetInstance()
+#endif
 }

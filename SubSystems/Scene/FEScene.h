@@ -27,8 +27,8 @@ namespace FocalEngine
 		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
 		std::vector<std::string> GetEntityIDList();
-		template<typename T> std::vector<std::string> GetEntityIDListWith();
-		template<typename T> std::vector<FEEntity*> GetEntityListWith();
+		template<typename T> std::vector<std::string> GetEntityIDListWithComponent();
+		template<typename T> std::vector<FEEntity*> GetEntityListWithComponent();
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
 		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");

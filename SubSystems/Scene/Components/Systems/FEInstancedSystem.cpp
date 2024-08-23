@@ -1,6 +1,13 @@
 #include "FEInstancedSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetInstancedSystem()
+{
+	return FEInstancedSystem::GetInstancePointer();
+}
+#endif
+
 FEInstancedSystem::FEInstancedSystem()
 {
 	RegisterOnComponentCallbacks();
@@ -61,7 +68,7 @@ void FEInstancedSystem::InitializeBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -137,7 +144,7 @@ void FEInstancedSystem::InitializeGPUCullingBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -279,7 +286,7 @@ void FEInstancedSystem::UpdateBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -541,7 +548,7 @@ void FEInstancedSystem::UpdateMatrices(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -1159,7 +1166,7 @@ void FEInstancedSystem::CheckDirtyFlag(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -1204,7 +1211,7 @@ void FEInstancedSystem::CheckDirtyFlag(FEEntity* Entity)
 			FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 			FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-			std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWith<FEGameModelComponent>();
+			std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 			for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 			{
 				FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);

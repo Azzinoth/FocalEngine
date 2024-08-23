@@ -35,5 +35,10 @@ namespace FocalEngine
 		FEEntity* GetParentEntity(FEVirtualUI* VirtualUI);
 	};
 
-#define VIRTUAL_UI_SYSTEM FEVirtualUISystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetVirtualUISystem();
+	#define VIRTUAL_UI_SYSTEM (*static_cast<FEVirtualUISystem*>(GetVirtualUISystem()))
+#else
+	#define VIRTUAL_UI_SYSTEM FEVirtualUISystem::GetInstance()
+#endif
 }

@@ -16,6 +16,7 @@ namespace FocalEngine
 
 		bool CheckFile(const std::string& Path);
 		bool RenameFile(const std::string& Path, const std::string& NewPath);
+		bool CopyFile(const std::string& Path, const std::string& NewPath);
 		bool DeleteFile(const std::string& Path);
 		std::vector<std::string> GetFileList(const std::string& Path);
 
@@ -45,5 +46,10 @@ namespace FocalEngine
 #endif
 	};
 
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetFileSystem();
+	#define FILE_SYSTEM (*static_cast<FEFileSystem*>(GetFileSystem()))
+#else
 	#define FILE_SYSTEM FEFileSystem::GetInstance()
+#endif
 }

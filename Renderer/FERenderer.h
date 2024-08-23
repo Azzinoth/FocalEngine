@@ -204,7 +204,12 @@ namespace FocalEngine
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
 	};
 
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetRenderer();
+	#define RENDERER (*static_cast<FERenderer*>(GetRenderer()))
+#else
 	#define RENDERER FERenderer::GetInstance()
+#endif
 }
 
 #endif // FERENDERER_H

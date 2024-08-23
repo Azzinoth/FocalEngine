@@ -245,8 +245,6 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.h"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.cpp"
-	"SubSystems/Scene/Components/FENativeScriptComponent.h"
-	"SubSystems/Scene/Components/FENativeScriptComponent.cpp"
 )
 
 file(GLOB Scene_Component_Systems_SRC
@@ -267,8 +265,15 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.h"
 	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.cpp"
-	"SubSystems/Scene/Components/Systems/FENativeScriptSystem.h"
-	"SubSystems/Scene/Components/Systems/FENativeScriptSystem.cpp"
+)
+
+file(GLOB Scene_NativeScript_System_SRC
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.cpp"
 )
 
 # *************** SCENE ***************
@@ -365,6 +370,7 @@ list(APPEND ALL_SOURCE_FILES
 			${Scene_SRC}
 			${Scene_Components_SRC}
 			${Scene_Component_Systems_SRC}
+			${Scene_NativeScript_System_SRC}
 			${OpenXR_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
@@ -513,6 +519,7 @@ source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
 source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
 source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})
+source_group("Source Files/SubSystems/Scene/NativeScriptSystem" FILES ${Scene_NativeScript_System_SRC})
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})

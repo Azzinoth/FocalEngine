@@ -26,5 +26,10 @@ namespace FocalEngine
 
 	};
 
-#define TRANSFORM_SYSTEM FETransformSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetTransformSystem();
+	#define TRANSFORM_SYSTEM (*static_cast<FETransformSystem*>(GetTransformSystem()))
+#else
+	#define TRANSFORM_SYSTEM FETransformSystem::GetInstance()
+#endif
 }

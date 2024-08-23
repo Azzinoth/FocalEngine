@@ -1,6 +1,11 @@
 #pragma once
 
-#define SCENE_MANAGER FESceneManager::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetSceneManager();
+	#define SCENE_MANAGER (*static_cast<FESceneManager*>(GetSceneManager()))
+#else
+	#define SCENE_MANAGER FESceneManager::GetInstance()
+#endif
 
 template<typename T>
 void FESceneManager::RegisterOnComponentConstructCallback(std::function<void(FEEntity*)> Callback)

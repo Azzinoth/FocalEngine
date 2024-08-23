@@ -1,6 +1,13 @@
 #include "FEObject.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetObjectManager()
+{
+	return FEObjectManager::GetInstancePointer();
+}
+#endif
+
 FEObjectManager::FEObjectManager()
 {
 	ObjectsByType.resize(13);

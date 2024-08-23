@@ -28,5 +28,10 @@ namespace FocalEngine
 		void SetEnabled(bool NewValue);
 	};
 
-#define SKY_DOME_SYSTEM FESkyDomeSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetSkyDomeSystem();
+	#define SKY_DOME_SYSTEM (*static_cast<FESkyDomeSystem*>(GetSkyDomeSystem()))
+#else
+	#define SKY_DOME_SYSTEM FESkyDomeSystem::GetInstance()
+#endif
 }

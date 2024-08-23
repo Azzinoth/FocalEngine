@@ -3,6 +3,13 @@
 #include "../../../FEngine.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetVirtualUISystem()
+{
+	return FEVirtualUISystem::GetInstancePointer();
+}
+#endif
+
 FEVirtualUISystem::FEVirtualUISystem()
 {
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();
@@ -194,7 +201,7 @@ void FEVirtualUISystem::Update()
 															 CameraComponent.GetViewMatrix(), CameraComponent.GetProjectionMatrix(),
 															 ViewportPosition, ViewportSize);
 
-		std::vector<FEEntity*> Entities = ActiveScenes[i]->GetEntityListWith<FEVirtualUIComponent>();
+		std::vector<FEEntity*> Entities = ActiveScenes[i]->GetEntityListWithComponent<FEVirtualUIComponent>();
 		for (size_t j = 0; j < Entities.size(); j++)
 		{
 			FEVirtualUIComponent& VirtualUIComponent = Entities[j]->GetComponent<FEVirtualUIComponent>();
@@ -211,7 +218,7 @@ FEEntity* FEVirtualUISystem::GetParentEntity(FEVirtualUI* VirtualUI)
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
-		std::vector<FEEntity*> Entities = ActiveScenes[i]->GetEntityListWith<FEVirtualUIComponent>();
+		std::vector<FEEntity*> Entities = ActiveScenes[i]->GetEntityListWithComponent<FEVirtualUIComponent>();
 		for (size_t j = 0; j < Entities.size(); j++)
 		{
 			FEVirtualUIComponent& VirtualUIComponent = Entities[j]->GetComponent<FEVirtualUIComponent>();

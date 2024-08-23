@@ -24,7 +24,7 @@ bool FEPrefab::IsUsingMaterial(const std::string MaterialID) const
 	if (Scene == nullptr)
 		return false;
 	
-	std::vector<FEEntity*> Entities = Scene->GetEntityListWith<FEGameModelComponent>();
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FEGameModelComponent>();
 	for (int i = 0; i < Entities.size(); i++)
 	{
 		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();
@@ -43,7 +43,7 @@ bool FEPrefab::IsUsingGameModel(const std::string GameModelID) const
 	if (Scene == nullptr)
 		return false;
 
-	std::vector<FEEntity*> Entities = Scene->GetEntityListWith<FEGameModelComponent>();
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FEGameModelComponent>();
 	for (int i = 0; i < Entities.size(); i++)
 	{
 		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();

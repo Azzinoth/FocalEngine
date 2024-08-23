@@ -1,6 +1,13 @@
 #include "FEFileSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetFileSystem()
+{
+	return FEFileSystem::GetInstancePointer();
+}
+#endif
+
 FEFileSystem::FEFileSystem() {}
 FEFileSystem::~FEFileSystem() {}
 
@@ -19,7 +26,21 @@ bool FEFileSystem::RenameFile(const std::string& Path, const std::string& NewPat
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::ChangeFileName: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::ChangeFileName: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+}
+
+bool FEFileSystem::CopyFile(const std::string& Path, const std::string& NewPath)
+{
+	try
+	{
+		std::filesystem::copy(Path, NewPath);
+		return true;
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::CopyFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -32,7 +53,7 @@ bool FEFileSystem::DeleteFile(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::DeleteFile: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::DeleteFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -60,7 +81,7 @@ bool FEFileSystem::RenameDirectory(const std::string& Path, const std::string& N
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::RenameDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::RenameDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -73,7 +94,7 @@ bool FEFileSystem::CreateDirectory(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::CreateDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::CreateDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -86,7 +107,7 @@ bool FEFileSystem::DeleteDirectory(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::DeleteDirectory: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::DeleteDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -116,7 +137,7 @@ std::vector<std::string> FEFileSystem::GetDirectoryList(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::GetFolderList: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::GetFolderList: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 	}
 
 	return Result;
@@ -143,7 +164,7 @@ std::vector<std::string> FEFileSystem::GetFileList(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::GetFileList: " + std::string(Exception.what()), "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::GetFileList: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 	}
 
 	return Result;

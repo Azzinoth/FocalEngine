@@ -28,5 +28,10 @@ namespace FocalEngine
 		bool IsPrefabInstanceUnmodified(FEEntity* Entity);
 	};
 
-#define PREFAB_INSTANCE_SYSTEM FEPrefabInstanceSystem::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetPrefabInstanceSystem();
+	#define PREFAB_INSTANCE_SYSTEM (*static_cast<FEPrefabInstanceSystem*>(GetPrefabInstanceSystem()))
+#else
+	#define PREFAB_INSTANCE_SYSTEM FEPrefabInstanceSystem::GetInstance()
+#endif
 }

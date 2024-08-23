@@ -192,5 +192,10 @@ namespace FocalEngine
 		void CreateReferenceSpace();
 	};
 
-#define FEOpenXR_CORE FEOpenXRCore::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetOpenXRCore();
+	#define FEOpenXR_CORE (*static_cast<FEOpenXRCore*>(GetOpenXRCore()))
+#else
+	#define FEOpenXR_CORE FEOpenXRCore::GetInstance()
+#endif
 }

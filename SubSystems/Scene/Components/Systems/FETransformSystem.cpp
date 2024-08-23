@@ -1,6 +1,13 @@
 #include "FETransformSystem.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetTransformSystem()
+{
+	return FETransformSystem::GetInstancePointer();
+}
+#endif
+
 FETransformSystem::FETransformSystem()
 {
 	RegisterOnComponentCallbacks();

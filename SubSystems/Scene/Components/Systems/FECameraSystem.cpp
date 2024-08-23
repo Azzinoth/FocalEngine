@@ -2,6 +2,13 @@
 #include "../FEngine.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetCameraSystem()
+{
+	return FECameraSystem::GetInstancePointer();
+}
+#endif
+
 FECameraSystem::FECameraSystem()
 {
 	RegisterOnComponentCallbacks();
@@ -99,7 +106,7 @@ void FECameraSystem::SetMainCamera(FEEntity* CameraEntity)
 
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 
-	std::vector<std::string> EntitiesWithCameraComponent = CameraEntity->GetParentScene()->GetEntityIDListWith<FECameraComponent>();
+	std::vector<std::string> EntitiesWithCameraComponent = CameraEntity->GetParentScene()->GetEntityIDListWithComponent<FECameraComponent>();
 	// Loop through all camera components and set them to not be the main camera.
 	for (const std::string& EntityID : EntitiesWithCameraComponent)
 	{
@@ -122,7 +129,7 @@ FEEntity* FECameraSystem::GetMainCameraEntity(FEScene* Scene) const
 		return nullptr;
 	}
 
-	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWith<FECameraComponent>();
+	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
 	for (const std::string& EntityID : EntitiesWithCameraComponent)
 	{
 		FEEntity* Entity = Scene->GetEntity(EntityID);
@@ -166,7 +173,7 @@ void FECameraSystem::Update(const double DeltaTime)
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
 	for (FEScene* Scene : ActiveScenes)
 	{
-		std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWith<FECameraComponent>();
+		std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
 		for (const std::string& EntityID : EntitiesWithCameraComponent)
 		{
 			FEEntity* Entity = Scene->GetEntity(EntityID);
@@ -253,7 +260,7 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 		// FIX ME! This is temporary
 		if (CameraComponent.Type == 0)
 		{
-			glm::vec4 Forward = { 0.0f, 0.0f, -(CameraComponent.MovementSpeed * 2) * (DeltaTime / 1000), 0.0f };
+			/*glm::vec4 Forward = { 0.0f, 0.0f, -(CameraComponent.MovementSpeed * 2) * (DeltaTime / 1000), 0.0f };
 			glm::vec4 Right = { (CameraComponent.MovementSpeed * 2) * (DeltaTime / 1000), 0.0f, 0.0f, 0.0f };
 
 			Right = Right * CameraComponent.ViewMatrix;
@@ -292,7 +299,7 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 				CurrentPosition.z -= Forward.z;
 			}
 
-			TransformComponent.SetPosition(CurrentPosition);
+			TransformComponent.SetPosition(CurrentPosition);*/
 
 			// Rotation part.
 			if (CameraComponent.LastMouseX == 0) CameraComponent.LastMouseX = MouseX;
@@ -427,7 +434,7 @@ FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
 		return nullptr;
 	}
 
-	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWith<FECameraComponent>();
+	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
 	for (const std::string& EntityID : EntitiesWithCameraComponent)
 	{
 		FEEntity* Entity = Scene->GetEntity(EntityID);

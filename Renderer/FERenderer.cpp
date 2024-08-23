@@ -4,6 +4,13 @@
 #include "../FEngine.h"
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetRenderer()
+{
+	return FERenderer::GetInstancePointer();
+}
+#endif
+
 FERenderer::FERenderer()
 {
 }
@@ -359,7 +366,7 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 	FEDirectionalLightShaderInfo DirectionalLightInfo;
 
 	int Index = 0;
-	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWith<FELightComponent>();
+	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWithComponent<FELightComponent>();
 	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{
 		FEEntity* LightEntity = CurrentScene->GetEntity(LightsIDList[i]);
@@ -928,7 +935,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	// and we need to set correct light position
 	//#fix it should update view matrices for each cascade!
 	FEEntity* DirectionalLightEntity = nullptr;
-	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWith<FELightComponent>();
+	std::vector< std::string> LightsIDList = CurrentScene->GetEntityIDListWithComponent<FELightComponent>();
 	for (size_t i = 0; i < LightsIDList.size(); i++)
 	{	
 		FEEntity* LightEntity = CurrentScene->GetEntity(LightsIDList[i]);

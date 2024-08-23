@@ -1,7 +1,7 @@
 #pragma once
 
 template<typename T>
-std::vector<std::string> FEScene::GetEntityIDListWith()
+std::vector<std::string> FEScene::GetEntityIDListWithComponent()
 {
 	std::vector<std::string> Result;
 	entt::basic_view ComponentView = Registry.view<T>();
@@ -12,7 +12,7 @@ std::vector<std::string> FEScene::GetEntityIDListWith()
 }
 
 template<typename T>
-std::vector<FEEntity*> FEScene::GetEntityListWith()
+std::vector<FEEntity*> FEScene::GetEntityListWithComponent()
 {
 	std::vector<FEEntity*> Result;
 	entt::basic_view ComponentView = Registry.view<T>();

@@ -9,7 +9,7 @@
 #include "FESkyDomeComponent.h"
 #include "FEPrefabInstanceComponent.h"
 #include "FEVirtualUIComponent.h"
-#include "FENativeScriptComponent.h"
+#include "NativeScriptSystem/FENativeScriptComponent.h"
 
 #include "entt.hpp"
 
@@ -116,5 +116,10 @@ namespace FocalEngine
         void SortComponentsByLoadingPriority(std::vector<std::string>& ComponentsNames);
     };
 
-#define COMPONENTS_TOOL FEComponentsTools::GetInstance()
+#ifdef FOCAL_ENGINE_SHARED
+    extern "C" __declspec(dllexport) void* GetComponentsTools();
+    #define COMPONENTS_TOOL (*static_cast<FEComponentsTools*>(GetComponentsTools()))
+#else
+    #define COMPONENTS_TOOL FEComponentsTools::GetInstance()
+#endif
 }

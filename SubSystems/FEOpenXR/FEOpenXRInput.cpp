@@ -2,6 +2,13 @@
 
 using namespace FocalEngine;
 
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetOpenXRInput()
+{
+    return FEOpenXRInput::GetInstancePointer();
+}
+#endif
+
 FEOpenXRInput::FEOpenXRInput()
 {
     FEVRControllerActionBindings ValveIndex;

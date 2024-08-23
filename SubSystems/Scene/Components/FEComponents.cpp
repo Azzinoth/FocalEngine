@@ -1,12 +1,20 @@
 #include "FEComponents.h"
 #include "../FEScene.h"
+
 using namespace FocalEngine;
+
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetComponentsTools()
+{
+	return FEComponentsTools::GetInstancePointer();
+}
+#endif
 
 FEComponentsTools::FEComponentsTools()
 {
 	// ************************* TAG COMPONENT *************************
 	FEComponentTypeInfo TagComponentInfo("Tag", typeid(FETagComponent));
-	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETagComponent>(); };
+	FunctionsToGetEntityIDListWith[TagComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FETagComponent>(); };
 	TagComponentInfo.bCanNotBeRemoved = true;
 	TagComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
@@ -29,7 +37,7 @@ FEComponentsTools::FEComponentsTools()
 
 	// ************************* TRANSFORM COMPONENT *************************
 	FEComponentTypeInfo TransformComponentInfo("Transform", typeid(FETransformComponent));
-	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETransformComponent>(); };
+	FunctionsToGetEntityIDListWith[TransformComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FETransformComponent>(); };
 	TransformComponentInfo.bCanNotBeRemoved = true;
 	TransformComponentInfo.LoadingPriority = 1;
 	ComponentIDToInfo[entt::type_id<FETransformComponent>().hash()] = TransformComponentInfo;
@@ -37,19 +45,19 @@ FEComponentsTools::FEComponentsTools()
 
 	// ************************* CAMERA COMPONENT *************************
 	FEComponentTypeInfo CameraComponentInfo("Camera", typeid(FECameraComponent));
-	FunctionsToGetEntityIDListWith[CameraComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FECameraComponent>(); };
+	FunctionsToGetEntityIDListWith[CameraComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FECameraComponent>(); };
 	ComponentIDToInfo[entt::type_id<FECameraComponent>().hash()] = CameraComponentInfo;
 	FEComponentTypeInfo& CameraInfo = ComponentIDToInfo[entt::type_id<FECameraComponent>().hash()];
 
 	// ************************* LIGHT COMPONENT *************************
 	FEComponentTypeInfo LightComponentInfo("Light", typeid(FELightComponent));
-	FunctionsToGetEntityIDListWith[LightComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FELightComponent>(); };
+	FunctionsToGetEntityIDListWith[LightComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FELightComponent>(); };
 	ComponentIDToInfo[entt::type_id<FELightComponent>().hash()] = LightComponentInfo;
 	FEComponentTypeInfo& LightInfo = ComponentIDToInfo[entt::type_id<FELightComponent>().hash()];
 
 	// ************************* GAME MODEL COMPONENT *************************
 	FEComponentTypeInfo GameModelComponentInfo("Game Model", typeid(FEGameModelComponent));
-	FunctionsToGetEntityIDListWith[GameModelComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEGameModelComponent>(); };
+	FunctionsToGetEntityIDListWith[GameModelComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEGameModelComponent>(); };
 	GameModelComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
@@ -87,39 +95,39 @@ FEComponentsTools::FEComponentsTools()
 
 	// ************************* INSTANCED COMPONENT *************************
 	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
-	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEInstancedComponent>(); };
+	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEInstancedComponent>(); };
 	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] = InstancedComponentInfo;
 	FEComponentTypeInfo& InstancedInfo = ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()];
 
 	// ************************* TERRAIN COMPONENT *************************
 	FEComponentTypeInfo TerrainComponentInfo("Terrain", typeid(FETerrainComponent));
-	FunctionsToGetEntityIDListWith[TerrainComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FETerrainComponent>(); };
+	FunctionsToGetEntityIDListWith[TerrainComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FETerrainComponent>(); };
 	ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()] = TerrainComponentInfo;
 	FEComponentTypeInfo& TerrainInfo = ComponentIDToInfo[entt::type_id<FETerrainComponent>().hash()];
 
 	// ************************* SKY DOME COMPONENT *************************
 	FEComponentTypeInfo SkyDomeComponentInfo("SkyDome", typeid(FESkyDomeComponent));
-	FunctionsToGetEntityIDListWith[SkyDomeComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FESkyDomeComponent>(); };
+	FunctionsToGetEntityIDListWith[SkyDomeComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FESkyDomeComponent>(); };
 	ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()] = SkyDomeComponentInfo;
 	FEComponentTypeInfo& SkyDomeInfo = ComponentIDToInfo[entt::type_id<FESkyDomeComponent>().hash()];
 
 	// ************************* PREFAB INSTANCE COMPONENT *************************
 	FEComponentTypeInfo PrefabInstanceComponentInfo("Prefab Instance", typeid(FEPrefabInstanceComponent));
-	FunctionsToGetEntityIDListWith[PrefabInstanceComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEPrefabInstanceComponent>(); };
+	FunctionsToGetEntityIDListWith[PrefabInstanceComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEPrefabInstanceComponent>(); };
 	PrefabInstanceComponentInfo.LoadingPriority = 2;
 	ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()] = PrefabInstanceComponentInfo;
 	FEComponentTypeInfo& PrefabInstanceInfo = ComponentIDToInfo[entt::type_id<FEPrefabInstanceComponent>().hash()];
 
 	// ************************* VIRTUAL UI COMPONENT *************************
 	FEComponentTypeInfo VirtualUIComponentInfo("Virtual UI", typeid(FEVirtualUIComponent));
-	FunctionsToGetEntityIDListWith[VirtualUIComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FEVirtualUIComponent>(); };
+	FunctionsToGetEntityIDListWith[VirtualUIComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEVirtualUIComponent>(); };
 	VirtualUIComponentInfo.LoadingPriority = 3;
 	ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()] = VirtualUIComponentInfo;
 	FEComponentTypeInfo& VirtualUIInfo = ComponentIDToInfo[entt::type_id<FEVirtualUIComponent>().hash()];
 
 	// ************************* NATIVE SCRIPT COMPONENT *************************
 	FEComponentTypeInfo NativeScriptComponentInfo("Native Script", typeid(FENativeScriptComponent));
-	FunctionsToGetEntityIDListWith[NativeScriptComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWith<FENativeScriptComponent>(); };
+	FunctionsToGetEntityIDListWith[NativeScriptComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FENativeScriptComponent>(); };
 	NativeScriptComponentInfo.LoadingPriority = 4;
 	ComponentIDToInfo[entt::type_id<FENativeScriptComponent>().hash()] = NativeScriptComponentInfo;
 	FEComponentTypeInfo& NativeScriptInfo = ComponentIDToInfo[entt::type_id<FENativeScriptComponent>().hash()];
