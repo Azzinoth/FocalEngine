@@ -180,7 +180,7 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* F
 
 void FEVirtualUISystem::Update()
 {
-	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
 		FEEntity* CameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(ActiveScenes[i]);
@@ -196,8 +196,7 @@ void FEVirtualUISystem::Update()
 		glm::ivec2 ViewportPosition = glm::ivec2(CurrentViewport->GetX(), CurrentViewport->GetY());
 		glm::ivec2 ViewportSize = glm::ivec2(CurrentViewport->GetWidth(), CurrentViewport->GetHeight());
 
-		// FIX ME! Should be proper input system.
-		glm::dvec3 MouseRay = GEOMETRY.CreateMouseRayToWorld(ENGINE.GetMouseX(), ENGINE.GetMouseY(),
+		glm::dvec3 MouseRay = GEOMETRY.CreateMouseRayToWorld(INPUT.GetMouseX(), INPUT.GetMouseY(),
 															 CameraComponent.GetViewMatrix(), CameraComponent.GetProjectionMatrix(),
 															 ViewportPosition, ViewportSize);
 
@@ -215,7 +214,7 @@ void FEVirtualUISystem::Update()
 
 FEEntity* FEVirtualUISystem::GetParentEntity(FEVirtualUI* VirtualUI)
 {
-	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
 		std::vector<FEEntity*> Entities = ActiveScenes[i]->GetEntityListWithComponent<FEVirtualUIComponent>();

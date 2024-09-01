@@ -5,7 +5,7 @@ using namespace FocalEngine;
 FEPrefab::FEPrefab(const std::string Name) : FEObject(FE_PREFAB, Name)
 {
 	SetName(Name);
-	Scene = SCENE_MANAGER.CreateScene(GetName(), "", false);
+	Scene = SCENE_MANAGER.CreateScene(GetName(), "", FESceneFlag::None);
 	SetDirtyFlag(true);
 }
 

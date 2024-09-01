@@ -9,6 +9,44 @@
 
 namespace FocalEngine
 {
+	enum class FESceneFlag : uint32_t
+	{
+		None = 0,
+		Renderable = 1 << 0,
+		Active = 1 << 1,
+		EditorMode = 1 << 2,
+		GameMode = 1 << 3,
+	};
+
+	// Enable bitwise operations for FESceneFlag
+	inline FESceneFlag operator|(FESceneFlag First, FESceneFlag Second)
+	{
+		return static_cast<FESceneFlag>(
+			static_cast<std::underlying_type_t<FESceneFlag>>(First) |
+			static_cast<std::underlying_type_t<FESceneFlag>>(Second)
+		);
+	}
+
+	inline FESceneFlag& operator|=(FESceneFlag& First, FESceneFlag Second)
+	{
+		First = First | Second;
+		return First;
+	}
+
+	inline FESceneFlag operator&(FESceneFlag First, FESceneFlag Second)
+	{
+		return static_cast<FESceneFlag>(
+			static_cast<std::underlying_type_t<FESceneFlag>>(First) &
+			static_cast<std::underlying_type_t<FESceneFlag>>(Second)
+		);
+	}
+
+	inline FESceneFlag& operator&=(FESceneFlag& First, FESceneFlag Second)
+	{
+		First = First & Second;
+		return First;
+	}
+
 	class FEScene : public FEObject
 	{
 		friend class FEEntity;
@@ -21,6 +59,9 @@ namespace FocalEngine
 		friend class FETransformSystem;
 	public:
 		FEScene();
+
+		void SetFlag(FESceneFlag Flag, bool Value);
+		bool HasFlag(FESceneFlag Flag) const;
 
 		// Entity Management
 		FEEntity* GetEntity(std::string ID);
@@ -53,6 +94,8 @@ namespace FocalEngine
 	private:
 		~FEScene();
 
+		FESceneFlag Flags = FESceneFlag::None;
+
 		// Internal Entity Management
 		FEEntity* GetEntityByEnTT(entt::entity ID);
 		void ClearEntityRecords(std::string EntityID, entt::entity EnttEntity);
@@ -66,7 +109,7 @@ namespace FocalEngine
 		// Data Members
 		entt::registry Registry;
 		bool bIsSceneClearing = false;
-		bool bActive = true;
+		//bool bActive = true;
 		std::unordered_map<entt::entity, FEEntity*> EnttToEntity;
 		std::unordered_map<std::string, FEEntity*> EntityMap;
 	};

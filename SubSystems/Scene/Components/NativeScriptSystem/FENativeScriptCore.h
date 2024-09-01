@@ -9,7 +9,6 @@ namespace FocalEngine
 	class FENativeScriptCore
 	{
 		friend class FENativeScriptComponent;
-		friend class FECoreScriptManager;
 		friend class FENativeScriptSystem;
 	public:
 		virtual ~FENativeScriptCore() = default;
@@ -30,14 +29,14 @@ namespace FocalEngine
 
 	struct FEScriptData
 	{
-	private:
+	//private:
 		friend class FENativeScriptComponent;
-		friend class FECoreScriptManager;
 		friend class FENativeScriptSystem;
 
 		std::function<FENativeScriptCore* ()> ConstructorFunction;
-	public:
+	//public:
 		std::string Name;
+		bool bRunInEditor = false;
 		std::unordered_map<std::string, FEScriptVariableInfo> VariablesRegistry;
 	};
 
@@ -51,68 +50,4 @@ namespace FocalEngine
 		HMODULE DLLHandle;
 		std::unordered_map<std::string, FEScriptData> Registry;
 	};
-
-	class FOCAL_ENGINE_API FECoreScriptManager
-	{
-	public:
-		SINGLETON_PUBLIC_PART(FECoreScriptManager)
-
-		using ScriptCreator = std::function<FENativeScriptCore* ()>;
-
-		static void RegisterScript(const std::string& Name, ScriptCreator ConstructorFunction)
-		{
-			GetRegistry()[Name].ConstructorFunction = ConstructorFunction;
-			GetRegistry()[Name].Name = Name;
-		}
-
-		static std::unordered_map<std::string, FEScriptData>& GetRegistry()
-		{
-			static std::unordered_map<std::string, FEScriptData> Registry;
-			return Registry;
-		}
-
-	private:
-		SINGLETON_PRIVATE_PART(FECoreScriptManager)
-	};
-
-// TO DO: Decide if it would be available in the DLL, or leave it as it is.
-#define CORE_SCRIPT_MANAGER FECoreScriptManager::GetInstance()
-
-//#ifdef FOCAL_ENGINE_SHARED
-//	extern "C" __declspec(dllexport) void* GetCoreScriptManager();
-//	#define CORE_SCRIPT_MANAGER (*static_cast<FECoreScriptManager*>(GetCoreScriptManager()))
-//#else
-//	#define CORE_SCRIPT_MANAGER FECoreScriptManager::GetInstance()
-//#endif
-
-#define REGISTER_SCRIPT(ScriptClass)													\
-    extern "C" __declspec(dllexport) FENativeScriptCore* Create##ScriptClass() {		\
-        return new ScriptClass();														\
-    }																					\
-    namespace {																			\
-        struct Register##ScriptClass {													\
-            Register##ScriptClass() {													\
-				CORE_SCRIPT_MANAGER.RegisterScript(#ScriptClass, Create##ScriptClass);	\
-            }																			\
-        } register##ScriptClass;														\
-    }
-
-#define REGISTER_SCRIPT_FIELD(ScriptClass, FieldType, FieldName)																							\
-    namespace {																																				\
-        struct Register##ScriptClass##FieldName {																											\
-            Register##ScriptClass##FieldName() {																											\
-                CORE_SCRIPT_MANAGER.GetRegistry()[#ScriptClass].VariablesRegistry[#FieldName].Name = #FieldName;											\
-				CORE_SCRIPT_MANAGER.GetRegistry()[#ScriptClass].VariablesRegistry[#FieldName].Type = #FieldType;											\
-                    																																		\
-                CORE_SCRIPT_MANAGER.GetRegistry()[#ScriptClass].VariablesRegistry[#FieldName].Getter = [](FENativeScriptCore* base) -> std::any {			\
-                    auto* script = static_cast<ScriptClass*>(base);																							\
-                    return script->FieldName;																												\
-                };																																			\
-				CORE_SCRIPT_MANAGER.GetRegistry()[#ScriptClass].VariablesRegistry[#FieldName].Setter = [](FENativeScriptCore* base, const std::any& value) {\
-                    auto* script = static_cast<ScriptClass*>(base);																							\
-                    script->FieldName = std::any_cast<FieldType>(value);																					\
-                };																																			\
-            }																																				\
-        } register##ScriptClass##FieldName;																													\
-    }
 }

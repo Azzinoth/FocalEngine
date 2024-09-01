@@ -137,7 +137,7 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 
 	bValidSwapChain = true;
 	// FIX ME! Temporary solution, only supports one scene
-	FEScene* CurrentScene = SCENE_MANAGER.GetActiveScenes()[0];
+	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
 	RENDERER.RenderVR(CurrentScene);
 	bValidSwapChain = false;
 }

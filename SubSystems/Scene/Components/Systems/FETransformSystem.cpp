@@ -43,7 +43,7 @@ FETransformSystem::~FETransformSystem() {};
 
 void FETransformSystem::Update()
 {
-	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
 	{
 		UpdateInternal(Scene->SceneGraph.GetRoot());

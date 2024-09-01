@@ -14,16 +14,16 @@ FESceneManager::FESceneManager()
 
 FEScene* FESceneManager::GetScene(std::string ID)
 {
-	if (SceneMap.find(ID) == SceneMap.end())
+	if (Scenes.find(ID) == Scenes.end())
 		return nullptr;
 
-	return SceneMap[ID];
+	return Scenes[ID];
 }
 
-FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID, bool bActive)
+FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID, FESceneFlag Flags)
 {
 	FEScene* Scene = new FEScene();
-	Scene->bActive = bActive;
+	Scene->Flags = Flags;
 
 	if (!Name.empty())
 		Scene->SetName(Name);
@@ -31,12 +31,9 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 	if (!ForceObjectID.empty())
 		Scene->SetID(ForceObjectID);
 
-	SceneMap[Scene->GetObjectID()] = Scene;
-	if (bActive)
-	{
-		ActiveSceneMap[Scene->GetObjectID()] = Scene;
+	Scenes[Scene->GetObjectID()] = Scene;
+	if (Scene->HasFlag(FESceneFlag::Active))
 		RegisterAllComponentCallbacks(Scene);
-	}
 	
 	return Scene;
 }
@@ -82,15 +79,15 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
 
 std::vector<std::string> FESceneManager::GetSceneIDList()
 {
-	FE_MAP_TO_STR_VECTOR(SceneMap)
+	FE_MAP_TO_STR_VECTOR(Scenes)
 }
 
 std::vector<FEScene*> FESceneManager::GetSceneByName(const std::string Name)
 {
 	std::vector<FEScene*> Result;
 
-	auto SceneIterator = SceneMap.begin();
-	while (SceneIterator != SceneMap.end())
+	auto SceneIterator = Scenes.begin();
+	while (SceneIterator != Scenes.end())
 	{
 		if (SceneIterator->second->GetName() == Name)
 			Result.push_back(SceneIterator->second);
@@ -103,10 +100,10 @@ std::vector<FEScene*> FESceneManager::GetSceneByName(const std::string Name)
 
 void FESceneManager::DeleteScene(std::string ID)
 {
-	if (SceneMap.find(ID) == SceneMap.end())
+	if (Scenes.find(ID) == Scenes.end())
 		return;
 
-	DeleteScene(SceneMap[ID]);
+	DeleteScene(Scenes[ID]);
 }
 
 void FESceneManager::DeleteScene(FEScene* Scene)
@@ -117,55 +114,15 @@ void FESceneManager::DeleteScene(FEScene* Scene)
 	std::string SceneID = Scene->GetObjectID();
 	delete Scene;
 
-	if (ActiveSceneMap.find(SceneID) != ActiveSceneMap.end())
-		ActiveSceneMap.erase(SceneID);
-
-	// Should scene be deactivated?
-	SceneMap.erase(SceneID);
-}
-
-void FESceneManager::ActivateScene(std::string ID)
-{
-	if (SceneMap.find(ID) == SceneMap.end())
-		return;
-
-	ActivateScene(SceneMap[ID]);
-}
-
-void FESceneManager::ActivateScene(FEScene* Scene)
-{
-	if (Scene == nullptr || Scene->bActive)
-		return;
-
-	Scene->bActive = true;
-	ActiveSceneMap[Scene->GetObjectID()] = Scene;
-}
-
-void FESceneManager::DeactivateScene(std::string ID)
-{
-	if (SceneMap.find(ID) == SceneMap.end())
-		return;
-
-	DeactivateScene(SceneMap[ID]);
-}
-
-void FESceneManager::DeactivateScene(FEScene* Scene)
-{
-	if (Scene == nullptr || !Scene->bActive)
-		return;
-
-	Scene->bActive = false;
-	if (ActiveSceneMap.find(Scene->GetObjectID()) != ActiveSceneMap.end())
-		ActiveSceneMap.erase(Scene->GetObjectID());
+	Scenes.erase(SceneID);
 }
 
 void FESceneManager::Update()
 {
-	auto SceneIterator = ActiveSceneMap.begin();
-	while (SceneIterator != ActiveSceneMap.end())
+	std::vector<FEScene*> ActiveScenes = GetScenesByFlagMask(FESceneFlag::Active);
+	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
-		SceneIterator->second->Update();
-		SceneIterator++;
+		ActiveScenes[i]->Update();
 	}
 }
 
@@ -173,8 +130,8 @@ std::vector<FEScene*> FESceneManager::GetAllScenes()
 {
 	std::vector<FEScene*> Result;
 
-	auto SceneIterator = SceneMap.begin();
-	while (SceneIterator != SceneMap.end())
+	auto SceneIterator = Scenes.begin();
+	while (SceneIterator != Scenes.end())
 	{
 		Result.push_back(SceneIterator->second);
 		SceneIterator++;
@@ -183,40 +140,42 @@ std::vector<FEScene*> FESceneManager::GetAllScenes()
 	return Result;
 }
 
-std::vector<FEScene*> FESceneManager::GetActiveScenes()
+std::vector<FEScene*> FESceneManager::GetScenesByFlagMask(FESceneFlag FlagMask)
 {
 	std::vector<FEScene*> Result;
 
-	auto SceneIterator = ActiveSceneMap.begin();
-	while (SceneIterator != ActiveSceneMap.end())
+	auto SceneIterator = Scenes.begin();
+	while (SceneIterator != Scenes.end())
 	{
-		Result.push_back(SceneIterator->second);
+		if ((SceneIterator->second->Flags & FlagMask) == FlagMask)
+			Result.push_back(SceneIterator->second);
+
 		SceneIterator++;
 	}
 
 	return Result;
 }
 
-FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName)
+FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter)
 {
 	FEScene* SceneToDuplicate = GetScene(ID);
 	if (SceneToDuplicate == nullptr)
 		return nullptr;
 
-	return DuplicateScene(SceneToDuplicate, NewSceneName);
+	return DuplicateScene(SceneToDuplicate, NewSceneName, Filter);
 }
 
-FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName)
+FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName, std::function<bool(FEEntity*)> Filter)
 {
 	//FIX ME! Currently new scene would be active, but should it be?
-	FEScene* Result = CreateScene(NewSceneName, "", true);
+	FEScene* Result = CreateScene(NewSceneName, "", FESceneFlag::Active);
 
 	// Get children of the root entity and import them.
 	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
 	for (auto RootChildren : RootChildrens)
 	{
 		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
-		Result->ImportEntity(EntityToDuplicate);
+		Result->ImportEntity(EntityToDuplicate, nullptr, Filter);
 	}
 
 	return Result;
@@ -272,4 +231,75 @@ bool FESceneManager::AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* F
 	}
 
 	return true;
+}
+
+std::vector<FEEntity*> FESceneManager::InstantiatePrefab(FEPrefab* Prefab, FEScene* Scene, bool bAddToSceneRoot)
+{
+	std::vector<FEEntity*> Result;
+
+	if (Prefab == nullptr || Scene == nullptr)
+	{
+		LOG.Add("FESceneManager::InstantiatePrefab: Prefab or Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FEScene* PrefabScene = Prefab->GetScene();
+	if (PrefabScene == nullptr)
+	{
+		LOG.Add("FESceneManager::InstantiatePrefab: Prefab scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FENaiveSceneGraphNode* RootNode = PrefabScene->SceneGraph.GetRoot();
+	if (RootNode == nullptr)
+	{
+		LOG.Add("FESceneManager::InstantiatePrefab: Prefab scene root node is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	if (bAddToSceneRoot)
+	{
+		// Import prefab scene graph nodes to the scene root.
+		std::vector<FENaiveSceneGraphNode*> PrefabNodes = ImportSceneAsNode(PrefabScene, Scene, Scene->SceneGraph.GetRoot());
+		if (!PrefabNodes.empty())
+		{
+			FEEntity* SceneRootEntity = Scene->SceneGraph.GetRoot()->GetEntity();
+			for (size_t i = 0; i < PrefabNodes.size(); i++)
+			{
+				Result.push_back(PrefabNodes[i]->GetEntity());
+			}
+
+			return Result;
+		}
+		else
+		{
+			LOG.Add("FESceneManager::InstantiatePrefab: Failed to import prefab scene graph nodes.", "FE_LOG_ECS", FE_LOG_ERROR);
+		}
+	}
+	else
+	{
+		// Create a new entity that will hold the prefab instance and all of prefab scene graph nodes.
+		FEEntity* NewEntity = Scene->CreateEntity(Prefab->GetName());
+		FENaiveSceneGraphNode* NewNode = Scene->SceneGraph.GetNodeByEntityID(NewEntity->GetObjectID());
+
+		std::vector<FENaiveSceneGraphNode*> PrefabNodes = ImportSceneAsNode(PrefabScene, Scene, NewNode);
+		if (!PrefabNodes.empty())
+		{
+			NewEntity->AddComponent<FEPrefabInstanceComponent>(Prefab);
+			Result.push_back(NewEntity);
+			for (size_t i = 0; i < PrefabNodes.size(); i++)
+			{
+				Result.push_back(PrefabNodes[i]->GetEntity());
+			}
+			
+			return Result;
+		}
+		else
+		{
+			LOG.Add("FESceneManager::InstantiatePrefab: Failed to import prefab scene graph nodes.", "FE_LOG_ECS", FE_LOG_ERROR);
+			Scene->DeleteEntity(NewEntity);
+		}
+	}
+
+	return Result;
 }

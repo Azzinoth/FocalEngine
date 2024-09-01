@@ -740,7 +740,7 @@ void FEObjLoader::ReadMaterialFile(const char* OriginalOBJFile)
 
 	std::string MaterialFileFullPath = FILE_SYSTEM.GetDirectoryPath(OriginalOBJFile);
 	MaterialFileFullPath += MaterialFileName;
-	if (!FILE_SYSTEM.CheckFile(MaterialFileFullPath.c_str()))
+	if (!FILE_SYSTEM.DoesFileExist(MaterialFileFullPath.c_str()))
 	{
 		LOG.Add(std::string("material file: ") + MaterialFileName + " was indicated in OBJ file but this file can't be located.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
@@ -857,7 +857,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Specular color texture map
@@ -872,7 +872,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Specular highlight component
@@ -887,7 +887,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// The alpha texture map
@@ -902,7 +902,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Some implementations use 'map_bump' instead of 'bump' below
@@ -917,7 +917,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Bump map (which by default uses luminance channel of the image)
@@ -932,7 +932,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Displacement map
@@ -947,7 +947,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Stencil decal texture (defaults to 'matte' channel of the image)
@@ -962,7 +962,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 }

@@ -9,6 +9,9 @@ void FENativeScriptComponent::OnCreate()
 
 void FENativeScriptComponent::OnDestroy()
 {
+	if (CoreInstance == nullptr)
+		return;
+
 	CoreInstance->OnDestroy();
 	delete CoreInstance;
 	CoreInstance = nullptr;
@@ -37,4 +40,16 @@ class FENativeScriptCore* FENativeScriptComponent::GetCoreInstance() const
 const struct FEScriptData* FENativeScriptComponent::GetScriptData() const
 {
 	return ScriptData;
+}
+
+bool FENativeScriptComponent::SetVariableValue(std::string VariableName, std::any Value)
+{
+	if (CoreInstance == nullptr)
+		return false;
+
+	if (ScriptData->VariablesRegistry.find(VariableName) == ScriptData->VariablesRegistry.end())
+		return false;
+
+	ScriptData->VariablesRegistry[VariableName].Setter(CoreInstance, Value);
+	return true;
 }

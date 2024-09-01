@@ -46,9 +46,7 @@ void FEngine::InternalUpdate()
 	// To ensure that all the other systems are updated before the TRANSFORM_SYSTEM will kick in.
 	TRANSFORM_SYSTEM.Update();
 
-	// FIX ME! Need proper INPUT system.
-	ENGINE.MouseScrollXOffset = 0.0;
-	ENGINE.MouseScrollYOffset = 0.0;
+	INPUT.Update();
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
@@ -89,7 +87,7 @@ void FEngine::BeginFrame(const bool InternalCall)
 
 void FEngine::Render(const bool InternalCall)
 {
-	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetActiveScenes();
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
 		RENDERER.Render(ActiveScenes[i]);
@@ -117,12 +115,10 @@ void FEngine::EndFrame(const bool InternalCall)
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
 {
 	FEWindow* NewWindow = APPLICATION.AddWindow(Width, Height, WindowTitle);
+	// Early initialization of INPUT system.
+	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
-	APPLICATION.GetMainWindow()->AddOnMouseButtonCallback(&FEngine::MouseButtonCallback);
-	APPLICATION.GetMainWindow()->AddOnMouseMoveCallback(&FEngine::MouseMoveCallback);
-	APPLICATION.GetMainWindow()->AddOnKeyCallback(&FEngine::KeyButtonCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
-	APPLICATION.GetMainWindow()->AddOnScrollCallback(&FEngine::MouseScrollCallback);
 	AddViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
@@ -161,24 +157,6 @@ void FEngine::AddWindowCloseCallback(void(*Func)())
 	APPLICATION.GetMainWindow()->AddOnCloseCallback(Func);
 }
 
-void FEngine::AddKeyCallback(void(*Func)(int, int, int, int))
-{
-	if (Func != nullptr)
-		ClientKeyButtonCallbacks.push_back(Func);
-}
-
-void FEngine::AddMouseButtonCallback(void(*Func)(int, int, int))
-{
-	if (Func != nullptr)
-		ClientMouseButtonCallbacks.push_back(Func);
-}
-
-void FEngine::AddMouseMoveCallback(void(*Func)(double, double))
-{
-	if (Func != nullptr)
-		ClientMouseMoveCallbacks.push_back(Func);
-}
-
 void FEngine::WindowResizeCallback(const int Width, const int Height)
 {
 	for (size_t i = 0; i < ENGINE.ClientWindowResizeCallbacks.size(); i++)
@@ -187,83 +165,6 @@ void FEngine::WindowResizeCallback(const int Width, const int Height)
 			continue;
 
 		ENGINE.ClientWindowResizeCallbacks[i](Width, Height);
-	}
-}
-
-void FEngine::MouseButtonCallback(const int Button, const int Action, const int Mods)
-{
-	for (size_t i = 0; i < ENGINE.ClientMouseButtonCallbacks.size(); i++)
-	{
-		if (ENGINE.ClientMouseButtonCallbacks[i] == nullptr)
-			continue;
-
-		ENGINE.ClientMouseButtonCallbacks[i](Button, Action, Mods);
-	}
-}
-
-void FEngine::MouseMoveCallback(double Xpos, double Ypos)
-{
-	for (size_t i = 0; i < ENGINE.ClientMouseMoveCallbacks.size(); i++)
-	{
-		if (ENGINE.ClientMouseMoveCallbacks[i] == nullptr)
-			continue;
-
-		ENGINE.ClientMouseMoveCallbacks[i](Xpos, Ypos);
-	}
-
-	// FIX ME! Need proper INPUT system.
-	ENGINE.LastFrameMouseX = ENGINE.MouseX;
-	ENGINE.LastFrameMouseY = ENGINE.MouseY;
-
-	// FIX ME! Need proper INPUT system.
-	ENGINE.MouseX = Xpos;
-	ENGINE.MouseY = Ypos;
-}
-
-void FEngine::KeyButtonCallback(const int Key, const int Scancode, const int Action, const int Mods)
-{
-	for (size_t i = 0; i < ENGINE.ClientKeyButtonCallbacks.size(); i++)
-	{
-		if (ENGINE.ClientKeyButtonCallbacks[i] == nullptr)
-			continue;
-		ENGINE.ClientKeyButtonCallbacks[i](Key, Scancode, Action, Mods);
-	}
-
-	// FIX ME! Need proper INPUT system.
-	if (Key == GLFW_KEY_A && Action == GLFW_PRESS)
-	{
-		ENGINE.bAKeyPressed = true;
-	}
-	else if (Key == GLFW_KEY_A && Action == GLFW_RELEASE)
-	{
-		ENGINE.bAKeyPressed = false;
-	}
-
-	if (Key == GLFW_KEY_W && Action == GLFW_PRESS)
-	{
-		ENGINE.bWKeyPressed = true;
-	}
-	else if (Key == GLFW_KEY_W && Action == GLFW_RELEASE)
-	{
-		ENGINE.bWKeyPressed = false;
-	}
-
-	if (Key == GLFW_KEY_S && Action == GLFW_PRESS)
-	{
-		ENGINE.bSKeyPressed = true;
-	}
-	else if (Key == GLFW_KEY_S && Action == GLFW_RELEASE)
-	{
-		ENGINE.bSKeyPressed = false;
-	}
-
-	if (Key == GLFW_KEY_D && Action == GLFW_PRESS)
-	{
-		ENGINE.bDKeyPressed = true;
-	}
-	else if (Key == GLFW_KEY_D && Action == GLFW_RELEASE)
-	{
-		ENGINE.bDKeyPressed = false;
 	}
 }
 
@@ -321,21 +222,6 @@ void FEngine::AddDropCallback(void(*Func)(int, const char**))
 {
 	if (Func != nullptr)
 		ClientDropCallbacks.push_back(Func);
-}
-
-void FEngine::MouseScrollCallback(const double Xoffset, const double Yoffset)
-{
-	// FIX ME! Need proper INPUT system.
-	ENGINE.MouseScrollXOffset = Xoffset;
-	ENGINE.MouseScrollYOffset = Yoffset;
-
-	for (size_t i = 0; i < ENGINE.ClientMouseScrollCallbacks.size(); i++)
-	{
-		if (ENGINE.ClientMouseScrollCallbacks[i] == nullptr)
-			continue;
-
-		ENGINE.ClientMouseScrollCallbacks[i](Xoffset, Yoffset);
-	}
 }
 
 bool FEngine::IsSimplifiedRenderingModeActive()
@@ -405,37 +291,9 @@ bool FEngine::IsVREnabled()
 	return bVRActive;
 }
 
-void FEngine::SetMousePosition(int X, int Y, bool bScreenPosition)
-{
-	if (bScreenPosition)
-	{
-		glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X - APPLICATION.GetMainWindow()->GetXPosition(), Y - APPLICATION.GetMainWindow()->GetYPosition());
-		X -= APPLICATION.GetMainWindow()->GetXPosition();
-		Y -= APPLICATION.GetMainWindow()->GetYPosition();
-	}
-	else
-	{
-		glfwSetCursorPos(APPLICATION.GetMainWindow()->GetGlfwWindow(), X, Y);
-	}
-
-	// FIX ME! Need proper INPUT system.
-	ENGINE.MouseX = X;
-	ENGINE.MouseY = Y;
-}
-
 void FEngine::AddOnAfterUpdateCallback(std::function<void()> Callback)
 {
 	OnAfterUpdateCallbacks.push_back(Callback);
-}
-
-double FEngine::GetMouseX()
-{
-	return MouseX;
-}
-
-double FEngine::GetMouseY()
-{
-	return MouseY;
 }
 
 std::string FEngine::AddViewport(ImGuiWindow* ImGuiWindowPointer)

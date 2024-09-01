@@ -21,7 +21,9 @@ namespace FocalEngine
 		FE_TERRAIN_LAYER = 9,
 		FE_PREFAB = 10,
 		FE_SCENE_GRAPH_NODE = 11,
-		FE_SCENE = 12
+		FE_SCENE = 12,
+		FE_ASSET_PACKAGE = 13,
+		FE_NATIVE_SCRIPT_MODULE = 14
 	};
 
 	struct FEObjectLoadedData
@@ -114,6 +116,14 @@ namespace FocalEngine
 			{
 				return "FE_SCENE";
 			}
+			case FocalEngine::FE_ASSET_PACKAGE:
+			{
+				return "FE_ASSET_PACKAGE";
+			}
+			case FocalEngine::FE_NATIVE_SCRIPT_MODULE:
+			{
+				return "FE_NATIVE_SCRIPT_MODULE";
+			}
 			default:
 				break;
 		}
@@ -140,6 +150,7 @@ namespace FocalEngine
 		friend class FESceneManager;
 		friend class FETerrainSystem;
 		friend class FESkyDomeSystem;
+		friend class FENativeScriptSystem;
 	public:
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();

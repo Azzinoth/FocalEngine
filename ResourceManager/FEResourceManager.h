@@ -4,6 +4,9 @@
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
+#include "../FileSystem/FEAssetPackage.h"
+
+#include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 #include "Config.h"
 
 #define ENGINE_RESOURCE_TAG "ENGINE_PRIVATE_RESOURCE"
@@ -19,6 +22,7 @@ namespace FocalEngine
 		friend class FESkyDomeSystem;
 		friend class FEVirtualUIContext;
 		friend class FEVirtualUISystem;
+		friend class FENativeScriptSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -108,11 +112,18 @@ namespace FocalEngine
 		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "");
 		void DeletePrefab(const FEPrefab* Prefab);
 
+		std::vector<std::string> GetNativeScriptModuleList();
+		std::vector<std::string> GetEnginePrivateNativeScriptModuleList();
+		FENativeScriptModule* GetNativeScriptModule(std::string ID);
+		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
+		FENativeScriptModule* CreateNativeScriptModule(std::string DLLFilePath, std::string PDBFilePath = "", std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
+		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);
+		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName);
+
 		void Clear();
 		void LoadStandardMeshes();
 		void LoadStandardMaterial();
 		void LoadStandardGameModels();
-		void LoadStandardPrefabs();
 
 		void ReSaveEnginePrivateTextures();
 		void ReSaveStandardMeshes();
@@ -137,6 +148,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEMesh*> Meshes;
 		std::unordered_map<std::string, FEGameModel*> GameModels;
 		std::unordered_map<std::string, FEPrefab*> Prefabs;
+		std::unordered_map<std::string, FENativeScriptModule*> NativeScriptModules;
 
 		FETexture* CreateTexture(std::string Name = "", std::string ForceObjectID = "");
 		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
@@ -165,6 +177,8 @@ namespace FocalEngine
 
 		template<typename T>
 		std::vector<std::string> GetResourceIDListByTag(const std::unordered_map<std::string, T*>& Resources, const std::string& Tag);
+
+		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
 	};
 #include "FEResourceManager.inl"
 

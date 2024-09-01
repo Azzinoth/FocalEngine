@@ -802,7 +802,6 @@ FEResourceManager::FEResourceManager()
 {
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
 	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
-	//MakeTextureStandard(NoTexture);
 	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
 	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
@@ -815,7 +814,21 @@ FEResourceManager::FEResourceManager()
 	LoadStandardMaterial();
 	LoadStandardMeshes();
 	LoadStandardGameModels();
-	LoadStandardPrefabs();
+	
+	// FIX ME! Temporary code.
+	/*FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__08_28_2024/OnlyCamera/UserScriptTest.dll", "D:/Script__08_28_2024/OnlyCamera/UserScriptTest.pdb", {}, "Camera scripts", "2B7956623302254F620A675F");
+	NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
+	SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");*/
+
+	// Load all standard script modules.
+	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
+	for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
+	{
+		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 15, 15) == ".fescriptmodule")
+		{
+			LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]).c_str());
+		}
+	}
 }
 
 FEResourceManager::~FEResourceManager()
@@ -2509,7 +2522,7 @@ FETexture* FEResourceManager::ImportTexture(const char* FileName)
 		return Result;
 	}
 	
-	if (!FILE_SYSTEM.CheckFile(FileName))
+	if (!FILE_SYSTEM.DoesFileExist(FileName))
 	{
 		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::ImportTexture", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
@@ -2659,13 +2672,6 @@ void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
 	delete Prefab;
 }
 
-void FEResourceManager::LoadStandardPrefabs()
-{
-	//FEPrefab* NewPrefab = new FEPrefab(GetGameModel("67251E393508013ZV579315F"/*"standardGameModel"*/), "standardPrefab");
-	//NewPrefab->SetID("4575527C773848040760656F");
-	//NewPrefab->SetTag(ENGINE_RESOURCE_TAG);
-}
-
 void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize)
 {
 	if (Mesh == nullptr)
@@ -2744,4 +2750,231 @@ void FEResourceManager::RemoveTagThatWillPreventDeletion(std::string Tag)
 			return;
 		}
 	}
+}
+
+std::vector<std::string> FEResourceManager::GetNativeScriptModuleList()
+{
+	FE_MAP_TO_STR_VECTOR(NativeScriptModules);
+}
+
+std::vector<std::string> FEResourceManager::GetEnginePrivateNativeScriptModuleList()
+{
+	return GetResourceIDListByTag(NativeScriptModules, ENGINE_RESOURCE_TAG);
+}
+
+FENativeScriptModule* FEResourceManager::GetNativeScriptModule(std::string ID)
+{
+	if (NativeScriptModules.find(ID) == NativeScriptModules.end())
+		return nullptr;
+
+	return NativeScriptModules[ID];
+}
+
+std::vector<FENativeScriptModule*> FEResourceManager::GetNativeScriptModuleByName(std::string Name)
+{
+	std::vector<FENativeScriptModule*> Result;
+
+	auto NativeScriptModulesIterator = NativeScriptModules.begin();
+	while (NativeScriptModulesIterator != NativeScriptModules.end())
+	{
+		if (NativeScriptModulesIterator->second->GetName() == Name)
+		{
+			Result.push_back(NativeScriptModulesIterator->second);
+		}
+
+		NativeScriptModulesIterator++;
+	}
+
+	return Result;
+}
+
+FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DLLFilePath, std::string PDBFilePath, std::vector<std::string> ScriptFiles, std::string Name, std::string ForceObjectID)
+{
+	if (DLLFilePath.empty())
+	{
+		LOG.Add("call of FEResourceManager::CreateNativeScriptModule with empty DLLFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (Name.empty())
+		Name = "Unnamed NativeScriptModule";
+
+	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DLLFilePath, PDBFilePath, ScriptFiles);
+	if (!ForceObjectID.empty())
+	{
+		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
+		NativeScriptModules[ForceObjectID]->SetID(ForceObjectID);
+	}
+	else
+	{
+		NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
+	}
+
+	NativeScriptModules[NewNativeScriptModule->ID]->SetName(Name);
+	return NativeScriptModules[NewNativeScriptModule->ID];
+}
+
+FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string FileName)
+{
+	if (FileName.empty())
+	{
+		LOG.Add("call of FEResourceManager::LoadFENativeScriptModule with empty FileName", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (!FILE_SYSTEM.DoesFileExist(FileName))
+	{
+		LOG.Add("can't locate file: " + FileName + " in FEResourceManager::LoadFENativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::fstream File;
+	File.open(FileName, std::ios::in | std::ios::binary);
+	if (!File.is_open())
+	{
+		LOG.Add("can't open file: " + FileName + " in FEResourceManager::LoadFENativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	float Version;
+	File.read((char*)&Version, sizeof(float));
+	if (Version != FE_NATIVE_SCRIPT_MODULE_VERSION)
+	{
+		LOG.Add("version mismatch in FEResourceManager::LoadFENativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
+		File.close();
+		return nullptr;
+	}
+
+	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule();
+	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
+	NewNativeScriptModule->SetID(ObjectData.ID);
+	NewNativeScriptModule->SetTag(ObjectData.Tag);
+	NewNativeScriptModule->SetName(ObjectData.Name);
+	NewNativeScriptModule->SetType(ObjectData.Type);
+
+	// Load DLLAssetID.
+	size_t DllAssetIDSize = 0;
+	File.read((char*)&DllAssetIDSize, sizeof(size_t));
+	char* DllAssetID = new char[DllAssetIDSize];
+	File.read(DllAssetID, DllAssetIDSize);
+	NewNativeScriptModule->DLLAssetID = std::string(DllAssetID, DllAssetIDSize);
+	delete[] DllAssetID;
+
+	// Load PDBAssetID.
+	size_t PdbAssetIDSize = 0;
+	File.read((char*)&PdbAssetIDSize, sizeof(size_t));
+	char* PdbAssetID = new char[PdbAssetIDSize];
+	File.read(PdbAssetID, PdbAssetIDSize);
+	NewNativeScriptModule->PDBAssetID = std::string(PdbAssetID, PdbAssetIDSize);
+	delete[] PdbAssetID;
+
+	// Load ScriptAssetIDs.
+	size_t ScriptAssetIDsSize = 0;
+	File.read((char*)&ScriptAssetIDsSize, sizeof(size_t));
+	for (size_t i = 0; i < ScriptAssetIDsSize; i++)
+	{
+		size_t ScriptAssetIDSize = 0;
+		File.read((char*)&ScriptAssetIDSize, sizeof(size_t));
+		char* ScriptAssetID = new char[ScriptAssetIDSize];
+		File.read(ScriptAssetID, ScriptAssetIDSize);
+		NewNativeScriptModule->ScriptAssetIDs.push_back(std::string(ScriptAssetID, ScriptAssetIDSize));
+		delete[] ScriptAssetID;
+	}
+
+	// Load ScriptAssetPackage.
+	size_t PackageFullCopySize = 0;
+	File.read((char*)&PackageFullCopySize, sizeof(size_t));
+	unsigned char* PackageFullCopy = new unsigned char[PackageFullCopySize];
+	File.read((char*)PackageFullCopy, PackageFullCopySize);
+	NewNativeScriptModule->ScriptAssetPackage = new FEAssetPackage();
+	NewNativeScriptModule->ScriptAssetPackage->LoadFromMemory(PackageFullCopy, PackageFullCopySize);
+	delete[] PackageFullCopy;
+
+	File.close();
+
+	NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
+	return NativeScriptModules[NewNativeScriptModule->ID];
+}
+
+void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName)
+{
+	if (NativeScriptModule == nullptr)
+	{
+		LOG.Add("call of FEResourceManager::SaveFENativeScriptModule with nullptr NativeScriptModule", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return;
+	}
+
+	if (FileName.empty())
+	{
+		LOG.Add("call of FEResourceManager::SaveFENativeScriptModule with empty FileName", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return;
+	}
+
+	std::fstream File;
+	File.open(FileName, std::ios::out | std::ios::binary);
+	if (!File.is_open())
+	{
+		LOG.Add("can't open file: " + FileName + " in FEResourceManager::SaveFENativeScriptModule", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return;
+	}
+
+	// Version of FENativeScriptModule file.
+	float Version = FE_NATIVE_SCRIPT_MODULE_VERSION;
+	File.write((char*)&Version, sizeof(float));
+
+	OBJECT_MANAGER.SaveFEObjectPart(File, NativeScriptModule);
+
+	// Save DLLAssetID.
+	size_t DllAssetIDSize = NativeScriptModule->DLLAssetID.size();
+	File.write((char*)&DllAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->DLLAssetID.c_str(), DllAssetIDSize);
+
+	// Save PDBAssetID.
+	size_t PdbAssetIDSize = NativeScriptModule->PDBAssetID.size();
+	File.write((char*)&PdbAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->PDBAssetID.c_str(), PdbAssetIDSize);
+
+	// Save ScriptAssetIDs.
+	size_t ScriptAssetIDsSize = NativeScriptModule->ScriptAssetIDs.size();
+	File.write((char*)&ScriptAssetIDsSize, sizeof(size_t));
+	for (size_t i = 0; i < NativeScriptModule->ScriptAssetIDs.size(); i++)
+	{
+		size_t ScriptAssetIDSize = NativeScriptModule->ScriptAssetIDs[i].size();
+		File.write((char*)&ScriptAssetIDSize, sizeof(size_t));
+		File.write(NativeScriptModule->ScriptAssetIDs[i].c_str(), ScriptAssetIDSize);
+	}
+
+	// Save ScriptAssetPackage.
+	size_t PackageFullCopySize = 0;
+	unsigned char* PackageFullCopy = NativeScriptModule->ScriptAssetPackage->ExportAsRawData(PackageFullCopySize);
+	File.write((char*)&PackageFullCopySize, sizeof(size_t));
+	File.write((char*)PackageFullCopy, PackageFullCopySize);
+
+	File.close();
+}
+
+bool FEResourceManager::DeleteNativeScriptModuleInternal(FENativeScriptModule* Module)
+{
+	if (Module == nullptr)
+	{
+		LOG.Add("call of FEResourceManager::DeleteNativeScriptModuleInternal with nullptr Module", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (Module->GetTag() == ENGINE_RESOURCE_TAG)
+	{
+		LOG.Add("can't delete Engine Private NativeScriptModule", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (NativeScriptModules.find(Module->GetObjectID()) == NativeScriptModules.end())
+	{
+		LOG.Add("can't find Module in NativeScriptModules in FEResourceManager::DeleteNativeScriptModuleInternal", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return false;
+	}
+
+	NativeScriptModules.erase(Module->GetObjectID());
+	delete Module;
+
+	return true;
 }

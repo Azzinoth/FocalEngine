@@ -19,9 +19,19 @@ glm::mat4 FECameraComponent::GetViewMatrix() const
 	return ViewMatrix;
 }
 
+void FECameraComponent::SetViewMatrix(const glm::mat4 NewViewMatrix)
+{
+	ViewMatrix = NewViewMatrix;
+}
+
 glm::mat4 FECameraComponent::GetProjectionMatrix() const
 {
 	return ProjectionMatrix;
+}
+
+void FECameraComponent::SetProjectionMatrix(const glm::mat4 NewProjectionMatrix)
+{
+	ProjectionMatrix = NewProjectionMatrix;
 }
 
 glm::vec3 FECameraComponent::GetUp() const
@@ -47,11 +57,6 @@ bool FECameraComponent::IsActive() const
 void FECameraComponent::SetActive(const bool Active)
 {
 	bIsActive = Active;
-}
-
-bool FECameraComponent::IsInputActive() const
-{
-	return bIsInputGrabingActive;
 }
 
 float FECameraComponent::GetFOV() const
@@ -122,17 +127,6 @@ float FECameraComponent::GetExposure() const
 void FECameraComponent::SetExposure(const float Exposure)
 {
 	this->Exposure = Exposure;
-}
-
-// FIX ME! Should not be here.
-float FECameraComponent::GetMovementSpeed() const
-{
-	return MovementSpeed;
-}
-
-void FECameraComponent::SetMovementSpeed(const float MovementSpeed)
-{
-	this->MovementSpeed = MovementSpeed;
 }
 
 void FECameraComponent::UpdateFrustumPlanes()
@@ -248,11 +242,6 @@ void FECameraComponent::SetRenderTargetSize(const int Width, const int Height)
 		return;
 
 	SetRenderTargetSizeInternal(Width, Height);
-}
-
-FEViewport* FECameraComponent::GetViewport() const
-{
-	return Viewport;
 }
 
 void FECameraComponent::SetRenderTargetSizeInternal(const int Width, const int Height)
@@ -487,4 +476,9 @@ float FECameraComponent::GetDistanceFogGradient()
 void FECameraComponent::SetDistanceFogGradient(const float NewValue)
 {
 	DistanceFogGradient = NewValue;
+}
+
+const FEViewport* FECameraComponent::GetViewport()
+{
+	return Viewport;
 }

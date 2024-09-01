@@ -13,6 +13,23 @@ FEScene::~FEScene()
 	Clear();
 }
 
+void FEScene::SetFlag(FESceneFlag Flag, bool Value)
+{
+	if (Value)
+		Flags |= Flag;
+	else
+		Flags = static_cast<FESceneFlag>(
+			static_cast<std::underlying_type_t<FESceneFlag>>(Flags) &
+			~static_cast<std::underlying_type_t<FESceneFlag>>(Flag)
+		);
+}
+
+bool FEScene::HasFlag(FESceneFlag Flag) const
+{
+	return (static_cast<std::underlying_type_t<FESceneFlag>>(Flags) &
+			static_cast<std::underlying_type_t<FESceneFlag>>(Flag)) != 0;
+}
+
 FEEntity* FEScene::GetEntity(std::string ID)
 {
 	if (EntityMap.find(ID) == EntityMap.end())
@@ -131,7 +148,7 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		return Result;
 	}
 
-	if (!FILE_SYSTEM.CheckFile(FileName))
+	if (!FILE_SYSTEM.DoesFileExist(FileName))
 	{
 		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEScene::ImportAsset", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
@@ -164,7 +181,7 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 {
 	std::vector<FEObject*> Result;
-	if (!FILE_SYSTEM.CheckFile(FileName))
+	if (!FILE_SYSTEM.DoesFileExist(FileName))
 	{
 		LOG.Add("call of FEScene::LoadGLTF can't locate file: " + std::string(FileName), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
@@ -192,7 +209,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 			continue;
 		}
 
-		if (!FILE_SYSTEM.CheckFile(FullPath.c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(FullPath.c_str()))
 		{
 			TextureMap[static_cast<int>(TextureMap.size())] = nullptr;
 			continue;

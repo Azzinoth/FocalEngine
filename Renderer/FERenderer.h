@@ -4,6 +4,7 @@
 #define FERENDERER_H
 
 #include "../SubSystems/Scene/Components/Systems/FEComponentSystems.h"
+#include "../SubSystems/FEInput.h"
 
 namespace FocalEngine
 {

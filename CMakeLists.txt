@@ -270,6 +270,8 @@ file(GLOB Scene_Component_Systems_SRC
 file(GLOB Scene_NativeScript_System_SRC
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.h"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.cpp"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.h"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.cpp"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
@@ -296,9 +298,16 @@ file(GLOB Scene_SRC
 
 # *************** SUB_SYSTEM ***************
 
+file(GLOB FileSystem_SubSystems_SRC
+	"SubSystems/FileSystem/FEFileSystem.cpp"
+	"SubSystems/FileSystem/FEFileSystem.h"
+	"SubSystems/FileSystem/FEAssetPackage.cpp"
+	"SubSystems/FileSystem/FEAssetPackage.h"
+)
+
 file(GLOB SubSystems_SRC
-	"SubSystems/FEFileSystem.cpp"
-	"SubSystems/FEFileSystem.h"
+	"SubSystems/FEInput.cpp"
+	"SubSystems/FEInput.h"
 )
 
 file(GLOB OpenXR_SRC
@@ -367,6 +376,7 @@ list(APPEND ALL_SOURCE_FILES
 			${ResourceManager_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
+			${FileSystem_SubSystems_SRC}
 			${Scene_SRC}
 			${Scene_Components_SRC}
 			${Scene_Component_Systems_SRC}
@@ -516,6 +526,7 @@ source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
+source_group("Source Files/SubSystems/FileSystem" FILES ${FileSystem_SubSystems_SRC})
 source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
 source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
 source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})

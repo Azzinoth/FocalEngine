@@ -3,6 +3,7 @@
 
 namespace FocalEngine
 {
+	// FIX ME! Should not be here.
 	enum FEViewportType
 	{
 		FE_VIEWPORT_NULL = 0,
@@ -12,6 +13,7 @@ namespace FocalEngine
 		FE_VIEWPORT_IMGUI_WINDOW = 4
 	};
 
+	// FIX ME! Should not be here.
 	class FEViewport
 	{
 		friend class FERenderer;
@@ -74,7 +76,9 @@ namespace FocalEngine
 		bool IsMainCamera() const;
 
 		glm::mat4 GetViewMatrix() const;
+		void SetViewMatrix(const glm::mat4 NewViewMatrix);
 		glm::mat4 GetProjectionMatrix() const;
+		void SetProjectionMatrix(const glm::mat4 NewProjectionMatrix);
 
 		glm::vec3 GetUp() const;
 		glm::vec3 GetForward() const;
@@ -82,11 +86,6 @@ namespace FocalEngine
 
 		bool IsActive() const;
 		void SetActive(const bool Active);
-
-		// FIX ME! Should not be here.
-		bool IsInputActive() const;
-
-		FEViewport* GetViewport() const;
 
 		glm::vec4 GetClearColor() const;
 		void SetClearColor(glm::vec4 NewClearColor);
@@ -108,14 +107,6 @@ namespace FocalEngine
 
 		float GetExposure() const;
 		void SetExposure(const float Exposure);
-
-		// FIX ME! Should not be here.
-		float GetMovementSpeed() const;
-		void SetMovementSpeed(const float MovementSpeed);
-
-		//FIX ME! It should not be here.
-		float CurrentMouseXAngle = 0.0f;
-		float CurrentMouseYAngle = 0.0f;
 
 		void UpdateFrustumPlanes();
 		std::vector<std::vector<float>> GetFrustumPlanes();
@@ -194,18 +185,10 @@ namespace FocalEngine
 		float GetDistanceFogGradient();
 		void SetDistanceFogGradient(const float NewValue);
 
-		// FIX ME! Should not be here.
-		int Type = 0;
-		bool bIsInputGrabingActive = false;
-		bool bIsInputReadingActive = false;
-
-		// FIX ME! Should not be here.
-		double DistanceToModel = 10.0;
+		const FEViewport* GetViewport();
 	private:
 		bool bIsActive = false;
 		bool bIsMainCamera = false;
-		// FIX ME! It should be either free or bound to a specific window(canvas).
-		//bool bUseDefaultRenderTargetSize = true;
 
 		FEViewport* Viewport = nullptr;
 
@@ -213,10 +196,6 @@ namespace FocalEngine
 
 		int RenderTargetWidth = 0;
 		int RenderTargetHeight = 0;
-
-		// FIX ME! Should not be here.
-		int RenderTargetCenterX = 0;
-		int RenderTargetCenterY = 0;
 
 		float FOV = 50.68f;
 		float NearPlane = 0.01f;
@@ -226,24 +205,10 @@ namespace FocalEngine
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
 
-		// FIX ME! Should not be here.
-		float MovementSpeed = 10.0f;
-
 		glm::mat4 ViewMatrix;
 		glm::mat4 ProjectionMatrix;
-
-		int CorrectionToSensitivity = 2;
-
 		std::vector<std::vector<float>> Frustum;
 
-		// FIX ME! Should not be here.
-		int LastMouseX = 0;
-		int LastMouseY = 0;
-		// FIX ME! Should not be here.
-		double CurrentPolarAngle = 90.0;
-		double CurrentAzimutAngle = 90.0;
-		glm::vec3 TrackingObjectPosition = glm::vec3(0.0f);
-		
 		void SetRenderTargetSizeInternal(const int Width, const int Height);
 
 		// *********** Anti-Aliasing(FXAA) ***********

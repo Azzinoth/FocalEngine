@@ -912,7 +912,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 		glm::ivec2 ViewportPosition = glm::ivec2(CurrentViewport->GetX(), CurrentViewport->GetY());
 		glm::ivec2 ViewportSize = glm::ivec2(CurrentViewport->GetWidth(), CurrentViewport->GetHeight());
 
-		MouseRay = GEOMETRY.CreateMouseRayToWorld(ENGINE.GetMouseX(), ENGINE.GetMouseY(),
+		MouseRay = GEOMETRY.CreateMouseRayToWorld(INPUT.GetMouseX(), INPUT.GetMouseY(),
 												  CurrentCameraComponent.GetViewMatrix(), CurrentCameraComponent.GetProjectionMatrix(),
 												  ViewportPosition, ViewportSize);
 	}

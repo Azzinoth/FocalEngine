@@ -27,6 +27,7 @@ FESkyDomeSystem::FESkyDomeSystem()
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FESkyDomeComponent>(SkyDomeComponentToJson);
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FESkyDomeComponent>(SkyDomeComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FESkyDomeComponent>(DuplicateSkyDomeComponent);
 }
 
 void FESkyDomeSystem::RegisterOnComponentCallbacks()
@@ -56,6 +57,20 @@ void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneCleari
 
 	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
 		return;
+}
+
+void FESkyDomeSystem::DuplicateSkyDomeComponent(FEEntity* SourceEntity, FEEntity* TargetEntity)
+{
+	if (SourceEntity == nullptr || TargetEntity == nullptr)
+		return;
+
+	if (!SourceEntity->HasComponent<FESkyDomeComponent>())
+		return;
+
+	// TODO: Make sky dome component not depend on game model component
+	// Currently, we will support duplication of sky dome component only if targer entity is in a different scene.
+	if (SourceEntity->GetParentScene() != TargetEntity->GetParentScene())
+		TargetEntity->AddComponent<FESkyDomeComponent>();
 }
 
 FESkyDomeSystem::~FESkyDomeSystem() {};

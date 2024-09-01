@@ -8,5 +8,5 @@ using namespace FocalEngine;
 //}
 //#endif
 
-FECoreScriptManager::FECoreScriptManager() {}
-FECoreScriptManager::~FECoreScriptManager() {}
+//FECoreScriptManager::FECoreScriptManager() {}
+//FECoreScriptManager::~FECoreScriptManager() {}

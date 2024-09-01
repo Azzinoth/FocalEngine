@@ -19,10 +19,6 @@ namespace FocalEngine
 
 		void Update(const double DeltaTime);
 
-		// FIX ME! This is temporary
-		void SetCursorToCenter(FECameraComponent& Camera);
-		glm::dvec3 PolarToCartesian(double PolarAngle, double AzimutAngle, const double R);
-
 		std::unordered_map<std::string, std::vector<FEEntity*>> ViewPortToCameraEntities;
 		static void OnViewportResize(std::string ViewportID);
 
@@ -37,7 +33,6 @@ namespace FocalEngine
 
 		bool SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID);
 
-		void SetIsIndividualInputActive(FEEntity* CameraEntity, const bool Active);
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
 	};
 

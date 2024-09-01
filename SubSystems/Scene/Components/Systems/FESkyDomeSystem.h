@@ -16,6 +16,8 @@ namespace FocalEngine
 		void RegisterOnComponentCallbacks();
 		void OnSceneClear();
 
+		static void DuplicateSkyDomeComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
+
 		static FEGameModel* SkyDomeGameModel;
 		bool bEnabled = true;
 
