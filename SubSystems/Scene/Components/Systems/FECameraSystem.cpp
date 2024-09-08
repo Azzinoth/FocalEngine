@@ -234,7 +234,6 @@ bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string Viewp
 	}
 
 	FEViewport* Viewport = ENGINE.GetViewport(ViewportID);
-
 	if (Viewport == nullptr)
 	{
 		LOG.Add("FECameraSystem::SetCameraViewport Viewport was not found with such ViewportID.", "FE_LOG_ECS", FE_LOG_ERROR);

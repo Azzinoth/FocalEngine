@@ -17,10 +17,15 @@ namespace FocalEngine
 		class FENativeScriptCore* GetCoreInstance() const;
 		const struct FEScriptData* GetScriptData() const;
 
+        std::any GetVariableValueRaw(const std::string& VariableName) const;
+
+        template<typename T>
+		bool GetVariableValue(const std::string& VariableName, T& OutValue) const;
 		bool SetVariableValue(std::string VariableName, std::any Value);
 
-		void OnCreate();
+		void Awake();
 		void OnDestroy();
 		void OnUpdate(double DeltaTime);
 	};
+#include "FENativeScriptComponent.inl"
 }

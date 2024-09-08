@@ -3,12 +3,18 @@
 
 namespace FocalEngine
 {
+	struct FEAlteredScriptVariable
+	{
+		std::string Name;
+		std::any AlteredValue;
+	};
+
 	struct FEModuleScriptInstance
 	{
 		FEScene* Scene;
 		FEEntity* Entity;
-		FENativeScriptComponent* NativeScriptComponent;
 		std::string ScriptName;
+		std::vector<FEAlteredScriptVariable> AlteredVariables;
 	};
 
 	class FOCAL_ENGINE_API FENativeScriptSystem
@@ -35,10 +41,42 @@ namespace FocalEngine
 		void CopyVariableValuesInternal(FENativeScriptComponent* SourceComponent, FENativeScriptComponent* TargetComponent);
 
 		// Returns array of information about components associated with module.
-		std::vector<FEModuleScriptInstance> GetComponentsOfModule(FENativeScriptModule* Module);
+		std::vector<FEModuleScriptInstance> GetModuleScriptInstances(FENativeScriptModule* Module);
+		void GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID);
+
+		// Function will check component for user altered variables, if any found, it will update list of components accordingly.
+		void CheckForAlteredVariables(std::vector<FEModuleScriptInstance>& ModuleScriptInstancesToUpdate);
+		std::any CreateEngineLocalScriptVariableCopy(FEScriptVariableInfo& Info, std::any Value);
+		template<typename T>
+		std::any CreateEngineLocalScriptVariableCopyTemplated(std::any Value);
 
 		// We should delete all script components associated with module.
 		void ComponentsClearOnModuleDeactivate(FENativeScriptModule* Module);
+
+		void RemoveComponentsFromScene(FEScene* Scene, std::string ModuleID);
+
+		template<typename T>
+		T* CastScript(FENativeScriptCore* Core);
+
+		template<typename T>
+		std::any LoadVariableTTypeToJSON(const Json::Value& Root);
+		template<typename T>
+		std::any LoadArrayVariableTTypeToJSON(const Json::Value& Root);
+		void LoadVariableFromJSON(Json::Value& Root, FEScriptVariableInfo& VariableInfo, FENativeScriptCore* Core);
+
+		template<typename T>
+		void SaveVariableTTypeToJSON(Json::Value& Root, std::any AnyValue);
+		template<typename T>
+		void SaveArrayVariableTTypeToJSON(Json::Value& Root, std::any AnyValue);
+		void SaveVariableToJSON(Json::Value& Root, FEScriptVariableInfo& VariableInfo, FENativeScriptCore* Core);
+
+		template<typename T>
+		bool IsEqualTType(std::any FirstScriptVariable, std::any SecondScriptVariable);
+
+		template<typename T>
+		bool IsEqualArrayTType(std::any FirstScriptVariable, std::any SecondScriptVariable);
+
+		bool IsEqualScriptVariable(FEScriptVariableInfo& VariableInfo, std::any FirstScriptVariable,  std::any SecondScriptVariable);
 	public:
 		SINGLETON_PUBLIC_PART(FENativeScriptSystem)
 
@@ -63,13 +101,25 @@ namespace FocalEngine
 		std::vector<std::string> GetActiveModuleIDList();
 		std::vector<std::string> GetActiveModuleScriptNameList(std::string ModuleID);
 
-		bool InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName);
+		bool InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName, std::string DLLID = "");
 
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(FEEntity* Entity);
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(std::string ModuleID, std::string ScriptName);
 		
-		std::string GetDLLMoudleIDByNativeScriptModuleID(std::string ModuleID);
+		std::string GetAssociatedDLLID(std::string ScriptModuleID);
+		std::string GetAssociatedScriptModuleID(std::string DLLModuleID);
+
+		template<typename T>
+		T* CastToScriptClass(FENativeScriptComponent& Component);
+
+		template<typename T>
+		std::vector<FEEntity*> GetEntityListWithScript(FEScene* Scene);
+
+		template<typename T>
+		std::vector<T*> GetScriptList(FEScene* Scene);
 	};
+
+#include "FENativeScriptSystem.inl"
 
 #ifdef FOCAL_ENGINE_SHARED
 	extern "C" __declspec(dllexport) void* GetNativeScriptSystem();

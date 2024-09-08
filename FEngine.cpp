@@ -16,6 +16,12 @@ FEngine::~FEngine()
 {
 }
 
+#include "ResourceManager/Timestamp.h"
+std::string FEngine::GetEngineBuildVersion()
+{
+	return ENGINE_BUILD_TIMESTAMP;
+}
+
 bool FEngine::IsNotTerminated()
 {
 	return APPLICATION.IsNotTerminated();
@@ -106,6 +112,8 @@ void FEngine::Render(const bool InternalCall)
 
 void FEngine::EndFrame(const bool InternalCall)
 {
+	INPUT.EndFrame();
+
 	if (!InternalCall) TIME.BeginTimeStamp();
 	APPLICATION.GetMainWindow()->EndFrame();
 	APPLICATION.EndFrame();

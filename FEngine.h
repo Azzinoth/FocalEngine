@@ -10,6 +10,8 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEngine)
 
+		std::string GetEngineBuildVersion();
+
 		void InitWindow(int Width = 1920 * 2, int Height = 1080 * 2, std::string WindowTitle = "FEWindow");
 
 		void BeginFrame(bool InternalCall = false);
@@ -86,6 +88,6 @@ namespace FocalEngine
 	extern "C" __declspec(dllexport) void* GetEngine();
 	#define ENGINE (*static_cast<FEngine*>(GetEngine()))
 #else
-	#define ENGINE FELOG::GetInstance()
+	#define ENGINE FEngine::GetInstance()
 #endif
 }

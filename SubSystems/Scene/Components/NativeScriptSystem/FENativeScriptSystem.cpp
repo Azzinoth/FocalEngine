@@ -122,9 +122,21 @@ void FENativeScriptSystem::CopyVariableValuesInternal(FENativeScriptComponent* S
 		return;
 	}
 
+	if (SourceComponent->CoreInstance == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::CopyVariableValuesInternal failed to copy variable values from component with null core instance.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return;
+	}
+
 	if (TargetComponent == nullptr)
 	{
 		LOG.Add("FENativeScriptSystem::CopyVariableValuesInternal failed to copy variable values to null component.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return;
+	}
+
+	if (TargetComponent->CoreInstance == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::CopyVariableValuesInternal failed to copy variable values to component with null core instance.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return;
 	}
 
@@ -183,12 +195,50 @@ void FENativeScriptSystem::DuplicateNativeScriptComponent(FEEntity* SourceEntity
 	NATIVE_SCRIPT_SYSTEM.CopyVariableValuesInternal(&SourceComponent, &TargetEntity->GetComponent<FENativeScriptComponent>());
 }
 
+void FENativeScriptSystem::SaveVariableToJSON(Json::Value& Root, FEScriptVariableInfo& VariableInfo, FENativeScriptCore* Core)
+{
+	if (Core == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::SaveVariableToJSON Core is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return;
+	}
+
+	std::string VariableName = VariableInfo.Name;
+	Root[VariableName]["Name"] = VariableName;
+	Root[VariableName]["Type"] = VariableInfo.Type;
+
+	if (VariableInfo.Type.find("vector<") != std::string::npos || VariableInfo.Type.find("std::vector<") != std::string::npos)
+	{
+		if (VariableInfo.Type.find("float>") != std::string::npos) SaveArrayVariableTTypeToJSON<float>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("int>") != std::string::npos) SaveArrayVariableTTypeToJSON<int>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("bool>") != std::string::npos) SaveArrayVariableTTypeToJSON<bool>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("std::string>") != std::string::npos) SaveArrayVariableTTypeToJSON<std::string>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("glm::vec2>") != std::string::npos) SaveArrayVariableTTypeToJSON<glm::vec2>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("glm::vec3>") != std::string::npos) SaveArrayVariableTTypeToJSON<glm::vec3>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type.find("glm::vec4>") != std::string::npos) SaveArrayVariableTTypeToJSON<glm::vec4>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+	}
+	else
+	{
+		if (VariableInfo.Type == "int") SaveVariableTTypeToJSON<int>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "float") SaveVariableTTypeToJSON<float>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "double") SaveVariableTTypeToJSON<double>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "bool") SaveVariableTTypeToJSON<bool>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "glm::vec2") SaveVariableTTypeToJSON<glm::vec2>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "glm::vec3") SaveVariableTTypeToJSON<glm::vec3>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "glm::vec4") SaveVariableTTypeToJSON<glm::vec4>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "glm::quat") SaveVariableTTypeToJSON<glm::quat>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "string") SaveVariableTTypeToJSON<std::string>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+		else if (VariableInfo.Type == "FEPrefab*") SaveVariableTTypeToJSON<FEPrefab*>(Root[VariableName]["Value"], VariableInfo.Getter(Core));
+	}
+}
+
 Json::Value FENativeScriptSystem::NativeScriptComponentToJson(FEEntity* Entity)
 {
 	Json::Value Root;
 	FENativeScriptComponent& NativeScriptComponent = Entity->GetComponent<FENativeScriptComponent>();
 
 	Root["ModuleID"] = NativeScriptComponent.ModuleID;
+	Root["DLLID"] = NATIVE_SCRIPT_SYSTEM.GetAssociatedDLLID(NativeScriptComponent.ModuleID);
 	Root["Name"] = NativeScriptComponent.GetScriptData()->Name;
 
 	Json::Value VariablesRoot;
@@ -197,73 +247,52 @@ Json::Value FENativeScriptSystem::NativeScriptComponentToJson(FEEntity* Entity)
 	auto VariableIterator = Variables.begin();
 	while (VariableIterator != Variables.end())
 	{
-		std::string VariableName = VariableIterator->first;
-		VariablesRoot[VariableName]["Name"] = VariableName;
-		VariablesRoot[VariableName]["Type"] = VariableIterator->second.Type;
-
-		FEScriptVariableInfo VariableInfo = VariableIterator->second;
-		std::any VariableValue = VariableInfo.Getter(NativeScriptComponent.GetCoreInstance());
-
-		if (VariableInfo.Type == "int")
-		{
-			int Value = std::any_cast<int>(VariableValue);
-			VariablesRoot[VariableName]["Value"] = Value;
-		}
-		else if (VariableInfo.Type == "float")
-		{
-			float Value = std::any_cast<float>(VariableValue);
-			VariablesRoot[VariableName]["Value"] = Value;
-		}
-		else if (VariableInfo.Type == "double")
-		{
-			double Value = std::any_cast<double>(VariableValue);
-			VariablesRoot[VariableName]["Value"] = Value;
-		}
-		else if (VariableInfo.Type == "bool")
-		{
-			bool Value = std::any_cast<bool>(VariableValue);
-			VariablesRoot[VariableName]["Value"] = Value;
-		}
-		else if (VariableInfo.Type == "glm::vec2")
-		{
-			glm::vec2 Value = std::any_cast<glm::vec2>(VariableValue);
-			VariablesRoot[VariableName]["Value"]["X"] = Value.x;
-			VariablesRoot[VariableName]["Value"]["Y"] = Value.y;
-		}
-		else if (VariableInfo.Type == "glm::vec3")
-		{
-			glm::vec3 Value = std::any_cast<glm::vec3>(VariableValue);
-			VariablesRoot[VariableName]["Value"]["X"] = Value.x;
-			VariablesRoot[VariableName]["Value"]["Y"] = Value.y;
-			VariablesRoot[VariableName]["Value"]["Z"] = Value.z;
-		}
-		else if (VariableInfo.Type == "glm::vec4")
-		{
-			glm::vec4 Value = std::any_cast<glm::vec4>(VariableValue);
-			VariablesRoot[VariableName]["Value"]["X"] = Value.x;
-			VariablesRoot[VariableName]["Value"]["Y"] = Value.y;
-			VariablesRoot[VariableName]["Value"]["Z"] = Value.z;
-			VariablesRoot[VariableName]["Value"]["W"] = Value.w;
-		}
-		else if (VariableInfo.Type == "glm::quat")
-		{
-			glm::quat Value = std::any_cast<glm::quat>(VariableValue);
-			VariablesRoot[VariableName]["Value"]["X"] = Value.x;
-			VariablesRoot[VariableName]["Value"]["Y"] = Value.y;
-			VariablesRoot[VariableName]["Value"]["Z"] = Value.z;
-			VariablesRoot[VariableName]["Value"]["W"] = Value.w;
-		}
-		else if (VariableInfo.Type == "std::string")
-		{
-			std::string Value = std::any_cast<std::string>(VariableValue);
-			VariablesRoot[VariableName]["Value"] = Value;
-		}
-
+		NATIVE_SCRIPT_SYSTEM.SaveVariableToJSON(VariablesRoot, VariableIterator->second, NativeScriptComponent.GetCoreInstance());
 		VariableIterator++;
 	}
 	Root["Variables"] = VariablesRoot;
 
 	return Root;
+}
+
+void FENativeScriptSystem::LoadVariableFromJSON(Json::Value& Root, FEScriptVariableInfo& VariableInfo, FENativeScriptCore* Core)
+{
+	if (Core == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::LoadVariableFromJSON Core is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return;
+	}
+
+	std::string VariableName = VariableInfo.Name;
+	if (VariableInfo.Type != Root["Type"].asString())
+	{
+		LOG.Add("FENativeScriptSystem::LoadVariableFromJSON failed to load variable with name: " + VariableName + " because types are different.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return;
+	}
+
+	if (VariableInfo.Type.find("vector<") != std::string::npos || VariableInfo.Type.find("std::vector<") != std::string::npos)
+	{
+		if (VariableInfo.Type.find("float>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<float>(Root["Value"]));
+		else if (VariableInfo.Type.find("int>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<int>(Root["Value"]));
+		else if (VariableInfo.Type.find("bool>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<bool>(Root["Value"]));
+		else if (VariableInfo.Type.find("std::string>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<std::string>(Root["Value"]));
+		else if (VariableInfo.Type.find("glm::vec2>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<glm::vec2>(Root["Value"]));
+		else if (VariableInfo.Type.find("glm::vec3>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<glm::vec3>(Root["Value"]));
+		else if (VariableInfo.Type.find("glm::vec4>") != std::string::npos) VariableInfo.Setter(Core, LoadArrayVariableTTypeToJSON<glm::vec4>(Root["Value"]));
+	}
+	else
+	{
+		if (VariableInfo.Type == "int") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<int>(Root["Value"]));
+		else if (VariableInfo.Type == "float") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<float>(Root["Value"]));
+		else if (VariableInfo.Type == "double") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<double>(Root["Value"]));
+		else if (VariableInfo.Type == "bool") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<bool>(Root["Value"]));
+		else if (VariableInfo.Type == "glm::vec2") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<glm::vec2>(Root["Value"]));
+		else if (VariableInfo.Type == "glm::vec3") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<glm::vec3>(Root["Value"]));
+		else if (VariableInfo.Type == "glm::vec4") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<glm::vec4>(Root["Value"]));
+		else if (VariableInfo.Type == "glm::quat") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<glm::quat>(Root["Value"]));
+		else if (VariableInfo.Type == "string") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<std::string>(Root["Value"]));
+		else if (VariableInfo.Type == "FEPrefab*") VariableInfo.Setter(Core, LoadVariableTTypeToJSON<FEPrefab*>(Root["Value"]));
+	}
 }
 
 void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json::Value Root)
@@ -289,7 +318,11 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 	}
 
 	Entity->AddComponent<FENativeScriptComponent>();
-	if (!NATIVE_SCRIPT_SYSTEM.InitializeScriptComponent(Entity, ModuleID, ScriptName))
+	std::string DLLID = "";
+	if (Root.isMember("DLLID"))
+		DLLID = Root["DLLID"].asString();
+
+	if (!NATIVE_SCRIPT_SYSTEM.InitializeScriptComponent(Entity, ModuleID, ScriptName, DLLID))
 	{
 		LOG.Add("FENativeScriptSystem::NativeScriptComponentFromJson failed to initialize script component.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		Entity->RemoveComponent<FENativeScriptComponent>();
@@ -303,81 +336,14 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 	while (VariableIterator != Variables.end())
 	{
 		std::string VariableName = VariableIterator->first;
-		FEScriptVariableInfo VariableInfo = VariableIterator->second;
-
 		Json::Value VariableRoot = Root["Variables"][VariableName];
-
 		if (VariableRoot.isNull())
 		{
 			VariableIterator++;
 			continue;
 		}
 
-		if (VariableInfo.Type != VariableRoot["Type"].asString())
-		{
-			VariableIterator++;
-			continue;
-		}
-
-		if (VariableInfo.Type == "int")
-		{
-			int Value = VariableRoot["Value"].asInt();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "float")
-		{
-			float Value = VariableRoot["Value"].asFloat();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "double")
-		{
-			double Value = VariableRoot["Value"].asDouble();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "bool")
-		{
-			bool Value = VariableRoot["Value"].asBool();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "glm::vec2")
-		{
-			glm::vec2 Value;
-			Value.x = VariableRoot["Value"]["X"].asFloat();
-			Value.y = VariableRoot["Value"]["Y"].asFloat();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "glm::vec3")
-		{
-			glm::vec3 Value;
-			Value.x = VariableRoot["Value"]["X"].asFloat();
-			Value.y = VariableRoot["Value"]["Y"].asFloat();
-			Value.z = VariableRoot["Value"]["Z"].asFloat();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "glm::vec4")
-		{
-			glm::vec4 Value;
-			Value.x = VariableRoot["Value"]["X"].asFloat();
-			Value.y = VariableRoot["Value"]["Y"].asFloat();
-			Value.z = VariableRoot["Value"]["Z"].asFloat();
-			Value.w = VariableRoot["Value"]["W"].asFloat();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "glm::quat")
-		{
-			glm::quat Value;
-			Value.x = VariableRoot["Value"]["X"].asFloat();
-			Value.y = VariableRoot["Value"]["Y"].asFloat();
-			Value.z = VariableRoot["Value"]["Z"].asFloat();
-			Value.w = VariableRoot["Value"]["W"].asFloat();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-		else if (VariableInfo.Type == "std::string")
-		{
-			std::string Value = VariableRoot["Value"].asString();
-			VariableInfo.Setter(NativeScriptComponent.GetCoreInstance(), Value);
-		}
-
+		NATIVE_SCRIPT_SYSTEM.LoadVariableFromJSON(VariableRoot, VariableIterator->second, NativeScriptComponent.GetCoreInstance());
 		VariableIterator++;
 	}
 }
@@ -395,11 +361,28 @@ bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativ
 		LOG.Add("FENativeScriptSystem::InitializeComponentInternal failed to add script component to entity with empty ModuleID.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
+
+	FEScene* Scene = Entity->GetParentScene();
+	if (Scene == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::InitializeComponentInternal failed to add script component to entity without parent scene.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
 	
 	NativeScriptComponent.CoreInstance = ScriptData.ConstructorFunction();
 	NativeScriptComponent.ModuleID = ActiveModuleID;
 	NativeScriptComponent.CoreInstance->ParentEntity = Entity;
 	NativeScriptComponent.ScriptData = &ScriptData;
+
+	if (Scene->HasFlag(FESceneFlag::EditorMode))
+	{
+		if (ScriptData.bRunInEditor)
+			NativeScriptComponent.Awake();
+	}
+	else if (Scene->HasFlag(FESceneFlag::GameMode))
+	{
+		NativeScriptComponent.Awake();
+	}
 
 	return true;
 }
@@ -454,7 +437,7 @@ std::vector<std::string> FENativeScriptSystem::GetActiveModuleIDList()
 	return Result;
 }
 
-bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName)
+bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName, std::string DLLID)
 {
 	if (Entity == nullptr)
 	{
@@ -478,7 +461,27 @@ bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::stri
 	if (ActiveModule == nullptr)
 	{
 		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with ID: " + ActiveModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
+
+		// If we can't find module ID, we will try to retrieve module by DLL module ID.
+		LOG.Add("FENativeScriptSystem::InitializeScriptComponent trying to find module with same DLL ID.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		if (DLLID.empty())
+		{
+			LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with same DLL ID because DLLID is empty.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+
+		ActiveModule = RESOURCE_MANAGER.GetNativeScriptModuleByDLLModuleID(DLLID);
+		if (ActiveModule == nullptr)
+		{
+			LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find module with DLL ID: " + DLLID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+		else
+		{
+			// Because we found module by DLL ID, we should update ActiveModuleID.
+			ActiveModuleID = ActiveModule->GetObjectID();
+			LOG.Add("FENativeScriptSystem::InitializeScriptComponent found module with DLL ID: " + DLLID, "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		}
 	}
 
 	if (ActiveModule->Registry.find(ScriptName) == ActiveModule->Registry.end())
@@ -570,6 +573,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(std::string ModuleID)
 	return ActivateNativeScriptModule(Module);
 }
 
+#include "../../ResourceManager/Timestamp.h"
 bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Module)
 {
 	if (Module == nullptr)
@@ -631,13 +635,54 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (!GetModuleID)
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to get GetModuleID function from DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return false;
+	}
+
+	typedef bool (*IsCompiledInDebugMode_Function)(void);
+	IsCompiledInDebugMode_Function IsCompiledInDebugMode = (IsCompiledInDebugMode_Function)GetProcAddress(DLLHandle, "IsCompiledInDebugMode");
+	if (IsCompiledInDebugMode)
+	{
+		bool DLLInDebug = IsCompiledInDebugMode();
+
+#ifdef _DEBUG
+		if (!DLLInDebug)
+		{
+			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled in release mode, while engine is in debug mode.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			FreeLibrary(DLLHandle);
+			return false;
+		}
+#else
+		if (DLLInDebug)
+		{
+			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled in debug mode, while engine is in release mode.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			FreeLibrary(DLLHandle);
+			return false;
+		}
+#endif
+	}
+
+	typedef unsigned long long (*Get_EngineHeaders_BuildVersion_Function)(void);
+	Get_EngineHeaders_BuildVersion_Function GetEngineHeadersBuildVersion = (Get_EngineHeaders_BuildVersion_Function)GetProcAddress(DLLHandle, "GetEngineHeadersBuildVersion");
+	if (GetEngineHeadersBuildVersion)
+	{
+		unsigned long long EngineHeadersBuildVersion = GetEngineHeadersBuildVersion();
+		unsigned long long EngineBuildVersion = std::stoull(ENGINE_BUILD_TIMESTAMP);
+		if (EngineHeadersBuildVersion != EngineBuildVersion)
+		{
+			// Currently we will just log this error, but in the future we should handle this more gracefully.
+			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule is loading DLL with path: " + DLLPath + " that was compiled with different engine headers version, that could lead to crashes.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+			//LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled with different engine headers version.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			//FreeLibrary(DLLHandle);
+			//return false;
+		}
 	}
 
 	std::string DLLModuleID = GetModuleID();
 	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to get proper DLLModuleID from DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return false;
 	}
 
@@ -646,6 +691,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (!GetScriptRegistry)
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to get GetScriptRegistry function from DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return false;
 	}
 
@@ -653,6 +699,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (!RawDLLRegistry)
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to get ScriptRegistry from DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return false;
 	}
 
@@ -747,6 +794,21 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 	return true;
 }
 
+void FENativeScriptSystem::RemoveComponentsFromScene(FEScene* Scene, std::string ModuleID)
+{
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
+
+	for (size_t i = 0; i < Entities.size(); i++)
+	{
+		FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
+		if (NativeScriptComponent.ModuleID == ModuleID)
+		{
+			NativeScriptComponent.OnDestroy();
+			Entities[i]->RemoveComponent<FENativeScriptComponent>();
+		}
+	}
+}
+
 void FENativeScriptSystem::ComponentsClearOnModuleDeactivate(FENativeScriptModule* Module)
 {
 	if (Module == nullptr)
@@ -757,51 +819,78 @@ void FENativeScriptSystem::ComponentsClearOnModuleDeactivate(FENativeScriptModul
 
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
-	{
-		std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
+		RemoveComponentsFromScene(Scene, Module->GetObjectID());
 
-		for (size_t i = 0; i < Entities.size(); i++)
+	// Besides active scenes, we should also check prefab internal scenes.
+	
+	// TO DO: That is interesting way of handling prefabs scenes, but I am not sure if it is the best way.
+	//std::vector<FEScene*> PrefabInternalScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::PrefabInternal);
+
+	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+	for (size_t i = 0; i < PrefabIDList.size(); i++)
+	{
+		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
+		FEScene* PrefabInternalScene = CurrentPrefab->GetScene();
+
+		if (PrefabInternalScene == nullptr)
+			continue;
+
+		RemoveComponentsFromScene(PrefabInternalScene, Module->GetObjectID());
+	}
+}
+
+void FENativeScriptSystem::GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID)
+{
+	if (Scene == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::GetModuleScriptInstancesFromScene failed to get components of null scene.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return;
+	}
+
+	std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
+
+	for (size_t i = 0; i < Entities.size(); i++)
+	{
+		FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
+		if (NativeScriptComponent.ModuleID == ModuleID)
 		{
-			FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
-			if (NativeScriptComponent.ModuleID == Module->GetObjectID())
-			{
-				NativeScriptComponent.OnDestroy();
-				Entities[i]->RemoveComponent<FENativeScriptComponent>();
-			}
+			FEModuleScriptInstance Instance;
+			Instance.Scene = Scene;
+			Instance.Entity = Entities[i];
+			//Instance.NativeScriptComponent = &NativeScriptComponent;
+			Instance.ScriptName = NativeScriptComponent.GetScriptData()->Name;
+
+			Result.push_back(Instance);
 		}
 	}
 }
 
 // Returns array of information about components associated with module.
-std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetComponentsOfModule(FENativeScriptModule* Module)
+std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetModuleScriptInstances(FENativeScriptModule* Module)
 {
 	std::vector<FEModuleScriptInstance> Result;
 
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetComponentsOfModule failed to get components of null module.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetModuleScriptInstances failed to get components of null module.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return Result;
 	}
 
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
+		GetModuleScriptInstancesFromScene(Result, Scene, Module->GetObjectID());
+
+	// Besides active scenes, we should also check prefab internal scenes.
+	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+	for (size_t i = 0; i < PrefabIDList.size(); i++)
 	{
-		std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
+		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
+		FEScene* PrefabInternalScene = CurrentPrefab->GetScene();
 
-		for (size_t i = 0; i < Entities.size(); i++)
-		{
-			FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
-			if (NativeScriptComponent.ModuleID == Module->GetObjectID())
-			{
-				FEModuleScriptInstance Instance;
-				Instance.Scene = Scene;
-				Instance.Entity = Entities[i];
-				Instance.NativeScriptComponent = &NativeScriptComponent;
-				Instance.ScriptName = NativeScriptComponent.GetScriptData()->Name;
+		if (PrefabInternalScene == nullptr)
+			continue;
 
-				Result.push_back(Instance);
-			}
-		}
+		GetModuleScriptInstancesFromScene(Result, PrefabInternalScene, Module->GetObjectID());
 	}
 
 	return Result;
@@ -858,6 +947,112 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(std::string CurrentModuleID,
 	return UpdateNativeScriptModule(CurrentModule, UpdatedModule);
 }
 
+std::any FENativeScriptSystem::CreateEngineLocalScriptVariableCopy(FEScriptVariableInfo& Info, std::any Value)
+{
+	// TO-DO: Make it more general with more templated magic.
+	if (Info.Type == "float") return CreateEngineLocalScriptVariableCopyTemplated<float>(Value);
+	else if (Info.Type == "int") return CreateEngineLocalScriptVariableCopyTemplated<int>(Value);
+	else if (Info.Type == "bool") return CreateEngineLocalScriptVariableCopyTemplated<bool>(Value);
+	else if (Info.Type == "std::string") return CreateEngineLocalScriptVariableCopyTemplated<std::string>(Value);
+	else if (Info.Type == "glm::vec2") return CreateEngineLocalScriptVariableCopyTemplated<glm::vec2>(Value);
+	else if (Info.Type == "glm::vec3") return CreateEngineLocalScriptVariableCopyTemplated<glm::vec3>(Value);
+	else if (Info.Type == "glm::vec4") return CreateEngineLocalScriptVariableCopyTemplated<glm::vec4>(Value);
+	else if (Info.Type == "glm::quat") return CreateEngineLocalScriptVariableCopyTemplated<glm::quat>(Value);
+	// ************************ FEObject children ************************
+	else if (Info.Type == "FEShader*") return CreateEngineLocalScriptVariableCopyTemplated<FEShader*>(Value);
+	else if (Info.Type == "FEMesh*") return CreateEngineLocalScriptVariableCopyTemplated<FEMesh*>(Value);
+	else if (Info.Type == "FETexture*") return CreateEngineLocalScriptVariableCopyTemplated<FETexture*>(Value);
+	else if (Info.Type == "FEMaterial*") return CreateEngineLocalScriptVariableCopyTemplated<FEMaterial*>(Value);
+	else if (Info.Type == "FEGameModel*") return CreateEngineLocalScriptVariableCopyTemplated<FEGameModel*>(Value);
+	// TO-DO: Think how to make it work with enitity. Right now it is not consistent between editor and game mode scenes.
+	//else if (Info.Type == "FEEntity*") return CreateLocalCopy<FEEntity*>(Value);
+	else if (Info.Type == "FEFramebuffer*") return CreateEngineLocalScriptVariableCopyTemplated<FEFramebuffer*>(Value);
+	else if (Info.Type == "FEPostProcess*") return CreateEngineLocalScriptVariableCopyTemplated<FEPostProcess*>(Value);
+	else if (Info.Type == "FEPrefab*") return CreateEngineLocalScriptVariableCopyTemplated<FEPrefab*>(Value);
+	// TO-DO: Check if it is working.
+	else if (Info.Type == "FEScene*") return CreateEngineLocalScriptVariableCopyTemplated<FEScene*>(Value);
+	else if (Info.Type == "FEAssetPackage*") return CreateEngineLocalScriptVariableCopyTemplated<FEAssetPackage*>(Value);
+	else if (Info.Type == "FENativeScriptModule*") return CreateEngineLocalScriptVariableCopyTemplated<FENativeScriptModule*>(Value);
+	// ************************ Vectors ************************
+	else if (Info.Type == "std::vector<float>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<float>>(Value);
+	else if (Info.Type == "std::vector<int>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<int>>(Value);
+	else if (Info.Type == "std::vector<bool>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<bool>>(Value);
+	else if (Info.Type == "std::vector<std::string>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<std::string>>(Value);
+	else if (Info.Type == "std::vector<glm::vec2>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<glm::vec2>>(Value);
+	else if (Info.Type == "std::vector<glm::vec3>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<glm::vec3>>(Value);
+	else if (Info.Type == "std::vector<glm::vec4>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<glm::vec4>>(Value);
+	else if (Info.Type == "std::vector<glm::quat>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<glm::quat>>(Value);
+	// ************************ FEObject children ************************
+	else if (Info.Type == "std::vector<FEShader*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEShader*>>(Value);
+	else if (Info.Type == "std::vector<FEMesh*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEMesh*>>(Value);
+	else if (Info.Type == "std::vector<FETexture*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FETexture*>>(Value);
+	else if (Info.Type == "std::vector<FEMaterial*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEMaterial*>>(Value);
+	else if (Info.Type == "std::vector<FEGameModel*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEGameModel*>>(Value);
+	// TO-DO: Think how to make it work with enitity. Right now it is not consistent between editor and game mode scenes.
+	//else if (Info.Type == "std::vector<FEEntity*>") return CreateLocalCopy<std::vector<FEEntity*>>(Value);
+	else if (Info.Type == "std::vector<FEFramebuffer*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEFramebuffer*>>(Value);
+	else if (Info.Type == "std::vector<FEPostProcess*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEPostProcess*>>(Value);
+	else if (Info.Type == "std::vector<FEPrefab*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEPrefab*>>(Value);
+	// TO-DO: Check if it is working.
+	else if (Info.Type == "std::vector<FEScene*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEScene*>>(Value);
+	else if (Info.Type == "std::vector<FEAssetPackage*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FEAssetPackage*>>(Value);
+	else if (Info.Type == "std::vector<FENativeScriptModule*>") return CreateEngineLocalScriptVariableCopyTemplated<std::vector<FENativeScriptModule*>>(Value);
+
+	// If we can't find the type, we will return empty any.
+	return std::any();
+}
+
+void FENativeScriptSystem::CheckForAlteredVariables(std::vector<FEModuleScriptInstance>& ModuleScriptInstancesToUpdate)
+{
+	for (size_t i = 0; i < ModuleScriptInstancesToUpdate.size(); i++)
+	{
+		FENativeScriptComponent& NativeScriptComponent = ModuleScriptInstancesToUpdate[i].Entity->GetComponent<FENativeScriptComponent>();
+		std::unordered_map<std::string, FEScriptVariableInfo> Variables = NATIVE_SCRIPT_SYSTEM.GetVariablesRegistry(ModuleScriptInstancesToUpdate[i].Entity);
+
+		FEScriptData* CurrentScriptData = NativeScriptComponent.ScriptData;
+		// We need to create an instance of the original core.
+		// To have access to the original variable values.
+		FENativeScriptCore* OriginalCoreInstance = CurrentScriptData->ConstructorFunction();
+
+		auto VariableIterator = Variables.begin();
+		while (VariableIterator != Variables.end())
+		{
+			FEScriptVariableInfo& VariableInfo = VariableIterator->second;
+
+			std::any OriginalValue = VariableInfo.Getter(OriginalCoreInstance);
+			std::any CurrentValue = NativeScriptComponent.GetVariableValueRaw(VariableInfo.Name);
+
+			if (CurrentScriptData->VariablesRegistry.find(VariableInfo.Name) != CurrentScriptData->VariablesRegistry.end())
+			{
+				if (!IsEqualScriptVariable(VariableInfo, OriginalValue, CurrentValue))
+				{
+					FEAlteredScriptVariable AlteredVariable;
+					AlteredVariable.Name = VariableInfo.Name;
+
+					// We need to create a local(Engine local, not DLL resident) copy of the altered variable.
+					// Because after we unload the DLL, we will lose access to the original variable.
+					AlteredVariable.AlteredValue = CreateEngineLocalScriptVariableCopy(VariableInfo, CurrentValue);
+					
+					if (!AlteredVariable.AlteredValue.has_value())
+					{
+						LOG.Add("FENativeScriptSystem::UpdateNativeScriptModule failed to create local copy of altered variable.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+						VariableIterator++;
+						continue;
+					}
+
+					ModuleScriptInstancesToUpdate[i].AlteredVariables.push_back(AlteredVariable);
+				}
+
+			}
+
+			VariableIterator++;
+		}
+
+		// Now we can delete the original core instance.
+		delete OriginalCoreInstance;
+	}
+}
+
 bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* CurrentModule, FENativeScriptModule* UpdatedModule)
 {
 	if (CurrentModule == nullptr)
@@ -873,7 +1068,9 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* Curren
 	}
 
 	// First we need to get the list of components associated with the current module.
-	std::vector<FEModuleScriptInstance> ComponentToRestore = GetComponentsOfModule(CurrentModule);
+	std::vector<FEModuleScriptInstance> ComponentToRestore = GetModuleScriptInstances(CurrentModule);
+	// Now we need to loop through the components and save script variables that was altered by user.
+	CheckForAlteredVariables(ComponentToRestore);
 
 	// Then we can deactivate and delete current module.
 	DeactivateNativeScriptModule(CurrentModule);
@@ -882,7 +1079,7 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* Curren
 	// And activate updated module.
 	ActivateNativeScriptModule(UpdatedModule);
 
-	// Now we can restore the components.
+	// Now we can restore the components and altered variables.
 	bool bAtLeastOneComponentRestored = false;
 	for (size_t i = 0; i < ComponentToRestore.size(); i++)
 	{
@@ -890,6 +1087,12 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* Curren
 		if (InitializeScriptComponent(ComponentToRestore[i].Entity, UpdatedModule->GetObjectID(), ComponentToRestore[i].ScriptName))
 		{
 			bAtLeastOneComponentRestored = true;
+
+			for (size_t j = 0; j < ComponentToRestore[i].AlteredVariables.size(); j++)
+			{
+				FENativeScriptComponent& NativeScriptComponent = ComponentToRestore[i].Entity->GetComponent<FENativeScriptComponent>();
+				NativeScriptComponent.SetVariableValue(ComponentToRestore[i].AlteredVariables[j].Name, ComponentToRestore[i].AlteredVariables[j].AlteredValue);
+			}
 		}
 		else
 		{
@@ -901,14 +1104,58 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* Curren
 	return bAtLeastOneComponentRestored;
 }
 
-std::string FENativeScriptSystem::GetDLLMoudleIDByNativeScriptModuleID(std::string ModuleID)
+std::string FENativeScriptSystem::GetAssociatedDLLID(std::string ScriptModuleID)
 {
-	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ModuleID);
+	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ScriptModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("GetDLLMoudleIDByNativeScriptModuleID failed to find module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetAssociatedDLLID failed to find module with ID: " + ScriptModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return "";
 	}
 
 	return Module->DLLModuleID;
+}
+
+std::string FENativeScriptSystem::GetAssociatedScriptModuleID(std::string DLLModuleID)
+{
+	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModuleByDLLModuleID(DLLModuleID);
+	if (Module == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::GetAssociatedScriptModuleID failed to find module with DLL ID: " + DLLModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return "";
+	}
+
+	return Module->GetObjectID();
+}
+
+bool FENativeScriptSystem::IsEqualScriptVariable(FEScriptVariableInfo& VariableInfo, std::any FirstScriptVariable, std::any SecondScriptVariable)
+{
+	if (VariableInfo.Type.find("vector<") != std::string::npos || VariableInfo.Type.find("std::vector<") != std::string::npos)
+	{
+		//return true;
+		if (VariableInfo.Type.find("float>") != std::string::npos) return IsEqualArrayTType<float>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("int>") != std::string::npos) return IsEqualArrayTType<int>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("bool>") != std::string::npos) return IsEqualArrayTType<bool>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("std::string>") != std::string::npos) return IsEqualArrayTType<std::string>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("glm::vec2>") != std::string::npos) return IsEqualArrayTType<glm::vec2>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("glm::vec3>") != std::string::npos) return IsEqualArrayTType<glm::vec3>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("glm::vec4>") != std::string::npos) return IsEqualArrayTType<glm::vec4>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("glm::quat>") != std::string::npos) return IsEqualArrayTType<glm::quat>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type.find("FEPrefab*>") != std::string::npos) return IsEqualArrayTType<FEPrefab*>(FirstScriptVariable, SecondScriptVariable);
+	}
+	else
+	{
+		if (VariableInfo.Type == "int") return IsEqualTType<int>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "float") return IsEqualTType<float>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "double") return IsEqualTType<double>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "bool") return IsEqualTType<bool>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "glm::vec2") return IsEqualTType<glm::vec2>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "glm::vec3") return IsEqualTType<glm::vec3>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "glm::vec4") return IsEqualTType<glm::vec4>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "glm::quat") return IsEqualTType<glm::quat>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "string") return IsEqualTType<std::string>(FirstScriptVariable, SecondScriptVariable);
+		else if (VariableInfo.Type == "FEPrefab*") return IsEqualTType<FEPrefab*>(FirstScriptVariable, SecondScriptVariable);
+	}
+
+	return false;
 }

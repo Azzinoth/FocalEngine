@@ -156,19 +156,18 @@ std::vector<FEScene*> FESceneManager::GetScenesByFlagMask(FESceneFlag FlagMask)
 	return Result;
 }
 
-FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter)
+FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
 {
 	FEScene* SceneToDuplicate = GetScene(ID);
 	if (SceneToDuplicate == nullptr)
 		return nullptr;
 
-	return DuplicateScene(SceneToDuplicate, NewSceneName, Filter);
+	return DuplicateScene(SceneToDuplicate, NewSceneName, Filter, Flags);
 }
 
-FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName, std::function<bool(FEEntity*)> Filter)
+FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
 {
-	//FIX ME! Currently new scene would be active, but should it be?
-	FEScene* Result = CreateScene(NewSceneName, "", FESceneFlag::Active);
+	FEScene* Result = CreateScene(NewSceneName, "", Flags);
 
 	// Get children of the root entity and import them.
 	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
@@ -181,6 +180,8 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	return Result;
 }
 
+// TO-DO: Look into makeing FETransformSystem more robust, with less speciale cases.
+#include "Components/Systems/FETransformSystem.h"
 std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
 	std::vector<FENaiveSceneGraphNode*> Result;
@@ -189,6 +190,10 @@ std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* S
 		LOG.Add("FESceneManager::ImportSceneAsNode: SourceScene or TargetScene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return Result;
 	}
+
+	// We are doing this to make sure that all entities have updated world matrices.
+	// It is especially important for FEPrefab scenes, because they are not updated by default.
+	TRANSFORM_SYSTEM.UpdateInternal(SourceScene->SceneGraph.GetRoot());
 
 	// Get children of the root entity and import them.
 	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();

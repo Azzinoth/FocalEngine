@@ -2,9 +2,9 @@
 #include "../../FEScene.h"
 using namespace FocalEngine;
 
-void FENativeScriptComponent::OnCreate()
+void FENativeScriptComponent::Awake()
 {
-	CoreInstance->OnCreate();
+	CoreInstance->Awake();
 }
 
 void FENativeScriptComponent::OnDestroy()
@@ -50,6 +50,31 @@ bool FENativeScriptComponent::SetVariableValue(std::string VariableName, std::an
 	if (ScriptData->VariablesRegistry.find(VariableName) == ScriptData->VariablesRegistry.end())
 		return false;
 
-	ScriptData->VariablesRegistry[VariableName].Setter(CoreInstance, Value);
+	try
+	{
+		ScriptData->VariablesRegistry[VariableName].Setter(CoreInstance, Value);
+		return true;
+	}
+	catch (const std::bad_any_cast&)
+	{
+		LOG.Add("FENativeScriptComponent::SetVariableValue: Error setting value for '" + VariableName + "'", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
 	return true;
+}
+
+std::any FENativeScriptComponent::GetVariableValueRaw(const std::string& VariableName) const
+{
+	if (CoreInstance == nullptr || ScriptData == nullptr)
+		return std::any();
+
+	auto VariablesIterator = ScriptData->VariablesRegistry.find(VariableName);
+	if (VariablesIterator == ScriptData->VariablesRegistry.end())
+	{
+		LOG.Add("FENativeScriptComponent::GetVariableValueRaw: Variable with name: " + VariableName + " not found in registry.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return std::any();
+	}
+
+	return VariablesIterator->second.Getter(CoreInstance);
 }

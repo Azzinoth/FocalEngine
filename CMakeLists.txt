@@ -273,8 +273,10 @@ file(GLOB Scene_NativeScript_System_SRC
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.cpp"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.inl"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.cpp"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.inl"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.cpp"
 )
 
@@ -559,6 +561,11 @@ set(GLFW_LIBRARY ${GLFW_LIBRARY} PARENT_SCOPE)
 # Export the OpenXRLoader variable
 set(OpenXRLoader_DLL ${OpenXRLoader_DLL} PARENT_SCOPE)
 
+# Add this line to define the .lib version info
+target_compile_definitions(FocalEngine PRIVATE 
+    ENGINE_LIB_VERSION="${ENGINE_BUILD_TIMESTAMP}"
+)
+
 if(NOT ENGINE_HEADERS_ONLY)
 	# If building as DLL, copy necessary DLLs to output directory
 	if(BUILD_SHARED_LIBS)
@@ -583,4 +590,9 @@ if(NOT ENGINE_HEADERS_ONLY)
 				"$<TARGET_FILE_DIR:FocalEngine>"
 		)
 	endif()
+
+	add_custom_command(TARGET FocalEngine PRE_BUILD
+		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
+			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
+    )
 endif()

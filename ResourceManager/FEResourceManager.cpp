@@ -816,9 +816,10 @@ FEResourceManager::FEResourceManager()
 	LoadStandardGameModels();
 	
 	// FIX ME! Temporary code.
-	/*FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__08_28_2024/OnlyCamera/UserScriptTest.dll", "D:/Script__08_28_2024/OnlyCamera/UserScriptTest.pdb", {}, "Camera scripts", "2B7956623302254F620A675F");
-	NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
-	SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");*/
+	//FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__09_03_2024/OnlyCamera/UserScriptTest.dll", "D:/Script__09_03_2024/OnlyCamera/UserScriptTest.pdb", {}, "Camera scripts", "2B7956623302254F620A675F");
+	//NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
+	//SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");
+
 
 	// Load all standard script modules.
 	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
@@ -2610,7 +2611,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	return Result;
 }
 
-std::vector<std::string> FEResourceManager::GetPrefabList()
+std::vector<std::string> FEResourceManager::GetPrefabIDList()
 {
 	FE_MAP_TO_STR_VECTOR(Prefabs)
 }
@@ -2770,6 +2771,20 @@ FENativeScriptModule* FEResourceManager::GetNativeScriptModule(std::string ID)
 	return NativeScriptModules[ID];
 }
 
+FENativeScriptModule* FEResourceManager::GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID)
+{
+	auto NativeScriptModulesIterator = NativeScriptModules.begin();
+	while (NativeScriptModulesIterator != NativeScriptModules.end())
+	{
+		if (NativeScriptModulesIterator->second->DLLModuleID == DLLModuleID)
+			return NativeScriptModulesIterator->second;
+
+		NativeScriptModulesIterator++;
+	}
+
+	return nullptr;
+}
+
 std::vector<FENativeScriptModule*> FEResourceManager::GetNativeScriptModuleByName(std::string Name)
 {
 	std::vector<FENativeScriptModule*> Result;
@@ -2799,7 +2814,42 @@ FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DL
 	if (Name.empty())
 		Name = "Unnamed NativeScriptModule";
 
+	// First we need to check if DLLFilePath is valid.
+	if (!FILE_SYSTEM.DoesFileExist(DLLFilePath))
+	{
+		LOG.Add("can't locate file: " + DLLFilePath + " in FEResourceManager::CreateNativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	// We also need to retrieve DLL module ID.
+	HMODULE DLLHandle = LoadLibraryA(DLLFilePath.c_str());
+	if (!DLLHandle)
+	{
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to load DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	// Ensuring that the DLL has the required functions.
+	typedef char* (*Get_ModuleID_Function)(void);
+	Get_ModuleID_Function GetModuleID = (Get_ModuleID_Function)GetProcAddress(DLLHandle, "GetModuleID");
+	if (!GetModuleID)
+	{
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get GetModuleID function from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string DLLModuleID = GetModuleID();
+	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
+	{
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get proper DLLModuleID from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	// If we have a valid DLLModuleID, we can unload the DLL and proceed.
+	FreeLibrary(DLLHandle);
+
 	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DLLFilePath, PDBFilePath, ScriptFiles);
+	NewNativeScriptModule->DLLModuleID = DLLModuleID;
 	if (!ForceObjectID.empty())
 	{
 		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
@@ -2852,6 +2902,14 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string Fi
 	NewNativeScriptModule->SetName(ObjectData.Name);
 	NewNativeScriptModule->SetType(ObjectData.Type);
 
+	// Load DLLModuleID.
+	size_t DLLModuleIDSize = 0;
+	File.read((char*)&DLLModuleIDSize, sizeof(size_t));
+	char* DLLModuleID = new char[DLLModuleIDSize];
+	File.read(DLLModuleID, DLLModuleIDSize);
+	NewNativeScriptModule->DLLModuleID = std::string(DLLModuleID, DLLModuleIDSize);
+	delete[] DLLModuleID;
+
 	// Load DLLAssetID.
 	size_t DllAssetIDSize = 0;
 	File.read((char*)&DllAssetIDSize, sizeof(size_t));
@@ -2867,6 +2925,14 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string Fi
 	File.read(PdbAssetID, PdbAssetIDSize);
 	NewNativeScriptModule->PDBAssetID = std::string(PdbAssetID, PdbAssetIDSize);
 	delete[] PdbAssetID;
+
+	// Load CMakeFileAssetID.
+	size_t CMakeFileAssetIDSize = 0;
+	File.read((char*)&CMakeFileAssetIDSize, sizeof(size_t));
+	char* CMakeFileAssetID = new char[CMakeFileAssetIDSize];
+	File.read(CMakeFileAssetID, CMakeFileAssetIDSize);
+	NewNativeScriptModule->CMakeFileAssetID = std::string(CMakeFileAssetID, CMakeFileAssetIDSize);
+	delete[] CMakeFileAssetID;
 
 	// Load ScriptAssetIDs.
 	size_t ScriptAssetIDsSize = 0;
@@ -2924,6 +2990,11 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 
 	OBJECT_MANAGER.SaveFEObjectPart(File, NativeScriptModule);
 
+	// Save DLLModuleID.
+	size_t DLLModuleIDSize = NativeScriptModule->DLLModuleID.size();
+	File.write((char*)&DLLModuleIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->DLLModuleID.c_str(), DLLModuleIDSize);
+
 	// Save DLLAssetID.
 	size_t DllAssetIDSize = NativeScriptModule->DLLAssetID.size();
 	File.write((char*)&DllAssetIDSize, sizeof(size_t));
@@ -2934,6 +3005,11 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	File.write((char*)&PdbAssetIDSize, sizeof(size_t));
 	File.write(NativeScriptModule->PDBAssetID.c_str(), PdbAssetIDSize);
 
+	// Save CMakeFileAssetID.
+	size_t CMakeFileAssetIDSize = NativeScriptModule->CMakeFileAssetID.size();
+	File.write((char*)&CMakeFileAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->CMakeFileAssetID.c_str(), CMakeFileAssetIDSize);
+
 	// Save ScriptAssetIDs.
 	size_t ScriptAssetIDsSize = NativeScriptModule->ScriptAssetIDs.size();
 	File.write((char*)&ScriptAssetIDsSize, sizeof(size_t));
@@ -2943,7 +3019,7 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 		File.write((char*)&ScriptAssetIDSize, sizeof(size_t));
 		File.write(NativeScriptModule->ScriptAssetIDs[i].c_str(), ScriptAssetIDSize);
 	}
-
+	
 	// Save ScriptAssetPackage.
 	size_t PackageFullCopySize = 0;
 	unsigned char* PackageFullCopy = NativeScriptModule->ScriptAssetPackage->ExportAsRawData(PackageFullCopySize);

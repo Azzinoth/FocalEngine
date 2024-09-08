@@ -18,7 +18,6 @@ FEVirtualUIComponent::FEVirtualUIComponent(int Width, int Height, FEMesh* Canvas
 
 	Framebuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, Width, Height, false);
 	VirtualUI = APPLICATION.AddVirtualUI(Framebuffer->FBO, Width, Height);
-	//SetCanvasResolution(glm::vec2(Width, Height));
 }
 
 FEVirtualUIComponent::~FEVirtualUIComponent()
@@ -486,22 +485,22 @@ void FEVirtualUIComponent::RegisterCallbacksForWindow()
 		return;
 
 	auto MouseButtonCallbackToRegister = std::bind(&FEVirtualUIComponent::MouseButtonListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-	WindowToListen->AddOnMouseButtonCallback(MouseButtonCallbackToRegister);
+	MouseButtonListenerID = WindowToListen->AddOnMouseButtonCallback(MouseButtonCallbackToRegister);
 
 	auto MouseMoveCallbackToRegister = std::bind(&FEVirtualUIComponent::MouseMoveListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->AddOnMouseMoveCallback(MouseMoveCallbackToRegister);
+	MouseMoveListenerID = WindowToListen->AddOnMouseMoveCallback(MouseMoveCallbackToRegister);
 
 	auto CharCallbackToRegister = std::bind(&FEVirtualUIComponent::CharListener, this, std::placeholders::_1);
-	WindowToListen->AddOnCharCallback(CharCallbackToRegister);
+	CharListenerID = WindowToListen->AddOnCharCallback(CharCallbackToRegister);
 
 	auto KeyCallbackToRegister = std::bind(&FEVirtualUIComponent::KeyListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-	WindowToListen->AddOnKeyCallback(KeyCallbackToRegister);
+	KeyListenerID = WindowToListen->AddOnKeyCallback(KeyCallbackToRegister);
 
 	auto DropCallbackToRegister = std::bind(&FEVirtualUIComponent::DropListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->AddOnDropCallback(DropCallbackToRegister);
+	DropListenerID = WindowToListen->AddOnDropCallback(DropCallbackToRegister);
 
 	auto ScrollCallbackToRegister = std::bind(&FEVirtualUIComponent::ScrollListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->AddOnScrollCallback(ScrollCallbackToRegister);
+	ScrollListenerID = WindowToListen->AddOnScrollCallback(ScrollCallbackToRegister);
 }
 
 void FEVirtualUIComponent::UnregisterCallbacksForWindow()
@@ -509,23 +508,12 @@ void FEVirtualUIComponent::UnregisterCallbacksForWindow()
 	if (WindowToListen == nullptr)
 		return;
 
-	auto MouseButtonCallbackToUnregister = std::bind(&FEVirtualUIComponent::MouseButtonListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-	WindowToListen->RemoveOnMouseButtonCallback(MouseButtonCallbackToUnregister);
-
-	auto MouseMoveCallbackToUnregister = std::bind(&FEVirtualUIComponent::MouseMoveListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->RemoveOnMouseMoveCallback(MouseMoveCallbackToUnregister);
-
-	auto CharCallbackToUnregister = std::bind(&FEVirtualUIComponent::CharListener, this, std::placeholders::_1);
-	WindowToListen->RemoveOnCharCallback(CharCallbackToUnregister);
-
-	auto KeyCallbackToUnregister = std::bind(&FEVirtualUIComponent::KeyListener, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-	WindowToListen->RemoveOnKeyCallback(KeyCallbackToUnregister);
-
-	auto DropCallbackToUnregister = std::bind(&FEVirtualUIComponent::DropListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->RemoveOnDropCallback(DropCallbackToUnregister);
-
-	auto ScrollCallbackToUnregister = std::bind(&FEVirtualUIComponent::ScrollListener, this, std::placeholders::_1, std::placeholders::_2);
-	WindowToListen->RemoveOnScrollCallback(ScrollCallbackToUnregister);
+	WindowToListen->RemoveCallback(MouseButtonListenerID);
+	WindowToListen->RemoveCallback(MouseMoveListenerID);
+	WindowToListen->RemoveCallback(CharListenerID);
+	WindowToListen->RemoveCallback(KeyListenerID);
+	WindowToListen->RemoveCallback(DropListenerID);
+	WindowToListen->RemoveCallback(ScrollListenerID);
 }
 
 void FEVirtualUIComponent::SetWindowToListen(FEWindow* Window)

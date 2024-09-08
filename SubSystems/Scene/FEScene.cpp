@@ -628,3 +628,22 @@ FEAABB FEScene::GetSceneAABB(std::function<bool(FEEntity*)> Filter)
 	SceneGraph.GetNodeAABB(Result, SceneGraph.GetRoot(), Filter);
 	return Result;
 }
+
+std::vector<FEEntity*> FEScene::GetEntityByTagComponent(std::string Tag)
+{
+	std::vector<FEEntity*> Result;
+
+	auto EntityIterator = EntityMap.begin();
+	while (EntityIterator != EntityMap.end())
+	{
+		if (EntityIterator->second->HasComponent<FETagComponent>())
+		{
+			if (EntityIterator->second->GetComponent<FETagComponent>().GetTag() == Tag)
+				Result.push_back(EntityIterator->second);
+		}
+
+		EntityIterator++;
+	}
+
+	return Result;
+}

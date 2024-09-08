@@ -12,7 +12,7 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 	public:
 		virtual ~FENativeScriptCore() = default;
-		virtual void OnCreate() {}
+		virtual void Awake() {}
 		virtual void OnDestroy() {}
 		virtual void OnUpdate(double DeltaTime) {}
 
@@ -29,12 +29,7 @@ namespace FocalEngine
 
 	struct FEScriptData
 	{
-	//private:
-		friend class FENativeScriptComponent;
-		friend class FENativeScriptSystem;
-
 		std::function<FENativeScriptCore* ()> ConstructorFunction;
-	//public:
 		std::string Name;
 		bool bRunInEditor = false;
 		std::unordered_map<std::string, FEScriptVariableInfo> VariablesRegistry;

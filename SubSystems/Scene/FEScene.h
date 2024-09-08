@@ -65,12 +65,15 @@ namespace FocalEngine
 
 		// Entity Management
 		FEEntity* GetEntity(std::string ID);
-		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
-		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
 		std::vector<std::string> GetEntityIDList();
+		std::vector<FEEntity*> GetEntityByName(std::string Name);
+		std::vector<FEEntity*> GetEntityByTagComponent(std::string Tag);
 		template<typename T> std::vector<std::string> GetEntityIDListWithComponent();
 		template<typename T> std::vector<FEEntity*> GetEntityListWithComponent();
-		std::vector<FEEntity*> GetEntityByName(std::string Name);
+
+		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
+		
 		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");
 		FEEntity* ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
@@ -109,7 +112,6 @@ namespace FocalEngine
 		// Data Members
 		entt::registry Registry;
 		bool bIsSceneClearing = false;
-		//bool bActive = true;
 		std::unordered_map<entt::entity, FEEntity*> EnttToEntity;
 		std::unordered_map<std::string, FEEntity*> EntityMap;
 	};

@@ -105,7 +105,7 @@ namespace FocalEngine
 		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string ForceObjectID = "");
 		void DeleteGameModel(const FEGameModel* GameModel);
 
-		std::vector<std::string> GetPrefabList();
+		std::vector<std::string> GetPrefabIDList();
 		std::vector<std::string> GetEnginePrivatePrefabList();
 		FEPrefab* GetPrefab(std::string ID);
 		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
@@ -115,6 +115,7 @@ namespace FocalEngine
 		std::vector<std::string> GetNativeScriptModuleList();
 		std::vector<std::string> GetEnginePrivateNativeScriptModuleList();
 		FENativeScriptModule* GetNativeScriptModule(std::string ID);
+		FENativeScriptModule* GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID);
 		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
 		FENativeScriptModule* CreateNativeScriptModule(std::string DLLFilePath, std::string PDBFilePath = "", std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);

@@ -6,6 +6,7 @@ namespace FocalEngine
 	class FOCAL_ENGINE_API FETransformSystem
 	{
 		friend class FEScene;
+		friend class FESceneManager;
 		friend class FERenderer;
 		friend class FEngine;
 		

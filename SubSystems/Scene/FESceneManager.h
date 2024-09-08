@@ -21,8 +21,8 @@ namespace FocalEngine
 		void DeleteScene(std::string ID);
 		void DeleteScene(FEScene* Scene);
 
-		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr);
-		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr);
+		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr, FESceneFlag Flags = FESceneFlag::None);
+		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr, FESceneFlag Flags = FESceneFlag::None);
 
 		std::vector<FENaiveSceneGraphNode*> ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
 

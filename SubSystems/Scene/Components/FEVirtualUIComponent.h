@@ -115,16 +115,27 @@ namespace FocalEngine
 		void RegisterCallbacksForWindow();
 		void UnregisterCallbacksForWindow();
 
+		std::string MouseButtonListenerID = "";
 		void MouseButtonListener(int Button, int Action, int Mods);
 		bool bMouseButtonPassThrough = false;
+
+		std::string MouseMoveListenerID = "";
 		void MouseMoveListener(double Xpos, double Ypos);
 		bool bMouseMovePassThrough = false;
+
+		std::string CharListenerID = "";
 		void CharListener(unsigned int Codepoint);
 		bool bCharPassThrough = false;
+
+		std::string KeyListenerID = "";
 		void KeyListener(int Key, int Scancode, int Action, int Mods);
 		bool bKeyPassThrough = false;
+
+		std::string DropListenerID = "";
 		void DropListener(int Count, const char** Paths);
 		bool bDropPassThrough = false;
+
+		std::string ScrollListenerID = "";
 		void ScrollListener(double Xoffset, double Yoffset);
 		bool bScrollPassThrough = false;
 
