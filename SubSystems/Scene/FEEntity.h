@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Renderer/FEFramebuffer.h"
-#include "../Renderer/FEPrefab.h"
+#include "FEPrefab.h"
 #include "Components/FEComponents.h"
 
 namespace FocalEngine
@@ -24,9 +24,7 @@ namespace FocalEngine
 
 		entt::registry& GetRegistry();
 
-		Json::Value ToJson();
 		void FromJson(Json::Value Root);
-
 		void SaveComponents(Json::Value& Root);
 	public:
 		template<typename T, typename... Args>
@@ -85,5 +83,7 @@ namespace FocalEngine
 
 		std::vector<FEComponentTypeInfo> GetComponentsInfoList();
 		FEScene* GetParentScene();
+		
+		Json::Value ToJson();
 	};
 }

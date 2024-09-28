@@ -173,8 +173,8 @@ file(GLOB ComputeShaders_SRC
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
-	"Renderer/FEPrefab.cpp"
-	"Renderer/FEPrefab.h"
+	"Renderer/FEViewport.cpp"
+	"Renderer/FEViewport.h"
 	"Renderer/FEFramebuffer.cpp"
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
@@ -296,6 +296,8 @@ file(GLOB Scene_SRC
 	"SubSystems/Scene/FENaiveSceneGraphNode.h"
 	"SubSystems/Scene/FEEntity.cpp"
 	"SubSystems/Scene/FEEntity.h"
+	"SubSystems/Scene/FEPrefab.cpp"
+	"SubSystems/Scene/FEPrefab.h"
 )
 
 # *************** SUB_SYSTEM ***************

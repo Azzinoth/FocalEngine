@@ -59,8 +59,10 @@ namespace FocalEngine
 		unsigned char* ExportAsRawData(size_t& Size);
 
 		std::string ImportAssetFromFile(const std::string& FilePath, FEAssetPackageEntryIntializeData IntializeData = FEAssetPackageEntryIntializeData());
+		bool UpdateAssetFromFile(const std::string& ID, const std::string& FilePath);
 		bool ExportAssetToFile(const std::string& ID, const std::string& FilePath);
 		bool IsAssetIDPresent(const std::string& ID);
+		bool RemoveAsset(const std::string& ID);
 
 		FEAssetPackageAssetInfo GetAssetInfo(const std::string& ID);
 		std::vector<FEAssetPackageAssetInfo> GetEntryList();
@@ -75,10 +77,6 @@ namespace FocalEngine
 		FEAssetPackageHeader Header;
 
 		void UpdateHeaderSize();
-
-		//void WriteHeader(std::ofstream& OpenedFile);
-		//bool ReadHeader(std::ifstream& OpenedFile);
-
 		// In memory representation of the asset package.
 		std::vector<char> Data;
 	};

@@ -308,3 +308,59 @@ std::vector<FEEntity*> FESceneManager::InstantiatePrefab(FEPrefab* Prefab, FESce
 
 	return Result;
 }
+
+void FESceneManager::Clear()
+{
+	std::vector<std::string> Tags = RESOURCE_MANAGER.GetTagsThatWillPreventDeletion();
+	std::vector<FEScene*> ScenesToDelete;
+
+	auto SceneIterator = Scenes.begin();
+	while (SceneIterator != Scenes.end())
+	{
+		bool bCanDelete = true;
+		for (size_t i = 0; i < Tags.size(); i++)
+		{
+			if (Tags[i] == SceneIterator->second->GetTag())
+			{
+				bCanDelete = false;
+				break;
+			}
+		}
+
+		if (SceneIterator->second->GetTag() == PREFAB_SCENE_DESCRIPTION_TAG)
+		{
+			std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+			for (size_t i = 0; i < PrefabIDList.size(); i++)
+			{
+				FEPrefab* Prefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
+				if (Prefab == nullptr)
+					continue;
+
+				if (Prefab->GetScene() != SceneIterator->second)
+					continue;
+
+				for (size_t j = 0; j < Tags.size(); j++)
+				{
+					if (Tags[j] == Prefab->GetTag())
+					{
+						bCanDelete = false;
+						break;
+					}
+				}
+
+				if (!bCanDelete)
+					break;
+			}
+		}
+
+		if (bCanDelete)
+			ScenesToDelete.push_back(SceneIterator->second);
+
+		SceneIterator++;
+	}
+
+	for (size_t i = 0; i < ScenesToDelete.size(); i++)
+	{
+		DeleteScene(ScenesToDelete[i]);
+	}
+}

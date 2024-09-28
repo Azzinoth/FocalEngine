@@ -6,6 +6,7 @@
 #include "FEGLTFLoader.h"
 #include "../FileSystem/FEAssetPackage.h"
 
+#include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 #include "Config.h"
 
@@ -109,15 +110,16 @@ namespace FocalEngine
 		std::vector<std::string> GetEnginePrivatePrefabList();
 		FEPrefab* GetPrefab(std::string ID);
 		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
-		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "");
+		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "", FEScene* SceneDescription = nullptr);
 		void DeletePrefab(const FEPrefab* Prefab);
 
 		std::vector<std::string> GetNativeScriptModuleList();
 		std::vector<std::string> GetEnginePrivateNativeScriptModuleList();
 		FENativeScriptModule* GetNativeScriptModule(std::string ID);
 		FENativeScriptModule* GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID);
+		std::string ReadDLLModuleID(std::string DLLFilePath);
 		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
-		FENativeScriptModule* CreateNativeScriptModule(std::string DLLFilePath, std::string PDBFilePath = "", std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
+		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);
 		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName);
 

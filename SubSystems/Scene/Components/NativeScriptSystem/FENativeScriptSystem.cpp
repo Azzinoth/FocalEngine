@@ -603,25 +603,39 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
 		FILE_SYSTEM.CreateDirectory(ExtractedFolderPath);
 
-	FEAssetPackageAssetInfo AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->DLLAssetID);
+	FEAssetPackageAssetInfo AssetInfo;
+
+#ifdef _DEBUG
+	AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->DebugDLLAssetID);
 	std::string DLLPath = ExtractedFolderPath + AssetInfo.Name;
-	if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->DLLAssetID, DLLPath))
+	if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->DebugDLLAssetID, DLLPath))
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to extract DLL file from asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	std::string PDBPath = "";
-	if (!Module->PDBAssetID.empty())
+	if (!Module->DebugPDBAssetID.empty())
 	{
-		AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->PDBAssetID);
-		if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->PDBAssetID, ExtractedFolderPath + AssetInfo.Name))
+		AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->DebugPDBAssetID);
+		if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->DebugPDBAssetID, ExtractedFolderPath + AssetInfo.Name))
 		{
 			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to extract PDB file from asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
 
+	Module->ExtractedPDBPath = PDBPath;
+#else
+	AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->ReleaseDLLAssetID);
+	std::string DLLPath = ExtractedFolderPath + AssetInfo.Name;
+	if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->ReleaseDLLAssetID, DLLPath))
+	{
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to extract DLL file from asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+#endif
+	
 	HMODULE DLLHandle = LoadLibraryA(DLLPath.c_str());
 	if (!DLLHandle)
 	{
@@ -708,7 +722,6 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	Module->bIsLoadedToMemory = true;
 	Module->DLLHandle = DLLHandle;
 	Module->ExtractedDLLPath = DLLPath;
-	Module->ExtractedPDBPath = PDBPath;
 	Module->DLLModuleID = DLLModuleID;
 
 	// Manually copy the registry to the loaded modules.

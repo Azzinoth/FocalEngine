@@ -816,9 +816,12 @@ FEResourceManager::FEResourceManager()
 	LoadStandardGameModels();
 	
 	// FIX ME! Temporary code.
-	//FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__09_03_2024/OnlyCamera/UserScriptTest.dll", "D:/Script__09_03_2024/OnlyCamera/UserScriptTest.pdb", {}, "Camera scripts", "2B7956623302254F620A675F");
-	//NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
-	//SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");
+	/*FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__09_10_2024/OnlyCamera/UserScriptTest.dll",
+																		   "D:/Script__09_10_2024/OnlyCamera/UserScriptTest.pdb",
+																		   "D:/Script__09_10_2024/OnlyCamera/Release/UserScriptTest.dll",
+																		   {}, "Camera scripts", "2B7956623302254F620A675F");
+	NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
+	SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");*/
 
 
 	// Load all standard script modules.
@@ -1162,18 +1165,11 @@ void FEResourceManager::LoadStandardGameModels()
 
 void FEResourceManager::Clear()
 {
-	std::vector<std::reference_wrapper<std::unordered_map<std::string, FEObject*>>> ResourceMapsToClear = {
-		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Materials),
-		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Meshes),
-		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Textures),
-		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(GameModels),
-		reinterpret_cast<std::unordered_map<std::string, FEObject*>&>(Prefabs)
-	};
-
-	for (auto& ResourceMap : ResourceMapsToClear)
-	{
-		ClearResource(ResourceMap.get());
-	}
+	ClearResource(Materials);
+	ClearResource(Meshes);
+	ClearResource(Textures);
+	ClearResource(GameModels);
+	ClearResource(Prefabs);
 }
 
 void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
@@ -2647,12 +2643,13 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 	return Result;
 }
 
-FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID)
+#include "../Scene/FEScene.h"
+FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID, FEScene* SceneDescription)
 {
 	if (Name.empty())
 		Name = "Unnamed prefab";
 
-	FEPrefab* NewPrefab = new FEPrefab();
+	FEPrefab* NewPrefab = new FEPrefab(Name, SceneDescription == nullptr ? true : false);
 	if (!ForceObjectID.empty())
 	{
 		Prefabs[ForceObjectID] = NewPrefab;
@@ -2664,6 +2661,12 @@ FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string Fo
 	}
 
 	Prefabs[NewPrefab->ID]->SetName(Name);
+	if (SceneDescription != nullptr)
+	{
+		SceneDescription->SetFlag(FESceneFlag::PrefabDescription, true);
+		Prefabs[NewPrefab->ID]->Scene = SceneDescription;
+	}
+
 	return Prefabs[NewPrefab->ID];
 }
 
@@ -2803,53 +2806,111 @@ std::vector<FENativeScriptModule*> FEResourceManager::GetNativeScriptModuleByNam
 	return Result;
 }
 
-FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DLLFilePath, std::string PDBFilePath, std::vector<std::string> ScriptFiles, std::string Name, std::string ForceObjectID)
+std::string FEResourceManager::ReadDLLModuleID(std::string DLLFilePath)
 {
 	if (DLLFilePath.empty())
 	{
-		LOG.Add("call of FEResourceManager::CreateNativeScriptModule with empty DLLFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("call of FEResourceManager::ReadDLLModuleID with empty DLLFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return "";
+	}
+
+	if (!FILE_SYSTEM.DoesFileExist(DLLFilePath))
+	{
+		LOG.Add("can't locate file: " + DLLFilePath + " in FEResourceManager::ReadDLLModuleID", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return "";
+	}
+
+	HMODULE DLLHandle = LoadLibraryA(DLLFilePath.c_str());
+	if (!DLLHandle)
+	{
+		LOG.Add("FEResourceManager::ReadDLLModuleID failed to load DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return "";
+	}
+
+	typedef char* (*Get_ModuleID_Function)(void);
+	Get_ModuleID_Function GetModuleID = (Get_ModuleID_Function)GetProcAddress(DLLHandle, "GetModuleID");
+	if (!GetModuleID)
+	{
+		LOG.Add("FEResourceManager::ReadDLLModuleID failed to get GetModuleID function from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return "";
+	}
+
+	std::string DLLModuleID = GetModuleID();
+	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
+	{
+		LOG.Add("FEResourceManager::ReadDLLModuleID failed to get proper DLLModuleID from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return "";
+	}
+
+	FreeLibrary(DLLHandle);
+	return DLLModuleID;
+}
+
+FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles, std::string Name, std::string ForceObjectID)
+{
+	if (DebugDLLFilePath.empty())
+	{
+		LOG.Add("call of FEResourceManager::CreateNativeScriptModule with empty DebugDLLFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (DebugPDBFilePath.empty())
+	{
+		LOG.Add("call of FEResourceManager::CreateNativeScriptModule with empty DebugPDBFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (ReleaseDLLFilePath.empty())
+	{
+		LOG.Add("call of FEResourceManager::CreateNativeScriptModule with empty ReleaseDLLFilePath", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (Name.empty())
 		Name = "Unnamed NativeScriptModule";
 
-	// First we need to check if DLLFilePath is valid.
-	if (!FILE_SYSTEM.DoesFileExist(DLLFilePath))
+	// First we need to check if files are valid.
+	if (!FILE_SYSTEM.DoesFileExist(DebugDLLFilePath))
 	{
-		LOG.Add("can't locate file: " + DLLFilePath + " in FEResourceManager::CreateNativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't locate file: " + DebugDLLFilePath + " in FEResourceManager::CreateNativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
-	// We also need to retrieve DLL module ID.
-	HMODULE DLLHandle = LoadLibraryA(DLLFilePath.c_str());
-	if (!DLLHandle)
+	if (!FILE_SYSTEM.DoesFileExist(DebugPDBFilePath))
 	{
-		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to load DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't locate file: " + DebugPDBFilePath + " in FEResourceManager::CreateNativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
-	// Ensuring that the DLL has the required functions.
-	typedef char* (*Get_ModuleID_Function)(void);
-	Get_ModuleID_Function GetModuleID = (Get_ModuleID_Function)GetProcAddress(DLLHandle, "GetModuleID");
-	if (!GetModuleID)
+	if (!FILE_SYSTEM.DoesFileExist(ReleaseDLLFilePath))
 	{
-		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get GetModuleID function from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't locate file: " + ReleaseDLLFilePath + " in FEResourceManager::CreateNativeScriptModule", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
-	std::string DLLModuleID = GetModuleID();
-	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
+	// We also need to retrieve DLL module ID from debug and release DLLs.
+	std::string DebugDLLModuleID = ReadDLLModuleID(DebugDLLFilePath);
+	if (DebugDLLModuleID.empty())
 	{
-		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get proper DLLModuleID from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get DLLModuleID from DLL: " + DebugDLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
-	// If we have a valid DLLModuleID, we can unload the DLL and proceed.
-	FreeLibrary(DLLHandle);
+	std::string ReleaseDLLModuleID = ReadDLLModuleID(DebugDLLFilePath);
+	if (ReleaseDLLModuleID.empty())
+	{
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get DLLModuleID from DLL: " + DebugDLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
 
-	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DLLFilePath, PDBFilePath, ScriptFiles);
-	NewNativeScriptModule->DLLModuleID = DLLModuleID;
+	if (DebugDLLModuleID != ReleaseDLLModuleID)
+	{
+		LOG.Add("FEResourceManager::CreateNativeScriptModule DLLModuleID mismatch between debug and release DLLs", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DebugDLLFilePath, DebugPDBFilePath, ReleaseDLLFilePath, ScriptFiles);
+	NewNativeScriptModule->DLLModuleID = DebugDLLModuleID;
 	if (!ForceObjectID.empty())
 	{
 		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
@@ -2910,21 +2971,29 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string Fi
 	NewNativeScriptModule->DLLModuleID = std::string(DLLModuleID, DLLModuleIDSize);
 	delete[] DLLModuleID;
 
-	// Load DLLAssetID.
-	size_t DllAssetIDSize = 0;
-	File.read((char*)&DllAssetIDSize, sizeof(size_t));
-	char* DllAssetID = new char[DllAssetIDSize];
-	File.read(DllAssetID, DllAssetIDSize);
-	NewNativeScriptModule->DLLAssetID = std::string(DllAssetID, DllAssetIDSize);
-	delete[] DllAssetID;
+	// Load DebugDLLAssetID.
+	size_t DebugDllAssetIDSize = 0;
+	File.read((char*)&DebugDllAssetIDSize, sizeof(size_t));
+	char* DebugDllAssetID = new char[DebugDllAssetIDSize];
+	File.read(DebugDllAssetID, DebugDllAssetIDSize);
+	NewNativeScriptModule->DebugDLLAssetID = std::string(DebugDllAssetID, DebugDllAssetIDSize);
+	delete[] DebugDllAssetID;
 
-	// Load PDBAssetID.
-	size_t PdbAssetIDSize = 0;
-	File.read((char*)&PdbAssetIDSize, sizeof(size_t));
-	char* PdbAssetID = new char[PdbAssetIDSize];
-	File.read(PdbAssetID, PdbAssetIDSize);
-	NewNativeScriptModule->PDBAssetID = std::string(PdbAssetID, PdbAssetIDSize);
-	delete[] PdbAssetID;
+	// Load DebugPDBAssetID.
+	size_t DebugPdbAssetIDSize = 0;
+	File.read((char*)&DebugPdbAssetIDSize, sizeof(size_t));
+	char* DebugPdbAssetID = new char[DebugPdbAssetIDSize];
+	File.read(DebugPdbAssetID, DebugPdbAssetIDSize);
+	NewNativeScriptModule->DebugPDBAssetID = std::string(DebugPdbAssetID, DebugPdbAssetIDSize);
+	delete[] DebugPdbAssetID;
+
+	// Load ReleaseDLLAssetID.
+	size_t ReleaseDllAssetIDSize = 0;
+	File.read((char*)&ReleaseDllAssetIDSize, sizeof(size_t));
+	char* ReleaseDllAssetID = new char[ReleaseDllAssetIDSize];
+	File.read(ReleaseDllAssetID, ReleaseDllAssetIDSize);
+	NewNativeScriptModule->ReleaseDLLAssetID = std::string(ReleaseDllAssetID, ReleaseDllAssetIDSize);
+	delete[] ReleaseDllAssetID;
 
 	// Load CMakeFileAssetID.
 	size_t CMakeFileAssetIDSize = 0;
@@ -2995,15 +3064,20 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	File.write((char*)&DLLModuleIDSize, sizeof(size_t));
 	File.write(NativeScriptModule->DLLModuleID.c_str(), DLLModuleIDSize);
 
-	// Save DLLAssetID.
-	size_t DllAssetIDSize = NativeScriptModule->DLLAssetID.size();
-	File.write((char*)&DllAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->DLLAssetID.c_str(), DllAssetIDSize);
+	// Save DebugDLLAssetID.
+	size_t DebugDllAssetIDSize = NativeScriptModule->DebugDLLAssetID.size();
+	File.write((char*)&DebugDllAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->DebugDLLAssetID.c_str(), DebugDllAssetIDSize);
 
-	// Save PDBAssetID.
-	size_t PdbAssetIDSize = NativeScriptModule->PDBAssetID.size();
-	File.write((char*)&PdbAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->PDBAssetID.c_str(), PdbAssetIDSize);
+	// Save DebugPDBAssetID.
+	size_t DebugPdbAssetIDSize = NativeScriptModule->DebugPDBAssetID.size();
+	File.write((char*)&DebugPdbAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->DebugPDBAssetID.c_str(), DebugPdbAssetIDSize);
+
+	// Save ReleaseDLLAssetID.
+	size_t ReleaseDllAssetIDSize = NativeScriptModule->ReleaseDLLAssetID.size();
+	File.write((char*)&ReleaseDllAssetIDSize, sizeof(size_t));
+	File.write(NativeScriptModule->ReleaseDLLAssetID.c_str(), ReleaseDllAssetIDSize);
 
 	// Save CMakeFileAssetID.
 	size_t CMakeFileAssetIDSize = NativeScriptModule->CMakeFileAssetID.size();

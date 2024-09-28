@@ -38,13 +38,16 @@ std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEA
 	}
 
 	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
-	std::string NameToUse = IntializeData.IsEmpty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name.empty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name;
-
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return "";
 	}
+
+	std::string NameToUse = IntializeData.IsEmpty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name.empty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name;
+	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
+	std::string TagToUse = IntializeData.IsEmpty() ? "" : IntializeData.Tag;
+	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
 
 	// Now we will try to read raw data from the file.
 	std::ifstream File(FilePath, std::ios::binary);
@@ -68,21 +71,82 @@ std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEA
 	NewEntry.Name = NameToUse;
 	NewEntry.TimeStamp = FILE_SYSTEM.GetFileLastWriteTime(FilePath);
 	NewEntry.Size = FileSize;
-	NewEntry.Offset = Header.CurrentAssetOffset;
-	NewEntry.Type = "";
-	NewEntry.Tag = "";
-	NewEntry.Comment = "";
+	NewEntry.Offset = Data.size();
+	NewEntry.Type = TypeToUse;
+	NewEntry.Tag = TagToUse;
+	NewEntry.Comment = CommentToUse;
 
 	Header.Entries[NewEntry.ID] = NewEntry;
 
 	Header.EntriesCount++;
-	Header.CurrentAssetOffset += NewEntry.Size;
 	UpdateHeaderSize();
 
 	// And finally, add the file data to the asset package data.
 	Data.insert(Data.end(), FileData.begin(), FileData.end());
 
 	return IDToUse;
+}
+
+bool FEAssetPackage::RemoveAsset(const std::string& ID)
+{
+	if (!IsAssetIDPresent(ID))
+	{
+		LOG.Add("FEAssetPackage::RemoveFile: Asset ID not present: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEAssetPackageAssetInfo EntryToDelete = Header.Entries[ID];
+	Data.erase(Data.begin() + EntryToDelete.Offset, Data.begin() + EntryToDelete.Offset + EntryToDelete.Size);
+
+	Header.Entries.erase(ID);
+	Header.EntriesCount--;
+	UpdateHeaderSize();
+
+	// Now we need to update the offsets of the assets that are after the removed asset.
+	for (auto& Entry : Header.Entries)
+	{
+		if (Entry.second.Offset > EntryToDelete.Offset)
+			Entry.second.Offset -= EntryToDelete.Size;
+	}
+
+	return true;
+}
+
+bool FEAssetPackage::UpdateAssetFromFile(const std::string& ID, const std::string& FilePath)
+{
+	if (!IsAssetIDPresent(ID))
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Asset ID not present: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesFileExist(FilePath))
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEAssetPackageAssetInfo OldEntryInfo = Header.Entries[ID];
+	if (!RemoveAsset(ID))
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Could not remove old asset: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::string NewID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
+	if (NewID.empty())
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Could not import file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (NewID != ID)
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
 }
 
 void FEAssetPackage::UpdateHeaderSize()
@@ -121,68 +185,6 @@ void FEAssetPackage::UpdateHeaderSize()
 
 FEAssetPackage::~FEAssetPackage() {}
 
-//void FEAssetPackage::WriteHeader(std::ofstream& OpenedFile)
-//{
-//	if (!OpenedFile.is_open())
-//	{
-//		LOG.Add("FEAssetPackage::WriteHeader: File is not open.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-//		return;
-//	}
-//
-//	// Write the header start phrase.
-//	OpenedFile.write(HeaderStartPhrase.c_str(), HeaderStartPhrase.size());
-//
-//	// Write the header size.
-//	OpenedFile.write((char*)&Header.Size, sizeof(size_t));
-//
-//	// Write the format version.
-//	OpenedFile.write((char*)&Header.FormatVersion, sizeof(size_t));
-//
-//	// Write the build time stamp.
-//	OpenedFile.write((char*)&Header.BuildTimeStamp, sizeof(size_t));
-//
-//	// Write the number of entries.
-//	OpenedFile.write((char*)&Header.EntriesCount, sizeof(size_t));
-//
-//	// Write the asset package entries.
-//	for (auto& Entry : Header.Entries)
-//	{
-//		// Write the ID.
-//		size_t IDSize = Entry.second.ID.size();
-//		OpenedFile.write((char*)&IDSize, sizeof(size_t));
-//		OpenedFile.write(Entry.second.ID.c_str(), IDSize);
-//
-//		// Write the name.
-//		size_t NameSize = Entry.second.Name.size();
-//		OpenedFile.write((char*)&NameSize, sizeof(size_t));
-//		OpenedFile.write(Entry.second.Name.c_str(), NameSize);
-//
-//		// Write the type.
-//		size_t TypeSize = Entry.second.Type.size();
-//		OpenedFile.write((char*)&TypeSize, sizeof(size_t));
-//		OpenedFile.write(Entry.second.Type.c_str(), TypeSize);
-//
-//		// Write the tag.
-//		size_t TagSize = Entry.second.Tag.size();
-//		OpenedFile.write((char*)&TagSize, sizeof(size_t));
-//		OpenedFile.write(Entry.second.Tag.c_str(), TagSize);
-//
-//		// Write the comment.
-//		size_t CommentSize = Entry.second.Comment.size();
-//		OpenedFile.write((char*)&CommentSize, sizeof(size_t));
-//		OpenedFile.write(Entry.second.Comment.c_str(), CommentSize);
-//
-//		// Write the time stamp.
-//		OpenedFile.write((char*)&Entry.second.TimeStamp, sizeof(size_t));
-//
-//		// Write the size.
-//		OpenedFile.write((char*)&Entry.second.Size, sizeof(size_t));
-//
-//		// Write the offset.
-//		OpenedFile.write((char*)&Entry.second.Offset, sizeof(size_t));
-//	}
-//}
-
 bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 {
 	std::ofstream File(FilePath, std::ios::binary);
@@ -208,115 +210,8 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 		return false;
 	}
 
-	
-
-	//WriteHeader(File);
-	//// Sanity check, if file written data is not equal to the header size, log an error.
-	//size_t WrittenDataSize = File.tellp();
-	//if (WrittenDataSize != Header.Size)
-	//{
-	//	LOG.Add("FEAssetPackage::WriteToFile: Header size is not equal to the written data size.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-	//	File.close();
-	//	FILE_SYSTEM.DeleteFile(FilePath);
-	//	return false;
-	//}
-
-	//// Write the asset package data.
-	//File.write(Data.data(), Data.size());
 	return true;
 }
-
-//bool FEAssetPackage::ReadHeader(std::ifstream& OpenedFile)
-//{
-//	if (!OpenedFile.is_open())
-//	{
-//		LOG.Add("FEAssetPackage::ReadHeader: File is not open.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-//		return false;
-//	}
-//
-//	// Read the header start phrase.
-//	char* HeaderStartPhraseBuffer = new char [HeaderStartPhrase.size() + 1];
-//	OpenedFile.read(HeaderStartPhraseBuffer, HeaderStartPhrase.size());
-//	HeaderStartPhraseBuffer[HeaderStartPhrase.size()] = '\0';
-//	std::string HeaderStartPhraseRead(HeaderStartPhraseBuffer, HeaderStartPhrase.size());
-//	if (HeaderStartPhraseRead != HeaderStartPhrase)
-//	{
-//		LOG.Add("FEAssetPackage::ReadHeader: Header start phrase is not correct.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-//		delete[] HeaderStartPhraseBuffer;
-//		return false;
-//	}
-//	delete[] HeaderStartPhraseBuffer;
-//
-//	// Read the header size.
-//	OpenedFile.read((char*)&Header.Size, sizeof(size_t));
-//
-//	// Read the format version.
-//	OpenedFile.read((char*)&Header.FormatVersion, sizeof(size_t));
-//
-//	// Read the build time stamp.
-//	OpenedFile.read((char*)&Header.BuildTimeStamp, sizeof(size_t));
-//
-//	// Read the number of entries.
-//	OpenedFile.read((char*)&Header.EntriesCount, sizeof(size_t));
-//
-//	// Read the asset package entries.
-//	for (size_t i = 0; i < Header.EntriesCount; i++)
-//	{
-//		FEAssetPackageEntry NewEntry;
-//
-//		// Read the ID.
-//		size_t IDSize = 0;
-//		OpenedFile.read((char*)&IDSize, sizeof(size_t));
-//		char* IDBuffer = new char[IDSize];
-//		OpenedFile.read(IDBuffer, IDSize);
-//		NewEntry.ID = std::string(IDBuffer, IDSize);
-//		delete[] IDBuffer;
-//
-//		// Read the name.
-//		size_t NameSize = 0;
-//		OpenedFile.read((char*)&NameSize, sizeof(size_t));
-//		char* NameBuffer = new char[NameSize];
-//		OpenedFile.read(NameBuffer, NameSize);
-//		NewEntry.Name = std::string(NameBuffer, NameSize);
-//		delete[] NameBuffer;
-//
-//		// Read the type.
-//		size_t TypeSize = 0;
-//		OpenedFile.read((char*)&TypeSize, sizeof(size_t));
-//		char* TypeBuffer = new char[TypeSize];
-//		OpenedFile.read(TypeBuffer, TypeSize);
-//		NewEntry.Type = std::string(TypeBuffer, TypeSize);
-//		delete[] TypeBuffer;
-//
-//		// Read the tag.
-//		size_t TagSize = 0;
-//		OpenedFile.read((char*)&TagSize, sizeof(size_t));
-//		char* TagBuffer = new char[TagSize];
-//		OpenedFile.read(TagBuffer, TagSize);
-//		NewEntry.Tag = std::string(TagBuffer, TagSize);
-//		delete[] TagBuffer;
-//
-//		// Read the comment.
-//		size_t CommentSize = 0;
-//		OpenedFile.read((char*)&CommentSize, sizeof(size_t));
-//		char* CommentBuffer = new char[CommentSize];
-//		OpenedFile.read(CommentBuffer, CommentSize);
-//		NewEntry.Comment = std::string(CommentBuffer, CommentSize);
-//
-//		// Read the time stamp.
-//		OpenedFile.read((char*)&NewEntry.TimeStamp, sizeof(size_t));
-//
-//		// Read the size.
-//		OpenedFile.read((char*)&NewEntry.Size, sizeof(size_t));
-//
-//		// Read the offset.
-//		OpenedFile.read((char*)&NewEntry.Offset, sizeof(size_t));
-//
-//		Header.Entries[NewEntry.ID] = NewEntry;
-//	}
-//
-//	return true;
-//}
 
 bool FEAssetPackage::LoadFromFile(const std::string& FilePath)
 {
@@ -342,19 +237,6 @@ bool FEAssetPackage::LoadFromFile(const std::string& FilePath)
 		delete[] RawData;
 		return false;
 	}
-
-	//// Try to read the header.
-	//if (!ReadHeader(File))
-	//{
-	//	File.close();
-	//	return false;
-	//}
-
-	//// Read the asset package data.
-	//File.seekg(Header.Size, std::ios::beg);
-	//size_t AssetPackageDataSize = FILE_SYSTEM.GetFileSize(FilePath) - Header.Size;
-	//Data.resize(AssetPackageDataSize);
-	//File.read(Data.data(), AssetPackageDataSize);
 
 	return true;
 }

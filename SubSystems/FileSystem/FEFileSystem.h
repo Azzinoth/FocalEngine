@@ -33,8 +33,11 @@ namespace FocalEngine
 		bool CreateDirectory(const std::string& Path);
 		bool DeleteDirectory(const std::string& Path);
 
+		std::vector<std::string> GetFilesInDirectory(const std::string& Path, bool bRecursive = false);
 		std::vector<std::string> GetFileNamesInDirectory(const std::string& Path, bool bRecursive = false);
 		std::vector<std::string> GetDirectoryList(const std::string& Path);
+
+		std::vector<std::string> GetFolderChain(const std::string& Path);
 
 #ifdef FE_WIN_32
 		void ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);

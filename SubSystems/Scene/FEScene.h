@@ -16,6 +16,7 @@ namespace FocalEngine
 		Active = 1 << 1,
 		EditorMode = 1 << 2,
 		GameMode = 1 << 3,
+		PrefabDescription = 1 << 4,
 	};
 
 	// Enable bitwise operations for FESceneFlag
@@ -73,6 +74,7 @@ namespace FocalEngine
 
 		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
 		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntityFromJson(Json::Value Root);
 		
 		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");

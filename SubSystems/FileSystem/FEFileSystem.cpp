@@ -226,6 +226,70 @@ std::vector<std::string> FEFileSystem::GetFileNamesInDirectory(const std::string
 	return Result;
 }
 
+std::vector<std::string> FEFileSystem::GetFilesInDirectory(const std::string& Path, bool bRecursive)
+{
+	std::vector<std::string> Result;
+
+	try
+	{
+		std::filesystem::path Directory(Path);
+		if (std::filesystem::exists(Directory) && std::filesystem::is_directory(Directory))
+		{
+			for (const auto& Entry : std::filesystem::directory_iterator(Directory))
+			{
+				const auto& Path = Entry.path();
+				if (std::filesystem::is_regular_file(Path))
+				{
+					Result.push_back(Path.string());
+				}
+				else if (bRecursive && std::filesystem::is_directory(Path))
+				{
+					std::vector<std::string> SubDirectoryFiles = GetFilesInDirectory(Path.string(), bRecursive);
+					Result.insert(Result.end(), SubDirectoryFiles.begin(), SubDirectoryFiles.end());
+				}
+			}
+		}
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetFilesInDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+	}
+
+	return Result;
+}
+
+std::vector<std::string> FEFileSystem::GetFolderChain(const std::string& Path)
+{
+	std::vector<std::string> Result;
+
+	try
+	{
+		std::filesystem::path Directory(Path);
+		while (!Directory.string().empty())
+		{
+			//Directory.
+			//std::filesystem::path test = std::filesystem::canonical(Directory.string() + "/");
+			//if (std::filesystem::is_directory(Directory.string() + "/"))
+
+			if (!Result.empty())
+			{
+				if (Result.back() == Directory.string())
+					break;
+			}
+			Result.push_back(Directory.string());
+			Directory = Directory.parent_path();
+		}
+
+		std::reverse(Result.begin(), Result.end());
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetFolderChain: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+	}
+
+	return Result;
+}
+
 std::vector<std::string> FEFileSystem::GetDirectoryList(const std::string& Path)
 {
 	std::vector<std::string> Result;

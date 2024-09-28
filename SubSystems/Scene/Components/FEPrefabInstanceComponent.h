@@ -1,5 +1,5 @@
 #pragma once
-#include "../Renderer/FEPrefab.h"
+#include "../FEPrefab.h"
 
 namespace FocalEngine
 {

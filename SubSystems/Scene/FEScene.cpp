@@ -647,3 +647,14 @@ std::vector<FEEntity*> FEScene::GetEntityByTagComponent(std::string Tag)
 
 	return Result;
 }
+
+FEEntity* FEScene::CreateEntityFromJson(Json::Value Root)
+{
+	std::string EntityID = Root["FEObjectData"]["ID"].asString();
+	std::string EntityName = Root["FEObjectData"]["Name"].asString();
+
+	FEEntity* NewEntity = CreateEntity(EntityName, EntityID);
+	NewEntity->FromJson(Root);
+
+	return NewEntity;
+}

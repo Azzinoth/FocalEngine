@@ -1,6 +1,4 @@
 #include "FERenderer.h"
-// FIX ME! It should not be here.
-// need correct INPUT_SYSTEM
 #include "../FEngine.h"
 using namespace FocalEngine;
 

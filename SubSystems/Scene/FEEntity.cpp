@@ -40,7 +40,25 @@ void FEEntity::SaveComponents(Json::Value& Root)
 
 void FEEntity::FromJson(Json::Value Root)
 {
+	FEObjectLoadedData Data = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
 	// ID and Name should be set before calling this function
+	if (Data.ID != GetObjectID())
+	{
+		LOG.Add("FEEntity::FromJson: ID mismatch!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
+	if (Data.Name != GetName())
+	{
+		LOG.Add("FEEntity::FromJson: Name mismatch!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
+	Tag = Data.Tag;
+	Type = Data.Type;
+
+	// Load components.
 	std::vector<Json::String> ComponentsList = Root["Components"].getMemberNames();
 	COMPONENTS_TOOL.SortComponentsByLoadingPriority(ComponentsList);
 

@@ -35,6 +35,8 @@ namespace FocalEngine
 
 		void Update();
 
+		void Clear();
+
 		std::vector<FEScene*> GetAllScenes();
 		std::vector<FEScene*> GetScenesByFlagMask(FESceneFlag FlagMask);
 

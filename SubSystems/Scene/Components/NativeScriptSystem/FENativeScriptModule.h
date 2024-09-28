@@ -11,16 +11,21 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 	
 		FENativeScriptModule();
-		FENativeScriptModule(std::string DLLFilePath, std::string PDBFilePath = "", std::vector<std::string> ScriptFiles = {});
+		FENativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {});
 	public:
 		~FENativeScriptModule();
 
 		bool IsLoadedToMemory();
 	private:
 		FEAssetPackage* ScriptAssetPackage;
-		std::string DLLAssetID;
-		std::string PDBAssetID;
 
+		std::string DebugDLLAssetID;
+		std::string DebugPDBAssetID;
+
+		std::string ReleaseDLLAssetID;
+		std::string ReleasePDBAssetID;
+
+		// FIX ME! That should not be here
 		std::string CMakeFileAssetID;
 		std::vector<std::string> ScriptAssetIDs;
 

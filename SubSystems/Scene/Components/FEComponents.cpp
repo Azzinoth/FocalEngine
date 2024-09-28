@@ -96,6 +96,7 @@ FEComponentsTools::FEComponentsTools()
 	// ************************* INSTANCED COMPONENT *************************
 	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
 	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEInstancedComponent>(); };
+	InstancedComponentInfo.LoadingPriority = 3;
 	ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()] = InstancedComponentInfo;
 	FEComponentTypeInfo& InstancedInfo = ComponentIDToInfo[entt::type_id<FEInstancedComponent>().hash()];
 
