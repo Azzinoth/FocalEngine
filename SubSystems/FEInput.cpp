@@ -174,14 +174,6 @@ std::string FEInput::AddKeyCallback(std::function<void(int, int, int, int)> User
 	return NewCallback.first;
 }
 
-std::string FEWindow::AddOnDropCallback(std::function<void(int, const char**)> UserOnDropCallback)
-{
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUniqueHexID(), UserOnDropCallback);
-	UserOnDropCallbackFuncs.push_back(NewCallback);
-
-	return NewCallback.first;
-}
-
 std::string FEInput::AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback)
 {
 	if (UserOnMouseButtonCallback == nullptr)
