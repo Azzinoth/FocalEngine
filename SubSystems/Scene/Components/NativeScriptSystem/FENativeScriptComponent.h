@@ -4,12 +4,32 @@
 
 namespace FocalEngine
 {
+	class FENativeScriptFailedToLoadData
+	{
+		friend class FENativeScriptSystem;
+
+		Json::Value RawData;
+		std::string ModuleID;
+	public:
+		Json::Value GetRawData()
+		{
+			return RawData;
+		}
+
+		std::string GetModuleID()
+		{
+			return ModuleID;
+		}
+	};
+
 	class FENativeScriptComponent
 	{
 		friend class FENativeScriptSystem;
+
 		class FENativeScriptCore* CoreInstance = nullptr;
 		std::string ModuleID;
 		struct FEScriptData* ScriptData = nullptr;
+		FENativeScriptFailedToLoadData* FailedToLoadData = nullptr;
 	public:
 		bool IsInitialized();
 		std::string GetModuleID();
@@ -26,6 +46,9 @@ namespace FocalEngine
 		void Awake();
 		void OnDestroy();
 		void OnUpdate(double DeltaTime);
+
+		bool IsFailedToLoad();
+		FENativeScriptFailedToLoadData* GetFailedToLoadData();
 	};
 #include "FENativeScriptComponent.inl"
 }

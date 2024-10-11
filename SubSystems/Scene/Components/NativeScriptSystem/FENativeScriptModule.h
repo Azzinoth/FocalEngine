@@ -16,6 +16,7 @@ namespace FocalEngine
 		~FENativeScriptModule();
 
 		bool IsLoadedToMemory();
+		std::string GetDLLModuleID();
 	private:
 		FEAssetPackage* ScriptAssetPackage;
 

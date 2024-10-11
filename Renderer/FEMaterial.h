@@ -18,7 +18,7 @@ namespace FocalEngine
 		FEMaterial(std::string Name);
 		~FEMaterial();
 
-		FEShader* Shader;
+		FEShader* Shader = nullptr;
 		
 		virtual void Bind();
 		virtual void UnBind();

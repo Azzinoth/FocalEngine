@@ -78,3 +78,13 @@ std::any FENativeScriptComponent::GetVariableValueRaw(const std::string& Variabl
 
 	return VariablesIterator->second.Getter(CoreInstance);
 }
+
+bool FENativeScriptComponent::IsFailedToLoad()
+{
+	return FailedToLoadData != nullptr;
+}
+
+FENativeScriptFailedToLoadData* FENativeScriptComponent::GetFailedToLoadData()
+{
+	return FailedToLoadData;
+}

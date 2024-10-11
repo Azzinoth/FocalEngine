@@ -13,6 +13,7 @@ FEScene::~FEScene()
 	Clear();
 }
 
+#include "FESceneManager.h"
 void FEScene::SetFlag(FESceneFlag Flag, bool Value)
 {
 	if (Value)
@@ -22,6 +23,15 @@ void FEScene::SetFlag(FESceneFlag Flag, bool Value)
 			static_cast<std::underlying_type_t<FESceneFlag>>(Flags) &
 			~static_cast<std::underlying_type_t<FESceneFlag>>(Flag)
 		);
+
+	if (HasFlag(FESceneFlag::Active))
+	{
+		SCENE_MANAGER.RegisterAllComponentCallbacks(this);
+	}
+	else
+	{
+		SCENE_MANAGER.UnRegisterAllComponentCallbacks(this);
+	}
 }
 
 bool FEScene::HasFlag(FESceneFlag Flag) const

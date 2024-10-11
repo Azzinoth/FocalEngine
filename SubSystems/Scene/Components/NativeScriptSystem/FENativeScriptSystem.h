@@ -34,6 +34,7 @@ namespace FocalEngine
 		static Json::Value NativeScriptComponentToJson(FEEntity* Entity);
 		static void NativeScriptComponentFromJson(FEEntity* Entity, Json::Value Root);
 		static void DuplicateNativeScriptComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
+		void AddFailedToLoadData(FEEntity* Entity, std::string ModuleID, Json::Value RawData);
 
 		bool InitializeComponentInternal(FEEntity* Entity, FENativeScriptComponent& NativeScriptComponent, std::string ActiveModuleID, FEScriptData& ScriptData);
 		FENativeScriptModule* GetActiveModule(std::string ModuleID);

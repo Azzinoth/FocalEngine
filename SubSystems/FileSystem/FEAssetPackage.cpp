@@ -197,6 +197,23 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	// Here we will use ExportAsRawData to get the raw data of the asset package.
 	size_t DataSize = 0;
 	unsigned char* RawData = ExportAsRawData(DataSize);
+	if (RawData == nullptr)
+	{
+		LOG.Add("FEAssetPackage::WriteToFile: Could not export asset package as raw data.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		File.close();
+		FILE_SYSTEM.DeleteFile(FilePath);
+		return false;
+	}
+
+	if (DataSize == 0)
+	{
+		LOG.Add("FEAssetPackage::WriteToFile: Asset package size is 0.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		File.close();
+		delete[] RawData;
+		FILE_SYSTEM.DeleteFile(FilePath);
+		return false;
+	}
+
 	File.write((char*)RawData, DataSize);
 	delete[] RawData;
 
@@ -311,6 +328,11 @@ std::string FEAssetPackage::GetBuildTimeStampAsString()
 unsigned char* FEAssetPackage::ExportAsRawData(size_t& Size)
 {
 	Size = Header.Size + Data.size();
+	if (Size == 0)
+	{
+		LOG.Add("FEAssetPackage::ExportAsRawData: Asset package size is 0.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return nullptr;
+	}
 
 	// First we will write the header.
 	unsigned char* DataToReturn = new unsigned char[Size];

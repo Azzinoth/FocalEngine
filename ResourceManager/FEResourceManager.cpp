@@ -2756,12 +2756,12 @@ void FEResourceManager::RemoveTagThatWillPreventDeletion(std::string Tag)
 	}
 }
 
-std::vector<std::string> FEResourceManager::GetNativeScriptModuleList()
+std::vector<std::string> FEResourceManager::GetNativeScriptModuleIDList()
 {
 	FE_MAP_TO_STR_VECTOR(NativeScriptModules);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateNativeScriptModuleList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateNativeScriptModuleIDList()
 {
 	return GetResourceIDListByTag(NativeScriptModules, ENGINE_RESOURCE_TAG);
 }

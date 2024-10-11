@@ -22,7 +22,7 @@ FENativeScriptSystem::FENativeScriptSystem()
 
 	// Activate all standard script modules.
 	// After engine is initialized, we should activate the modules.
-	std::vector<std::string> ModulesIDsToActivate = RESOURCE_MANAGER.GetNativeScriptModuleList();
+	std::vector<std::string> ModulesIDsToActivate = RESOURCE_MANAGER.GetNativeScriptModuleIDList();
 	for (size_t i = 0; i < ModulesIDsToActivate.size(); i++)
 	{
 		ActivateNativeScriptModule(ModulesIDsToActivate[i]);
@@ -237,6 +237,17 @@ Json::Value FENativeScriptSystem::NativeScriptComponentToJson(FEEntity* Entity)
 	Json::Value Root;
 	FENativeScriptComponent& NativeScriptComponent = Entity->GetComponent<FENativeScriptComponent>();
 
+	if (NativeScriptComponent.IsFailedToLoad())
+	{
+		/*Root["ModuleID"] = NativeScriptComponent.FailedToLoadData->ModuleID;
+		Root["DLLID"] = NATIVE_SCRIPT_SYSTEM.GetAssociatedDLLID(NativeScriptComponent.FailedToLoadData->ModuleID);
+		Root["Name"] = NativeScriptComponent.FailedToLoadData->RawData["Name"].asString();
+		Root["FailedToLoadData"] = NativeScriptComponent.FailedToLoadData->RawData;*/
+
+		Root = NativeScriptComponent.FailedToLoadData->RawData;
+		return Root;
+	}
+
 	Root["ModuleID"] = NativeScriptComponent.ModuleID;
 	Root["DLLID"] = NATIVE_SCRIPT_SYSTEM.GetAssociatedDLLID(NativeScriptComponent.ModuleID);
 	Root["Name"] = NativeScriptComponent.GetScriptData()->Name;
@@ -317,6 +328,7 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 		return;
 	}
 
+	// After this point if we fail to initialize script component, we should add failed to load data to entity.
 	Entity->AddComponent<FENativeScriptComponent>();
 	std::string DLLID = "";
 	if (Root.isMember("DLLID"))
@@ -325,7 +337,8 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 	if (!NATIVE_SCRIPT_SYSTEM.InitializeScriptComponent(Entity, ModuleID, ScriptName, DLLID))
 	{
 		LOG.Add("FENativeScriptSystem::NativeScriptComponentFromJson failed to initialize script component.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		Entity->RemoveComponent<FENativeScriptComponent>();
+		//Entity->RemoveComponent<FENativeScriptComponent>();
+		NATIVE_SCRIPT_SYSTEM.AddFailedToLoadData(Entity, ModuleID, Root);
 		return;
 	}
 
@@ -385,6 +398,28 @@ bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativ
 	}
 
 	return true;
+}
+
+void FENativeScriptSystem::AddFailedToLoadData(FEEntity* Entity, std::string ModuleID, Json::Value RawData)
+{
+	if (Entity == nullptr)
+	{
+		LOG.Add("FENativeScriptSystem::AddFailedToLoadData failed to add failed to load data to null entity.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return;
+	}
+
+	if (ModuleID.empty())
+	{
+		LOG.Add("FENativeScriptSystem::AddFailedToLoadData failed to add failed to load data to entity with empty ModuleID.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return;
+	}
+
+	FENativeScriptFailedToLoadData* FailedToLoadData = new FENativeScriptFailedToLoadData();
+	FailedToLoadData->ModuleID = ModuleID;
+	FailedToLoadData->RawData = RawData;
+
+	Entity->AddComponent<FENativeScriptComponent>();
+	Entity->GetComponent<FENativeScriptComponent>().FailedToLoadData = FailedToLoadData;
 }
 
 FENativeScriptModule* FENativeScriptSystem::GetActiveModule(std::string ModuleID)

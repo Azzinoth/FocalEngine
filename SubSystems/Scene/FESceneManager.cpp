@@ -38,43 +38,82 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 	return Scene;
 }
 
-void FESceneManager::RegisterAllComponentCallbacks(FEScene* NewScene)
+void FESceneManager::RegisterAllComponentCallbacks(FEScene* Scene)
 {
-	NewScene->Registry.on_construct<FETagComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
-	NewScene->Registry.on_construct<FETransformComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETransformComponent>>();
-	NewScene->Registry.on_construct<FECameraComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
-	NewScene->Registry.on_construct<FELightComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
-	NewScene->Registry.on_construct<FEGameModelComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
-	NewScene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
-	NewScene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
-	NewScene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
-	NewScene->Registry.on_construct<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEPrefabInstanceComponent>>();
-	NewScene->Registry.on_construct<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEVirtualUIComponent>>();
-	NewScene->Registry.on_construct<FENativeScriptComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FENativeScriptComponent>>();
+	Scene->Registry.on_construct<FETagComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
+	Scene->Registry.on_construct<FETransformComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETransformComponent>>();
+	Scene->Registry.on_construct<FECameraComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
+	Scene->Registry.on_construct<FELightComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
+	Scene->Registry.on_construct<FEGameModelComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
+	Scene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_construct<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_construct<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_construct<FENativeScriptComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FENativeScriptComponent>>();
 
-	NewScene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
-	NewScene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
-	NewScene->Registry.on_destroy<FECameraComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
-	NewScene->Registry.on_destroy<FELightComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
-	NewScene->Registry.on_destroy<FEGameModelComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
-	NewScene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
-	NewScene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
-	NewScene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
-	NewScene->Registry.on_destroy<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEPrefabInstanceComponent>>();
-	NewScene->Registry.on_destroy<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEVirtualUIComponent>>();
-	NewScene->Registry.on_destroy<FENativeScriptComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FENativeScriptComponent>>();
+	Scene->Registry.on_destroy<FETagComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
+	Scene->Registry.on_destroy<FETransformComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
+	Scene->Registry.on_destroy<FECameraComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
+	Scene->Registry.on_destroy<FELightComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
+	Scene->Registry.on_destroy<FEGameModelComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
+	Scene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_destroy<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_destroy<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_destroy<FENativeScriptComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FENativeScriptComponent>>();
 
-	NewScene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
-	NewScene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
-	NewScene->Registry.on_update<FECameraComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
-	NewScene->Registry.on_update<FELightComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
-	NewScene->Registry.on_update<FEGameModelComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
-	NewScene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
-	NewScene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
-	NewScene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
-	NewScene->Registry.on_update<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEPrefabInstanceComponent>>();
-	NewScene->Registry.on_update<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEVirtualUIComponent>>();
-	NewScene->Registry.on_update<FENativeScriptComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FENativeScriptComponent>>();
+	Scene->Registry.on_update<FETagComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
+	Scene->Registry.on_update<FETransformComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
+	Scene->Registry.on_update<FECameraComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
+	Scene->Registry.on_update<FELightComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
+	Scene->Registry.on_update<FEGameModelComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
+	Scene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_update<FEPrefabInstanceComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_update<FEVirtualUIComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_update<FENativeScriptComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FENativeScriptComponent>>();
+}
+
+void FESceneManager::UnRegisterAllComponentCallbacks(FEScene* Scene)
+{
+	Scene->Registry.on_construct<FETagComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
+	Scene->Registry.on_construct<FETransformComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FETransformComponent>>();
+	Scene->Registry.on_construct<FECameraComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
+	Scene->Registry.on_construct<FELightComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
+	Scene->Registry.on_construct<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_construct<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_construct<FETerrainComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
+	Scene->Registry.on_construct<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_construct<FEPrefabInstanceComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_construct<FEVirtualUIComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_construct<FENativeScriptComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FENativeScriptComponent>>();
+
+	Scene->Registry.on_destroy<FETagComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FETagComponent>>();
+	Scene->Registry.on_destroy<FETransformComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FETransformComponent>>();
+	Scene->Registry.on_destroy<FECameraComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
+	Scene->Registry.on_destroy<FELightComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
+	Scene->Registry.on_destroy<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_destroy<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_destroy<FETerrainComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
+	Scene->Registry.on_destroy<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_destroy<FEPrefabInstanceComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_destroy<FEVirtualUIComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_destroy<FENativeScriptComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FENativeScriptComponent>>();
+
+	Scene->Registry.on_update<FETagComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FETagComponent>>();
+	Scene->Registry.on_update<FETransformComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FETransformComponent>>();
+	Scene->Registry.on_update<FECameraComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
+	Scene->Registry.on_update<FELightComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
+	Scene->Registry.on_update<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_update<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
+	Scene->Registry.on_update<FETerrainComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
+	Scene->Registry.on_update<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
+	Scene->Registry.on_update<FEPrefabInstanceComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEPrefabInstanceComponent>>();
+	Scene->Registry.on_update<FEVirtualUIComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEVirtualUIComponent>>();
+	Scene->Registry.on_update<FENativeScriptComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FENativeScriptComponent>>();
 }
 
 std::vector<std::string> FESceneManager::GetSceneIDList()

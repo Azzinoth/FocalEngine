@@ -998,6 +998,12 @@ void FERenderer::Render(FEScene* CurrentScene)
 
 			for (size_t i = 0; i < static_cast<size_t>(LightComponent.ActiveCascades); i++)
 			{
+				if (LightComponent.CascadeData[i].FrameBuffer == nullptr)
+				{
+					LOG.Add("Function FERenderer::Render, LightComponent.CascadeData[i].FrameBuffer is nullptr!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+					continue;
+				}
+
 				// Put camera to the position of light.
 				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
 				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMat;

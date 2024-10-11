@@ -113,8 +113,8 @@ namespace FocalEngine
 		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "", FEScene* SceneDescription = nullptr);
 		void DeletePrefab(const FEPrefab* Prefab);
 
-		std::vector<std::string> GetNativeScriptModuleList();
-		std::vector<std::string> GetEnginePrivateNativeScriptModuleList();
+		std::vector<std::string> GetNativeScriptModuleIDList();
+		std::vector<std::string> GetEnginePrivateNativeScriptModuleIDList();
 		FENativeScriptModule* GetNativeScriptModule(std::string ID);
 		FENativeScriptModule* GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID);
 		std::string ReadDLLModuleID(std::string DLLFilePath);

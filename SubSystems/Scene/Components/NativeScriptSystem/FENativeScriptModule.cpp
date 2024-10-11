@@ -22,3 +22,8 @@ bool FENativeScriptModule::IsLoadedToMemory()
 {
 	return bIsLoadedToMemory;
 }
+
+std::string FENativeScriptModule::GetDLLModuleID()
+{
+	return DLLModuleID;
+}

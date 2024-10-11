@@ -40,7 +40,8 @@ namespace FocalEngine
 		std::vector<FEScene*> GetAllScenes();
 		std::vector<FEScene*> GetScenesByFlagMask(FESceneFlag FlagMask);
 
-		void RegisterAllComponentCallbacks(FEScene* NewScene);
+		void RegisterAllComponentCallbacks(FEScene* Scene);
+		void UnRegisterAllComponentCallbacks(FEScene* Scene);
 
 		// Checks if two scene graph hierarchies are equivalent.
 		// It will not check entities, only the hierarchy structure.
