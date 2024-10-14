@@ -1,5 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "FEResourceManager.h"
+#include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.h"
 using namespace FocalEngine;
 
 #ifdef FOCAL_ENGINE_SHARED
@@ -823,12 +824,11 @@ FEResourceManager::FEResourceManager()
 	NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
 	SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");*/
 
-
 	// Load all standard script modules.
 	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
 	for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
 	{
-		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 15, 15) == ".fescriptmodule")
+		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 19, 19) == ".nativescriptmodule")
 		{
 			LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]).c_str());
 		}
@@ -2774,20 +2774,6 @@ FENativeScriptModule* FEResourceManager::GetNativeScriptModule(std::string ID)
 	return NativeScriptModules[ID];
 }
 
-FENativeScriptModule* FEResourceManager::GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID)
-{
-	auto NativeScriptModulesIterator = NativeScriptModules.begin();
-	while (NativeScriptModulesIterator != NativeScriptModules.end())
-	{
-		if (NativeScriptModulesIterator->second->DLLModuleID == DLLModuleID)
-			return NativeScriptModulesIterator->second;
-
-		NativeScriptModulesIterator++;
-	}
-
-	return nullptr;
-}
-
 std::vector<FENativeScriptModule*> FEResourceManager::GetNativeScriptModuleByName(std::string Name)
 {
 	std::vector<FENativeScriptModule*> Result;
@@ -2844,6 +2830,26 @@ std::string FEResourceManager::ReadDLLModuleID(std::string DLLFilePath)
 
 	FreeLibrary(DLLHandle);
 	return DLLModuleID;
+}
+
+FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string Name, std::string ForceObjectID)
+{
+	if (Name.empty())
+		Name = "Unnamed NativeScriptModule";
+
+	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule();
+	if (!ForceObjectID.empty())
+	{
+		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
+		NativeScriptModules[ForceObjectID]->SetID(ForceObjectID);
+	}
+	else
+	{
+		NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
+	}
+
+	NativeScriptModules[NewNativeScriptModule->ID]->SetName(Name);
+	return NativeScriptModules[NewNativeScriptModule->ID];
 }
 
 FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles, std::string Name, std::string ForceObjectID)
@@ -2910,7 +2916,6 @@ FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string De
 	}
 
 	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DebugDLLFilePath, DebugPDBFilePath, ReleaseDLLFilePath, ScriptFiles);
-	NewNativeScriptModule->DLLModuleID = DebugDLLModuleID;
 	if (!ForceObjectID.empty())
 	{
 		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
@@ -2962,14 +2967,6 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string Fi
 	NewNativeScriptModule->SetTag(ObjectData.Tag);
 	NewNativeScriptModule->SetName(ObjectData.Name);
 	NewNativeScriptModule->SetType(ObjectData.Type);
-
-	// Load DLLModuleID.
-	size_t DLLModuleIDSize = 0;
-	File.read((char*)&DLLModuleIDSize, sizeof(size_t));
-	char* DLLModuleID = new char[DLLModuleIDSize];
-	File.read(DLLModuleID, DLLModuleIDSize);
-	NewNativeScriptModule->DLLModuleID = std::string(DLLModuleID, DLLModuleIDSize);
-	delete[] DLLModuleID;
 
 	// Load DebugDLLAssetID.
 	size_t DebugDllAssetIDSize = 0;
@@ -3025,6 +3022,20 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(std::string Fi
 	NewNativeScriptModule->ScriptAssetPackage->LoadFromMemory(PackageFullCopy, PackageFullCopySize);
 	delete[] PackageFullCopy;
 
+	// Load project data.
+	size_t ProjectPackageFullCopySize = 0;
+	File.read((char*)&ProjectPackageFullCopySize, sizeof(size_t));
+	if (ProjectPackageFullCopySize > 0)
+	{
+		unsigned char* ProjectPackageFullCopy = new unsigned char[ProjectPackageFullCopySize];
+		File.read((char*)ProjectPackageFullCopy, ProjectPackageFullCopySize);
+
+		FEAssetPackage* ProjectData = new FEAssetPackage();
+		ProjectData->LoadFromMemory(ProjectPackageFullCopy, ProjectPackageFullCopySize);
+		NewNativeScriptModule->Project->Initialize(ProjectData);
+		delete[] ProjectPackageFullCopy;
+	}
+
 	File.close();
 
 	NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
@@ -3058,11 +3069,6 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	File.write((char*)&Version, sizeof(float));
 
 	OBJECT_MANAGER.SaveFEObjectPart(File, NativeScriptModule);
-
-	// Save DLLModuleID.
-	size_t DLLModuleIDSize = NativeScriptModule->DLLModuleID.size();
-	File.write((char*)&DLLModuleIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->DLLModuleID.c_str(), DLLModuleIDSize);
 
 	// Save DebugDLLAssetID.
 	size_t DebugDllAssetIDSize = NativeScriptModule->DebugDLLAssetID.size();
@@ -3099,6 +3105,29 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	unsigned char* PackageFullCopy = NativeScriptModule->ScriptAssetPackage->ExportAsRawData(PackageFullCopySize);
 	File.write((char*)&PackageFullCopySize, sizeof(size_t));
 	File.write((char*)PackageFullCopy, PackageFullCopySize);
+
+	// Saveing project data.
+	size_t ProjectPackageFullCopySize = 0;
+	if (NativeScriptModule->Project != nullptr)
+	{
+		NativeScriptModule->Project->UpdateDataToRecoverVSProject();
+		if (NativeScriptModule->Project->DataToRecoverVSProject == nullptr)
+		{
+			LOG.Add("NativeScriptModule->Project->DataToRecoverVSProject is nullptr in FEResourceManager::SaveFENativeScriptModule", "FE_LOG_SAVING", FE_LOG_WARNING);
+			File.write((char*)&ProjectPackageFullCopySize, sizeof(size_t));
+		}
+		else
+		{
+			unsigned char* ProjectPackageFullCopy = NativeScriptModule->Project->DataToRecoverVSProject->ExportAsRawData(ProjectPackageFullCopySize);
+			File.write((char*)&ProjectPackageFullCopySize, sizeof(size_t));
+			File.write((char*)ProjectPackageFullCopy, ProjectPackageFullCopySize);
+		}
+	}
+	else
+	{
+		LOG.Add("NativeScriptModule->Project is nullptr in FEResourceManager::SaveFENativeScriptModule", "FE_LOG_SAVING", FE_LOG_WARNING);
+		File.write((char*)&ProjectPackageFullCopySize, sizeof(size_t));
+	}
 
 	File.close();
 }

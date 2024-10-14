@@ -239,17 +239,11 @@ Json::Value FENativeScriptSystem::NativeScriptComponentToJson(FEEntity* Entity)
 
 	if (NativeScriptComponent.IsFailedToLoad())
 	{
-		/*Root["ModuleID"] = NativeScriptComponent.FailedToLoadData->ModuleID;
-		Root["DLLID"] = NATIVE_SCRIPT_SYSTEM.GetAssociatedDLLID(NativeScriptComponent.FailedToLoadData->ModuleID);
-		Root["Name"] = NativeScriptComponent.FailedToLoadData->RawData["Name"].asString();
-		Root["FailedToLoadData"] = NativeScriptComponent.FailedToLoadData->RawData;*/
-
 		Root = NativeScriptComponent.FailedToLoadData->RawData;
 		return Root;
 	}
 
 	Root["ModuleID"] = NativeScriptComponent.ModuleID;
-	Root["DLLID"] = NATIVE_SCRIPT_SYSTEM.GetAssociatedDLLID(NativeScriptComponent.ModuleID);
 	Root["Name"] = NativeScriptComponent.GetScriptData()->Name;
 
 	Json::Value VariablesRoot;
@@ -330,11 +324,7 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 
 	// After this point if we fail to initialize script component, we should add failed to load data to entity.
 	Entity->AddComponent<FENativeScriptComponent>();
-	std::string DLLID = "";
-	if (Root.isMember("DLLID"))
-		DLLID = Root["DLLID"].asString();
-
-	if (!NATIVE_SCRIPT_SYSTEM.InitializeScriptComponent(Entity, ModuleID, ScriptName, DLLID))
+	if (!NATIVE_SCRIPT_SYSTEM.InitializeScriptComponent(Entity, ModuleID, ScriptName))
 	{
 		LOG.Add("FENativeScriptSystem::NativeScriptComponentFromJson failed to initialize script component.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		//Entity->RemoveComponent<FENativeScriptComponent>();
@@ -472,7 +462,7 @@ std::vector<std::string> FENativeScriptSystem::GetActiveModuleIDList()
 	return Result;
 }
 
-bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName, std::string DLLID)
+bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName)
 {
 	if (Entity == nullptr)
 	{
@@ -496,27 +486,7 @@ bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::stri
 	if (ActiveModule == nullptr)
 	{
 		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with ID: " + ActiveModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-
-		// If we can't find module ID, we will try to retrieve module by DLL module ID.
-		LOG.Add("FENativeScriptSystem::InitializeScriptComponent trying to find module with same DLL ID.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		if (DLLID.empty())
-		{
-			LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with same DLL ID because DLLID is empty.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			return false;
-		}
-
-		ActiveModule = RESOURCE_MANAGER.GetNativeScriptModuleByDLLModuleID(DLLID);
-		if (ActiveModule == nullptr)
-		{
-			LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find module with DLL ID: " + DLLID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			return false;
-		}
-		else
-		{
-			// Because we found module by DLL ID, we should update ActiveModuleID.
-			ActiveModuleID = ActiveModule->GetObjectID();
-			LOG.Add("FENativeScriptSystem::InitializeScriptComponent found module with DLL ID: " + DLLID, "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		}
+		return false;
 	}
 
 	if (ActiveModule->Registry.find(ScriptName) == ActiveModule->Registry.end())
@@ -721,9 +691,6 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 		{
 			// Currently we will just log this error, but in the future we should handle this more gracefully.
 			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule is loading DLL with path: " + DLLPath + " that was compiled with different engine headers version, that could lead to crashes.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-			//LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled with different engine headers version.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			//FreeLibrary(DLLHandle);
-			//return false;
 		}
 	}
 
@@ -757,7 +724,6 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	Module->bIsLoadedToMemory = true;
 	Module->DLLHandle = DLLHandle;
 	Module->ExtractedDLLPath = DLLPath;
-	Module->DLLModuleID = DLLModuleID;
 
 	// Manually copy the registry to the loaded modules.
 	auto Iterator = DLLRegistry->begin();
@@ -785,8 +751,8 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(std::string ModuleID)
 
 	if (ActiveModules.find(ModuleID) == ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + ModuleID + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + ModuleID + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return true;
 	}
 
 	return DeactivateNativeScriptModule(Module);
@@ -802,8 +768,8 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 
 	if (ActiveModules.find(Module->GetObjectID()) == ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return true;
 	}
 
 	if (!Module->IsLoadedToMemory())
@@ -835,8 +801,6 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 	ExtractedFolderPath += Module->GetObjectID() + "/";
 	if (FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
 		FILE_SYSTEM.DeleteDirectory(ExtractedFolderPath);
-
-	Module->DLLModuleID = "";
 
 	ActiveModules.erase(Module->GetObjectID());
 	return true;
@@ -1152,28 +1116,56 @@ bool FENativeScriptSystem::UpdateNativeScriptModule(FENativeScriptModule* Curren
 	return bAtLeastOneComponentRestored;
 }
 
-std::string FENativeScriptSystem::GetAssociatedDLLID(std::string ScriptModuleID)
+bool FENativeScriptSystem::ReloadDLL(FENativeScriptModule* ModuleToUpdate)
 {
-	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ScriptModuleID);
-	if (Module == nullptr)
+	if (ModuleToUpdate == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetAssociatedDLLID failed to find module with ID: " + ScriptModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return "";
+		LOG.Add("FENativeScriptSystem::ReloadDLL failed to update null module.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
 	}
 
-	return Module->DLLModuleID;
-}
+	// First we need to get the list of components associated with the current module.
+	std::vector<FEModuleScriptInstance> ComponentToRestore = GetModuleScriptInstances(ModuleToUpdate);
+	// Now we need to loop through the components and save script variables that was altered by user.
+	CheckForAlteredVariables(ComponentToRestore);
 
-std::string FENativeScriptSystem::GetAssociatedScriptModuleID(std::string DLLModuleID)
-{
-	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModuleByDLLModuleID(DLLModuleID);
-	if (Module == nullptr)
+	// Then we can deactivate module.
+	if (!DeactivateNativeScriptModule(ModuleToUpdate))
 	{
-		LOG.Add("FENativeScriptSystem::GetAssociatedScriptModuleID failed to find module with DLL ID: " + DLLModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return "";
+		LOG.Add("FENativeScriptSystem::ReloadDLL failed to deactivate module with ID: " + ModuleToUpdate->GetObjectID(), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
 	}
 
-	return Module->GetObjectID();
+	// And activate it again.
+	if (!ActivateNativeScriptModule(ModuleToUpdate))
+	{
+		LOG.Add("FENativeScriptSystem::ReloadDLL failed to activate module with ID: " + ModuleToUpdate->GetObjectID(), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Now we can restore the components and altered variables.
+	bool bAtLeastOneComponentRestored = false;
+	for (size_t i = 0; i < ComponentToRestore.size(); i++)
+	{
+		ComponentToRestore[i].Entity->AddComponent<FENativeScriptComponent>();
+		if (InitializeScriptComponent(ComponentToRestore[i].Entity, ModuleToUpdate->GetObjectID(), ComponentToRestore[i].ScriptName))
+		{
+			bAtLeastOneComponentRestored = true;
+
+			for (size_t j = 0; j < ComponentToRestore[i].AlteredVariables.size(); j++)
+			{
+				FENativeScriptComponent& NativeScriptComponent = ComponentToRestore[i].Entity->GetComponent<FENativeScriptComponent>();
+				NativeScriptComponent.SetVariableValue(ComponentToRestore[i].AlteredVariables[j].Name, ComponentToRestore[i].AlteredVariables[j].AlteredValue);
+			}
+		}
+		else
+		{
+			LOG.Add("FENativeScriptSystem::ReloadDLL failed to restore component with script name: " + ComponentToRestore[i].ScriptName + " to entity.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			ComponentToRestore[i].Entity->RemoveComponent<FENativeScriptComponent>();
+		}
+	}
+
+	return bAtLeastOneComponentRestored;
 }
 
 bool FENativeScriptSystem::IsEqualScriptVariable(FEScriptVariableInfo& VariableInfo, std::any FirstScriptVariable, std::any SecondScriptVariable)

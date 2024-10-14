@@ -278,6 +278,8 @@ file(GLOB Scene_NativeScript_System_SRC
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.inl"
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.cpp"
 )
 
 # *************** SCENE ***************

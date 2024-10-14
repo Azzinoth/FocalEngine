@@ -116,9 +116,9 @@ namespace FocalEngine
 		std::vector<std::string> GetNativeScriptModuleIDList();
 		std::vector<std::string> GetEnginePrivateNativeScriptModuleIDList();
 		FENativeScriptModule* GetNativeScriptModule(std::string ID);
-		FENativeScriptModule* GetNativeScriptModuleByDLLModuleID(std::string DLLModuleID);
 		std::string ReadDLLModuleID(std::string DLLFilePath);
 		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
+		FENativeScriptModule* CreateNativeScriptModule(std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);
 		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName);

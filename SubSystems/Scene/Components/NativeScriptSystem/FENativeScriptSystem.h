@@ -99,17 +99,16 @@ namespace FocalEngine
 		// Should be used only for hot-reloading of new version of same module.
 		bool UpdateNativeScriptModule(FENativeScriptModule* CurrentModule, FENativeScriptModule* UpdatedModule);
 
+		bool ReloadDLL(FENativeScriptModule* ModuleToUpdate);
+
 		std::vector<std::string> GetActiveModuleIDList();
 		std::vector<std::string> GetActiveModuleScriptNameList(std::string ModuleID);
 
-		bool InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName, std::string DLLID = "");
+		bool InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName);
 
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(FEEntity* Entity);
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(std::string ModuleID, std::string ScriptName);
 		
-		std::string GetAssociatedDLLID(std::string ScriptModuleID);
-		std::string GetAssociatedScriptModuleID(std::string DLLModuleID);
-
 		template<typename T>
 		T* CastToScriptClass(FENativeScriptComponent& Component);
 
