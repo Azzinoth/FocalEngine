@@ -411,7 +411,7 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 	//#fix only standardShaders uniforms buffers are filled.
 	static int LightInfoHash = static_cast<int>(std::hash<std::string>{}("lightInfo"));
 	static int DirectionalLightInfoHash = static_cast<int>(std::hash<std::string>{}("directionalLightInfo"));
-	const std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetEnginePrivateShadersList();
+	const std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetEnginePrivateShaderIDList();
 	for (size_t i = 0; i < ShaderList.size(); i++)
 	{
 		FEShader* Shader = RESOURCE_MANAGER.GetShader(ShaderList[i]);
@@ -548,7 +548,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 	if (CurrentScene == nullptr)
 		return;
 
-	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(CurrentScene);
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCamera(CurrentScene);
 	if (MainCameraEntity == nullptr)
 		return;
 
@@ -889,7 +889,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 		return;
 
 	//  FIX ME!
-	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(CurrentScene);
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCamera(CurrentScene);
 	if (MainCameraEntity == nullptr)
 		return;
 
@@ -1506,7 +1506,7 @@ void FERenderer::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
 		return;
 	}
 
-	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(SceneToWorkWith);
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCamera(SceneToWorkWith);
 	if (MainCameraEntity == nullptr)
 	{
 		LOG.Add("Main camera entity for given scene is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);

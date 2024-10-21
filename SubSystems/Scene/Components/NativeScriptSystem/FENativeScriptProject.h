@@ -19,7 +19,6 @@ namespace FocalEngine
 
 		std::string WorkingDirectory = "";
 		std::string VSProjectDirectory = "";
-		//std::string ProjectName = "";
 		bool EnsureVSProjectDirectoryIsIntact();
 
 		std::vector<std::string> SourceFileList;
@@ -47,13 +46,6 @@ namespace FocalEngine
 		};
 
 		bool ReplaceInFile(std::string FilePath, std::vector<InstructionWhatToReplaceInFile> Instructions);
-		bool UpdateEngineFiles();
-
-		FEAssetPackage* CreateEngineHeadersAssetPackage();
-		bool UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
-
-		FEAssetPackage* CreateEngineLIBAssetPackage();
-		bool UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
 
 		void SetFileTracking();
 		bool GenerateScriptFilesFromTemplate(std::string ScriptName);
@@ -71,8 +63,6 @@ namespace FocalEngine
 		std::string GetVSProjectDirectory();
 
 		// Space in project name is not allowed
-		//void SetProjectName(std::string NewValue);
-		//std::string GetProjectName();
 		std::string GetVSProjectName();
 
 		bool HasRecoverableVSProjectData();
@@ -87,5 +77,8 @@ namespace FocalEngine
 		void UpdateDataToRecoverVSProject();
 
 		bool Update();
+
+		std::vector<std::string> GetSourceFileList();
+		bool ExtractSourceFilesTo(std::string DestinationDirectory);
 	};
 }

@@ -41,26 +41,6 @@ std::string FENativeScriptProject::GetVSProjectDirectory()
 	return VSProjectDirectory;
 }
 
-//void FENativeScriptProject::SetProjectName(std::string NewValue)
-//{
-//	std::string TemporaryProjectName = NewValue;
-//	std::string CorrectProjectName = "";
-//	for (size_t i = 0; i < TemporaryProjectName.size(); i++)
-//	{
-//		if (TemporaryProjectName[i] == ' ')
-//			CorrectProjectName += "_";
-//		else
-//			CorrectProjectName += TemporaryProjectName[i];
-//	}
-//
-//	ProjectName = CorrectProjectName;
-//}
-//
-//std::string FENativeScriptProject::GetProjectName()
-//{
-//	return ProjectName;
-//}
-
 std::string FENativeScriptProject::GetVSProjectName()
 {
 	if (Parent == nullptr)
@@ -231,7 +211,6 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 
 	std::vector<std::string> InitialFilesToCheck = {
 		"CMakeLists.txt",
-		"SubSystems/FocalEngine/FENativeScriptConnector.h", "SubSystems/FocalEngine/FENativeScriptConnector.cpp",
 		"FocalEngine.lib", "FEBasicApplication.lib",
 		"BuildManagement/EnsureBuildCompletion.cmake",
 		"BuildManagement/DebugBuildActions.cmake", "BuildManagement/ReleaseBuildActions.cmake"
@@ -395,7 +374,7 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	}
 
 	// Create all needed folders.
-	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine", "BuildManagement/" };
+	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine", "BuildManagement/", "SubSystems/FocalEngine/Resources/", "SubSystems/FocalEngine/Resources/UserScriptsData/" };
 	for (size_t i = 0; i < FoldersToCreate.size(); i++)
 	{
 		if (!FILE_SYSTEM.CreateDirectory(VSProjectDirectory + FoldersToCreate[i]))
@@ -406,15 +385,14 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	}
 
 	// Place required files in the destination directory.
-	std::string EditorFolder = FILE_SYSTEM.GetCurrentWorkingPath();
-	std::vector<std::pair<std::string, std::string>> FilesToCopy;
-	FilesToCopy.push_back({ EditorFolder + "/UserScripts/NativeScriptProjectData/BuildManagement/EnsureBuildCompletion.cmake", VSProjectDirectory + "BuildManagement/EnsureBuildCompletion.cmake" });
-	FilesToCopy.push_back({ EditorFolder + "/UserScripts/NativeScriptProjectData/BuildManagement/DebugBuildActions.cmake", VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake" });
-	FilesToCopy.push_back({ EditorFolder + "/UserScripts/NativeScriptProjectData/BuildManagement/ReleaseBuildActions.cmake", VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake" });
-	FilesToCopy.push_back({ EditorFolder + "/UserScripts/NativeScriptProjectData/CMakeLists.txt", VSProjectDirectory + "CMakeLists.txt" });
 	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER);
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/FENativeScriptConnector.h", VSProjectDirectory + "SubSystems/FocalEngine/FENativeScriptConnector.h" });
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/FENativeScriptConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/FENativeScriptConnector.cpp" });
+	std::vector<std::pair<std::string, std::string>> FilesToCopy;
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/EnsureBuildCompletion.cmake", VSProjectDirectory + "BuildManagement/EnsureBuildCompletion.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/DebugBuildActions.cmake", VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/ReleaseBuildActions.cmake", VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/CMakeLists.txt", VSProjectDirectory + "CMakeLists.txt" });
+	// We need to copy only one .cpp file.
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/FENativeScriptConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.cpp" });
 
 	for (size_t i = 0; i < SourceFileFullPathList.size(); i++)
 	{
@@ -444,9 +422,9 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 		return false;
 	}
 
-	if (!UpdateEngineFiles())
+	if (!RESOURCE_MANAGER.CopyEngineFiles(true, false, true, VSProjectDirectory))
 	{
-		LOG.Add("FENativeScriptProject::InitializeProject: Error updating engine files in user native script project", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::InitializeProject: Error copying engine files in user native script project", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -522,19 +500,6 @@ bool FENativeScriptProject::InitializeCMakeFileAndScriptFiles(std::vector<std::s
 	}
 	Instructions.clear();
 
-	CurrentInstruction.SubStringInLineToTrigger = "SET_MODULE_ID(\"PLACE_HOLDER\");";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = Parent->GetObjectID();
-	Instructions.push_back(CurrentInstruction);
-
-	std::string FENativeScriptConnectorHeaderFilePath = VSProjectDirectory + "SubSystems/FocalEngine/FENativeScriptConnector.h";
-	if (!ReplaceInFile(FENativeScriptConnectorHeaderFilePath, Instructions))
-	{
-		LOG.Add("FENativeScriptProject::InitializeCMakeFileAndScriptFiles: Error initializing FENativeScriptConnector.h", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-	Instructions.clear();
-
 	return true;
 }
 
@@ -586,256 +551,11 @@ bool FENativeScriptProject::ReplaceInFile(std::string Path, std::vector<Instruct
 	return true;
 }
 
-bool FENativeScriptProject::UpdateEngineFiles()
-{
-	if (VSProjectDirectory.empty())
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: ProjectPath is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: ProjectPath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	FEAssetPackage* EngineHeadersPackage = CreateEngineHeadersAssetPackage();
-	if (EngineHeadersPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: Error creating engine headers asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (!UnPackEngineHeadersAssetPackage(EngineHeadersPackage, VSProjectDirectory + "SubSystems/FocalEngine/"))
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: Error unpacking engine headers asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	FEAssetPackage* EngineLIBPackage = CreateEngineLIBAssetPackage();
-	if (EngineLIBPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: Error creating engine lib asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (!UnPackEngineLIBAssetPackage(EngineLIBPackage, VSProjectDirectory))
-	{
-		LOG.Add("FENativeScriptProject::UpdateEngineFiles: Error unpacking engine lib asset package.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	return true;
-}
-
-FEAssetPackage* FENativeScriptProject::CreateEngineHeadersAssetPackage()
-{
-	FEAssetPackage* EngineHeadersAssetPackage = new FEAssetPackage();
-	EngineHeadersAssetPackage->SetName("EngineHeaders");
-	if (EngineHeadersAssetPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::CreateEngineHeadersAssetPackage: Error creating asset package", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return nullptr;
-	}
-
-	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
-	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
-	{
-		LOG.Add("FENativeScriptProject::CreateEngineHeadersAssetPackage: Engine folder does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return nullptr;
-	}
-
-	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
-	// After having all files in the engine folder, we need to filter out only the header files.
-	for (size_t i = 0; i < AllFiles.size(); i++)
-	{
-		if (AllFiles[i].find(".h") != std::string::npos || AllFiles[i].find(".inl") != std::string::npos)
-		{
-			FEAssetPackageEntryIntializeData EntryData;
-			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
-			// But we will erase the engine folder path from the file name.
-			EntryData.Name = AllFiles[i].substr(EnginePath.size());
-			EntryData.Type = "Text";
-			EntryData.Tag = ENGINE_RESOURCE_TAG;
-			EntryData.Comment = "Engine header file";
-
-			EngineHeadersAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
-		}
-	}
-
-	return EngineHeadersAssetPackage;
-}
-
-bool FENativeScriptProject::UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
-{
-	if (AssetPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Asset package is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (Path.empty())
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Destination path is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Destination path does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
-	if (AssetPackageContent.empty())
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Asset package is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	for (size_t i = 0; i < AssetPackageContent.size(); i++)
-	{
-		std::string LocalPath = std::filesystem::path(AssetPackageContent[i].Name).parent_path().string();
-		// Since we are not using folders in FEAssetPackage, we need to create all folders in the file path.
-		// First we need to get chain of folders.
-		std::vector<std::string> FolderChain;
-		try
-		{
-			std::filesystem::path Directory(LocalPath);
-			while (!Directory.string().empty())
-			{
-				if (!FolderChain.empty())
-				{
-					if (FolderChain.back() == Directory.string())
-						break;
-				}
-				FolderChain.push_back(Directory.string());
-				Directory = Directory.parent_path();
-			}
-
-			std::reverse(FolderChain.begin(), FolderChain.end());
-		}
-		catch (const std::exception& Exception)
-		{
-			LOG.Add("Error in FENativeScriptProject::UnPackEngineHeadersAssetPackage: " + std::string(Exception.what()), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			return false;
-		}
-
-		// Then we will go from the root folder to the last folder and create them if they do not exist.
-		for (size_t i = 0; i < FolderChain.size(); i++)
-		{
-			std::string FinalPath = Path + FolderChain[i];
-			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
-			{
-				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
-				{
-					LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Error creating directory " + FinalPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-					return false;
-				}
-			}
-		}
-
-		// Now we are ready to write the file.
-		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
-		{
-			LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			return false;
-		}
-	}
-
-	return true;
-}
-
-FEAssetPackage* FENativeScriptProject::CreateEngineLIBAssetPackage()
-{
-	FEAssetPackage* EngineLIBAssetPackage = new FEAssetPackage();
-	EngineLIBAssetPackage->SetName("EngineHeaders");
-	if (EngineLIBAssetPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::CreateEngineLIBAssetPackage: Error creating asset package", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return nullptr;
-	}
-
-	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
-	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
-	{
-		LOG.Add("FENativeScriptProject::CreateEngineLIBAssetPackage: Engine folder does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return nullptr;
-	}
-
-	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
-
-	std::vector<std::string> DebugStrings;
-	// After having all files in the engine folder, we need to filter out only the lib files.
-	for (size_t i = 0; i < AllFiles.size(); i++)
-	{
-		if (AllFiles[i].find(".lib") != std::string::npos)
-		{
-			// FIX ME! Currently projects would need only debug lib files. Is it correct?
-			// And only FocalEngine.lib and FEBasicApplication.lib are needed.
-			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
-				continue;
-
-			FEAssetPackageEntryIntializeData EntryData;
-			EntryData.Name = FILE_SYSTEM.GetFileName(AllFiles[i]);
-			DebugStrings.push_back(EntryData.Name);
-			EntryData.Type = "BINARY";
-			EntryData.Tag = ENGINE_RESOURCE_TAG;
-			EntryData.Comment = "Engine lib file";
-
-			EngineLIBAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
-		}
-	}
-
-	return EngineLIBAssetPackage;
-}
-
-bool FENativeScriptProject::UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
-{
-	if (AssetPackage == nullptr)
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineLIBAssetPackage: Asset package is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (Path.empty())
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineLIBAssetPackage: Destination path is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineLIBAssetPackage: Destination path does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
-	if (AssetPackageContent.empty())
-	{
-		LOG.Add("FENativeScriptProject::UnPackEngineLIBAssetPackage: Asset package is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	for (size_t i = 0; i < AssetPackageContent.size(); i++)
-	{
-		// Now we are ready to write the file.
-		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
-		{
-			LOG.Add("FENativeScriptProject::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-			return false;
-		}
-	}
-
-	return true;
-}
-
 bool FENativeScriptProject::ConfigureAndBuildCMake()
 {
 	if (VSProjectDirectory.empty())
 	{
-		LOG.Add("FENativeScriptProject::RunCMake: VSProjectDirectory is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::ConfigureAndBuildCMake: VSProjectDirectory is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -848,7 +568,7 @@ bool FENativeScriptProject::ConfigureAndBuildCMake()
 	int ConfigureResult = std::system(ConfigureCommand.c_str());
 	if (ConfigureResult != 0)
 	{
-		LOG.Add("FENativeScriptProject::RunCMake: Error running CMake configure command", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::ConfigureAndBuildCMake: Error running CMake configure command", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -859,7 +579,7 @@ bool FENativeScriptProject::ConfigureAndBuildCMake()
 	int BuildResult = std::system(BuildCommand.c_str());
 	if (BuildResult != 0)
 	{
-		LOG.Add("FENativeScriptProject::RunCMake: Error running CMake build command", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::ConfigureAndBuildCMake: Error running CMake build command", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -940,11 +660,6 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 
 	std::vector<InstructionWhatToReplaceInFile> Instructions;
 	InstructionWhatToReplaceInFile CurrentInstruction;
-	CurrentInstruction.SubStringInLineToTrigger = "SET_MODULE_ID(\"PLACE_HOLDER\")";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = "2342HA";
-	Instructions.push_back(CurrentInstruction);
-
 	CurrentInstruction.SubStringInLineToTrigger = "class PLACE_HOLDER : public FENativeScriptCore";
 	CurrentInstruction.What = "PLACE_HOLDER";
 	CurrentInstruction.ReplaceWith = ScriptName;
@@ -958,6 +673,11 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 	CurrentInstruction.SubStringInLineToTrigger = "REGISTER_SCRIPT_FIELD(PLACE_HOLDER, int, ExampleVariable)";
 	CurrentInstruction.What = "PLACE_HOLDER";
 	CurrentInstruction.ReplaceWith = ScriptName;
+	Instructions.push_back(CurrentInstruction);
+
+	CurrentInstruction.SubStringInLineToTrigger = "SET_MODULE_ID(\"PLACE_HOLDER\");";
+	CurrentInstruction.What = "PLACE_HOLDER";
+	CurrentInstruction.ReplaceWith = Parent->GetObjectID();
 	Instructions.push_back(CurrentInstruction);
 
 	std::string ScriptHeaderFilePath = VSProjectDirectory + ScriptName + ".h";
@@ -1133,4 +853,43 @@ bool FENativeScriptProject::Update()
 	UpdateTrackedFileWriteTime(ReleaseDllFileData);
 
 	return bResult;
+}
+
+std::vector<std::string> FENativeScriptProject::GetSourceFileList()
+{
+	return SourceFileList;
+}
+
+bool FENativeScriptProject::ExtractSourceFilesTo(std::string DestinationDirectory)
+{
+	if (DestinationDirectory.empty())
+	{
+		LOG.Add("FENativeScriptProject::ExtractSourceFilesTo: Destination directory is empty", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(DestinationDirectory))
+	{
+		LOG.Add("FENativeScriptProject::ExtractSourceFilesTo: Destination directory does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = DataToRecoverVSProject->GetEntryList();
+	if (AssetPackageContent.empty())
+	{
+		LOG.Add("FENativeScriptProject::ExtractSourceFilesTo: Asset package is empty", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::vector<std::string> SourceFileFullPathList;
+	for (size_t i = 0; i < AssetPackageContent.size(); i++)
+	{
+		if (!DataToRecoverVSProject->ExportAssetToFile(AssetPackageContent[i].ID, DestinationDirectory + AssetPackageContent[i].Name))
+		{
+			LOG.Add("FENativeScriptProject::ExtractSourceFilesTo: Error exporting asset " + AssetPackageContent[i].Name, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
 }

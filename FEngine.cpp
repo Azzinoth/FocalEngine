@@ -72,8 +72,8 @@ void FEngine::BeginFrame(const bool InternalCall)
 	APPLICATION.GetMainWindow()->BeginFrame();
 
 #ifdef FE_DEBUG_ENABLED
-	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShadersList();
-	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetEnginePrivateShadersList();
+	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShaderIDList();
+	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetEnginePrivateShaderIDList();
 	for (size_t i = 0; i < TempList.size(); i++)
 	{
 		ShaderList.push_back(TempList[i]);
@@ -118,6 +118,14 @@ void FEngine::EndFrame(const bool InternalCall)
 	APPLICATION.GetMainWindow()->EndFrame();
 	APPLICATION.EndFrame();
 	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
+
+	// FIX ME! This is a temporary solution.
+	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)
+	{
+		FILE_SYSTEM.DeleteDirectory(FILE_SYSTEM.GetCurrentWorkingPath() + "/SubSystems");
+		delete RESOURCE_MANAGER.PrivateEngineAssetPackage;
+		RESOURCE_MANAGER.PrivateEngineAssetPackage = nullptr;
+	}
 }
 
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)

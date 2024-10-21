@@ -31,6 +31,7 @@ namespace FocalEngine
 		bool DoesDirectoryExist(const std::string& Path);
 		bool RenameDirectory(const std::string& Path, const std::string& NewPath);
 		bool CreateDirectory(const std::string& Path);
+		bool CopyDirectory(const std::string& Path, const std::string& NewPath);
 		bool DeleteDirectory(const std::string& Path);
 
 		std::vector<std::string> GetFilesInDirectory(const std::string& Path, bool bRecursive = false);

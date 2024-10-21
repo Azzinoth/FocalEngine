@@ -1,4 +1,7 @@
 #include "FENativeScriptSystem.h"
+#ifndef FOCAL_ENGINE_SHARED
+#include "../../../../Resources/UserScriptsData/FENativeScriptConnector.h"
+#endif
 using namespace FocalEngine;
 
 #ifdef FOCAL_ENGINE_SHARED
@@ -99,18 +102,18 @@ void FENativeScriptSystem::Update(double DeltaTime)
 
 	//if (ActiveGameModeScenes.empty())
 	//{
-		std::vector<FEScene*> ActiveEditorScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::EditorMode);
-		for (FEScene* Scene : ActiveEditorScenes)
-		{
-			std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
+	std::vector<FEScene*> ActiveEditorScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::EditorMode);
+	for (FEScene* Scene : ActiveEditorScenes)
+	{
+		std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
 
-			for (size_t i = 0; i < Entities.size(); i++)
-			{
-				FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
-				if (NativeScriptComponent.IsInitialized() && NativeScriptComponent.ScriptData->bRunInEditor)
-					NativeScriptComponent.OnUpdate(DeltaTime);
-			}
+		for (size_t i = 0; i < Entities.size(); i++)
+		{
+			FENativeScriptComponent& NativeScriptComponent = Entities[i]->GetComponent<FENativeScriptComponent>();
+			if (NativeScriptComponent.IsInitialized() && NativeScriptComponent.ScriptData->bRunInEditor)
+				NativeScriptComponent.OnUpdate(DeltaTime);
 		}
+	}
 	//}
 }
 
@@ -501,7 +504,12 @@ bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::stri
 		return false;
 	}
 
-	InitializeComponentInternal(Entity, Entity->GetComponent<FENativeScriptComponent>(), ActiveModuleID, ActiveModule->Registry[ScriptName]);
+	if (!InitializeComponentInternal(Entity, Entity->GetComponent<FENativeScriptComponent>(), ActiveModuleID, ActiveModule->Registry[ScriptName]))
+	{
+		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to initialize script component.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
 	return true;
 }
 
@@ -575,6 +583,14 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(std::string ModuleID)
 		return false;
 	}
 
+#ifndef FOCAL_ENGINE_SHARED
+	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetObjectID()))
+	{
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + ModuleID + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+#endif //  FOCAL_ENGINE_SHARED
+
 	return ActivateNativeScriptModule(Module);
 }
 
@@ -599,6 +615,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 		return false;
 	}
 
+#ifdef FOCAL_ENGINE_SHARED
 	// First we need to extract the DLL and PDB files to a temporary directory.
 	std::string ExtractedFolderPath = FILE_SYSTEM.GetCurrentWorkingPath() + "/ExtractedNativeScripts/";
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
@@ -644,7 +661,21 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	HMODULE DLLHandle = LoadLibraryA(DLLPath.c_str());
 	if (!DLLHandle)
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to load DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		DWORD ErrorMessageID = ::GetLastError();
+		if (ErrorMessageID == 0)
+		{
+			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to load DLL: " + DLLPath + " without error message.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+
+		LPSTR MessageBuffer = nullptr;
+		size_t Size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+									 NULL, ErrorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&MessageBuffer, 0, NULL);
+
+		std::string StringMessage(MessageBuffer, Size);
+		LocalFree(MessageBuffer);
+
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to load DLL: " + DLLPath + " with error: " + StringMessage, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -735,6 +766,18 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 		Module->Registry[Iterator->first].VariablesRegistry = Iterator->second.VariablesRegistry;
 		Iterator++;
 	}
+#else
+	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetObjectID()))
+	{
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + Module->GetObjectID() + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	Module->bIsLoadedToMemory = true;
+	Module->DLLHandle = nullptr;
+	Module->ExtractedDLLPath = "";
+	Module->Registry = STATIC_CORE_SCRIPT_MANAGER.GetRegistryForModuleWithID(Module->GetObjectID());
+#endif //  FOCAL_ENGINE_SHARED
 
 	ActiveModules[Module->GetObjectID()] = Module;
 	return true;
@@ -1164,6 +1207,9 @@ bool FENativeScriptSystem::ReloadDLL(FENativeScriptModule* ModuleToUpdate)
 			ComponentToRestore[i].Entity->RemoveComponent<FENativeScriptComponent>();
 		}
 	}
+
+	if (ComponentToRestore.empty())
+		bAtLeastOneComponentRestored = true;
 
 	return bAtLeastOneComponentRestored;
 }

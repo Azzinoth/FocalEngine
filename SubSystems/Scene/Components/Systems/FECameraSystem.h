@@ -28,7 +28,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FECameraSystem)
 
 		void SetMainCamera(FEEntity* CameraEntity);
-		FEEntity* GetMainCameraEntity(FEScene* Scene) const;
+		FEEntity* GetMainCamera(FEScene* Scene) const;
 		FEViewport* GetMainCameraViewport(FEScene* Scene) const;
 
 		bool SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID);

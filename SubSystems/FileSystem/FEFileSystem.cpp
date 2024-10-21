@@ -181,6 +181,21 @@ bool FEFileSystem::CreateDirectory(const std::string& Path)
 	}
 }
 
+bool FEFileSystem::CopyDirectory(const std::string& Path, const std::string& NewPath)
+{
+	try
+	{
+		std::filesystem::copy(Path, NewPath, std::filesystem::copy_options::recursive);
+	}
+	catch (const std::exception& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::CopyDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
+}
+
 bool FEFileSystem::DeleteDirectory(const std::string& Path)
 {
 	try

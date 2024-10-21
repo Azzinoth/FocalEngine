@@ -59,8 +59,8 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
-		double CPUTime, GPUTime;
-		double CurrentDeltaTime;
+		double CPUTime = 0.0, GPUTime = 0.0;
+		double CurrentDeltaTime = 0.0;
 
 		bool bSimplifiedRendering = false;
 		bool bVsyncEnabled = true;

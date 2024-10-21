@@ -15,6 +15,8 @@ namespace FocalEngine
 
 		FEScene* GetScene(std::string ID);
 		FEScene* CreateScene(std::string Name = "", std::string ForceObjectID = "", FESceneFlag Flags = FESceneFlag::None);
+		Json::Value SaveSceneToJSON(FEScene* Scene, std::function<bool(FEEntity*)> Filter = nullptr);
+		FEScene* LoadSceneFromJSON(Json::Value& Root, FESceneFlag Flags = FESceneFlag::None);
 		std::vector<std::string> GetSceneIDList();
 		std::vector<FEScene*> GetSceneByName(std::string Name);
 
@@ -48,10 +50,14 @@ namespace FocalEngine
 		bool AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* FirstStaringNode, FENaiveSceneGraphNode* SecondStartingNode, bool bCheckNames = false);
 
 		std::vector<FEEntity*> InstantiatePrefab(FEPrefab* Prefab, FEScene* Scene, bool bAddToSceneRoot = false);
+
+		bool SetStartingScene(std::string SceneID);
+		FEScene* GetStartingScene();
 	private:
 		SINGLETON_PRIVATE_PART(FESceneManager)
 
 		std::unordered_map<std::string, FEScene*> Scenes;
+		std::string StartingSceneID;
 
 		template<typename T>
 		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity);

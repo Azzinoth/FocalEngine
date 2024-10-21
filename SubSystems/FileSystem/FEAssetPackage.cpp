@@ -1,4 +1,6 @@
 #include "FEAssetPackage.h"
+#include "../ResourceManager/FEResourceManager.h"
+#include "../SubSystems/Scene/FESceneManager.h"
 using namespace FocalEngine;
 
 std::string FEAssetPackage::HeaderStartPhrase = "FEAssetPackage";
@@ -87,6 +89,215 @@ std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEA
 	return IDToUse;
 }
 
+std::string FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryIntializeData IntializeData)
+{
+	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
+	if (IsAssetIDPresent(IDToUse))
+	{
+		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return "";
+	}
+
+	std::string NameToUse = IntializeData.IsEmpty() ? "" : IntializeData.Name;
+	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
+	std::string TagToUse = IntializeData.IsEmpty() ? "" : IntializeData.Tag;
+	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
+
+	// Now we will add object to the asset package data.
+	FEAssetPackageAssetInfo NewEntry;
+	NewEntry.ID = IDToUse;
+	NewEntry.Name = NameToUse;
+	NewEntry.TimeStamp = TIME.GetTimeStamp(FE_TIME_RESOLUTION_NANOSECONDS);
+	NewEntry.Size = Size;
+	NewEntry.Offset = Data.size();
+	NewEntry.Type = TypeToUse;
+	NewEntry.Tag = TagToUse;
+	NewEntry.Comment = CommentToUse;
+
+	Header.Entries[NewEntry.ID] = NewEntry;
+
+	Header.EntriesCount++;
+	UpdateHeaderSize();
+
+	// And finally, add the object data to the asset package data.
+	Data.insert(Data.end(), RawData, RawData + Size);
+
+	return IDToUse;
+}
+
+std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIntializeData IntializeData)
+{
+	if (Object == nullptr)
+	{
+		LOG.Add("FEAssetPackage::ImportAsset: Object is nullptr.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return "";
+	}
+
+	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
+	if (IsAssetIDPresent(IDToUse))
+	{
+		LOG.Add("FEAssetPackage::ImportAsset: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return "";
+	}
+
+	std::string NameToUse = IntializeData.IsEmpty() ? Object->GetName() : IntializeData.Name.empty() ? Object->GetName() : IntializeData.Name;
+	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
+	std::string TagToUse = IntializeData.IsEmpty() ? Object->GetTag() : IntializeData.Tag;
+	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
+
+	// FIX ME! It should not save info to file, but to memory.
+	switch (Object->GetType())
+	{
+		case FE_OBJECT_TYPE::FE_TEXTURE:
+		{
+			FETexture* Texture = reinterpret_cast<FETexture*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_TEXTURE";
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempTexture.texture";
+			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath.c_str());
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_MESH:
+		{
+			FEMesh* Mesh = reinterpret_cast<FEMesh*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_MESH";
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempMesh.mesh";
+			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath.c_str());
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_MATERIAL:
+		{
+			FEMaterial* Material = reinterpret_cast<FEMaterial*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_MATERIAL";
+
+			Json::Value JsonRepresentation = RESOURCE_MANAGER.SaveMaterialToJSON(Material);
+
+			Json::StreamWriterBuilder Builder;
+			const std::string JsonFile = Json::writeString(Builder, JsonRepresentation);
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempMaterial.material";
+			std::ofstream ResourcesFile;
+			ResourcesFile.open(FilePath);
+			ResourcesFile << JsonFile;
+			ResourcesFile.close();
+
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_GAMEMODEL:
+		{
+			FEGameModel* GameModel = reinterpret_cast<FEGameModel*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_GAMEMODEL";
+
+			Json::Value JsonRepresentation = RESOURCE_MANAGER.SaveGameModelToJSON(GameModel);
+
+			Json::StreamWriterBuilder Builder;
+			const std::string JsonFile = Json::writeString(Builder, JsonRepresentation);
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempGameModel.gamemodel";
+			std::ofstream ResourcesFile;
+			ResourcesFile.open(FilePath);
+			ResourcesFile << JsonFile;
+			ResourcesFile.close();
+
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_PREFAB:
+		{
+			FEPrefab* Prefab = reinterpret_cast<FEPrefab*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_PREFAB";
+
+			Json::Value JsonRepresentation = RESOURCE_MANAGER.SavePrefabToJSON(Prefab);
+
+			Json::StreamWriterBuilder Builder;
+			const std::string JsonFile = Json::writeString(Builder, JsonRepresentation);
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempPrefab.prefab";
+			std::ofstream ResourcesFile;
+			ResourcesFile.open(FilePath);
+			ResourcesFile << JsonFile;
+			ResourcesFile.close();
+
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_NATIVE_SCRIPT_MODULE:
+		{
+			FENativeScriptModule* NativeScriptModule = reinterpret_cast<FENativeScriptModule*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_NATIVE_SCRIPT_MODULE";
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempNativeScriptModule.nativescriptmodule";
+			RESOURCE_MANAGER.SaveFENativeScriptModule(NativeScriptModule, FilePath);
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		case FE_OBJECT_TYPE::FE_SCENE:
+		{
+			FEScene* Scene = reinterpret_cast<FEScene*>(Object);
+
+			if (TypeToUse.empty())
+				TypeToUse = "FE_SCENE";
+
+			Json::Value JsonRepresentation = SCENE_MANAGER.SaveSceneToJSON(Scene);
+			Json::StreamWriterBuilder Builder;
+			const std::string JsonFile = Json::writeString(Builder, JsonRepresentation);
+
+			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempScene.scene";
+			std::ofstream ResourcesFile;
+			ResourcesFile.open(FilePath);
+			ResourcesFile << JsonFile;
+			ResourcesFile.close();
+
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			FILE_SYSTEM.DeleteFile(FilePath);
+
+			return ResultingID;
+		}
+
+		default:
+		{
+			LOG.Add("FEAssetPackage::ImportAsset: Object type not supported: " + Object->GetName(), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+			return "";
+		}
+	}
+
+	return "";
+}
+
 bool FEAssetPackage::RemoveAsset(const std::string& ID)
 {
 	if (!IsAssetIDPresent(ID))
@@ -137,6 +348,37 @@ bool FEAssetPackage::UpdateAssetFromFile(const std::string& ID, const std::strin
 	if (NewID.empty())
 	{
 		LOG.Add("FEAssetPackage::UpdateFile: Could not import file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (NewID != ID)
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
+}
+
+bool FEAssetPackage::UpdateAssetFromMemory(const std::string& ID, unsigned char* RawData, size_t Size)
+{
+	if (!IsAssetIDPresent(ID))
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Asset ID not present: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEAssetPackageAssetInfo OldEntryInfo = Header.Entries[ID];
+	if (!RemoveAsset(ID))
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Could not remove old asset: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::string NewID = ImportAssetFromMemory(RawData, Size, FEAssetPackageEntryIntializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
+	if (NewID.empty())
+	{
+		LOG.Add("FEAssetPackage::UpdateFile: Could not import file from memory.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -315,6 +557,22 @@ bool FEAssetPackage::ExportAssetToFile(const std::string& ID, const std::string&
 	return true;
 }
 
+bool FEAssetPackage::ExportAssetToMemory(const std::string& ID, unsigned char*& RawData, size_t& Size)
+{
+	if (!IsAssetIDPresent(ID))
+	{
+		LOG.Add("FEAssetPackage::ExportAssetToMemory: Asset ID not present: " + ID, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEAssetPackageAssetInfo& Entry = Header.Entries[ID];
+	RawData = new unsigned char[Entry.Size];
+	memcpy(RawData, Data.data() + Entry.Offset, Entry.Size);
+	Size = Entry.Size;
+
+	return true;
+}
+
 size_t FEAssetPackage::GetBuildTimeStamp()
 {
 	return Header.BuildTimeStamp;
@@ -489,4 +747,16 @@ bool FEAssetPackage::LoadFromMemory(unsigned char* RawData, size_t Size)
 	memcpy(Data.data(), CurrentDataPointer, Size - Header.Size);
 
 	return true;
+}
+
+std::vector<std::string> FEAssetPackage::GetAssetIDsByName(const std::string& Name)
+{
+	std::vector<std::string> Result;
+	for (auto& Entry : Header.Entries)
+	{
+		if (Entry.second.Name == Name)
+			Result.push_back(Entry.first);
+	}
+
+	return Result;
 }

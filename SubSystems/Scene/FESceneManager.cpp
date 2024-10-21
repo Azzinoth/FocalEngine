@@ -38,6 +38,34 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 	return Scene;
 }
 
+Json::Value FESceneManager::SaveSceneToJSON(FEScene* Scene, std::function<bool(FEEntity*)> Filter)
+{
+	if (Scene == nullptr)
+	{
+		LOG.Add("FESceneManager::SaveSceneToJSON: Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Json::Value();
+	}
+
+	Json::Value Root;
+
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(Scene);
+	Json::Value SceneHierarchy = Scene->SceneGraph.ToJson(Filter);
+	Root["Scene hierarchy"] = SceneHierarchy;
+
+	return Root;
+}
+
+FEScene* FESceneManager::LoadSceneFromJSON(Json::Value& Root, FESceneFlag Flags)
+{
+	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
+	FEScene* NewScene = SCENE_MANAGER.CreateScene(LoadedObjectData.Name, LoadedObjectData.ID, Flags);
+	RESOURCE_MANAGER.SetTag(NewScene, LoadedObjectData.Tag);
+
+	NewScene->SceneGraph.FromJson(Root["Scene hierarchy"]);
+	return NewScene;
+}
+
 void FESceneManager::RegisterAllComponentCallbacks(FEScene* Scene)
 {
 	Scene->Registry.on_construct<FETagComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETagComponent>>();
@@ -402,4 +430,46 @@ void FESceneManager::Clear()
 	{
 		DeleteScene(ScenesToDelete[i]);
 	}
+}
+
+FEScene* FESceneManager::GetStartingScene()
+{
+	if (StartingSceneID.empty() || GetScene(StartingSceneID) == nullptr)
+	{
+		std::vector<std::string> TagsToAvoid = RESOURCE_MANAGER.GetTagsThatWillPreventDeletion();
+		TagsToAvoid.push_back(PREFAB_SCENE_DESCRIPTION_TAG);
+
+		std::vector<FEScene*> AllScenes = GetAllScenes();
+		for (size_t i = 0; i < AllScenes.size(); i++)
+		{
+			bool bCanUse = true;
+			for (size_t j = 0; j < TagsToAvoid.size(); j++)
+			{
+				if (AllScenes[i]->GetTag() == TagsToAvoid[j])
+				{
+					bCanUse = false;
+					break;
+				}
+			}
+
+			if (bCanUse)
+				return AllScenes[i];
+		}
+
+		return nullptr;
+	}
+
+	return GetScene(StartingSceneID);
+}
+
+bool FESceneManager::SetStartingScene(std::string SceneID)
+{
+	if (GetScene(StartingSceneID) == nullptr)
+	{
+		LOG.Add("FESceneManager::SetStartingScene: Scene with ID " + SceneID + " does not exist.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	StartingSceneID = SceneID;
+	return true;
 }

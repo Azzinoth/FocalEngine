@@ -1,5 +1,8 @@
-#include "SubSystems/FocalEngine/FENativeScriptConnector.h"
+#include "SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.h"
 using namespace FocalEngine;
+
+// DO NOT CHANGE THIS LINE.
+SET_MODULE_ID("PLACE_HOLDER");
 
 class PLACE_HOLDER : public FENativeScriptCore
 {

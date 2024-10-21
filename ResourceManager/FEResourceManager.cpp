@@ -75,7 +75,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	}
 
 	File.unsetf(std::ios::skipws);
-	RawFileData.insert(RawFileData.begin(),std::istream_iterator<unsigned char>(File), std::istream_iterator<unsigned char>());
+	RawFileData.insert(RawFileData.begin(), std::istream_iterator<unsigned char>(File), std::istream_iterator<unsigned char>());
 
 	std::vector<unsigned char> RawExtractedData;
 	unsigned int Width, Height;
@@ -89,7 +89,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 	}
 
 	bool bUsingAlpha = false;
-	for (size_t i = 3; i < RawExtractedData.size(); i+=4)
+	for (size_t i = 3; i < RawExtractedData.size(); i += 4)
 	{
 		if (RawExtractedData[i] != 255)
 		{
@@ -151,7 +151,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 		}
 	}
-	
+
 	NewTexture->FileName = FileName;
 
 	if (Name.empty())
@@ -200,7 +200,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 
 	const int MaxDimention = std::max(Texture->Width, Texture->Height);
 	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
-	char** PixelData = new char*[MipCount];
+	char** PixelData = new char* [MipCount];
 
 	for (size_t i = 0; i < MipCount; i++)
 	{
@@ -222,7 +222,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, static_cast<GLint>(i), AdditionalTestPixels));
 
 		int RealSize = 0;
-		for (size_t j = ImgSize * 2 - 1; j > 0 ; j--)
+		for (size_t j = ImgSize * 2 - 1; j > 0; j--)
 		{
 			if (Pixels[j] != ' ')
 			{
@@ -287,7 +287,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
-	
+
 	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -369,7 +369,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 
 		// If some material uses this texture we should set dirty flag.
 		// Game model will updated as a consequences.
-		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialList();
+		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialIDList();
 
 		for (size_t i = 0; i < MaterialList.size(); i++)
 		{
@@ -416,7 +416,7 @@ FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::str
 		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
-	
+
 	File.seekg(0, std::ios::beg);
 	char* FileData = new char[static_cast<int>(FileSize)];
 	File.read(FileData, FileSize);
@@ -483,7 +483,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	{
 		int Size = *(int*)(&FileData[CurrentShift]);
 		CurrentShift += 4;
-		
+
 		NewTexture->UpdateRawData((unsigned char*)(&FileData[CurrentShift]));
 	}
 	else
@@ -565,13 +565,13 @@ FEMesh* FEResourceManager::RawDataToMesh(std::vector<float>& Positions, std::vec
 }
 
 FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
-										 float* UV, const int UVSize,
-										 float* Normals, const int NormSize,
-										 float* Tangents, const int TanSize,
-										 int* Indices, const int IndexSize,
-										 float* Colors, int ColorSize,
-										 float* MatIndexs, const int MatIndexsSize, const int MatCount, 
-										 const std::string Name)
+	float* UV, const int UVSize,
+	float* Normals, const int NormSize,
+	float* Tangents, const int TanSize,
+	int* Indices, const int IndexSize,
+	float* Colors, int ColorSize,
+	float* MatIndexs, const int MatIndexsSize, const int MatCount,
+	const std::string Name)
 {
 	int VertexType = FE_POSITION | FE_INDEX;
 
@@ -802,20 +802,36 @@ void FEResourceManager::LoadStandardMeshes()
 FEResourceManager::FEResourceManager()
 {
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
+
+	// FIX ME! It is temporary solution.
+	// We need to understand should we use files or .fepackage
+	if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
+	{
+		PrivateEngineAssetPackage = new FEAssetPackage();
+		if (!PrivateEngineAssetPackage->LoadFromFile((FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage").c_str()))
+		{
+			LOG.Add("FEResourceManager::FEResourceManager: Can't load EngineResources.fepackage file!", "FE_LOG_LOADING", FE_LOG_ERROR);
+			delete PrivateEngineAssetPackage;
+			PrivateEngineAssetPackage = nullptr;
+		}
+
+		UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
+	}
+
 	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
 	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
 	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
 
 	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-																LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
-																nullptr, nullptr, nullptr, nullptr,
-																"5C267A01466A545E7D1A2E66");
+		LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"5C267A01466A545E7D1A2E66");
 	NewShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	LoadStandardMaterial();
 	LoadStandardMeshes();
 	LoadStandardGameModels();
-	
+
 	// FIX ME! Temporary code.
 	/*FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__09_10_2024/OnlyCamera/UserScriptTest.dll",
 																		   "D:/Script__09_10_2024/OnlyCamera/UserScriptTest.pdb",
@@ -853,14 +869,14 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 
 
 		Result.push_back(RawDataToMesh(OBJLoader.LoadedObjects[i]->FVerC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FVerC.size()),
-									   OBJLoader.LoadedObjects[i]->FTexC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTexC.size()),
-									   OBJLoader.LoadedObjects[i]->FNorC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FNorC.size()),
-									   OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
-								       OBJLoader.LoadedObjects[i]->FInd.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FInd.size()),
-									   nullptr, 0,
-									   OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
-	
-	
+			OBJLoader.LoadedObjects[i]->FTexC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTexC.size()),
+			OBJLoader.LoadedObjects[i]->FNorC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FNorC.size()),
+			OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
+			OBJLoader.LoadedObjects[i]->FInd.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FInd.size()),
+			nullptr, 0,
+			OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
+
+
 		// in rawDataToMesh() hidden FEMesh allocation and TextureIterator will go to hash table so we need to use setMeshName() not setName.
 		Result.back()->SetName(name);
 		Meshes[Result.back()->GetObjectID()] = reinterpret_cast<FEMesh*>(Result.back());
@@ -900,7 +916,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
 	LoadedObjectID = ObjectData.ID;
 	LoadedName = ObjectData.Name;
-	
+
 	File.read(Buffer, 4);
 	const int VertexCout = *(int*)Buffer;
 	char* VertexBuffer = new char[VertexCout * 4];
@@ -956,13 +972,13 @@ FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Na
 	File.close();
 
 	FEMesh* NewMesh = RawDataToMesh((float*)VertexBuffer, VertexCout,
-									(float*)TexBuffer, TexCout,
-									(float*)NormBuffer, NormCout,
-									(float*)TangBuffer, TangCout,
-									(int*)IndexBuffer, IndexCout,
-									nullptr, 0,
-									(float*)MatIndexBuffer, MatIndexCout, MatCount,
-									Name.empty() ? LoadedName : Name);
+		(float*)TexBuffer, TexCout,
+		(float*)NormBuffer, NormCout,
+		(float*)TangBuffer, TangCout,
+		(int*)IndexBuffer, IndexCout,
+		nullptr, 0,
+		(float*)MatIndexBuffer, MatIndexCout, MatCount,
+		Name.empty() ? LoadedName : Name);
 
 	const std::string OldID = NewMesh->ID;
 	// Overwrite ID with Loaded ID.
@@ -996,16 +1012,111 @@ FEMaterial* FEResourceManager::CreateMaterial(std::string Name, const std::strin
 	if (!ForceObjectID.empty())
 		NewMaterial->SetID(ForceObjectID);
 	Materials[NewMaterial->GetObjectID()] = NewMaterial;
-	
+
 	return Materials[NewMaterial->GetObjectID()];
 }
 
-std::vector<std::string> FEResourceManager::GetMaterialList()
+Json::Value FEResourceManager::SaveMaterialToJSON(FEMaterial* Material)
+{
+	Json::Value Root;
+
+	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+	{
+		if (Material->Textures[i] != nullptr)
+			Root["Textures"][std::to_string(i).c_str()] = Material->Textures[i]->GetObjectID();
+
+		if (Material->TextureBindings[i] != -1)
+			Root["Texture bindings"][std::to_string(i).c_str()] = Material->TextureBindings[i];
+
+		if (Material->TextureChannels[i] != -1)
+			Root["Texture channels"][std::to_string(i).c_str()] = Material->TextureChannels[i];
+	}
+
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(Material);
+	Root["Metalness"] = Material->GetMetalness();
+	Root["Roughness"] = Material->GetRoughness();
+	Root["NormalMap intensity"] = Material->GetNormalMapIntensity();
+	Root["AmbientOcclusion intensity"] = Material->GetAmbientOcclusionIntensity();
+	Root["AmbientOcclusionMap intensity"] = Material->GetAmbientOcclusionMapIntensity();
+	Root["RoughnessMap intensity"] = Material->GetRoughnessMapIntensity();
+	Root["MetalnessMap intensity"] = Material->GetMetalnessMapIntensity();
+	Root["Tiling"] = Material->GetTiling();
+	Root["Compack packing"] = Material->IsCompackPacking();
+
+	return Root;
+}
+
+FEMaterial* FEResourceManager::LoadMaterialFromJSON(Json::Value& Root)
+{
+	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
+	FEMaterial* NewMaterial = RESOURCE_MANAGER.CreateMaterial(LoadedObjectData.Name, LoadedObjectData.ID);
+	RESOURCE_MANAGER.SetTag(NewMaterial, LoadedObjectData.Tag);
+	NewMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+
+	std::vector<Json::String> MembersList = Root.getMemberNames();
+	for (size_t i = 0; i < MembersList.size(); i++)
+	{
+		if (MembersList[i] == "Textures")
+		{
+			for (size_t j = 0; j < FE_MAX_TEXTURES_PER_MATERIAL; j++)
+			{
+				if (Root["Textures"].isMember(std::to_string(j).c_str()))
+				{
+					std::string TextureID = Root["Textures"][std::to_string(j).c_str()].asCString();
+					NewMaterial->Textures[j] = RESOURCE_MANAGER.GetTexture(TextureID);
+					if (NewMaterial->Textures[j] == nullptr)
+						NewMaterial->Textures[j] = RESOURCE_MANAGER.NoTexture;
+				}
+			}
+		}
+
+		if (MembersList[i] == "Texture bindings")
+		{
+			for (size_t j = 0; j < FE_MAX_TEXTURES_PER_MATERIAL; j++)
+			{
+				if (Root["Texture bindings"].isMember(std::to_string(j).c_str()))
+				{
+					int Binding = Root["Texture bindings"][std::to_string(j).c_str()].asInt();
+					NewMaterial->TextureBindings[j] = Binding;
+				}
+			}
+		}
+
+		if (MembersList[i] == "Texture channels")
+		{
+			for (size_t j = 0; j < FE_MAX_TEXTURES_PER_MATERIAL; j++)
+			{
+				if (Root["Texture channels"].isMember(std::to_string(j).c_str()))
+				{
+					int binding = Root["Texture channels"][std::to_string(j).c_str()].asInt();
+					NewMaterial->TextureChannels[j] = binding;
+				}
+			}
+		}
+	}
+
+	NewMaterial->SetMetalness(Root["Metalness"].asFloat());
+	NewMaterial->SetRoughness(Root["Roughness"].asFloat());
+	NewMaterial->SetNormalMapIntensity(Root["NormalMap intensity"].asFloat());
+	NewMaterial->SetAmbientOcclusionIntensity(Root["AmbientOcclusion intensity"].asFloat());
+	NewMaterial->SetAmbientOcclusionMapIntensity(Root["AmbientOcclusionMap intensity"].asFloat());
+	NewMaterial->SetRoughnessMapIntensity(Root["RoughnessMap intensity"].asFloat());
+	NewMaterial->SetMetalnessMapIntensity(Root["MetalnessMap intensity"].asFloat());
+
+	if (Root.isMember("Tiling"))
+		NewMaterial->SetTiling(Root["Tiling"].asFloat());
+	NewMaterial->SetCompackPacking(Root["Compack packing"].asBool());
+
+	return NewMaterial;
+}
+
+std::vector<std::string> FEResourceManager::GetMaterialIDList()
 {
 	FE_MAP_TO_STR_VECTOR(Materials)
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateMaterialList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateMaterialIDList()
 {
 	return GetResourceIDListByTag(Materials, ENGINE_RESOURCE_TAG);
 }
@@ -1014,7 +1125,7 @@ FEMaterial* FEResourceManager::GetMaterial(const std::string ID)
 {
 	if (Materials.find(ID) == Materials.end())
 		return nullptr;
-	
+
 	return Materials[ID];
 }
 
@@ -1047,12 +1158,12 @@ std::string FEResourceManager::GetFileNameFromFilePath(const std::string FilePat
 	return std::string("");
 }
 
-std::vector<std::string> FEResourceManager::GetMeshList()
+std::vector<std::string> FEResourceManager::GetMeshIDList()
 {
 	FE_MAP_TO_STR_VECTOR(Meshes)
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateMeshList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateMeshIDList()
 {
 	return GetResourceIDListByTag(Meshes, ENGINE_RESOURCE_TAG);
 }
@@ -1061,7 +1172,7 @@ FEMesh* FEResourceManager::GetMesh(const std::string ID)
 {
 	if (Meshes.find(ID) == Meshes.end())
 		return nullptr;
-	
+
 	return Meshes[ID];
 }
 
@@ -1085,9 +1196,9 @@ void FEResourceManager::LoadStandardMaterial()
 	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial", "18251A5E0F08013Z3939317U");
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl").c_str()).c_str(),
-															 LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str()).c_str(),
-															 nullptr, nullptr, nullptr, nullptr,
-															 "6917497A5E0C05454876186F");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"6917497A5E0C05454876186F");
 	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
 
 	const FEShaderParam Color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
@@ -1095,45 +1206,45 @@ void FEResourceManager::LoadStandardMaterial()
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str()).c_str(),
-															LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str(),
-															nullptr, nullptr, nullptr, nullptr,
-															"4C41665B5E125C2A07456E44");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"4C41665B5E125C2A07456E44");
 	FEPhongShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	// ****************************** PBR SHADER ******************************
 	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl").c_str()).c_str(),
-													  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
-													  nullptr, nullptr, nullptr, nullptr,
-													  "0800253C242B05321A332D09");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"0800253C242B05321A332D09");
 
 	PBRShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
-																	LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str()).c_str(),
-																	nullptr, nullptr, nullptr, nullptr,
-																	"5E45017E664A62273E191500");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"5E45017E664A62273E191500");
 
 	PBRShaderForward->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl").c_str()).c_str(),
-															        LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
-																	nullptr, nullptr, nullptr, nullptr,
-																	"670B01496E202658377A4576");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"670B01496E202658377A4576");
 
 	PBRGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
 
 	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
-																		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
-																		nullptr, nullptr, nullptr, nullptr,
-																		"7C80085C184442155D0F3C7B");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"7C80085C184442155D0F3C7B");
 
 	PBRInstancedShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl").c_str()).c_str(),
-																					  LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
-																					  nullptr, nullptr, nullptr, nullptr,
-																					  "613830232E12602D6A1D2C17");
+		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"613830232E12602D6A1D2C17");
 
 	PBRInstancedGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
@@ -1200,7 +1311,7 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetNormalsBufferID(), 0, sizeof(float) * Count, Normals));
 	File.write((char*)&Count, sizeof(int));
 	File.write((char*)Normals, sizeof(float) * Count);
-	
+
 	Count = Mesh->GetTangentsCount();
 	float* Tangents = new float[Count];
 	FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetTangentsBufferID(), 0, sizeof(float) * Count, Tangents));
@@ -1215,7 +1326,7 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 
 	int MaterialCount = Mesh->MaterialsCount;
 	File.write((char*)&MaterialCount, sizeof(int));
-	
+
 	if (MaterialCount > 1)
 	{
 		Count = Mesh->GetMaterialsIndicesCount();
@@ -1243,7 +1354,7 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const char* FileName)
 	delete[] Indices;
 }
 
-std::vector<std::string> FEResourceManager::GetTextureList()
+std::vector<std::string> FEResourceManager::GetTextureIDList()
 {
 	FE_MAP_TO_STR_VECTOR(Textures)
 }
@@ -1324,12 +1435,12 @@ void FEResourceManager::DeleteFEMesh(const FEMesh* Mesh)
 	delete Mesh;
 }
 
-std::vector<std::string> FEResourceManager::GetGameModelList()
+std::vector<std::string> FEResourceManager::GetGameModelIDList()
 {
 	FE_MAP_TO_STR_VECTOR(GameModels)
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateGameModelList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateGameModelIDList()
 {
 	return GetResourceIDListByTag(GameModels, ENGINE_RESOURCE_TAG);
 }
@@ -1338,7 +1449,7 @@ FEGameModel* FEResourceManager::GetGameModel(const std::string ID)
 {
 	if (GameModels.find(ID) == GameModels.end())
 		return nullptr;
-	
+
 	return GameModels[ID];
 }
 
@@ -1381,9 +1492,78 @@ FEGameModel* FEResourceManager::CreateGameModel(FEMesh* Mesh, FEMaterial* Materi
 	{
 		GameModels[NewGameModel->ID] = NewGameModel;
 	}
-	
+
 	GameModels[NewGameModel->ID]->SetName(Name);
 	return GameModels[NewGameModel->ID];
+}
+
+Json::Value FEResourceManager::SaveGameModelToJSON(FEGameModel* GameModel)
+{
+	Json::Value Root;
+
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(GameModel);
+	Root["Mesh"] = GameModel->Mesh->GetObjectID();
+	Root["Material"] = GameModel->Material->GetObjectID();
+	Root["ScaleFactor"] = GameModel->GetScaleFactor();
+
+	Root["LODs"]["HaveLODlevels"] = GameModel->IsUsingLOD();
+	if (GameModel->IsUsingLOD())
+	{
+		Root["LODs"]["CullDistance"] = GameModel->GetCullDistance();
+		Root["LODs"]["Billboard zero rotaion"] = GameModel->GetBillboardZeroRotaion();
+		Root["LODs"]["LODCount"] = GameModel->GetLODCount();
+		for (size_t i = 0; i < GameModel->GetLODCount(); i++)
+		{
+			Root["LODs"][std::to_string(i)]["Mesh"] = GameModel->GetLODMesh(i)->GetObjectID();
+			Root["LODs"][std::to_string(i)]["Max draw distance"] = GameModel->GetLODMaxDrawDistance(i);
+			Root["LODs"][std::to_string(i)]["IsBillboard"] = GameModel->IsLODBillboard(i);
+			if (GameModel->IsLODBillboard(i))
+				Root["LODs"][std::to_string(i)]["Billboard material"] = GameModel->GetBillboardMaterial()->GetObjectID();
+		}
+	}
+
+	return Root;
+}
+
+FEGameModel* FEResourceManager::LoadGameModelFromJSON(Json::Value& Root)
+{
+	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
+	FEGameModel* NewGameModel = RESOURCE_MANAGER.CreateGameModel(RESOURCE_MANAGER.GetMesh(Root["Mesh"].asCString()),
+		RESOURCE_MANAGER.GetMaterial(Root["Material"].asCString()),
+		LoadedObjectData.Name, LoadedObjectData.ID);
+
+	if (NewGameModel == nullptr)
+	{
+		LOG.Add("Can't load game model from JSON in function FEResourceManager::LoadGameModelFromJSON.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	RESOURCE_MANAGER.SetTag(NewGameModel, LoadedObjectData.Tag);
+
+	NewGameModel->SetScaleFactor(Root["ScaleFactor"].asFloat());
+
+	bool bHaveLODLevels = Root["LODs"]["HaveLODlevels"].asBool();
+	NewGameModel->SetUsingLOD(bHaveLODLevels);
+	if (bHaveLODLevels)
+	{
+		NewGameModel->SetCullDistance(Root["LODs"]["CullDistance"].asFloat());
+		NewGameModel->SetBillboardZeroRotaion(Root["LODs"]["Billboard zero rotaion"].asFloat());
+
+		size_t LODCount = Root["LODs"]["LODCount"].asInt();
+		for (size_t i = 0; i < LODCount; i++)
+		{
+			NewGameModel->SetLODMesh(i, RESOURCE_MANAGER.GetMesh(Root["LODs"][std::to_string(i)]["Mesh"].asString()));
+			NewGameModel->SetLODMaxDrawDistance(i, Root["LODs"][std::to_string(i)]["Max draw distance"].asFloat());
+
+			bool bLODBillboard = Root["LODs"][std::to_string(i)]["IsBillboard"].asBool();
+			NewGameModel->SetIsLODBillboard(i, bLODBillboard);
+			if (bLODBillboard)
+				NewGameModel->SetBillboardMaterial(RESOURCE_MANAGER.GetMaterial(Root["LODs"][std::to_string(i)]["Billboard material"].asString()));
+		}
+	}
+
+	return NewGameModel;
 }
 
 void FEResourceManager::DeleteGameModel(const FEGameModel* GameModel)
@@ -1393,16 +1573,16 @@ void FEResourceManager::DeleteGameModel(const FEGameModel* GameModel)
 }
 
 FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
-										  const char* TessControlText, const char* TessEvalText,
-										  const char* GeometryText, const char* ComputeText, const std::string ForceObjectID)
+	const char* TessControlText, const char* TessEvalText,
+	const char* GeometryText, const char* ComputeText, const std::string ForceObjectID)
 {
 	if (ShaderName.empty())
 		ShaderName = "unnamedShader";
 
 	// Shader with compute stage cannot contain any other stage.
 	if (ComputeText != nullptr && (VertexText != nullptr || FragmentText != nullptr ||
-								   TessControlText != nullptr || TessEvalText != nullptr ||
-								   GeometryText != nullptr))
+		TessControlText != nullptr || TessEvalText != nullptr ||
+		GeometryText != nullptr))
 	{
 		return nullptr;
 	}
@@ -1440,12 +1620,12 @@ std::vector<FEShader*> FEResourceManager::GetShaderByName(const std::string Name
 	return Result;
 }
 
-std::vector<std::string> FEResourceManager::GetShadersList()
+std::vector<std::string> FEResourceManager::GetShaderIDList()
 {
 	FE_MAP_TO_STR_VECTOR(Shaders)
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateShadersList()
+std::vector<std::string> FEResourceManager::GetEnginePrivateShaderIDList()
 {
 	return GetResourceIDListByTag(Shaders, ENGINE_RESOURCE_TAG);
 }
@@ -1466,7 +1646,7 @@ void FEResourceManager::DeleteShader(const FEShader* Shader)
 	{
 		if (MaterialsIterator->second->Shader->GetNameHash() == Shader->GetNameHash())
 			MaterialsIterator->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
-		
+
 		MaterialsIterator++;
 	}
 
@@ -1486,8 +1666,8 @@ bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* N
 	if (Shaders.find(OldShaderID) != Shaders.end())
 	{
 		Shaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
-										NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
-										NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
+			NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
+			NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
 	}
 
 	return true;
@@ -1566,7 +1746,7 @@ FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const
 	{
 		NewFramebuffer->ColorAttachments[i] = nullptr;
 	}
-	
+
 	NewFramebuffer->Width = Width;
 	NewFramebuffer->Height = Height;
 
@@ -1624,84 +1804,84 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 	std::string Result = "NULL";
 	switch (ObjectType)
 	{
-		case FocalEngine::FE_NULL:
+	case FocalEngine::FE_NULL:
+	{
+		return Result;
+	}
+	case FocalEngine::FE_SHADER:
+	{
+		const size_t NextID = Shaders.size();
+		size_t Index = 0;
+		Result = "Shader_" + std::to_string(NextID + Index);
+		while (Shaders.find(Result) != Shaders.end())
 		{
-			return Result;
-		}
-		case FocalEngine::FE_SHADER:
-		{
-			const size_t NextID = Shaders.size();
-			size_t Index = 0;
+			Index++;
 			Result = "Shader_" + std::to_string(NextID + Index);
-			while (Shaders.find(Result) != Shaders.end())
-			{
-				Index++;
-				Result = "Shader_" + std::to_string(NextID + Index);
-			}
-
-			return Result;
 		}
-		case FocalEngine::FE_TEXTURE:
+
+		return Result;
+	}
+	case FocalEngine::FE_TEXTURE:
+	{
+		const size_t NextID = Textures.size();
+		size_t Index = 0;
+		Result = "Texture_" + std::to_string(NextID + Index);
+		while (Textures.find(Result) != Textures.end())
 		{
-			const size_t NextID = Textures.size();
-			size_t Index = 0;
+			Index++;
 			Result = "Texture_" + std::to_string(NextID + Index);
-			while (Textures.find(Result) != Textures.end())
-			{
-				Index++;
-				Result = "Texture_" + std::to_string(NextID + Index);
-			}
-			
-			return Result;
 		}
-		case FocalEngine::FE_MESH:
+
+		return Result;
+	}
+	case FocalEngine::FE_MESH:
+	{
+		const size_t NextID = Meshes.size();
+		size_t Index = 0;
+		Result = "Mesh_" + std::to_string(NextID + Index);
+		while (Meshes.find(Result) != Meshes.end())
 		{
-			const size_t NextID = Meshes.size();
-			size_t Index = 0;
+			Index++;
 			Result = "Mesh_" + std::to_string(NextID + Index);
-			while (Meshes.find(Result) != Meshes.end())
-			{
-				Index++;
-				Result = "Mesh_" + std::to_string(NextID + Index);
-			}
-
-			return Result;
 		}
-		case FocalEngine::FE_MATERIAL:
+
+		return Result;
+	}
+	case FocalEngine::FE_MATERIAL:
+	{
+		const size_t NextID = Materials.size();
+		size_t Index = 0;
+		Result = "Material_" + std::to_string(NextID + Index);
+		while (Materials.find(Result) != Materials.end())
 		{
-			const size_t NextID = Materials.size();
-			size_t Index = 0;
+			Index++;
 			Result = "Material_" + std::to_string(NextID + Index);
-			while (Materials.find(Result) != Materials.end())
-			{
-				Index++;
-				Result = "Material_" + std::to_string(NextID + Index);
-			}
-
-			return Result;
 		}
-		case FocalEngine::FE_GAMEMODEL:
+
+		return Result;
+	}
+	case FocalEngine::FE_GAMEMODEL:
+	{
+		const size_t NextID = GameModels.size();
+		size_t Index = 0;
+		Result = "GameModel_" + std::to_string(NextID + Index);
+		while (GameModels.find(Result) != GameModels.end())
 		{
-			const size_t NextID = GameModels.size();
-			size_t Index = 0;
+			Index++;
 			Result = "GameModel_" + std::to_string(NextID + Index);
-			while (GameModels.find(Result) != GameModels.end())
-			{
-				Index++;
-				Result = "GameModel_" + std::to_string(NextID + Index);
-			}
-
-			return Result;
-		}
-		case FocalEngine::FE_ENTITY:
-		{
-			return Result;
 		}
 
-		default:
-		{
-			return Result;
-		}	
+		return Result;
+	}
+	case FocalEngine::FE_ENTITY:
+	{
+		return Result;
+	}
+
+	default:
+	{
+		return Result;
+	}
 	}
 }
 
@@ -1715,13 +1895,13 @@ FETexture* FEResourceManager::CreateSameFormatTexture(FETexture* ReferenceTextur
 
 	if (DifferentW == 0 && DifferentH == 0)
 		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, ReferenceTexture->Width, ReferenceTexture->Height, bUnManaged, Name);
-	
+
 	if (DifferentW != 0 && DifferentH == 0)
 		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, DifferentW, ReferenceTexture->Height, bUnManaged, Name);
-	
+
 	if (DifferentW == 0 && DifferentH != 0)
 		return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, ReferenceTexture->Width, DifferentH, bUnManaged, Name);
-	
+
 	return CreateTexture(ReferenceTexture->InternalFormat, ReferenceTexture->Format, DifferentW, DifferentH, bUnManaged, Name);
 }
 
@@ -1893,13 +2073,13 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 			int FloatValue = (Sign << 31) | (Exponent << 23) | (Mantissa << 13);
 
 			return *reinterpret_cast<float*>(&FloatValue);
-		};
+			};
 
 		const unsigned char* TextureData = TextureToExport->GetRawData();
 		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
 
 		size_t RawDataIndex = 0;
-		for (size_t i = 0; i < RawData.size() * sizeof(unsigned short); i+=2)
+		for (size_t i = 0; i < RawData.size() * sizeof(unsigned short); i += 2)
 		{
 			// Combine two bytes into one 16-bit half float.
 			unsigned short Half = (TextureData[i + 1] << 8) | TextureData[i];
@@ -1951,7 +2131,7 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 			RawData[i] = TextreData[i];
 		}
 
-		for (size_t i = 0; i < RawData.size(); i+=2)
+		for (size_t i = 0; i < RawData.size(); i += 2)
 		{
 			std::swap(RawData[i], RawData[i + 1]);
 		}
@@ -2143,7 +2323,7 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 					if (weight > 1.0f)
 						weight = 1.0f;
 
-					
+
 					size_t sourceIndex = (scaledI * width + scaledJ) * sourceByteCount;
 
 					if (sourceIndex + 3 >= width * height * sourceByteCount)
@@ -2260,7 +2440,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 		// Function resizeTextureRawData will output RGBA data, we need to take only R channel.
 		std::vector<unsigned char> RedChannel;
 		RedChannel.resize(SourceTexture->GetWidth() * SourceTexture->GetHeight());
-		for (size_t i = 0; i < RedChannel.size() * 4; i+=4)
+		for (size_t i = 0; i < RedChannel.size() * 4; i += 4)
 		{
 			RedChannel[i / 4] = Result[i];
 		}
@@ -2518,7 +2698,7 @@ FETexture* FEResourceManager::ImportTexture(const char* FileName)
 		LOG.Add("call of FEResourceManager::ImportTexture with nullptr FileName", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Result;
 	}
-	
+
 	if (!FILE_SYSTEM.DoesFileExist(FileName))
 	{
 		LOG.Add("Can't locate file: " + std::string(FileName) + " in FEResourceManager::ImportTexture", "FE_LOG_LOADING", FE_LOG_ERROR);
@@ -2527,7 +2707,7 @@ FETexture* FEResourceManager::ImportTexture(const char* FileName)
 
 	std::string FileExtention = FILE_SYSTEM.GetFileExtension(FileName);
 	std::transform(FileExtention.begin(), FileExtention.end(), FileExtention.begin(), [](const unsigned char C) { return std::tolower(C); });
-	
+
 	if (FileExtention == ".png")
 	{
 		Result = LoadPNGTexture(FileName);
@@ -2541,7 +2721,7 @@ FETexture* FEResourceManager::ImportTexture(const char* FileName)
 	{
 		Result = LoadBMPTexture(FileName);
 	}
-	
+
 	return Result;
 }
 
@@ -2612,7 +2792,7 @@ std::vector<std::string> FEResourceManager::GetPrefabIDList()
 	FE_MAP_TO_STR_VECTOR(Prefabs)
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivatePrefabList()
+std::vector<std::string> FEResourceManager::GetEnginePrivatePrefabIDList()
 {
 	return GetResourceIDListByTag(Prefabs, ENGINE_RESOURCE_TAG);
 }
@@ -2643,7 +2823,6 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 	return Result;
 }
 
-#include "../Scene/FEScene.h"
 FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID, FEScene* SceneDescription)
 {
 	if (Name.empty())
@@ -2668,6 +2847,49 @@ FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string Fo
 	}
 
 	return Prefabs[NewPrefab->ID];
+}
+
+Json::Value FEResourceManager::SavePrefabToJSON(FEPrefab* Prefab)
+{
+	Json::Value Root;
+
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(Prefab);
+	if (Prefab->GetScene() == nullptr)
+	{
+		LOG.Add("FEResourceManager::SavePrefabToJSON: Prefab scene is nullptr!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		Root["SceneID"] = "";
+		return Root;
+	}
+
+	Root["SceneID"] = Prefab->GetScene()->GetObjectID();
+	return Root;
+}
+
+FEPrefab* FEResourceManager::LoadPrefabFromJSON(Json::Value& Root)
+{
+	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
+	std::string SceneID;
+	if (Root.isMember("Scene"))
+	{
+		SceneID = Root["Scene"]["ID"].asCString();
+	}
+	else
+	{
+		SceneID = Root["SceneID"].asCString();
+	}
+
+	FEScene* Scene = SCENE_MANAGER.GetScene(SceneID);
+	if (Scene == nullptr)
+	{
+		LOG.Add("FEResourceManager::LoadPrefabFromJSON: Prefab scene is missing!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	FEPrefab* NewPrefab = RESOURCE_MANAGER.CreatePrefab(LoadedObjectData.Name, LoadedObjectData.ID, Scene);
+	RESOURCE_MANAGER.SetTag(NewPrefab, LoadedObjectData.Tag);
+
+	return NewPrefab;
 }
 
 void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
@@ -2719,10 +2941,10 @@ FEObjectLoadedData FEResourceManager::LoadFEObjectPart(Json::Value Root)
 
 	if (Root.isMember("Name") && Root["Name"].isString())
 		Result.Name = Root["Name"].asString();
-	
+
 	if (Root.isMember("Type") && Root["Type"].isInt())
 		Result.Type = FE_OBJECT_TYPE(Root["Type"].asInt());
-	
+
 	return Result;
 }
 
@@ -3099,7 +3321,7 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 		File.write((char*)&ScriptAssetIDSize, sizeof(size_t));
 		File.write(NativeScriptModule->ScriptAssetIDs[i].c_str(), ScriptAssetIDSize);
 	}
-	
+
 	// Save ScriptAssetPackage.
 	size_t PackageFullCopySize = 0;
 	unsigned char* PackageFullCopy = NativeScriptModule->ScriptAssetPackage->ExportAsRawData(PackageFullCopySize);
@@ -3154,6 +3376,526 @@ bool FEResourceManager::DeleteNativeScriptModuleInternal(FENativeScriptModule* M
 
 	NativeScriptModules.erase(Module->GetObjectID());
 	delete Module;
+
+	return true;
+}
+
+FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
+{
+	FEAssetPackage* EngineHeadersAssetPackage = new FEAssetPackage();
+	EngineHeadersAssetPackage->SetName("EngineHeaders");
+	if (EngineHeadersAssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::CreateEngineHeadersAssetPackage: Error creating asset package", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
+	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
+	{
+		LOG.Add("FEResourceManager::CreateEngineHeadersAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
+	// After having all files in the engine folder, we need to filter out only the header files.
+	for (size_t i = 0; i < AllFiles.size(); i++)
+	{
+		if (AllFiles[i].substr(AllFiles[i].size() - 2) == ".h" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".hpp" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".inl")
+		{
+			FEAssetPackageEntryIntializeData EntryData;
+			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
+			// But we will erase the engine folder path from the file name.
+			EntryData.Name = AllFiles[i].substr(EnginePath.size());
+			EntryData.Type = "Text";
+			EntryData.Tag = ENGINE_RESOURCE_TAG;
+			EntryData.Comment = "Engine header file";
+
+			EngineHeadersAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+		}
+	}
+
+	return EngineHeadersAssetPackage;
+}
+
+bool FEResourceManager::UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
+{
+	if (AssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Asset package is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (Path.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Destination path is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
+	{
+		LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Destination path does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
+	if (AssetPackageContent.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Asset package is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	for (size_t i = 0; i < AssetPackageContent.size(); i++)
+	{
+		std::string LocalPath = std::filesystem::path(AssetPackageContent[i].Name).parent_path().string();
+		// Since we are not using folders in FEAssetPackage, we need to create all folders in the file path.
+		// First we need to get chain of folders.
+		std::vector<std::string> FolderChain;
+		try
+		{
+			std::filesystem::path Directory(LocalPath);
+			while (!Directory.string().empty())
+			{
+				if (!FolderChain.empty())
+				{
+					if (FolderChain.back() == Directory.string())
+						break;
+				}
+				FolderChain.push_back(Directory.string());
+				Directory = Directory.parent_path();
+			}
+
+			std::reverse(FolderChain.begin(), FolderChain.end());
+		}
+		catch (const std::exception& Exception)
+		{
+			LOG.Add("Error in FEResourceManager::UnPackEngineHeadersAssetPackage: " + std::string(Exception.what()), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		// Then we will go from the root folder to the last folder and create them if they do not exist.
+		for (size_t i = 0; i < FolderChain.size(); i++)
+		{
+			std::string FinalPath = Path + FolderChain[i];
+			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
+			{
+				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				{
+					LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+					return false;
+				}
+			}
+		}
+
+		// Now we are ready to write the file.
+		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
+		{
+			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+FEAssetPackage* FEResourceManager::CreateEngineSourceFilesAssetPackage()
+{
+	FEAssetPackage* EngineSourceFilesAssetPackage = new FEAssetPackage();
+	EngineSourceFilesAssetPackage->SetName("EngineSourceFiles");
+	if (EngineSourceFilesAssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::CreateEngineSourceFilesAssetPackage: Error creating asset package", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
+	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
+	{
+		LOG.Add("FEResourceManager::CreateEngineSourceFilesAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
+	// After having all files in the engine folder, we need to filter out only the source files.
+	for (size_t i = 0; i < AllFiles.size(); i++)
+	{
+		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".cpp" || AllFiles[i].substr(AllFiles[i].size() - 2) == ".c")
+		{
+			FEAssetPackageEntryIntializeData EntryData;
+			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
+			// But we will erase the engine folder path from the file name.
+			EntryData.Name = AllFiles[i].substr(EnginePath.size());
+			EntryData.Type = "Text";
+			EntryData.Tag = ENGINE_RESOURCE_TAG;
+			EntryData.Comment = "Engine source file";
+
+			EngineSourceFilesAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+		}
+	}
+
+	return EngineSourceFilesAssetPackage;
+}
+
+bool FEResourceManager::UnPackEngineSourceFilesAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
+{
+	if (AssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Asset package is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (Path.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Destination path is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
+	{
+		LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Destination path does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
+	if (AssetPackageContent.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Asset package is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	for (size_t i = 0; i < AssetPackageContent.size(); i++)
+	{
+		std::string LocalPath = std::filesystem::path(AssetPackageContent[i].Name).parent_path().string();
+		// Since we are not using folders in FEAssetPackage, we need to create all folders in the file path.
+		// First we need to get chain of folders.
+		std::vector<std::string> FolderChain;
+		try
+		{
+			std::filesystem::path Directory(LocalPath);
+			while (!Directory.string().empty())
+			{
+				if (!FolderChain.empty())
+				{
+					if (FolderChain.back() == Directory.string())
+						break;
+				}
+				FolderChain.push_back(Directory.string());
+				Directory = Directory.parent_path();
+			}
+
+			std::reverse(FolderChain.begin(), FolderChain.end());
+		}
+		catch (const std::exception& Exception)
+		{
+			LOG.Add("Error in FEResourceManager::UnPackEngineSourceFilesAssetPackage: " + std::string(Exception.what()), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		// Then we will go from the root folder to the last folder and create them if they do not exist.
+		for (size_t j = 0; j < FolderChain.size(); j++)
+		{
+			std::string FinalPath = Path + FolderChain[j];
+			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
+			{
+				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				{
+					LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+					return false;
+				}
+			}
+		}
+
+		// Now we are ready to write the file.
+		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
+		{
+			LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
+{
+	FEAssetPackage* EngineLIBAssetPackage = new FEAssetPackage();
+	EngineLIBAssetPackage->SetName("EngineLib");
+	if (EngineLIBAssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: Error creating asset package", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
+	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
+	{
+		LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
+
+	std::vector<std::string> DebugStrings;
+	// After having all files in the engine folder, we need to filter out only the lib files.
+	for (size_t i = 0; i < AllFiles.size(); i++)
+	{
+		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".lib")
+		{
+			// FIX ME! Currently projects would need only debug lib files. Is it correct?
+			// It will grab either Debug or Release lib files. It should be more deterministic.
+			// And only FocalEngine.lib and FEBasicApplication.lib are needed.
+			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
+				continue;
+
+			FEAssetPackageEntryIntializeData EntryData;
+			EntryData.Name = FILE_SYSTEM.GetFileName(AllFiles[i]);
+			DebugStrings.push_back(EntryData.Name);
+			EntryData.Type = "BINARY";
+			EntryData.Tag = ENGINE_RESOURCE_TAG;
+			EntryData.Comment = "Engine lib file";
+
+			EngineLIBAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+		}
+	}
+
+	return EngineLIBAssetPackage;
+}
+
+bool FEResourceManager::UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
+{
+	if (AssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::UnPackEngineLIBAssetPackage: Asset package is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (Path.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineLIBAssetPackage: Destination path is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
+	{
+		LOG.Add("FEResourceManager::UnPackEngineLIBAssetPackage: Destination path does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
+	if (AssetPackageContent.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackEngineLIBAssetPackage: Asset package is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	for (size_t i = 0; i < AssetPackageContent.size(); i++)
+	{
+		// Now we are ready to write the file.
+		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
+		{
+			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool FEResourceManager::CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngineSourceFiles, bool bCopyEngineLIBs, std::string DestinationDirectory)
+{
+	if (!FILE_SYSTEM.DoesDirectoryExist(DestinationDirectory))
+	{
+		LOG.Add("FEResourceManager::CopyEngineFiles: DestinationDirectory does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (bCopyEngineHeaders)
+	{
+		FEAssetPackage* EngineHeadersPackage = RESOURCE_MANAGER.CreateEngineHeadersAssetPackage();
+		if (EngineHeadersPackage == nullptr)
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error creating engine headers asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		if (!RESOURCE_MANAGER.UnPackEngineHeadersAssetPackage(EngineHeadersPackage, DestinationDirectory + "SubSystems/FocalEngine/"))
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine headers asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	if (bCopyEngineSourceFiles)
+	{
+		FEAssetPackage* EngineSourcePackage = RESOURCE_MANAGER.CreateEngineSourceFilesAssetPackage();
+		if (EngineSourcePackage == nullptr)
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error creating engine source files asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		if (!RESOURCE_MANAGER.UnPackEngineSourceFilesAssetPackage(EngineSourcePackage, DestinationDirectory + "SubSystems/FocalEngine/"))
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine source files asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	if (bCopyEngineLIBs)
+	{
+		FEAssetPackage* EngineLIBPackage = RESOURCE_MANAGER.CreateEngineLIBAssetPackage();
+		if (EngineLIBPackage == nullptr)
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error creating engine lib asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		if (!RESOURCE_MANAGER.UnPackEngineLIBAssetPackage(EngineLIBPackage, DestinationDirectory))
+		{
+			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine lib asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	return true;
+}
+
+FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
+{
+	FEAssetPackage* PrivateEngineAssetPackage = new FEAssetPackage();
+	PrivateEngineAssetPackage->SetName("PrivateEngineResources");
+	if (PrivateEngineAssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::CreatePrivateEngineAssetPackage: Error creating asset package", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
+	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
+	{
+		LOG.Add("FEResourceManager::CreatePrivateEngineAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	// FIX ME! It is temporary solution.
+	// I will just dump all related files in the engine folder to the asset package.
+	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath + "/Resources/", false);
+	for (size_t i = 0; i < AllFiles.size(); i++)
+	{
+		if (AllFiles[i].substr(AllFiles[i].size() - 8) == ".texture" ||
+			AllFiles[i].substr(AllFiles[i].size() - 6) == ".model" ||
+			AllFiles[i].substr(AllFiles[i].size() - 19) == ".nativescriptmodule")
+		{
+			FEAssetPackageEntryIntializeData EntryData;
+			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
+			// But we will erase the engine folder path from the file name.
+			EntryData.Name = AllFiles[i].substr(FILE_SYSTEM.GetCurrentWorkingPath().size());
+			EntryData.Type = AllFiles[i].substr(AllFiles[i].size() - 8) == ".texture" ? "FE_TEXTURE" : AllFiles[i].substr(AllFiles[i].size() - 19) == ".nativescriptmodule" ? "FE_NATIVE_SCRIPT_MODULE" : "FE_GAME_MODEL";
+			EntryData.Tag = ENGINE_RESOURCE_TAG;
+			EntryData.Comment = "";
+
+			PrivateEngineAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+		}
+	}
+
+	// And files from CoreExtensions.
+	AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath + "/CoreExtensions/", true);
+	for (size_t i = 0; i < AllFiles.size(); i++)
+	{
+		if (AllFiles[i].substr(AllFiles[i].size() - 5) == ".glsl")
+		{
+			FEAssetPackageEntryIntializeData EntryData;
+			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
+			// But we will erase the engine folder path from the file name.
+			EntryData.Name = AllFiles[i].substr(FILE_SYSTEM.GetCurrentWorkingPath().size());
+			EntryData.Type = "GLSL";
+			EntryData.Tag = ENGINE_RESOURCE_TAG;
+			EntryData.Comment = "";
+
+			PrivateEngineAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+		}
+	}
+
+	//PrivateEngineAssetPackage->ImportAsset(RESOURCE_MANAGER.NoTexture);
+	return PrivateEngineAssetPackage;
+}
+
+bool FEResourceManager::UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPackage, std::string Path)
+{
+	if (AssetPackage == nullptr)
+	{
+		LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Asset package is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (Path.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Destination path is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(Path))
+	{
+		LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Destination path does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = AssetPackage->GetEntryList();
+	if (AssetPackageContent.empty())
+	{
+		LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Asset package is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	for (size_t i = 0; i < AssetPackageContent.size(); i++)
+	{
+		std::string LocalPath = std::filesystem::path(AssetPackageContent[i].Name).parent_path().string();
+		// Since we are not using folders in FEAssetPackage, we need to create all folders in the file path.
+		// First we need to get chain of folders.
+		std::vector<std::string> FolderChain;
+		try
+		{
+			std::filesystem::path Directory(LocalPath);
+			while (!Directory.string().empty())
+			{
+				if (!FolderChain.empty())
+				{
+					if (FolderChain.back() == Directory.string())
+						break;
+				}
+				FolderChain.push_back(Directory.string());
+				Directory = Directory.parent_path();
+			}
+
+			std::reverse(FolderChain.begin(), FolderChain.end());
+		}
+		catch (const std::exception& Exception)
+		{
+			LOG.Add("Error in FEResourceManager::UnPackPrivateEngineAssetPackage: " + std::string(Exception.what()), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		// Then we will go from the root folder to the last folder and create them if they do not exist.
+		for (size_t j = 0; j < FolderChain.size(); j++)
+		{
+			std::string FinalPath = Path + FolderChain[j];
+			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
+			{
+				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				{
+					LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+					return false;
+				}
+			}
+		}
+
+		// Now we are ready to write the file.
+		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, Path + AssetPackageContent[i].Name))
+		{
+			LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + Path + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
 
 	return true;
 }

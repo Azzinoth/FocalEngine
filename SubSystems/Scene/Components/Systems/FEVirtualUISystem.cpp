@@ -183,7 +183,7 @@ void FEVirtualUISystem::Update()
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 	{
-		FEEntity* CameraEntity = CAMERA_SYSTEM.GetMainCameraEntity(ActiveScenes[i]);
+		FEEntity* CameraEntity = CAMERA_SYSTEM.GetMainCamera(ActiveScenes[i]);
 		if (CameraEntity == nullptr)
 			continue;
 

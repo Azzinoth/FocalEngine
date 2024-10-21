@@ -33,8 +33,8 @@ namespace FocalEngine
 
 		FEShader* GetShader(std::string ShaderID);
 		std::vector<FEShader*> GetShaderByName(std::string Name);
-		std::vector<std::string> GetShadersList();
-		std::vector<std::string> GetEnginePrivateShadersList();
+		std::vector<std::string> GetShaderIDList();
+		std::vector<std::string> GetEnginePrivateShaderIDList();
 		void DeleteShader(const FEShader* Shader);
 		bool ReplaceShader(std::string OldShaderID, FEShader* NewShader);
 		std::string LoadGLSL(const char* FileName);
@@ -57,7 +57,7 @@ namespace FocalEngine
 		bool ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName);
 		bool ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
 		void DeleteFETexture(const FETexture* Texture);
-		std::vector<std::string> GetTextureList();
+		std::vector<std::string> GetTextureIDList();
 		FETexture* GetTexture(std::string ID);
 		std::vector<FETexture*> GetTextureByName(std::string Name);
 		FETexture* NoTexture;
@@ -81,8 +81,8 @@ namespace FocalEngine
 
 		void DeleteFEMesh(const FEMesh* Mesh);
 
-		std::vector<std::string> GetMeshList();
-		std::vector<std::string> GetEnginePrivateMeshList();
+		std::vector<std::string> GetMeshIDList();
+		std::vector<std::string> GetEnginePrivateMeshIDList();
 		FEMesh* GetMesh(std::string ID);
 		std::vector<FEMesh*> GetMeshByName(std::string Name);
 		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
@@ -92,25 +92,31 @@ namespace FocalEngine
 
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
-		std::vector<std::string> GetMaterialList();
-		std::vector<std::string> GetEnginePrivateMaterialList();
+		std::vector<std::string> GetMaterialIDList();
+		std::vector<std::string> GetEnginePrivateMaterialIDList();
 		FEMaterial* GetMaterial(std::string ID);
 		std::vector<FEMaterial*> GetMaterialByName(std::string Name);
 		FEMaterial* CreateMaterial(std::string Name = "", std::string ForceObjectID = "");
+		Json::Value SaveMaterialToJSON(FEMaterial* Material);
+		FEMaterial* LoadMaterialFromJSON(Json::Value& Root);
 		void DeleteMaterial(const FEMaterial* Material);
 
-		std::vector<std::string> GetGameModelList();
-		std::vector<std::string> GetEnginePrivateGameModelList();
+		std::vector<std::string> GetGameModelIDList();
+		std::vector<std::string> GetEnginePrivateGameModelIDList();
 		FEGameModel* GetGameModel(std::string ID);
 		std::vector<FEGameModel*> GetGameModelByName(std::string Name);
 		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string ForceObjectID = "");
+		Json::Value SaveGameModelToJSON(FEGameModel* GameModel);
+		FEGameModel* LoadGameModelFromJSON(Json::Value& Root);
 		void DeleteGameModel(const FEGameModel* GameModel);
 
 		std::vector<std::string> GetPrefabIDList();
-		std::vector<std::string> GetEnginePrivatePrefabList();
+		std::vector<std::string> GetEnginePrivatePrefabIDList();
 		FEPrefab* GetPrefab(std::string ID);
 		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
 		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "", FEScene* SceneDescription = nullptr);
+		Json::Value SavePrefabToJSON(FEPrefab* Prefab);
+		FEPrefab* LoadPrefabFromJSON(Json::Value& Root);
 		void DeletePrefab(const FEPrefab* Prefab);
 
 		std::vector<std::string> GetNativeScriptModuleIDList();
@@ -122,6 +128,17 @@ namespace FocalEngine
 		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);
 		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName);
+
+		FEAssetPackage* CreateEngineHeadersAssetPackage();
+		bool UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		FEAssetPackage* CreateEngineSourceFilesAssetPackage();
+		bool UnPackEngineSourceFilesAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		FEAssetPackage* CreateEngineLIBAssetPackage();
+		bool UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		bool CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngineSourceFiles, bool bCopyEngineLIBs, std::string DestinationDirectory);
+
+		FEAssetPackage* CreatePrivateEngineAssetPackage();
+		bool UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
 
 		void Clear();
 		void LoadStandardMeshes();
@@ -182,6 +199,10 @@ namespace FocalEngine
 		std::vector<std::string> GetResourceIDListByTag(const std::unordered_map<std::string, T*>& Resources, const std::string& Tag);
 
 		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
+
+		// FIX ME! It is temporary solution.
+		bool bUsePackageForPrivateResources = false;
+		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
 	};
 #include "FEResourceManager.inl"
 

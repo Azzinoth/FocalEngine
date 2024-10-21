@@ -47,7 +47,7 @@ void FECameraSystem::DuplicateCameraComponent(FEEntity* SourceEntity, FEEntity* 
 	NewCameraComponent.bIsMainCamera = false;
 	// But if component is duplicated as part of scene duplication, it could be a main camera.
 	// If no other camera is set as main camera in parent scene, it will be set as main camera.
-	if (CAMERA_SYSTEM.GetMainCameraEntity(TargetEntity->GetParentScene()) == nullptr)
+	if (CAMERA_SYSTEM.GetMainCamera(TargetEntity->GetParentScene()) == nullptr)
 		NewCameraComponent.bIsMainCamera = true;
 	
 	// TO DO: Maybe rethink what to do with viewport.
@@ -124,11 +124,11 @@ void FECameraSystem::SetMainCamera(FEEntity* CameraEntity)
 	CameraComponent.bIsMainCamera = true;
 }
 
-FEEntity* FECameraSystem::GetMainCameraEntity(FEScene* Scene) const
+FEEntity* FECameraSystem::GetMainCamera(FEScene* Scene) const
 {
 	if (Scene == nullptr)
 	{
-		LOG.Add("FECameraSystem::GetMainCameraEntity Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("FECameraSystem::GetMainCamera Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return nullptr;
 	}
 

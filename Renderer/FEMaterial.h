@@ -109,8 +109,8 @@ namespace FocalEngine
 		float GetTiling() const;
 		void SetTiling(float NewValue);
 	private:
-		glm::vec3 DiffuseColor;
-		glm::vec3 BaseColor;
+		glm::vec3 DiffuseColor = glm::vec3(0.0f);
+		glm::vec3 BaseColor = glm::vec3(0.0f);
 
 		int PlaceTextureInList(FETexture* Texture);
 		void SetTextureBinding(int Index, int TextureIndex, int SubMaterial, int Channel = -2);

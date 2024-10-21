@@ -145,8 +145,8 @@ namespace FocalEngine
 		float Gamma = 2.2f;
 		float Exposure = 1.0f;
 
-		glm::mat4 ViewMatrix;
-		glm::mat4 ProjectionMatrix;
+		glm::mat4 ViewMatrix = glm::mat4(1.0f);
+		glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
 		std::vector<std::vector<float>> Frustum;
 
 		void SetRenderTargetSizeInternal(const int Width, const int Height);
