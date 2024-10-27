@@ -282,6 +282,15 @@ file(GLOB Scene_NativeScript_System_SRC
 	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.cpp"
 )
 
+set(Unpacked_NativeScript_Connector_SRC)
+
+if(USE_STATIC_RUNTIME)
+    list(APPEND Unpacked_NativeScript_Connector_SRC
+        "Resources/UserScriptsData/FENativeScriptConnector.h"
+        "Resources/UserScriptsData/FENativeScriptConnector.cpp"
+    )
+endif()
+
 # *************** SCENE ***************
 
 file(GLOB Scene_SRC
@@ -393,6 +402,12 @@ list(APPEND ALL_SOURCE_FILES
 			${lodepng_SRC}
 			${stb_image_SRC}
 )
+
+if(USE_STATIC_RUNTIME)
+	list(APPEND ALL_SOURCE_FILES
+		${Unpacked_NativeScript_Connector_SRC}
+	)
+endif()
 
 if(ENABLE_TESTS)
     add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
@@ -537,6 +552,9 @@ source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
 source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
 source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})
 source_group("Source Files/SubSystems/Scene/NativeScriptSystem" FILES ${Scene_NativeScript_System_SRC})
+if(USE_STATIC_RUNTIME)
+	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
+endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})

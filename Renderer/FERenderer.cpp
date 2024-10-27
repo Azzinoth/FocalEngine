@@ -557,10 +557,13 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 	CurrentCameraComponent.UpdateFrustumPlanes();
 
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
-	//glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-	
+
 	if (bClearActiveInSimplifiedRendering)
+	{
+		glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
+		glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	}
 
 	// No instanced rendering for now.
 	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
@@ -1008,7 +1011,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
 				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMat;
 
-				SetViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight());
+				SetGLViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight());
 
 				UpdateGPUCullingFrustum();
 
@@ -1125,7 +1128,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 			CurrentCameraComponent.ViewMatrix = OldViewMatrix;
 			CurrentCameraComponent.ProjectionMatrix = OldProjectionMatrix;
 
-			SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
+			SetGLViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 			break;
 		}
 	}
@@ -1144,7 +1147,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 
 	// ********* RENDER SCENE *********
 
-	SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
+	SetGLViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 	CurrentCameraRenderingData->GBuffer->GFrameBuffer->Bind();
 
 	const unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
@@ -1382,11 +1385,11 @@ void FERenderer::Render(FEScene* CurrentScene)
 			Effect.IntermediateFramebuffer->SetColorAttachment(Effect.Stages[j]->OutTexture);
 			if (Effect.Stages[j]->OutTexture->Width != CurrentCameraRenderingData->SceneToTextureFB->GetWidth())
 			{
-				SetViewport(0, 0, Effect.Stages[j]->OutTexture->Width, Effect.Stages[j]->OutTexture->Height);
+				SetGLViewport(0, 0, Effect.Stages[j]->OutTexture->Width, Effect.Stages[j]->OutTexture->Height);
 			}
 			else
 			{
-				SetViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
+				SetGLViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 			}
 			Effect.IntermediateFramebuffer->Bind();
 
@@ -2324,17 +2327,17 @@ FEEntity* FERenderer::TryToGetLastUsedCameraEntity()
 	return reinterpret_cast<FEEntity*>(LastRenderedCamera);
 }
 
-void FERenderer::SetViewport(int X, int Y, int Width, int Height)
+void FERenderer::SetGLViewport(int X, int Y, int Width, int Height)
 {
-	SetViewport(glm::ivec4(X, Y, Width, Height));
+	SetGLViewport(glm::ivec4(X, Y, Width, Height));
 }
 
-void FERenderer::SetViewport(glm::ivec4 ViewPortData)
+void FERenderer::SetGLViewport(glm::ivec4 ViewPortData)
 {
 	FE_GL_ERROR(glViewport(ViewPortData.x, ViewPortData.y, ViewPortData.z, ViewPortData.w));
 }
 
-glm::ivec4 FERenderer::GetViewport()
+glm::ivec4 FERenderer::GetGLViewport()
 {
 	glm::ivec4 Viewport;
 	FE_GL_ERROR(glGetIntegerv(GL_VIEWPORT, &Viewport[0]));

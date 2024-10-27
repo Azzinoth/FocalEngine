@@ -40,6 +40,17 @@ namespace FocalEngine
 
 		std::vector<std::string> GetFolderChain(const std::string& Path);
 
+		struct TextReplacementRule
+		{
+			// Pattern to identify the line where replacement should occur
+			std::string ContextPattern;
+			// Text to be replaced
+			std::string TargetText;
+			std::string ReplacementText;
+		};
+
+		bool PerformTextReplacements(const std::string& FilePath, const std::vector<TextReplacementRule>& Rules);
+
 #ifdef FE_WIN_32
 		void ShowFileOpenDialog(std::string& Path, const COMDLG_FILTERSPEC* Filter, int FilterCount = 1);
 		void ShowFolderOpenDialog(std::string& Path);

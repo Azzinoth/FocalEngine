@@ -110,7 +110,7 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	const uint32_t ColorTexture = reinterpret_cast<const XrSwapchainImageOpenGLKHR*>(SwapChainImage)->image;
 	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorTexture, 0));
 
-	RENDERER.SetViewport(static_cast<int>(LayerView.subImage.imageRect.offset.x),
+	RENDERER.SetGLViewport(static_cast<int>(LayerView.subImage.imageRect.offset.x),
 						 static_cast<int>(LayerView.subImage.imageRect.offset.y),
 						 static_cast<int>(LayerView.subImage.imageRect.extent.width),
 						 static_cast<int>(LayerView.subImage.imageRect.extent.height));

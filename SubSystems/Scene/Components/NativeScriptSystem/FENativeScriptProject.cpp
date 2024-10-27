@@ -390,7 +390,7 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/EnsureBuildCompletion.cmake", VSProjectDirectory + "BuildManagement/EnsureBuildCompletion.cmake" });
 	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/DebugBuildActions.cmake", VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake" });
 	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/ReleaseBuildActions.cmake", VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake" });
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/CMakeLists.txt", VSProjectDirectory + "CMakeLists.txt" });
+	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/CMakeLists_Template.txt", VSProjectDirectory + "CMakeLists.txt" });
 	// We need to copy only one .cpp file.
 	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/FENativeScriptConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.cpp" });
 
@@ -448,11 +448,11 @@ bool FENativeScriptProject::InitializeCMakeFileAndScriptFiles(std::vector<std::s
 
 	std::string CMakeFilePath = VSProjectDirectory + "CMakeLists.txt";
 
-	std::vector<InstructionWhatToReplaceInFile> Instructions;
-	InstructionWhatToReplaceInFile CurrentInstruction;
-	CurrentInstruction.SubStringInLineToTrigger = "set(PROJECT_NAME PLACE_HOLDER)";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = GetVSProjectName();
+	std::vector<FEFileSystem::TextReplacementRule> Instructions;
+	FEFileSystem::TextReplacementRule CurrentInstruction;
+	CurrentInstruction.ContextPattern = "set(PROJECT_NAME PLACE_HOLDER)";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = GetVSProjectName();
 	Instructions.push_back(CurrentInstruction);
 
 	std::string SourceFilesList = "file(GLOB Main_SRC\n";
@@ -462,92 +462,44 @@ bool FENativeScriptProject::InitializeCMakeFileAndScriptFiles(std::vector<std::s
 	}
 	SourceFilesList += ")";
 
-	CurrentInstruction.SubStringInLineToTrigger = "file(GLOB Main_SRC PLACE_HOLDER)";
-	CurrentInstruction.What = "file(GLOB Main_SRC PLACE_HOLDER)";
-	CurrentInstruction.ReplaceWith = SourceFilesList;
+	CurrentInstruction.ContextPattern = "file(GLOB Main_SRC PLACE_HOLDER)";
+	CurrentInstruction.TargetText = "file(GLOB Main_SRC PLACE_HOLDER)";
+	CurrentInstruction.ReplacementText = SourceFilesList;
 	Instructions.push_back(CurrentInstruction);
 
-	if (!ReplaceInFile(CMakeFilePath, Instructions))
+	if (!FILE_SYSTEM.PerformTextReplacements(CMakeFilePath, Instructions))
 	{
 		LOG.Add("FENativeScriptProject::InitializeCMakeFileAndScriptFiles: Error initializing CMakeLists.txt", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
 
-	CurrentInstruction.SubStringInLineToTrigger = "--target PLACE_HOLDER --config Release";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = GetVSProjectName();
+	CurrentInstruction.ContextPattern = "--target PLACE_HOLDER --config Release";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = GetVSProjectName();
 	Instructions.push_back(CurrentInstruction);
 
 	std::string DebugBuildActionsCMake = VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake";
-	if (!ReplaceInFile(DebugBuildActionsCMake, Instructions))
+	if (!FILE_SYSTEM.PerformTextReplacements(DebugBuildActionsCMake, Instructions))
 	{
 		LOG.Add("FENativeScriptProject::InitializeCMakeFileAndScriptFiles: Error initializing BuildManagement/DebugBuildActions.cmake", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
 
-	CurrentInstruction.SubStringInLineToTrigger = "--target PLACE_HOLDER --config Debug";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = GetVSProjectName();
+	CurrentInstruction.ContextPattern = "--target PLACE_HOLDER --config Debug";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = GetVSProjectName();
 	Instructions.push_back(CurrentInstruction);
 
 	std::string ReleaseBuildActionsCMake = VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake";
-	if (!ReplaceInFile(ReleaseBuildActionsCMake, Instructions))
+	if (!FILE_SYSTEM.PerformTextReplacements(ReleaseBuildActionsCMake, Instructions))
 	{
 		LOG.Add("FENativeScriptProject::InitializeCMakeFileAndScriptFiles: Error initializing BuildManagement/ReleaseBuildActions.cmake", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
 
-	return true;
-}
-
-bool FENativeScriptProject::ReplaceInFile(std::string Path, std::vector<InstructionWhatToReplaceInFile> Instructions)
-{
-	if (Path.empty())
-	{
-		LOG.Add("FENativeScriptProject::ReplaceInFile: File path is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	std::fstream File(Path, std::ios::in);
-	if (!File.is_open())
-	{
-		LOG.Add("FENativeScriptProject::ReplaceInFile: Error opening file " + Path, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	std::vector<std::string> FileContent;
-	std::string Line;
-	while (std::getline(File, Line))
-		FileContent.push_back(Line);
-
-	File.close();
-
-	for (size_t i = 0; i < FileContent.size(); i++)
-	{
-		for (size_t j = 0; j < Instructions.size(); j++)
-		{
-			if (FileContent[i].find(Instructions[j].SubStringInLineToTrigger) != std::string::npos)
-			{
-				FileContent[i].replace(FileContent[i].find(Instructions[j].What), Instructions[j].What.size(), Instructions[j].ReplaceWith);
-			}
-		}
-	}
-
-	File.open(Path, std::ios::out | std::ios::trunc);
-	if (!File.is_open())
-	{
-		LOG.Add("FENativeScriptProject::ReplaceInFile: Error opening file " + Path, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
-		return false;
-	}
-
-	// Write the modified content back to the file
-	for (size_t i = 0; i < FileContent.size(); i++)
-		File << FileContent[i] + "\n";
-
-	File.close();
 	return true;
 }
 
@@ -658,58 +610,58 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 		return false;
 	}
 
-	std::vector<InstructionWhatToReplaceInFile> Instructions;
-	InstructionWhatToReplaceInFile CurrentInstruction;
-	CurrentInstruction.SubStringInLineToTrigger = "class PLACE_HOLDER : public FENativeScriptCore";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	std::vector<FEFileSystem::TextReplacementRule> Instructions;
+	FEFileSystem::TextReplacementRule CurrentInstruction;
+	CurrentInstruction.ContextPattern = "class PLACE_HOLDER : public FENativeScriptCore";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "REGISTER_SCRIPT(PLACE_HOLDER)";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "REGISTER_SCRIPT(PLACE_HOLDER)";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "REGISTER_SCRIPT_FIELD(PLACE_HOLDER, int, ExampleVariable)";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "REGISTER_SCRIPT_FIELD(PLACE_HOLDER, int, ExampleVariable)";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "SET_MODULE_ID(\"PLACE_HOLDER\");";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = Parent->GetObjectID();
+	CurrentInstruction.ContextPattern = "SET_MODULE_ID(\"PLACE_HOLDER\");";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = Parent->GetObjectID();
 	Instructions.push_back(CurrentInstruction);
 
 	std::string ScriptHeaderFilePath = VSProjectDirectory + ScriptName + ".h";
-	if (!ReplaceInFile(ScriptHeaderFilePath, Instructions))
+	if (!FILE_SYSTEM.PerformTextReplacements(ScriptHeaderFilePath, Instructions))
 	{
 		LOG.Add("FENativeScriptProject::GenerateScriptFilesFromTemplate: Error initializing " + ScriptName + ".h", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
 
-	CurrentInstruction.SubStringInLineToTrigger = "#include \"NativeScriptTemplate.h\"";
-	CurrentInstruction.What = "NativeScriptTemplate";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "#include \"NativeScriptTemplate.h\"";
+	CurrentInstruction.TargetText = "NativeScriptTemplate";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "void PLACE_HOLDER::Awake()";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "void PLACE_HOLDER::Awake()";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "void PLACE_HOLDER::OnDestroy()";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "void PLACE_HOLDER::OnDestroy()";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.SubStringInLineToTrigger = "void PLACE_HOLDER::OnUpdate(double DeltaTime)";
-	CurrentInstruction.What = "PLACE_HOLDER";
-	CurrentInstruction.ReplaceWith = ScriptName;
+	CurrentInstruction.ContextPattern = "void PLACE_HOLDER::OnUpdate(double DeltaTime)";
+	CurrentInstruction.TargetText = "PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = ScriptName;
 	Instructions.push_back(CurrentInstruction);
 
 	std::string ScriptSourceFilePath = VSProjectDirectory + ScriptName + ".cpp";
-	if (!ReplaceInFile(ScriptSourceFilePath, Instructions))
+	if (!FILE_SYSTEM.PerformTextReplacements(ScriptSourceFilePath, Instructions))
 	{
 		LOG.Add("FENativeScriptProject::GenerateScriptFilesFromTemplate: Error initializing " + ScriptName + ".cpp", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;

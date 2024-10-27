@@ -122,9 +122,9 @@ namespace FocalEngine
 		bool IsClearActiveInSimplifiedRendering();
 		void SetClearActiveInSimplifiedRendering(bool NewValue);
 
-		void SetViewport(int X, int Y, int Width, int Height);
-		void SetViewport(glm::ivec4 ViewPortData);
-		glm::ivec4 GetViewport();
+		void SetGLViewport(int X, int Y, int Width, int Height);
+		void SetGLViewport(glm::ivec4 ViewPortData);
+		glm::ivec4 GetGLViewport();
 
 		FECameraRenderingData* GetCameraRenderingData(FEEntity* CameraEntity);
 		void AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing = false);

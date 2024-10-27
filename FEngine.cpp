@@ -102,7 +102,7 @@ void FEngine::Render(const bool InternalCall)
 	if (bVRActive)
 	{
 		OpenXR_MANAGER.Update();
-		RENDERER.SetViewport(0, 0, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
+		RENDERER.SetGLViewport(0, 0, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
 	}
 
 	APPLICATION.GetMainWindow()->Render();
@@ -381,11 +381,11 @@ void FEngine::ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool&
 		{
 			FEWindow* Window = static_cast<FEWindow*>(ViewPort->WindowHandle);
 
-			if (ViewPort->X != Window->GetXPosition() || ViewPort->Y != Window->GetYPosition())
+			if (ViewPort->X != 0 || ViewPort->Y != 0)
 				bMoved = true;
 
-			ViewPort->X = Window->GetXPosition();
-			ViewPort->Y = Window->GetYPosition();
+			ViewPort->X = 0;
+			ViewPort->Y = 0;
 
 			if (ViewPort->Width != Window->GetWidth() || ViewPort->Height != Window->GetHeight())
 				bResize = true;

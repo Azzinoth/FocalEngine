@@ -100,8 +100,6 @@ void FENativeScriptSystem::Update(double DeltaTime)
 		}
 	}
 
-	//if (ActiveGameModeScenes.empty())
-	//{
 	std::vector<FEScene*> ActiveEditorScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::EditorMode);
 	for (FEScene* Scene : ActiveEditorScenes)
 	{
@@ -114,7 +112,6 @@ void FENativeScriptSystem::Update(double DeltaTime)
 				NativeScriptComponent.OnUpdate(DeltaTime);
 		}
 	}
-	//}
 }
 
 void FENativeScriptSystem::CopyVariableValuesInternal(FENativeScriptComponent* SourceComponent, FENativeScriptComponent* TargetComponent)

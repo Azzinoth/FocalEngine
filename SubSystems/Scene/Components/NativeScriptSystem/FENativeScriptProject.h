@@ -38,15 +38,6 @@ namespace FocalEngine
 
 		bool InitializeCMakeFileAndScriptFiles(std::vector<std::string> SourceFileFullPathList);
 
-		struct InstructionWhatToReplaceInFile
-		{
-			std::string SubStringInLineToTrigger;
-			std::string What;
-			std::string ReplaceWith;
-		};
-
-		bool ReplaceInFile(std::string FilePath, std::vector<InstructionWhatToReplaceInFile> Instructions);
-
 		void SetFileTracking();
 		bool GenerateScriptFilesFromTemplate(std::string ScriptName);
 

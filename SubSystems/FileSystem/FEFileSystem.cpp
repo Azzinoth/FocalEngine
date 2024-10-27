@@ -561,3 +561,54 @@ std::string FEFileSystem::ReadFEString(std::fstream& File)
 
 	return Result;
 }
+
+bool FEFileSystem::PerformTextReplacements(const std::string& FilePath, const std::vector<TextReplacementRule>& Rules)
+{
+	if (FilePath.empty())
+	{
+		LOG.Add("FEFileSystem::ReplaceInFile: File path is empty", "FE_FILE_SYSTEM", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::fstream File(FilePath, std::ios::in);
+	if (!File.is_open())
+	{
+		LOG.Add("FEFileSystem::ReplaceInFile: Error opening file " + FilePath, "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::vector<std::string> FileContent;
+	std::string Line;
+	while (std::getline(File, Line))
+		FileContent.push_back(Line);
+
+	File.close();
+
+	// Apply replacements
+	for (size_t i = 0; i < FileContent.size(); i++)
+	{
+		for (size_t j = 0; j < Rules.size(); j++)
+		{
+			if (FileContent[i].find(Rules[j].ContextPattern) != std::string::npos)
+			{
+				size_t Position = FileContent[i].find(Rules[j].TargetText);
+				if (Position != std::string::npos)
+					FileContent[i].replace(Position, Rules[j].TargetText.length(), Rules[j].ReplacementText);
+			}
+		}
+	}
+
+	File.open(FilePath, std::ios::out | std::ios::trunc);
+	if (!File.is_open())
+	{
+		LOG.Add("FEFileSystem::ReplaceInFile: Error opening file " + FilePath, "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Write the modified content back to the file
+	for (size_t i = 0; i < FileContent.size(); i++)
+		File << FileContent[i] + "\n";
+
+	File.close();
+	return true;
+}
