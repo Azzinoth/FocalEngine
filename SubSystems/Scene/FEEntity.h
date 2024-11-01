@@ -56,7 +56,7 @@ namespace FocalEngine
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
-				// FIX ME! Should make it return nullptr pointer not throw exception
+				// FIX ME! Should make it return nullptr pointer or something, not throw exception.
 				throw std::runtime_error("Component does not exist in entity");
 			}
 

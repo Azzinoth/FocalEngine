@@ -18,7 +18,7 @@ namespace FocalEngine
 		FEPostProcessStage(int InTextureSource, FEShader* Shader);
 		FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader);
 
-		std::vector<FEShaderParam> StageSpecificUniforms;
+		std::vector<FEShaderUniformValue> StageSpecificUniformValues;
 		std::vector<int> InTextureSource;
 		std::vector<FETexture*> InTexture;
 		FEShader* Shader = nullptr;

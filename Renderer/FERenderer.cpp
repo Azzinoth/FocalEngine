@@ -130,7 +130,7 @@ void FERenderer::Init()
 																	  nullptr, nullptr,
 																	  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
 
-		ComputeDepthPyramidDownSample->UpdateParameterData("scaleDownBy", 2);
+		ComputeDepthPyramidDownSample->UpdateUniformData("scaleDownBy", 2);
 
 		FEPostProcess::ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
 		FEPostProcess::ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
@@ -206,20 +206,8 @@ void FERenderer::Init()
 	RESOURCE_MANAGER.SetTagIternal(RENDERER.ShadowMapMaterialInstanced, ENGINE_RESOURCE_TAG);
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* ForceCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
+void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* ForceCamera, const bool IsReceivingShadows, const bool IsUniformLighting)
 {
-	static int FETextureBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureBindings[0]"));
-	static int FETextureChannelsBindingsUniformLocationsHash = static_cast<int>(std::hash<std::string>{}("textureChannels[0]"));
-
-	if (Material != nullptr)
-	{
-		if (Shader->bMaterialTexturesList)
-		{
-			Shader->LoadIntArray(FETextureBindingsUniformLocationsHash, Material->TextureBindings.data(), Material->TextureBindings.size());
-			Shader->LoadIntArray(FETextureChannelsBindingsUniformLocationsHash, Material->TextureChannels.data(), Material->TextureChannels.size());
-		}
-	}
-
 	//  FIX ME!
 	FEEntity* CameraEntityToUse = ForceCamera;
 	if (ForceCamera == nullptr)
@@ -231,65 +219,74 @@ void FERenderer::LoadStandardParams(FEShader* Shader, FEMaterial* Material, FETr
 	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
 	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
 
-	if (Shader->GetParameter("FEWorldMatrix") != nullptr)
-		Shader->UpdateParameterData("FEWorldMatrix", Transform->GetWorldMatrix());
+	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
+	if (Shader->GetUniform("textureBindings") != nullptr)
+		Shader->GetUniform("textureBindings")->SetValue<std::vector<int>>(Material->TextureBindings);
 
-	if (Shader->GetParameter("FEViewMatrix") != nullptr)
-		Shader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
+	if (Shader->GetUniform("textureChannels") != nullptr)
+		Shader->GetUniform("textureChannels")->SetValue<std::vector<int>>(Material->TextureChannels);
 
-	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
-		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	if (Shader->GetUniform("FEWorldMatrix") != nullptr)
+		Shader->UpdateUniformData("FEWorldMatrix", Transform->GetWorldMatrix());
 
-	if (Shader->GetParameter("FEPVMMatrix") != nullptr)
-		Shader->UpdateParameterData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
+	if (Shader->GetUniform("FEViewMatrix") != nullptr)
+		Shader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
-	if (Shader->GetParameter("FECameraPosition") != nullptr)
-		Shader->UpdateParameterData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
+	if (Shader->GetUniform("FEProjectionMatrix") != nullptr)
+		Shader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
-	if (Shader->GetParameter("FEGamma") != nullptr)
-		Shader->UpdateParameterData("FEGamma", CurrentCameraComponent.GetGamma());
+	if (Shader->GetUniform("FEPVMMatrix") != nullptr)
+		Shader->UpdateUniformData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
 
-	if (Shader->GetParameter("FEExposure") != nullptr)
-		Shader->UpdateParameterData("FEExposure", CurrentCameraComponent.GetExposure());
+	if (Shader->GetUniform("FECameraPosition") != nullptr)
+		Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
-		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
+	if (Shader->GetUniform("FEGamma") != nullptr)
+		Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());
 
-	if (Shader->GetParameter("FEUniformLighting") != nullptr)
-		Shader->UpdateParameterData("FEUniformLighting", IsUniformLighting);
+	if (Shader->GetUniform("FEExposure") != nullptr)
+		Shader->UpdateUniformData("FEExposure", CurrentCameraComponent.GetExposure());
 
+	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
+		Shader->UpdateUniformData("FEReceiveShadows", IsReceivingShadows);
+
+	if (Shader->GetUniform("FEUniformLighting") != nullptr)
+		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
+
+	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Material != nullptr)
 	{
-		if (Shader->GetParameter("FEAOIntensity") != nullptr)
-			Shader->UpdateParameterData("FEAOIntensity", Material->GetAmbientOcclusionIntensity());
+		if (Shader->GetUniform("FEAOIntensity") != nullptr)
+			Shader->UpdateUniformData("FEAOIntensity", Material->GetAmbientOcclusionIntensity());
 
-		if (Shader->GetParameter("FEAOMapIntensity") != nullptr)
-			Shader->UpdateParameterData("FEAOMapIntensity", Material->GetAmbientOcclusionMapIntensity());
+		if (Shader->GetUniform("FEAOMapIntensity") != nullptr)
+			Shader->UpdateUniformData("FEAOMapIntensity", Material->GetAmbientOcclusionMapIntensity());
 
-		if (Shader->GetParameter("FENormalMapIntensity") != nullptr)
-			Shader->UpdateParameterData("FENormalMapIntensity", Material->GetNormalMapIntensity());
+		if (Shader->GetUniform("FENormalMapIntensity") != nullptr)
+			Shader->UpdateUniformData("FENormalMapIntensity", Material->GetNormalMapIntensity());
 
-		if (Shader->GetParameter("FERoughness") != nullptr)
-			Shader->UpdateParameterData("FERoughness", Material->Roughness);
+		if (Shader->GetUniform("FERoughness") != nullptr)
+			Shader->UpdateUniformData("FERoughness", Material->Roughness);
 
-		if (Shader->GetParameter("FERoughnessMapIntensity") != nullptr)
-			Shader->UpdateParameterData("FERoughnessMapIntensity", Material->GetRoughnessMapIntensity());
+		if (Shader->GetUniform("FERoughnessMapIntensity") != nullptr)
+			Shader->UpdateUniformData("FERoughnessMapIntensity", Material->GetRoughnessMapIntensity());
 
-		if (Shader->GetParameter("FEMetalness") != nullptr)
-			Shader->UpdateParameterData("FEMetalness", Material->Metalness);
+		if (Shader->GetUniform("FEMetalness") != nullptr)
+			Shader->UpdateUniformData("FEMetalness", Material->Metalness);
 
-		if (Shader->GetParameter("FEMetalnessMapIntensity") != nullptr)
-			Shader->UpdateParameterData("FEMetalnessMapIntensity", Material->GetMetalnessMapIntensity());
+		if (Shader->GetUniform("FEMetalnessMapIntensity") != nullptr)
+			Shader->UpdateUniformData("FEMetalnessMapIntensity", Material->GetMetalnessMapIntensity());
 
-		if (Shader->GetParameter("FETiling") != nullptr)
-			Shader->UpdateParameterData("FETiling", Material->GetTiling());
+		if (Shader->GetUniform("FETiling") != nullptr)
+			Shader->UpdateUniformData("FETiling", Material->GetTiling());
 
-		if (Shader->GetParameter("compactMaterialPacking") != nullptr)
-			Shader->UpdateParameterData("compactMaterialPacking", Material->IsCompackPacking());
+		if (Shader->GetUniform("compactMaterialPacking") != nullptr)
+			Shader->UpdateUniformData("compactMaterialPacking", Material->IsCompackPacking());
 	}
 }
 
-void FERenderer::LoadStandardParams(FEShader* Shader, const bool IsReceivingShadows, FEEntity* ForceCamera, const bool IsUniformLighting)
+void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool IsReceivingShadows, FEEntity* ForceCamera, const bool IsUniformLighting)
 {
 	//  FIX ME!
 	FEEntity* CameraEntityToUse = ForceCamera;
@@ -303,26 +300,26 @@ void FERenderer::LoadStandardParams(FEShader* Shader, const bool IsReceivingShad
 	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
 	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
 
-	if (Shader->GetParameter("FEViewMatrix") != nullptr)
-		Shader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	if (Shader->GetUniform("FEViewMatrix") != nullptr)
+		Shader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
-	if (Shader->GetParameter("FEProjectionMatrix") != nullptr)
-		Shader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	if (Shader->GetUniform("FEProjectionMatrix") != nullptr)
+		Shader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
-	if (Shader->GetParameter("FECameraPosition") != nullptr)
-		Shader->UpdateParameterData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
+	if (Shader->GetUniform("FECameraPosition") != nullptr)
+		Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-	if (Shader->GetParameter("FEGamma") != nullptr)
-		Shader->UpdateParameterData("FEGamma", CurrentCameraComponent.GetGamma());
+	if (Shader->GetUniform("FEGamma") != nullptr)
+		Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());
 
-	if (Shader->GetParameter("FEExposure") != nullptr)
-		Shader->UpdateParameterData("FEExposure", CurrentCameraComponent.GetExposure());
+	if (Shader->GetUniform("FEExposure") != nullptr)
+		Shader->UpdateUniformData("FEExposure", CurrentCameraComponent.GetExposure());
 
-	if (Shader->GetParameter("FEReceiveShadows") != nullptr)
-		Shader->UpdateParameterData("FEReceiveShadows", IsReceivingShadows);
+	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
+		Shader->UpdateUniformData("FEReceiveShadows", IsReceivingShadows);
 
-	if (Shader->GetParameter("FEUniformLighting") != nullptr)
-		Shader->UpdateParameterData("FEUniformLighting", IsUniformLighting);
+	if (Shader->GetUniform("FEUniformLighting") != nullptr)
+		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
 }
 
 void FERenderer::AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing)
@@ -487,8 +484,8 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 	}
 
 	CurrentGameModel->GetMaterial()->Bind();
-	LoadStandardParams(CurrentGameModel->GetMaterial()->Shader, CurrentGameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
-	CurrentGameModel->GetMaterial()->Shader->LoadDataToGPU();
+	LoadStandardUniforms(CurrentGameModel->GetMaterial()->Shader, CurrentGameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	CurrentGameModel->GetMaterial()->Shader->LoadUniformsDataToGPU();
 
 	INSTANCED_RENDERING_SYSTEM.Render(Entity, GameModelComponent, PrefabIndex);
 
@@ -524,8 +521,8 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 		}
 
 		CurrentGameModel->GetBillboardMaterial()->Bind();
-		LoadStandardParams(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentGameModel->GetBillboardMaterial(), &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
-		CurrentGameModel->GetBillboardMaterial()->Shader->LoadDataToGPU();
+		LoadStandardUniforms(CurrentGameModel->GetBillboardMaterial()->Shader, CurrentGameModel->GetBillboardMaterial(), &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+		CurrentGameModel->GetBillboardMaterial()->Shader->LoadUniformsDataToGPU();
 
 		INSTANCED_RENDERING_SYSTEM.RenderOnlyBillbords(Entity, GameModelComponent, PrefabIndex);
 
@@ -592,8 +589,8 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 	ScreenQuadShader->Start();
 	// FIX ME! CAMERA
-	LoadStandardParams(ScreenQuadShader, true);
-	ScreenQuadShader->LoadDataToGPU();
+	LoadStandardUniforms(ScreenQuadShader, true);
+	ScreenQuadShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -649,25 +646,25 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	// ************************************ Bloom ************************************
 	FEPostProcess* BloomEffect = ENGINE.CreatePostProcess("Bloom", static_cast<int>(CameraComponent.RenderTargetWidth / 4.0f), static_cast<int>(CameraComponent.RenderTargetHeight / 4.0f));
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
-	BloomEffect->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", 1.0f);
+	BloomEffect->Stages[0]->Shader->UpdateUniformData("thresholdBrightness", 1.0f);
 
 	FEShader* BloomBlurShader = RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/);
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 5.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 5.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 1.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, BloomBlurShader));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 1.0f));
 
 	FEShader* BloomCompositionShader = RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/);
 	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, BloomCompositionShader));
@@ -696,9 +693,9 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	FEShader* DOFShader = RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/);
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, DOFShader));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
 
 	RENDERER.AddPostProcess(Result, DOFEffect);
 	// ************************************ DOF END ************************************
@@ -786,20 +783,20 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_SCENE_HDR_COLOR, RESOURCE_MANAGER.GetShader("0C19574118676C2E5645200E"/*"FEBloomThreshold"*/)));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 5.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(5.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 5.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 1.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, RESOURCE_MANAGER.GetShader("7F3E4F5C130B537F0846274F"/*"FEBloomBlur"*/)));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
-	BloomEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(1.0f, "BloomSize"));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
+	BloomEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("BloomSize", 1.0f));
 
 	BloomEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_HDR_COLOR}, RESOURCE_MANAGER.GetShader("1833272551376C2E5645200E"/*"FEBloomComposition"*/)));
 
@@ -824,9 +821,9 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 	// ************************************ DOF ************************************
 	FEPostProcess* DOFEffect = ENGINE.CreatePostProcess("DOF", CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(0.0f, 1.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(0.0f, 1.0f)));
 	DOFEffect->AddStage(new FEPostProcessStage(std::vector<int> { FE_POST_PROCESS_PREVIOUS_STAGE_RESULT0, FE_POST_PROCESS_SCENE_DEPTH}, RESOURCE_MANAGER.GetShader("7800253C244442155D0F3C7B"/*"DOF"*/)));
-	DOFEffect->Stages.back()->StageSpecificUniforms.push_back(FEShaderParam(glm::vec2(1.0f, 0.0f), "FEBlurDirection"));
+	DOFEffect->Stages.back()->StageSpecificUniformValues.push_back(FEShaderUniformValue("FEBlurDirection", glm::vec2(1.0f, 0.0f)));
 	RENDERER.AddPostProcess(CurrentData, DOFEffect);
 	// ************************************ DOF END ************************************
 
@@ -992,8 +989,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 		if (LightComponent.IsCastShadows())
 		{
 			const float ShadowsBlurFactor = LightComponent.GetShadowBlurFactor();
-			ShaderPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
-			ShaderInstancedPBR->UpdateParameterData("shadowBlurFactor", ShadowsBlurFactor);
+			ShaderPBR->UpdateUniformData("shadowBlurFactor", ShadowsBlurFactor);
+			ShaderInstancedPBR->UpdateUniformData("shadowBlurFactor", ShadowsBlurFactor);
 
 			const glm::vec3 OldCameraPosition = CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE);
 			const glm::mat4 OldViewMatrix = CurrentCameraComponent.GetViewMatrix();
@@ -1252,9 +1249,9 @@ void FERenderer::Render(FEScene* CurrentScene)
 
 	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 	FinalSceneShader->Start();
-	FinalSceneShader->UpdateParameterData("SSAOActive", CurrentCameraComponent.IsSSAOEnabled() ? 1.0f : 0.0f);
-	LoadStandardParams(FinalSceneShader, true);
-	FinalSceneShader->LoadDataToGPU();
+	FinalSceneShader->UpdateUniformData("SSAOActive", CurrentCameraComponent.IsSSAOEnabled() ? 1.0f : 0.0f);
+	LoadStandardUniforms(FinalSceneShader, true);
+	FinalSceneShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1282,10 +1279,10 @@ void FERenderer::Render(FEScene* CurrentScene)
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	InstancedLineShader->Start();
-	InstancedLineShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	InstancedLineShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	InstancedLineShader->UpdateParameterData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
-	InstancedLineShader->LoadDataToGPU();
+	InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
+	InstancedLineShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1346,17 +1343,15 @@ void FERenderer::Render(FEScene* CurrentScene)
 		for (size_t j = 0; j < Effect.Stages.size(); j++)
 		{
 			Effect.Stages[j]->Shader->Start();
-			LoadStandardParams(Effect.Stages[j]->Shader, nullptr, nullptr);
-			for (size_t k = 0; k < Effect.Stages[j]->StageSpecificUniforms.size(); k++)
+			LoadStandardUniforms(Effect.Stages[j]->Shader, nullptr, nullptr);
+			for (size_t k = 0; k < Effect.Stages[j]->StageSpecificUniformValues.size(); k++)
 			{
-				FEShaderParam* Param = Effect.Stages[j]->Shader->GetParameter(Effect.Stages[j]->StageSpecificUniforms[k].GetName());
-				if (Param != nullptr)
-				{
-					Param->Data = Effect.Stages[j]->StageSpecificUniforms[k].Data;
-				}
+				FEShaderUniform* CurrentUniform = Effect.Stages[j]->Shader->GetUniform(Effect.Stages[j]->StageSpecificUniformValues[k].GetName());
+				if (CurrentUniform != nullptr)
+					CurrentUniform->CurrentValue = Effect.Stages[j]->StageSpecificUniformValues[k];
 			}
 
-			Effect.Stages[j]->Shader->LoadDataToGPU();
+			Effect.Stages[j]->Shader->LoadUniformsDataToGPU();
 
 			for (size_t k = 0; k < Effect.Stages[j]->InTextureSource.size(); k++)
 			{
@@ -1472,8 +1467,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 #ifdef USE_OCCLUSION_CULLING
 
 	ComputeTextureCopy->Start();
-	ComputeTextureCopy->UpdateParameterData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()));
-	ComputeTextureCopy->LoadDataToGPU();
+	ComputeTextureCopy->UpdateUniformData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()));
+	ComputeTextureCopy->LoadUniformsDataToGPU();
 
 	CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(0);
 	glBindImageTexture(1, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
@@ -1487,8 +1482,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 		const float DownScale = static_cast<float>(pow(2.0f, i));
 
 		ComputeDepthPyramidDownSample->Start();
-		ComputeDepthPyramidDownSample->UpdateParameterData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth() / DownScale, CurrentCameraRenderingData->DepthPyramid->GetHeight() / DownScale));
-		ComputeDepthPyramidDownSample->LoadDataToGPU();
+		ComputeDepthPyramidDownSample->UpdateUniformData("textureSize", glm::vec2(CurrentCameraRenderingData->DepthPyramid->GetWidth() / DownScale, CurrentCameraRenderingData->DepthPyramid->GetHeight() / DownScale));
+		ComputeDepthPyramidDownSample->LoadUniformsDataToGPU();
 		glBindImageTexture(0, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), static_cast<GLint>(i), GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 		glBindImageTexture(1, CurrentCameraRenderingData->DepthPyramid->GetTextureID(), static_cast<GLint>(i + 1), GL_FALSE, 0, GL_WRITE_ONLY, GL_R32F);
 
@@ -1574,8 +1569,8 @@ void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelCompone
 	}
 
 	GameModel->Material->Bind();
-	LoadStandardParams(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
-	GameModel->Material->Shader->LoadDataToGPU();
+	LoadStandardUniforms(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	GameModel->Material->Shader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
 	if ((GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1638,8 +1633,8 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* For
 	}
 
 	GameModel->Material->Bind();
-	LoadStandardParams(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
-	GameModel->Material->Shader->LoadDataToGPU();
+	LoadStandardUniforms(GameModel->Material->Shader, GameModel->Material, &TransformComponent, ForceCamera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
+	GameModel->Material->Shader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(GameModel->Mesh->GetVaoID()));
 	if ((GameModel->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1727,7 +1722,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Force
 	}
 
 	TerrainComponent.Shader->Start();
-	LoadStandardParams(TerrainComponent.Shader, nullptr, &TransformComponent, ForceCamera, TerrainComponent.IsReceivingShadows());
+	LoadStandardUniforms(TerrainComponent.Shader, nullptr, &TransformComponent, ForceCamera, TerrainComponent.IsReceivingShadows());
 	// ************ Load materials data for all Terrain layers ************
 
 	const int LayersUsed = TerrainComponent.LayersUsed();
@@ -1741,16 +1736,16 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Force
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, TerrainComponent.GPULayersDataBuffer));
 
 	// Shadow map shader does not have this parameter.
-	if (TerrainComponent.Shader->GetParameter("usedLayersCount") != nullptr)
-		TerrainComponent.Shader->UpdateParameterData("usedLayersCount", static_cast<float>(LayersUsed));
+	if (TerrainComponent.Shader->GetUniform("usedLayersCount") != nullptr)
+		TerrainComponent.Shader->UpdateUniformData("usedLayersCount", static_cast<float>(LayersUsed));
 	// ************ Load materials data for all Terrain layers END ************
 
-	TerrainComponent.Shader->UpdateParameterData("hightScale", TerrainComponent.HightScale);
-	TerrainComponent.Shader->UpdateParameterData("scaleFactor", TerrainComponent.ScaleFactor);
+	TerrainComponent.Shader->UpdateUniformData("hightScale", TerrainComponent.HightScale);
+	TerrainComponent.Shader->UpdateUniformData("scaleFactor", TerrainComponent.ScaleFactor);
 	if (TerrainComponent.Shader->GetName() != "FESMTerrainShader")
-		TerrainComponent.Shader->UpdateParameterData("tileMult", TerrainComponent.TileMult);
-	TerrainComponent.Shader->UpdateParameterData("LODlevel", TerrainComponent.LODLevel);
-	TerrainComponent.Shader->UpdateParameterData("hightMapShift", TerrainComponent.HightMapShift);
+		TerrainComponent.Shader->UpdateUniformData("tileMult", TerrainComponent.TileMult);
+	TerrainComponent.Shader->UpdateUniformData("LODlevel", TerrainComponent.LODLevel);
+	TerrainComponent.Shader->UpdateUniformData("hightMapShift", TerrainComponent.HightMapShift);
 
 	glm::vec3 PivotPosition = TransformComponent.GetPosition();
 	TerrainComponent.ScaleFactor = 1.0f * TerrainComponent.ChunkPerSide;
@@ -1759,7 +1754,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Force
 	static int WorldMatrixHash = static_cast<int>(std::hash<std::string>{}("FEWorldMatrix"));
 	static int HightMapShiftHash = static_cast<int>(std::hash<std::string>{}("hightMapShift"));
 
-	TerrainComponent.Shader->LoadDataToGPU();
+	TerrainComponent.Shader->LoadUniformsDataToGPU();
 	FETransformComponent OldState = TransformComponent;
 	for (size_t i = 0; i < TerrainComponent.ChunkPerSide; i++)
 	{
@@ -1782,21 +1777,21 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Force
 				if (CameraEntityToUse == nullptr)
 					return;
 			}
-			//  FIX ME!
 			FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
 			FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
 
-			TerrainComponent.Shader->UpdateParameterData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * TransformComponent.GetWorldMatrix());
-			if (TerrainComponent.Shader->GetParameter("FEWorldMatrix") != nullptr)
-				TerrainComponent.Shader->UpdateParameterData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
-			TerrainComponent.Shader->UpdateParameterData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
-			TerrainComponent.Shader->LoadMatrix(PVMHash, *static_cast<glm::mat4*>(TerrainComponent.Shader->GetParameter("FEPVMMatrix")->Data));
-			if (TerrainComponent.Shader->GetParameter("FEWorldMatrix") != nullptr)
-				TerrainComponent.Shader->LoadMatrix(WorldMatrixHash, *static_cast<glm::mat4*>(TerrainComponent.Shader->GetParameter("FEWorldMatrix")->Data));
+			TerrainComponent.Shader->UpdateUniformData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * TransformComponent.GetWorldMatrix());
+			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
+				TerrainComponent.Shader->UpdateUniformData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
+			TerrainComponent.Shader->UpdateUniformData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
-			if (TerrainComponent.Shader->GetParameter("hightMapShift") != nullptr)
-				TerrainComponent.Shader->LoadVector(HightMapShiftHash, *static_cast<glm::vec2*>(TerrainComponent.Shader->GetParameter("hightMapShift")->Data));
+			TerrainComponent.Shader->LoadUniformDataToGPU("FEPVMMatrix");
+
+			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
+				TerrainComponent.Shader->LoadUniformDataToGPU("FEWorldMatrix");
+
+			TerrainComponent.Shader->LoadUniformDataToGPU("hightMapShift");
 
 			FE_GL_ERROR(glDrawArraysInstanced(GL_PATCHES, 0, 4, 64 * 64));
 		}
@@ -1833,60 +1828,60 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	FECameraComponent& CameraComponent = CameraData->CameraEntity->GetComponent<FECameraComponent>();
 	
 	// **************************** Bloom ********************************
-	CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateParameterData("thresholdBrightness", CameraComponent.GetBloomThreshold());
+	CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateUniformData("thresholdBrightness", CameraComponent.GetBloomThreshold());
 
-	*static_cast<float*>(CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniforms[1].Data) = CameraComponent.GetBloomSize();
-	*static_cast<float*>(CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniforms[1].Data) = CameraComponent.GetBloomSize();
+	CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
+	CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
 	// **************************** Bloom END ****************************
 
 	// **************************** FXAA ********************************
-	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAASpanMax", CameraComponent.GetFXAASpanMax());
-	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMin", CameraComponent.GetFXAAReduceMin());
-	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAAReduceMul", CameraComponent.GetFXAAReduceMul());
-	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateParameterData("FXAATextureSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateUniformData("FXAASpanMax", CameraComponent.GetFXAASpanMax());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateUniformData("FXAAReduceMin", CameraComponent.GetFXAAReduceMin());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateUniformData("FXAAReduceMul", CameraComponent.GetFXAAReduceMul());
+	CameraData->PostProcessEffects[2]->Stages[0]->Shader->UpdateUniformData("FXAATextureSize", glm::vec2(1.0f / CameraComponent.RenderTargetWidth, 1.0f / CameraComponent.RenderTargetHeight));
 	// **************************** FXAA END ****************************
 
 	// **************************** Depth of Field ********************************
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("depthThreshold", CameraComponent.GetDOFNearDistance());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("depthThreshold", CameraComponent.GetDOFNearDistance());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("blurSize", CameraComponent.GetDOFStrength());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("zNear", CameraComponent.GetNearPlane());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("zNear", CameraComponent.GetNearPlane());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateParameterData("zFar", CameraComponent.GetFarPlane());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateParameterData("zFar", CameraComponent.GetFarPlane());
+	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
+	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
 	// **************************** Depth of Field END ****************************
 
 	// **************************** Chromatic Aberration ********************************
-	CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateParameterData("intensity", CameraComponent.GetChromaticAberrationIntensity());
+	CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateUniformData("intensity", CameraComponent.GetChromaticAberrationIntensity());
 	// **************************** Chromatic Aberration END ****************************
 
 	// **************************** Distance Fog ********************************
 
 	if (CameraComponent.IsDistanceFogEnabled())
 	{
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", CameraComponent.GetDistanceFogDensity());
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", CameraComponent.GetDistanceFogGradient());
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogDensity", CameraComponent.GetDistanceFogDensity());
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogGradient", CameraComponent.GetDistanceFogGradient());
 
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", CameraComponent.GetDistanceFogDensity());
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", CameraComponent.GetDistanceFogGradient());
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogDensity", CameraComponent.GetDistanceFogDensity());
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", CameraComponent.GetDistanceFogGradient());
 	}
 	else
 	{
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", -1.0f);
-		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", -1.0f);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogDensity", -1.0f);
+		RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogGradient", -1.0f);
 
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", -1.0f);
-		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", -1.0f);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogDensity", -1.0f);
+		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", -1.0f);
 	}
 	// **************************** Distance Fog END ****************************
 }
@@ -1980,16 +1975,16 @@ void FERenderer::GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FE
 	FETransformComponent& CurrentCameraTransformComponent = CameraEntityToUse->GetComponent<FETransformComponent>();
 
 #ifdef USE_OCCLUSION_CULLING
-	FrustumCullingShader->UpdateParameterData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	FrustumCullingShader->UpdateParameterData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	FrustumCullingShader->UpdateParameterData("useOcclusionCulling", bUseOcclusionCulling);
+	FrustumCullingShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	FrustumCullingShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	FrustumCullingShader->UpdateUniformData("useOcclusionCulling", bUseOcclusionCulling);
 	// It should be last frame size!
 	const glm::vec2 RenderTargetSize = glm::vec2(CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
-	FrustumCullingShader->UpdateParameterData("renderTargetSize", RenderTargetSize);
-	FrustumCullingShader->UpdateParameterData("nearFarPlanes", glm::vec2(CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane()));
+	FrustumCullingShader->UpdateUniformData("renderTargetSize", RenderTargetSize);
+	FrustumCullingShader->UpdateUniformData("nearFarPlanes", glm::vec2(CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane()));
 #endif // USE_OCCLUSION_CULLING
 
-	FrustumCullingShader->LoadDataToGPU();
+	FrustumCullingShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, InstancedComponent.InstancedElementsData[BufferIndex]->SourceDataBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, InstancedComponent.InstancedElementsData[BufferIndex]->PositionsBuffer));
@@ -2037,17 +2032,17 @@ void FERenderer::UpdateSSAO()
 	if (CurrentCameraRenderingData->SSAO->Shader == nullptr)
 		CurrentCameraRenderingData->SSAO->Shader = RESOURCE_MANAGER.GetShader("1037115B676E383E36345079"/*"FESSAOShader"*/);
 
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SampleCount", CameraComponent.GetSSAOSampleCount());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("SampleCount", CameraComponent.GetSSAOSampleCount());
 	
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SmallDetails", CameraComponent.IsSSAOSmallDetailsEnabled() ? 1.0f : 0.0f);
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("Bias", CameraComponent.GetSSAOBias());
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("Radius", CameraComponent.GetSSAORadius());
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("RadiusSmallDetails", CameraComponent.GetSSAORadiusSmallDetails());
-	CurrentCameraRenderingData->SSAO->Shader->UpdateParameterData("SmallDetailsWeight", CameraComponent.GetSSAOSmallDetailsWeight());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("SmallDetails", CameraComponent.IsSSAOSmallDetailsEnabled() ? 1.0f : 0.0f);
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("Bias", CameraComponent.GetSSAOBias());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("Radius", CameraComponent.GetSSAORadius());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("RadiusSmallDetails", CameraComponent.GetSSAORadiusSmallDetails());
+	CurrentCameraRenderingData->SSAO->Shader->UpdateUniformData("SmallDetailsWeight", CameraComponent.GetSSAOSmallDetailsWeight());
 	
 	CurrentCameraRenderingData->SSAO->Shader->Start();
-	LoadStandardParams(CurrentCameraRenderingData->SSAO->Shader, true, nullptr);
-	CurrentCameraRenderingData->SSAO->Shader->LoadDataToGPU();
+	LoadStandardUniforms(CurrentCameraRenderingData->SSAO->Shader, true, nullptr);
+	CurrentCameraRenderingData->SSAO->Shader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -2062,12 +2057,12 @@ void FERenderer::UpdateSSAO()
 		// First blur stage
 		FEShader* BlurShader = RESOURCE_MANAGER.GetShader("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
 		BlurShader->Start();
-		if (BlurShader->GetParameter("FEBlurDirection"))
-			BlurShader->UpdateParameterData("FEBlurDirection", glm::vec2(0.0f, 1.0f));
-		if (BlurShader->GetParameter("BlurRadius"))
-			BlurShader->UpdateParameterData("BlurRadius", 1.3f);
+		if (BlurShader->GetUniform("FEBlurDirection"))
+			BlurShader->UpdateUniformData("FEBlurDirection", glm::vec2(0.0f, 1.0f));
+		if (BlurShader->GetUniform("BlurRadius"))
+			BlurShader->UpdateUniformData("BlurRadius", 1.3f);
 
-		BlurShader->LoadDataToGPU();
+		BlurShader->LoadUniformsDataToGPU();
 
 		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->Bind(0);
 		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
@@ -2079,12 +2074,12 @@ void FERenderer::UpdateSSAO()
 		FE_GL_ERROR(glBindVertexArray(0));
 
 		// Second blur stage
-		if (BlurShader->GetParameter("FEBlurDirection"))
-			BlurShader->UpdateParameterData("FEBlurDirection", glm::vec2(1.0f, 0.0f));
-		if (BlurShader->GetParameter("BlurRadius"))
-			BlurShader->UpdateParameterData("BlurRadius", 1.3f);
+		if (BlurShader->GetUniform("FEBlurDirection"))
+			BlurShader->UpdateUniformData("FEBlurDirection", glm::vec2(1.0f, 0.0f));
+		if (BlurShader->GetUniform("BlurRadius"))
+			BlurShader->UpdateUniformData("BlurRadius", 1.3f);
 
-		BlurShader->LoadDataToGPU();
+		BlurShader->LoadUniformsDataToGPU();
 
 		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->Bind(0);
 		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
@@ -2182,7 +2177,7 @@ void FERenderer::RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target)
 
 	FEShader* ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 	ScreenQuadShader->Start();
-	ScreenQuadShader->LoadDataToGPU();
+	ScreenQuadShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -2267,7 +2262,7 @@ bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* 
 
 	FEShader* CurrentShader = RESOURCE_MANAGER.GetShader("5C267A01466A545E7D1A2E66"/*FECombineFrameBuffers*/);
 	CurrentShader->Start();
-	CurrentShader->LoadDataToGPU();
+	CurrentShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));

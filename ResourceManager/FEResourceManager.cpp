@@ -1201,8 +1201,8 @@ void FEResourceManager::LoadStandardMaterial()
 		"6917497A5E0C05454876186F");
 	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
 
-	const FEShaderParam Color(glm::vec3(1.0f, 0.4f, 0.6f), "baseColor");
-	NewMaterial->AddParameter(Color);
+	FEShaderUniformValue Color("baseColor", glm::vec3(1.0f, 0.4f, 0.6f));
+	NewMaterial->SetUniformVariation(Color);
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str()).c_str(),
@@ -1256,13 +1256,13 @@ void FEResourceManager::LoadStandardMaterial()
 	// ****************************** PBR SHADER END ******************************
 
 	// same as FERenderer::updateFogInShaders()
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogDensity", 0.007f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("fogGradient", 2.5f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateParameterData("shadowBlurFactor", 1.0f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogDensity", 0.007f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogGradient", 2.5f);
+	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("shadowBlurFactor", 1.0f);
 
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogDensity", 0.007f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("fogGradient", 2.5f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateParameterData("shadowBlurFactor", 1.0f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogDensity", 0.007f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", 2.5f);
+	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("shadowBlurFactor", 1.0f);
 }
 
 void FEResourceManager::LoadStandardGameModels()

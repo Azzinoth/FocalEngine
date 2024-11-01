@@ -29,11 +29,8 @@ FETerrainSystem::FETerrainSystem()
 																						  nullptr, nullptr,
 																					      "50064D3C4D0B537F0846274F");
 	RESOURCE_MANAGER.SetTagIternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
-
-	const FEShaderParam ColorParam(glm::vec3(1.0f, 1.0f, 1.0f), "baseColor");
-	RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/)->AddParameter(ColorParam);
-
-	RESOURCE_MANAGER.SetTagIternal(RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/), ENGINE_RESOURCE_TAG);
+	ShadowMapTerrainShader->UpdateUniformData("baseColor", glm::vec3(1.0f, 1.0f, 1.0f));
+	RESOURCE_MANAGER.SetTagIternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* TerrainBrushOutput = RESOURCE_MANAGER.CreateShader("terrainBrushOutput", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str()).c_str(),
 																					   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str()).c_str(),
@@ -494,14 +491,14 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 
 		if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
 		{
-			BrushOutputShader->UpdateParameterData("brushCenter", glm::vec2(LocalX, LocalZ));
+			BrushOutputShader->UpdateUniformData("brushCenter", glm::vec2(LocalX, LocalZ));
 		}
 
-		BrushOutputShader->UpdateParameterData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
-		BrushOutputShader->UpdateParameterData("brushMode", static_cast<float>(GetBrushMode()));
+		BrushOutputShader->UpdateUniformData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
+		BrushOutputShader->UpdateUniformData("brushMode", static_cast<float>(GetBrushMode()));
 
 		TerrainComponent.BrushOutputFB->SetColorAttachment(TerrainComponent.HeightMap);
-		BrushOutputShader->UpdateParameterData("brushIntensity", BrushIntensity / 10.0f);
+		BrushOutputShader->UpdateUniformData("brushIntensity", BrushIntensity / 10.0f);
 
 		TerrainComponent.BrushOutputFB->Bind();
 		BrushOutputShader->Start();
@@ -511,19 +508,19 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 			TerrainComponent.LayerMaps[0]->Bind(0);
 			RENDERER.SetGLViewport(0, 0, TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight());
 
-			BrushOutputShader->UpdateParameterData("brushIntensity", BrushIntensity * 5.0f);
-			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex()));
+			BrushOutputShader->UpdateUniformData("brushIntensity", BrushIntensity * 5.0f);
+			BrushOutputShader->UpdateUniformData("layerIndex", static_cast<float>(GetBrushLayerIndex()));
 			TerrainComponent.BrushOutputFB->SetColorAttachment(TerrainComponent.LayerMaps[0]);
-			BrushOutputShader->LoadDataToGPU();
+			BrushOutputShader->LoadUniformsDataToGPU();
 
 			FE_GL_ERROR(glBindVertexArray(PlaneMesh->GetVaoID()));
 			FE_GL_ERROR(glEnableVertexAttribArray(0));
 			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, PlaneMesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
 
 			TerrainComponent.LayerMaps[1]->Bind(0);
-			BrushOutputShader->UpdateParameterData("layerIndex", static_cast<float>(GetBrushLayerIndex() - 4.0f));
+			BrushOutputShader->UpdateUniformData("layerIndex", static_cast<float>(GetBrushLayerIndex() - 4.0f));
 			TerrainComponent.BrushOutputFB->SetColorAttachment(TerrainComponent.LayerMaps[1]);
-			BrushOutputShader->LoadDataToGPU();
+			BrushOutputShader->LoadUniformsDataToGPU();
 
 			FE_GL_ERROR(glDrawElements(GL_TRIANGLES, PlaneMesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
 			FE_GL_ERROR(glDisableVertexAttribArray(0));
@@ -549,7 +546,7 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 		}
 		else
 		{
-			BrushOutputShader->LoadDataToGPU();
+			BrushOutputShader->LoadUniformsDataToGPU();
 			TerrainComponent.HeightMap->Bind(0);
 
 			RENDERER.SetGLViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight());
@@ -569,14 +566,14 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 
 	if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
 	{
-		BrushVisualShader->UpdateParameterData("brushCenter", glm::vec2(LocalX, LocalZ));
+		BrushVisualShader->UpdateUniformData("brushCenter", glm::vec2(LocalX, LocalZ));
 	}
-	BrushVisualShader->UpdateParameterData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
+	BrushVisualShader->UpdateUniformData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
 
 	TerrainComponent.BrushVisualFB->Bind();
 	BrushVisualShader->Start();
 
-	BrushVisualShader->LoadDataToGPU();
+	BrushVisualShader->LoadUniformsDataToGPU();
 	RENDERER.SetGLViewport(0, 0, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight());
 
 	FE_GL_ERROR(glBindVertexArray(PlaneMesh->GetVaoID()));

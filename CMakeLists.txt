@@ -192,6 +192,9 @@ file(GLOB Renderer_SRC
 	"Renderer/FEShader.cpp"
 	"Renderer/FEShader.h"
 	"Renderer/FEShader.inl"
+	"Renderer/FEShaderUniform.cpp"
+	"Renderer/FEShaderUniform.h"
+	"Renderer/FEShaderUniform.inl"
 	"Renderer/FETexture.cpp"
 	"Renderer/FETexture.h"
 )

@@ -33,7 +33,7 @@ FEPostProcess::~FEPostProcess()
 void FEPostProcess::RenderResult()
 {
 	ScreenQuadShader->Start();
-	ScreenQuadShader->LoadDataToGPU();
+	ScreenQuadShader->LoadUniformsDataToGPU();
 	Stages.back()->OutTexture->Bind(0);
 
 	FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));
