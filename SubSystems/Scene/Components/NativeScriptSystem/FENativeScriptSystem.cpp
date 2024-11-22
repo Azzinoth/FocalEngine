@@ -875,7 +875,7 @@ void FENativeScriptSystem::ComponentsClearOnModuleDeactivate(FENativeScriptModul
 
 	// Besides active scenes, we should also check prefab internal scenes.
 	
-	// TO DO: That is interesting way of handling prefabs scenes, but I am not sure if it is the best way.
+	// TO DO: That is an interesting way of handling prefabs scenes, but I am not sure if it is the best way.
 	//std::vector<FEScene*> PrefabInternalScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::PrefabInternal);
 
 	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();

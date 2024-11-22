@@ -766,7 +766,7 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 	for (size_t i = 0; i < CurrentData->PostProcessEffects.size(); i++)
 	{
 		// We should delete only internally created frame buffers.
-		// Other wise user created postProcess could create UB.
+		// Otherwise user created postProcess could create UB.
 		if (CurrentData->PostProcessEffects[i]->GetName() == "Bloom" ||
 			CurrentData->PostProcessEffects[i]->GetName() == "GammaAndHDR" ||
 			CurrentData->PostProcessEffects[i]->GetName() == "FE_FXAA" ||

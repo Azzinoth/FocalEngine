@@ -102,7 +102,7 @@ namespace FocalEngine
 		void ReadMaterialLine(std::stringstream& LineStream);
 		bool CheckCurrentMaterialObject();
 
-		void ReadLine(std::stringstream& lineStream, FERawOBJData* data);
+		void ReadLine(std::stringstream& LineStream, FERawOBJData* Data);
 		void ProcessRawData(FERawOBJData* Data);
 
 		void CalculateNormals(FERawOBJData* Data);

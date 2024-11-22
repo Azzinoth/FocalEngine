@@ -91,9 +91,9 @@ void FEOpenXR::PollEvents()
 			{
 				case XR_SESSION_STATE_READY:
 				{
-					XrSessionBeginInfo sessionBeginInfo{ XR_TYPE_SESSION_BEGIN_INFO };
-					sessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-					FE_OPENXR_ERROR(xrBeginSession(FEOpenXR_CORE.Session, &sessionBeginInfo));
+					XrSessionBeginInfo SessionBeginInfo{ XR_TYPE_SESSION_BEGIN_INFO };
+					SessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+					FE_OPENXR_ERROR(xrBeginSession(FEOpenXR_CORE.Session, &SessionBeginInfo));
 					//m_sessionRunning = true;
 					break;
 				}

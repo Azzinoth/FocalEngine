@@ -82,7 +82,7 @@ void FEShaderUniform::LoadUniformToGPU()
 		case FE_SHADER_UNIFORM_TYPE::FE_INT_ARRAY:
 		{
 			const auto& Array = GetValue<std::vector<int>>();
-			// TODO: in 64 bit systems Array.size() will be 64 bit, but GL expects 32 bit, it could cause problems
+			// TODO: in 64-bit systems Array.size() will be 64 bit, but GL expects 32 bit, it could cause problems
 			FE_GL_ERROR(glUniform1iv(Locations[0], static_cast<GLsizei>(Array.size()), Array.data()));
 			break;
 		}

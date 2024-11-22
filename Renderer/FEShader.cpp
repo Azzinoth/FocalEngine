@@ -894,7 +894,7 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 			ParsedShaderText.erase(Index, strlen(FE_DEBUG_MACRO));
 		}
 
-		// find next if it is exist
+		// Find next if it exists
 		Index = ParsedShaderText.find(FE_DEBUG_MACRO);
 	}
 

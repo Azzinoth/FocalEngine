@@ -51,7 +51,7 @@ namespace FocalEngine
 		void InvokeResize(int Width, int Height);
 		void InvokeMouseButton(int Button, int Action, int Mods = 0);
 		void InvokeMouseMove(double Xpos, double Ypos);
-		void InvokeCharInput(unsigned int codepoint);
+		void InvokeCharInput(unsigned int Codepoint);
 		void InvokeKeyInput(int Key, int Scancode, int Action, int Mods);
 		void InvokeDropInput(int Count, const char** Paths);
 		void InvokeScrollInput(double Xoffset, double Yoffset);

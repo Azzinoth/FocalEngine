@@ -457,7 +457,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		}
 	}
 
-	// After normalization we will cast double precision vertex coordinates to float precision.
+	// Convert normalized vertex coordinates from double to float
 	if (bUseDoublePrecisionForReadingCoordinates)
 	{
 		Data->RawVertexCoordinates.resize(Data->RawVertexCoordinatesDoublePrecision.size());

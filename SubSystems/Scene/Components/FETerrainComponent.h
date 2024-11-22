@@ -37,7 +37,7 @@ namespace FocalEngine
 		FE_TERRAIN_BRUSH_LAYER_DRAW = 5
 	};
 
-	// Idealy it not should be here
+	// Ideally, this should not be here
 	class FEEntity;
 
 	class FETerrainComponent
@@ -118,7 +118,7 @@ namespace FocalEngine
 		// **************************** TERRAIN EDITOR TOOLS ****************************
 		FEFramebuffer* BrushOutputFB = nullptr;
 		FEFramebuffer* BrushVisualFB = nullptr;
-		// **************************** TERRAIN EDITOR TOOLS END ****************************
+		// **************************** TERRAIN EDITOR TOOLS END ************************
 
 		std::vector<FEEntity*> SnapedInstancedEntities;
 

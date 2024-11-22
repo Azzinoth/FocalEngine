@@ -135,7 +135,7 @@ namespace FocalEngine
 		float CSMXYDepth = 1.0f;
 		FECascadeData CascadeData[4];
 
-		// Spot Light Specific
+		// Spotlight Specific
 		float SpotAngle = 30.0f;
 		float SpotAngleOuter = 45.0f;
 	};

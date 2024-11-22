@@ -433,7 +433,7 @@ FETexture* FEMaterial::GetSpecifiedMap(const int BindingIndex, const int SubMate
 	if (TextureBindings[BindingIndex + SubMaterial * 6] == -1)
 		return nullptr;
 
-	// clean up messed up textureBindings.
+	// Clean up invalid TextureBindings
 	if (Textures[TextureBindings[BindingIndex + SubMaterial * 6]] == nullptr)
 	{
 		TextureBindings[BindingIndex + SubMaterial * 6] = -1;

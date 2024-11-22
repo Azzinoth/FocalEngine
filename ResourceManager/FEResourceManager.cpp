@@ -367,8 +367,8 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 	{
 		const FETexture* NewlyCreatedTexture = RESOURCE_MANAGER.LoadFETexture(Input->FileData, "", Input->NewTexture);
 
-		// If some material uses this texture we should set dirty flag.
-		// Game model will updated as a consequences.
+		// If any material uses this texture, set the dirty flag.
+		// Game model will be updated as a consequence.
 		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialIDList();
 
 		for (size_t i = 0; i < MaterialList.size(); i++)
@@ -2828,7 +2828,7 @@ FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string Fo
 	if (Name.empty())
 		Name = "Unnamed prefab";
 
-	FEPrefab* NewPrefab = new FEPrefab(Name, SceneDescription == nullptr ? true : false);
+	FEPrefab* NewPrefab = new FEPrefab(Name, SceneDescription == nullptr);
 	if (!ForceObjectID.empty())
 	{
 		Prefabs[ForceObjectID] = NewPrefab;

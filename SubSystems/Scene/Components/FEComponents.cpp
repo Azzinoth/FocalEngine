@@ -369,8 +369,8 @@ bool FEComponentTypeInfo::EvaluateConstraints(const std::vector<FEComponentTypeI
 
 bool FEComponentTypeInfo::EvaluateConstraint(const FEComponentConstraint& Constraint, const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards) const
 {
-	auto ComponentExists = [&ComponentToCheckTowards](const FEComponentTypeInfo& comp) {
-		return std::find(ComponentToCheckTowards.begin(), ComponentToCheckTowards.end(), comp) != ComponentToCheckTowards.end();
+	auto ComponentExists = [&ComponentToCheckTowards](const FEComponentTypeInfo& Component) {
+		return std::find(ComponentToCheckTowards.begin(), ComponentToCheckTowards.end(), Component) != ComponentToCheckTowards.end();
 	};
 
 	switch (Constraint.LogicOperation)

@@ -350,7 +350,7 @@ std::vector<FEEntity*> FESceneManager::InstantiatePrefab(FEPrefab* Prefab, FESce
 	}
 	else
 	{
-		// Create a new entity that will hold the prefab instance and all of prefab scene graph nodes.
+		// Create a new entity to hold the prefab instance and its scene graph nodes
 		FEEntity* NewEntity = Scene->CreateEntity(Prefab->GetName());
 		FENaiveSceneGraphNode* NewNode = Scene->SceneGraph.GetNodeByEntityID(NewEntity->GetObjectID());
 

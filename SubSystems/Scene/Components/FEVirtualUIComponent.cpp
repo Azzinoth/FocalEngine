@@ -181,12 +181,12 @@ void FEVirtualUIComponent::AddOnCharCallback(std::function<void(unsigned int)> U
 	VirtualUI->AddOnCharCallback(UserOnCharCallback);
 }
 
-void FEVirtualUIComponent::InvokeCharInput(unsigned int codepoint)
+void FEVirtualUIComponent::InvokeCharInput(unsigned int Codepoint)
 {
 	if (!bActiveInput)
 		return;
 
-	VirtualUI->InvokeCharInput(codepoint);
+	VirtualUI->InvokeCharInput(Codepoint);
 }
 
 void FEVirtualUIComponent::AddOnKeyCallback(std::function<void(int, int, int, int)> UserOnKeyCallback)
