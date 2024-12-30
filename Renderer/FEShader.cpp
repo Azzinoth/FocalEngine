@@ -93,6 +93,7 @@ FEShader::FEShader(const std::string Name, const char* VertexText, const char* F
 	if (ComputeText != nullptr)
 		FE_GL_ERROR(glDeleteShader(ComputeShaderID));
 
+	RegisterActiveAttributes();
 	RegisterUniforms();
 
 #ifdef FE_DEBUG_ENABLED
@@ -1192,6 +1193,7 @@ void FEShader::ReCompile(const std::string Name, const char* VertexText, const c
 #ifdef FE_DEBUG_ENABLED
 	CreateSSBO();
 #endif
+	RegisterActiveAttributes();
 	RegisterUniforms();
 }
 
@@ -1205,5 +1207,230 @@ void FEShader::AddUniformsFromShader(FEShader* Shader)
 	{
 		AddUniformInternal(UniformIterator->second);
 		UniformIterator++;
+	}
+}
+
+void FEShader::RegisterActiveAttributes()
+{
+	GLint AttributeCount;
+	GLint AttributeSize;
+	GLenum AttributeType;
+	GLsizei ActualAttributeNameLength;
+
+	// Get number of active attributes
+	FE_GL_ERROR(glGetProgramiv(ProgramID, GL_ACTIVE_ATTRIBUTES, &AttributeCount));
+
+	for (size_t i = 0; i < static_cast<size_t>(AttributeCount); i++)
+	{
+		const GLsizei MaxAttributeNameLength = 512;
+		GLchar AttributeName[MaxAttributeNameLength];
+
+		// Get attribute info
+		FE_GL_ERROR(glGetActiveAttrib(ProgramID,
+			static_cast<GLuint>(i),
+			MaxAttributeNameLength,
+			&ActualAttributeNameLength,
+			&AttributeSize,
+			&AttributeType,
+			AttributeName));
+
+		std::string AttributeNameString = AttributeName;
+
+		// Check if it's an array attribute
+		bool bIsArray = ((AttributeSize > 1) && (AttributeNameString.find('[') != std::string::npos));
+		std::string AttributeArrayName = "";
+
+		if (bIsArray)
+			AttributeArrayName = AttributeNameString.substr(0, AttributeNameString.find('['));
+
+		std::vector<GLuint> Locations;
+		if (bIsArray)
+		{
+			for (size_t i = 0; i < AttributeSize; i++)
+			{
+				std::string CurrentVariableName = AttributeArrayName + "[" + std::to_string(i) + "]";
+				GLuint Location = -1;
+				FE_GL_ERROR(Location = glGetAttribLocation(ProgramID, CurrentVariableName.c_str()));
+				Locations.push_back(Location);
+			}
+		}
+		else
+		{
+			GLuint Location = -1;
+			FE_GL_ERROR(Location = glGetAttribLocation(ProgramID, AttributeName));
+			Locations.push_back(Location);
+		}
+
+		switch (AttributeType)
+		{
+			case GL_BOOL:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC2:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC3:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC4:
+			{
+
+
+				break;
+			}
+
+			case GL_UNSIGNED_INT:
+			{
+
+
+				break;
+			}
+
+			case GL_INT:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_DOUBLE:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC2:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC3:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC4:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT2:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT3:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT4:
+			{
+
+				break;
+			}
+
+			default:
+				break;
+		}
+		
 	}
 }

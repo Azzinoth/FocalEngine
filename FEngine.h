@@ -38,9 +38,6 @@ namespace FocalEngine
 		FEViewport* GetDefaultViewport();
 		FEViewport* GetViewport(std::string ViewportID);
 
-		bool IsSimplifiedRenderingModeActive();
-		void ActivateSimplifiedRenderingMode();
-
 		bool IsVsyncEnabled();
 		void SetVsyncEnabled(bool NewValue);
 

@@ -240,17 +240,6 @@ void FEngine::AddDropCallback(void(*Func)(int, const char**))
 		ClientDropCallbacks.push_back(Func);
 }
 
-bool FEngine::IsSimplifiedRenderingModeActive()
-{
-	return bSimplifiedRendering;
-}
-
-void FEngine::ActivateSimplifiedRenderingMode()
-{
-	bSimplifiedRendering = true;
-	RENDERER.bSimplifiedRendering = true;
-}
-
 bool FEngine::IsVsyncEnabled()
 {
 	return bVsyncEnabled;

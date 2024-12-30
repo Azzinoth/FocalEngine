@@ -3,6 +3,12 @@
 
 namespace FocalEngine
 {
+	enum class FERenderingPipeline
+	{
+		Deferred,
+		Forward_Simplified,
+	};
+
 	struct FOCAL_ENGINE_API FECameraComponent
 	{
 #define DEFAULT_CAMERA_CLEAR_COLOR glm::vec4(0.55f, 0.73f, 0.87f, 1.0f)
@@ -26,6 +32,9 @@ namespace FocalEngine
 
 		bool IsActive() const;
 		void SetActive(const bool Active);
+
+		bool IsClearColorEnabled() const;
+		void SetIsClearColorEnabled(const bool bEnabled);
 
 		glm::vec4 GetClearColor() const;
 		void SetClearColor(glm::vec4 NewClearColor);
@@ -126,13 +135,17 @@ namespace FocalEngine
 		void SetDistanceFogGradient(const float NewValue);
 
 		const FEViewport* GetViewport();
+
+		FERenderingPipeline GetRenderingPipeline() const;
 	private:
 		bool bIsActive = false;
 		bool bIsMainCamera = false;
 
+		FERenderingPipeline RenderingPipeline = FERenderingPipeline::Deferred;
 		FEViewport* Viewport = nullptr;
 
 		glm::vec4 ClearColor = DEFAULT_CAMERA_CLEAR_COLOR;
+		bool bClearColorEnabled = true;
 
 		int RenderTargetWidth = 0;
 		int RenderTargetHeight = 0;

@@ -99,6 +99,16 @@ void FECameraComponent::SetAspectRatio(const float AspectRatio)
 	this->AspectRatio = AspectRatio;
 }
 
+bool FECameraComponent::IsClearColorEnabled() const
+{
+	return bClearColorEnabled;
+}
+
+void FECameraComponent::SetIsClearColorEnabled(const bool bEnabled)
+{
+	bClearColorEnabled = bEnabled;
+}
+
 glm::vec4 FECameraComponent::GetClearColor() const
 {
 	return ClearColor;
@@ -481,4 +491,9 @@ void FECameraComponent::SetDistanceFogGradient(const float NewValue)
 const FEViewport* FECameraComponent::GetViewport()
 {
 	return Viewport;
+}
+
+FERenderingPipeline FECameraComponent::GetRenderingPipeline() const
+{
+	return RenderingPipeline;
 }

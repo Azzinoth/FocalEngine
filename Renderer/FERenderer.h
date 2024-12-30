@@ -119,9 +119,6 @@ namespace FocalEngine
 
 		void AddAfterRenderCallback(std::function<void()> Callback);
 
-		bool IsClearActiveInSimplifiedRendering();
-		void SetClearActiveInSimplifiedRendering(bool NewValue);
-
 		void SetGLViewport(int X, int Y, int Width, int Height);
 		void SetGLViewport(glm::ivec4 ViewPortData);
 		glm::ivec4 GetGLViewport();
@@ -181,14 +178,7 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> DebugOutputTextures;
 
-		bool bSimplifiedRendering = false;
 		void Init();
-
-		// *********** VR Rendering ***********
-
-		bool bClearActiveInSimplifiedRendering = true;
-
-		// *********** VR Rendering END ***********
 
 		std::vector<std::function<void()>> AfterRenderCallbacks;
 
@@ -199,6 +189,7 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
+		void ForceCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		void OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
 		FECameraRenderingData* CurrentCameraRenderingData = nullptr;

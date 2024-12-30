@@ -34,6 +34,8 @@ namespace FocalEngine
 		bool SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID);
 
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
+
+		bool SetCameraRenderingPipeline(FEEntity* CameraEntity, FERenderingPipeline NewPipeline);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

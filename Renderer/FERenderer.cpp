@@ -28,168 +28,150 @@ void FERenderer::Init()
 
 	RESOURCE_MANAGER.SetTagIternal(FEScreenQuadShader, ENGINE_RESOURCE_TAG);
 
-	if (bSimplifiedRendering)
-	{
-		// Because of VR
-		glGenBuffers(1, &UniformBufferForLights);
-		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
-		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
+	glGenBuffers(1, &UniformBufferForLights);
+	glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
+	glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
 
-		glGenBuffers(1, &UniformBufferForDirectionalLight);
-		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
-		glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
+	glGenBuffers(1, &UniformBufferForDirectionalLight);
+	glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
+	glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
+
+	// Instanced lines
+	LinesBuffer.resize(FE_MAX_LINES);
+
+	const float QuadVertices[] = {
+		0.0f,  -0.5f,  0.0f,
+		1.0f,  -0.5f,  1.0f,
+		1.0f,  0.5f,   1.0f,
+
+		0.0f,  -0.5f,  0.0f,
+		1.0f,  0.5f,   1.0f,
+		0.0f,  0.5f,   0.0f,
+	};
+	glGenVertexArrays(1, &InstancedLineVAO);
+	glBindVertexArray(InstancedLineVAO);
+
+	unsigned int QuadVBO;
+	glGenBuffers(1, &QuadVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, QuadVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
+
+	glGenBuffers(1, &InstancedLineBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer);
+	glBufferData(GL_ARRAY_BUFFER, LinesBuffer.size() * sizeof(FELine), LinesBuffer.data(), GL_DYNAMIC_DRAW);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), static_cast<void*>(nullptr));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(9 * sizeof(float)));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glVertexAttribDivisor(0, 0);
+	glVertexAttribDivisor(1, 1);
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glVertexAttribDivisor(4, 1);
+
+	glBindVertexArray(0);
+
+	FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader",
+														 nullptr, nullptr,
+														 nullptr, nullptr,
+														 nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str()).c_str());
+
+	FE_GL_ERROR(glGenBuffers(1, &FrustumInfoBuffer));
+	FE_GL_ERROR(glGenBuffers(1, &CullingLODCountersBuffer));
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, CullingLODCountersBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * 40, nullptr, GL_DYNAMIC_DRAW));
+
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
+
+	std::vector<float> FrustumData;
+	for (size_t i = 0; i < 32; i++)
+	{
+		FrustumData.push_back(0.0);
 	}
-	else
-	{
-		glGenBuffers(1, &UniformBufferForLights);
-		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
-		glBufferData(GL_UNIFORM_BUFFER, FE_MAX_LIGHTS * UBufferForLightSize, nullptr, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForLights, 0, FE_MAX_LIGHTS * UBufferForLightSize);
 
-		glGenBuffers(1, &UniformBufferForDirectionalLight);
-		glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForDirectionalLight);
-		glBufferData(GL_UNIFORM_BUFFER, UBufferForDirectionalLightSize, nullptr, GL_STATIC_DRAW);
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-		glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
-
-		// Instanced lines
-		LinesBuffer.resize(FE_MAX_LINES);
-
-		const float QuadVertices[] = {
-			0.0f,  -0.5f,  0.0f,
-			1.0f,  -0.5f,  1.0f,
-			1.0f,  0.5f,   1.0f,
-
-			0.0f,  -0.5f,  0.0f,
-			1.0f,  0.5f,   1.0f,
-			0.0f,  0.5f,   0.0f,
-		};
-		glGenVertexArrays(1, &InstancedLineVAO);
-		glBindVertexArray(InstancedLineVAO);
-
-		unsigned int QuadVBO;
-		glGenBuffers(1, &QuadVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, QuadVBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-
-		glGenBuffers(1, &InstancedLineBuffer);
-		glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer);
-		glBufferData(GL_ARRAY_BUFFER, LinesBuffer.size() * sizeof(FELine), LinesBuffer.data(), GL_DYNAMIC_DRAW);
-
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), static_cast<void*>(nullptr));
-		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
-		glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(6 * sizeof(float)));
-		glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(9 * sizeof(float)));
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		glVertexAttribDivisor(0, 0);
-		glVertexAttribDivisor(1, 1);
-		glVertexAttribDivisor(2, 1);
-		glVertexAttribDivisor(3, 1);
-		glVertexAttribDivisor(4, 1);
-
-		glBindVertexArray(0);
-
-		FrustumCullingShader = RESOURCE_MANAGER.CreateShader("FE_FrustumCullingShader",
-															 nullptr, nullptr,
-															 nullptr, nullptr,
-															 nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_FrustumCulling_CS.glsl").c_str()).c_str());
-
-		FE_GL_ERROR(glGenBuffers(1, &FrustumInfoBuffer));
-		FE_GL_ERROR(glGenBuffers(1, &CullingLODCountersBuffer));
-
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, CullingLODCountersBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(unsigned int) * 40, nullptr, GL_DYNAMIC_DRAW));
-
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, FrustumInfoBuffer));
-
-		std::vector<float> FrustumData;
-		for (size_t i = 0; i < 32; i++)
-		{
-			FrustumData.push_back(0.0);
-		}
-
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), FrustumData.data(), GL_DYNAMIC_DRAW));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * (32), FrustumData.data(), GL_DYNAMIC_DRAW));
 
 
-		ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy",
-														   nullptr, nullptr,
-														   nullptr, nullptr,
-														   nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str()).c_str());
+	ComputeTextureCopy = RESOURCE_MANAGER.CreateShader("FE_ComputeTextureCopy",
+														nullptr, nullptr,
+														nullptr, nullptr,
+														nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeTextureCopy_CS.glsl").c_str()).c_str());
 
 
-		ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample",
-																	  nullptr, nullptr,
-																	  nullptr, nullptr,
-																	  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
+	ComputeDepthPyramidDownSample = RESOURCE_MANAGER.CreateShader("FE_ComputeDepthPyramidDownSample",
+																	nullptr, nullptr,
+																	nullptr, nullptr,
+																	nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//ComputeShaders//FE_ComputeDepthPyramidDownSample_CS.glsl").c_str()).c_str());
 
-		ComputeDepthPyramidDownSample->UpdateUniformData("scaleDownBy", 2);
+	ComputeDepthPyramidDownSample->UpdateUniformData("scaleDownBy", 2);
 
-		FEPostProcess::ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
-		FEPostProcess::ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
+	FEPostProcess::ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+	FEPostProcess::ScreenQuadShader = RESOURCE_MANAGER.GetShader("7933272551311F3A1A5B2363"/*"FEScreenQuadShader"*/);
 
-		FEShader* BloomThresholdShader = RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-																						   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str(),
-																						   nullptr, nullptr, nullptr, nullptr,
-																						   "0C19574118676C2E5645200E");
-		RESOURCE_MANAGER.SetTagIternal(BloomThresholdShader, ENGINE_RESOURCE_TAG);
-
-		FEShader* BloomBlurShader = RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-																				 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str(),
-																				 nullptr, nullptr, nullptr, nullptr,
-																				 "7F3E4F5C130B537F0846274F");
-		RESOURCE_MANAGER.SetTagIternal(BloomBlurShader, ENGINE_RESOURCE_TAG);
-
-		FEShader* BloomCompositionShader = RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
-																							   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str(),
-																							   nullptr, nullptr, nullptr, nullptr,
-																							   "1833272551376C2E5645200E");
-		RESOURCE_MANAGER.SetTagIternal(BloomCompositionShader, ENGINE_RESOURCE_TAG);
-
-		FEShader* GammaHDRShader = RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
-																						RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str(),
+	FEShader* BloomThresholdShader = RESOURCE_MANAGER.CreateShader("FEBloomThreshold", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+																						RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str(),
 																						nullptr, nullptr, nullptr, nullptr,
-																						"3417497A5E0C0C2A07456E44");
-		RESOURCE_MANAGER.SetTagIternal(GammaHDRShader, ENGINE_RESOURCE_TAG);
+																						"0C19574118676C2E5645200E");
+	RESOURCE_MANAGER.SetTagIternal(BloomThresholdShader, ENGINE_RESOURCE_TAG);
 
-		FEShader* FEFXAAShader = RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
-																			   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str(),
-																			   nullptr, nullptr, nullptr, nullptr,
-																			   "1E69744A10604C2A1221426B");
-		RESOURCE_MANAGER.SetTagIternal(FEFXAAShader, ENGINE_RESOURCE_TAG);
+	FEShader* BloomBlurShader = RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+																				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str(),
+																				nullptr, nullptr, nullptr, nullptr,
+																				"7F3E4F5C130B537F0846274F");
+	RESOURCE_MANAGER.SetTagIternal(BloomBlurShader, ENGINE_RESOURCE_TAG);
 
-		FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
-																   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str(),
-																   nullptr, nullptr, nullptr, nullptr,
-																   "7800253C244442155D0F3C7B");
-		RESOURCE_MANAGER.SetTagIternal(DOFShader, ENGINE_RESOURCE_TAG);
+	FEShader* BloomCompositionShader = RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
+																							RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str(),
+																							nullptr, nullptr, nullptr, nullptr,
+																							"1833272551376C2E5645200E");
+	RESOURCE_MANAGER.SetTagIternal(BloomCompositionShader, ENGINE_RESOURCE_TAG);
 
-		FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
-																										 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str(),
-																										 nullptr, nullptr, nullptr, nullptr,
-																										 "9A41665B5E2B05321A332D09");
-		RESOURCE_MANAGER.SetTagIternal(ChromaticAberrationShader, ENGINE_RESOURCE_TAG);
+	FEShader* GammaHDRShader = RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
+																					RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str(),
+																					nullptr, nullptr, nullptr, nullptr,
+																					"3417497A5E0C0C2A07456E44");
+	RESOURCE_MANAGER.SetTagIternal(GammaHDRShader, ENGINE_RESOURCE_TAG);
 
-		FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
-																			   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str(),
-																			   nullptr, nullptr, nullptr, nullptr,
-																			   "1037115B676E383E36345079");
+	FEShader* FEFXAAShader = RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
+																			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str(),
+																			nullptr, nullptr, nullptr, nullptr,
+																			"1E69744A10604C2A1221426B");
+	RESOURCE_MANAGER.SetTagIternal(FEFXAAShader, ENGINE_RESOURCE_TAG);
 
-		RESOURCE_MANAGER.SetTagIternal(FESSAOShader, ENGINE_RESOURCE_TAG);
+	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
+																RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str(),
+																nullptr, nullptr, nullptr, nullptr,
+																"7800253C244442155D0F3C7B");
+	RESOURCE_MANAGER.SetTagIternal(DOFShader, ENGINE_RESOURCE_TAG);
 
-		FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str(),
-																					   nullptr, nullptr, nullptr, nullptr,
-																					   "0B5770660B6970800D776542");
-		RESOURCE_MANAGER.SetTagIternal(FESSAOBlurShader, ENGINE_RESOURCE_TAG);
-	}
+	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
+																										RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str(),
+																										nullptr, nullptr, nullptr, nullptr,
+																										"9A41665B5E2B05321A332D09");
+	RESOURCE_MANAGER.SetTagIternal(ChromaticAberrationShader, ENGINE_RESOURCE_TAG);
+
+	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
+																			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str(),
+																			nullptr, nullptr, nullptr, nullptr,
+																			"1037115B676E383E36345079");
+
+	RESOURCE_MANAGER.SetTagIternal(FESSAOShader, ENGINE_RESOURCE_TAG);
+
+	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																					RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str(),
+																					nullptr, nullptr, nullptr, nullptr,
+																					"0B5770660B6970800D776542");
+	RESOURCE_MANAGER.SetTagIternal(FESSAOBlurShader, ENGINE_RESOURCE_TAG);
 
 	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial", "7C41565B2E2B05321A182D89" /*"FEShadowMapShader"*/);
 	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str()).c_str(),
@@ -555,26 +537,34 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 
-	if (bClearActiveInSimplifiedRendering)
+	if (CurrentCameraComponent.IsClearColorEnabled())
 	{
 		glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
 		glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
-	// No instanced rendering for now.
-	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
-	for (entt::entity CurrentEnTTEntity : GameModelGroup)
+	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
+	for (entt::entity EnTTEntity : GameModelGroup)
 	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEnTTEntity);
+		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
-		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(CurrentEnTTEntity);
-		if (CurrentEntity == nullptr)
+		if (!GameModelComponent.IsVisible() /*|| !GameModelComponent.IsPostprocessApplied()*/)
 			continue;
 
-		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
-			RenderGameModelComponentForward(CurrentEntity);
+			RenderGameModelComponentForward(Entity);
+		}
+		// No instanced rendering for now.
+		else if (Entity->HasComponent<FEInstancedComponent>())
+		{
+			//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+			//RenderGameModelComponentWithInstanced(Entity);
 		}
 	}
 
@@ -624,6 +614,9 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	Result = new FECameraRenderingData();
 	Result->CameraEntity = CameraEntity;
 	Result->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.RenderTargetWidth, CameraComponent.RenderTargetHeight);
+
+	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
+		return Result;
 
 	Result->GBuffer = new FEGBuffer(Result->SceneToTextureFB);
 	Result->SSAO = new FESSAO(Result->SceneToTextureFB);
@@ -741,7 +734,7 @@ void FERenderer::OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity)
 		}
 	}*/
 
-	if (bSimplifiedRendering)
+	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 		return;
 
 	delete CurrentData->DepthPyramid;
@@ -860,6 +853,20 @@ FECameraRenderingData* FERenderer::GetCameraRenderingData(FEEntity* CameraEntity
 	}
 }
 
+void FERenderer::ForceCameraRenderingDataUpdate(FEEntity* CameraEntity)
+{
+	if (CameraEntity == nullptr)
+		return;
+
+	if (CameraRenderingDataMap.find(CameraEntity->GetObjectID()) != CameraRenderingDataMap.end())
+	{
+		delete CameraRenderingDataMap[CameraEntity->GetObjectID()];
+		CameraRenderingDataMap.erase(CameraEntity->GetObjectID());
+	}
+
+	CreateCameraRenderingData(CameraEntity);
+}
+
 FETexture* FERenderer::GetCameraResult(FEEntity* CameraEntity)
 {
 	FETexture* Result = nullptr;
@@ -918,7 +925,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	if (bVRActive)
 		return;
 
-	if (bSimplifiedRendering)
+	if (CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 	{
 		SimplifiedRender(CurrentScene);
 		return;
@@ -1150,9 +1157,12 @@ void FERenderer::Render(FEScene* CurrentScene)
 	const unsigned int attachments[6] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5 };
 	glDrawBuffers(6, attachments);
 
-	glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
-	glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	if (CurrentCameraComponent.IsClearColorEnabled())
+	{
+		glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
+		glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+	}
 
 	UpdateGPUCullingFrustum();
 
@@ -1599,6 +1609,8 @@ void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelCompone
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
+// FIX ME! Should I have it as a separate function or it should be done only if camera is in forward rendering mode?
+// That function is used only in VR rendering and Simplified !!
 void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera, bool bReloadUniformBlocks)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
@@ -1617,10 +1629,24 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* For
 		return;
 	}
 
+	if (GameModelComponent.IsWireframeMode())
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+	//  FIX ME!
+	FEEntity* CameraEntityToUse = ForceCamera;
+	if (ForceCamera == nullptr)
+	{
+		CameraEntityToUse = TryToGetLastUsedCameraEntity();
+		if (CameraEntityToUse == nullptr)
+			return;
+	}
+	FECameraComponent& CurrentCameraComponent = CameraEntityToUse->GetComponent<FECameraComponent>();
+
 	FEShader* OriginalShader = nullptr;
-	if (!bSimplifiedRendering || RENDERER.bVRActive)
+	if (!(CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified) || RENDERER.bVRActive)
 	{
 		OriginalShader = GameModel->Material->Shader;
+		// FIX ME! It should not depend on RENDERER.bVRActive !
 		if (RENDERER.bVRActive)
 		{
 			if (OriginalShader->GetObjectID() != "6917497A5E0C05454876186F"/*"SolidColorMaterial"*/)
@@ -1653,8 +1679,11 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* For
 
 	GameModel->Material->UnBind();
 
-	if (!bSimplifiedRendering || RENDERER.bVRActive)
+	if (!(CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified) || RENDERER.bVRActive)
 		GameModel->Material->Shader = OriginalShader;
+
+	if (GameModelComponent.IsWireframeMode())
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera)
@@ -1826,6 +1855,8 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 		return;
 
 	FECameraComponent& CameraComponent = CameraData->CameraEntity->GetComponent<FECameraComponent>();
+	if (CameraComponent.GetRenderingPipeline() != FERenderingPipeline::Deferred)
+		return;
 	
 	// **************************** Bloom ********************************
 	CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateUniformData("thresholdBrightness", CameraComponent.GetBloomThreshold());
@@ -2295,16 +2326,6 @@ void FERenderer::AddAfterRenderCallback(std::function<void()> Callback)
 	}
 
 	AfterRenderCallbacks.push_back(Callback);
-}
-
-bool FERenderer::IsClearActiveInSimplifiedRendering()
-{
-	return bClearActiveInSimplifiedRendering;
-}
-
-void FERenderer::SetClearActiveInSimplifiedRendering(bool NewValue)
-{
-	bClearActiveInSimplifiedRendering = NewValue;
 }
 
 FEEntity* FERenderer::TryToGetLastUsedCameraEntity()

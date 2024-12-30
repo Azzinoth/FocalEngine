@@ -391,3 +391,18 @@ void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, Json::Value Root)
 	CameraComponent.SetSSAORadiusSmallDetails(Root["SSAO"]["Radius Small Details"].asFloat());
 	CameraComponent.SetSSAOSmallDetailsWeight(Root["SSAO"]["Small Details Weight"].asFloat());
 }
+
+bool FECameraSystem::SetCameraRenderingPipeline(FEEntity* CameraEntity, FERenderingPipeline NewPipeline)
+{
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::SetCameraRenderingPipeline CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return false;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	CameraComponent.RenderingPipeline = NewPipeline;
+	RENDERER.ForceCameraRenderingDataUpdate(CameraEntity);
+
+	return true;
+}

@@ -131,6 +131,7 @@ namespace FocalEngine
 		std::vector<std::string> TextureUniforms;
 
 		std::string ParseShaderForMacro(const char* ShaderText);
+		void RegisterActiveAttributes();
 		void RegisterUniforms();
 
 		bool bCSM = false;
