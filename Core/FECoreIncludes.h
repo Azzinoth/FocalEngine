@@ -31,19 +31,21 @@
 #define RADIANS_TOANGLE_COF 180.0f / glm::pi<float>()
 
 #ifdef FE_DEBUG_ENABLED
-	#define FE_GL_ERROR(glCall)            \
-	{                                      \
-		glCall;                            \
-		GLenum error = glGetError();	   \
-		if (error != 0)                    \
-		{								   \
-			assert("FE_GL_ERROR" && 0);	   \
-		}                                  \
-	}
-#else
-	#define FE_GL_ERROR(glCall)            \
-	{                                      \
-		glCall;                            \
+	#define FE_GL_ERROR(GLCall)																										  \
+	{																																  \
+		GLCall;																														  \
+		GLenum Error = glGetError();																								  \
+        if (Error != GL_NO_ERROR)																									  \
+        {																															  \
+			std::string ErrorMessage = "OpenGL Error: " + std::to_string(Error) + " at " + __FILE__ + ":" + std::to_string(__LINE__); \
+			LOG.Add(ErrorMessage, "FE_GL_ERROR", FE_LOG_ERROR);																		  \
+			assert(ErrorMessage.c_str() && 0);																						  \
+        }																															  \
+	}										
+#else										
+	#define FE_GL_ERROR(GLCall)																										  \
+	{																																  \
+		GLCall;																														  \
 	}
 #endif // FE_GL_ERROR
 
