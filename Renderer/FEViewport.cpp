@@ -11,6 +11,11 @@ std::string FEViewport::GetID() const
 	return ID;
 }
 
+FEViewportType FEViewport::GetType() const
+{
+	return Type;
+}
+
 int FEViewport::GetX() const
 {
 	return X;
@@ -19,6 +24,16 @@ int FEViewport::GetX() const
 int FEViewport::GetY() const
 {
 	return Y;
+}
+
+void FEViewport::SetWidth(const int NewWidth)
+{
+	Width = NewWidth;
+}
+
+void FEViewport::SetHeight(const int NewHeight)
+{
+	Height = NewHeight;
 }
 
 int FEViewport::GetWidth() const

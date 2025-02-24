@@ -48,6 +48,11 @@ layout (location = 2) out vec3 gNormal;
 layout (location = 3) out vec4 gAlbedo;
 layout (location = 4) out vec4 gMaterialProperties;
 layout (location = 5) out vec4 gShaderProperties;
+layout (location = 6) out vec2 gMotionVectors;
+
+@ProjectionMatrix@
+uniform mat4 FEPreviousFrameViewMatrix;
+uniform vec2 ScreenSize;
 
 @Texture@ projectedMap;
 
@@ -307,6 +312,24 @@ void main(void)
 	gShaderProperties.g = texture(projectedMap, FS_IN.UV / tileMult).r;
 	gShaderProperties.b = texture(projectedMap, FS_IN.UV / tileMult).g;
 	gShaderProperties.a = texture(projectedMap, FS_IN.UV / tileMult).b;
+
+	// Motion vectors
+	vec2 MotionVectorsResult = vec2(0.0f, 0.0f);
+	vec4 PreviousClipPosition = FEProjectionMatrix * FEPreviousFrameViewMatrix * vec4(FS_IN.worldPosition.xyz, 1.0);
+	vec4 CurrentClipPosition = FEProjectionMatrix * FS_IN.viewPosition;
+
+	if (CurrentClipPosition.w > 0 && PreviousClipPosition.w > 0)
+	{
+		CurrentClipPosition.xyz /= CurrentClipPosition.w;
+		PreviousClipPosition.xyz /= PreviousClipPosition.w;
+
+		vec2 CurrentWindowPosition = CurrentClipPosition.xy * vec2(0.5);
+		vec2 PreviousWindowPosition = PreviousClipPosition.xy * vec2(0.5);
+
+		MotionVectorsResult = (PreviousWindowPosition * ScreenSize) - (CurrentWindowPosition * ScreenSize);
+	}
+
+	gMotionVectors = MotionVectorsResult;
 
 	outColor = finalColor;
 }

@@ -36,6 +36,8 @@ namespace FocalEngine
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
 
 		bool SetCameraRenderingPipeline(FEEntity* CameraEntity, FERenderingPipeline NewPipeline);
+
+		bool SetCameraRenderScale(FEEntity* CameraEntity, float NewValue);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

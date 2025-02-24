@@ -2054,27 +2054,27 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		TextureToExport->InternalFormat != GL_R16 &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
-		TextureToExport->InternalFormat != GL_RGBA16F)
+		TextureToExport->InternalFormat != GL_RGBA16F &&
+		TextureToExport->InternalFormat != GL_RG16F)
 	{
 		LOG.Add("FEResourceManager::ExportFETextureToPNG InternalFormat of TextureToExport is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
-	std::vector<unsigned char> RawData;
+	auto HalfFloatToFloat = [](unsigned short HalfFloat) -> float {
+		int Sign = (HalfFloat >> 15) & 0x00000001;
+		int Exponent = (HalfFloat >> 10) & 0x0000001F;
+		int Mantissa = HalfFloat & 0x000003FF;
 
+		Exponent = Exponent + (127 - 15);
+		int FloatValue = (Sign << 31) | (Exponent << 23) | (Mantissa << 13);
+
+		return *reinterpret_cast<float*>(&FloatValue);
+	};
+
+	std::vector<unsigned char> RawData;
 	if (TextureToExport->InternalFormat == GL_RGBA16F)
 	{
-		auto HalfFloatToFloat = [](unsigned short HalfFloat) -> float {
-			int Sign = (HalfFloat >> 15) & 0x00000001;
-			int Exponent = (HalfFloat >> 10) & 0x0000001F;
-			int Mantissa = HalfFloat & 0x000003FF;
-
-			Exponent = Exponent + (127 - 15);
-			int FloatValue = (Sign << 31) | (Exponent << 23) | (Mantissa << 13);
-
-			return *reinterpret_cast<float*>(&FloatValue);
-			};
-
 		const unsigned char* TextureData = TextureToExport->GetRawData();
 		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
 
@@ -2093,7 +2093,6 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		// Flip image vertically
 		const size_t RowBytes = TextureToExport->GetWidth() * 4;
 		unsigned char* RowBuffer = new unsigned char[RowBytes];
-
 		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
 		{
 			// Copy the top row to a buffer
@@ -2106,6 +2105,33 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 			std::memcpy(RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
 		}
 
+		delete[] RowBuffer;
+	}
+	else if (TextureToExport->InternalFormat == GL_RG16F)
+	{
+		const unsigned char* TextureData = TextureToExport->GetRawData();
+		// Two channels per pixel (R and G) – output 8 bits per channel.
+		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 2);
+
+		size_t RawDataIndex = 0;
+		// Total half-floats = width * height * 2; each half-float is 2 bytes.
+		for (size_t i = 0; i < RawData.size() * sizeof(unsigned short); i += 2)
+		{
+			unsigned short Half = (TextureData[i + 1] << 8) | TextureData[i];
+			float Value = HalfFloatToFloat(Half);
+			unsigned char ByteValue = static_cast<unsigned char>(std::max(0.0f, std::min(1.0f, Value)) * 255.0f);
+			RawData[RawDataIndex++] = ByteValue;
+		}
+
+		// Flip image vertically.
+		const size_t RowBytes = TextureToExport->GetWidth() * 2;  // 2 bytes per pixel row
+		unsigned char* RowBuffer = new unsigned char[RowBytes];
+		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
+		{
+			std::memcpy(RowBuffer, RawData.data() + y * RowBytes, RowBytes);
+			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBytes);
+			std::memcpy(RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
+		}
 		delete[] RowBuffer;
 	}
 	else if (TextureToExport->InternalFormat == GL_RED)
@@ -2152,6 +2178,10 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 	if (TextureToExport->InternalFormat == GL_R16)
 	{
 		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight(), LCT_GREY, 16);
+	}
+	if (TextureToExport->InternalFormat == GL_RG16F)
+	{
+		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight(), LCT_GREY_ALPHA);
 	}
 	else
 	{

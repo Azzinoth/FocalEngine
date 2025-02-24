@@ -1,5 +1,7 @@
 #include "FECameraComponent.h"
 #include "../ResourceManager/FEResourceManager.h"
+#include "Systems/FECameraSystem.h"
+#include "../../../FEngine.h"
 using namespace FocalEngine;
 
 FECameraComponent::FECameraComponent()
@@ -7,6 +9,8 @@ FECameraComponent::FECameraComponent()
 	Frustum.resize(6);
 	for (size_t i = 0; i < Frustum.size(); i++)
 		Frustum[i].resize(4);
+
+	Viewport = new FEViewport();
 }
 
 bool FECameraComponent::IsMainCamera() const
@@ -236,33 +240,66 @@ std::vector<std::vector<float>> FECameraComponent::GetFrustumPlanes()
 	return Frustum;
 }
 
+float FECameraComponent::GetRenderScale()
+{
+	return RenderScale;
+}
+
 int FECameraComponent::GetRenderTargetWidth() const
 {
-	return RenderTargetWidth;
+	if (Viewport == nullptr)
+	{
+		LOG.Add("FECameraComponent::GetRenderTargetWidth Viewport is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return RenderTargetWidth;
+	}
+
+	return static_cast<int>(Viewport->GetWidth() * RenderScale);
 }
 
 int FECameraComponent::GetRenderTargetHeight() const
 {
-	return RenderTargetHeight;
+	if (Viewport == nullptr)
+	{
+		LOG.Add("FECameraComponent::GetRenderTargetHeight Viewport is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return RenderTargetHeight;
+	}
+
+	return static_cast<int>(Viewport->GetHeight() * RenderScale);
 }
 
-void FECameraComponent::SetRenderTargetSize(const int Width, const int Height)
+bool FECameraComponent::TryToSetViewportSize(const int Width, const int Height)
 {
-	if (Viewport != nullptr)
-		return;
-
-	SetRenderTargetSizeInternal(Width, Height);
+	return TryToSetViewportSizeInternal(Width, Height);
 }
 
-void FECameraComponent::SetRenderTargetSizeInternal(const int Width, const int Height)
+bool FECameraComponent::TryToSetViewportSizeInternal(const int Width, const int Height)
 {
 	if (Width < 1 || Height < 1)
-		return;
+		return false;
 
-	RenderTargetWidth = Width;
-	RenderTargetHeight = Height;
+	if (Viewport == nullptr)
+	{
+		LOG.Add("FECameraComponent::TryToSetViewportSizeInternal Viewport is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
 
-	AspectRatio = static_cast<float>(Width) / static_cast<float>(Height);
+	if (Viewport->GetType() == FE_VIEWPORT_VIRTUAL)
+	{
+		Viewport->SetWidth(Width);
+		Viewport->SetHeight(Height);
+		RenderScale = 1.0f;
+		AspectRatio = static_cast<float>(Viewport->GetWidth()) / static_cast<float>(Viewport->GetHeight());
+
+		return true;
+	}
+	else
+	{
+		// If the viewport is not virtual this function should fail.
+		LOG.Add("FECameraComponent::TryToSetViewportSizeInternal Viewport is not virtual.", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return false;
+	}
+
+	return false;
 }
 
 float FECameraComponent::GetBloomThreshold()
@@ -283,6 +320,71 @@ float FECameraComponent::GetBloomSize()
 void FECameraComponent::SetBloomSize(float NewValue)
 {
 	BloomSize = NewValue;
+}
+
+bool FECameraComponent::IsTemporalJitterEnabled()
+{
+	return bTemporalJitterEnabled;
+}
+
+void FECameraComponent::SetTemporalJitterEnabled(const bool NewValue)
+{
+	bTemporalJitterEnabled = NewValue;
+}
+
+size_t FECameraComponent::GetTemporalJitterSequenceLength()
+{
+	return TemporalJitterSequenceLength;
+}
+
+void FECameraComponent::SetTemporalJitterSequenceLength(size_t NewValue)
+{
+	TemporalJitterSequenceLength = NewValue;
+}
+
+glm::vec2 FECameraComponent::GetTemporalJitterOffset()
+{
+	if (!bTemporalJitterEnabled)
+		return glm::vec2(0.0f);
+
+	return CurrentTemporalJitterOffset;
+}
+
+// Halton jitter
+void FECameraComponent::UpdateTemporalJitterOffset()
+{
+	if (LastTemporalFrameIndexUpdateEngineFrame == ENGINE.GetCurrentFrameIndex())
+		return;
+
+	LastTemporalFrameIndexUpdateEngineFrame = ENGINE.GetCurrentFrameIndex();
+
+	CurrentTemporalJitterOffset = glm::vec2(0.0f, 0.0f);
+	TemporalFrameIndex = (TemporalFrameIndex + 1) % TemporalJitterSequenceLength;
+
+	constexpr int BaseX = 2;
+	int Index = TemporalFrameIndex + 1;
+	float InvBase = 1.0f / BaseX;
+	float Fraction = InvBase;
+	while (Index > 0)
+	{
+		CurrentTemporalJitterOffset.x += (Index % BaseX) * Fraction;
+		Index /= BaseX;
+		Fraction *= InvBase;
+	}
+
+	constexpr int BaseY = 3;
+	Index = TemporalFrameIndex + 1;
+	InvBase = 1.0f / BaseY;
+	Fraction = InvBase;
+	while (Index > 0)
+	{
+		CurrentTemporalJitterOffset.y += (Index % BaseY) * Fraction;
+		Index /= BaseY;
+		Fraction *= InvBase;
+	}
+
+	CurrentTemporalJitterOffset.x -= 0.5f;
+	CurrentTemporalJitterOffset.y -= 0.5f;
 }
 
 float FECameraComponent::GetFXAASpanMax()

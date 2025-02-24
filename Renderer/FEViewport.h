@@ -5,7 +5,7 @@ namespace FocalEngine
 {
 	enum FEViewportType
 	{
-		FE_VIEWPORT_NULL = 0,
+		FE_VIEWPORT_VIRTUAL = 0,
 		FE_VIEWPORT_OS_WINDOW = 1,
 		FE_VIEWPORT_GLFW_WINDOW = 2,
 		FE_VIEWPORT_FEWINDOW = 3,
@@ -19,6 +19,8 @@ namespace FocalEngine
 		friend class FECameraSystem;
 		friend struct FECameraComponent;
 
+		FEViewport();
+
 		std::string ID = "";
 
 		int X = 0;
@@ -26,14 +28,19 @@ namespace FocalEngine
 		int Width = 0;
 		int Height = 0;
 
-		FEViewportType Type = FE_VIEWPORT_NULL;
-		void* WindowHandle = nullptr;
+		void SetWidth(const int NewWidth);
+		void SetHeight(const int NewHeight);
 
-		FEViewport();
+		FEViewportType Type = FE_VIEWPORT_VIRTUAL;
+		void* WindowHandle = nullptr;
 	public:
 		std::string GetID() const;
+
+		FEViewportType GetType() const;
+
 		int GetX() const;
 		int GetY() const;
+
 		int GetWidth() const;
 		int GetHeight() const;
 	};

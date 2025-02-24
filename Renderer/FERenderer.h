@@ -28,6 +28,7 @@ namespace FocalEngine
 		FETexture* Albedo = nullptr;
 		FETexture* MaterialProperties = nullptr;
 		FETexture* ShaderProperties = nullptr;
+		FETexture* MotionVectors = nullptr;
 
 		void RenderTargetResize(FEFramebuffer* MainFrameBuffer);
 	};
@@ -190,7 +191,6 @@ namespace FocalEngine
 		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
 		void ForceCameraRenderingDataUpdate(FEEntity* CameraEntity);
-		void OnResizeCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
 		FECameraRenderingData* CurrentCameraRenderingData = nullptr;
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);

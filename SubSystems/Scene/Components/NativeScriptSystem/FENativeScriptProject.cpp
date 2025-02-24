@@ -800,6 +800,11 @@ bool FENativeScriptProject::Update()
 
 	bool bResult = UpdateParentScriptModule();
 
+	// In some cases we would want to save such module right away.
+	// It is needed to ensure that the module is saved before the next frame.
+	// TO-DO: It is a hack and should be replaced with a proper solution.
+	RESOURCE_MANAGER.SaveFENativeScriptModule(Parent, VSProjectDirectory + Parent->GetObjectID() + ".nativescriptmodule");
+
 	UpdateTrackedFileWriteTime(DebugDllFileData);
 	UpdateTrackedFileWriteTime(DebugPdbFileData);
 	UpdateTrackedFileWriteTime(ReleaseDllFileData);

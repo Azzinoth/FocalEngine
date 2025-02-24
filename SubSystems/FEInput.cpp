@@ -233,6 +233,10 @@ void FEInput::MouseMoveCallback(double Xpos, double Ypos)
 void FEInput::KeyButtonCallback(const int Key, const int Scancode, const int Action, const int Mods)
 {
 	FEInputKey TempKey = static_cast<FEInputKey>(Key);
+
+	bool bWasChanged = INPUT.KeyMap[TempKey].State != static_cast<FEInputKeyState>(Action) || INPUT.KeyModifier != static_cast<FEInputKeyModifier>(Mods);
+	INPUT.KeyMap[TempKey].bLastFrameUpdated = bWasChanged;
+
 	INPUT.KeyMap[TempKey].State = static_cast<FEInputKeyState>(Action);
 	INPUT.KeyModifier = static_cast<FEInputKeyModifier>(Mods);
 
@@ -288,7 +292,12 @@ double FEInput::GetMouseY()
 
 void FEInput::EndFrame()
 {
-	
+	auto KeyMapIterator = KeyMap.begin();
+	while (KeyMapIterator != KeyMap.end())
+	{
+		KeyMapIterator->second.bLastFrameUpdated = false;
+		KeyMapIterator++;
+	}
 }
 
 FEInputKeyInfo FEInput::GetKeyInfo(FEInputKey Key)

@@ -63,7 +63,9 @@ namespace FocalEngine
 		int GetRenderTargetWidth() const;
 		int GetRenderTargetHeight() const;
 
-		void SetRenderTargetSize(const int Width, const int Height);
+		float GetRenderScale();
+
+		bool TryToSetViewportSize(const int Width, const int Height);
 
 		// *********** Anti-Aliasing(FXAA) ***********
 		float GetFXAASpanMax();
@@ -137,6 +139,15 @@ namespace FocalEngine
 		const FEViewport* GetViewport();
 
 		FERenderingPipeline GetRenderingPipeline() const;
+
+		// *********** Temporal Anti-Aliasing common ***********
+		bool IsTemporalJitterEnabled();
+		void SetTemporalJitterEnabled(const bool NewValue);
+
+		size_t GetTemporalJitterSequenceLength();
+		void SetTemporalJitterSequenceLength(size_t NewValue);
+
+		glm::vec2 GetTemporalJitterOffset();
 	private:
 		bool bIsActive = false;
 		bool bIsMainCamera = false;
@@ -147,6 +158,7 @@ namespace FocalEngine
 		glm::vec4 ClearColor = DEFAULT_CAMERA_CLEAR_COLOR;
 		bool bClearColorEnabled = true;
 
+		float RenderScale = 1.0f;
 		int RenderTargetWidth = 0;
 		int RenderTargetHeight = 0;
 
@@ -162,8 +174,18 @@ namespace FocalEngine
 		glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
 		std::vector<std::vector<float>> Frustum;
 
-		void SetRenderTargetSizeInternal(const int Width, const int Height);
+		bool TryToSetViewportSizeInternal(const int Width, const int Height);
 
+		// *********** Temporal Anti-Aliasing variables ***********
+		bool bTemporalJitterEnabled = false;
+		unsigned long long LastTemporalFrameIndexUpdateEngineFrame = 0;
+		int TemporalFrameIndex = 0;
+		glm::vec2 CurrentTemporalJitterOffset = glm::vec2(0.0f);
+		size_t TemporalJitterSequenceLength = 64;
+		glm::mat4 PreviousFrameViewMatrix = glm::mat4(1.0f);
+
+		void UpdateTemporalJitterOffset();
+		
 		// *********** Anti-Aliasing(FXAA) ***********
 		float FXAASpanMax = 8.0f;
 		float FXAAReduceMin = 1.0f / 128.0f;

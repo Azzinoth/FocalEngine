@@ -10,7 +10,7 @@ Focal Engine is a personal project of a 3D rendering engine, showcasing an array
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/4.png)
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/5.png)
 
-## Features
+## Graphical Features
 
 - Physically-based rendering
 - High dynamic range (HDR) rendering internally
@@ -18,9 +18,11 @@ Focal Engine is a personal project of a 3D rendering engine, showcasing an array
 - Deferred shading
 - Screen-Space Ambient Occlusion (SSAO)
 - Cascaded soft shadows
-- Fast Approximate Anti-Aliasing (FXAA)
 - Sky with atmospheric scattering
 - Compressed textures support with multi-threaded loading
+- Fast Approximate Anti-Aliasing (FXAA)
+- Dynamic render scale adjustment
+- Camera temporal jitter and partial motion vector calculations, needed for future TAA and third-party upscalers
 
 ## Terrain
 
@@ -29,9 +31,18 @@ Focal Engine is a personal project of a 3D rendering engine, showcasing an array
 - Up to 8 terrain layer materials
 - Each layer can define foliage spawn rules
 
+## Entity Component System (ECS)
+⚠️ Add information
+
+## C++ Scripting System
+⚠️ Add information
+
 ## Performance
 
 All instanced entities will have a pass with multiple computer shaders that perform LOD level calculations, Frustum and Occlusion culling entirely on the GPU.
+
+### Profiling
+⚠️ Add information
 
 ## Building the Project for Visual Studio (Windows) as .lib
 

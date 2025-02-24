@@ -49,10 +49,6 @@ void FECameraSystem::DuplicateCameraComponent(FEEntity* SourceEntity, FEEntity* 
 	// If no other camera is set as main camera in parent scene, it will be set as main camera.
 	if (CAMERA_SYSTEM.GetMainCamera(TargetEntity->GetParentScene()) == nullptr)
 		NewCameraComponent.bIsMainCamera = true;
-	
-	// TO DO: Maybe rethink what to do with viewport.
-	// Currently, we will set it to nullptr.
-	NewCameraComponent.Viewport = nullptr;
 }
 
 void FECameraSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
@@ -155,7 +151,7 @@ void FECameraSystem::OnViewportResize(std::string ViewportID)
 		return;
 	}
 
-	// Check if we are managing that viewport.
+	// Check if we are managing cameras for this viewport.
 	if (CAMERA_SYSTEM.ViewPortToCameraEntities.find(ViewportID) == CAMERA_SYSTEM.ViewPortToCameraEntities.end())
 		return;
 
@@ -166,9 +162,37 @@ void FECameraSystem::OnViewportResize(std::string ViewportID)
 			continue;
 
 		FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
-		CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
-		RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
+		if (CameraComponent.Viewport->Width <= 0 || CameraComponent.Viewport->Height <= 0)
+			break;
+		
+		CameraComponent.AspectRatio = static_cast<float>(CameraComponent.Viewport->GetWidth()) / static_cast<float>(CameraComponent.Viewport->GetHeight());
+		RENDERER.ForceCameraRenderingDataUpdate(CameraEntity);
 	}
+}
+
+bool FECameraSystem::SetCameraRenderScale(FEEntity* CameraEntity, float NewValue)
+{
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::SetCameraRenderScale CameraEntity is nullptr or does not have a camera component.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (NewValue <= 0.0f)
+	{
+		LOG.Add("FECameraSystem::SetCameraRenderScale Render scale is less than or equal to zero.", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return false;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	// If render scale is not changed, we do not need to update anything.
+	if (abs(CameraComponent.RenderScale - NewValue) < 0.0001f)
+		return false;
+
+	CameraComponent.RenderScale = NewValue;
+	RENDERER.ForceCameraRenderingDataUpdate(CameraEntity);
+
+	return true;
 }
 
 void FECameraSystem::Update(const double DeltaTime)
@@ -199,24 +223,23 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	FETransformComponent& TransformComponent = CameraEntity->GetComponent<FETransformComponent>();
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 
-	if (CameraComponent.Viewport != nullptr)
-	{
-		// Check for stale data.
-		if (CameraComponent.RenderTargetWidth != CameraComponent.Viewport->GetWidth() || CameraComponent.RenderTargetHeight != CameraComponent.Viewport->GetHeight())
-		{
-			if (CameraComponent.Viewport->GetWidth() != 0 && CameraComponent.Viewport->GetHeight() != 0)
-			{
-				CameraComponent.SetRenderTargetSizeInternal(CameraComponent.Viewport->Width, CameraComponent.Viewport->Height);
-				RENDERER.OnResizeCameraRenderingDataUpdate(CameraEntity);
-			}
-		}
-	}
-
 	// If no script is attached, we will use default camera view matrix update.
 	if (!CameraEntity->HasComponent<FENativeScriptComponent>())
 		CameraComponent.ViewMatrix = glm::inverse(TransformComponent.GetWorldMatrix());
-	
+
 	CameraComponent.ProjectionMatrix = glm::perspective(glm::radians(CameraComponent.FOV), CameraComponent.AspectRatio, CameraComponent.NearPlane, CameraComponent.FarPlane);
+	
+	if (CameraComponent.IsTemporalJitterEnabled())
+	{
+		CameraComponent.UpdateTemporalJitterOffset();
+
+		glm::mat4 JitterMatrix = glm::translate(glm::mat4(1.0f),
+												glm::vec3(2.0f * CameraComponent.GetTemporalJitterOffset().x / CameraComponent.GetRenderTargetWidth(),
+												          -2.0f * CameraComponent.GetTemporalJitterOffset().y / CameraComponent.GetRenderTargetHeight(), 0.0f));
+		CameraComponent.ProjectionMatrix = JitterMatrix * CameraComponent.ProjectionMatrix;
+	}
+
+	CameraComponent.PreviousFrameViewMatrix = CameraComponent.ViewMatrix;
 }
 
 bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID)
@@ -241,6 +264,8 @@ bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string Viewp
 	}
 
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	if (CameraComponent.Viewport != nullptr)
+		delete CameraComponent.Viewport;
 	CameraComponent.Viewport = Viewport;
 
 	ViewPortToCameraEntities[Viewport->ID].push_back(CameraEntity);
@@ -294,6 +319,7 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	Root["NearPlane"] = CameraComponent.NearPlane;
 	Root["FarPlane"] = CameraComponent.FarPlane;
 	Root["AspectRatio"] = CameraComponent.AspectRatio;
+	Root["RenderingScale"] = CameraComponent.RenderScale;
 
 	// *********** Gamma Correction & Exposure ***********
 	Root["Gamma Correction & Exposure"]["Gamma"] = CameraComponent.GetGamma();
@@ -328,9 +354,6 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	Root["SSAO"]["Radius Small Details"] = CameraComponent.GetSSAORadiusSmallDetails();
 	Root["SSAO"]["Small Details Weight"] = CameraComponent.GetSSAOSmallDetailsWeight();
 
-	// Should that be saved ?
-	//FEViewport* Viewport = nullptr;
-
 	return Root;
 }
 
@@ -356,6 +379,8 @@ void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, Json::Value Root)
 	CameraComponent.NearPlane = Root["NearPlane"].asFloat();
 	CameraComponent.FarPlane = Root["FarPlane"].asFloat();
 	CameraComponent.AspectRatio = Root["AspectRatio"].asFloat();
+	if (Root.isMember("RenderingScale"))
+		CameraComponent.RenderScale = Root["RenderingScale"].asFloat();
 
 	// *********** Gamma Correction & Exposure ***********
 	CameraComponent.SetGamma(Root["Gamma Correction & Exposure"]["Gamma"].asFloat());

@@ -126,6 +126,8 @@ void FEngine::EndFrame(const bool InternalCall)
 		delete RESOURCE_MANAGER.PrivateEngineAssetPackage;
 		RESOURCE_MANAGER.PrivateEngineAssetPackage = nullptr;
 	}
+
+	CurentFrameIndex++;
 }
 
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
@@ -135,7 +137,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
-	AddViewport(NewWindow);
+	CreateViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
 
@@ -301,7 +303,7 @@ void FEngine::AddOnAfterUpdateCallback(std::function<void()> Callback)
 	OnAfterUpdateCallbacks.push_back(Callback);
 }
 
-std::string FEngine::AddViewport(ImGuiWindow* ImGuiWindowPointer)
+std::string FEngine::CreateViewport(ImGuiWindow* ImGuiWindowPointer)
 {
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
@@ -314,13 +316,11 @@ std::string FEngine::AddViewport(ImGuiWindow* ImGuiWindowPointer)
 	NewViewport->WindowHandle = ImGuiWindowPointer;
 	
 	Viewports.push_back(NewViewport);
-	bool bMoved, bResize;
-	ViewportCheckForModificationIndividual(NewViewport, bMoved, bResize);
 
 	return NewViewport->ID;
 }
 
-std::string FEngine::AddViewport(FEWindow* FEWindowPointer)
+std::string FEngine::CreateViewport(FEWindow* FEWindowPointer)
 {
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
@@ -333,8 +333,6 @@ std::string FEngine::AddViewport(FEWindow* FEWindowPointer)
 	NewViewport->WindowHandle = FEWindowPointer;
 
 	Viewports.push_back(NewViewport);
-	bool bMoved, bResize;
-	ViewportCheckForModificationIndividual(NewViewport, bMoved, bResize);
 
 	return NewViewport->ID;
 }
@@ -357,7 +355,7 @@ void FEngine::ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool&
 
 	switch (ViewPort->Type)
 	{
-		case FE_VIEWPORT_NULL:
+		case FE_VIEWPORT_VIRTUAL:
 		 return;
 
 		case FE_VIEWPORT_OS_WINDOW:
@@ -449,4 +447,9 @@ FEViewport* FEngine::GetDefaultViewport()
 		return nullptr;
 
 	return Viewports[0];
+}
+
+unsigned long long FEngine::GetCurrentFrameIndex()
+{
+	return CurentFrameIndex;
 }

@@ -48,11 +48,15 @@ namespace FocalEngine
 
 		void AddOnAfterUpdateCallback(std::function<void()> Callback);
 
-		std::string AddViewport(ImGuiWindow* ImGuiWindowPointer);
-		std::string AddViewport(FEWindow* FEWindowPointer);
+		// Returns Viewport ID
+		std::string CreateViewport(ImGuiWindow* ImGuiWindowPointer);
+		// Returns Viewport ID
+		std::string CreateViewport(FEWindow* FEWindowPointer);
 
 		void AddOnViewportMovedCallback(std::function<void(std::string)> Callback);
 		void AddOnViewportResizeCallback(std::function<void(std::string)> Callback);
+
+		unsigned long long GetCurrentFrameIndex();
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -79,6 +83,8 @@ namespace FocalEngine
 
 		void ViewportCheckForModification();
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
+
+		unsigned long long CurentFrameIndex = 0;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED
