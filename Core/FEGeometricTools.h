@@ -7,8 +7,6 @@ namespace FocalEngine
 	class FEAABB
 	{
 		friend class FEEntity;
-		friend class FEEntityInstanced;
-		friend class FETerrain;
 		friend class FEResourceManager;
 		friend class FEScene;
 	public:

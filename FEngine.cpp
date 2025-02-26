@@ -119,7 +119,7 @@ void FEngine::EndFrame(const bool InternalCall)
 	APPLICATION.EndFrame();
 	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
 
-	// FIX ME! This is a temporary solution.
+	// FIXME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
 	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)
 	{
 		FILE_SYSTEM.DeleteDirectory(FILE_SYSTEM.GetCurrentWorkingPath() + "/SubSystems");

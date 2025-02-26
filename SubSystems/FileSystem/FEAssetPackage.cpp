@@ -145,7 +145,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 	std::string TagToUse = IntializeData.IsEmpty() ? Object->GetTag() : IntializeData.Tag;
 	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
 
-	// FIX ME! It should not save info to file, but to memory.
+	// TODO: This should save info to memory, not to file.
 	switch (Object->GetType())
 	{
 		case FE_OBJECT_TYPE::FE_TEXTURE:

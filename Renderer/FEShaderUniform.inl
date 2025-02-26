@@ -82,7 +82,7 @@ const T& FEShaderUniform::GetValue() const
 	{
 		//LOG.Add("FEShaderUniform::GetValue() failed, type mismatch", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		//return T();
-		// FIX ME! Should make it return nullptr pointer or something, not throw exception.
+		// FIXME: Should return nullptr or similar instead of throwing an exception.
 		throw std::runtime_error("Type mismatch");
 	}
 

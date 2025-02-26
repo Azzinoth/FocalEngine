@@ -200,7 +200,8 @@ namespace FocalEngine
 
 		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
 
-		// FIX ME! It is temporary solution.
+		// TODO: Find a better way to handle resource extraction.
+		// These variables are used to extract engine resources after application build.
 		bool bUsePackageForPrivateResources = false;
 		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
 	};

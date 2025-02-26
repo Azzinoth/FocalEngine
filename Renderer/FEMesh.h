@@ -8,7 +8,6 @@ namespace FocalEngine
 	class FEMesh : public FEObject
 	{	
 		friend class FEEntity;
-		friend class FEEntityInstanced;
 		friend class FEInstancedSystem;
 		friend class FERenderer;
 		friend class FEResourceManager;

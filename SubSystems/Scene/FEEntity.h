@@ -9,7 +9,6 @@ namespace FocalEngine
 	class FEScene;
 	class FOCAL_ENGINE_API FEEntity : public FEObject
 	{
-		friend class FEEntityInstanced;
 		friend class FERenderer;
 		friend class FEResourceManager;
 		friend class FEScene;
@@ -56,7 +55,7 @@ namespace FocalEngine
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
-				// FIX ME! Should make it return nullptr pointer or something, not throw exception.
+				// FIXME: Should return nullptr or similar instead of throwing an exception.
 				throw std::runtime_error("Component does not exist in entity");
 			}
 

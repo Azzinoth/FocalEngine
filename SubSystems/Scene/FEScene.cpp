@@ -124,28 +124,40 @@ void FEScene::Clear()
 	bIsSceneClearing = false;
 }
 
+// In case that game model is used in some entities, we need to replace it with default game model.
+// TODO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
-	// Looking if this gameModel is used in some prefab.
-	// to-do: should be done through list of pointers to entities that uses this gameModel.
+	auto GameModelComponentsView = this->Registry.view<FEGameModelComponent>();
+
+	for (entt::entity EnTTEntity : GameModelComponentsView)
+	{
+		FEGameModelComponent& GameModelComponent = GameModelComponentsView.get<FEGameModelComponent>(EnTTEntity);
+		FEEntity* Entity = this->GetEntityByEnTT(EnTTEntity);
+		if (GameModelComponent.GetGameModel() == nullptr)
+			continue;
+
+		if (GameModelComponent.GetGameModel() == GameModel)
+			GameModelComponent.SetGameModel(RESOURCE_MANAGER.GetGameModel(RESOURCE_MANAGER.GetEnginePrivateGameModelIDList()[0]));
+	}
 }
 
-// FIX ME!
+// In case that prefab is used in some entities, we need to delete it's reference.
+// TODO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 {
-	// Looking if this prefab is used in some entities.
-	// to-do: should be done through list of pointers to entities that uses this gameModel.
-	/*auto EntitiesIterator = EntityMap.begin();
-	while (EntitiesIterator != EntityMap.end())
-	{
-		if (EntitiesIterator->second->Prefab == Prefab)
-		{
-			EntitiesIterator->second->Prefab = RESOURCE_MANAGER.GetPrefab(RESOURCE_MANAGER.GetStandardPrefabList()[0]);
-			EntitiesIterator->second->SetDirtyFlag(true);
-		}
+	auto PrefabInstanceComponentsView = this->Registry.view<FEPrefabInstanceComponent>();
 
-		EntitiesIterator++;
-	}*/
+	for (entt::entity EnTTEntity : PrefabInstanceComponentsView)
+	{
+		FEPrefabInstanceComponent& PrefabInstanceComponent = PrefabInstanceComponentsView.get<FEPrefabInstanceComponent>(EnTTEntity);
+		FEEntity* Entity = this->GetEntityByEnTT(EnTTEntity);
+		if (PrefabInstanceComponent.GetPrefab() == nullptr)
+			continue;
+
+		if (PrefabInstanceComponent.GetPrefab() == Prefab)
+			Entity->RemoveComponent<FEPrefabInstanceComponent>();
+	}
 }
 
 std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)

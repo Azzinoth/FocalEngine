@@ -129,14 +129,14 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	CurrentViewMatrix *= glm::toMat4(EyeOrientation);
 	CurrentViewMatrix = glm::inverse(CurrentViewMatrix);
 
-	// FIX ME!
+	// FIXME: Need proper camera implementation for VR rendering.
 	//static FEBasicCamera* CurrentCamera = new FEBasicCamera("VRCamera");
 	//CurrentCamera->SetPosition(EyePosition);
 	//CurrentCamera->ProjectionMatrix = CurrentProjectionMatrix;
 	//CurrentCamera->ViewMatrix = CurrentViewMatrix;
 
 	bValidSwapChain = true;
-	// FIX ME! Temporary solution, only supports one scene
+	// FIXME: Temporary solution, only supports one scene.
 	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
 	RENDERER.RenderVR(CurrentScene);
 	bValidSwapChain = false;

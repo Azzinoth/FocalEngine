@@ -137,7 +137,8 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		if (NewTexture->MipEnabled)
 		{
 			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+			// TO-DO: make it configurable.
+			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 		}
 
@@ -291,7 +292,8 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));// to-do: fix this
+		// TO-DO: make it configurable.
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
@@ -531,7 +533,8 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	if (NewTexture->MipEnabled)
 	{
 		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		// TO-DO: make it configurable.
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
@@ -803,8 +806,6 @@ FEResourceManager::FEResourceManager()
 {
 	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
 
-	// FIX ME! It is temporary solution.
-	// We need to understand should we use files or .fepackage
 	if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
 	{
 		PrivateEngineAssetPackage = new FEAssetPackage();
@@ -831,14 +832,6 @@ FEResourceManager::FEResourceManager()
 	LoadStandardMaterial();
 	LoadStandardMeshes();
 	LoadStandardGameModels();
-
-	// FIX ME! Temporary code.
-	/*FENativeScriptModule* NewNativeScriptModule = CreateNativeScriptModule("D:/Script__09_10_2024/OnlyCamera/UserScriptTest.dll",
-																		   "D:/Script__09_10_2024/OnlyCamera/UserScriptTest.pdb",
-																		   "D:/Script__09_10_2024/OnlyCamera/Release/UserScriptTest.dll",
-																		   {}, "Camera scripts", "2B7956623302254F620A675F");
-	NewNativeScriptModule->SetTag(ENGINE_RESOURCE_TAG);
-	SaveFENativeScriptModule(NewNativeScriptModule, "CameraScripts.fescriptmodule");*/
 
 	// Load all standard script modules.
 	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
@@ -2515,7 +2508,8 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 	if (NewTexture->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		// TO-DO: make it configurable.
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
@@ -2789,7 +2783,8 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	if (Result->MipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f)); // to-do: fix this
+		// TO-DO: make it configurable.
+		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 	}
 
@@ -3671,9 +3666,9 @@ FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 	{
 		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".lib")
 		{
-			// FIX ME! Currently projects would need only debug lib files. Is it correct?
-			// It will grab either Debug or Release lib files. It should be more deterministic.
-			// And only FocalEngine.lib and FEBasicApplication.lib are needed.
+			// FIXME: Currently projects only need debug lib files. Is this correct?
+			// The code will grab either Debug or Release lib files. We should make this more deterministic.
+			// Note: Only FocalEngine.lib and FEBasicApplication.lib are needed.
 			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
 				continue;
 
@@ -3807,8 +3802,8 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 		return nullptr;
 	}
 
-	// FIX ME! It is temporary solution.
-	// I will just dump all related files in the engine folder to the asset package.
+	// TODO: Check if we need to add more files to the asset package.
+	// Currently dumping all related files from the engine folder into the asset package.
 	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath + "/Resources/", false);
 	for (size_t i = 0; i < AllFiles.size(); i++)
 	{
@@ -3846,7 +3841,6 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 		}
 	}
 
-	//PrivateEngineAssetPackage->ImportAsset(RESOURCE_MANAGER.NoTexture);
 	return PrivateEngineAssetPackage;
 }
 

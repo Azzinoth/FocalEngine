@@ -76,11 +76,11 @@ namespace FocalEngine
 
 		void Render(FEScene* CurrentScene);
 		
-		void RenderGameModelComponent(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, FEScene* ParentScene, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bReloadUniformBlocks = false);
-		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* ForceCamera = nullptr, bool bShadowMap = false, bool bReloadUniformBlocks = false, size_t PrefabIndex = 0);
-		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* ForceCamera = nullptr);
+		void RenderGameModelComponent(FEEntity* Entity, FEEntity* Camera, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FETransformComponent& TransformComponent, FEScene* ParentScene, FEEntity* Camera, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Camera, bool bReloadUniformBlocks = false);
+		void RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntity* Camera, bool bShadowMap = false, bool bReloadUniformBlocks = false, size_t PrefabIndex = 0);
+		void RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camera);
 		
 		FETexture* GetCameraResult(FEEntity* CameraEntity);
 
@@ -129,8 +129,8 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
-		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* ForceCamera = nullptr, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
-		void LoadStandardUniforms(FEShader* Shader, bool IsReceivingShadows, FEEntity* ForceCamera = nullptr, const bool IsUniformLighting = false);
+		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
+		void LoadStandardUniforms(FEShader* Shader, bool IsReceivingShadows, FEEntity* Camera, const bool IsUniformLighting = false);
 		void LoadUniformBlocks(FEScene* CurrentScene);
 
 		void SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith);
@@ -170,9 +170,9 @@ namespace FocalEngine
 		GLuint FrustumInfoBuffer = 0;
 		GLuint CullingLODCountersBuffer = 0;
 
-		void UpdateGPUCullingFrustum();
-		void GPUCulling(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, size_t PrefabIndex = 0);
-		void GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, size_t BufferIndex);
+		void UpdateGPUCullingFrustum(FEEntity* Camera);
+		void GPUCulling(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, FEEntity* Camera, size_t PrefabIndex = 0);
+		void GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FEGameModelComponent& GameModelComponent, FEEntity* Camera, size_t BufferIndex);
 
 		bool bUseOcclusionCulling = true;
 		// *********** GPU Culling END ***********
@@ -182,11 +182,6 @@ namespace FocalEngine
 		void Init();
 
 		std::vector<std::function<void()>> AfterRenderCallbacks;
-
-		// FIX ME! Temporary
-		std::string LastRenderedSceneID;
-		std::string LastRenderedCameraID;
-		FEEntity* TryToGetLastUsedCameraEntity();
 
 		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);

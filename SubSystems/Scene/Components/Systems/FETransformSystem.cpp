@@ -83,9 +83,7 @@ void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 		CurrentTransform.WorldSpaceMatrix = CurrentTransform.LocalSpaceMatrix;
 	}
 
-	// FIX ME! instanced position should be updated if parent(or terrain) is updated.
-	// right now it is not updated.
-
+	// FIXME: Instanced position should update when parent (or terrain) is updated, currently no update occurs.
 	//bool bWasDirty = CurrentTransform.IsDirty();
 	//CurrentTransform.SetDirtyFlag(false);
 	auto Children = SubTreeRoot->GetChildren();

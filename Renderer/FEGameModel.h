@@ -28,7 +28,6 @@ namespace FocalEngine
 	{
 		friend FERenderer;
 		friend FEPrefab;
-		friend FEEntityInstanced;
 	public:
 		FEGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name);
 		~FEGameModel();

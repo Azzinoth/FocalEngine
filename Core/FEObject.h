@@ -142,8 +142,6 @@ namespace FocalEngine
 		friend class FEMaterial;
 		friend class FEGameModel;
 		friend class FEEntity;
-		friend class FETerrain;
-		friend class FEEntityInstanced;
 		friend class FEResourceManager;
 		friend class FENaiveSceneGraphNode;
 		friend class FEScene;

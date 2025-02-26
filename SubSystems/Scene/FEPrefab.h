@@ -13,7 +13,6 @@ namespace FocalEngine
 		friend FERenderer;
 		friend FEResourceManager;
 		friend FEEntity;
-		friend FEEntityInstanced;
 
 		FEScene* Scene = nullptr;
 	public:
