@@ -57,6 +57,10 @@ namespace FocalEngine
 		// material records
 		std::vector<MaterialRecord> MaterialRecords;
 		std::vector<float> MatIDs;
+
+		// Used for saving
+		std::vector<int> NormalIndices;
+		std::vector<int> UVIndices;
 	};
 
 	class FEObjLoader
@@ -82,6 +86,8 @@ namespace FocalEngine
 		// Use to get raw data from the loaded file.
 		// Recommenede only if you know what you are doing.
 		std::vector<FERawOBJData*>* GetLoadedObjects();
+
+		bool SaveToOBJ(const char* FileName, FERawOBJData* Data);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjLoader)
 			

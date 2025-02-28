@@ -688,6 +688,166 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	return NewMesh;
 }
 
+bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* FileName)
+{
+	if (MeshToExport == nullptr)
+	{
+		LOG.Add("MeshToExport is nullptr in function FEResourceManager::ExportFEMeshToOBJ.", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FileName == nullptr)
+	{
+		LOG.Add("FileName is nullptr in function FEResourceManager::ExportFEMeshToOBJ.", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	FEObjLoader& OBJLoader = FEObjLoader::GetInstance();
+	// Create a raw OBJ data object to hold the mesh data
+	FERawOBJData Data;
+
+	// Extract data from the mesh
+	const size_t VertexCount = MeshToExport->GetPositionsCount() / 3;
+	const size_t NormalCount = MeshToExport->GetNormalsCount() / 3;
+	const size_t UVCount = MeshToExport->GetUVCount() / 2;
+	const size_t IndexCount = MeshToExport->GetIndicesCount();
+	const size_t ColorCount = MeshToExport->GetColorCount() / 3;
+
+	OBJLoader.bHaveNormalCoord = NormalCount > 0 ? true : false;
+	OBJLoader.bHaveTextureCoord = UVCount > 0 ? true : false;
+	OBJLoader.bHaveColors = ColorCount > 0 ? true : false;
+
+	// Get buffer data from GPU
+	float* Positions = new float[MeshToExport->GetPositionsCount()];
+	FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetPositionsBufferID(), 0, sizeof(float) * MeshToExport->GetPositionsCount(), Positions));
+
+	float* Normals = nullptr;
+	if (NormalCount > 0)
+	{
+		Normals = new float[MeshToExport->GetNormalsCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetNormalsBufferID(), 0, sizeof(float) * MeshToExport->GetNormalsCount(), Normals));
+	}
+
+	float* UVs = nullptr;
+	if (UVCount > 0)
+	{
+		UVs = new float[MeshToExport->GetUVCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetUVBufferID(), 0, sizeof(float) * MeshToExport->GetUVCount(), UVs));
+	}
+
+	int* Indices = new int[MeshToExport->GetIndicesCount()];
+	FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetIndicesBufferID(), 0, sizeof(int) * MeshToExport->GetIndicesCount(), Indices));
+
+	float* Colors = nullptr;
+	if (ColorCount > 0)
+	{
+		Colors = new float[MeshToExport->GetColorCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetColorBufferID(), 0, sizeof(float) * MeshToExport->GetColorCount(), Colors));
+	}
+
+	float* MaterialIndices = nullptr;
+	if (MeshToExport->GetMaterialsIndicesCount() > 0)
+	{
+		MaterialIndices = new float[MeshToExport->GetMaterialsIndicesCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetMaterialsIndicesBufferID(), 0, sizeof(float) * MeshToExport->GetMaterialsIndicesCount(), MaterialIndices));
+	}
+
+	// Fill RawOBJData with vertex positions
+	for (size_t i = 0; i < VertexCount; i++)
+	{
+		glm::vec3 VertexPositions(Positions[i * 3], Positions[i * 3 + 1], Positions[i * 3 + 2]);
+		Data.RawVertexCoordinates.push_back(VertexPositions);
+
+		if (Colors != nullptr)
+		{
+			glm::vec3 Color(Colors[i * 3], Colors[i * 3 + 1], Colors[i * 3 + 2]);
+			Data.RawVertexColors.push_back(Color);
+		}
+	}
+
+	// Fill RawOBJData with texture coordinates (UVs)
+	if (UVs != nullptr)
+	{
+		for (size_t i = 0; i < UVCount; i++)
+		{
+			glm::vec2 UV(UVs[i * 2], UVs[i * 2 + 1]);
+			// Flip V coordinate to follow OBJ convention
+			//UV.y = 1.0f - UV.y;
+			Data.RawTextureCoordinates.push_back(UV);
+		}
+	}
+
+	// Fill RawOBJData with normal coordinates
+	if (Normals != nullptr)
+	{
+		for (size_t i = 0; i < NormalCount; i++)
+		{
+			glm::vec3 NormalVector(Normals[i * 3], Normals[i * 3 + 1], Normals[i * 3 + 2]);
+			Data.RawNormalCoordinates.push_back(NormalVector);
+		}
+	}
+
+	// Create material record if needed
+	if (MeshToExport->MaterialsCount > 0 && MaterialIndices != nullptr)
+	{
+		// Default material record as placeholder
+		MaterialRecord MaterialRecord;
+		MaterialRecord.Name = MeshToExport->GetName() + "_material";
+		Data.MaterialRecords.push_back(MaterialRecord);
+	}
+
+	// Convert indices to the OBJ format (1-based, not 0-based)
+	// OBJ format requires indices for vertex/uv/normal for each face
+	for (size_t i = 0; i < IndexCount; i += 3)
+	{
+		// For each triangle's vertex
+		for (size_t j = 0; j < 3; j++)
+		{
+			size_t CurrentIndex = Indices[i + j] + 1; // +1 because OBJ indices start at 1
+
+			// In OBJ, each face vertex is defined as v/vt/vn
+			Data.RawIndices.push_back(CurrentIndex); // vertex position index
+
+			if (UVCount > 0)
+				Data.UVIndices.push_back(CurrentIndex); // texture coordinate index
+
+			if (NormalCount > 0)
+				Data.NormalIndices.push_back(CurrentIndex); // normal vector index
+		}
+	}
+
+	if (Colors != nullptr)
+	{
+		for (size_t i = 0; i < ColorCount; i += 3)
+		{
+			glm::vec3 Color(Colors[i], Colors[i + 1], Colors[i + 2]);
+			Data.RawVertexColors.push_back(Color);
+		}
+	}
+
+	// Use FEObjLoader to save the file
+	bool Result = OBJLoader.SaveToOBJ(FileName, &Data);
+
+	// Clean up allocated memory
+	delete[] Positions;
+	if (Normals) delete[] Normals;
+	if (UVs) delete[] UVs;
+	delete[] Indices;
+	if (Colors) delete[] Colors;
+	if (MaterialIndices) delete[] MaterialIndices;
+
+	if (Result)
+	{
+		LOG.Add(std::string("Successfully exported mesh to: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
+	}
+	else
+	{
+		LOG.Add(std::string("Failed to export mesh to: ") + FileName, "FE_LOG_SAVING", FE_LOG_ERROR);
+	}
+
+	return Result;
+}
+
 void FEResourceManager::LoadStandardMeshes()
 {
 	if (Meshes.find("84251E6E0D0801363579317R"/*"cube"*/) != Meshes.end())

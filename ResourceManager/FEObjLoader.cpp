@@ -1011,3 +1011,142 @@ bool FEObjLoader::IsDoubleVertexOnSeams()
 {
 	return bDoubleVertexOnSeams;
 }
+
+bool FEObjLoader::SaveToOBJ(const char* FileName, FERawOBJData* Data)
+{
+	if (FileName == nullptr || Data == nullptr)
+	{
+		LOG.Add(std::string("Invalid parameters in function FEObjLoader::SaveToOBJ."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::ofstream File(FileName);
+	if (!File.is_open())
+	{
+		LOG.Add(std::string("Failed to open file for writing in function FEObjLoader::SaveToOBJ: ") + FileName, "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Write header/comment
+	File << "# OBJ file exported by FocalEngine\n";
+	File << "# " << Data->RawVertexCoordinates.size() << " vertices\n";
+	File << "# " << Data->RawTextureCoordinates.size() << " texture coordinates\n";
+	File << "# " << Data->RawNormalCoordinates.size() << " normals\n";
+	File << "# " << Data->RawIndices.size() / 3 << " faces\n\n";
+
+	// Write material library reference if we have materials
+	if (!Data->MaterialRecords.empty())
+	{
+		// Nothing to do here, we don't support writing MTL files
+	}
+
+	// Write vertices
+	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
+	{
+		File << "v " << Data->RawVertexCoordinates[i].x << " " 
+			 << Data->RawVertexCoordinates[i].y << " " 
+			 << Data->RawVertexCoordinates[i].z;
+
+		// Add vertex colors if they exist
+		if (bHaveColors && i < Data->RawVertexColors.size())
+		{
+			File << " " << Data->RawVertexColors[i].x << " "
+				 << Data->RawVertexColors[i].y << " "
+				 << Data->RawVertexColors[i].z;
+		}
+
+		File << "\n";
+	}
+	File << "\n";
+
+	// Write texture coordinates
+	if (bHaveTextureCoord)
+	{
+		for (size_t i = 0; i < Data->RawTextureCoordinates.size(); i++)
+		{
+			// OBJ format typically has Y flipped compared to OpenGL
+			File << "vt " << Data->RawTextureCoordinates[i].x << " "
+				 << (1.0f - Data->RawTextureCoordinates[i].y) << "\n";
+		}
+		File << "\n";
+	}
+
+	// Write normals
+	if (bHaveNormalCoord)
+	{
+		for (size_t i = 0; i < Data->RawNormalCoordinates.size(); i++)
+		{
+			File << "vn " << Data->RawNormalCoordinates[i].x << " "
+				 << Data->RawNormalCoordinates[i].y << " "
+				 << Data->RawNormalCoordinates[i].z << "\n";
+		}
+		File << "\n";
+	}
+
+	size_t FaceCount = Data->RawIndices.size();
+	for (size_t i = 0; i < FaceCount; i += 3)
+	{
+		// Write face indices
+		// OBJ indices are 1-based, our internal indices are 0-based
+		File << "f ";
+
+		// Handle different formats based on what data we have
+		if (bHaveTextureCoord && bHaveNormalCoord)
+		{
+			// Format: v/vt/vn
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentTextureIndex = Data->UVIndices[i + j];
+					int CurrentNormalIndex = Data->NormalIndices[i + j];
+					File << CurrentIndex << "/" << CurrentTextureIndex << "/" << CurrentNormalIndex << " ";
+				}
+			}
+		}
+		else if (bHaveTextureCoord && !bHaveNormalCoord)
+		{
+			// Format: v/vt
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentTextureIndex = Data->UVIndices[i + j];
+					File << CurrentIndex << "/" << CurrentTextureIndex << " ";
+				}
+			}
+		}
+		else if (!bHaveTextureCoord && bHaveNormalCoord)
+		{
+			// Format: v//vn
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentNormalIndex = Data->NormalIndices[i + j];
+					File << CurrentIndex << "//" << CurrentNormalIndex << " ";
+				}
+			}
+		}
+		else
+		{
+			// Format: v
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					File << (Data->RawIndices[i + j]) << " ";
+				}
+			}
+		}
+
+		File << "\n";
+	}
+
+	File.close();
+	LOG.Add(std::string("Successfully saved OBJ file: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
+	return true;
+}

@@ -28,12 +28,21 @@ set(TEST_SOURCE_FILES)
 set(TEST_INCLUDE_FILES)
 
 if(ENABLE_TESTS)
-    list(APPEND TEST_LIBS
-        debug       Tests/ThirdParty/googletest/lib/Debug/gtest
-        debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
-        optimized   Tests/ThirdParty/googletest/lib/Release/gtest
-        optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
-    )
+	if(BUILD_SHARED_LIBS)
+		list(APPEND TEST_LIBS
+			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest
+			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
+			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest
+			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
+		)
+	else()
+		list(APPEND TEST_LIBS
+			debug       Tests/ThirdParty/googletest/lib/Debug/gtest
+			debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
+			optimized   Tests/ThirdParty/googletest/lib/Release/gtest
+			optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
+		)
+	endif()
 
 	list(APPEND TEST_SOURCE_FILES
         "Tests/RunAllTests.cpp"

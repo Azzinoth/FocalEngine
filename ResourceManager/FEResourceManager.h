@@ -80,6 +80,7 @@ namespace FocalEngine
 							  std::string Name = "");
 
 		void DeleteFEMesh(const FEMesh* Mesh);
+		bool ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* FileName);
 
 		std::vector<std::string> GetMeshIDList();
 		std::vector<std::string> GetEnginePrivateMeshIDList();

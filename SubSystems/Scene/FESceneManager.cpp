@@ -247,7 +247,7 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	return Result;
 }
 
-// TO-DO: Look into makeing FETransformSystem more robust, with less speciale cases.
+// TODO: Improve FETransformSystem robustness by reducing special cases.
 #include "Components/Systems/FETransformSystem.h"
 std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {

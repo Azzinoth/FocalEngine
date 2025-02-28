@@ -101,27 +101,25 @@ void FEObject::SetID(std::string NewValue)
 {
 	if (ID == NewValue)
 	{
-		LOG.Add("FEObject::setID newID is the same as current ID, redundant call", "FE_LOG_LOADING", FE_LOG_INFO);
+		LOG.Add("FEObject::SetID NewValue is the same as current ID, redundant call", "FE_LOG_GENERAL", FE_LOG_INFO);
 		return;
 	}
 
 	if (OBJECT_MANAGER.AllObjects.find(ID) == OBJECT_MANAGER.AllObjects.end())
 	{
+		LOG.Add("FEObject::SetID current object is not found in AllObjects list!", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		assert(0);
 	}
 
 	if (OBJECT_MANAGER.AllObjects.find(NewValue) != OBJECT_MANAGER.AllObjects.end())
 	{
+		LOG.Add("FEObject::SetID New ID is already in use!", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		assert(0);
 	}
 
 	if (OBJECT_MANAGER.ObjectsByType[Type].find(ID) == OBJECT_MANAGER.ObjectsByType[Type].end())
 	{
-		assert(0);
-	}
-
-	if (OBJECT_MANAGER.ObjectsByType[Type].find(NewValue) != OBJECT_MANAGER.ObjectsByType[Type].end())
-	{
+		LOG.Add("FEObject::SetID current object is not found in ObjectsByType list!", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		assert(0);
 	}
 
@@ -143,13 +141,13 @@ void FEObject::SetIDOfUnTyped(const std::string NewValue)
 {
 	if (Type != FE_NULL)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", "FE_LOG_LOADING", FE_LOG_WARNING);
+		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (ID == NewValue)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", "FE_LOG_LOADING", FE_LOG_INFO);
+		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", "FE_LOG_GENERAL", FE_LOG_INFO);
 		return;
 	}
 
@@ -199,13 +197,13 @@ void FEObjectManager::SaveFEObjectPart(std::fstream& OpenedFile, FEObject* Objec
 {
 	if (Object == nullptr)
 	{
-		LOG.Add("FEObjectManager::SaveFEObjectPart Object is nullptr", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEObjectManager::SaveFEObjectPart Object is nullptr", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
 	if (!OpenedFile.is_open())
 	{
-		LOG.Add("FEObjectManager::SaveFEObjectPart file is not open", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEObjectManager::SaveFEObjectPart file is not open", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 

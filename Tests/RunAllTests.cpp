@@ -9,6 +9,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	ENGINE.InitWindow(1280, 720);
 	THREAD_POOL.SetConcurrentThreadCount(10);
+	//LOG.SetFileOutput(true);
 
 	int TestResult = RUN_ALL_TESTS();
 

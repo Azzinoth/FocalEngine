@@ -326,7 +326,6 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 
 		FENaiveSceneGraphNode* NewNode = new FENaiveSceneGraphNode(NodeData["Name"].asString());
 
-
 		FEEntity* NewEntity = nullptr;
 		FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(NodeData["Entity"]["FEObjectData"]);
 		// Before passing data to node, we need to create entity
