@@ -27,6 +27,29 @@ set(TEST_LIBS)
 set(TEST_SOURCE_FILES)
 set(TEST_INCLUDE_FILES)
 
+if(NOT TARGET FEBasicApplication)
+  add_subdirectory(SubSystems/FEBasicApplication)
+endif()
+
+# if engine does not have a parent, then some additional settings are needed.
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	if(MSVC)
+		# Disable C4251 warning
+		add_compile_options(/wd4251)
+
+		if(USE_STATIC_RUNTIME)
+			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+		else()
+			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+		endif()
+
+		# Always add /MP for multi-processor compilation.
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	endif()
+endif()
+
 if(ENABLE_TESTS)
 	if(BUILD_SHARED_LIBS)
 		list(APPEND TEST_LIBS
@@ -70,10 +93,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
 configure_file(${ENGINE_FOLDER}/ResourceManager/Config.h.in ${ENGINE_FOLDER}/ResourceManager/Config.h @ONLY)
-
-if(NOT TARGET FEBasicApplication)
-  add_subdirectory(SubSystems/FEBasicApplication)
-endif()
 
 file(GLOB InstancedLineMaterial_SRC
 	"CoreExtensions/StandardMaterial/InstancedLineMaterial/FE_InstancedLine_FS.glsl"

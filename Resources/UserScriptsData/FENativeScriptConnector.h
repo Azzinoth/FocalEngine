@@ -121,7 +121,7 @@ using namespace FocalEngine;
 			return Registry.find(ModuleID) != Registry.end();
 		}
 
-		std::unordered_map<std::string, FEScriptData>& GetRegistryForModuleWithID(std::string& ModuleID)
+		std::unordered_map<std::string, FEScriptData> GetRegistryForModuleWithID(std::string& ModuleID)
 		{
 			if (!HaveModuleWithID(ModuleID))
 			{

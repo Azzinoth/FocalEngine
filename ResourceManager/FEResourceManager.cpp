@@ -803,7 +803,7 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* File
 		// For each triangle's vertex
 		for (size_t j = 0; j < 3; j++)
 		{
-			size_t CurrentIndex = Indices[i + j] + 1; // +1 because OBJ indices start at 1
+			int CurrentIndex = Indices[i + j] + 1; // +1 because OBJ indices start at 1
 
 			// In OBJ, each face vertex is defined as v/vt/vn
 			Data.RawIndices.push_back(CurrentIndex); // vertex position index
