@@ -31,23 +31,19 @@ if(NOT TARGET FEBasicApplication)
   add_subdirectory(SubSystems/FEBasicApplication)
 endif()
 
-# if engine does not have a parent, then some additional settings are needed.
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-	if(MSVC)
-		# Disable C4251 warning
-		add_compile_options(/wd4251)
+if(MSVC)
+	# Disable C4251 warning
+	add_compile_options(/wd4251)
 
-		if(USE_STATIC_RUNTIME)
-			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-		else()
-			set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
-		endif()
-
-		# Always add /MP for multi-processor compilation.
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	if(USE_STATIC_RUNTIME)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	else()
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
 	endif()
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
 if(ENABLE_TESTS)
