@@ -1070,7 +1070,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 
 		for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
 		{
-			RenderGameModelComponentWithInstanced(Entity, nullptr, false, false, i);
+			RenderGameModelComponentWithInstanced(Entity, MainCameraEntity, false, false, i);
 		}
 	}
 
