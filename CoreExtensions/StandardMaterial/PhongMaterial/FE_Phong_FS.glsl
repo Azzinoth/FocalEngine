@@ -15,10 +15,10 @@ uniform int debugFlag;
 
 struct FELight
 {
-	vec3 typeAndAngles;
-	vec3 position;
-	vec3 color;
-	vec3 direction;
+	vec4 typeAndAngles;
+	vec4 position;
+	vec4 color;
+	vec4 direction;
 	mat4 lightSpace;
 };
 
@@ -155,11 +155,11 @@ void main(void)
 		if (FElight[i].color.x == 0 && FElight[i].color.y == 0 && FElight[i].color.z == 0)
 			continue;
 
-		if (FElight[i].typeAndAngles.x == 10)
+		if (FElight[i].typeAndAngles.x == 2)
 		{
 			out_Color += vec4(pointLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 		}
-		else if (FElight[i].typeAndAngles.x == 11)
+		else if (FElight[i].typeAndAngles.x == 3)
 		{
 			out_Color += vec4(spotLightColor(FElight[i], normal, FS_IN.fragPosition, viewDirection, baseColor), 1.0f);
 		}

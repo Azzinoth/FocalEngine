@@ -1,8 +1,6 @@
 #include "FEObjLoader.h"
 using namespace FocalEngine;
 
-FEObjLoader* FEObjLoader::Instance = nullptr;
-
 FEObjLoader::FEObjLoader()
 {
 	
@@ -290,173 +288,54 @@ void FEObjLoader::ReadFile(const char* FileName)
 	}
 }
 
-glm::vec3 FEObjLoader::CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2)
-{
-	glm::dvec3 Edge_0 = V2 - V1;
-	glm::dvec3 Edge_1 = V2 - V0;
-
-	glm::dvec3 Normal = glm::normalize(glm::cross(Edge_1, Edge_0));
-
-	if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-		Normal = glm::dvec3();
-
-	return Normal;
-}
-
 void FEObjLoader::CalculateNormals(FERawOBJData* Data)
 {
-	std::vector<double> TrianglesArea;
 	std::vector<glm::dvec3> TrianglePoints;
 	TrianglePoints.resize(3);
 
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	std::vector<int> Indices;
+	for (size_t i = 0; i < Data->FInd.size(); i++)
 	{
-		int VertexPosition = Data->FInd[i] * 3;
-		TrianglePoints[0] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		VertexPosition = Data->FInd[i + 1] * 3;
-		TrianglePoints[1] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		VertexPosition = Data->FInd[i + 2] * 3;
-		TrianglePoints[2] = glm::dvec3(Data->DVerC[VertexPosition], Data->DVerC[VertexPosition + 1], Data->DVerC[VertexPosition + 2]);
-
-		TrianglesArea.push_back(GEOMETRY.CalculateTriangleArea(TrianglePoints[0], TrianglePoints[1], TrianglePoints[2]));
+		Indices.push_back(Data->FInd[i]);
 	}
-	
-	struct VertexNormalsInfo
+
+	if (bUseDoublePrecisionForReadingCoordinates)
 	{
-		std::vector<glm::dvec3> Normals;
-		std::vector<double> Areas;
-		double AreaSum = 0.0;
-	};
-
-	std::vector<VertexNormalsInfo> DataForWeightedNormals;
-	DataForWeightedNormals.resize(Data->FInd.size());
-
-	int IndexShift = 3;
-	// We assume that there were no normals info read.
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
-	{
-		glm::dvec3 V0 = { Data->DVerC[Data->FInd[i] * IndexShift], Data->DVerC[Data->FInd[i] * IndexShift + 1], Data->DVerC[Data->FInd[i] * IndexShift + 2] };
-		glm::dvec3 V1 = { Data->DVerC[Data->FInd[i + 1] * IndexShift], Data->DVerC[Data->FInd[i + 1] * IndexShift + 1], Data->DVerC[Data->FInd[i + 1] * IndexShift + 2] };
-		glm::dvec3 V2 = { Data->DVerC[Data->FInd[i + 2] * IndexShift], Data->DVerC[Data->FInd[i + 2] * IndexShift + 1], Data->DVerC[Data->FInd[i + 2] * IndexShift + 2] };
-
-		glm::vec3 Normal = CalculateNormal(V0, V1, V2);
-
-		DataForWeightedNormals[Data->FInd[i]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i]].AreaSum += TrianglesArea[i / 3];
-
-		DataForWeightedNormals[Data->FInd[i + 1]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i + 1]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i + 1]].AreaSum += TrianglesArea[i / 3];
-
-		DataForWeightedNormals[Data->FInd[i + 2]].Normals.push_back(Normal);
-		DataForWeightedNormals[Data->FInd[i + 2]].Areas.push_back(TrianglesArea[i / 3]);
-		DataForWeightedNormals[Data->FInd[i + 2]].AreaSum += TrianglesArea[i / 3];
+		GEOMETRY.CalculateNormals(Data->FInd, Data->DVerC, Data->FNorC);
 	}
-	
-	for (size_t i = 0; i < Data->FInd.size(); i += 3)
+	else
 	{
-		glm::vec3 Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i]].Normals.size(); j++)
+		std::vector<double> DoubleVertices;
+		for (size_t i = 0; i < Data->FVerC.size(); i++)
 		{
-			Normal += DataForWeightedNormals[Data->FInd[i]].Normals[j] * DataForWeightedNormals[Data->FInd[i]].Areas[j] / DataForWeightedNormals[Data->FInd[i]].AreaSum;
+			DoubleVertices.push_back(Data->FVerC[i]);
 		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
 
-		Data->FNorC[Data->FInd[i] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i] * IndexShift + 2] = Normal.z;
-
-		Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 1]].Normals.size(); j++)
-		{
-			Normal += DataForWeightedNormals[Data->FInd[i + 1]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 1]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 1]].AreaSum;
-		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
-
-		Data->FNorC[Data->FInd[i + 1] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i + 1] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i + 1] * IndexShift + 2] = Normal.z;
-
-		Normal = glm::vec3(0.0f);
-		for (size_t j = 0; j < DataForWeightedNormals[Data->FInd[i + 2]].Normals.size(); j++)
-		{
-			Normal += DataForWeightedNormals[Data->FInd[i + 2]].Normals[j] * DataForWeightedNormals[Data->FInd[i + 2]].Areas[j] / DataForWeightedNormals[Data->FInd[i + 2]].AreaSum;
-		}
-		Normal = glm::normalize(Normal);
-		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
-			Normal = glm::vec3();
-
-		Data->FNorC[Data->FInd[i + 2] * IndexShift] = Normal.x;
-		Data->FNorC[Data->FInd[i + 2] * IndexShift + 1] = Normal.y;
-		Data->FNorC[Data->FInd[i + 2] * IndexShift + 2] = Normal.z;
+		GEOMETRY.CalculateNormals(Data->FInd, DoubleVertices, Data->FNorC);
 	}
-}
-
-glm::vec3 FEObjLoader::CalculateTangent(const glm::vec3 V0, const glm::vec3 V1, const glm::vec3 V2, std::vector<glm::vec2>&& Textures)
-{
-	const glm::vec3 Q1 = V1 - V0;
-	const glm::vec3 Q2 = V2 - V0;
-	const glm::vec2 UV0 = Textures[0];
-	const glm::vec2 UV1 = Textures[1];
-	const glm::vec2 UV2 = Textures[2];
-
-	const float T1 = UV1.y - UV0.y;
-	const float T2 = UV2.y - UV0.y;
-
-	const glm::vec3 Tangent = T1 * Q2 - T2 * Q1;
-
-	return Tangent;
 }
 
 void FEObjLoader::CalculateTangents(FERawOBJData* Data)
 {
-	for (size_t i = 0; i < Data->FInd.size() - 1; i += 3)
+	std::vector<int> Indices;
+	for (size_t i = 0; i < Data->FInd.size(); i++)
 	{
-		const glm::vec3 V0 = { Data->FVerC[Data->FInd[i] * 3], Data->FVerC[Data->FInd[i] * 3 + 1], Data->FVerC[Data->FInd[i] * 3 + 2] };
-		const glm::vec3 V1 = { Data->FVerC[Data->FInd[i + 1] * 3], Data->FVerC[Data->FInd[i + 1] * 3 + 1], Data->FVerC[Data->FInd[i + 1] * 3 + 2] };
-		const glm::vec3 V2 = { Data->FVerC[Data->FInd[i + 2] * 3], Data->FVerC[Data->FInd[i + 2] * 3 + 1], Data->FVerC[Data->FInd[i + 2] * 3 + 2] };
+		Indices.push_back(Data->FInd[i]);
+	}
 
-		glm::vec2 T0 = { Data->FTexC[Data->FInd[i] * 2], Data->FTexC[Data->FInd[i] * 2 + 1] };
-		glm::vec2 T1 = { Data->FTexC[Data->FInd[i + 1] * 2], Data->FTexC[Data->FInd[i + 1] * 2 + 1] };
-		glm::vec2 T2 = { Data->FTexC[Data->FInd[i + 2] * 2], Data->FTexC[Data->FInd[i + 2] * 2 + 1] };
-
-		glm::vec3 Tangent = CalculateTangent(V0, V1, V2, { T0, T1, T2 });
-		// To eliminate NaN values after normalization.
-		// I encounter this problem if triangle has same texture coordinates.
-		if (Tangent.x != 0 || Tangent.y != 0 || Tangent.z != 0)
+	if (bUseDoublePrecisionForReadingCoordinates)
+	{
+		GEOMETRY.CalculateTangents(Data->FInd, Data->DVerC, Data->FTexC, Data->FNorC, Data->FTanC);
+	}
+	else
+	{
+		std::vector<double> DoubleVertices;
+		for (size_t i = 0; i < Data->FVerC.size(); i++)
 		{
-			Tangent = glm::normalize(Tangent);
+			DoubleVertices.push_back(Data->FVerC[i]);
 		}
-		else
-		{
-			glm::vec3 Normal = { Data->FNorC[Data->FInd[i] * 3], Data->FNorC[Data->FInd[i] * 3 + 1], Data->FNorC[Data->FInd[i] * 3 + 2] };
-			glm::vec3 TangentOne = glm::cross(Normal, glm::vec3(0.0f, 0.0f, 1.0f));
-			glm::vec3 TangentTwo = glm::cross(Normal, glm::vec3(0.0f, 1.0f, 0.0f));
-			// Choosing candidate with bigger length/magnitude.
-			// Length/magnitude of cross product depend on sine of angle between vectors
-			// and sine of 90 degrees is 1.0(max value), so basically we are choosing cross product in which vectors was closer to perpendicular(assuming both vectors are unit vectors).
-			Tangent = glm::length(TangentOne) > glm::length(TangentTwo) ? TangentOne : TangentTwo;
-			Tangent = glm::normalize(Tangent);
-		}	
 
-		Data->FTanC[Data->FInd[i] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i] * 3 + 2] = Tangent.z;
-
-		Data->FTanC[Data->FInd[i + 1] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i + 1] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i + 1] * 3 + 2] = Tangent.z;
-
-		Data->FTanC[Data->FInd[i + 2] * 3] = Tangent.x;
-		Data->FTanC[Data->FInd[i + 2] * 3 + 1] = Tangent.y;
-		Data->FTanC[Data->FInd[i + 2] * 3 + 2] = Tangent.z;
+		GEOMETRY.CalculateTangents(Data->FInd, DoubleVertices, Data->FTexC, Data->FNorC, Data->FTanC);
 	}
 }
 
@@ -578,7 +457,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		}
 	}
 
-	// After normalization we will cast double precision vertex coordinates to float precision.
+	// Convert normalized vertex coordinates from double to float
 	if (bUseDoublePrecisionForReadingCoordinates)
 	{
 		Data->RawVertexCoordinates.resize(Data->RawVertexCoordinatesDoublePrecision.size());
@@ -861,7 +740,7 @@ void FEObjLoader::ReadMaterialFile(const char* OriginalOBJFile)
 
 	std::string MaterialFileFullPath = FILE_SYSTEM.GetDirectoryPath(OriginalOBJFile);
 	MaterialFileFullPath += MaterialFileName;
-	if (!FILE_SYSTEM.CheckFile(MaterialFileFullPath.c_str()))
+	if (!FILE_SYSTEM.DoesFileExist(MaterialFileFullPath.c_str()))
 	{
 		LOG.Add(std::string("material file: ") + MaterialFileName + " was indicated in OBJ file but this file can't be located.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
@@ -978,7 +857,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Specular color texture map
@@ -993,7 +872,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Specular highlight component
@@ -1008,7 +887,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// The alpha texture map
@@ -1023,7 +902,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Some implementations use 'map_bump' instead of 'bump' below
@@ -1038,7 +917,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Bump map (which by default uses luminance channel of the image)
@@ -1053,7 +932,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Displacement map
@@ -1068,7 +947,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 	// Stencil decal texture (defaults to 'matte' channel of the image)
@@ -1083,7 +962,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		if ((*StringEdited)[0] == ' ')
 			StringEdited->erase(StringEdited->begin());
 
-		if (!FILE_SYSTEM.CheckFile(StringEdited->c_str()))
+		if (!FILE_SYSTEM.DoesFileExist(StringEdited->c_str()))
 			LookForFile(*StringEdited);
 	}
 }
@@ -1131,4 +1010,143 @@ void FEObjLoader::DoubleVertexOnSeams(bool NewValue)
 bool FEObjLoader::IsDoubleVertexOnSeams()
 {
 	return bDoubleVertexOnSeams;
+}
+
+bool FEObjLoader::SaveToOBJ(const char* FileName, FERawOBJData* Data)
+{
+	if (FileName == nullptr || Data == nullptr)
+	{
+		LOG.Add(std::string("Invalid parameters in function FEObjLoader::SaveToOBJ."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::ofstream File(FileName);
+	if (!File.is_open())
+	{
+		LOG.Add(std::string("Failed to open file for writing in function FEObjLoader::SaveToOBJ: ") + FileName, "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Write header/comment
+	File << "# OBJ file exported by FocalEngine\n";
+	File << "# " << Data->RawVertexCoordinates.size() << " vertices\n";
+	File << "# " << Data->RawTextureCoordinates.size() << " texture coordinates\n";
+	File << "# " << Data->RawNormalCoordinates.size() << " normals\n";
+	File << "# " << Data->RawIndices.size() / 3 << " faces\n\n";
+
+	// Write material library reference if we have materials
+	if (!Data->MaterialRecords.empty())
+	{
+		// Nothing to do here, we don't support writing MTL files
+	}
+
+	// Write vertices
+	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
+	{
+		File << "v " << Data->RawVertexCoordinates[i].x << " " 
+			 << Data->RawVertexCoordinates[i].y << " " 
+			 << Data->RawVertexCoordinates[i].z;
+
+		// Add vertex colors if they exist
+		if (bHaveColors && i < Data->RawVertexColors.size())
+		{
+			File << " " << Data->RawVertexColors[i].x << " "
+				 << Data->RawVertexColors[i].y << " "
+				 << Data->RawVertexColors[i].z;
+		}
+
+		File << "\n";
+	}
+	File << "\n";
+
+	// Write texture coordinates
+	if (bHaveTextureCoord)
+	{
+		for (size_t i = 0; i < Data->RawTextureCoordinates.size(); i++)
+		{
+			// OBJ format typically has Y flipped compared to OpenGL
+			File << "vt " << Data->RawTextureCoordinates[i].x << " "
+				 << (1.0f - Data->RawTextureCoordinates[i].y) << "\n";
+		}
+		File << "\n";
+	}
+
+	// Write normals
+	if (bHaveNormalCoord)
+	{
+		for (size_t i = 0; i < Data->RawNormalCoordinates.size(); i++)
+		{
+			File << "vn " << Data->RawNormalCoordinates[i].x << " "
+				 << Data->RawNormalCoordinates[i].y << " "
+				 << Data->RawNormalCoordinates[i].z << "\n";
+		}
+		File << "\n";
+	}
+
+	size_t FaceCount = Data->RawIndices.size();
+	for (size_t i = 0; i < FaceCount; i += 3)
+	{
+		// Write face indices
+		// OBJ indices are 1-based, our internal indices are 0-based
+		File << "f ";
+
+		// Handle different formats based on what data we have
+		if (bHaveTextureCoord && bHaveNormalCoord)
+		{
+			// Format: v/vt/vn
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentTextureIndex = Data->UVIndices[i + j];
+					int CurrentNormalIndex = Data->NormalIndices[i + j];
+					File << CurrentIndex << "/" << CurrentTextureIndex << "/" << CurrentNormalIndex << " ";
+				}
+			}
+		}
+		else if (bHaveTextureCoord && !bHaveNormalCoord)
+		{
+			// Format: v/vt
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentTextureIndex = Data->UVIndices[i + j];
+					File << CurrentIndex << "/" << CurrentTextureIndex << " ";
+				}
+			}
+		}
+		else if (!bHaveTextureCoord && bHaveNormalCoord)
+		{
+			// Format: v//vn
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					int CurrentIndex = Data->RawIndices[i + j];
+					int CurrentNormalIndex = Data->NormalIndices[i + j];
+					File << CurrentIndex << "//" << CurrentNormalIndex << " ";
+				}
+			}
+		}
+		else
+		{
+			// Format: v
+			for (size_t j = 0; j < 3; j++)
+			{
+				if (i + j < FaceCount)
+				{
+					File << (Data->RawIndices[i + j]) << " ";
+				}
+			}
+		}
+
+		File << "\n";
+	}
+
+	File.close();
+	LOG.Add(std::string("Successfully saved OBJ file: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
+	return true;
 }

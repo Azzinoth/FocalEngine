@@ -1,6 +1,9 @@
 #include "FEPostProcess.h"
 using namespace FocalEngine;
 
+FEMesh* FEPostProcess::ScreenQuad = nullptr;
+FEShader* FEPostProcess::ScreenQuadShader = nullptr;
+
 FEPostProcessStage::FEPostProcessStage(const int InTextureSource, FEShader* Shader)
 {
 	this->InTextureSource.push_back(InTextureSource);
@@ -27,10 +30,10 @@ FEPostProcess::~FEPostProcess()
 	delete IntermediateFramebuffer;
 }
 
-void FocalEngine::FEPostProcess::RenderResult()
+void FEPostProcess::RenderResult()
 {
 	ScreenQuadShader->Start();
-	ScreenQuadShader->LoadDataToGPU();
+	ScreenQuadShader->LoadUniformsDataToGPU();
 	Stages.back()->OutTexture->Bind(0);
 
 	FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));

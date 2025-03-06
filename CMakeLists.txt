@@ -12,8 +12,72 @@ project(FocalEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_CXX_FLAGS_DEBUG "/MP /ZI /W3 /Od /MTd /JMC /sdl /FC /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D WIN32 /D _WINDOWS /D _DEBUG /D FE_DEBUG_ENABLED")
-set(CMAKE_CXX_FLAGS_RELEASE "/MP /MT /W3 /O2 /Oi /Gy /sdl /FC /GL /OPT:REF /OPT:ICF /D IMGUI_IMPL_OPENGL_LOADER_GLEW /D NDEBUG /D WIN32 /D _WINDOWS")
+if(MSVC)
+  # Disable C4251 warning
+  add_compile_options(/wd4251)
+
+  # Disable LNK4197 warning
+  add_link_options("/ignore:4197")
+endif()
+
+option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
+option(ENABLE_TESTS "Enable tests" OFF)
+
+set(TEST_LIBS)
+set(TEST_SOURCE_FILES)
+set(TEST_INCLUDE_FILES)
+
+if(NOT TARGET FEBasicApplication)
+  add_subdirectory(SubSystems/FEBasicApplication)
+endif()
+
+if(MSVC)
+	# Disable C4251 warning
+	add_compile_options(/wd4251)
+
+	if(USE_STATIC_RUNTIME)
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+	else()
+		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd")
+		set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD")
+	endif()
+
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+endif()
+
+if(ENABLE_TESTS)
+	if(BUILD_SHARED_LIBS)
+		list(APPEND TEST_LIBS
+			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest
+			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
+			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest
+			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
+		)
+	else()
+		list(APPEND TEST_LIBS
+			debug       Tests/ThirdParty/googletest/lib/Debug/gtest
+			debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
+			optimized   Tests/ThirdParty/googletest/lib/Release/gtest
+			optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
+		)
+	endif()
+
+	list(APPEND TEST_SOURCE_FILES
+        "Tests/RunAllTests.cpp"
+        "Tests/RunAllTests.h"
+		"Tests/SceneGraphTest.cpp"
+        "Tests/SceneGraphTest.h"
+    )
+
+	list(APPEND TEST_INCLUDE_FILES
+        "Tests/ThirdParty/googletest/include"
+    )
+
+	# Adding flags for multi-processor compilation
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MP")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP")
+endif()
 
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
@@ -25,10 +89,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
 configure_file(${ENGINE_FOLDER}/ResourceManager/Config.h.in ${ENGINE_FOLDER}/ResourceManager/Config.h @ONLY)
-
-if(NOT TARGET FEBasicApplication)
-  add_subdirectory(SubSystems/FEBasicApplication)
-endif()
 
 file(GLOB InstancedLineMaterial_SRC
 	"CoreExtensions/StandardMaterial/InstancedLineMaterial/FE_InstancedLine_FS.glsl"
@@ -134,28 +194,15 @@ file(GLOB ComputeShaders_SRC
 	"CoreExtensions/ComputeShaders/FE_ComputeDepthPyramidDownSample_CS.glsl"
 )
 
-file(GLOB CoreExtensions_SRC
-	"CoreExtensions/FEFreeCamera.cpp"
-	"CoreExtensions/FEFreeCamera.h"
-	"CoreExtensions/FEModelViewCamera.cpp"
-	"CoreExtensions/FEModelViewCamera.h"
-)
-
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
-	"Renderer/FEEntity.cpp"
-	"Renderer/FEEntity.h"
-	"Renderer/FEEntityInstanced.cpp"
-	"Renderer/FEEntityInstanced.h"
-	"Renderer/FEPrefab.cpp"
-	"Renderer/FEPrefab.h"
+	"Renderer/FEViewport.cpp"
+	"Renderer/FEViewport.h"
 	"Renderer/FEFramebuffer.cpp"
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
 	"Renderer/FEGameModel.h"
-	"Renderer/FELight.cpp"
-	"Renderer/FELight.h"
 	"Renderer/FELine.cpp"
 	"Renderer/FELine.h"
 	"Renderer/FEMaterial.cpp"
@@ -169,10 +216,11 @@ file(GLOB Renderer_SRC
 	"Renderer/FEShader.cpp"
 	"Renderer/FEShader.h"
 	"Renderer/FEShader.inl"
+	"Renderer/FEShaderUniform.cpp"
+	"Renderer/FEShaderUniform.h"
+	"Renderer/FEShaderUniform.inl"
 	"Renderer/FETexture.cpp"
 	"Renderer/FETexture.h"
-	"Renderer/FETerrain.cpp"
-	"Renderer/FETerrain.h"
 )
 
 # *************** RESOURCE MANAGER ***************
@@ -183,6 +231,7 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
+	"ResourceManager/FEResourceManager.inl"
 	"ResourceManager/FEResourceManager.h"
 	"ResourceManager/Config.h"
 )
@@ -190,6 +239,7 @@ file(GLOB ResourceManager_SRC
 # *************** CORE ***************
 
 file(GLOB Core_SRC
+	"Core/FocalEngineAPI.h"
 	"Core/FECoreIncludes.h"
 	"Core/FEGeometricTools.cpp"
 	"Core/FEGeometricTools.h"
@@ -197,24 +247,109 @@ file(GLOB Core_SRC
 	"Core/FEObject.h"
 )
 
+# *************** COMPONENTS ***************
+
+file(GLOB Scene_Components_SRC
+	"SubSystems/Scene/Components/FEComponents.h"
+	"SubSystems/Scene/Components/FEComponents.cpp"
+	"SubSystems/Scene/Components/FETagComponent.cpp"
+	"SubSystems/Scene/Components/FETagComponent.h"
+	"SubSystems/Scene/Components/FETransformComponent.cpp"
+	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FECameraComponent.cpp"
+	"SubSystems/Scene/Components/FECameraComponent.h"
+	"SubSystems/Scene/Components/FELightComponent.cpp"
+	"SubSystems/Scene/Components/FELightComponent.h"
+	"SubSystems/Scene/Components/FEGameModelComponent.cpp"
+	"SubSystems/Scene/Components/FEGameModelComponent.h"
+	"SubSystems/Scene/Components/FEInstancedComponent.cpp"
+	"SubSystems/Scene/Components/FEInstancedComponent.h"
+	"SubSystems/Scene/Components/FETerrainComponent.cpp"
+	"SubSystems/Scene/Components/FETerrainComponent.h"
+	"SubSystems/Scene/Components/FESkyDomeComponent.cpp"
+	"SubSystems/Scene/Components/FESkyDomeComponent.h"
+	"SubSystems/Scene/Components/FEPrefabInstanceComponent.h"
+	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
+	"SubSystems/Scene/Components/FEVirtualUIComponent.h"
+	"SubSystems/Scene/Components/FEVirtualUIComponent.cpp"
+)
+
+file(GLOB Scene_Component_Systems_SRC
+	"SubSystems/Scene/Components/Systems/FEComponentSystems.h"
+	"SubSystems/Scene/Components/Systems/FETransformSystem.h"
+	"SubSystems/Scene/Components/Systems/FETransformSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FELightSystem.h"
+	"SubSystems/Scene/Components/Systems/FELightSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FECameraSystem.h"
+	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
+	"SubSystems/Scene/Components/Systems/FEInstancedSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
+	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
+	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.h"
+	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.h"
+	"SubSystems/Scene/Components/Systems/FEVirtualUISystem.cpp"
+)
+
+file(GLOB Scene_NativeScript_System_SRC
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.inl"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.inl"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.cpp"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.h"
+	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.cpp"
+)
+
+set(Unpacked_NativeScript_Connector_SRC)
+
+if(USE_STATIC_RUNTIME)
+    list(APPEND Unpacked_NativeScript_Connector_SRC
+        "Resources/UserScriptsData/FENativeScriptConnector.h"
+        "Resources/UserScriptsData/FENativeScriptConnector.cpp"
+    )
+endif()
+
 # *************** SCENE ***************
 
 file(GLOB Scene_SRC
+	"SubSystems/Scene/FESceneManager.cpp"
+	"SubSystems/Scene/FESceneManager.inl"
+	"SubSystems/Scene/FESceneManager.h"
 	"SubSystems/Scene/FEScene.cpp"
+	"SubSystems/Scene/FEScene.inl"
 	"SubSystems/Scene/FEScene.h"
-	"SubSystems/Scene/FETransformComponent.cpp"
-	"SubSystems/Scene/FETransformComponent.h"
+	"SubSystems/Scene/FENaiveSceneGraph.cpp"
+	"SubSystems/Scene/FENaiveSceneGraph.inl"
+	"SubSystems/Scene/FENaiveSceneGraph.h"
+	"SubSystems/Scene/FENaiveSceneGraphNode.cpp"
+	"SubSystems/Scene/FENaiveSceneGraphNode.h"
+	"SubSystems/Scene/FEEntity.cpp"
+	"SubSystems/Scene/FEEntity.h"
+	"SubSystems/Scene/FEPrefab.cpp"
+	"SubSystems/Scene/FEPrefab.h"
 )
 
 # *************** SUB_SYSTEM ***************
 
+file(GLOB FileSystem_SubSystems_SRC
+	"SubSystems/FileSystem/FEFileSystem.cpp"
+	"SubSystems/FileSystem/FEFileSystem.h"
+	"SubSystems/FileSystem/FEAssetPackage.cpp"
+	"SubSystems/FileSystem/FEAssetPackage.h"
+)
+
 file(GLOB SubSystems_SRC
-	"SubSystems/FEBasicCamera.cpp"
-	"SubSystems/FEBasicCamera.h"
-	"SubSystems/FEFileSystem.cpp"
-	"SubSystems/FEFileSystem.h"
-	"SubSystems/FEVirtualUIContext.h"
-	"SubSystems/FEVirtualUIContext.cpp"
+	"SubSystems/FEInput.cpp"
+	"SubSystems/FEInput.h"
 )
 
 file(GLOB OpenXR_SRC
@@ -255,8 +390,9 @@ file(GLOB source_SRC
 link_directories(${GLEW_LIB_DIR})
 link_directories(${GLFW_LIB_DIR})
 
-# add the executable
-add_library(FocalEngine 
+set(ALL_SOURCE_FILES "")
+list(APPEND ALL_SOURCE_FILES
+			${TEST_SOURCE_FILES}
 			${source_SRC}
 			${InstancedLineMaterial_SRC}
 			${PBRMaterial_SRC}
@@ -276,14 +412,17 @@ add_library(FocalEngine
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
 			${Core_SRC}
-			${CoreExtensions_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
 			# *************** RESOURCE MANAGER ***************
 			${ResourceManager_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
+			${FileSystem_SubSystems_SRC}
 			${Scene_SRC}
+			${Scene_Components_SRC}
+			${Scene_Component_Systems_SRC}
+			${Scene_NativeScript_System_SRC}
 			${OpenXR_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
@@ -291,17 +430,124 @@ add_library(FocalEngine
 			${stb_image_SRC}
 )
 
-target_link_libraries(FocalEngine 
-    PRIVATE 
-        FEBasicApplication
-        glew32s.lib
-        glfw3.lib
-        glfw3dll.lib
-        opengl32.lib
-    PUBLIC 
-        debug	  ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/openxr_loaderd.lib
-        optimized ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/openxr_loader.lib
+if(USE_STATIC_RUNTIME)
+	list(APPEND ALL_SOURCE_FILES
+		${Unpacked_NativeScript_Connector_SRC}
+	)
+endif()
+
+if(ENABLE_TESTS)
+    add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
+else()
+    if(BUILD_SHARED_LIBS)
+		if(ENGINE_HEADERS_ONLY)
+			add_library(FocalEngine INTERFACE)
+			target_include_directories(FocalEngine INTERFACE 
+				${CMAKE_CURRENT_SOURCE_DIR}
+				${GLEW_INCLUDE_DIR}
+				${BASICAPP_THIRDPARTY_DIR}
+				${BASICAPP_DIR}
+				${FOCAL_ENGINE_INCLUDES}
+			)
+		else()
+			add_library(FocalEngine SHARED ${ALL_SOURCE_FILES})
+			target_compile_definitions(FocalEngine PRIVATE FOCAL_ENGINE_EXPORTS)
+			target_compile_definitions(FocalEngine PRIVATE FEBASICAPPLICATION_SHARED)
+			target_compile_definitions(FocalEngine PUBLIC FOCAL_ENGINE_SHARED)
+
+			# Sometimes /GL conflicts with WINDOWS_EXPORT_ALL_SYMBOLS
+			set_target_properties(FocalEngine PROPERTIES COMPILE_OPTIONS "/GL-")
+			set_target_properties(FocalEngine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+			# Disable C4251 warning
+			target_compile_options(FocalEngine PRIVATE /wd4251)
+		endif()
+	else()
+		add_library(FocalEngine STATIC ${ALL_SOURCE_FILES})
+	endif()
+endif()
+
+# Adjust OpenXRLoader linking based on BUILD_SHARED_LIBS and FEBASICAPPLICATION_STATIC_RUNTIME
+if(BUILD_SHARED_LIBS)
+    if(USE_STATIC_RUNTIME)
+        message(WARNING "Building a shared library with static runtime is uncommon and may lead to issues.")
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Static_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Static_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Static_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Static_runtime/openxr_loader.dll)
+    else()
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.dll)
+    endif()
+else()
+    if(USE_STATIC_RUNTIME)
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Static_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Static_runtime/openxr_loader.lib)
+
+		# No DLL for static library
+        set(OpenXRLoader_DLL_Debug "")
+        set(OpenXRLoader_DLL_Release "")
+    else()
+        set(OpenXRLoader_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/Dynamic_runtime/openxr_loaderd.lib)
+        set(OpenXRLoader_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/Dynamic_runtime/openxr_loader.lib)
+
+		set(OpenXRLoader_DLL_Debug   ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Debug/DLL/Dynamic_runtime/openxr_loaderd.dll)
+        set(OpenXRLoader_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/openxr/Lib/x64/Release/DLL/Dynamic_runtime/openxr_loader.dll)
+    endif()
+endif()
+
+# Set OpenXRLoader_DLL based on the current configuration
+set(OpenXRLoader_DLL $<$<CONFIG:Debug>:${OpenXRLoader_DLL_Debug}>$<$<CONFIG:Release>:${OpenXRLoader_DLL_Release}>)
+
+# Define GLEW_STATIC for static builds
+if(USE_STATIC_RUNTIME)
+    add_definitions(-DGLEW_STATIC)
+endif()
+
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ PARENT_SCOPE)
+set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/)
+
+set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt PARENT_SCOPE)
+set(FOCAL_ENGINE_ENTT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/entt)
+
+set(FOCAL_ENGINE_INCLUDES "")
+list(APPEND FOCAL_ENGINE_INCLUDES
+    ${FOCAL_ENGINE_THIRD_PARTY_DIR}
+    ${FOCAL_ENGINE_ENTT_DIR}
 )
+set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
+
+if(NOT ENGINE_HEADERS_ONLY)
+	target_link_libraries(FocalEngine 
+		PRIVATE 
+			FEBasicApplication
+			${GLFW_LIBRARY}
+			${GLEW_LIBRARY}
+			opengl32.lib
+		PUBLIC 
+			debug	  ${OpenXRLoader_Debug}
+			optimized ${OpenXRLoader_Release}
+			${TEST_LIBS}
+	)
+
+	target_include_directories(FocalEngine
+			PUBLIC
+				${GLEW_INCLUDE_DIR}
+				${BASICAPP_THIRDPARTY_DIR}
+				${BASICAPP_DIR}
+				${FOCAL_ENGINE_INCLUDES}
+			PRIVATE
+				${TEST_INCLUDE_FILES}
+	)
+endif()
+
+if(ENABLE_TESTS)
+	source_group("Test Source Files" FILES ${TEST_SOURCE_FILES})
+endif()
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/Core" FILES ${Core_SRC})
@@ -322,14 +568,20 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_FXAA" FILES ${FE
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection" FILES ${FE_GammaAndHDRCorrection_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
 source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${ComputeShaders_SRC})
-source_group("Source Files/CoreExtensions" FILES ${CoreExtensions_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
+source_group("Source Files/SubSystems/FileSystem" FILES ${FileSystem_SubSystems_SRC})
 source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
+source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
+source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})
+source_group("Source Files/SubSystems/Scene/NativeScriptSystem" FILES ${Scene_NativeScript_System_SRC})
+if(USE_STATIC_RUNTIME)
+	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
+endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
@@ -339,16 +591,6 @@ source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
 # set the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngine)
 
-set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/ PARENT_SCOPE)
-set(FOCAL_ENGINE_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/)
-
-include_directories(
-	${GLEW_INCLUDE_DIR}
-	${BASICAPP_THIRDPARTY_DIR}
-	${BASICAPP_DIR}
-	${FOCAL_ENGINE_THIRD_PARTY_DIR}
-)
-
 # Re-export of the variables from child projects
 set(GLEW_LIB_DIR ${GLEW_LIB_DIR} PARENT_SCOPE)
 set(GLFW_LIB_DIR ${GLFW_LIB_DIR} PARENT_SCOPE)
@@ -356,3 +598,50 @@ set(GLFW_LIB_DIR ${GLFW_LIB_DIR} PARENT_SCOPE)
 set(GLEW_INCLUDE_DIR ${GLEW_INCLUDE_DIR} PARENT_SCOPE)
 set(BASICAPP_THIRDPARTY_DIR ${BASICAPP_THIRDPARTY_DIR} PARENT_SCOPE)
 set(BASICAPP_DIR ${BASICAPP_DIR} PARENT_SCOPE)
+
+# Export the BUILD_SHARED_LIBS and USE_STATIC_RUNTIME variables
+set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS} PARENT_SCOPE)
+set(USE_STATIC_RUNTIME ${USE_STATIC_RUNTIME} PARENT_SCOPE)
+
+# Export the GLEW_LIBRARY and GLFW_LIBRARY variables
+set(GLEW_LIBRARY ${GLEW_LIBRARY} PARENT_SCOPE)
+set(GLFW_LIBRARY ${GLFW_LIBRARY} PARENT_SCOPE)
+
+# Export the OpenXRLoader variable
+set(OpenXRLoader_DLL ${OpenXRLoader_DLL} PARENT_SCOPE)
+
+# Add this line to define the .lib version info
+target_compile_definitions(FocalEngine PRIVATE 
+    ENGINE_LIB_VERSION="${ENGINE_BUILD_TIMESTAMP}"
+)
+
+if(NOT ENGINE_HEADERS_ONLY)
+	# If building as DLL, copy necessary DLLs to output directory
+	if(BUILD_SHARED_LIBS)
+		add_custom_command(TARGET FocalEngine POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${GLFW_LIB_DIR}/glfw3.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"$<TARGET_FILE_DIR:FEBasicApplication>/FEBasicApplication.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				${OpenXRLoader_DLL}
+				"$<TARGET_FILE_DIR:FocalEngine>"
+		)
+	endif()
+
+	# If using dynamic runtime, copy necessary DLLs to output directory
+	if(NOT USE_STATIC_RUNTIME)
+		add_custom_command(TARGET FocalEngine POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${GLEW_LIB_DIR}/glew32.dll"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+		)
+	endif()
+
+	add_custom_command(TARGET FocalEngine PRE_BUILD
+		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
+			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
+    )
+endif()

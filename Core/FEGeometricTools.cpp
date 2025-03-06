@@ -1,6 +1,13 @@
 #include "FEGeometricTools.h"
 using namespace FocalEngine;
-FEGeometry* FEGeometry::Instance = nullptr;
+
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetGeometry()
+{
+	return FEGeometry::GetInstancePointer();
+}
+#endif
+
 FEGeometry::FEGeometry() {}
 FEGeometry::~FEGeometry() {}
 
@@ -556,6 +563,241 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
+bool FEGeometry::IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon)
+{
+	return std::abs(FirstVector.x - SecondVector.x) < Epsilon &&
+		   std::abs(FirstVector.y - SecondVector.y) < Epsilon &&
+		   std::abs(FirstVector.z - SecondVector.z) < Epsilon;
+}
+
+bool FEGeometry::IsEpsilonEqual(const glm::dquat& FirstQuaternion, const glm::dquat& SecondQuaternion, double Epsilon)
+{
+	return glm::abs(glm::dot(FirstQuaternion, SecondQuaternion)) > (1.0 - Epsilon);
+}
+
+bool FEGeometry::IsEpsilonEqual(const glm::dmat4& FirstMatrix, const glm::dmat4& SecondMatrix, double Epsilon)
+{
+	return IsEpsilonEqual(FirstMatrix[0], SecondMatrix[0], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[1], SecondMatrix[1], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[2], SecondMatrix[2], Epsilon) &&
+		   IsEpsilonEqual(FirstMatrix[3], SecondMatrix[3], Epsilon);
+}
+
+bool FEGeometry::DecomposeMatrixToTranslationRotationScale(const glm::dmat4& Matrix, glm::dvec3& OutTranslation, glm::dquat& OutRotationQuaternion, glm::dvec3& OutScale)
+{
+	// In rare cases glm::decompose can fail because of precision issues
+	// So we will use double precision version of glm::decompose
+	glm::dvec3 DoubleSkew;
+	glm::dvec4 DoublePerspective;
+	return glm::decompose(Matrix, OutScale, OutRotationQuaternion, OutTranslation, DoubleSkew, DoublePerspective);
+}
+
+glm::vec3 FEGeometry::CalculateNormal(glm::dvec3 FirstVertex, glm::dvec3 SecondVertex, glm::dvec3 ThirdVertex)
+{
+	glm::dvec3 Edge_0 = ThirdVertex - SecondVertex;
+	glm::dvec3 Edge_1 = ThirdVertex - FirstVertex;
+
+	glm::dvec3 Normal = glm::normalize(glm::cross(Edge_1, Edge_0));
+
+	if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+		Normal = glm::dvec3();
+
+	return Normal;
+}
+
+void FEGeometry::CalculateNormals(const std::vector<int>& Indices, const std::vector<float>& Vertices, std::vector<float>& NormalsToFill)
+{
+	std::vector<double> VerticesDouble;
+	VerticesDouble.resize(Vertices.size());
+	for (size_t i = 0; i < Vertices.size(); i++)
+		VerticesDouble[i] = static_cast<double>(Vertices[i]);
+
+	CalculateNormals(Indices, VerticesDouble, NormalsToFill);
+}
+
+void FEGeometry::CalculateNormals(const std::vector<int>& Indices, const std::vector<double>& Vertices, std::vector<float>& NormalsToFill)
+{
+	std::vector<double> TrianglesArea;
+	std::vector<glm::dvec3> TrianglePoints;
+	TrianglePoints.resize(3);
+
+	for (size_t i = 0; i < Indices.size(); i += 3)
+	{
+		int VertexPosition = Indices[i] * 3;
+		TrianglePoints[0] = glm::dvec3(Vertices[VertexPosition], Vertices[VertexPosition + 1], Vertices[VertexPosition + 2]);
+
+		VertexPosition = Indices[i + 1] * 3;
+		TrianglePoints[1] = glm::dvec3(Vertices[VertexPosition], Vertices[VertexPosition + 1], Vertices[VertexPosition + 2]);
+
+		VertexPosition = Indices[i + 2] * 3;
+		TrianglePoints[2] = glm::dvec3(Vertices[VertexPosition], Vertices[VertexPosition + 1], Vertices[VertexPosition + 2]);
+
+		TrianglesArea.push_back(CalculateTriangleArea(TrianglePoints[0], TrianglePoints[1], TrianglePoints[2]));
+	}
+
+	struct VertexNormalsInfo
+	{
+		std::vector<glm::dvec3> Normals;
+		std::vector<double> Areas;
+		double AreaSum = 0.0;
+	};
+
+	std::vector<VertexNormalsInfo> DataForWeightedNormals;
+	DataForWeightedNormals.resize(Indices.size());
+
+	int IndexShift = 3;
+	// We assume that there were no normals info read.
+	for (size_t i = 0; i < Indices.size(); i += 3)
+	{
+		glm::dvec3 V0 = { Vertices[Indices[i] * IndexShift], Vertices[Indices[i] * IndexShift + 1], Vertices[Indices[i] * IndexShift + 2] };
+		glm::dvec3 V1 = { Vertices[Indices[i + 1] * IndexShift], Vertices[Indices[i + 1] * IndexShift + 1], Vertices[Indices[i + 1] * IndexShift + 2] };
+		glm::dvec3 V2 = { Vertices[Indices[i + 2] * IndexShift], Vertices[Indices[i + 2] * IndexShift + 1], Vertices[Indices[i + 2] * IndexShift + 2] };
+
+		glm::vec3 Normal = CalculateNormal(V0, V1, V2);
+
+		DataForWeightedNormals[Indices[i]].Normals.push_back(Normal);
+		DataForWeightedNormals[Indices[i]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Indices[i]].AreaSum += TrianglesArea[i / 3];
+
+		DataForWeightedNormals[Indices[i + 1]].Normals.push_back(Normal);
+		DataForWeightedNormals[Indices[i + 1]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Indices[i + 1]].AreaSum += TrianglesArea[i / 3];
+
+		DataForWeightedNormals[Indices[i + 2]].Normals.push_back(Normal);
+		DataForWeightedNormals[Indices[i + 2]].Areas.push_back(TrianglesArea[i / 3]);
+		DataForWeightedNormals[Indices[i + 2]].AreaSum += TrianglesArea[i / 3];
+	}
+
+	for (size_t i = 0; i < Indices.size(); i += 3)
+	{
+		glm::vec3 Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Indices[i]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Indices[i]].Normals[j] * DataForWeightedNormals[Indices[i]].Areas[j] / DataForWeightedNormals[Indices[i]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
+
+		NormalsToFill[Indices[i] * IndexShift] = Normal.x;
+		NormalsToFill[Indices[i] * IndexShift + 1] = Normal.y;
+		NormalsToFill[Indices[i] * IndexShift + 2] = Normal.z;
+
+		Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Indices[i + 1]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Indices[i + 1]].Normals[j] * DataForWeightedNormals[Indices[i + 1]].Areas[j] / DataForWeightedNormals[Indices[i + 1]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
+
+		NormalsToFill[Indices[i + 1] * IndexShift] = Normal.x;
+		NormalsToFill[Indices[i + 1] * IndexShift + 1] = Normal.y;
+		NormalsToFill[Indices[i + 1] * IndexShift + 2] = Normal.z;
+
+		Normal = glm::vec3(0.0f);
+		for (size_t j = 0; j < DataForWeightedNormals[Indices[i + 2]].Normals.size(); j++)
+		{
+			Normal += DataForWeightedNormals[Indices[i + 2]].Normals[j] * DataForWeightedNormals[Indices[i + 2]].Areas[j] / DataForWeightedNormals[Indices[i + 2]].AreaSum;
+		}
+		Normal = glm::normalize(Normal);
+		if (isnan(Normal.x) || isnan(Normal.y) || isnan(Normal.z))
+			Normal = glm::vec3();
+
+		NormalsToFill[Indices[i + 2] * IndexShift] = Normal.x;
+		NormalsToFill[Indices[i + 2] * IndexShift + 1] = Normal.y;
+		NormalsToFill[Indices[i + 2] * IndexShift + 2] = Normal.z;
+	}
+}
+
+glm::vec3 FEGeometry::CalculateTangent(const glm::vec3 FirstVertex, const glm::vec3 SecondVertex, const glm::vec3 ThirdVertex, std::vector<glm::vec2>&& TextureCoordinates)
+{
+	const glm::vec3 Q1 = SecondVertex - FirstVertex;
+	const glm::vec3 Q2 = ThirdVertex - FirstVertex;
+	const glm::vec2 UV0 = TextureCoordinates[0];
+	const glm::vec2 UV1 = TextureCoordinates[1];
+	const glm::vec2 UV2 = TextureCoordinates[2];
+
+	const float T1 = UV1.y - UV0.y;
+	const float T2 = UV2.y - UV0.y;
+
+	const glm::vec3 Tangent = T1 * Q2 - T2 * Q1;
+	return Tangent;
+}
+
+void FEGeometry::CalculateTangents(const std::vector<int>& Indices, const std::vector<float>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill)
+{
+	std::vector<double> VerticesDouble;
+	VerticesDouble.resize(Vertices.size());
+	for (size_t i = 0; i < Vertices.size(); i++)
+		VerticesDouble[i] = static_cast<double>(Vertices[i]);
+
+	CalculateTangents(Indices, VerticesDouble, TextureCoordinates, Normals, TangentsToFill);
+}
+
+void FEGeometry::CalculateTangents(const std::vector<int>& Indices, const std::vector<double>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill)
+{
+	for (size_t i = 0; i < Indices.size() - 1; i += 3)
+	{
+		const glm::vec3 V0 = { Vertices[Indices[i] * 3], Vertices[Indices[i] * 3 + 1], Vertices[Indices[i] * 3 + 2] };
+		const glm::vec3 V1 = { Vertices[Indices[i + 1] * 3], Vertices[Indices[i + 1] * 3 + 1], Vertices[Indices[i + 1] * 3 + 2] };
+		const glm::vec3 V2 = { Vertices[Indices[i + 2] * 3], Vertices[Indices[i + 2] * 3 + 1], Vertices[Indices[i + 2] * 3 + 2] };
+
+		glm::vec2 T0 = { TextureCoordinates[Indices[i] * 2], TextureCoordinates[Indices[i] * 2 + 1] };
+		glm::vec2 T1 = { TextureCoordinates[Indices[i + 1] * 2], TextureCoordinates[Indices[i + 1] * 2 + 1] };
+		glm::vec2 T2 = { TextureCoordinates[Indices[i + 2] * 2], TextureCoordinates[Indices[i + 2] * 2 + 1] };
+
+		glm::vec3 Tangent = GEOMETRY.CalculateTangent(V0, V1, V2, { T0, T1, T2 });
+		// To eliminate NaN values after normalization.
+		// I encounter this problem if triangle has same texture coordinates.
+		if (Tangent.x != 0 || Tangent.y != 0 || Tangent.z != 0)
+		{
+			Tangent = glm::normalize(Tangent);
+		}
+		else
+		{
+			glm::vec3 Normal = { Normals[Indices[i] * 3], Normals[Indices[i] * 3 + 1], Normals[Indices[i] * 3 + 2] };
+			glm::vec3 TangentOne = glm::cross(Normal, glm::vec3(0.0f, 0.0f, 1.0f));
+			glm::vec3 TangentTwo = glm::cross(Normal, glm::vec3(0.0f, 1.0f, 0.0f));
+			// Choosing candidate with bigger length/magnitude.
+			// Length/magnitude of cross product depend on sine of angle between vectors
+			// and sine of 90 degrees is 1.0(max value), so basically we are choosing cross product in which vectors was closer to perpendicular(assuming both vectors are unit vectors).
+			Tangent = glm::length(TangentOne) > glm::length(TangentTwo) ? TangentOne : TangentTwo;
+			Tangent = glm::normalize(Tangent);
+		}
+
+		TangentsToFill[Indices[i] * 3] = Tangent.x;
+		TangentsToFill[Indices[i] * 3 + 1] = Tangent.y;
+		TangentsToFill[Indices[i] * 3 + 2] = Tangent.z;
+
+		TangentsToFill[Indices[i + 1] * 3] = Tangent.x;
+		TangentsToFill[Indices[i + 1] * 3 + 1] = Tangent.y;
+		TangentsToFill[Indices[i + 1] * 3 + 2] = Tangent.z;
+
+		TangentsToFill[Indices[i + 2] * 3] = Tangent.x;
+		TangentsToFill[Indices[i + 2] * 3 + 1] = Tangent.y;
+		TangentsToFill[Indices[i + 2] * 3 + 2] = Tangent.z;
+	}
+}
+
+bool FEGeometry::RaysIntersection(const glm::vec3& FirstRayOrigin, const glm::vec3& FirstRayDirection, const glm::vec3& SecondRayOrigin, const glm::vec3& SecondRayDirection, float& FirstRayParametricIntersection, float& SecondRayParametricIntersection) const
+{
+	const glm::vec3 DirectionsCrossProduct = glm::cross(FirstRayDirection, SecondRayDirection);
+
+	// Two rays are parallel.
+	if (DirectionsCrossProduct == glm::vec3(0.0f))
+		return false;
+
+	FirstRayParametricIntersection = glm::dot(glm::cross((SecondRayOrigin - FirstRayOrigin), SecondRayDirection), DirectionsCrossProduct);
+	FirstRayParametricIntersection /= glm::length(DirectionsCrossProduct) * glm::length(DirectionsCrossProduct);
+
+	SecondRayParametricIntersection = glm::dot(glm::cross((SecondRayOrigin - FirstRayOrigin), FirstRayDirection), DirectionsCrossProduct);
+	SecondRayParametricIntersection /= glm::length(DirectionsCrossProduct) * glm::length(DirectionsCrossProduct);
+
+	return true;
+}
+
 bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint, float* U, float* V)
 {
 	// Ensure the triangle is defined by exactly three vertices
@@ -1101,4 +1343,21 @@ std::vector<glm::dvec3> FEGeometry::GetIntersectionPoints(FEAABB& AABB, std::vec
 	}
 
 	return Result;
+}
+
+glm::dvec3 FEGeometry::CreateMouseRayToWorld(const double MouseScreenX, const double MouseScreenY, const glm::dmat4 ViewMatrix, const glm::dmat4 ProjectionMatrix, const glm::ivec2 ViewportPosition, const glm::ivec2 ViewportSize) const
+{
+	glm::dvec2 NormalizedMouseCoordinates;
+	NormalizedMouseCoordinates.x = (2.0f * (MouseScreenX - ViewportPosition.x)) / ViewportSize.x - 1;
+	NormalizedMouseCoordinates.y = 1.0f - (2.0f * ((MouseScreenY - ViewportPosition.y))) / ViewportSize.y;
+
+	const glm::dvec4 ClipCoordinates = glm::dvec4(NormalizedMouseCoordinates.x, NormalizedMouseCoordinates.y, -1.0, 1.0);
+	glm::dvec4 EyeCoordinates = glm::inverse(ProjectionMatrix) * ClipCoordinates;
+	EyeCoordinates.z = -1.0f;
+	EyeCoordinates.w = 0.0f;
+
+	glm::dvec3 WorldRay = glm::inverse(ViewMatrix) * EyeCoordinates;
+	WorldRay = glm::normalize(WorldRay);
+
+	return WorldRay;
 }

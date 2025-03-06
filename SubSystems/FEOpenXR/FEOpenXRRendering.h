@@ -59,5 +59,10 @@ namespace FocalEngine
 		void RenderLoop();
 	};
 
-#define FEOpenXR_RENDERING FEOpenXRRendering::getInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetOpenXRRendering();
+	#define FEOpenXR_RENDERING (*static_cast<FEOpenXRRendering*>(GetOpenXRRendering()))
+#else
+	#define FEOpenXR_RENDERING FEOpenXRRendering::GetInstance()
+#endif
 }

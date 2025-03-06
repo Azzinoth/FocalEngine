@@ -141,23 +141,23 @@ namespace FocalEngine
 		}
 	}
 
-	static void LogXrError(XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr)
+	static void LogXrError(XrResult Result, const char* Originator = nullptr, const char* SourceLocation = nullptr)
 	{
 		std::string ErrorMsg = "";
-		ErrorMsg += "OpenXR error: " + XrResultToString(res) + "\n";
-		ErrorMsg += "OpenXR error code: " + std::to_string(res) + "\n";
-		ErrorMsg += "Function: " + std::string(originator) + "\n";
-		ErrorMsg += "Source location: " + std::string(sourceLocation) + "\n";
+		ErrorMsg += "OpenXR error: " + XrResultToString(Result) + "\n";
+		ErrorMsg += "OpenXR error code: " + std::to_string(Result) + "\n";
+		ErrorMsg += "Function: " + std::string(Originator) + "\n";
+		ErrorMsg += "Source location: " + std::string(SourceLocation) + "\n";
 
 		LOG.Add(ErrorMsg, "FE_LOG_OPENXR");
 	}
 
-	static XrResult CheckXrResult(XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr)
+	static XrResult CheckXrResult(XrResult Result, const char* Originator = nullptr, const char* SourceLocation = nullptr)
 	{
-		if (XR_FAILED(res))
-			LogXrError(res, originator, sourceLocation);
+		if (XR_FAILED(Result))
+			LogXrError(Result, Originator, SourceLocation);
 
-		return res;
+		return Result;
 	}
 
 #define FE_OPENXR_ERROR(cmd) CheckXrResult(cmd, #cmd, FILE_AND_LINE);
@@ -192,5 +192,10 @@ namespace FocalEngine
 		void CreateReferenceSpace();
 	};
 
-#define FEOpenXR_CORE FEOpenXRCore::getInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetOpenXRCore();
+	#define FEOpenXR_CORE (*static_cast<FEOpenXRCore*>(GetOpenXRCore()))
+#else
+	#define FEOpenXR_CORE FEOpenXRCore::GetInstance()
+#endif
 }

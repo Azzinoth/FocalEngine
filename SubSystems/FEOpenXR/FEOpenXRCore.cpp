@@ -2,7 +2,12 @@
 
 using namespace FocalEngine;
 
-FEOpenXRCore* FEOpenXRCore::Instance = nullptr;
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetOpenXRCore()
+{
+	return FEOpenXRCore::GetInstancePointer();
+}
+#endif
 
 FEOpenXRCore::FEOpenXRCore() {}
 FEOpenXRCore::~FEOpenXRCore() {}
@@ -56,12 +61,12 @@ void FEOpenXRCore::InitializeSession()
 
 	FE_OPENXR_ERROR(pfnGetOpenGLGraphicsRequirementsKHR(OpenXRInstance, SystemID, &OpenglReqs));
 
-	XrGraphicsBindingOpenGLWin32KHR graphicsBinding{ XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR };
-	graphicsBinding.hDC = wglGetCurrentDC();
-	graphicsBinding.hGLRC = wglGetCurrentContext();
+	XrGraphicsBindingOpenGLWin32KHR GraphicsBinding{ XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR };
+	GraphicsBinding.hDC = wglGetCurrentDC();
+	GraphicsBinding.hGLRC = wglGetCurrentContext();
 
 	XrSessionCreateInfo SessionCreateInfo = { XR_TYPE_SESSION_CREATE_INFO };
-	SessionCreateInfo.next = &graphicsBinding;
+	SessionCreateInfo.next = &GraphicsBinding;
 	SessionCreateInfo.systemId = SystemID;
 
 	FE_OPENXR_ERROR(xrCreateSession(OpenXRInstance, &SessionCreateInfo, &Session));

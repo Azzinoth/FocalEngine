@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../SubSystems/FEFileSystem.h"
+#include "../SubSystems/FileSystem/FEFileSystem.h"
 #include "../Core/FEGeometricTools.h"
 
 namespace FocalEngine
@@ -57,6 +57,10 @@ namespace FocalEngine
 		// material records
 		std::vector<MaterialRecord> MaterialRecords;
 		std::vector<float> MatIDs;
+
+		// Used for saving
+		std::vector<int> NormalIndices;
+		std::vector<int> UVIndices;
 	};
 
 	class FEObjLoader
@@ -82,6 +86,8 @@ namespace FocalEngine
 		// Use to get raw data from the loaded file.
 		// Recommenede only if you know what you are doing.
 		std::vector<FERawOBJData*>* GetLoadedObjects();
+
+		bool SaveToOBJ(const char* FileName, FERawOBJData* Data);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjLoader)
 			
@@ -102,13 +108,10 @@ namespace FocalEngine
 		void ReadMaterialLine(std::stringstream& LineStream);
 		bool CheckCurrentMaterialObject();
 
-		void ReadLine(std::stringstream& lineStream, FERawOBJData* data);
+		void ReadLine(std::stringstream& LineStream, FERawOBJData* Data);
 		void ProcessRawData(FERawOBJData* Data);
 
-		glm::vec3 CalculateNormal(glm::dvec3 V0, glm::dvec3 V1, glm::dvec3 V2);
 		void CalculateNormals(FERawOBJData* Data);
-
-		glm::vec3 CalculateTangent(const glm::vec3 V0, const glm::vec3 V1, const glm::vec3 V2, std::vector<glm::vec2>&& Textures);
 		void CalculateTangents(FERawOBJData* Data);
 
 		void NormalizeVertexPositions(FERawOBJData* Data);

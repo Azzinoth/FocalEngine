@@ -101,7 +101,7 @@ void FETexture::GPUAllocateTeture(const GLenum Target, const GLint Level, const 
 {
 	FE_GL_ERROR(glTexImage2D(Target, Level, Internalformat, Width, Height, Border, Format, Type, Data));
 #ifdef FE_GPUMEM_ALLOCATION_LOGING
-	FELOG::getInstance().logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
+	LOG.logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
 #endif
 }
 
@@ -124,30 +124,30 @@ void FETexture::EraseFromOnDeleteCallBackList(const std::string ObjectID)
 
 std::string FETexture::TextureInternalFormatToString(const GLint InternalFormat)
 {
-	std::string result;
+	std::string Result;
 
 	if (InternalFormat == GL_RGBA)
 	{
-		result += "GL_RGBA";
+		Result += "GL_RGBA";
 	}
 	else if (InternalFormat == GL_RED)
 	{
-		result += "GL_RED";
+		Result += "GL_RED";
 	}
 	else if (InternalFormat == GL_R16)
 	{
-		result += "GL_R16";
+		Result += "GL_R16";
 	}
 	else if (InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
 	{
-		result += "GL_COMPRESSED_RGBA_S3TC_DXT5_EXT";
+		Result += "GL_COMPRESSED_RGBA_S3TC_DXT5_EXT";
 	}
 	else if (InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		result += "GL_COMPRESSED_RGBA_S3TC_DXT1_EXT";
+		Result += "GL_COMPRESSED_RGBA_S3TC_DXT1_EXT";
 	}
 	
-	return result;
+	return Result;
 }
 
 std::vector<GLuint> FETexture::NoDeletingList = std::vector<GLuint>();
@@ -158,60 +158,96 @@ void FETexture::AddToNoDeletingList(const GLuint TextureID)
 
 unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 {
-	unsigned char* result = nullptr;
+	unsigned char* Result = nullptr;
 	if (RawDataSize != nullptr)
 		*RawDataSize = 0;
 
 	if (InternalFormat != GL_RGBA &&
+		InternalFormat != GL_RGB &&
 		InternalFormat != GL_RED &&
 		InternalFormat != GL_R16 &&
+		InternalFormat != GL_RG16F &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
-		InternalFormat != GL_RGBA16F)
+		InternalFormat != GL_RGBA16F &&
+		InternalFormat != GL_DEPTH24_STENCIL8 &&
+		InternalFormat != GL_DEPTH_COMPONENT32)
 	{
-		LOG.Add("FETexture::getRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
-		return result;
+		LOG.Add("FETexture::GetRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return Result;
 	}
 
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
 
-	if (InternalFormat == GL_RGBA16F)
+	if (InternalFormat == GL_RG16F)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = GetWidth() * GetHeight() * 2 * sizeof(unsigned short);
+		Result = new unsigned char[GetWidth() * GetHeight() * 2 * sizeof(unsigned short)];
+		glPixelStorei(GL_PACK_ALIGNMENT, 2);
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_HALF_FLOAT, Result));
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	}
+	else if (InternalFormat == GL_DEPTH_COMPONENT32)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = GetWidth() * GetHeight() * sizeof(float);
+		Result = new unsigned char[GetWidth() * GetHeight() * sizeof(float)];
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, Result));
+	}
+	else if (InternalFormat == GL_DEPTH24_STENCIL8)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = GetWidth() * GetHeight() * 4;
+		Result = new unsigned char[GetWidth() * GetHeight() * 4];
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, Result));
+	}
+	else if (InternalFormat == GL_RGBA16F)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 4 * sizeof(unsigned short);
-		result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
+
+		Result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_R16)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 2;
-		result = new unsigned char[GetWidth() * GetHeight() * 2];
+		Result = new unsigned char[GetWidth() * GetHeight() * 2];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_RED)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight();
-		result = new unsigned char[GetWidth() * GetHeight()];
+		Result = new unsigned char[GetWidth() * GetHeight()];
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, result));
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
-	else
+	// Check GL_COMPRESSED_RGBA_S3TC_DXT5_EXT and GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+	else if (InternalFormat == GL_RGBA || InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT || InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
 		if (RawDataSize != nullptr)
 			*RawDataSize = GetWidth() * GetHeight() * 4;
-		result = new unsigned char[GetWidth() * GetHeight() * 4];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, result));
+		Result = new unsigned char[GetWidth() * GetHeight() * 4];
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Result));
+	}
+	else if (InternalFormat == GL_RGB)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = GetWidth() * GetHeight() * 3;
+		Result = new unsigned char[GetWidth() * GetHeight() * 3];
+		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, Result));
 	}
 
-	return result;
+	return Result;
 }
 
 void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
@@ -219,6 +255,7 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
 	if (InternalFormat != GL_RGBA &&
 		InternalFormat != GL_RED &&
 		InternalFormat != GL_R16 &&
+		InternalFormat != GL_RGBA16F &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
@@ -243,7 +280,14 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
 	FE_GL_ERROR(glGenTextures(1, &TextureID));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
 
-	if (InternalFormat == GL_RGBA)
+	if (InternalFormat == GL_RGBA16F)
+	{
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_RGBA16F, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_HALF_FLOAT, (void*)(NewRawData)));
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+	}
+	else if (InternalFormat == GL_RGBA)
 	{
 		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_RGBA8, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(NewRawData)));

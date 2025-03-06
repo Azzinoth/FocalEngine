@@ -37,8 +37,20 @@ void FEMaterial::Bind()
 			Textures[i]->Bind(static_cast<int>(i));
 	}
 
-	// #fix such specific if statement in this class is not clean coding
-	Shader->UpdateParameterData("baseColor", BaseColor);
+	auto UniformVariationIterator = UniformVariations.begin();
+	while (UniformVariationIterator != UniformVariations.end())
+	{
+		FEShaderUniform* Uniform = Shader->GetUniform(UniformVariationIterator->first);
+		if (Uniform == nullptr)
+		{
+			LOG.Add("FEMaterial::Bind() failed to bind variation on non existing uniform: " + UniformVariationIterator->first, "FE_LOG_RENDERING", FE_LOG_WARNING);
+			UniformVariationIterator++;
+			continue;
+		}
+
+		Uniform->CurrentValue = UniformVariationIterator->second;
+		UniformVariationIterator++;
+	}
 }
 
 void FEMaterial::UnBind()
@@ -53,60 +65,62 @@ void FEMaterial::UnBind()
 	}
 }
 
-void FEMaterial::SetParam(const std::string Name, const int NewData) const
+bool FEMaterial::SetUniformVariation(const FEShaderUniformValue NewUniformVariation)
 {
-	Shader->UpdateParameterData(Name, NewData);
+	if (Shader->GetUniform(NewUniformVariation.GetName()) == nullptr)
+	{
+		LOG.Add("FEMaterial::SetUniformVariation() failed to set variation on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return false;
+	}
+
+	UniformVariations[NewUniformVariation.GetName()] = NewUniformVariation;
+	return true;
 }
 
-void FEMaterial::SetParam(const std::string Name, const float NewData) const
+std::vector<std::string> FEMaterial::GetUniformNameList() const
 {
-	Shader->UpdateParameterData(Name, NewData);
+	return Shader->GetUniformNameList();
 }
 
-void FEMaterial::SetParam(const std::string Name, const glm::vec2 NewData) const
+std::vector<std::string> FEMaterial::GetUniformVariationsNameList() const
 {
-	Shader->UpdateParameterData(Name, NewData);
+	FE_MAP_TO_STR_VECTOR(UniformVariations);
 }
 
-void FEMaterial::SetParam(const std::string Name, const glm::vec3 NewData) const
+FEShaderUniformValue* FEMaterial::GetUniformVariation(std::string Name)
 {
-	Shader->UpdateParameterData(Name, NewData);
+	if (UniformVariations.find(Name) == UniformVariations.end())
+		return nullptr;
+
+	return &UniformVariations[Name];
 }
 
-void FEMaterial::SetParam(const std::string Name, const glm::vec4 NewData) const
+glm::vec3 FEMaterial::GetBaseColor()
 {
-	Shader->UpdateParameterData(Name, NewData);
+	if (Shader->GetUniform("baseColor") == nullptr)
+	{
+		LOG.Add("FEMaterial::GetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return glm::vec3();
+	}
+
+	if (UniformVariations.find("baseColor") == UniformVariations.end())
+	{
+		LOG.Add("FEMaterial::GetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return glm::vec3();
+	}
+	
+	return UniformVariations["baseColor"].GetValue<glm::vec3>();
 }
 
-void FEMaterial::SetParam(const std::string Name, const glm::mat4 NewData) const
-{
-	Shader->UpdateParameterData(Name, NewData);
-}
-
-void FEMaterial::AddParameter(const FEShaderParam NewParameter) const
-{
-	Shader->AddParameter(NewParameter);
-}
-
-std::vector<std::string> FEMaterial::GetParameterList() const
-{
-	return Shader->GetParameterList();
-}
-
-FEShaderParam* FEMaterial::GetParameter(const std::string Name) const
-{
-	return Shader->GetParameter(Name);
-}
-
-glm::vec3 FEMaterial::GetBaseColor() const
-{
-	return BaseColor;
-}
-
-// Only influence color of object if shader with such uniform is applied.
 void FEMaterial::SetBaseColor(const glm::vec3 NewValue)
 {
-	BaseColor = NewValue;
+	if (Shader->GetUniform("baseColor") == nullptr)
+	{
+		LOG.Add("FEMaterial::SetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return;
+	}
+
+	UniformVariations["baseColor"] = FEShaderUniformValue("baseColor", NewValue);
 }
 
 float FEMaterial::GetMetalness() const
@@ -419,7 +433,7 @@ FETexture* FEMaterial::GetSpecifiedMap(const int BindingIndex, const int SubMate
 	if (TextureBindings[BindingIndex + SubMaterial * 6] == -1)
 		return nullptr;
 
-	// clean up messed up textureBindings.
+	// Clean up invalid TextureBindings
 	if (Textures[TextureBindings[BindingIndex + SubMaterial * 6]] == nullptr)
 	{
 		TextureBindings[BindingIndex + SubMaterial * 6] = -1;
@@ -496,7 +510,7 @@ void FEMaterial::ClearAllTexturesInfo()
 
 bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 {
-	bool result = false;
+	bool Result = false;
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (Textures[i] == nullptr)
@@ -504,12 +518,12 @@ bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 
 		if (Textures[i]->GetObjectID() == Texture->GetObjectID())
 		{
-			result = true;
-			return result;
+			Result = true;
+			return Result;
 		}
 	}
 
-	return result;
+	return Result;
 }
 
 bool FEMaterial::IsCompackPacking()
@@ -593,14 +607,14 @@ void FEMaterial::ClearTextureBinding(const int Index, const int SubMaterial, con
 
 int FEMaterial::GetUsedTexturesCount() const
 {
-	int result = 0;
+	int Result = 0;
 	for (size_t i = 0; i < Textures.size(); i++)
 	{
 		if (Textures[i] != nullptr)
-			result++;
+			Result++;
 	}
 
-	return result;
+	return Result;
 }
 
 float FEMaterial::GetDisplacementMapIntensity() const

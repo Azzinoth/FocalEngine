@@ -36,10 +36,10 @@ uniform float SSAOActive;
 
 struct FELight
 {
-	vec3 typeAndAngles;
-	vec3 position;
-	vec3 color;
-	vec3 direction;
+	vec4 typeAndAngles;
+	vec4 position;
+	vec4 color;
+	vec4 direction;
 	mat4 lightSpace;
 };
 
@@ -110,19 +110,16 @@ float getAO()
 
 float getRoughness()
 {
-	//return texture(textures[2], FS_IN.UV).g;
 	return materialProperties.g;
 }
 
 float getMetalness()
 {
-	//return texture(textures[2], FS_IN.UV).b;
 	return materialProperties.b;
 }
 
 float getDisplacement()
 {
-	//return texture(textures[2], FS_IN.UV).a;
 	return materialProperties.a;
 }
 
@@ -325,20 +322,27 @@ void main(void)
 		if (FElight[i].color.x == 0 && FElight[i].color.y == 0 && FElight[i].color.z == 0)
 			continue;
 
-		if (FElight[i].typeAndAngles.x == 1)
+		if (FElight[i].typeAndAngles.x == 2)
 		{
 			outColor += vec4(pointLightColor(FElight[i], normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
 		}
-		else if (FElight[i].typeAndAngles.x == 2)
+		else if (FElight[i].typeAndAngles.x == 3)
 		{
 			outColor += vec4(spotLightColor(FElight[i], normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
 		}
 	}
 
 	outColor += vec4(directionalLightColor(normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
-	// shaderID tell us that it is terrain
-	if (texture(textures[4], FS_IN.UV).r == 1)
+
+	// TODO: Make ShaderID more general, right now it pretty limited.
+	vec4 ShaderID = texture(textures[4], FS_IN.UV);
+	// If ShaderID is 1, then it is terrain
+	if (ShaderID.r == 1)
 		outColor += vec4(texture(textures[4], FS_IN.UV).g, texture(textures[4], FS_IN.UV).b, texture(textures[4], FS_IN.UV).a , 1.0);
+
+	// If ShaderID is not 0 or 1, then it is clear color, pass it through without any changes
+	if ((ShaderID.r != 0 || ShaderID.g != 0 || ShaderID.b != 0) && (ShaderID.r != 1))
+		outColor = getAlbedo();
 
 	// test fog
 	if (fogDensity > 0.0f && fogGradient > 0.0f)
