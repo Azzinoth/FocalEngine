@@ -1,6 +1,7 @@
 #pragma once
 
-#include "FEEntity.h"
+#include "FEFramebuffer.h"
+#include "FEMesh.h"
 
 namespace FocalEngine
 {
@@ -17,7 +18,7 @@ namespace FocalEngine
 		FEPostProcessStage(int InTextureSource, FEShader* Shader);
 		FEPostProcessStage(std::vector<int>&& InTextureSource, FEShader* Shader);
 
-		std::vector<FEShaderParam> StageSpecificUniforms;
+		std::vector<FEShaderUniformValue> StageSpecificUniformValues;
 		std::vector<int> InTextureSource;
 		std::vector<FETexture*> InTexture;
 		FEShader* Shader = nullptr;
@@ -45,8 +46,8 @@ namespace FocalEngine
 		FEPostProcess(std::string Name);
 
 		int ScreenWidth, ScreenHeight;
-		FEMesh* ScreenQuad;
-		FEShader* ScreenQuadShader;
+		static FEMesh* ScreenQuad;
+		static FEShader* ScreenQuadShader;
 		FETexture* InTexture = nullptr;
 		FETexture* FinalTexture = nullptr;
 

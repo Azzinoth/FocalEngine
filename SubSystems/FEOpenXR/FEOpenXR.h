@@ -20,5 +20,10 @@ namespace FocalEngine
 		void PollEvents();
 	};
 
-#define OpenXR_MANAGER FEOpenXR::getInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetOpenXR();
+	#define OpenXR_MANAGER (*static_cast<FEOpenXR*>(GetOpenXR()))
+#else
+	#define OpenXR_MANAGER FEOpenXR::GetInstance()
+#endif
 }

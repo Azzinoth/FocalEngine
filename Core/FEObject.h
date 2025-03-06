@@ -16,35 +16,53 @@ namespace FocalEngine
 		FE_MATERIAL = 4,
 		FE_GAMEMODEL = 5,
 		FE_ENTITY = 6,
-		FE_TERRAIN = 7,
-		FE_ENTITY_INSTANCED = 8,
-		FE_DIRECTIONAL_LIGHT = 9,
-		FE_POINT_LIGHT = 10,
-		FE_SPOT_LIGHT = 11,
-		FE_CAMERA = 12,
-		FE_FRAME_BUFFER = 13,
-		FE_POST_PROCESS = 14,
-		FE_TERRAIN_LAYER = 15,
-		FE_PREFAB = 16,
-		FE_VIRTUAL_UI_CONTEXT = 17,
-		FE_SCENE_ENTITY = 18
+		FE_FRAME_BUFFER = 7,
+		FE_POST_PROCESS = 8,
+		FE_TERRAIN_LAYER = 9,
+		FE_PREFAB = 10,
+		FE_SCENE_GRAPH_NODE = 11,
+		FE_SCENE = 12,
+		FE_ASSET_PACKAGE = 13,
+		FE_NATIVE_SCRIPT_MODULE = 14
 	};
 
-	class FEObjectManager
+	struct FEObjectLoadedData
+	{
+		std::string ID;
+		FE_OBJECT_TYPE Type = FE_NULL;
+		std::string Tag;
+		std::string Name;
+	};
+
+	class FOCAL_ENGINE_API FEObjectManager
 	{
 		friend class FEObject;
 		friend class FEngine;
 		friend class FERenderer;
 		friend class FEResourceManager;
 		friend class FEScene;
+		friend class FESceneManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
 		FEObject* GetFEObject(std::string ID);
+		// Takes open file stream and saves the object part of the file.
+		void SaveFEObjectPart(std::fstream& OpenedFile, FEObject* Object);
+		// Takes open file stream and loads the object part of the file, also returns bytes read.
+		FEObjectLoadedData LoadFEObjectPart(std::fstream& OpenedFile);
+		// Takes file data as char* and loads the object part, also returns bytes read.
+		FEObjectLoadedData LoadFEObjectPart(char* FileData, int& CurrentShift);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjectManager)
 		std::unordered_map<std::string, FEObject*> AllObjects;
 		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
 	};
+
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetObjectManager();
+	#define OBJECT_MANAGER (*static_cast<FEObjectManager*>(GetObjectManager()))
+#else
+	#define OBJECT_MANAGER FEObjectManager::GetInstance()
+#endif
 
 	static std::string FEObjectTypeToString(const FE_OBJECT_TYPE Type)
 	{
@@ -78,30 +96,6 @@ namespace FocalEngine
 			{
 				return "FE_ENTITY";
 			}
-			case FocalEngine::FE_TERRAIN:
-			{
-				return "FE_TERRAIN";
-			}
-			case FocalEngine::FE_ENTITY_INSTANCED:
-			{
-				return "FE_ENTITY_INSTANCED";
-			}
-			case FocalEngine::FE_DIRECTIONAL_LIGHT:
-			{
-				return "FE_DIRECTIONAL_LIGHT";
-			}
-			case FocalEngine::FE_POINT_LIGHT:
-			{
-				return "FE_POINT_LIGHT";
-			}
-			case FocalEngine::FE_SPOT_LIGHT:
-			{
-				return "FE_SPOT_LIGHT";
-			}
-			case FocalEngine::FE_CAMERA:
-			{
-				return "FE_CAMERA";
-			}
 			case FocalEngine::FE_FRAME_BUFFER:
 			{
 				return "FE_FRAME_BUFFER";
@@ -114,13 +108,21 @@ namespace FocalEngine
 			{
 				return "FE_PREFAB";
 			}
-			case FocalEngine::FE_VIRTUAL_UI_CONTEXT:
+			case FocalEngine::FE_SCENE_GRAPH_NODE:
 			{
-				return "FE_VIRTUAL_UI_CONTEXT";
+				return "FE_SCENE_GRAPH_NODE";
 			}
-			case FocalEngine::FE_SCENE_ENTITY:
+			case FocalEngine::FE_SCENE:
 			{
-				return "FE_SCENE_ENTITY";
+				return "FE_SCENE";
+			}
+			case FocalEngine::FE_ASSET_PACKAGE:
+			{
+				return "FE_ASSET_PACKAGE";
+			}
+			case FocalEngine::FE_NATIVE_SCRIPT_MODULE:
+			{
+				return "FE_NATIVE_SCRIPT_MODULE";
 			}
 			default:
 				break;
@@ -129,26 +131,32 @@ namespace FocalEngine
 		return "FE_NULL";
 	}
 
-	class FEObject
+	class FOCAL_ENGINE_API FEObject
 	{
+		friend class FEObjectManager;
 		friend class FEngine;
+		friend class FERenderer;
 		friend class FEShader;
 		friend class FEMesh;
 		friend class FETexture;
 		friend class FEMaterial;
 		friend class FEGameModel;
 		friend class FEEntity;
-		friend class FETerrain;
-		friend class FEEntityInstanced;
 		friend class FEResourceManager;
 		friend class FENaiveSceneGraphNode;
 		friend class FEScene;
+		friend class FESceneManager;
+		friend class FETerrainSystem;
+		friend class FESkyDomeSystem;
+		friend class FENativeScriptSystem;
 	public:
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();
 
 		std::string GetObjectID() const;
 		FE_OBJECT_TYPE GetType() const;
+
+		std::string GetTag() const;
 
 		bool IsDirty() const;
 		void SetDirtyFlag(bool NewValue);
@@ -161,18 +169,19 @@ namespace FocalEngine
 	private:
 		std::string ID;
 		FE_OBJECT_TYPE Type = FE_NULL;
+		std::string Tag = "";
 		bool bDirtyFlag = false;
 
 		std::string Name;
 		int NameHash = 0;
 		void SetID(std::string NewValue);
+		void SetTag(std::string NewValue);
 		void SetType(FE_OBJECT_TYPE NewValue);
+
 	protected:
 		std::vector<std::string> CallListOnDeleteFEObject;
 		virtual void ProcessOnDeleteCallbacks(std::string DeletingFEObject);
 	};
-
-	#define OBJECT_MANAGER FEObjectManager::getInstance()
 }
 
 #endif FEOBJECT_H

@@ -5,18 +5,14 @@
 
 namespace FocalEngine
 {
-	class FEEntity;
-	class FEEntityInstanced;
-	class FERenderer;
-	class FEResourceManager;
-
 	class FEMesh : public FEObject
 	{	
-		friend FEEntity;
-		friend FEEntityInstanced;
-		friend FERenderer;
-		friend FEResourceManager;
+		friend class FEEntity;
+		friend class FEInstancedSystem;
+		friend class FERenderer;
+		friend class FEResourceManager;
 	public:
+		FEMesh() : FEObject(FE_MESH, "Name") {};
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
 		~FEMesh();
 

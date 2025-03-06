@@ -1,205 +1,6 @@
 #include "FEShader.h"
 using namespace FocalEngine;
 
-FEShaderParam::FEShaderParam()
-{
-	Data = nullptr;
-}
-
-std::string FEShaderParam::GetName()
-{
-	return Name;
-}
-
-void FEShaderParam::SetName(const std::string NewName)
-{
-	Name = NewName;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const bool Data, const std::string Name)
-{
-	this->Data = new bool(Data);
-	Type = FE_BOOL_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const int Data, const std::string Name)
-{
-	this->Data = new int(Data);
-	Type = FE_INT_SCALAR_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const float Data, const std::string Name)
-{
-	this->Data = new float(Data);
-	Type = FE_FLOAT_SCALAR_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const glm::vec2 Data, const std::string Name)
-{
-	this->Data = new glm::vec2(Data);
-	Type = FE_VECTOR2_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const glm::vec3 Data, const std::string Name)
-{
-	this->Data = new glm::vec3(Data);
-	Type = FE_VECTOR3_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const glm::vec4 Data, const std::string Name)
-{
-	this->Data = new glm::vec4(Data);
-	Type = FE_VECTOR4_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-FEShaderParam::FEShaderParam(const glm::mat4 Data, const std::string Name)
-{
-	this->Data = new glm::mat4(Data);
-	Type = FE_MAT4_UNIFORM;
-	this->Name = Name;
-	NameHash = static_cast<int>(std::hash<std::string>{}(Name));
-}
-
-void FEShaderParam::CopyCode(const FEShaderParam& Copy)
-{
-	switch (Copy.Type)
-	{
-		case FE_BOOL_UNIFORM:
-		{
-			Data = new bool;
-			*static_cast<bool*>(Data) = *static_cast<bool*>(Copy.Data);
-			break;
-		}
-
-		case FE_INT_SCALAR_UNIFORM:
-		{
-			Data = new int;
-			*static_cast<int*>(Data) = *static_cast<int*>(Copy.Data);
-			break;
-		}
-
-		case FE_FLOAT_SCALAR_UNIFORM:
-		{
-			Data = new float;
-			*static_cast<float*>(Data) = *static_cast<float*>(Copy.Data);
-			break;
-		}
-
-		case FE_VECTOR2_UNIFORM:
-		{
-			Data = new glm::vec2;
-			*static_cast<glm::vec2*>(Data) = *static_cast<glm::vec2*>(Copy.Data);
-			break;
-		}
-
-		case FE_VECTOR3_UNIFORM:
-		{
-			Data = new glm::vec3;
-			*static_cast<glm::vec3*>(Data) = *static_cast<glm::vec3*>(Copy.Data);
-			break;
-		}
-
-		case FE_VECTOR4_UNIFORM:
-		{
-			Data = new glm::vec4;
-			*static_cast<glm::vec4*>(Data) = *static_cast<glm::vec4*>(Copy.Data);
-			break;
-		}
-
-		case FE_MAT4_UNIFORM:
-		{
-			Data = new glm::mat4;
-			*static_cast<glm::mat4*>(Data) = *static_cast<glm::mat4*>(Copy.Data);
-			break;
-		}
-
-		default:
-			break;
-	}
-}
-
-FEShaderParam::FEShaderParam(const FEShaderParam& Copy)
-{
-	this->Type = Copy.Type;
-	this->Name = Copy.Name;
-	this->NameHash = Copy.NameHash;
-
-	CopyCode(Copy);
-}
-
-void FEShaderParam::operator=(const FEShaderParam& Assign)
-{
-	if (&Assign != this)
-		this->~FEShaderParam();
-
-	this->Type = Assign.Type;
-	this->Name = Assign.Name;
-	this->NameHash = Assign.NameHash;
-
-	CopyCode(Assign);
-}
-
-FEShaderParam::~FEShaderParam()
-{
-	if (Data == nullptr)
-		return;
-
-	switch (Type)
-	{
-		case FE_INT_SCALAR_UNIFORM:
-		{
-			delete static_cast<int*>(Data);
-			break;
-		}
-	
-		case FE_FLOAT_SCALAR_UNIFORM:
-		{
-			delete static_cast<float*>(Data);
-			break;
-		}
-	
-		case FE_VECTOR2_UNIFORM:
-		{
-			delete static_cast<glm::vec2*>(Data);
-			break;
-		}
-	
-		case FE_VECTOR3_UNIFORM:
-		{
-			delete static_cast<glm::vec3*>(Data);
-			break;
-		}
-	
-		case FE_VECTOR4_UNIFORM:
-		{
-			delete static_cast<glm::vec4*>(Data);
-			break;
-		}
-	
-		case FE_MAT4_UNIFORM:
-		{
-			delete static_cast<glm::mat4*>(Data);
-			break;
-		}
-	
-		default:
-			break;
-	}
-}
-
 FEShader::FEShader(const std::string Name, const char* VertexText, const char* FragmentText,
                    const char* TessControlText, const char* TessEvalText,
                    const char* GeometryText, const char* ComputeText, const bool TestCompilation, const int GlslVersion) : FEObject(FE_SHADER, Name)
@@ -292,6 +93,7 @@ FEShader::FEShader(const std::string Name, const char* VertexText, const char* F
 	if (ComputeText != nullptr)
 		FE_GL_ERROR(glDeleteShader(ComputeShaderID));
 
+	RegisterActiveAttributes();
 	RegisterUniforms();
 
 #ifdef FE_DEBUG_ENABLED
@@ -349,9 +151,8 @@ void FEShader::CopyCode(const FEShader& Shader)
 
 	VertexAttributes = Shader.VertexAttributes;
 
-	Parameters = Shader.Parameters;
+	Uniforms = Shader.Uniforms;
 	BlockUniforms = Shader.BlockUniforms;
-	UniformLocations = Shader.UniformLocations;
 	TextureUniforms = Shader.TextureUniforms;
 
 	bCSM = Shader.bCSM;
@@ -385,68 +186,276 @@ FEShader::~FEShader()
 
 void FEShader::RegisterUniforms()
 {
-	GLint Count;
-	GLint Size;
-	GLenum Type;
+	GLint UniformCount;
+	GLint UniformSize;
+	GLenum UniformType;
+	GLsizei ActualUniformNameLength;
 
-	GLsizei Length;
-
-	FE_GL_ERROR(glGetProgramiv(ProgramID, GL_ACTIVE_UNIFORMS, &Count));
-	for (size_t i = 0; i < static_cast<size_t>(Count); i++)
+	FE_GL_ERROR(glGetProgramiv(ProgramID, GL_ACTIVE_UNIFORMS, &UniformCount));
+	for (size_t i = 0; i < static_cast<size_t>(UniformCount); i++)
 	{
-		const GLsizei BufSize = 64;
-		GLchar name[BufSize];
-		FE_GL_ERROR(glGetActiveUniform(ProgramID, static_cast<GLuint>(i), BufSize, &Length, &Size, &Type, name));
-		// arrays are not currently part of params
-		if (std::string(name).find("[") != std::string::npos)
-			continue;
+		const GLsizei MaxUniformNameLength = 512;
+		GLchar UniformName[MaxUniformNameLength];
+		FE_GL_ERROR(glGetActiveUniform(ProgramID, static_cast<GLuint>(i), MaxUniformNameLength, &ActualUniformNameLength, &UniformSize, &UniformType, UniformName));
 		
-		switch (Type)
+		std::string UniformNameString = UniformName;
+		if (UniformNameString.find("debugFlag") != std::string::npos)
+		{
+			int y = 0;
+			y++;
+			//bDebugRequest = true;
+			//continue;
+		}
+
+		bool bIsArray = ((UniformSize > 1) && (UniformNameString.find('[') != std::string::npos));
+		std::string UniformArrayName = "";
+		if (bIsArray)
+			UniformArrayName = UniformNameString.substr(0, UniformNameString.find('['));
+
+		std::vector<GLuint> Locations;
+		if (bIsArray)
+		{
+			for (size_t i = 0; i < UniformSize; i++)
+			{
+				std::string CurrentVariableName = UniformArrayName + "[" + std::to_string(i) + "]";
+				GLuint Location = -1;
+				FE_GL_ERROR(Location = glGetUniformLocation(ProgramID, CurrentVariableName.c_str()));
+				Locations.push_back(Location);
+			}
+		}
+		else
+		{
+			GLuint Location = -1;
+			FE_GL_ERROR(Location = glGetUniformLocation(ProgramID, UniformName));
+			Locations.push_back(Location);
+		}
+		
+		switch (UniformType)
 		{
 			case GL_BOOL:
 			{
-				AddParameter(FEShaderParam(false, name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_BOOL_ARRAY, std::vector<bool>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_BOOL, false, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_UNSIGNED_INT:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_UNSIGNED_INT_ARRAY, std::vector<unsigned int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_UNSIGNED_INT, 0, UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_INT:
 			{
-				AddParameter(FEShaderParam(0, name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_INT_ARRAY, std::vector<int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_INT, 0, UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_FLOAT:
 			{
-				AddParameter(FEShaderParam(0.0f, name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_ARRAY, std::vector<float>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT, 0.0f, UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_FLOAT_VEC2:
 			{
-				AddParameter(FEShaderParam(glm::vec2(0.0f), name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR2_ARRAY, std::vector<glm::vec2>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR2, glm::vec2(0.0f), UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_FLOAT_VEC3:
 			{
-				AddParameter(FEShaderParam(glm::vec3(0.0f), name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR3_ARRAY, std::vector<glm::vec3>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR3, glm::vec3(0.0f), UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_FLOAT_VEC4:
 			{
-				AddParameter(FEShaderParam(glm::vec4(0.0f), name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR4_ARRAY, std::vector<glm::vec4>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR4, glm::vec4(0.0f), UniformName, Locations));
+				}
+
 				break;
 			}
 
 			case GL_FLOAT_MAT4:
 			{
-				AddParameter(FEShaderParam(glm::mat4(1.0f), name));
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_MAT4_ARRAY, std::vector<glm::mat4>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_MAT4, glm::mat4(1.0f), UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_SAMPLER_1D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_1D_ARRAY, Locations, UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_1D, 0, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_SAMPLER_2D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_2D_ARRAY, Locations, UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_2D, 0, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_SAMPLER_3D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_3D_ARRAY, Locations, UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_3D, 0, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_SAMPLER_CUBE:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_CUBE_ARRAY, Locations, UniformArrayName, Locations));
+				}
+				else
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_CUBE, 0, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_IMAGE_1D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_1D_ARRAY, std::vector<unsigned int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					// TODO: check if this make sense
+					GLint BindingPoint;
+					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_1D, BindingPoint, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_IMAGE_2D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_2D_ARRAY, std::vector<unsigned int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					// TODO: check if this make sense
+					GLint BindingPoint;
+					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_2D, BindingPoint, UniformName, Locations));
+				}
+
+				break;
+			}
+
+			case GL_IMAGE_3D:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D_ARRAY, std::vector<unsigned int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					// TODO: check if this make sense
+					GLint BindingPoint;
+					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D, BindingPoint, UniformName, Locations));
+				}
+
 				break;
 			}
 
 			default:
+			{
+				LOG.Add("FEShader::RegisterUniforms() unknown uniform type: " + std::to_string(UniformType), "FE_LOG_RENDERING", FE_LOG_ERROR);
 				break;
+			}	
 		}
 	}
 	
@@ -472,12 +481,7 @@ void FEShader::RegisterUniforms()
 	{
 		for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 		{
-			std::string Temp = "textures[" + std::to_string(i) + "]";
-			std::string SecondTemp = "textureBindings[" + std::to_string(i) + "]";
-			std::string ThirdTemp = "textureChannels[" + std::to_string(i) + "]";
-			FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, Temp.c_str()), static_cast<int>(i)));
-			UniformLocations[static_cast<int>(std::hash<std::string>{}(SecondTemp))] = glGetUniformLocation(ProgramID, SecondTemp.c_str());
-			UniformLocations[static_cast<int>(std::hash<std::string>{}(ThirdTemp))] = glGetUniformLocation(ProgramID, ThirdTemp.c_str());
+			FE_GL_ERROR(glUniform1i(GetUniform("textures")->Locations[i], static_cast<int>(i)));
 		}
 
 		// 16 textures for material + 4 CSM textures at the end. Next available binding is 20. Max is 27.
@@ -514,6 +518,7 @@ void FEShader::RegisterUniforms()
 		FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, "CSM2"), FE_CSM_UNIT + 2));
 		FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, "CSM3"), FE_CSM_UNIT + 3));
 	}
+
 	Stop();
 }
 
@@ -618,7 +623,7 @@ void FEShader::CleanUp()
 	delete[] ComputeShaderText;
 	ComputeShaderText = nullptr;
 
-	Parameters.clear();
+	Uniforms.clear();
 #ifdef FE_DEBUG_ENABLED
 	if (bDebugRequest)
 		FE_GL_ERROR(glDeleteBuffers(1, &SSBO));
@@ -890,7 +895,7 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 			ParsedShaderText.erase(Index, strlen(FE_DEBUG_MACRO));
 		}
 
-		// find next if it is exist
+		// Find next if it exists
 		Index = ParsedShaderText.find(FE_DEBUG_MACRO);
 	}
 
@@ -937,150 +942,56 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 	return ParsedShaderText;
 }
 
-GLuint FEShader::GetUniformLocation(const int& UniformNameHash)
+void FEShader::LoadUniformsDataToGPU()
 {
-	return UniformLocations[UniformNameHash];
-}
-
-void FEShader::LoadScalar(const int& UniformNameHash, const GLboolean& Value)
-{
-	FE_GL_ERROR(glUniform1f(UniformLocations[UniformNameHash], Value));
-}
-
-void FEShader::LoadScalar(const int& UniformNameHash, const GLfloat& Value)
-{
-	FE_GL_ERROR(glUniform1f(UniformLocations[UniformNameHash], Value));
-}
-
-void FEShader::LoadScalar(const int& UniformNameHash, const GLint& Value)
-{
-	FE_GL_ERROR(glUniform1i(UniformLocations[UniformNameHash], Value));
-}
-
-void FEShader::LoadVector(const int& UniformNameHash, const glm::vec2& Vector)
-{
-	FE_GL_ERROR(glUniform2f(UniformLocations[UniformNameHash], Vector.x, Vector.y));
-}
-
-void FEShader::LoadVector(const int& UniformNameHash, const glm::vec3& Vector)
-{
-	FE_GL_ERROR(glUniform3f(UniformLocations[UniformNameHash], Vector.x, Vector.y, Vector.z));
-}
-
-void FEShader::LoadVector(const int& UniformNameHash, const glm::vec4& Vector)
-{
-	FE_GL_ERROR(glUniform4f(UniformLocations[UniformNameHash], Vector.x, Vector.y, Vector.z, Vector.w));
-}
-
-void FEShader::LoadMatrix(const int& UniformNameHash, glm::mat4& Matrix)
-{
-	FE_GL_ERROR(glUniformMatrix4fv(UniformLocations[UniformNameHash], 1, false, glm::value_ptr(Matrix)));
-}
-
-void FEShader::LoadIntArray(const int& UniformNameHash, const GLint* Array, const size_t ArraySize)
-{
-	FE_GL_ERROR(glUniform1iv(UniformLocations[UniformNameHash], static_cast<int>(ArraySize), Array));
-}
-
-void FEShader::LoadIntArray(const GLuint UniformLocation, const GLint* Array, const size_t ArraySize)
-{
-	FE_GL_ERROR(glUniform1iv(UniformLocation, static_cast<int>(ArraySize), Array));
-}
-
-void FEShader::LoadFloatArray(const int& UniformNameHash, const GLfloat* Array, const size_t ArraySize)
-{
-	FE_GL_ERROR(glUniform1fv(UniformLocations[UniformNameHash], static_cast<int>(ArraySize), Array));
-}
-
-void FEShader::LoadDataToGPU()
-{
-	auto iterator = Parameters.begin();
-	while (iterator != Parameters.end())
+	auto UniformIterator = Uniforms.begin();
+	while (UniformIterator != Uniforms.end())
 	{
-		if (iterator->second.Data == nullptr)
-			continue;
-
-		switch (iterator->second.Type)
-		{
-			case FE_BOOL_UNIFORM:
-			{
-				LoadScalar(iterator->second.NameHash, *static_cast<GLboolean*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_INT_SCALAR_UNIFORM:
-			{
-				LoadScalar(iterator->second.NameHash, *static_cast<int*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_FLOAT_SCALAR_UNIFORM:
-			{
-				LoadScalar(iterator->second.NameHash, *static_cast<float*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_VECTOR2_UNIFORM:
-			{
-				LoadVector(iterator->second.NameHash, *static_cast<glm::vec2*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_VECTOR3_UNIFORM:
-			{
-				LoadVector(iterator->second.NameHash, *static_cast<glm::vec3*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_VECTOR4_UNIFORM:
-			{
-				LoadVector(iterator->second.NameHash, *static_cast<glm::vec4*>(iterator->second.Data));
-				break;
-			}
-
-			case FE_MAT4_UNIFORM:
-			{
-				LoadMatrix(iterator->second.NameHash, *static_cast<glm::mat4*>(iterator->second.Data));
-				break;
-			}
-
-			default:
-				break;
-		}
-		iterator++;
+		UniformIterator->second.LoadUniformToGPU();
+		UniformIterator++;
 	}
 }
 
-void FEShader::AddParameter(FEShaderParam Parameter)
+bool FEShader::LoadUniformDataToGPU(std::string UniformName)
 {
-	/*bool find = false;
-	for (size_t i = 0; i < FEStandardUniforms.size(); i++)
-	{
-		if (Parameter.getName().find(FEStandardUniforms[i]) != GL_INVALID_INDEX)
-			find = true;
-	}
-	Parameter.loadedFromEngine = find;*/
+	FEShaderUniform* Uniform = GetUniform(UniformName);
+	if (Uniform == nullptr)
+		return false;
 
-	Parameters[Parameter.GetName()] = Parameter;
+	Uniform->LoadUniformToGPU();
 
-	Parameters[Parameter.GetName()].NameHash = static_cast<int>(std::hash<std::string>{}(Parameter.GetName()));
-	UniformLocations[Parameters[Parameter.GetName()].NameHash] = glGetUniformLocation(ProgramID, Parameter.GetName().c_str());
+	return true;
 }
 
-std::vector<std::string> FEShader::GetParameterList()
+void FEShader::AddUniformInternal(FEShaderUniform NewUniform)
 {
-	FE_MAP_TO_STR_VECTOR(Parameters)
+	Uniforms[NewUniform.GetName()] = NewUniform;
 }
 
-FEShaderParam* FEShader::GetParameter(const std::string Name)
+std::vector<std::string> FEShader::GetUniformNameList()
 {
-	if (Parameters.find(Name) == Parameters.end())
+	FE_MAP_TO_STR_VECTOR(Uniforms)
+}
+
+FEShaderUniform* FEShader::GetUniform(const std::string Name)
+{
+	if (Uniforms.find(Name) == Uniforms.end())
 	{
 		LOG.Add(std::string("getParameter can't find : ") + Name + " in function FEShader::getParameter", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
-	return &Parameters[Name];
+	return &Uniforms[Name];
+}
+
+bool FEShader::GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue)
+{
+	FEShaderUniform* Uniform = GetUniform(UniformName);
+	if (Uniform == nullptr)
+		return false;
+
+	ReturnedValue = Uniform->CurrentValue;
+	return true;
 }
 
 std::vector<std::string> FEShader::GetTextureList()
@@ -1282,29 +1193,244 @@ void FEShader::ReCompile(const std::string Name, const char* VertexText, const c
 #ifdef FE_DEBUG_ENABLED
 	CreateSSBO();
 #endif
+	RegisterActiveAttributes();
 	RegisterUniforms();
 }
 
-void FEShader::AddParametersFromShader(FEShader* Shader)
+void FEShader::AddUniformsFromShader(FEShader* Shader)
 {
 	if (Shader == nullptr)
 		return;
 
-	auto iterator = Parameters.begin();
-	while (iterator != Parameters.end())
+	auto UniformIterator = Shader->Uniforms.begin();
+	while (UniformIterator != Shader->Uniforms.end())
 	{
-		AddParameter(iterator->second);
-		iterator++;
+		AddUniformInternal(UniformIterator->second);
+		UniformIterator++;
 	}
 }
 
-void* FEShader::GetParameterData(std::string Name)
+void FEShader::RegisterActiveAttributes()
 {
-	if (Parameters.find(Name) == Parameters.end())
-	{
-		LOG.Add(std::string("GetParameterData can't find : ") + Name + " in function FEShader::GetParameterData", "FE_LOG_RENDERING", FE_LOG_WARNING);
-		return nullptr;
-	}
+	GLint AttributeCount;
+	GLint AttributeSize;
+	GLenum AttributeType;
+	GLsizei ActualAttributeNameLength;
 
-	return Parameters[Name].Data;
+	// Get number of active attributes
+	FE_GL_ERROR(glGetProgramiv(ProgramID, GL_ACTIVE_ATTRIBUTES, &AttributeCount));
+
+	for (size_t i = 0; i < static_cast<size_t>(AttributeCount); i++)
+	{
+		const GLsizei MaxAttributeNameLength = 512;
+		GLchar AttributeName[MaxAttributeNameLength];
+
+		// Get attribute info
+		FE_GL_ERROR(glGetActiveAttrib(ProgramID,
+			static_cast<GLuint>(i),
+			MaxAttributeNameLength,
+			&ActualAttributeNameLength,
+			&AttributeSize,
+			&AttributeType,
+			AttributeName));
+
+		std::string AttributeNameString = AttributeName;
+
+		// Check if it's an array attribute
+		bool bIsArray = ((AttributeSize > 1) && (AttributeNameString.find('[') != std::string::npos));
+		std::string AttributeArrayName = "";
+
+		if (bIsArray)
+			AttributeArrayName = AttributeNameString.substr(0, AttributeNameString.find('['));
+
+		std::vector<GLuint> Locations;
+		if (bIsArray)
+		{
+			for (size_t i = 0; i < AttributeSize; i++)
+			{
+				std::string CurrentVariableName = AttributeArrayName + "[" + std::to_string(i) + "]";
+				GLuint Location = -1;
+				FE_GL_ERROR(Location = glGetAttribLocation(ProgramID, CurrentVariableName.c_str()));
+				Locations.push_back(Location);
+			}
+		}
+		else
+		{
+			GLuint Location = -1;
+			FE_GL_ERROR(Location = glGetAttribLocation(ProgramID, AttributeName));
+			Locations.push_back(Location);
+		}
+
+		switch (AttributeType)
+		{
+			case GL_BOOL:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC2:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC3:
+			{
+
+
+				break;
+			}
+
+			case GL_BOOL_VEC4:
+			{
+
+
+				break;
+			}
+
+			case GL_UNSIGNED_INT:
+			{
+
+
+				break;
+			}
+
+			case GL_INT:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_INT_VEC4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_VEC4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT2:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT3:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_FLOAT_MAT4:
+			{
+				int y = 0;
+				y++;
+
+				break;
+			}
+
+			case GL_DOUBLE:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC2:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC3:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_VEC4:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT2:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT3:
+			{
+
+				break;
+			}
+
+			case GL_DOUBLE_MAT4:
+			{
+
+				break;
+			}
+
+			default:
+				break;
+		}
+		
+	}
 }

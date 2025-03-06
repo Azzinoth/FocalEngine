@@ -1,9 +1,13 @@
 #include "FENaiveSceneGraphNode.h"
+#include "FEScene.h"
 using namespace FocalEngine;
 
-FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_ENTITY, Name) {}
+FENaiveSceneGraphNode::FENaiveSceneGraphNode(std::string Name) : FEObject(FE_SCENE_GRAPH_NODE, Name) {}
 FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 {
+	if (Entity != nullptr)
+		delete Entity;
+
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		delete Children[i];
@@ -13,38 +17,43 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 
 void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
-	FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToWorkOn->GetOldStyleEntity());
-	FETransformComponent& ChildTransform = ChildEntity->Transform;
-	glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
+	if (NodeToWorkOn == nullptr)
+		return;
 
-	FEEntity* Entity = reinterpret_cast<FEEntity*>(GetOldStyleEntity());
-	if (Entity != nullptr)
+	FETransformComponent& ChildTransform = NodeToWorkOn->GetEntity()->GetComponent<FETransformComponent>();
+	glm::mat4 ChildWorldMatrix = ChildTransform.GetWorldMatrix();
+	glm::mat4 ParentWorldMatrix = GetEntity()->GetComponent<FETransformComponent>().GetWorldMatrix();
+
+	// Calculate the inverse of the parent's world matrix
+	glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
+
+	// Calculate the new local matrix for the child
+	glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
+
+	glm::dvec3 DoubleScale;
+	glm::dquat DoubleRotation;
+	glm::dvec3 DoubleTranslation;
+	if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
 	{
-		FETransformComponent& ParentTransform = Entity->Transform;
-
-		glm::mat4 ParentWorldMatrix = ParentTransform.GetTransformMatrix();
-
-		// Calculate the inverse of the parent's world matrix
-		glm::mat4 ParentWorldInverseMatrix = glm::inverse(ParentWorldMatrix);
-
-		// Calculate the new local matrix for the child
-		glm::mat4 ChildLocalMatrix = ParentWorldInverseMatrix * ChildWorldMatrix;
-
-		glm::dvec3 DoubleScale;
-		glm::dquat DoubleRotation;
-		glm::dvec3 DoubleTranslation;
-		if (GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildLocalMatrix, DoubleTranslation, DoubleRotation, DoubleScale))
-		{
-			ChildTransform.SetPosition(DoubleTranslation);
-			ChildTransform.SetQuaternion(DoubleRotation);
-			ChildTransform.SetScale(DoubleScale);
-		}
+		ChildTransform.SetPosition(DoubleTranslation);
+		ChildTransform.SetQuaternion(DoubleRotation);
+		ChildTransform.SetScale(DoubleScale);
 	}
 }
 
 void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
-	if (bPreserveWorldTransform)
+	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
+		return;
+
+	// Check if the child is already in the children list
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		if (Children[i] == NodeToAdd)
+			return;
+	}
+
+	if (bPreserveWorldTransform && GetEntity() != nullptr)
 		ApplyTransformHierarchy(NodeToAdd);
 
 	Children.push_back(NodeToAdd);
@@ -54,23 +63,19 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
 	FENaiveSceneGraphNode* OldParent = NodeToWorkOn->Parent;
+	FETransformComponent& ChildTransform = NodeToWorkOn->GetEntity()->GetComponent<FETransformComponent>();
 
-	FEEntity* ChildEntity = reinterpret_cast<FEEntity*>(NodeToWorkOn->GetOldStyleEntity());
-	FETransformComponent& ChildTransform = ChildEntity->Transform;
-	glm::mat4 ChildWorldMatrix = ChildTransform.GetTransformMatrix();
+	glm::mat4 ChildWorldMatrix = ChildTransform.GetWorldMatrix();
 
 	// We want preserve the world position of the child
 	// First we need to check if current parent is not root node
 	if (OldParent != nullptr && OldParent->GetParent() != nullptr)
 	{
 		// In case it is not root we need to reverce old parent influence.
-		FEEntity* OldParentEntity = reinterpret_cast<FEEntity*>(OldParent->GetOldStyleEntity());
-		if (OldParentEntity != nullptr)
+		if (OldParent->Parent != nullptr)
 		{
-			FETransformComponent& OldParentTransform = OldParentEntity->Transform;
-
-			glm::mat4 ChildLocalMatrix = ChildTransform.LocalSpaceMatrix;
-			glm::mat4 OldParentWorldMatrix = OldParentTransform.GetTransformMatrix();
+			glm::mat4 ChildLocalMatrix = ChildTransform.GetLocalMatrix();
+			glm::mat4 OldParentWorldMatrix = OldParent->GetEntity()->GetComponent<FETransformComponent>().GetWorldMatrix();
 
 			// Calculate the child's world matrix
 			ChildWorldMatrix = OldParentWorldMatrix * ChildLocalMatrix;
@@ -132,24 +137,6 @@ FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChild(std::string ID)
 	return nullptr;
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByOldEntityID(std::string OldEntityID)
-{
-	if (OldStyleEntity != nullptr && OldStyleEntity->GetObjectID() == OldEntityID)
-		return this;
-
-	// If we reach here, the child was not found
-	// It is possible that the child is a child of a child
-	// So we need to search recursively
-	for (size_t i = 0; i < Children.size(); i++)
-	{
-		FENaiveSceneGraphNode* Child = Children[i]->GetChildByOldEntityID(OldEntityID);
-		if (Child != nullptr)
-			return Child;
-	}
-
-	return nullptr;
-}
-
 std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetChildByName(std::string Name)
 {
 	std::vector<FENaiveSceneGraphNode*> Result;
@@ -188,9 +175,9 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetRecursiveChildren(
 	return Result;
 }
 
-FEObject* FENaiveSceneGraphNode::GetOldStyleEntity()
+FEEntity* FENaiveSceneGraphNode::GetEntity()
 {
-	return OldStyleEntity;
+	return Entity;
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()
@@ -228,26 +215,21 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetAllNodesInternal()
 	return Result;
 }
 
-Json::Value FENaiveSceneGraphNode::ToJson()
+Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFilter)
 {
 	Json::Value Node;
 	Node["Name"] = GetName();
 	Node["ID"] = GetObjectID();
 	// Only root node does not have ParentID
 	Node["ParentID"] = Parent->GetObjectID();
-	// Temporary, each node should have entity ID
-	if (OldStyleEntity == nullptr)
-	{
-		Node["OldEntityID"] = -1;
-	}
-	else
-	{
-		Node["OldEntityID"] = OldStyleEntity->GetObjectID();
-	}
+	Node["Entity"] = Entity->ToJson();
 
 	Json::Value ChildrenArray;
 	for (size_t i = 0; i < Children.size(); i++)
 	{
+		if (ChildFilter != nullptr && !ChildFilter(Children[i]->Entity))
+			continue;
+
 		ChildrenArray[std::to_string(i)]["ID"] = Children[i]->GetObjectID();
 	}
 	Node["Children"] = ChildrenArray;
@@ -257,13 +239,34 @@ Json::Value FENaiveSceneGraphNode::ToJson()
 
 void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 {
+	if (Entity == nullptr)
+	{
+		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
 	SetName(Root["Name"].asString());
 	SetID(Root["ID"].asString());
-	std::string OldEntityID = Root["OldEntityID"].asString();
-	if (OldEntityID != "-1")
+	Entity->FromJson(Root["Entity"]);
+}
+
+FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByEntityID(std::string EntityID)
+{
+	for (size_t i = 0; i < Children.size(); i++)
 	{
-		OldStyleEntity = OBJECT_MANAGER.GetFEObject(OldEntityID);
-		if (OldStyleEntity == nullptr)
-			LOG.Add("FENaiveSceneGraphNode::FromJson: Could not find entity with ID: " + OldEntityID, "FE_LOG_LOADING", FE_LOG_ERROR);
+		if (Children[i]->Entity->GetObjectID() == EntityID)
+			return Children[i];
 	}
+
+	// If we reach here, the child was not found
+	// It is possible that the child is a child of a child
+	// So we need to search recursively
+	for (size_t i = 0; i < Children.size(); i++)
+	{
+		FENaiveSceneGraphNode* Child = Children[i]->GetChildByEntityID(EntityID);
+		if (Child != nullptr)
+			return Child;
+	}
+
+	return nullptr;
 }

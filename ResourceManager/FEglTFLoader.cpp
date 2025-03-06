@@ -1,8 +1,6 @@
 #include "FEGLTFLoader.h"
 using namespace FocalEngine;
 
-FEGLTFLoader* FEGLTFLoader::Instance = nullptr;
-
 FEGLTFLoader::FEGLTFLoader()
 {
     

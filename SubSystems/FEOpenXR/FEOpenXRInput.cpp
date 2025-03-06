@@ -2,7 +2,13 @@
 
 using namespace FocalEngine;
 
-FEOpenXRInput* FEOpenXRInput::Instance = nullptr;
+#ifdef FOCAL_ENGINE_SHARED
+extern "C" __declspec(dllexport) void* GetOpenXRInput()
+{
+    return FEOpenXRInput::GetInstancePointer();
+}
+#endif
+
 FEOpenXRInput::FEOpenXRInput()
 {
     FEVRControllerActionBindings ValveIndex;
@@ -617,7 +623,7 @@ void FEOpenXRInput::SetRightAButtonReleaseCallBack(std::function<void()> UserCal
     reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
-// FIX ME! Introduce simpler function to get controller type.
+// TODO: Need to implement a simpler function to determine controller type.
 std::string FEOpenXRInput::CurrentlyActiveInteractionProfile(bool bLeftController)
 {
     XrPath TopLevelUserPath;

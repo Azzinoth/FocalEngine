@@ -1,21 +1,14 @@
 #pragma once
 
 #include "../Core/FECoreIncludes.h"
-#include <glm/gtx/matrix_decompose.hpp>
 
 namespace FocalEngine
 {
-	class FEEntity;
-	class FEEntityInstanced;
-	class FETerrain;
-	class FEResourceManager;
-
 	class FEAABB
 	{
-		friend FEEntity;
-		friend FEEntityInstanced;
-		friend FETerrain;
-		friend FEResourceManager;
+		friend class FEEntity;
+		friend class FEResourceManager;
+		friend class FEScene;
 	public:
 		FEAABB();
 		FEAABB(glm::vec3 Min, glm::vec3 Max);
@@ -88,7 +81,7 @@ namespace FocalEngine
 		float LongestAxisLength = 0.0f;
 	};
 
-	class FEGeometry
+	class FOCAL_ENGINE_API FEGeometry
 	{
 	public:
 		SINGLETON_PUBLIC_PART(FEGeometry)
@@ -107,6 +100,7 @@ namespace FocalEngine
 		void CalculateTangents(const std::vector<int>& Indices, const std::vector<float>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
 		void CalculateTangents(const std::vector<int>& Indices, const std::vector<double>& Vertices, const std::vector<float>& TextureCoordinates, const std::vector<float>& Normals, std::vector<float>& TangentsToFill);
 
+		glm::dvec3 CreateMouseRayToWorld(const double MouseScreenX, const double MouseScreenY, const glm::dmat4 ViewMatrix, const glm::dmat4 ProjectionMatrix, const glm::ivec2 ViewportPosition, const glm::ivec2 ViewportSize) const;
 		bool RaysIntersection(const glm::vec3& FirstRayOrigin, const glm::vec3& FirstRayDirection, const glm::vec3& SecondRayOrigin, const glm::vec3& SecondRayDirection, float& FirstRayParametricIntersection, float& SecondRayParametricIntersection) const;
 
 		bool IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDirection, std::vector<glm::vec3>& TriangleVertices, float& Distance, glm::vec3* HitPoint = nullptr, float* U = nullptr, float* V = nullptr);
@@ -125,5 +119,10 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEGeometry)
 	};
 
-#define GEOMETRY FEGeometry::getInstance()
+#ifdef FOCAL_ENGINE_SHARED
+	extern "C" __declspec(dllexport) void* GetGeometry();
+	#define GEOMETRY (*static_cast<FEGeometry*>(GetGeometry()))
+#else
+	#define GEOMETRY FEGeometry::GetInstance()
+#endif
 }

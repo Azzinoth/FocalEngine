@@ -7,14 +7,14 @@ in vec2 textureCoords;
 uniform float FXAASpanMax;
 uniform float FXAAReduceMin;
 uniform float FXAAReduceMul;
-uniform vec2 FXAATextuxelSize;
+uniform vec2 FXAATextureSize;
 @Texture@ inputTexture;
 
 out vec4 out_Color;
 
 void main(void)
 {
-	vec2 texCoordOffset = FXAATextuxelSize;
+	vec2 texCoordOffset = FXAATextureSize;
 	
 	vec3 luma = vec3(0.299, 0.587, 0.114);
 	float lumaTL = dot(luma, texture2D(inputTexture, textureCoords.xy + (vec2(-1.0, -1.0) * texCoordOffset)).xyz);

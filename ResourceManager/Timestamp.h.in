@@ -1,0 +1,3 @@
+#pragma once
+
+#define ENGINE_BUILD_TIMESTAMP @ENGINE_BUILD_TIMESTAMP@

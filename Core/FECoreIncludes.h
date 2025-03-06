@@ -3,7 +3,7 @@
 #pragma warning (disable: 4334)     // '<<': result of 32-bit shift implicitly converted to 64 bits (was 64-bit shift intended?) in lodepng.cpp
 
 #include "FEBasicApplication.h"
-
+#include "FocalEngineAPI.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -19,6 +19,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.inl"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/gtx/matrix_decompose.hpp"
 
 #include "jsoncpp/json/json.h"
 
@@ -27,29 +28,33 @@
 #include <random>
 
 #define ANGLE_TORADIANS_COF glm::pi<float>() / 180.0f
+#define RADIANS_TOANGLE_COF 180.0f / glm::pi<float>()
 
 #ifdef FE_DEBUG_ENABLED
-	#define FE_GL_ERROR(glCall)            \
-	{                                      \
-		glCall;                            \
-		GLenum error = glGetError();	   \
-		if (error != 0)                    \
-		{								   \
-			assert("FE_GL_ERROR" && 0);	   \
-		}                                  \
-	}
-#else
-	#define FE_GL_ERROR(glCall)            \
-	{                                      \
-		glCall;                            \
+	#define FE_GL_ERROR(GLCall)																										  \
+	{																																  \
+		GLCall;																														  \
+		GLenum Error = glGetError();																								  \
+        if (Error != GL_NO_ERROR)																									  \
+        {																															  \
+			std::string ErrorMessage = "OpenGL Error: " + std::to_string(Error) + " at " + __FILE__ + ":" + std::to_string(__LINE__); \
+			LOG.Add(ErrorMessage, "FE_GL_ERROR", FE_LOG_ERROR);																		  \
+			assert(ErrorMessage.c_str() && 0);																						  \
+        }																															  \
+	}										
+#else										
+	#define FE_GL_ERROR(GLCall)																										  \
+	{																																  \
+		GLCall;																														  \
 	}
 #endif // FE_GL_ERROR
 
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 28
 #define FE_WIN_32
-#define FE_MESH_VERSION 0.01f
-#define FE_TEXTURE_VERSION 0.01f
+#define FE_MESH_VERSION 0.02f
+#define FE_TEXTURE_VERSION 0.02f
+#define FE_NATIVE_SCRIPT_MODULE_VERSION 0.01f
 
 #define FE_SIMD_ENABLED
 

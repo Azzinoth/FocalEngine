@@ -18,28 +18,22 @@ namespace FocalEngine
 		FEMaterial(std::string Name);
 		~FEMaterial();
 
-		FEShader* Shader;
+		FEShader* Shader = nullptr;
 		
-		virtual void Bind();
-		virtual void UnBind();
-
-		void SetParam(std::string Name, int NewData) const;
-		void SetParam(std::string Name, float NewData) const;
-		void SetParam(std::string Name, glm::vec2 NewData) const;
-		void SetParam(std::string Name, glm::vec3 NewData) const;
-		void SetParam(std::string Name, glm::vec4 NewData) const;
-		void SetParam(std::string Name, glm::mat4 NewData) const;
+		void Bind();
+		void UnBind();
 
 		std::vector<FETexture*> Textures;
 		std::vector<int> TextureBindings;
 		std::vector<int> TextureChannels;
 
-		void AddParameter(FEShaderParam NewParameter) const;
-		std::vector<std::string> GetParameterList() const;
-		FEShaderParam* GetParameter(std::string Name) const;
+		std::vector<std::string> GetUniformNameList() const;
+		std::vector<std::string> GetUniformVariationsNameList() const;
 
-		glm::vec3 GetBaseColor() const;
-		// Only influence color of object if shader with such uniform is applied.
+		bool SetUniformVariation(FEShaderUniformValue NewUniformVariation);
+		FEShaderUniformValue* GetUniformVariation(std::string Name);
+
+		glm::vec3 GetBaseColor();
 		void SetBaseColor(glm::vec3 NewValue);
 
 		float GetMetalness() const;
@@ -109,8 +103,7 @@ namespace FocalEngine
 		float GetTiling() const;
 		void SetTiling(float NewValue);
 	private:
-		glm::vec3 DiffuseColor;
-		glm::vec3 BaseColor;
+		std::unordered_map<std::string, FEShaderUniformValue> UniformVariations;
 
 		int PlaceTextureInList(FETexture* Texture);
 		void SetTextureBinding(int Index, int TextureIndex, int SubMaterial, int Channel = -2);
