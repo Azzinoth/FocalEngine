@@ -2,12 +2,32 @@
 
 ![build](https://github.com/Azzinoth/FocalEngine/actions/workflows/Build.yml/badge.svg?branch=master)
 
-Focal Engine is a personal project of a realtime 3D rendering/game engine with a dedicated editor, that can be used to create games (though not all functionality is ready yet) and visualization applications, with particular strengths in geospatial visualization capabilities.
+Focal Engine is an open-source, modular real-time 3D rendering and game engine designed for building interactive 3D applications, games, and scientific visualizations. It excels at handling complex geospatial data and GPU-driven rendering, empowering developers and researchers to create sophisticated graphical solutions efficiently.
+
+⚠️ **Currently in Alpha**: Expect breaking changes and ongoing development.
 
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/1.png)
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/2.png)
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/4.png)
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/6.png)
+
+## Table of Contents
+- [Focal Engine Ecosystem](#focal-engine-ecosystem)
+- [Projects Using Focal Engine](#projects-using-focal-engine)
+- [Features](#features)
+  - [Graphical Features](#graphical-features)
+  - [Point Cloud Handling](#advanced-point-cloud-handling)
+  - [Terrain](#terrain)
+  - [Performance](#performance)
+  - [VR Support](#vr-support)
+  - [Entity Component System (ECS)](#entity-component-system-ecs)
+    - [Prefab System](#prefab-system)
+  - [C++ Scripting](#c-scripting)
+- [Editor](#editor-overview)
+- [Build and Setup](#build-system)
+- [Testing](#testing)
+- [Example Application](#simple-application-example)
+- [Third-Party Licenses](#third-party-licenses)
 
 ## Focal Engine Ecosystem
 
@@ -27,7 +47,9 @@ This modularity makes it easier to include just the engine in applications that 
 
 [HabiCAT 3D](https://github.com/Azzinoth/HabiCAT3D) - An open-source software that implements novel algorithms for generating multi-scale complexity metrics maps(like rugosity, fractal dimension, vector dispersion and others) for complex 3D habitat models.
 
-## Graphical Features
+## Features
+
+### Graphical Features
 
 - Physically-based rendering
 - High dynamic range (HDR) rendering internally
@@ -42,7 +64,7 @@ This modularity makes it easier to include just the engine in applications that 
 - Camera temporal jitter and partial motion vector calculations, needed for future TAA and third-party upscalers
 - Each camera has its own unique rendering pipeline with customizable settings
 
-## Advanced Point Cloud Handling
+### Advanced Point Cloud Handling
 
 The Focal Engine provides specialized capabilities for working with large-scale point cloud data:
 
@@ -56,12 +78,30 @@ The Focal Engine provides specialized capabilities for working with large-scale 
 - GPU-Accelerated Editing: Tools for manipulating and editing huge point clouds directly in GPU memory  
   ⚠️ Work in progress ⚠️
 
-## Terrain
+### Terrain
 
 - Chunked terrain with tessellation for LOD
 - Frustum culling of sub chunks
 - Up to 8 terrain layer materials
 - Each layer can define foliage spawn rules
+
+### VR Support
+
+The Focal Engine leverages OpenXR integration to provide support for a wide range of VR headsets and controllers. The engine has a virtual UI system specifically designed for comfortable and intuitive interaction in VR space.
+  
+![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/8.png)
+
+### Entity Component System (ECS)
+
+Focal Engine employs EnTT ECS for optimized performance and flexible architecture. Easily compose entities from modular components, enabling scalable and maintainable code.
+
+#### Prefab System
+
+Easily define reusable entities or groups of entities as Prefabs. Prefabs encapsulate entities and their component configurations as scenes, allowing you to instantiate complex object setups multiple times efficiently. Prefabs simplify asset management and accelerate level design.
+
+### C++ Scripting: 
+
+Attach custom scripts directly to entities for rapid prototyping, modular gameplay logic, and efficient runtime performance.
 
 ## Performance
 
@@ -72,29 +112,6 @@ Focal Engine features a GPU-driven rendering pipeline (⚠️ Work in progress �
 Engine submodule includes a profiling system that provides detailed analysis of CPU utilization across threads. This system is  designed to handle complex, highly multithreaded workloads, allowing to identify and address performance bottlenecks.
 
 ![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/7.png)
-
-## VR Support
-
-The Focal Engine leverages OpenXR integration to provide support for a wide range of VR headsets and controllers. The engine has a virtual UI system specifically designed for comfortable and intuitive interaction in VR space.
-  
-![3D scene in the Focal Engine](https://github.com/Azzinoth/FocalEngine/blob/media/8.png)
-
-## Entity Component System (ECS)
-
-Engine uses EnTT library (also used in Minecraft) to implement an Entity Component System architecture. This approach helps to:
-- Separate data from logic for better code organization
-- Enable better performance through data-oriented design
-- Provide flexible component-based object composition
-
-Additionally, Prefabs were introduced to make it easy to predefine an entity or group of entities along with all their components. A Prefab (internally implemented as a scene) can be instantiated multiple times, allowing for efficient reuse of complex entity configurations.
-
-## C++ Scripting System
-
-Native script component gives ability to attach custom C++ code to entities, allowing for runtime behavior definition or custom game logic implementation.
-
-As a practical example, the default cameras are organized as Prefabs containing both a camera component and a script component that defines the interaction logic.
-
-This demonstrates how the scripting system can be used to create reusable, modular gameplay elements.
 
 ## Editor Overview
 
