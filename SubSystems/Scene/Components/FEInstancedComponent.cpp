@@ -104,6 +104,16 @@ void FEInstancedComponent::Clear()
 	Modifications.clear();
 }
 
+FE_CULING_TYPE FEInstancedComponent::GetCullingType()
+{
+	return CullingType;
+}
+
+void FEInstancedComponent::SetCullingType(FE_CULING_TYPE NewValue)
+{
+	CullingType = NewValue;
+}
+
 FEEntity* FEInstancedComponent::GetSnappedToTerrain()
 {
 	return TerrainToSnap;

@@ -609,47 +609,11 @@ void FEInstancedSystem::Render(FEEntity* Entity, FEGameModelComponent& GameModel
 
 void FEInstancedSystem::RenderGameModelComponent(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, size_t BufferIndex)
 {
-	for (size_t i = 0; i < GameModelComponent.GetGameModel()->GetMaxLODCount(); i++)
-	{
-		if (GameModelComponent.GetGameModel()->IsLODBillboard(i))
-			break;
-
-		if (GameModelComponent.GetGameModel()->GetLODMesh(i) != nullptr)
-		{
-			if (InstancedComponent.InstancedElementsData[BufferIndex]->LODBuffers[i] == 0)
-				break;
-
-			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedComponent.InstancedElementsData[BufferIndex]->LODBuffers[i]));
-
-			FE_GL_ERROR(glBindVertexArray(GameModelComponent.GetGameModel()->GetLODMesh(i)->GetVaoID()));
-
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
-			if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
-
-			FE_GL_ERROR(glEnableVertexAttribArray(6));
-			FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(0)));
-			FE_GL_ERROR(glEnableVertexAttribArray(7));
-			FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
-			FE_GL_ERROR(glEnableVertexAttribArray(8));
-			FE_GL_ERROR(glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4))));
-			FE_GL_ERROR(glEnableVertexAttribArray(9));
-			FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
-
-			FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, InstancedComponent.InstancedElementsData[BufferIndex]->IndirectDrawInfoBuffer));
-			FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(i * sizeof(FEDrawElementsIndirectCommand))));
-
-			FE_GL_ERROR(glBindVertexArray(0));
-			FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-		}
-	}
-
 	if (InstancedComponent.CullingType == FE_CULLING_NONE)
 	{
-		FE_GL_ERROR(glBindVertexArray(GameModelComponent.GetGameModel()->Mesh->GetVaoID()));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedComponent.InstancedElementsData[BufferIndex]->InstancedBuffer));
+		FE_GL_ERROR(glBindVertexArray(GameModelComponent.GetGameModel()->GetMesh()->GetVaoID()));
+
 		if ((GameModelComponent.GetGameModel()->Mesh->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
 		if ((GameModelComponent.GetGameModel()->Mesh->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
 		if ((GameModelComponent.GetGameModel()->Mesh->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
@@ -658,7 +622,7 @@ void FEInstancedSystem::RenderGameModelComponent(FEGameModelComponent& GameModel
 		if ((GameModelComponent.GetGameModel()->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
 		FE_GL_ERROR(glEnableVertexAttribArray(6));
-		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(nullptr)));
+		FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(0)));
 		FE_GL_ERROR(glEnableVertexAttribArray(7));
 		FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
 		FE_GL_ERROR(glEnableVertexAttribArray(8));
@@ -666,9 +630,52 @@ void FEInstancedSystem::RenderGameModelComponent(FEGameModelComponent& GameModel
 		FE_GL_ERROR(glEnableVertexAttribArray(9));
 		FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
 
-		FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, GameModelComponent.GetGameModel()->Mesh->GetVertexCount(), GL_UNSIGNED_INT, nullptr, static_cast<int>(InstancedComponent.InstanceCount)));
+		FEMesh* Mesh = GameModelComponent.GetGameModel()->GetMesh();
+
+		FE_GL_ERROR(glDrawElementsInstanced(GL_TRIANGLES, GameModelComponent.GetGameModel()->GetMesh()->GetVertexCount(), GL_UNSIGNED_INT, nullptr, static_cast<int>(InstancedComponent.InstanceCount)));
 
 		FE_GL_ERROR(glBindVertexArray(0));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	}
+	else if (InstancedComponent.CullingType == FE_CULLING_LODS)
+	{
+		for (size_t i = 0; i < GameModelComponent.GetGameModel()->GetMaxLODCount(); i++)
+		{
+			if (GameModelComponent.GetGameModel()->IsLODBillboard(i))
+				break;
+
+			if (GameModelComponent.GetGameModel()->GetLODMesh(i) != nullptr)
+			{
+				if (InstancedComponent.InstancedElementsData[BufferIndex]->LODBuffers[i] == 0)
+					break;
+
+				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedComponent.InstancedElementsData[BufferIndex]->LODBuffers[i]));
+
+				FE_GL_ERROR(glBindVertexArray(GameModelComponent.GetGameModel()->GetLODMesh(i)->GetVaoID()));
+
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_POSITION) == FE_POSITION) FE_GL_ERROR(glEnableVertexAttribArray(0));
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_COLOR) == FE_COLOR) FE_GL_ERROR(glEnableVertexAttribArray(1));
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_NORMAL) == FE_NORMAL) FE_GL_ERROR(glEnableVertexAttribArray(2));
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
+				if ((GameModelComponent.GetGameModel()->GetLODMesh(i)->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+				FE_GL_ERROR(glEnableVertexAttribArray(6));
+				FE_GL_ERROR(glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), static_cast<void*>(0)));
+				FE_GL_ERROR(glEnableVertexAttribArray(7));
+				FE_GL_ERROR(glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4))));
+				FE_GL_ERROR(glEnableVertexAttribArray(8));
+				FE_GL_ERROR(glVertexAttribPointer(8, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4))));
+				FE_GL_ERROR(glEnableVertexAttribArray(9));
+				FE_GL_ERROR(glVertexAttribPointer(9, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4))));
+
+				FE_GL_ERROR(glBindBuffer(GL_DRAW_INDIRECT_BUFFER, InstancedComponent.InstancedElementsData[BufferIndex]->IndirectDrawInfoBuffer));
+				FE_GL_ERROR(glDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, (GLvoid*)(i * sizeof(FEDrawElementsIndirectCommand))));
+
+				FE_GL_ERROR(glBindVertexArray(0));
+				FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+			}
+		}
 	}
 }
 

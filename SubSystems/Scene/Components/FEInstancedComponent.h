@@ -96,6 +96,9 @@ namespace FocalEngine
 
 		size_t GetInstanceCount();
 
+		FE_CULING_TYPE GetCullingType();
+		void SetCullingType(FE_CULING_TYPE NewValue);
+
 		FEEntity* GetSnappedToTerrain();
 		int GetTerrainLayer();
 
