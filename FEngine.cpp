@@ -150,6 +150,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	TRANSFORM_SYSTEM;
 	LIGHT_SYSTEM;
 	CAMERA_SYSTEM;
+	POINT_CLOUD_SYSTEM;
 	INSTANCED_RENDERING_SYSTEM;
 	TERRAIN_SYSTEM;
 	SKY_DOME_SYSTEM;

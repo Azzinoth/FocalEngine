@@ -23,7 +23,8 @@ namespace FocalEngine
 		FE_SCENE_GRAPH_NODE = 11,
 		FE_SCENE = 12,
 		FE_ASSET_PACKAGE = 13,
-		FE_NATIVE_SCRIPT_MODULE = 14
+		FE_NATIVE_SCRIPT_MODULE = 14,
+		FE_POINT_CLOUD = 15
 	};
 
 	struct FEObjectLoadedData
@@ -91,6 +92,10 @@ namespace FocalEngine
 			case FocalEngine::FE_GAMEMODEL:
 			{
 				return "FE_GAMEMODEL";
+			}
+			case FocalEngine::FE_POINT_CLOUD:
+			{
+				return "FE_POINT_CLOUD";
 			}
 			case FocalEngine::FE_ENTITY:
 			{

@@ -451,6 +451,7 @@ void FEInstancedSystem::AddInstanceInternal(FEEntity* Entity, FEGameModelCompone
 	InstancedComponent.InstancedElementsData[BufferIndex]->TransformedInstancedMatrices.push_back(TransformComponent.GetWorldMatrix() * InstanceMatrix);
 	InstancedComponent.InstancedElementsData[BufferIndex]->InstancePositions.push_back(InstancedComponent.InstancedElementsData[BufferIndex]->TransformedInstancedMatrices.back()[3]);
 
+	InstancedComponent.InstanceCount++;
 	for (size_t j = 0; j < GameModelComponent.GetGameModel()->GetMaxLODCount(); j++)
 	{
 		InstancedComponent.InstancedElementsData[BufferIndex]->InstancedMatricesLOD[j].resize(InstancedComponent.InstanceCount);

@@ -530,6 +530,9 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 	FETransformComponent& CurrentCameraTransformComponent = MainCameraEntity->GetComponent<FETransformComponent>();
 	CurrentCameraComponent.UpdateFrustumPlanes();
 
+	FECameraRenderingData* CurrentCameraRenderingData = GetCameraRenderingData(MainCameraEntity);
+	if (CurrentCameraRenderingData == nullptr)
+		return;
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 
 	if (CurrentCameraComponent.IsClearColorEnabled())
@@ -555,11 +558,10 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 		{
 			RenderGameModelComponentForward(Entity, MainCameraEntity);
 		}
-		// No instanced rendering for now.
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
-			//ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
-			//RenderGameModelComponentWithInstanced(Entity);
+			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
+			RenderGameModelComponentWithInstanced(Entity, MainCameraEntity);
 		}
 	}
 
@@ -778,7 +780,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	if (MainCameraEntity == nullptr)
 		return;
 
-	CurrentCameraRenderingData = GetCameraRenderingData(MainCameraEntity);
+	FECameraRenderingData* CurrentCameraRenderingData = GetCameraRenderingData(MainCameraEntity);
 	if (CurrentCameraRenderingData == nullptr)
 		return;
 
@@ -1108,7 +1110,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	CurrentCameraRenderingData->GBuffer->ShaderProperties->Bind(4);
 	
 	// ************************************ SSAO ************************************
-	UpdateSSAO();
+	UpdateSSAO(MainCameraEntity);
 	// ************************************ SSAO END ************************************
 
 	// ************************************ COPYING DEPTH BUFFER ************************************
@@ -1861,6 +1863,7 @@ void FERenderer::GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FE
 	FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
 	FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
+	FECameraRenderingData* CurrentCameraRenderingData = GetCameraRenderingData(Camera);
 #ifdef USE_OCCLUSION_CULLING
 	FrustumCullingShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 	FrustumCullingShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
@@ -1906,12 +1909,13 @@ void FERenderer::SetOcclusionCullingEnabled(const bool NewValue)
 	bUseOcclusionCulling = NewValue;
 }
 
-void FERenderer::UpdateSSAO()
+void FERenderer::UpdateSSAO(FEEntity* Camera)
 {
-	if (CurrentCameraRenderingData == nullptr)
+	if (Camera == nullptr)
 		return;
 
-	FECameraComponent& CameraComponent = CurrentCameraRenderingData->CameraEntity->GetComponent<FECameraComponent>();
+	FECameraRenderingData* CurrentCameraRenderingData = GetCameraRenderingData(Camera);
+	FECameraComponent& CameraComponent = Camera->GetComponent<FECameraComponent>();
 	if (!CameraComponent.IsSSAOEnabled())
 		return;
 

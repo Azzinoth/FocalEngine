@@ -138,31 +138,6 @@ namespace FocalEngine
 		void UnConnectFromTerrainLayer();
 
 		FE_CULING_TYPE CullingType = FE_CULLING_LODS;
-		// ******************* RENDERING *******************
-		//std::vector<std::vector<glm::mat4>> InstancedMatricesLOD;
-		//std::vector<glm::vec3> InstancePositions;
-		//int* LODCounts = nullptr;
-
-		//// GPU Culling
-		//GLenum InstancedBuffer = 0;
-		//GLenum* LODBuffers = nullptr;
-
-		//GLuint SourceDataBuffer = 0;
-		//GLuint PositionsBuffer = 0;
-		//GLuint AABBSizesBuffer = 0;
-		//GLuint LODInfoBuffer = 0;
-
-		//FEDrawElementsIndirectCommand* IndirectDrawsInfo;
-		//GLuint IndirectDrawInfoBuffer = 0;
-
-		//FEAABB AllInstancesAABB;
-		//FEGameModel* LastFrameGameModel = nullptr;
-
-		//std::vector<glm::mat4> InstancedMatrices;
-		//std::vector<glm::mat4> TransformedInstancedMatrices;
-		//std::vector<float> InstancedAABBSizes;
-		// ******************* RENDERING END *******************
-		
 
 		std::vector<FEInstanceModification> Modifications;
 	};

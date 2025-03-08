@@ -73,6 +73,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_construct<FECameraComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
 	Scene->Registry.on_construct<FELightComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
 	Scene->Registry.on_construct<FEGameModelComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_construct<FEPointCloudComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_construct<FEInstancedComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_construct<FETerrainComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
 	Scene->Registry.on_construct<FESkyDomeComponent>().connect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
@@ -85,6 +86,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_destroy<FECameraComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
 	Scene->Registry.on_destroy<FELightComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
 	Scene->Registry.on_destroy<FEGameModelComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_destroy<FEPointCloudComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_destroy<FEInstancedComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_destroy<FETerrainComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
 	Scene->Registry.on_destroy<FESkyDomeComponent>().connect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
@@ -97,6 +99,7 @@ void FESceneManager::RegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_update<FECameraComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
 	Scene->Registry.on_update<FELightComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
 	Scene->Registry.on_update<FEGameModelComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_update<FEPointCloudComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_update<FEInstancedComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_update<FETerrainComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
 	Scene->Registry.on_update<FESkyDomeComponent>().connect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();
@@ -112,6 +115,7 @@ void FESceneManager::UnRegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_construct<FECameraComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FECameraComponent>>();
 	Scene->Registry.on_construct<FELightComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FELightComponent>>();
 	Scene->Registry.on_construct<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_construct<FEPointCloudComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_construct<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_construct<FETerrainComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FETerrainComponent>>();
 	Scene->Registry.on_construct<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentConstructWrapper<FESkyDomeComponent>>();
@@ -124,6 +128,7 @@ void FESceneManager::UnRegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_destroy<FECameraComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FECameraComponent>>();
 	Scene->Registry.on_destroy<FELightComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FELightComponent>>();
 	Scene->Registry.on_destroy<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_destroy<FEPointCloudComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_destroy<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_destroy<FETerrainComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FETerrainComponent>>();
 	Scene->Registry.on_destroy<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentDestroyWrapper<FESkyDomeComponent>>();
@@ -136,6 +141,7 @@ void FESceneManager::UnRegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_update<FECameraComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FECameraComponent>>();
 	Scene->Registry.on_update<FELightComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FELightComponent>>();
 	Scene->Registry.on_update<FEGameModelComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEGameModelComponent>>();
+	Scene->Registry.on_update<FEPointCloudComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEPointCloudComponent>>();
 	Scene->Registry.on_update<FEInstancedComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FEInstancedComponent>>();
 	Scene->Registry.on_update<FETerrainComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FETerrainComponent>>();
 	Scene->Registry.on_update<FESkyDomeComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FESkyDomeComponent>>();

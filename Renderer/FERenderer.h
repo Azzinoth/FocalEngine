@@ -95,7 +95,7 @@ namespace FocalEngine
 		bool IsOcclusionCullingEnabled();
 		void SetOcclusionCullingEnabled(bool NewValue);
 
-		void UpdateSSAO();
+		void UpdateSSAO(FEEntity* Camera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 		void SimplifiedRender(FEScene* CurrentScene);
@@ -187,7 +187,6 @@ namespace FocalEngine
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
 		void ForceCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
-		FECameraRenderingData* CurrentCameraRenderingData = nullptr;
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
 	};
 

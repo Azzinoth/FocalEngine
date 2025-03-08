@@ -4,6 +4,7 @@
 #include "FECameraComponent.h"
 #include "FELightComponent.h"
 #include "FEGameModelComponent.h"
+#include "FEPointCloudComponent.h"
 #include "FEInstancedComponent.h"
 #include "FETerrainComponent.h"
 #include "FESkyDomeComponent.h"
@@ -73,6 +74,7 @@ namespace FocalEngine
         friend class FETransformSystem;
         friend class FECameraSystem;
         friend class FELightSystem;
+		friend class FEPointCloudSystem;
         friend class FEInstancedSystem;
         friend class FETerrainSystem;
         friend class FESkyDomeSystem;

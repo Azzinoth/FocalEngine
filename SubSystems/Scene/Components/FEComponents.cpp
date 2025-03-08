@@ -93,6 +93,34 @@ FEComponentsTools::FEComponentsTools()
 	ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()] = GameModelComponentInfo;
 	FEComponentTypeInfo& GameModelInfo = ComponentIDToInfo[entt::type_id<FEGameModelComponent>().hash()];
 
+	// ************************* POINT CLOUD COMPONENT *************************
+	FEComponentTypeInfo PointCloudComponentInfo("Point Cloud", typeid(FEPointCloudComponent));
+	FunctionsToGetEntityIDListWith[PointCloudComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEPointCloudComponent>(); };
+	PointCloudComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
+		Json::Value Root;
+		FEPointCloudComponent& CurrentComponent = ParentEntity->GetComponent<FEPointCloudComponent>();
+		//Root["ModelID"] = CurrentComponent.GetGameModel()->GetObjectID();
+
+		Root["bVisible"] = CurrentComponent.IsVisible();
+		
+		return Root;
+	};
+
+	PointCloudComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+		ParentEntity->AddComponent<FEPointCloudComponent>(/*RESOURCE_MANAGER.GetGameModel(Root["ModelID"].asString())*/);
+		FEPointCloudComponent& CurrentComponent = ParentEntity->GetComponent<FEPointCloudComponent>();
+
+		CurrentComponent.SetVisibility(Root["bVisible"].asBool());
+	};
+
+	PointCloudComponentInfo.DuplicateComponent = [](FEEntity* SourceEntity, FEEntity* TargetEntity) {
+		if (TargetEntity->AddComponent<FEPointCloudComponent>())
+			TargetEntity->GetComponent<FEPointCloudComponent>() = SourceEntity->GetComponent<FEPointCloudComponent>();
+	};
+	PointCloudComponentInfo.LoadingPriority = 3;
+	ComponentIDToInfo[entt::type_id<FEPointCloudComponent>().hash()] = PointCloudComponentInfo;
+	FEComponentTypeInfo& PointCloudInfo = ComponentIDToInfo[entt::type_id<FEPointCloudComponent>().hash()];
+
 	// ************************* INSTANCED COMPONENT *************************
 	FEComponentTypeInfo InstancedComponentInfo("Instanced", typeid(FEInstancedComponent));
 	FunctionsToGetEntityIDListWith[InstancedComponentInfo.Type] = [](FEScene* CurrentScene) { return CurrentScene->GetEntityIDListWithComponent<FEInstancedComponent>(); };
@@ -139,6 +167,7 @@ FEComponentsTools::FEComponentsTools()
 	CameraInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {CameraInfo} });
 	LightInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {LightInfo} });
 	GameModelInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {GameModelInfo} });
+	PointCloudInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {PointCloudInfo} });
 
 	InstancedInfo.Constraints.push_back({ FE_LOGIC_OPERATION::NOT, {InstancedInfo} });
 	InstancedInfo.Constraints.push_back({ FE_LOGIC_OPERATION::XOR, {GameModelInfo, PrefabInstanceComponentInfo} });

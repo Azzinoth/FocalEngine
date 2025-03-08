@@ -3,6 +3,7 @@
 #include "FETransformSystem.h"
 #include "FELightSystem.h"
 #include "FECameraSystem.h"
+#include "FEPointCloudSystem.h"
 #include "FEInstancedSystem.h"
 #include "FETerrainSystem.h"
 #include "FESkyDomeSystem.h"
