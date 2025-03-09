@@ -167,6 +167,9 @@ void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDIANT
 {
 	if (SpaceType == FE_LOCAL_SPACE)
 	{
+		if (glm::all(glm::epsilonEqual(Position, NewPosition, 0.0001f)))
+			return;
+
 		Position = NewPosition;
 		Update();
 	}
@@ -174,6 +177,9 @@ void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDIANT
 	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::vec3 CurrentWorldPosition = GetPosition(FE_WORLD_SPACE);
+		if (glm::all(glm::epsilonEqual(CurrentWorldPosition, NewPosition, 0.0001f)))
+			return;
+
 		glm::vec3 Difference = NewPosition - CurrentWorldPosition;
 
 		MoveAlongAxis(glm::vec3(1, 0, 0), Difference.x, FE_WORLD_SPACE);
