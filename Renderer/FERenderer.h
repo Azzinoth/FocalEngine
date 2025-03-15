@@ -85,12 +85,13 @@ namespace FocalEngine
 		FETexture* GetCameraResult(FEEntity* CameraEntity);
 
 		void DrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
+		void DrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
+		void DrawFrustum(FEEntity* Camera, glm::vec3 Color = glm::vec3(0.3f, 0.6f, 0.1f), float LineWidth = 0.2f);
 
 		float TestTime = 0.0f;
 		float LastTestTime = 0.0f;
 
 		bool bFreezeCulling = false;
-		void DrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
 
 		bool IsOcclusionCullingEnabled();
 		void SetOcclusionCullingEnabled(bool NewValue);

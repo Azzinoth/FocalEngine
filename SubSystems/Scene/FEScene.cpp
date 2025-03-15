@@ -633,6 +633,11 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 		Result = Entity->GetComponent<FEVirtualUIComponent>().GetAABB();
 	}
 
+	if (Entity->HasComponent<FEPointCloudComponent>())
+	{
+		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+	}
+
 	// If entity has no renderable components, we can have FEAABB with zero volume.
 	// But with position.
 	if (Result.GetVolume() == 0 && GEOMETRY.IsEpsilonEqual(Result.GetSize(), glm::vec3(0.0f)))

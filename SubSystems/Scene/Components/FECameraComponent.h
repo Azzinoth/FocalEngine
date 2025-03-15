@@ -1,5 +1,6 @@
 #pragma once
 #include "../Renderer/FEViewport.h"
+#include "../Core/FEPlane.h"
 
 namespace FocalEngine
 {
@@ -7,6 +8,18 @@ namespace FocalEngine
 	{
 		Deferred,
 		Forward_Simplified,
+	};
+
+	struct FEFrustum
+	{
+		FEPlane<float> LeftPlane;
+		FEPlane<float> RightPlane;
+		FEPlane<float> BottomPlane;
+		FEPlane<float> TopPlane;
+		FEPlane<float> NearPlane;
+		FEPlane<float> FarPlane;
+
+		std::vector<float> GetAllPlanesCoefficients();
 	};
 
 	struct FOCAL_ENGINE_API FECameraComponent
@@ -57,8 +70,8 @@ namespace FocalEngine
 		float GetExposure() const;
 		void SetExposure(const float Exposure);
 
-		void UpdateFrustumPlanes();
-		std::vector<std::vector<float>> GetFrustumPlanes();
+		void UpdateFrustum();
+		FEFrustum GetFrustum();
 
 		int GetRenderTargetWidth() const;
 		int GetRenderTargetHeight() const;
@@ -172,7 +185,7 @@ namespace FocalEngine
 
 		glm::mat4 ViewMatrix = glm::mat4(1.0f);
 		glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
-		std::vector<std::vector<float>> Frustum;
+		FEFrustum Frustum;
 
 		bool TryToSetViewportSizeInternal(const int Width, const int Height);
 

@@ -1,11 +1,12 @@
 #pragma once
 
+#include "FEPLYParser.h"
 #include "../Renderer/FEPostProcess.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
 #include "../FileSystem/FEAssetPackage.h"
-
+#include "../Renderer/FEPointCloud.h"
 #include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 #include "Config.h"
@@ -91,6 +92,15 @@ namespace FocalEngine
 		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
 		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
 
+		std::vector<std::string> GetPointCloudIDList();
+		std::vector<std::string> GetEnginePrivatePointCloudIDList();
+		FEPointCloud* GetPointCloud(std::string ID);
+		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
+		FEPointCloud* ImportPointCloud(std::string FileName);
+		FEPointCloud* LoadFEPointCloud(std::string FileName, std::string Name = "");
+		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName);
+
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
 		std::vector<std::string> GetMaterialIDList();
@@ -167,6 +177,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FETexture*> Textures;
 		std::unordered_map<std::string, FEMaterial*> Materials;
 		std::unordered_map<std::string, FEMesh*> Meshes;
+		std::unordered_map<std::string, FEPointCloud*> PointClouds;
 		std::unordered_map<std::string, FEGameModel*> GameModels;
 		std::unordered_map<std::string, FEPrefab*> Prefabs;
 		std::unordered_map<std::string, FENativeScriptModule*> NativeScriptModules;

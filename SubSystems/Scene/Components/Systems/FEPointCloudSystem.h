@@ -12,6 +12,7 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEPointCloudSystem)
 
 		bool bInternalAdd = false;
+		FEShader* StandardPointCloudShader = nullptr;
 
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
@@ -21,6 +22,9 @@ namespace FocalEngine
 
 		//static Json::Value LightComponentToJson(FEEntity* Entity);
 		//static void LightComponentFromJson(FEEntity* Entity, Json::Value Root);
+
+		void Render(FEEntity* Entity, FEEntity* Camera);
+		void RenderPointCloudComponent(FETransformComponent& TransformComponent, FEPointCloudComponent& PointCloudComponent, FEEntity* Camera);
 	public:
 		SINGLETON_PUBLIC_PART(FEPointCloudSystem)
 

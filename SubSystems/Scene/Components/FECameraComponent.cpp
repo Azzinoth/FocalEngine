@@ -6,10 +6,6 @@ using namespace FocalEngine;
 
 FECameraComponent::FECameraComponent()
 {
-	Frustum.resize(6);
-	for (size_t i = 0; i < Frustum.size(); i++)
-		Frustum[i].resize(4);
-
 	Viewport = new FEViewport();
 }
 
@@ -143,101 +139,93 @@ void FECameraComponent::SetExposure(const float Exposure)
 	this->Exposure = Exposure;
 }
 
-void FECameraComponent::UpdateFrustumPlanes()
+void FECameraComponent::UpdateFrustum()
 {
-	float Clip[16];
+	glm::mat4 ViewProjectionMatrix = GetProjectionMatrix() * GetViewMatrix();
 
-	glm::mat4 Cliping = GetProjectionMatrix() * GetViewMatrix();
-	for (int i = 0; i < 4; i++)
-	{
-		Clip[i * 4] = Cliping[i][0];
-		Clip[i * 4 + 1] = Cliping[i][1];
-		Clip[i * 4 + 2] = Cliping[i][2];
-		Clip[i * 4 + 3] = Cliping[i][3];
-	}
+	// Left plane
+	Frustum.LeftPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] + ViewProjectionMatrix[0][0],
+													 ViewProjectionMatrix[1][3] + ViewProjectionMatrix[1][0],
+													 ViewProjectionMatrix[2][3] + ViewProjectionMatrix[2][0],
+													 ViewProjectionMatrix[3][3] + ViewProjectionMatrix[3][0]);
 
-	/* Extract the numbers for the RIGHT plane */
-	Frustum[0][0] = Clip[3] - Clip[0];
-	Frustum[0][1] = Clip[7] - Clip[4];
-	Frustum[0][2] = Clip[11] - Clip[8];
-	Frustum[0][3] = Clip[15] - Clip[12];
+	// Right plane
+	Frustum.RightPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] - ViewProjectionMatrix[0][0],
+													  ViewProjectionMatrix[1][3] - ViewProjectionMatrix[1][0],
+													  ViewProjectionMatrix[2][3] - ViewProjectionMatrix[2][0],
+													  ViewProjectionMatrix[3][3] - ViewProjectionMatrix[3][0]);
 
-	/* Normalize the result */
-	float T = sqrt(Frustum[0][0] * Frustum[0][0] + Frustum[0][1] * Frustum[0][1] + Frustum[0][2] * Frustum[0][2]);
-	Frustum[0][0] /= T;
-	Frustum[0][1] /= T;
-	Frustum[0][2] /= T;
-	Frustum[0][3] /= T;
+	// Bottom plane
+	Frustum.BottomPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] + ViewProjectionMatrix[0][1],
+													   ViewProjectionMatrix[1][3] + ViewProjectionMatrix[1][1],
+													   ViewProjectionMatrix[2][3] + ViewProjectionMatrix[2][1],
+													   ViewProjectionMatrix[3][3] + ViewProjectionMatrix[3][1]);
 
-	/* Extract the numbers for the LEFT plane */
-	Frustum[1][0] = Clip[3] + Clip[0];
-	Frustum[1][1] = Clip[7] + Clip[4];
-	Frustum[1][2] = Clip[11] + Clip[8];
-	Frustum[1][3] = Clip[15] + Clip[12];
+	// Top plane
+	Frustum.TopPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] - ViewProjectionMatrix[0][1],
+													ViewProjectionMatrix[1][3] - ViewProjectionMatrix[1][1],
+													ViewProjectionMatrix[2][3] - ViewProjectionMatrix[2][1],
+													ViewProjectionMatrix[3][3] - ViewProjectionMatrix[3][1]);
 
-	/* Normalize the result */
-	T = sqrt(Frustum[1][0] * Frustum[1][0] + Frustum[1][1] * Frustum[1][1] + Frustum[1][2] * Frustum[1][2]);
-	Frustum[1][0] /= T;
-	Frustum[1][1] /= T;
-	Frustum[1][2] /= T;
-	Frustum[1][3] /= T;
+	// Near plane
+	Frustum.NearPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] + ViewProjectionMatrix[0][2],
+													 ViewProjectionMatrix[1][3] + ViewProjectionMatrix[1][2],
+													 ViewProjectionMatrix[2][3] + ViewProjectionMatrix[2][2],
+													 ViewProjectionMatrix[3][3] + ViewProjectionMatrix[3][2]);
 
-	/* Extract the BOTTOM plane */
-	Frustum[2][0] = Clip[3] + Clip[1];
-	Frustum[2][1] = Clip[7] + Clip[5];
-	Frustum[2][2] = Clip[11] + Clip[9];
-	Frustum[2][3] = Clip[15] + Clip[13];
-
-	/* Normalize the result */
-	T = sqrt(Frustum[2][0] * Frustum[2][0] + Frustum[2][1] * Frustum[2][1] + Frustum[2][2] * Frustum[2][2]);
-	Frustum[2][0] /= T;
-	Frustum[2][1] /= T;
-	Frustum[2][2] /= T;
-	Frustum[2][3] /= T;
-
-	/* Extract the TOP plane */
-	Frustum[3][0] = Clip[3] - Clip[1];
-	Frustum[3][1] = Clip[7] - Clip[5];
-	Frustum[3][2] = Clip[11] - Clip[9];
-	Frustum[3][3] = Clip[15] - Clip[13];
-
-	/* Normalize the result */
-	T = sqrt(Frustum[3][0] * Frustum[3][0] + Frustum[3][1] * Frustum[3][1] + Frustum[3][2] * Frustum[3][2]);
-	Frustum[3][0] /= T;
-	Frustum[3][1] /= T;
-	Frustum[3][2] /= T;
-	Frustum[3][3] /= T;
-
-	/* Extract the FAR plane */
-	Frustum[4][0] = Clip[3] - Clip[2];
-	Frustum[4][1] = Clip[7] - Clip[6];
-	Frustum[4][2] = Clip[11] - Clip[10];
-	Frustum[4][3] = Clip[15] - Clip[14];
-
-	/* Normalize the result */
-	T = sqrt(Frustum[4][0] * Frustum[4][0] + Frustum[4][1] * Frustum[4][1] + Frustum[4][2] * Frustum[4][2]);
-	Frustum[4][0] /= T;
-	Frustum[4][1] /= T;
-	Frustum[4][2] /= T;
-	Frustum[4][3] /= T;
-
-	/* Extract the NEAR plane */
-	Frustum[5][0] = Clip[3] + Clip[2];
-	Frustum[5][1] = Clip[7] + Clip[6];
-	Frustum[5][2] = Clip[11] + Clip[10];
-	Frustum[5][3] = Clip[15] + Clip[14];
-
-	/* Normalize the result */
-	T = sqrt(Frustum[5][0] * Frustum[5][0] + Frustum[5][1] * Frustum[5][1] + Frustum[5][2] * Frustum[5][2]);
-	Frustum[5][0] /= T;
-	Frustum[5][1] /= T;
-	Frustum[5][2] /= T;
-	Frustum[5][3] /= T;
+	// Far plane
+	Frustum.FarPlane.SetFromGeneralFormCoefficients(ViewProjectionMatrix[0][3] - ViewProjectionMatrix[0][2],
+													ViewProjectionMatrix[1][3] - ViewProjectionMatrix[1][2],
+													ViewProjectionMatrix[2][3] - ViewProjectionMatrix[2][2],
+													ViewProjectionMatrix[3][3] - ViewProjectionMatrix[3][2]);
 }
 
-std::vector<std::vector<float>> FECameraComponent::GetFrustumPlanes()
+FEFrustum FECameraComponent::GetFrustum()
 {
 	return Frustum;
+}
+
+std::vector<float> FEFrustum::GetAllPlanesCoefficients()
+{
+	std::vector<float> Coefficients;
+
+	glm::vec4 RightPlaneCoefficients = RightPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(RightPlaneCoefficients.x);
+	Coefficients.push_back(RightPlaneCoefficients.y);
+	Coefficients.push_back(RightPlaneCoefficients.z);
+	Coefficients.push_back(RightPlaneCoefficients.w);
+
+	glm::vec4 LeftPlaneCoefficients = LeftPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(LeftPlaneCoefficients.x);
+	Coefficients.push_back(LeftPlaneCoefficients.y);
+	Coefficients.push_back(LeftPlaneCoefficients.z);
+	Coefficients.push_back(LeftPlaneCoefficients.w);
+
+	glm::vec4 BottomPlaneCoefficients = BottomPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(BottomPlaneCoefficients.x);
+	Coefficients.push_back(BottomPlaneCoefficients.y);
+	Coefficients.push_back(BottomPlaneCoefficients.z);
+	Coefficients.push_back(BottomPlaneCoefficients.w);
+
+	glm::vec4 TopPlaneCoefficients = TopPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(TopPlaneCoefficients.x);
+	Coefficients.push_back(TopPlaneCoefficients.y);
+	Coefficients.push_back(TopPlaneCoefficients.z);
+	Coefficients.push_back(TopPlaneCoefficients.w);
+
+	glm::vec4 FarPlaneCoefficients = FarPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(FarPlaneCoefficients.x);
+	Coefficients.push_back(FarPlaneCoefficients.y);
+	Coefficients.push_back(FarPlaneCoefficients.z);
+	Coefficients.push_back(FarPlaneCoefficients.w);
+
+	glm::vec4 NearPlaneCoefficients = NearPlane.GetGeneralFormCoefficients();
+	Coefficients.push_back(NearPlaneCoefficients.x);
+	Coefficients.push_back(NearPlaneCoefficients.y);
+	Coefficients.push_back(NearPlaneCoefficients.z);
+	Coefficients.push_back(NearPlaneCoefficients.w);
+
+	return Coefficients;
 }
 
 float FECameraComponent::GetRenderScale()

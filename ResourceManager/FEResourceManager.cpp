@@ -1416,6 +1416,14 @@ void FEResourceManager::LoadStandardMaterial()
 	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogDensity", 0.007f);
 	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", 2.5f);
 	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("shadowBlurFactor", 1.0f);
+
+	// ****************************** POINT CLOUD SHADERS ******************************
+
+	FEShader* StandardPointCloudShader = CreateShader("StandardPointCloudShader", LoadGLSL((EngineFolder + "CoreExtensions//PointCloudShaders//FE_PointCloud_VS.glsl").c_str()).c_str(),
+																				  LoadGLSL((EngineFolder + "CoreExtensions//PointCloudShaders//FE_PointCloud_FS.glsl").c_str()).c_str(),
+																				  nullptr, nullptr, nullptr, nullptr);
+
+	// ****************************** POINT CLOUD SHADERS END **************************
 }
 
 void FEResourceManager::LoadStandardGameModels()
@@ -4082,4 +4090,138 @@ bool FEResourceManager::UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPac
 	}
 
 	return true;
+}
+
+std::vector<std::string> FEResourceManager::GetPointCloudIDList()
+{
+	FE_MAP_TO_STR_VECTOR(PointClouds)
+}
+
+std::vector<std::string> FEResourceManager::GetEnginePrivatePointCloudIDList()
+{
+	return GetResourceIDListByTag(PointClouds, ENGINE_RESOURCE_TAG);
+}
+
+FEPointCloud* FEResourceManager::GetPointCloud(std::string ID)
+{
+	if (PointClouds.find(ID) == PointClouds.end())
+		return nullptr;
+
+	return PointClouds[ID];
+}
+
+std::vector<FEPointCloud*> FEResourceManager::GetPointCloudByName(const std::string Name)
+{
+	std::vector<FEPointCloud*> Result;
+	auto PointCloudIterator = PointClouds.begin();
+	while (PointCloudIterator != PointClouds.end())
+	{
+		if (PointCloudIterator->second->GetName() == Name)
+			Result.push_back(PointCloudIterator->second);
+
+		PointCloudIterator++;
+	}
+
+	return Result;
+}
+
+FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions)
+{
+	FEPointCloud* NewPointCloud = new FEPointCloud();
+	NewPointCloud->SetName(Name);
+
+	if (!ForceObjectID.empty())	
+		NewPointCloud->SetID(ForceObjectID);
+
+	if (bCenterPositions && !RawPointCloudData.empty())
+	{
+		glm::vec3 Min = glm::vec3(FLT_MAX);
+		glm::vec3 Max = glm::vec3(-FLT_MAX);
+		/*float MinX = FLT_MAX;
+		float MaxX = -FLT_MAX;
+
+		float MinY = FLT_MAX;
+		float MaxY = -FLT_MAX;
+
+		float MinZ = FLT_MAX;
+		float MaxZ = -FLT_MAX;*/
+
+		for (size_t i = 0; i < RawPointCloudData.size(); i++)
+		{
+			if (RawPointCloudData[i].X < Min.x)
+				Min.x = RawPointCloudData[i].X;
+
+			if (RawPointCloudData[i].X > Max.x)
+				Max.x = RawPointCloudData[i].X;
+
+			if (RawPointCloudData[i].Y < Min.y)
+				Min.y = RawPointCloudData[i].Y;
+
+			if (RawPointCloudData[i].Y > Max.y)
+				Max.y = RawPointCloudData[i].Y;
+
+			if (RawPointCloudData[i].Z < Min.z)
+				Min.z = RawPointCloudData[i].Z;
+
+			if (RawPointCloudData[i].Z > Max.z)
+				Max.z = RawPointCloudData[i].Z;
+		}
+
+		glm::vec3 Extent = Max - Min;
+		//float XExtent = MaxX - MinX;
+		//float YExtent = MaxY - MinY;
+		//float ZExtent = MaxZ - MinZ;
+
+		glm::vec3 Center = Min + Extent / 2.0f;
+
+		//glm::vec3 Center = glm::vec3(MinX + XExtent / 2.0f, MinY + YExtent / 2.0f, MinZ + ZExtent / 2.0f);
+
+		for (size_t i = 0; i < RawPointCloudData.size(); i++)
+		{
+			RawPointCloudData[i].X = RawPointCloudData[i].X - Center.x;
+			RawPointCloudData[i].Y = RawPointCloudData[i].Y - Center.y;
+			RawPointCloudData[i].Z = RawPointCloudData[i].Z - Center.z;
+		}
+
+		NewPointCloud->AABB = FEAABB(Min - Center, Max - Center);
+	}
+
+	PointClouds[NewPointCloud->GetObjectID()] = NewPointCloud;
+	NewPointCloud->PointCount = RawPointCloudData.size();
+	// make set/get raw data
+
+	glGenBuffers(1, &NewPointCloud->VboID);
+
+	// Bind and upload vertex data to the VBO.
+	glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW);
+
+	glGenVertexArrays(1, &NewPointCloud->VaoID);
+
+	// Bind and link VAO and VBO.
+	glBindVertexArray(NewPointCloud->VaoID);
+	glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	return NewPointCloud;
+}
+
+FEPointCloud* FEResourceManager::ImportPointCloud(std::string FileName)
+{
+	return nullptr;
+}
+
+FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::string Name)
+{
+	return nullptr;
+}
+
+void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName)
+{
+
 }

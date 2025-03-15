@@ -194,6 +194,11 @@ file(GLOB ComputeShaders_SRC
 	"CoreExtensions/ComputeShaders/FE_ComputeDepthPyramidDownSample_CS.glsl"
 )
 
+file(GLOB PointCloudShaders_SRC
+	"CoreExtensions/PointCloudShaders/FE_PointCloud_VS.glsl"
+	"CoreExtensions/PointCloudShaders/FE_PointCloud_FS.glsl"
+)
+
 # *************** RENDERER ***************
 
 file(GLOB Renderer_SRC
@@ -209,6 +214,8 @@ file(GLOB Renderer_SRC
 	"Renderer/FEMaterial.h"
 	"Renderer/FEMesh.cpp"
 	"Renderer/FEMesh.h"
+	"Renderer/FEPointCloud.cpp"
+	"Renderer/FEPointCloud.h"
 	"Renderer/FEPostProcess.cpp"
 	"Renderer/FEPostProcess.h"
 	"Renderer/FERenderer.cpp"
@@ -228,6 +235,8 @@ file(GLOB Renderer_SRC
 file(GLOB ResourceManager_SRC
 	"ResourceManager/FEObjLoader.cpp"
 	"ResourceManager/FEObjLoader.h"
+	"ResourceManager/FEPLYParser.cpp"
+	"ResourceManager/FEPLYParser.h"
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
@@ -241,6 +250,8 @@ file(GLOB ResourceManager_SRC
 file(GLOB Core_SRC
 	"Core/FocalEngineAPI.h"
 	"Core/FECoreIncludes.h"
+	"Core/FEPlane.cpp"
+	"Core/FEPlane.h"
 	"Core/FEGeometricTools.cpp"
 	"Core/FEGeometricTools.h"
 	"Core/FEObject.cpp"
@@ -415,6 +426,7 @@ list(APPEND ALL_SOURCE_FILES
 			${FE_GammaAndHDRCorrection_SRC}
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
+			${PointCloudShaders_SRC}
 			${Core_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
@@ -572,6 +584,7 @@ source_group("Source Files/CoreExtensions/PostProcessEffects/FE_FXAA" FILES ${FE
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_GammaAndHDRCorrection" FILES ${FE_GammaAndHDRCorrection_SRC})
 source_group("Source Files/CoreExtensions/PostProcessEffects/FE_SSAO" FILES ${FE_SSAO_SRC})
 source_group("Source Files/CoreExtensions/ComputeShaders/" FILES ${ComputeShaders_SRC})
+source_group("Source Files/CoreExtensions/PointCloudShaders/" FILES ${PointCloudShaders_SRC})
 # *************** RENDERER ***************
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************

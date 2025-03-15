@@ -1,10 +1,10 @@
 #include "FEPointCloudComponent.h"
 using namespace FocalEngine;
 
-//FEPointcloudComponent::FEPointcloudComponent(FEGameModel* GameModelToSet)
-//{
-//	GameModel = GameModelToSet;
-//}
+FEPointCloudComponent::FEPointCloudComponent(FEPointCloud* PointCloudToSet)
+{
+	PointCloud = PointCloudToSet;
+}
 
 FEPointCloudComponent::FEPointCloudComponent(const FEPointCloudComponent& Other)
 {
@@ -24,4 +24,14 @@ bool FEPointCloudComponent::IsVisible() const
 void FEPointCloudComponent::SetVisibility(bool NewValue)
 {
 	bVisible = NewValue;
+}
+
+FEPointCloud* FEPointCloudComponent::GetPointCloud() const
+{
+	return PointCloud;
+}
+
+void FEPointCloudComponent::SetPointCloud(FEPointCloud* NewPointCloud)
+{
+	PointCloud = NewPointCloud;
 }

@@ -14,6 +14,16 @@ FEPointCloudSystem::FEPointCloudSystem()
 	//COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEPointCloudComponent>(PointCloudComponentToJson);
 	//COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEPointCloudComponent>(PointCloudComponentFromJson);
 	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEPointCloudComponent>(DuplicatePointCloudComponent);
+
+	std::vector<FEShader*> StandardPointCloudShaderList = RESOURCE_MANAGER.GetShaderByName("StandardPointCloudShader");
+	if (StandardPointCloudShaderList.empty())
+	{
+		LOG.Add("FEPointCloudSystem::FEPointCloudSystem: StandardPointCloudShader not found", "FE_LOG_RENDERING", FE_LOG_ERROR);
+	}
+	else
+	{
+		StandardPointCloudShader = StandardPointCloudShaderList[0];
+	}
 }
 
 void FEPointCloudSystem::RegisterOnComponentCallbacks()
@@ -160,3 +170,40 @@ FEPointCloudSystem::~FEPointCloudSystem() {};
 //
 //	PointCloudComponent.SetRange(Root["Range"].asFloat());
 //}
+
+void FEPointCloudSystem::Render(FEEntity* Entity, FEEntity* Camera)
+{
+	if (Entity == nullptr || Camera == nullptr)
+		return;
+
+	if (!Entity->HasComponent<FEPointCloudComponent>())
+		return;
+
+	RenderPointCloudComponent(Entity->GetComponent<FETransformComponent>(), Entity->GetComponent<FEPointCloudComponent>(), Camera);
+}
+
+void FEPointCloudSystem::RenderPointCloudComponent(FETransformComponent& TransformComponent, FEPointCloudComponent& PointCloudComponent, FEEntity* Camera)
+{
+	FEPointCloud* PointCloud = PointCloudComponent.GetPointCloud();
+	if (PointCloud == nullptr || Camera == nullptr)
+		return;
+
+	if (StandardPointCloudShader == nullptr)
+	{
+		LOG.Add("FEPointCloudSystem::RenderPointCloudComponent: StandardPointCloudShader is nullptr", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	glm::mat4 WorldMatrix = TransformComponent.GetWorldMatrix();
+	glm::mat4 ViewMatrix = Camera->GetComponent<FECameraComponent>().GetViewMatrix();
+	glm::mat4 ProjectionMatrix = Camera->GetComponent<FECameraComponent>().GetProjectionMatrix();
+
+	StandardPointCloudShader->Start();
+	StandardPointCloudShader->UpdateUniformData("FEWorldMatrix", WorldMatrix);
+	StandardPointCloudShader->UpdateUniformData("FEViewMatrix", ViewMatrix);
+	StandardPointCloudShader->UpdateUniformData("FEProjectionMatrix", ProjectionMatrix);
+	StandardPointCloudShader->LoadUniformsDataToGPU();
+
+	glBindVertexArray(PointCloud->GetVaoID());
+	glDrawArrays(GL_POINTS, 0, static_cast<GLuint>(PointCloud->GetPointCount()));
+}
