@@ -20,15 +20,13 @@ namespace FocalEngine
 
 		static void DuplicatePointCloudComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
-		//static Json::Value LightComponentToJson(FEEntity* Entity);
-		//static void LightComponentFromJson(FEEntity* Entity, Json::Value Root);
-
-		void Render(FEEntity* Entity, FEEntity* Camera);
-		void RenderPointCloudComponent(FETransformComponent& TransformComponent, FEPointCloudComponent& PointCloudComponent, FEEntity* Camera);
+		static Json::Value PointCloudComponentToJson(FEEntity* Entity);
+		static void PointCloudComponentFromJson(FEEntity* Entity, Json::Value Root);
 	public:
 		SINGLETON_PUBLIC_PART(FEPointCloudSystem)
 
-		
+		void Render(FEEntity* Entity, FEEntity* Camera);
+		void RenderPointCloudComponent(FETransformComponent& TransformComponent, FEPointCloudComponent& PointCloudComponent, FEEntity* Camera);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

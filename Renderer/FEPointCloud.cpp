@@ -31,7 +31,8 @@ using namespace FocalEngine;
 
 FEPointCloud::~FEPointCloud()
 {
-	//FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
+	FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
+	FE_GL_ERROR(glDeleteBuffers(1, &VboID));
 }
 
 GLuint FEPointCloud::GetVboID() const
@@ -52,4 +53,27 @@ FEAABB FEPointCloud::GetAABB() const
 size_t FEPointCloud::GetPointCount() const
 {
 	return PointCount;
+}
+
+std::vector<FEPointCloudVertex> FEPointCloud::GetRawData() const
+{
+	std::vector<FEPointCloudVertex> RawData;
+
+	if (VboID == -1 || VaoID == -1)
+	{
+		LOG.Add("FEPointCloud::GetRawData() called on object with invalid VBO or VAO", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return RawData;
+	}
+
+	if (PointCount == 0)
+	{
+		LOG.Add("FEPointCloud::GetRawData() called on object with 0 points", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return RawData;
+	}
+
+	RawData.resize(PointCount);
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, VboID));
+	FE_GL_ERROR(glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+
+	return RawData;
 }

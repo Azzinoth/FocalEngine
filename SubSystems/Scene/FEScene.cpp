@@ -190,6 +190,11 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName.c_str(), true);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
 	}
+	else if (FileExtention == ".ply")
+	{
+		FEObject* LoadedObject = RESOURCE_MANAGER.ImportPLYFile(FileName);
+		Result.push_back(LoadedObject);
+	}
 	// .gltf could contain scene, so EntityIterator should be loaded in FEScene
 	else if (FileExtention == ".gltf")
 	{

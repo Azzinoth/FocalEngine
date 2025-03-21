@@ -568,13 +568,13 @@ FEMesh* FEResourceManager::RawDataToMesh(std::vector<float>& Positions, std::vec
 }
 
 FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
-	float* UV, const int UVSize,
-	float* Normals, const int NormSize,
-	float* Tangents, const int TanSize,
-	int* Indices, const int IndexSize,
-	float* Colors, int ColorSize,
-	float* MatIndexs, const int MatIndexsSize, const int MatCount,
-	const std::string Name)
+										 float* UV, const int UVSize,
+										 float* Normals, const int NormSize,
+										 float* Tangents, const int TanSize,
+										 int* Indices, const int IndexSize,
+										 float* Colors, int ColorSize,
+										 float* MatIndexs, const int MatIndexsSize, const int MatCount,
+										 const std::string Name)
 {
 	int VertexType = FE_POSITION | FE_INDEX;
 
@@ -597,7 +597,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	GLuint ColorsBufferID = 0;
-	if (Colors != nullptr)
+	if (Colors != nullptr && ColorSize != 0)
 	{
 		VertexType |= FE_COLOR;
 		// colors
@@ -609,7 +609,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	}
 
 	GLuint NormalsBufferID = 0;
-	if (Normals != nullptr)
+	if (Normals != nullptr && NormSize != 0)
 	{
 		VertexType |= FE_NORMAL;
 		// normals
@@ -621,7 +621,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	}
 
 	GLuint TangentsBufferID = 0;
-	if (Tangents != nullptr)
+	if (Tangents != nullptr && TanSize != 0)
 	{
 		VertexType |= FE_TANGENTS;
 		// tangents
@@ -633,7 +633,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	}
 
 	GLuint UVBufferID = 0;
-	if (UV != nullptr)
+	if (UV != nullptr && UVSize != 0)
 	{
 		VertexType |= FE_UV;
 		// UV
@@ -686,6 +686,98 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	NewMesh->MaterialsCount = MatCount;
 
 	return NewMesh;
+}
+
+FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name, std::string ForceObjectID)
+{
+	FEMesh* NewMesh = nullptr;
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return NewMesh;
+	}
+
+	if (Name.empty())
+		Name = "unnamedMesh";
+
+	bool bIsMesh = IsPLYCointainMesh(PLYData);
+	if (!bIsMesh)
+	{
+		LOG.Add("PLYData is not a mesh in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return NewMesh;
+	}
+
+	std::vector<glm::vec3> Vertices = ExtractPositionsFromPLYData(PLYData);
+	if (Vertices.empty())
+	{
+		LOG.Add("Can't extract positions from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return NewMesh;
+	}
+
+	std::vector<int> Indices = ExtractIndicesFromPLYData(PLYData);
+	if (Indices.empty())
+	{
+		LOG.Add("Can't extract indices from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return NewMesh;
+	}
+
+	std::vector<std::vector<unsigned char>> Color = ExtractColorsFromPLYData(PLYData);
+	std::vector<float> ConvertedColors;
+	for (size_t i = 0; i < Color.size(); i++)
+	{
+		ConvertedColors.push_back(static_cast<float>(Color[i][0]) / 255.0f);
+		ConvertedColors.push_back(static_cast<float>(Color[i][1]) / 255.0f);
+		ConvertedColors.push_back(static_cast<float>(Color[i][2]) / 255.0f);
+	}
+
+	std::vector<float> Positions;
+	for (size_t i = 0; i < Vertices.size(); i++)
+	{
+		Positions.push_back(Vertices[i].x);
+		Positions.push_back(Vertices[i].y);
+		Positions.push_back(Vertices[i].z);
+	}
+
+	bool bTextureCoordinatesArePartOfVertex = false;
+	std::vector<glm::vec2> UV = ExtractUVsFromPLYData(PLYData, bTextureCoordinatesArePartOfVertex);
+	std::vector<float> ConvertedUV;
+	for (size_t i = 0; i < UV.size(); i++)
+	{
+		ConvertedUV.push_back(UV[i].x);
+		ConvertedUV.push_back(1.0f - UV[i].y);
+	}
+	
+	std::vector<glm::vec3> Normals = ExtractNormalsFromPLYData(PLYData);
+	std::vector<float> ConvertedNormals;
+	if (Normals.empty())
+	{
+		ConvertedNormals.resize(Positions.size());
+		GEOMETRY.CalculateNormals(Indices, Positions, ConvertedNormals);
+	}
+	else
+	{
+		for (size_t i = 0; i < Normals.size(); i++)
+		{
+			ConvertedNormals.push_back(Normals[i].x);
+			ConvertedNormals.push_back(Normals[i].y);
+			ConvertedNormals.push_back(Normals[i].z);
+		}
+	}
+
+	std::vector<float> Tangents;
+	if (ConvertedUV.size() > 0 && ConvertedNormals.size() > 0)
+	{
+		Tangents.resize(ConvertedNormals.size());
+		GEOMETRY.CalculateTangents(Indices, Positions, ConvertedUV, ConvertedNormals, Tangents);
+	}
+
+	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()),
+						 ConvertedUV.data(), static_cast<int>(ConvertedUV.size()),
+						 ConvertedNormals.data(), static_cast<int>(ConvertedNormals.size()),
+						 Tangents.data(), static_cast<int>(Tangents.size()),
+						 Indices.data(), static_cast<int>(Indices.size()),
+						 ConvertedColors.data(), static_cast<int>(ConvertedColors.size()),
+						 nullptr, 0, 0, Name);
 }
 
 bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* FileName)
@@ -846,6 +938,206 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* File
 	}
 
 	return Result;
+}
+
+bool FEResourceManager::ExportFEMeshToPLY(FEMesh* MeshToExport, std::string FileName)
+{
+	bool bResult = false;
+
+	if (MeshToExport == nullptr)
+	{
+		LOG.Add("MeshToExport is nullptr in function FEResourceManager::ExportFEMeshToPLY.", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return bResult;
+	}
+
+	if (FileName.empty())
+	{
+		LOG.Add("FileName is empty in function FEResourceManager::ExportFEMeshToPLY.", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return bResult;
+	}
+
+	// Extract data from the mesh
+	const size_t VertexCount = MeshToExport->GetPositionsCount() / 3;
+	const size_t NormalCount = MeshToExport->GetNormalsCount() / 3;
+	const size_t UVCount = MeshToExport->GetUVCount() / 2;
+	const size_t IndexCount = MeshToExport->GetIndicesCount();
+	const size_t ColorCount = MeshToExport->GetColorCount() / 3;
+
+	// Get buffer data from GPU
+	float* Positions = new float[MeshToExport->GetPositionsCount()];
+	FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetPositionsBufferID(), 0, sizeof(float) * MeshToExport->GetPositionsCount(), Positions));
+
+	float* Normals = nullptr;
+	if (NormalCount > 0)
+	{
+		Normals = new float[MeshToExport->GetNormalsCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetNormalsBufferID(), 0, sizeof(float) * MeshToExport->GetNormalsCount(), Normals));
+	}
+
+	float* UVs = nullptr;
+	if (UVCount > 0)
+	{
+		UVs = new float[MeshToExport->GetUVCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetUVBufferID(), 0, sizeof(float) * MeshToExport->GetUVCount(), UVs));
+	}
+
+	int* Indices = new int[MeshToExport->GetIndicesCount()];
+	FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetIndicesBufferID(), 0, sizeof(int) * MeshToExport->GetIndicesCount(), Indices));
+
+	float* Colors = nullptr;
+	if (ColorCount > 0)
+	{
+		Colors = new float[MeshToExport->GetColorCount()];
+		FE_GL_ERROR(glGetNamedBufferSubData(MeshToExport->GetColorBufferID(), 0, sizeof(float) * MeshToExport->GetColorCount(), Colors));
+	}
+
+	FERawPLYData* PLYData = new FERawPLYData();
+	PLYData->Header = new FEPLYHeader();
+	PLYData->Header->StorageType = PLYFileType::BINARY_LITTLE_ENDIAN;
+	PLYData->Header->Comments.push_back("Generated by Focal Engine");
+	PLYData->Header->ElementSchemas.push_back(PLYElementSchema());
+	PLYData->Header->ElementSchemas[0].Name = "vertex";
+	size_t PLYVertexCount = MeshToExport->GetPositionsCount() / 3;
+	PLYData->Header->ElementSchemas[0].Count = PLYVertexCount;
+
+	size_t PropertyIndex = 0;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "x";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+	PropertyIndex++;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "y";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+	PropertyIndex++;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "z";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+	PropertyIndex++;
+
+	if (NormalCount > 0)
+	{
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "nx";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "ny";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "nz";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+		PropertyIndex++;
+	}
+
+	if (UVCount > 0)
+	{
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "u";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "v";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::FLOAT;
+		PropertyIndex++;
+	}
+
+	if (ColorCount > 0)
+	{
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "red";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::UCHAR;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "green";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::UCHAR;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "blue";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::UCHAR;
+		PropertyIndex++;
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Name = "alpha";
+		PLYData->Header->ElementSchemas[0].PropertyDefinitions[PropertyIndex].Type = PLYPropertyType::UCHAR;
+		PropertyIndex++;
+	}
+
+	PLYData->Elements.push_back(PLYElementData());
+	PLYData->Elements[0].Description = PLYData->Header->ElementSchemas[0];
+	PLYData->Elements[0].Entries.resize(PLYVertexCount);
+	
+	for (size_t i = 0; i < PLYVertexCount; i++)
+	{
+		PLYData->Elements[0].Entries[i].PropertyValues.resize(PLYData->Elements[0].Description.PropertyDefinitions.size());
+		PropertyIndex = 0;
+
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Positions[i * 3];
+		PropertyIndex++;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Positions[i * 3 + 1];
+		PropertyIndex++;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Positions[i * 3 + 2];
+		PropertyIndex++;
+
+		if (NormalCount > 0)
+		{
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Normals[i * 3];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Normals[i * 3 + 1];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Normals[i * 3 + 2];
+			PropertyIndex++;
+		}
+
+		if (UVCount > 0)
+		{
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = UVs[i * 2];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = 1.0f - UVs[i * 2 + 1];
+			PropertyIndex++;
+		}
+
+		if (ColorCount > 0)
+		{
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Colors[i * 3];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Colors[i * 3 + 1];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = Colors[i * 3 + 2];
+			PropertyIndex++;
+			std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[PropertyIndex]) = 255;
+			PropertyIndex++;
+		}
+	}
+
+	PLYData->Header->ElementSchemas.push_back(PLYElementSchema());
+	PLYData->Header->ElementSchemas[1].Name = "face";
+	size_t PLYIndecesCount = MeshToExport->GetIndicesCount() / 3;
+	PLYData->Header->ElementSchemas[1].Count = PLYIndecesCount;
+
+	PLYData->Header->ElementSchemas[1].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[1].PropertyDefinitions[0].Name = "vertex_indices";
+	PLYData->Header->ElementSchemas[1].PropertyDefinitions[0].bIsList = true;
+	PLYData->Header->ElementSchemas[1].PropertyDefinitions[0].SizeType = PLYPropertyType::UCHAR;
+	PLYData->Header->ElementSchemas[1].PropertyDefinitions[0].Type = PLYPropertyType::UINT;
+
+	PLYData->Elements.push_back(PLYElementData());
+	PLYData->Elements[1].Description = PLYData->Header->ElementSchemas[1];
+	PLYData->Elements[1].Entries.resize(PLYIndecesCount);
+
+	PropertyIndex = 0;
+	for (size_t i = 0; i < PLYIndecesCount; i++)
+	{
+		PLYData->Elements[1].Entries[i].PropertyValues.resize(1);
+		PLYData->Elements[1].Entries[i].PropertyValues[PropertyIndex] = PLYListValue();
+		PLYListValue& ListValue = std::get<PLYListValue>(PLYData->Elements[1].Entries[i].PropertyValues[PropertyIndex]);
+
+		ListValue.push_back(Indices[i * 3]);
+		ListValue.push_back(Indices[i * 3 + 1]);
+		ListValue.push_back(Indices[i * 3 + 2]);
+	}
+
+	bResult = PLY_MANAGER.SaveToPLY(FileName, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
+	return bResult;
 }
 
 void FEResourceManager::LoadStandardMeshes()
@@ -1439,6 +1731,7 @@ void FEResourceManager::Clear()
 {
 	ClearResource(Materials);
 	ClearResource(Meshes);
+	ClearResource(PointClouds);
 	ClearResource(Textures);
 	ClearResource(GameModels);
 	ClearResource(Prefabs);
@@ -4137,14 +4430,6 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	{
 		glm::vec3 Min = glm::vec3(FLT_MAX);
 		glm::vec3 Max = glm::vec3(-FLT_MAX);
-		/*float MinX = FLT_MAX;
-		float MaxX = -FLT_MAX;
-
-		float MinY = FLT_MAX;
-		float MaxY = -FLT_MAX;
-
-		float MinZ = FLT_MAX;
-		float MaxZ = -FLT_MAX;*/
 
 		for (size_t i = 0; i < RawPointCloudData.size(); i++)
 		{
@@ -4168,13 +4453,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		}
 
 		glm::vec3 Extent = Max - Min;
-		//float XExtent = MaxX - MinX;
-		//float YExtent = MaxY - MinY;
-		//float ZExtent = MaxZ - MinZ;
-
 		glm::vec3 Center = Min + Extent / 2.0f;
-
-		//glm::vec3 Center = glm::vec3(MinX + XExtent / 2.0f, MinY + YExtent / 2.0f, MinZ + ZExtent / 2.0f);
 
 		for (size_t i = 0; i < RawPointCloudData.size(); i++)
 		{
@@ -4188,7 +4467,6 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 
 	PointClouds[NewPointCloud->GetObjectID()] = NewPointCloud;
 	NewPointCloud->PointCount = RawPointCloudData.size();
-	// make set/get raw data
 
 	glGenBuffers(1, &NewPointCloud->VboID);
 
@@ -4211,17 +4489,887 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	return NewPointCloud;
 }
 
+FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name, std::string ForceObjectID, bool bCenterPositions)
+{
+	FEPointCloud* LoadedPointCloud = nullptr;
+
+	if (PLYData == nullptr)
+	{
+		LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	bool bIsPointCloud = IsPLYCointainPointCloud(PLYData);
+	if (!bIsPointCloud)
+	{
+		LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: PLY file does not contain point cloud data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	std::vector<FEPointCloudVertex> Vertices;
+	std::vector<glm::vec3> Positions = ExtractPositionsFromPLYData(PLYData);
+	if (Positions.empty())
+	{
+		LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: Error extracting positions from PLY data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	Vertices.resize(Positions.size());
+	for (size_t i = 0; i < Positions.size(); i++)
+	{
+		Vertices[i].X = Positions[i].x;
+		Vertices[i].Y = Positions[i].y;
+		Vertices[i].Z = Positions[i].z;
+	}
+
+	std::vector<std::vector<unsigned char>> Colors = ExtractColorsFromPLYData(PLYData);
+	if (!Colors.empty() && Positions.size() == Colors.size())
+	{
+		for (size_t i = 0; i < Colors.size(); i++)
+		{
+			if (Colors[i].size() == 4)
+			{
+				Vertices[i].R = Colors[i][0];
+				Vertices[i].G = Colors[i][1];
+				Vertices[i].B = Colors[i][2];
+				Vertices[i].A = Colors[i][3];
+			}
+		}
+	}
+
+	LoadedPointCloud = RawDataToFEPointCloud(Vertices, Name, ForceObjectID, bCenterPositions);
+	return LoadedPointCloud;
+}
+
 FEPointCloud* FEResourceManager::ImportPointCloud(std::string FileName)
 {
-	return nullptr;
+	FEPointCloud* LoadedPointCloud = nullptr;
+	if (FileName.empty())
+	{
+		LOG.Add("FEResourceManager::ImportPointCloud: FileName is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return LoadedPointCloud;
+	}
+
+	bool bIsPLYFile = false;
+	bool bIsLASFile = false;
+
+	FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FileName);
+
+	LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FileName));
+	
+	/*if (!bIsPLYFile && !bIsLASFile)
+	{
+		LOG.Add("FEResourceManager::ImportPointCloud: File format is not supported", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return LoadedPointCloud;
+	}*/
+
+	return LoadedPointCloud;
+}
+
+FEObject* FEResourceManager::ImportPLYFile(std::string FileName)
+{
+	FEObject* LoadedObject = nullptr;
+
+	FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FileName);
+	if (PLYData == nullptr)
+	{
+		LOG.Add("FEResourceManager::ImportPLYFile: Error parsing PLY file", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedObject;
+	}
+
+	FEPointCloud* LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FileName));
+	if (LoadedPointCloud != nullptr)
+		LoadedObject = LoadedPointCloud;
+	
+	if (LoadedObject == nullptr)
+	{
+		FEMesh* LoadedMesh = RawPLYDataToFEMesh(PLYData, FILE_SYSTEM.GetFileName(FileName));
+		LoadedObject = LoadedMesh;
+	}
+	else
+	{
+		LOG.Add("FEResourceManager::ImportPLYFile: Error creating object from PLY file", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+	}
+
+	return LoadedObject;
 }
 
 FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::string Name)
 {
-	return nullptr;
+	std::fstream File;
+
+	File.open(FileName, std::ios::in | std::ios::binary);
+	const std::streamsize FileSize = File.tellg();
+	if (FileSize < 0)
+	{
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEPointCloud.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	char* Buffer = new char[4];
+
+	// Version of FEPointCloud File type
+	File.read(Buffer, 4);
+	const float Version = *(float*)Buffer;
+
+	std::string LoadedObjectID;
+	std::string LoadedName;
+	if (Version != FE_POINT_CLOUD_VERSION)
+	{
+		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEPointCloud. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
+	LoadedObjectID = ObjectData.ID;
+	LoadedName = ObjectData.Name;
+
+	char* Buffer_8Byte = new char[8];
+	File.read(Buffer_8Byte, sizeof(size_t));
+	const size_t VertexCout = *(size_t*)Buffer_8Byte;
+	char* VertexBuffer = new char[VertexCout * sizeof(float)];
+	File.read(VertexBuffer, VertexCout * sizeof(float));
+
+	File.read(Buffer_8Byte, sizeof(size_t));
+	const size_t ColorCout = *(size_t*)Buffer_8Byte;
+	char* ColorBuffer = new char[ColorCout * sizeof(unsigned char)];
+	File.read(ColorBuffer, ColorCout * sizeof(unsigned char));
+
+	std::vector<FEPointCloudVertex> PointCloudData;
+	for (size_t i = 0; i < VertexCout / 3; i++)
+	{
+		PointCloudData.push_back(FEPointCloudVertex());
+		PointCloudData[i].X = *(float*)(VertexBuffer + i * 3 * sizeof(float));
+		PointCloudData[i].Y = *(float*)(VertexBuffer + i * 3 * sizeof(float) + sizeof(float));
+		PointCloudData[i].Z = *(float*)(VertexBuffer + i * 3 * sizeof(float) + sizeof(float) * 2);
+
+		PointCloudData[i].R = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char));
+		PointCloudData[i].G = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char) + sizeof(unsigned char));
+		PointCloudData[i].B = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char) + sizeof(unsigned char) * 2);
+		PointCloudData[i].A = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char) + sizeof(unsigned char) * 3);
+	}
+	
+	FEAABB PointCloudAABB;
+	for (int i = 0; i <= 2; i++)
+	{
+		File.read(Buffer, 4);
+		PointCloudAABB.Min[i] = *(float*)Buffer;
+	}
+
+	for (int i = 0; i <= 2; i++)
+	{
+		File.read(Buffer, 4);
+		PointCloudAABB.Max[i] = *(float*)Buffer;
+	}
+
+	File.close();
+
+	FEPointCloud* NewPointCloud = RawDataToFEPointCloud(PointCloudData, Name, LoadedObjectID, false);
+
+	delete[] Buffer;
+	delete[] Buffer_8Byte;
+	delete[] VertexBuffer;
+	delete[] ColorBuffer;
+	
+	NewPointCloud->AABB = PointCloudAABB;
+	NewPointCloud->SetName(Name);
+	NewPointCloud->Tag = ObjectData.Tag;
+
+	return NewPointCloud;
 }
 
 void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName)
 {
+	std::fstream File;
+	File.open(FileName, std::ios::out | std::ios::binary);
 
+	// Version of FEPointCloud File type.
+	float Version = FE_POINT_CLOUD_VERSION;
+	File.write((char*)&Version, sizeof(float));
+
+	OBJECT_MANAGER.SaveFEObjectPart(File, PointCloud);
+
+	std::vector<FEPointCloudVertex> Data = PointCloud->GetRawData();
+
+	size_t Count = PointCloud->GetPointCount() * 3;
+	float* Positions = new float[Count];
+	for (size_t i = 0; i < PointCloud->GetPointCount(); i++)
+	{
+		Positions[i * 3] = Data[i].X;
+		Positions[i * 3 + 1] = Data[i].Y;
+		Positions[i * 3 + 2] = Data[i].Z;
+	}
+	
+	File.write((char*)&Count, sizeof(size_t));
+	File.write((char*)Positions, sizeof(float) * Count);
+
+	Count = PointCloud->GetPointCount() * 4;
+	unsigned char* Colors = new unsigned char[PointCloud->GetPointCount() * 4];
+	for (size_t i = 0; i < PointCloud->GetPointCount(); i++)
+	{
+		Colors[i * 4] = Data[i].R;
+		Colors[i * 4 + 1] = Data[i].G;
+		Colors[i * 4 + 2] = Data[i].B;
+		Colors[i * 4 + 3] = Data[i].A;
+	}
+
+	File.write((char*)&Count, sizeof(size_t));
+	File.write((char*)Colors, sizeof(unsigned char) * Count);
+
+	File.write((char*)&PointCloud->AABB.Min[0], sizeof(float));
+	File.write((char*)&PointCloud->AABB.Min[1], sizeof(float));
+	File.write((char*)&PointCloud->AABB.Min[2], sizeof(float));
+
+	File.write((char*)&PointCloud->AABB.Max[0], sizeof(float));
+	File.write((char*)&PointCloud->AABB.Max[1], sizeof(float));
+	File.write((char*)&PointCloud->AABB.Max[2], sizeof(float));
+
+	File.close();
+
+	delete[] Positions;
+}
+
+bool FEResourceManager::IsPLYCointainMesh(FERawPLYData* PLYData)
+{
+	if (PLYData == nullptr)
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (PLYData->Header == nullptr)
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (PLYData->Header->ElementSchemas.empty())
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	bool bHasVertex = false;
+	for (size_t i = 0; i < PLYData->Header->ElementSchemas.size(); i++)
+	{
+		if (PLYData->Header->ElementSchemas[i].Name == "vertex")
+		{
+			if (PLYData->Header->ElementSchemas[i].PropertyDefinitions.size() < 3)
+				break;
+			
+			bool bHasX = false;
+			bool bHasY = false;
+			bool bHasZ = false;
+
+			for (size_t j = 0; j < PLYData->Header->ElementSchemas[i].PropertyDefinitions.size(); j++)
+			{
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "x")
+					bHasX = true;
+
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "y")
+					bHasY = true;
+
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "z")
+					bHasZ = true;
+			}
+
+			bHasVertex = bHasX && bHasY && bHasZ;
+		}
+	}
+
+	bool bHasFace = false;
+	for (size_t i = 0; i < PLYData->Header->ElementSchemas.size(); i++)
+	{
+		if (PLYData->Header->ElementSchemas[i].Name == "face")
+		{
+			if (PLYData->Header->ElementSchemas[i].PropertyDefinitions.size() == 0)
+				break;
+
+			for (size_t j = 0; j < PLYData->Header->ElementSchemas[i].PropertyDefinitions.size(); j++)
+			{
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "vertex_indices" ||
+					PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "vertex_index" ||
+					PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "indices")
+				{
+					bHasFace = true;
+				}
+			}
+		}
+	}
+	
+	return bHasFace && bHasVertex;
+}
+
+bool FEResourceManager::IsPLYCointainPointCloud(FERawPLYData* PLYData)
+{
+	if (PLYData == nullptr)
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (PLYData->Header == nullptr)
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (PLYData->Header->ElementSchemas.empty())
+	{
+		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (IsPLYCointainMesh(PLYData))
+		return false;
+	
+	bool bHasVertex = false;
+	for (size_t i = 0; i < PLYData->Header->ElementSchemas.size(); i++)
+	{
+		if (PLYData->Header->ElementSchemas[i].Name == "vertex")
+		{
+			if (PLYData->Header->ElementSchemas[i].PropertyDefinitions.size() < 3)
+				break;
+
+			bool bHasX = false;
+			bool bHasY = false;
+			bool bHasZ = false;
+
+			for (size_t j = 0; j < PLYData->Header->ElementSchemas[i].PropertyDefinitions.size(); j++)
+			{
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "x")
+					bHasX = true;
+
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "y")
+					bHasY = true;
+
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "z")
+					bHasZ = true;
+			}
+
+			bHasVertex = bHasX && bHasY && bHasZ;
+		}
+	}
+
+	bool bHasFace = false;
+	for (size_t i = 0; i < PLYData->Header->ElementSchemas.size(); i++)
+	{
+		if (PLYData->Header->ElementSchemas[i].Name == "face")
+		{
+			if (PLYData->Header->ElementSchemas[i].PropertyDefinitions.size() == 0)
+				break;
+
+			for (size_t j = 0; j < PLYData->Header->ElementSchemas[i].PropertyDefinitions.size(); j++)
+			{
+				if (PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "vertex_indices" ||
+					PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "vertex_index" ||
+					PLYData->Header->ElementSchemas[i].PropertyDefinitions[j].Name == "indices")
+				{
+					bHasFace = true;
+				}
+			}
+		}
+	}
+
+	return !bHasFace && bHasVertex;
+}
+
+void FEResourceManager::DeleteFEPointCloud(FEPointCloud* PointCloud)
+{
+	if (PointCloud == nullptr)
+	{
+		LOG.Add("FEResourceManager::DeleteFEPointCloud: PointCloud is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return;
+	}
+
+	if (PointClouds.find(PointCloud->GetObjectID()) == PointClouds.end())
+	{
+		LOG.Add("FEResourceManager::DeleteFEPointCloud: PointCloud does not exist in the resource manager", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return;
+	}
+
+	PointClouds.erase(PointCloud->GetObjectID());
+	delete PointCloud;
+}
+
+bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FileName)
+{
+	bool bResult = false;
+
+	if (PointCloudToExport == nullptr)
+	{
+		LOG.Add("FEResourceManager::ExportFEPointCloudToPLY: PointCloudToExport is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return bResult;
+	}
+
+	if (FileName.empty())
+	{
+		LOG.Add("FEResourceManager::ExportFEPointCloudToPLY: FileName is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return bResult;
+	}
+
+	std::vector<FEPointCloudVertex> PointCloudData;
+	PointCloudData = PointCloudToExport->GetRawData();
+
+	FERawPLYData* PLYData = new FERawPLYData();
+	PLYData->Header = new FEPLYHeader();
+	PLYData->Header->StorageType = PLYFileType::BINARY_LITTLE_ENDIAN;
+	PLYData->Header->Comments.push_back("Generated by Focal Engine");
+	PLYData->Header->ElementSchemas.push_back(PLYElementSchema());
+	PLYData->Header->ElementSchemas[0].Name = "vertex";
+	PLYData->Header->ElementSchemas[0].Count = PointCloudData.size();
+
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[0].Name = "x";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[0].Type = PLYPropertyType::FLOAT;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[1].Name = "y";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[1].Type = PLYPropertyType::FLOAT;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[2].Name = "z";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[2].Type = PLYPropertyType::FLOAT;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[3].Name = "red";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[3].Type = PLYPropertyType::UCHAR;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[4].Name = "green";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[4].Type = PLYPropertyType::UCHAR;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[5].Name = "blue";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[5].Type = PLYPropertyType::UCHAR;
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions.push_back(PLYPropertyDefinition());
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[6].Name = "alpha";
+	PLYData->Header->ElementSchemas[0].PropertyDefinitions[6].Type = PLYPropertyType::UCHAR;
+
+	PLYData->Elements.push_back(PLYElementData());
+	PLYData->Elements[0].Description = PLYData->Header->ElementSchemas[0];
+	PLYData->Elements[0].Entries.resize(PointCloudData.size());
+	for (size_t i = 0; i < PointCloudData.size(); i++)
+	{
+		PLYData->Elements[0].Entries[i].PropertyValues.resize(7);
+
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[0]) = PointCloudData[i].X;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[1]) = PointCloudData[i].Y;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[2]) = PointCloudData[i].Z;
+
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[3]) = PointCloudData[i].R;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[4]) = PointCloudData[i].G;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[5]) = PointCloudData[i].B;
+		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[6]) = PointCloudData[i].A;
+	}
+
+	bResult = PLY_MANAGER.SaveToPLY(FileName, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
+	return bResult;
+}
+
+std::vector<glm::vec3> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYData* PLYData)
+{
+	std::vector<glm::vec3> Positions;
+
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return Positions;
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == "vertex")
+		{
+			Positions.reserve(PLYData->Elements[i].Entries.size());
+
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				glm::vec3 CurrentVertex;
+
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+
+						if (Property.Name == "x" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.x = std::get<float>(CurrentValue);
+						else if (Property.Name == "y" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.y = std::get<float>(CurrentValue);
+						else if (Property.Name == "z" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.z = std::get<float>(CurrentValue);
+					}
+				}
+
+				Positions.push_back(CurrentVertex);
+			}
+
+			break;
+		}
+	}
+
+	return Positions;
+}
+
+std::vector<std::vector<unsigned char>> FEResourceManager::ExtractColorsFromPLYData(FERawPLYData* PLYData)
+{
+	std::vector<std::vector<unsigned char>> Colors;
+
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return Colors;
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == "vertex")
+		{
+			bool bCorrectElement = false;
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "red" || Property.Name == "r" ||
+							(Property.Name == "green" || Property.Name == "g") ||
+							(Property.Name == "blue" || Property.Name == "b") ||
+							(Property.Name == "alpha" || Property.Name == "a")) && Property.Type == PLYPropertyType::UCHAR)
+						{
+							bCorrectElement = true;
+						}
+					}
+
+					if (bCorrectElement)
+						break;
+				}
+
+				if (bCorrectElement)
+					break;
+			}
+
+			if (!bCorrectElement)
+				continue;
+
+			Colors.reserve(PLYData->Elements[i].Entries.size());
+
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				std::vector<unsigned char> CurrentVertexColor;
+				CurrentVertexColor.resize(4);
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+
+						if ((Property.Name == "red" || Property.Name == "r") && Property.Type == PLYPropertyType::UCHAR) CurrentVertexColor[0] = std::get<unsigned char>(CurrentValue);
+						else if ((Property.Name == "green" || Property.Name == "g") && Property.Type == PLYPropertyType::UCHAR) CurrentVertexColor[1] = std::get<unsigned char>(CurrentValue);
+						else if ((Property.Name == "blue" || Property.Name == "b") && Property.Type == PLYPropertyType::UCHAR) CurrentVertexColor[2] = std::get<unsigned char>(CurrentValue);
+						else if ((Property.Name == "alpha" || Property.Name == "a") && Property.Type == PLYPropertyType::UCHAR) CurrentVertexColor[3] = std::get<unsigned char>(CurrentValue);
+					}
+				}
+
+				Colors.push_back(CurrentVertexColor);
+			}
+
+			break;
+		}
+	}
+
+	return Colors;
+}
+
+std::vector<int> FEResourceManager::ExtractIndicesFromPLYData(FERawPLYData* PLYData)
+{
+	std::vector<int> Indices;
+
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return Indices;
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == "face")
+		{
+			Indices.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYListValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYListValue& CurrentValue = std::get<PLYListValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "vertex_indices" || Property.Name == "vertex_index" || Property.Name == "indices") && Property.bIsList)
+						{
+							if (Property.Type == PLYPropertyType::INT)
+							{
+								for (size_t l = 0; l < CurrentValue.size(); l++)
+								{
+									Indices.push_back(std::get<int>(CurrentValue[l]));
+								}
+							}
+							else if (Property.Type == PLYPropertyType::UINT)
+							{
+								for (size_t l = 0; l < CurrentValue.size(); l++)
+								{
+									Indices.push_back(std::get<unsigned int>(CurrentValue[l]));
+								}
+							}
+						}
+					}
+				}
+			}
+			break;
+		}
+	}
+
+	return Indices;
+}
+
+std::vector<glm::vec2> FEResourceManager::ExtractUVsFromPLYData(FERawPLYData* PLYData, bool& bTextureCoordinatesArePartOfVertex)
+{
+	std::vector<glm::vec2> UVs;
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return UVs;
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == "vertex")
+		{
+			bool bCorrectElement = false;
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "u" || Property.Name == "U" ||
+							Property.Name == "s" || Property.Name == "S" ||
+							Property.Name == "texture_u") && Property.Type == PLYPropertyType::FLOAT)
+						{
+							bCorrectElement = true;
+						}
+							
+						if ((Property.Name == "v" || Property.Name == "V" ||
+							Property.Name == "t" || Property.Name == "T" ||
+							Property.Name == "texture_v") && Property.Type == PLYPropertyType::FLOAT)
+						{
+							bCorrectElement = true;
+						}	
+					}
+
+					if (bCorrectElement)
+						break;
+				}
+
+				if (bCorrectElement)
+					break;
+			}
+
+			if (!bCorrectElement)
+				continue;
+
+			bTextureCoordinatesArePartOfVertex = true;
+
+			UVs.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				glm::vec2 CurrentUV;
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "u" || Property.Name == "U" ||
+							Property.Name == "s" || Property.Name == "S" ||
+							Property.Name == "texture_u") && Property.Type == PLYPropertyType::FLOAT)
+						{
+							CurrentUV.x = std::get<float>(CurrentValue);
+						}
+							
+						if ((Property.Name == "v" || Property.Name == "V" ||
+							Property.Name == "t" || Property.Name == "T" ||
+							Property.Name == "texture_v") && Property.Type == PLYPropertyType::FLOAT)
+						{
+							CurrentUV.y = std::get<float>(CurrentValue);
+						}
+					}
+				}
+				UVs.push_back(CurrentUV);
+			}
+			break;
+		}
+		else if (PLYData->Elements[i].Description.Name.find("texture") != std::string::npos)
+		{
+			bool bCorrectElement = false;
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "u" || Property.Name == "U") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+
+						if ((Property.Name == "v" || Property.Name == "V") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+					}
+
+					if (bCorrectElement)
+						break;
+				}
+
+				if (bCorrectElement)
+					break;
+			}
+
+			if (!bCorrectElement)
+				continue;
+
+			bTextureCoordinatesArePartOfVertex = false;
+
+			UVs.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				glm::vec2 CurrentUV;
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if (Property.Name == "u" && Property.Type == PLYPropertyType::FLOAT) CurrentUV.x = std::get<float>(CurrentValue);
+						else if (Property.Name == "v" && Property.Type == PLYPropertyType::FLOAT) CurrentUV.y = std::get<float>(CurrentValue);
+					}
+				}
+				UVs.push_back(CurrentUV);
+			}
+			break;
+		}
+	}
+
+	return UVs;
+}
+
+std::vector<glm::vec3> FEResourceManager::ExtractNormalsFromPLYData(FERawPLYData* PLYData)
+{
+	std::vector<glm::vec3> Normals;
+	if (PLYData == nullptr)
+	{
+		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return Normals;
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == "vertex")
+		{
+			bool bCorrectElement = false;
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "nx" || Property.Name == "NX") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+						if ((Property.Name == "ny" || Property.Name == "NY") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+						if ((Property.Name == "nz" || Property.Name == "NZ") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+					}
+					if (bCorrectElement)
+						break;
+				}
+				if (bCorrectElement)
+					break;
+			}
+
+			if (!bCorrectElement)
+				continue;
+
+			Normals.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				glm::vec3 CurrentNormal;
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "nx" || Property.Name == "NX") && Property.Type == PLYPropertyType::FLOAT) CurrentNormal.x = std::get<float>(CurrentValue);
+						else if ((Property.Name == "ny" || Property.Name == "NY") && Property.Type == PLYPropertyType::FLOAT) CurrentNormal.y = std::get<float>(CurrentValue);
+						else if ((Property.Name == "nz" || Property.Name == "NZ") && Property.Type == PLYPropertyType::FLOAT) CurrentNormal.z = std::get<float>(CurrentValue);
+					}
+				}
+				Normals.push_back(CurrentNormal);
+			}
+			break;
+		}
+		else if (PLYData->Elements[i].Description.Name.find("normal") != std::string::npos)
+		{
+			bool bCorrectElement = false;
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "nx" || Property.Name == "NX") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+						if ((Property.Name == "ny" || Property.Name == "NY") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+						if ((Property.Name == "nz" || Property.Name == "NZ") && Property.Type == PLYPropertyType::FLOAT)
+							bCorrectElement = true;
+					}
+					if (bCorrectElement)
+						break;
+				}
+				if (bCorrectElement)
+					break;
+			}
+
+			if (!bCorrectElement)
+				continue;
+
+			Normals.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				glm::vec3 CurrentNormal;
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if ((Property.Name == "nx" || Property.Name == "NX") && Property.Type == PLYPropertyType::FLOAT)
+							CurrentNormal.x = std::get<float>(CurrentValue);
+						else if ((Property.Name == "ny" || Property.Name == "NY") && Property.Type == PLYPropertyType::FLOAT)
+							CurrentNormal.y = std::get<float>(CurrentValue);
+						else if ((Property.Name == "nz" || Property.Name == "NZ") && Property.Type == PLYPropertyType::FLOAT)
+							CurrentNormal.z = std::get<float>(CurrentValue);
+					}
+				}
+				Normals.push_back(CurrentNormal);
+			}
+		}
+	}
+
+	return Normals;
 }

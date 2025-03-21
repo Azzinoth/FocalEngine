@@ -35,3 +35,23 @@ void FEPointCloudComponent::SetPointCloud(FEPointCloud* NewPointCloud)
 {
 	PointCloud = NewPointCloud;
 }
+
+glm::vec3 FEPointCloudComponent::GetGlobalColorOverride() const
+{
+	return FEGlobalColorOverride;
+}
+
+void FEPointCloudComponent::SetGlobalColorOverride(const glm::vec3& NewColor)
+{
+	FEGlobalColorOverride = NewColor;
+}
+
+bool FEPointCloudComponent::IsUsingGlobalColorOverride() const
+{
+	return bUseGlobalColorOverride;
+}
+
+void FEPointCloudComponent::SetUseGlobalColorOverride(bool NewValue)
+{
+	bUseGlobalColorOverride = NewValue;
+}

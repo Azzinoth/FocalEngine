@@ -16,9 +16,17 @@ namespace FocalEngine
 
 		FEPointCloud* GetPointCloud() const;
 		void SetPointCloud(FEPointCloud* NewPointCloud);
-	private:
 
+		glm::vec3 GetGlobalColorOverride() const;
+		void SetGlobalColorOverride(const glm::vec3& NewColor);
+
+		bool IsUsingGlobalColorOverride() const;
+		void SetUseGlobalColorOverride(bool NewValue);
+	private:
 		FEPointCloud* PointCloud = nullptr;
 		bool bVisible = true;
+
+		glm::vec3 FEGlobalColorOverride;
+		bool bUseGlobalColorOverride = false;
 	};
 }

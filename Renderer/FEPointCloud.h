@@ -33,6 +33,7 @@ namespace FocalEngine
 
 		FEAABB GetAABB() const;
 
+		std::vector<FEPointCloudVertex> GetRawData() const;
 	private:
 		GLuint VboID = -1;
 		GLuint VaoID = -1;

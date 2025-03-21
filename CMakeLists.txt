@@ -235,8 +235,8 @@ file(GLOB Renderer_SRC
 file(GLOB ResourceManager_SRC
 	"ResourceManager/FEObjLoader.cpp"
 	"ResourceManager/FEObjLoader.h"
-	"ResourceManager/FEPLYParser.cpp"
-	"ResourceManager/FEPLYParser.h"
+	"ResourceManager/FEPLYManager.cpp"
+	"ResourceManager/FEPLYManager.h"
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
 	"ResourceManager/FEResourceManager.cpp"

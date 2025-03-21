@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FEPLYParser.h"
+#include "FEPLYManager.h"
 #include "../Renderer/FEPostProcess.h"
 #include "../ThirdParty/lodepng/lodepng.h"
 #include "../ThirdParty/stb_image/stb_image.h"
@@ -79,15 +79,18 @@ namespace FocalEngine
 							  float* Colors = nullptr, int ColorSize = 0,
 							  float* MatIndexs = nullptr, int MatIndexsSize = 0, int MatCount = 0,
 							  std::string Name = "");
+		FEMesh* RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "");
 
 		void DeleteFEMesh(const FEMesh* Mesh);
 		bool ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* FileName);
+		bool ExportFEMeshToPLY(FEMesh* MeshToExport, std::string FileName);
 
 		std::vector<std::string> GetMeshIDList();
 		std::vector<std::string> GetEnginePrivateMeshIDList();
 		FEMesh* GetMesh(std::string ID);
 		std::vector<FEMesh*> GetMeshByName(std::string Name);
 		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
+		
 		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
 		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
 		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
@@ -97,9 +100,12 @@ namespace FocalEngine
 		FEPointCloud* GetPointCloud(std::string ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
 		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
+		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
 		FEPointCloud* ImportPointCloud(std::string FileName);
 		FEPointCloud* LoadFEPointCloud(std::string FileName, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName);
+		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FileName);
+		void DeleteFEPointCloud(FEPointCloud* PointCloud);
 
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
@@ -170,6 +176,10 @@ namespace FocalEngine
 		std::vector<std::string> GetTagsThatWillPreventDeletion();
 		void AddTagThatWillPreventDeletion(std::string Tag);
 		void RemoveTagThatWillPreventDeletion(std::string Tag);
+
+		FEObject* ImportPLYFile(std::string FileName);
+		bool IsPLYCointainMesh(FERawPLYData* PLYData);
+		bool IsPLYCointainPointCloud(FERawPLYData* PLYData);
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -216,6 +226,12 @@ namespace FocalEngine
 		// These variables are used to extract engine resources after application build.
 		bool bUsePackageForPrivateResources = false;
 		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
+
+		std::vector<glm::vec3> ExtractPositionsFromPLYData(FERawPLYData* PLYData);
+		std::vector<int> ExtractIndicesFromPLYData(FERawPLYData* PLYData);
+		std::vector<std::vector<unsigned char>> ExtractColorsFromPLYData(FERawPLYData* PLYData);
+		std::vector<glm::vec2> ExtractUVsFromPLYData(FERawPLYData* PLYData, bool& bTextureCoordinatesArePartOfVertex);
+		std::vector<glm::vec3> ExtractNormalsFromPLYData(FERawPLYData* PLYData);
 	};
 #include "FEResourceManager.inl"
 
