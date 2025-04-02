@@ -22,7 +22,7 @@ bool FEAssetPackage::IsAssetIDPresent(const std::string& ID)
 	return Header.Entries.find(ID) != Header.Entries.end();
 }
 
-std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetPackageEntryIntializeData IntializeData)
+std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetPackageEntryInitializeData InitializeData)
 {
 	// For time being, we will not support hierarchical asset packages.
 	// Because of this, we will not support adding directories to the asset package.
@@ -39,17 +39,17 @@ std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEA
 		return "";
 	}
 
-	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
+	std::string IDToUse = InitializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return "";
 	}
 
-	std::string NameToUse = IntializeData.IsEmpty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name.empty() ? FILE_SYSTEM.GetFileName(FilePath) : IntializeData.Name;
-	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
-	std::string TagToUse = IntializeData.IsEmpty() ? "" : IntializeData.Tag;
-	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
+	std::string NameToUse = InitializeData.IsEmpty() ? FILE_SYSTEM.GetFileName(FilePath) : InitializeData.Name.empty() ? FILE_SYSTEM.GetFileName(FilePath) : InitializeData.Name;
+	std::string TypeToUse = InitializeData.IsEmpty() ? "" : InitializeData.Type;
+	std::string TagToUse = InitializeData.IsEmpty() ? "" : InitializeData.Tag;
+	std::string CommentToUse = InitializeData.IsEmpty() ? "" : InitializeData.Comment;
 
 	// Now we will try to read raw data from the file.
 	std::ifstream File(FilePath, std::ios::binary);
@@ -89,19 +89,19 @@ std::string FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEA
 	return IDToUse;
 }
 
-std::string FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryIntializeData IntializeData)
+std::string FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryInitializeData InitializeData)
 {
-	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
+	std::string IDToUse = InitializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return "";
 	}
 
-	std::string NameToUse = IntializeData.IsEmpty() ? "" : IntializeData.Name;
-	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
-	std::string TagToUse = IntializeData.IsEmpty() ? "" : IntializeData.Tag;
-	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
+	std::string NameToUse = InitializeData.IsEmpty() ? "" : InitializeData.Name;
+	std::string TypeToUse = InitializeData.IsEmpty() ? "" : InitializeData.Type;
+	std::string TagToUse = InitializeData.IsEmpty() ? "" : InitializeData.Tag;
+	std::string CommentToUse = InitializeData.IsEmpty() ? "" : InitializeData.Comment;
 
 	// Now we will add object to the asset package data.
 	FEAssetPackageAssetInfo NewEntry;
@@ -125,7 +125,7 @@ std::string FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t
 	return IDToUse;
 }
 
-std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIntializeData IntializeData)
+std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInitializeData InitializeData)
 {
 	if (Object == nullptr)
 	{
@@ -133,17 +133,17 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 		return "";
 	}
 
-	std::string IDToUse = IntializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : IntializeData.ID;
+	std::string IDToUse = InitializeData.IsEmpty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID.empty() ? APPLICATION.GetUniqueHexID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::ImportAsset: Asset ID already present: " + IDToUse, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return "";
 	}
 
-	std::string NameToUse = IntializeData.IsEmpty() ? Object->GetName() : IntializeData.Name.empty() ? Object->GetName() : IntializeData.Name;
-	std::string TypeToUse = IntializeData.IsEmpty() ? "" : IntializeData.Type;
-	std::string TagToUse = IntializeData.IsEmpty() ? Object->GetTag() : IntializeData.Tag;
-	std::string CommentToUse = IntializeData.IsEmpty() ? "" : IntializeData.Comment;
+	std::string NameToUse = InitializeData.IsEmpty() ? Object->GetName() : InitializeData.Name.empty() ? Object->GetName() : InitializeData.Name;
+	std::string TypeToUse = InitializeData.IsEmpty() ? "" : InitializeData.Type;
+	std::string TagToUse = InitializeData.IsEmpty() ? Object->GetTag() : InitializeData.Tag;
+	std::string CommentToUse = InitializeData.IsEmpty() ? "" : InitializeData.Comment;
 
 	// TODO: This should save info to memory, not to file.
 	switch (Object->GetType())
@@ -157,7 +157,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempTexture.texture";
 			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath.c_str());
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -172,7 +172,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempMesh.mesh";
 			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath.c_str());
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -196,7 +196,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 			ResourcesFile << JsonFile;
 			ResourcesFile.close();
 
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -220,7 +220,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 			ResourcesFile << JsonFile;
 			ResourcesFile.close();
 
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -244,7 +244,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 			ResourcesFile << JsonFile;
 			ResourcesFile.close();
 
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -259,7 +259,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempNativeScriptModule.nativescriptmodule";
 			RESOURCE_MANAGER.SaveFENativeScriptModule(NativeScriptModule, FilePath);
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -282,7 +282,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInt
 			ResourcesFile << JsonFile;
 			ResourcesFile.close();
 
-			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
+			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
 			return ResultingID;
@@ -344,7 +344,7 @@ bool FEAssetPackage::UpdateAssetFromFile(const std::string& ID, const std::strin
 		return false;
 	}
 
-	std::string NewID = ImportAssetFromFile(FilePath, FEAssetPackageEntryIntializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
+	std::string NewID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
 	if (NewID.empty())
 	{
 		LOG.Add("FEAssetPackage::UpdateFile: Could not import file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
@@ -375,7 +375,7 @@ bool FEAssetPackage::UpdateAssetFromMemory(const std::string& ID, unsigned char*
 		return false;
 	}
 
-	std::string NewID = ImportAssetFromMemory(RawData, Size, FEAssetPackageEntryIntializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
+	std::string NewID = ImportAssetFromMemory(RawData, Size, FEAssetPackageEntryInitializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
 	if (NewID.empty())
 	{
 		LOG.Add("FEAssetPackage::UpdateFile: Could not import file from memory.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);

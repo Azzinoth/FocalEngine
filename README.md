@@ -72,8 +72,10 @@ The Focal Engine provides specialized capabilities for working with large-scale 
 
   ⚠️ Work in progress ⚠️
 
-- High-Performance Rendering: Support for real-time visualization of massive point clouds (hundreds of millions to billions of points)  
-  ⚠️ Work in progress ⚠️
+- High-Performance Rendering: Support for real-time visualization of massive point clouds (hundreds of millions to billions of points)
+
+  *Implementation based on:*  
+  Schütz, M., Kerbl, B., & Wimmer, M. (2021). [Rendering point clouds with compute shaders and vertex order optimization](https://doi.org/10.1111/cgf.14345). In Computer Graphics Forum (Vol. 40, No. 4, pp. 115-126).
 
 - GPU-Accelerated Editing: Tools for manipulating and editing huge point clouds directly in GPU memory  
   ⚠️ Work in progress ⚠️

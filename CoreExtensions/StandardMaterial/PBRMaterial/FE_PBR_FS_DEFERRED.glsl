@@ -331,10 +331,10 @@ void main(void)
 			outColor += vec4(spotLightColor(FElight[i], normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
 		}
 	}
-
+	
 	outColor += vec4(directionalLightColor(normal, getWorldPosition(), viewDirection, baseColor), 1.0f);
-
-	// TODO: Make ShaderID more general, right now it pretty limited.
+	
+	// TO-DO: Make ShaderID more general, right now it pretty limited.
 	vec4 ShaderID = texture(textures[4], FS_IN.UV);
 	// If ShaderID is 1, then it is terrain
 	if (ShaderID.r == 1)
@@ -553,7 +553,6 @@ vec3 directionalLightColor(vec3 normal, vec3 fragPosition, vec3 viewDir, vec3 ba
 
 	if (!FEReceiveShadows)
 		return Lo;
-		
 
 	float shadow = 0.0;
 	float distanceToCam = length(FECameraPosition - getWorldPosition());

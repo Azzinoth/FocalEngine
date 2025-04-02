@@ -124,8 +124,8 @@ namespace FocalEngine
 		bool IsSSAOSmallDetailsEnabled();
 		void SetSSAOSmallDetailsEnabled(const bool NewValue);
 
-		bool IsSSAOResultBlured();
-		void SetSSAOResultBlured(const bool NewValue);
+		bool IsSSAOResultBlurred();
+		void SetSSAOResultBlurred(const bool NewValue);
 
 		float GetSSAOBias();
 		void SetSSAOBias(const float NewValue);
@@ -222,7 +222,7 @@ namespace FocalEngine
 		int SSAOSampleCount = 16;
 
 		bool bSSAOSmallDetails = true;
-		bool bSSAOBlured = true;
+		bool bSSAOBlurred = true;
 
 		float SSAOBias = 0.013f;
 		float SSAORadius = 10.0f;

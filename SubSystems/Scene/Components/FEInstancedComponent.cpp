@@ -44,7 +44,7 @@ float FESpawnInfo::GetScaleDeviation()
 	return FinalDeviation;
 }
 
-int FESpawnInfo::GetRotaionDeviation(const glm::vec3 Axis)
+int FESpawnInfo::GetRotationDeviation(const glm::vec3 Axis)
 {
 	if (Axis.x > 0.0f)
 	{
@@ -104,12 +104,12 @@ void FEInstancedComponent::Clear()
 	Modifications.clear();
 }
 
-FE_CULING_TYPE FEInstancedComponent::GetCullingType()
+FE_CULLING_TYPE FEInstancedComponent::GetCullingType()
 {
 	return CullingType;
 }
 
-void FEInstancedComponent::SetCullingType(FE_CULING_TYPE NewValue)
+void FEInstancedComponent::SetCullingType(FE_CULLING_TYPE NewValue)
 {
 	CullingType = NewValue;
 }

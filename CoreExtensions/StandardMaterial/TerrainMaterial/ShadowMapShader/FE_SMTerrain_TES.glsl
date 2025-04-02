@@ -1,7 +1,7 @@
 layout (quads, fractional_even_spacing) in;
 
 @PVMMatrix@
-uniform float hightScale;
+uniform float HeightScale;
 
 @Texture@ heightMap;
 
@@ -9,11 +9,11 @@ in vec2 TC_UV[];
 
 float height(float u, float v)
 {
-	//float min = -hightScale;
-	//float max = hightScale;
-	return texture(heightMap, vec2(u,v)).r * 2 * hightScale - hightScale;
+	//float min = -HeightScale;
+	//float max = HeightScale;
+	return texture(heightMap, vec2(u,v)).r * 2 * HeightScale - HeightScale;
 	
-	//return (texture(heightMap, vec2(u,v)).r * hightScale);
+	//return (texture(heightMap, vec2(u,v)).r * HeightScale);
 }
 
 void main(void)

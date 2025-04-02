@@ -209,7 +209,7 @@ namespace FocalEngine
 		std::string AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback);
 		std::string AddMouseMoveCallback(std::function<void(double, double)> UserOnMouseMoveCallback);
 
-		// TO-DO: It is terrible to obligate the user to remove the callback or application will crash. We should remove it automatically.
+		// TO-DO: Forcing users to manually remove callbacks to avoid crashes is poor design. Implement automatic removal.
 		void RemoveCallback(std::string CallbackID);
 
 		void Update();

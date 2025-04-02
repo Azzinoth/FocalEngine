@@ -197,6 +197,8 @@ file(GLOB ComputeShaders_SRC
 file(GLOB PointCloudShaders_SRC
 	"CoreExtensions/PointCloudShaders/FE_PointCloud_VS.glsl"
 	"CoreExtensions/PointCloudShaders/FE_PointCloud_FS.glsl"
+	"CoreExtensions/PointCloudShaders/ComputeShaders/FE_PointCloud_CS.glsl"
+	"CoreExtensions/PointCloudShaders/ComputeShaders/FE_PointCloud_After_Rendering_CS.glsl"
 )
 
 # *************** RENDERER ***************

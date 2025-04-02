@@ -826,10 +826,10 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 		bCSM = true;
 	}
 
-	Index = ParsedShaderText.find(FE_RECEVESHADOWS_MACRO);
+	Index = ParsedShaderText.find(FE_RECEIVESHADOWS_MACRO);
 	if (Index != std::string::npos)
 	{
-		ParsedShaderText.replace(Index, strlen(FE_RECEVESHADOWS_MACRO), "uniform bool FEReceiveShadows;");
+		ParsedShaderText.replace(Index, strlen(FE_RECEIVESHADOWS_MACRO), "uniform bool FEReceiveShadows;");
 	}
 
 	Index = ParsedShaderText.find(FE_MATERIAL_TEXTURES_MACRO);

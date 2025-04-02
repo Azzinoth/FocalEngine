@@ -526,23 +526,23 @@ bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 	return Result;
 }
 
-bool FEMaterial::IsCompackPacking()
+bool FEMaterial::IsCompactPacking()
 {
-	if (!IsCompackPackingPossible())
-		bCompackPacking = false;
+	if (!IsCompactPackingPossible())
+		bCompactPacking = false;
 
-	return bCompackPacking;
+	return bCompactPacking;
 }
 
-void FEMaterial::SetCompackPacking(const bool NewValue)
+void FEMaterial::SetCompactPacking(const bool NewValue)
 {
-	if (NewValue && !IsCompackPackingPossible())
+	if (NewValue && !IsCompactPackingPossible())
 		return;
 
-	bCompackPacking = NewValue;
+	bCompactPacking = NewValue;
 }
 
-bool FEMaterial::IsCompackPackingPossible()
+bool FEMaterial::IsCompactPackingPossible()
 {
 	// All material properties should be available from one texture.
 	if (GetAOMap() != nullptr && GetAOMap() == GetRoughnessMap() && GetAOMap() == GetMetalnessMap() && GetAOMap() == GetDisplacementMap())

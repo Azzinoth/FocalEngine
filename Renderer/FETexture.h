@@ -22,7 +22,7 @@ namespace FocalEngine
 		friend FEPostProcess;
 		friend FEFramebuffer;
 	public:
-		static void GPUAllocateTeture(GLenum Target, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLint Border, GLenum Format, GLenum Type, const void* Data);
+		static void GPUAllocateTexture(GLenum Target, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLint Border, GLenum Format, GLenum Type, const void* Data);
 		static std::string TextureInternalFormatToString(GLint InternalFormat);
 
 		FETexture(std::string Name);
@@ -60,7 +60,7 @@ namespace FocalEngine
 		void AddToOnDeleteCallBackList(std::string ObjectID);
 		void EraseFromOnDeleteCallBackList(std::string ObjectID);
 
-		static std::vector<GLuint> NoDeletingList;
-		static void AddToNoDeletingList(GLuint TextureID);
+		static std::vector<GLuint> PreventAutoDeletionList;
+		static void MarkAsPersistent(GLuint TextureID);
 	};
 }

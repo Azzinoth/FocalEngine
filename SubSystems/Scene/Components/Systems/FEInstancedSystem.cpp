@@ -241,7 +241,7 @@ void FEInstancedSystem::InitializeGPUCullingBuffer(FEEntity* Entity, FEGameModel
 
 	LODInfoData.push_back(static_cast<float>(BillboardIndex));
 	// This should not be here, instead normal of plane should align with vector to camera.
-	LODInfoData.push_back(1.5708f * 3.0f + GameModelComponent.GetGameModel()->GetBillboardZeroRotaion() * ANGLE_TORADIANS_COF);
+	LODInfoData.push_back(1.5708f * 3.0f + GameModelComponent.GetGameModel()->GetBillboardZeroRotation() * ANGLE_TORADIANS_COF);
 	LODInfoData.push_back(static_cast<float>(InstancedComponent.InstanceCount));
 
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, InstancedComponent.InstancedElementsData[BufferIndex]->LODInfoBuffer));
@@ -573,7 +573,7 @@ void FEInstancedSystem::UpdateMatrix(FEEntity* Entity, size_t BufferIndex)
 
 	if (InstancedComponent.InstancedElementsData[BufferIndex]->InstancedMatrices.size() != InstancedComponent.InstancedElementsData[BufferIndex]->TransformedInstancedMatrices.size())
 	{
-		LOG.Add("InstancedMatrices size and TransformedInstancedMatrices size is not equal in FEInstancedSystem::UpdateMatrix", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("InstancedMatrices size and TransformedInstancedMatrices size are not equal in FEInstancedSystem::UpdateMatrix", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -1134,9 +1134,9 @@ bool FEInstancedSystem::PopulateInstanceInternal(FEEntity* Entity, FEGameModelCo
 
 		NewMat = glm::translate(NewMat, glm::vec3(X, Y, Z));
 
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotaionDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
 		float FinalScale = GameModelComponent.GetGameModel()->GetScaleFactor() + GameModelComponent.GetGameModel()->GetScaleFactor() * SpawnInfo.GetScaleDeviation();
 		if (FinalScale < 0.0f)

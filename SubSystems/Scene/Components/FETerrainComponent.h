@@ -8,7 +8,7 @@ namespace FocalEngine
 #define FE_TERRAIN_MAX_LAYERS 8
 #define FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER 9
 #define FE_TERRAIN_LAYER_PER_TEXTURE 4
-#define FE_TERRAIN_STANDARD_HIGHT_MAP_RESOLUTION 1024
+#define FE_TERRAIN_STANDARD_HEIGHT_MAP_RESOLUTION 1024
 #define FE_TERRAIN_STANDARD_LAYER_MAP_RESOLUTION 512
 
 	class FETerrainLayer
@@ -68,8 +68,8 @@ namespace FocalEngine
 		bool IsWireframeMode();
 		void SetWireframeMode(bool NewValue);
 		
-		float GetHightScale();
-		void SetHightScale(float NewValue);
+		float GetHeightScale();
+		void SetHeightScale(float NewValue);
 
 		float GetDisplacementScale();
 		void SetDisplacementScale(float NewValue);
@@ -100,11 +100,11 @@ namespace FocalEngine
 		bool bReceiveShadows = true;
 		bool bDirtyFlag = false;
 
-		float HightScale = 1.0f;
+		float HeightScale = 1.0f;
 		float DisplacementScale = 0.2f;
 		float ScaleFactor = 1.0f;
 		glm::vec2 TileMult = glm::vec2(1.0);
-		glm::vec2 HightMapShift = glm::vec2(0.0);
+		glm::vec2 HeightMapShift = glm::vec2(0.0);
 		float ChunkPerSide = 2.0f;
 
 		float LODLevel = 64.0f;
@@ -120,7 +120,7 @@ namespace FocalEngine
 		FEFramebuffer* BrushVisualFB = nullptr;
 		// **************************** TERRAIN EDITOR TOOLS END ************************
 
-		std::vector<FEEntity*> SnapedInstancedEntities;
+		std::vector<FEEntity*> SnappedInstancedEntities;
 
 		std::vector<FETerrainLayer*> Layers;
 		std::vector<unsigned char*> LayerMapsRawData;

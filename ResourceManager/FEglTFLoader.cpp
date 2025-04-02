@@ -193,7 +193,7 @@ void FEGLTFLoader::Load(const char* FileName)
 			CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();
 
 			if (CurrentBuffer.ByteLength != FileSize)
-				LOG.Add("ByteLength and fileSize is not equal in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("ByteLength and fileSize are not equal in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 
 			if (JsonBuffers[static_cast<int>(i)].isMember("name"))
 				CurrentBuffer.Name = JsonBuffers[static_cast<int>(i)]["name"].asCString();
@@ -501,7 +501,7 @@ void FEGLTFLoader::Load(const char* FileName)
 		Json::Value JsonNodes = Root["nodes"];
 		for (size_t i = 0; i < JsonNodes.size(); i++)
 		{
-			GLTFNodes NewNode;
+			GLTFNode NewNode;
 			bool bAnyInfoWasRead = false;
 
 			if (JsonNodes[static_cast<int>(i)].isMember("name"))
@@ -601,12 +601,12 @@ void FEGLTFLoader::Load(const char* FileName)
 
 			if (JsonNodes[static_cast<int>(i)].isMember("children"))
 			{
-				std::unordered_map<int, bool> ChildrensPresent;
+				std::unordered_map<int, bool> ChildrenPresent;
 
-				Json::Value JsonChildrens = JsonNodes[static_cast<int>(i)]["children"];
-				for (size_t j = 0; j < JsonChildrens.size(); j++)
+				Json::Value JsonChildren = JsonNodes[static_cast<int>(i)]["children"];
+				for (size_t j = 0; j < JsonChildren.size(); j++)
 				{
-					int NewChild = JsonChildrens[static_cast<int>(j)].asInt();
+					int NewChild = JsonChildren[static_cast<int>(j)].asInt();
 					// Each element in the array MUST be greater than or equal to 0.
 					if (NewChild < 0)
 					{
@@ -615,13 +615,13 @@ void FEGLTFLoader::Load(const char* FileName)
 					}
 
 					// Each element in the array MUST be unique.
-					if (ChildrensPresent.find(NewChild) != ChildrensPresent.end())
+					if (ChildrenPresent.find(NewChild) != ChildrenPresent.end())
 					{
 						LOG.Add("Child is not unique in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
 						continue;
 					}
 
-					ChildrensPresent[NewChild] = true;
+					ChildrenPresent[NewChild] = true;
 					NewNode.Children.push_back(NewChild);
 				}
 			}
@@ -643,10 +643,10 @@ void FEGLTFLoader::Load(const char* FileName)
 
 			if (JsonScenes[static_cast<int>(i)].isMember("nodes"))
 			{
-				Json::Value JsonNodeIndexes = JsonScenes[static_cast<int>(i)]["nodes"];
-				for (size_t j = 0; j < JsonNodeIndexes.size(); j++)
+				Json::Value JsonNodeIndices = JsonScenes[static_cast<int>(i)]["nodes"];
+				for (size_t j = 0; j < JsonNodeIndices.size(); j++)
 				{
-					int NewNodeIndex = JsonNodeIndexes[static_cast<int>(j)].asInt();
+					int NewNodeIndex = JsonNodeIndices[static_cast<int>(j)].asInt();
 					// Each element in the array MUST be greater than or equal to 0.
 					if (NewNodeIndex < 0)
 					{
@@ -680,7 +680,7 @@ bool FEGLTFLoader::LoadPositions(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["POSITION"])
 	{
-		LOG.Add("Primitive.Attributes[\"POSITION\"] is out of bounds of accessors.size() function FEGLTFLoader::LoadPositions.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Primitive.Attributes[\"POSITION\"] index is out of bounds of accessors.size() function FEGLTFLoader::LoadPositions.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -708,11 +708,11 @@ bool FEGLTFLoader::LoadPositions(GLTFPrimitive& Primitive)
 	return true;
 }
 
-bool FEGLTFLoader::LoadNomals(GLTFPrimitive& Primitive)
+bool FEGLTFLoader::LoadNormals(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["NORMAL"])
 	{
-		LOG.Add("Primitive.Attributes[\"NORMAL\"] is out of bounds of accessors.size() function FEGLTFLoader::LoadNomals.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Primitive.Attributes[\"NORMAL\"] index is out of bounds of accessors.size() function FEGLTFLoader::LoadNormals.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -723,7 +723,7 @@ bool FEGLTFLoader::LoadNomals(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType != 5126)
 	{
-		LOG.Add("ComponentType is not float in function FEGLTFLoader::LoadNomals.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("ComponentType is not float in function FEGLTFLoader::LoadNormals.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -744,7 +744,7 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Attributes["TANGENT"])
 	{
-		LOG.Add("Primitive.Attributes[\"TANGENT\"] is out of bounds of accessors.size() function FEGLTFLoader::LoadTangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Primitive.Attributes[\"TANGENT\"] index is out of bounds of accessors.size() function FEGLTFLoader::LoadTangents.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -806,7 +806,7 @@ bool FEGLTFLoader::LoadUV(GLTFPrimitive& Primitive)
 		{
 			if (Accessors.size() <= Primitive.Attributes[AttributeName])
 			{
-				LOG.Add("Primitive.Attributes[" + AttributeName + "] is out of bounds of accessors.size() function FEGLTFLoader::LoadUV.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("Primitive.Attributes[" + AttributeName + "] index is out of bounds of accessors.size() function FEGLTFLoader::LoadUV.", "FE_LOG_LOADING", FE_LOG_ERROR);
 				//return false;
 			}
 
@@ -841,7 +841,7 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 {
 	if (Accessors.size() <= Primitive.Indices)
 	{
-		LOG.Add("Primitive.Indices is out of bounds of accessors.size() function FEGLTFLoader::LoadIndices.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Primitive.Indices index is out of bounds of accessors.size() function FEGLTFLoader::LoadIndices.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -911,7 +911,7 @@ bool FEGLTFLoader::LoadMeshRawData(GLTFPrimitive& Primitive)
 
 	if (Primitive.Attributes.find("NORMAL") != Primitive.Attributes.end())
 	{
-		if (!LoadNomals(Primitive))
+		if (!LoadNormals(Primitive))
 			return false;
 	}
 

@@ -22,14 +22,14 @@ bool FEPLYManager::IsPLYFile(std::string FilePath)
 {
 	if (FilePath.empty())
 	{
-		LOG.Add(std::string("Empty file path in function FEPLYParser::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Empty file path in function FEPLYManager::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
 	{
-		LOG.Add(std::string("Could not open file in function FEPLYParser::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Could not open file in function FEPLYManager::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -37,7 +37,7 @@ bool FEPLYManager::IsPLYFile(std::string FilePath)
 	std::getline(File, CurrentLine);
 	if (CurrentLine != "ply")
 	{
-		LOG.Add(std::string("File is not a PLY file in function FEPLYParser::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("File is not a PLY file in function FEPLYManager::IsPLYFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -56,7 +56,7 @@ FEPLYHeader* FEPLYManager::ParseHeader(std::ifstream& File)
 
 	if (Line != "ply")
 	{
-		LOG.Add(std::string("File is not a PLY file in function FEPLYParser::ParseHeader."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("File is not a PLY file in function FEPLYManager::ParseHeader."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete Header;
 		return nullptr;
 	}
@@ -222,7 +222,7 @@ PLYScalarValue FEPLYManager::ReadPropertyValue(std::ifstream& File, PLYPropertyT
 
 	if (LoadedPLY == nullptr || LoadedPLY->Header == nullptr)
 	{
-		LOG.Add(std::string("No header loaded in function FEPLYParser::ReadPropertyValue."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("No header loaded in function FEPLYManager::ReadPropertyValue."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Value;
 	}
 
@@ -370,7 +370,7 @@ bool FEPLYManager::ParseData(std::ifstream& File)
 {
 	if (LoadedPLY == nullptr || LoadedPLY->Header == nullptr)
 	{
-		LOG.Add(std::string("No header loaded in function FEPLYParser::ParseASCIIData."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("No header loaded in function FEPLYManager::ParseData."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -472,7 +472,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	LoadedPLY = new FERawPLYData();
 	if (FilePath.empty())
 	{
-		LOG.Add(std::string("Empty file path in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Empty file path in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
 		return nullptr;
 	}
@@ -480,7 +480,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
 	{
-		LOG.Add(std::string("Could not open file with path: ") + FilePath + " in function FEPLYParser::ParseFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Could not open file with path: ") + FilePath + " in function FEPLYManager::ParseFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
 		return nullptr;
 	}
@@ -488,7 +488,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	LoadedPLY->Header = ParseHeader(File);
 	if (LoadedPLY->Header == nullptr)
 	{
-		LOG.Add(std::string("Could not parse header in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Could not parse header in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
 		return nullptr;
 	}
@@ -497,7 +497,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	{
 		if (!ParseData(File))
 		{
-			LOG.Add(std::string("Could not parse ASCII data in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add(std::string("Could not parse ASCII data in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 			delete LoadedPLY;
 			return nullptr;
 		}
@@ -506,19 +506,19 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	{
 		if (!ParseData(File))
 		{
-			LOG.Add(std::string("Could not parse binary data in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add(std::string("Could not parse binary data in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 			delete LoadedPLY;
 			return nullptr;
 		}
 	}
 	else if (LoadedPLY->Header->StorageType == PLYFileType::BINARY_BIG_ENDIAN)
 	{
-		LOG.Add(std::string("BINARY_BIG_ENDIAN PLY files are not supported in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("BINARY_BIG_ENDIAN PLY files are not supported in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 	else
 	{
-		LOG.Add(std::string("Unknown PLY file type in function FEPLYParser::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Unknown PLY file type in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -629,19 +629,19 @@ bool FEPLYManager::SaveToPLY(const std::string& FilePath, FERawPLYData* Data, PL
 {
 	if (Data == nullptr)
 	{
-		LOG.Add(std::string("No data to save in function FEPLYParser::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add(std::string("No data to save in function FEPLYManager::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Data->Header == nullptr)
 	{
-		LOG.Add(std::string("No header in data to save in function FEPLYParser::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add(std::string("No header in data to save in function FEPLYManager::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (FilePath.empty())
 	{
-		LOG.Add(std::string("Empty file path in function FEPLYParser::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add(std::string("Empty file path in function FEPLYManager::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -657,7 +657,7 @@ bool FEPLYManager::SaveToPLY(const std::string& FilePath, FERawPLYData* Data, PL
 
 	if (Data->Header->StorageType == PLYFileType::UNKNOWN)
 	{
-		LOG.Add(std::string("Unknown storage type in function FEPLYParser::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add(std::string("Unknown storage type in function FEPLYManager::SaveToPLY."), "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 

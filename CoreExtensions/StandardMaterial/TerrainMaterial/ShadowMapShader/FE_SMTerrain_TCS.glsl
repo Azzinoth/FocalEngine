@@ -4,21 +4,21 @@ layout (vertices = 4) out;
 @CameraPosition@
 
 @Texture@ heightMap;
-uniform float hightScale;
+uniform float HeightScale;
 uniform float scaleFactor;
 uniform float LODlevel;
-uniform vec2 hightMapShift;
+uniform vec2 HeightMapShift;
 
 in vec2 vertex_UV[];
 out vec2 TC_UV[];
 
 float height(float u, float v)
 {
-	//float min = -hightScale;
-	//float max = hightScale;
-	return texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * 2 * hightScale - hightScale;
+	//float min = -HeightScale;
+	//float max = HeightScale;
+	return texture(heightMap,(vec2(u,v) - HeightMapShift) / scaleFactor).r * 2 * HeightScale - HeightScale;
 	
-	//return texture(heightMap,(vec2(u,v) - hightMapShift) / scaleFactor).r * hightScale;
+	//return texture(heightMap,(vec2(u,v) - HeightMapShift) / scaleFactor).r * HeightScale;
 }
 
 // frustum_edge should be 1, but I gave additional 10% for less aggressive culling. 
@@ -91,5 +91,5 @@ void main(void)
 	}
 
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	TC_UV[gl_InvocationID] = (vertex_UV[gl_InvocationID] - hightMapShift) / scaleFactor;
+	TC_UV[gl_InvocationID] = (vertex_UV[gl_InvocationID] - HeightMapShift) / scaleFactor;
 }

@@ -99,7 +99,7 @@ namespace FocalEngine
 		void SetBrushLayerIndex(size_t NewValue);
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
-		void SetHeightMap(FETexture* HightMap, FEEntity* TerrainEntity);
+		void SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity);
 		void LoadHeightMap(std::string FileName, FEEntity* TerrainEntity);
 	};
 

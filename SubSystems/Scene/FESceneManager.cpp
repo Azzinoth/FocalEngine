@@ -253,7 +253,7 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	return Result;
 }
 
-// TODO: Improve FETransformSystem robustness by reducing special cases.
+// TO-DO: Improve FETransformSystem robustness by minimizing special case handling.
 #include "Components/Systems/FETransformSystem.h"
 std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
@@ -269,8 +269,8 @@ std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* S
 	TRANSFORM_SYSTEM.UpdateInternal(SourceScene->SceneGraph.GetRoot());
 
 	// Get children of the root entity and import them.
-	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
-	for (auto RootChildren : RootChildrens)
+	std::vector<FENaiveSceneGraphNode*> RootChildren = SourceScene->SceneGraph.GetRoot()->GetChildren();
+	for (auto RootChildren : RootChildren)
 	{
 		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
 		FEEntity* NewChildEntity = TargetScene->ImportEntity(EntityToDuplicate, TargetParent, Filter);

@@ -1,4 +1,4 @@
-uniform float hightScale;
+uniform float HeightScale;
 uniform float scaleFactor;
 uniform vec2 tileMult;
 

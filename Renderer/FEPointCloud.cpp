@@ -59,21 +59,56 @@ std::vector<FEPointCloudVertex> FEPointCloud::GetRawData() const
 {
 	std::vector<FEPointCloudVertex> RawData;
 
-	if (VboID == -1 || VaoID == -1)
-	{
-		LOG.Add("FEPointCloud::GetRawData() called on object with invalid VBO or VAO", "FE_POINT_CLOUD", FE_LOG_WARNING);
-		return RawData;
-	}
-
 	if (PointCount == 0)
 	{
 		LOG.Add("FEPointCloud::GetRawData() called on object with 0 points", "FE_POINT_CLOUD", FE_LOG_WARNING);
 		return RawData;
 	}
 
-	RawData.resize(PointCount);
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, VboID));
-	FE_GL_ERROR(glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+	if (IsAdvancedRenderingEnabled())
+	{
+		if (ComputeShaderBuffer == GLuint(-1))
+		{
+			LOG.Add("FEPointCloud::GetRawData() called on object with invalid ComputeShaderBuffer", "FE_POINT_CLOUD", FE_LOG_WARNING);
+			return RawData;
+		}
+
+		RawData.resize(PointCount);
+		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, ComputeShaderBuffer));
+		FE_GL_ERROR(glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+
+		return RawData;
+	}
+	else
+	{
+		if (VaoID == GLuint(-1))
+		{
+			LOG.Add("FEPointCloud::GetRawData() called on object with invalid VAO", "FE_POINT_CLOUD", FE_LOG_WARNING);
+			return RawData;
+		}
+
+		if (VboID == GLuint(-1))
+		{
+			LOG.Add("FEPointCloud::GetRawData() called on object with invalid VBO", "FE_POINT_CLOUD", FE_LOG_WARNING);
+			return RawData;
+		}
+
+		RawData.resize(PointCount);
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, VboID));
+		FE_GL_ERROR(glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+	}
 
 	return RawData;
+}
+
+bool FEPointCloud::IsAdvancedRenderingEnabled() const
+{
+	return bUseAdvancedRendering;
+}
+
+#include "../SubSystems/Scene/Components/Systems/FEPointCloudSystem.h"
+void FEPointCloud::SetAdvancedRenderingEnabled(const bool bUseAdvancedRendering)
+{
+	if (POINT_CLOUD_SYSTEM.SetAdvancedRendering(this, bUseAdvancedRendering))
+		this->bUseAdvancedRendering = bUseAdvancedRendering;
 }

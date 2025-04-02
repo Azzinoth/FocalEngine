@@ -9,7 +9,7 @@ FEMaterial* FETerrainLayer::GetMaterial()
 
 void FETerrainLayer::SetMaterial(FEMaterial* NewValue)
 {
-	if (NewValue->IsCompackPacking())
+	if (NewValue->IsCompactPacking())
 		Material = NewValue;
 }
 
@@ -76,9 +76,9 @@ bool FETerrainComponent::IsWireframeMode()
 	return bWireframeMode;
 }
 
-float FETerrainComponent::GetHightScale()
+float FETerrainComponent::GetHeightScale()
 {
-	return HightScale;
+	return HeightScale;
 }
 
 FETexture* FETerrainComponent::GetHeightMap() const
@@ -86,15 +86,15 @@ FETexture* FETerrainComponent::GetHeightMap() const
 	return HeightMap;
 }
 
-void FETerrainComponent::SetHightScale(const float NewValue)
+void FETerrainComponent::SetHeightScale(const float NewValue)
 {
 	if (NewValue <= 0)
 		return;
 
-	if (HightScale != NewValue)
+	if (HeightScale != NewValue)
 		bDirtyFlag = true;
 
-	HightScale = NewValue;
+	HeightScale = NewValue;
 }
 
 glm::vec2 FETerrainComponent::GetTileMult()
@@ -191,7 +191,7 @@ FETerrainLayer* FETerrainComponent::ActivateVacantLayerSlot(FEMaterial* Material
 		return nullptr;
 	}
 
-	if (!Material->IsCompackPacking())
+	if (!Material->IsCompactPacking())
 	{
 		LOG.Add("FETerrainComponent::activateLayerSlot material is not compactly packed", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
@@ -271,7 +271,7 @@ void FETerrainComponent::LoadLayersDataToGPU()
 	for (size_t i = 0; i < Layers.size(); i++)
 	{
 		const size_t index = i * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER;
-		if (Layers[i] != nullptr && Layers[i]->GetMaterial()->IsCompackPacking())
+		if (Layers[i] != nullptr && Layers[i]->GetMaterial()->IsCompactPacking())
 		{
 			const FEMaterial* CurrentMaterial = Layers[i]->GetMaterial();
 			// normalMapIntensity

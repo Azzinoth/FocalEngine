@@ -26,7 +26,7 @@ namespace FocalEngine
 		FEPointCloud* PointCloud = nullptr;
 		bool bVisible = true;
 
-		glm::vec3 FEGlobalColorOverride;
+		glm::vec3 GlobalColorOverride;
 		bool bUseGlobalColorOverride = false;
 	};
 }

@@ -45,16 +45,22 @@ namespace FocalEngine
 		FEShader* Shader = nullptr;
 	};
 
-	// TO-DO: That is very non GPU memory efficient way to support multiple cameras.
+	// TO-DO: This is very non GPU memory efficient way to support multiple cameras.
 	struct FECameraRenderingData
 	{
 		friend class FERenderer;
+
 		FEEntity* CameraEntity = nullptr;
 		FEFramebuffer* SceneToTextureFB = nullptr;
 		FEGBuffer* GBuffer = nullptr;
 		FESSAO* SSAO = nullptr;
 		FETexture* DepthPyramid = nullptr;
 		std::vector<FEPostProcess*> PostProcessEffects;
+
+		// Variables for compute shader based point cloud rendering.
+		FEFramebuffer* PointCloudIntermediateFrameBuffer = nullptr;
+		GLuint PointCloud64bitFrameBuffer = -1;
+		bool IsAdvancedPointCloudRenderingInitialized();
 
 		FETexture* FinalScene = nullptr;
 
@@ -64,6 +70,10 @@ namespace FocalEngine
 			delete GBuffer;
 			delete SSAO;
 			delete DepthPyramid;
+			delete PointCloudIntermediateFrameBuffer;
+
+			if (PointCloud64bitFrameBuffer != GLuint (-1))
+				FE_GL_ERROR(glDeleteBuffers(1, &PointCloud64bitFrameBuffer));
 		}
 	};
 	
@@ -127,6 +137,20 @@ namespace FocalEngine
 
 		FECameraRenderingData* GetCameraRenderingData(FEEntity* CameraEntity);
 		void AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing = false);
+
+		// TO-DO: This function is not ready yet. The main problem is that fused data would not be fed into postprocess.
+		bool FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEFramebuffer* ResultingFrameBuffer);
+		bool FuseFrameBufferDataAndCameraData(FETexture* SourceColor, FETexture* SourceDepth, FEEntity* TargetCamera,
+											  float SourceNearPlane, float SourceFarPlane,
+											  glm::vec3 NormalsToWrite, glm::vec4 MaterialPropertiesToWrite,
+											  glm::vec4 ShaderPropertiesToWrite, glm::vec2 MotionVectorsToWrite);
+		bool FuseFrameBufferDataAndCameraData(FEFramebuffer* Source, FEEntity* TargetCamera,
+											  float SourceNearPlane, float SourceFarPlane,
+											  glm::vec3 NormalsToWrite, glm::vec4 MaterialPropertiesToWrite,
+											  glm::vec4 ShaderPropertiesToWrite, glm::vec2 MotionVectorsToWrite);
+		bool FuseTwoFrameBuffers(FEFramebuffer* FirstSource, float FirstNearPlane, float FirstFarPlane,
+								 FEFramebuffer* SecondSource, float SecondNearPlane, float SecondFarPlane, FEFramebuffer* Target);
+		bool FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEEntity* CameraToPutResultIn);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -189,6 +213,8 @@ namespace FocalEngine
 		void ForceCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
+
+		bool InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

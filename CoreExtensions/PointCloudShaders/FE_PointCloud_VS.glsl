@@ -5,7 +5,7 @@
 @ProjectionMatrix@
 
 layout (location = 1) in vec4 Color;
-uniform vec3 FEGlobalColorOverride;
+uniform vec3 GlobalColorOverride;
 uniform bool bUseGlobalColorOverride;
 
 out vec4 VS_OutColor;
@@ -16,7 +16,7 @@ void main()
 	
 	if (bUseGlobalColorOverride)
 	{
-		VS_OutColor = vec4(FEGlobalColorOverride, 1.0);
+		VS_OutColor = vec4(GlobalColorOverride, 1.0);
 	}
 	else
 	{

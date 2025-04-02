@@ -14,13 +14,13 @@ FEVirtualUISystem::FEVirtualUISystem()
 {
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();
 	CanvasMaterial->SetName("VirtualUISystem_CanvasMaterial");
-	RESOURCE_MANAGER.SetTagIternal(CanvasMaterial, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(CanvasMaterial, ENGINE_RESOURCE_TAG);
 	CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
 
 	DummyGameModel = RESOURCE_MANAGER.CreateGameModel();
 	DummyGameModel->SetName("VirtualUISystem_DummyGameModel");
 	DummyGameModel->SetMaterial(CanvasMaterial);
-	RESOURCE_MANAGER.SetTagIternal(DummyGameModel, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(DummyGameModel, ENGINE_RESOURCE_TAG);
 	DummyGameModelComponent.SetGameModel(DummyGameModel);
 
 	RegisterOnComponentCallbacks();

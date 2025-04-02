@@ -22,6 +22,7 @@ namespace FocalEngine
 		friend class FEEntity;
 		friend class FERenderer;
 		friend class FEResourceManager;
+		friend class FEPointCloudSystem;
 	public:
 		FEPointCloud() : FEObject(FE_POINT_CLOUD, "Unnamed point cloud") {};
 		~FEPointCloud();
@@ -34,9 +35,19 @@ namespace FocalEngine
 		FEAABB GetAABB() const;
 
 		std::vector<FEPointCloudVertex> GetRawData() const;
+
+		bool IsAdvancedRenderingEnabled() const;
+		void SetAdvancedRenderingEnabled(const bool bUseAdvancedRendering);
 	private:
+		static const size_t MaxBytesPerBuffer = UINT32_MAX - 1;
+		static const size_t MaxPointsPerBuffer = MaxBytesPerBuffer / sizeof(FEPointCloudVertex);
+
 		GLuint VboID = -1;
 		GLuint VaoID = -1;
+		GLuint ComputeShaderBuffer = -1;
+		std::vector<GLuint> ComputeShaderBuffers;
+
+		bool bUseAdvancedRendering = false;
 
 		size_t PointCount = 0;
 		

@@ -347,7 +347,7 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	Root["SSAO"]["Sample Count"] = CameraComponent.GetSSAOSampleCount();
 
 	Root["SSAO"]["Small Details"] = CameraComponent.IsSSAOSmallDetailsEnabled();
-	Root["SSAO"]["Blured"] = CameraComponent.IsSSAOResultBlured();
+	Root["SSAO"]["Blured"] = CameraComponent.IsSSAOResultBlurred();
 
 	Root["SSAO"]["Bias"] = CameraComponent.GetSSAOBias();
 	Root["SSAO"]["Radius"] = CameraComponent.GetSSAORadius();
@@ -408,7 +408,7 @@ void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, Json::Value Root)
 	CameraComponent.SetSSAOSampleCount(Root["SSAO"]["Sample Count"].asInt());
 
 	CameraComponent.SetSSAOSmallDetailsEnabled(Root["SSAO"]["Small Details"].asBool());
-	CameraComponent.SetSSAOResultBlured(Root["SSAO"]["Blured"].asBool());
+	CameraComponent.SetSSAOResultBlurred(Root["SSAO"]["Blured"].asBool());
 
 	CameraComponent.SetSSAOBias(Root["SSAO"]["Bias"].asFloat());
 	CameraComponent.SetSSAORadius(Root["SSAO"]["Radius"].asFloat());
@@ -430,4 +430,36 @@ bool FECameraSystem::SetCameraRenderingPipeline(FEEntity* CameraEntity, FERender
 	RENDERER.ForceCameraRenderingDataUpdate(CameraEntity);
 
 	return true;
+}
+
+void FECameraSystem::PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm::vec3 Up)
+{
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FETransformComponent>() || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::LookAt CameraEntity is nullptr or does not have a transform or camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return;
+	}
+
+	FETransformComponent& TransformComponent = CameraEntity->GetComponent<FETransformComponent>();
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+
+	glm::mat4 NewViewMatrix = glm::mat4(1.0f);
+
+	glm::dvec3 CurrentPosition = TransformComponent.GetPosition(FE_WORLD_SPACE);
+	NewViewMatrix = glm::lookAt(CurrentPosition, glm::dvec3(0.0f), glm::dvec3(0, 1, 0));
+
+	NewViewMatrix = glm::translate(NewViewMatrix, -Target);
+	CurrentPosition += Target;
+
+	glm::dvec3 Position;
+	glm::dquat Rotation;
+	glm::dvec3 Scale;
+	GEOMETRY.DecomposeMatrixToTranslationRotationScale(NewViewMatrix, Position, Rotation, Scale);
+
+	// We need to update TransformComponent position and rotation.
+	TransformComponent.SetPosition(CurrentPosition);
+	TransformComponent.SetQuaternion(Rotation);
+	TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
+
+	CameraComponent.SetViewMatrix(NewViewMatrix);
 }

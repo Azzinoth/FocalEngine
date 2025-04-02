@@ -65,7 +65,7 @@ namespace FocalEngine
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateSameFormatTexture(FETexture* ReferenceTexture, int DifferentW = 0, int DifferentH = 0, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateCopyOfTexture(FETexture* ReferenceTexture, bool bUnManaged = true, std::string Name = "");
-		FETexture* CreateBlankHightMapTexture(int Width, int Height, std::string Name = "");
+		FETexture* CreateBlankHeightMapTexture(int Width, int Height, std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
 
 		FETexture* ImportTexture(const char* FileName);
@@ -99,7 +99,7 @@ namespace FocalEngine
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();
 		FEPointCloud* GetPointCloud(std::string ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
 		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
 		FEPointCloud* ImportPointCloud(std::string FileName);
 		FEPointCloud* LoadFEPointCloud(std::string FileName, std::string Name = "");
@@ -178,8 +178,10 @@ namespace FocalEngine
 		void RemoveTagThatWillPreventDeletion(std::string Tag);
 
 		FEObject* ImportPLYFile(std::string FileName);
-		bool IsPLYCointainMesh(FERawPLYData* PLYData);
-		bool IsPLYCointainPointCloud(FERawPLYData* PLYData);
+		bool DoesPLYContainMesh(FERawPLYData* PLYData);
+		bool DoesPLYContainPointCloud(FERawPLYData* PLYData);
+
+		std::string GetEngineFolder();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -215,7 +217,7 @@ namespace FocalEngine
 		template<typename T>
 		void ClearResource(std::unordered_map<std::string, T*>& ResourceMap);
 
-		void SetTagIternal(FEObject* Object, std::string NewTag);
+		void SetTagInternal(FEObject* Object, std::string NewTag);
 
 		template<typename T>
 		std::vector<std::string> GetResourceIDListByTag(const std::unordered_map<std::string, T*>& Resources, const std::string& Tag);
@@ -227,7 +229,7 @@ namespace FocalEngine
 		bool bUsePackageForPrivateResources = false;
 		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
 
-		std::vector<glm::vec3> ExtractPositionsFromPLYData(FERawPLYData* PLYData);
+		std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> ExtractPositionsFromPLYData(FERawPLYData* PLYData);
 		std::vector<int> ExtractIndicesFromPLYData(FERawPLYData* PLYData);
 		std::vector<std::vector<unsigned char>> ExtractColorsFromPLYData(FERawPLYData* PLYData);
 		std::vector<glm::vec2> ExtractUVsFromPLYData(FERawPLYData* PLYData, bool& bTextureCoordinatesArePartOfVertex);

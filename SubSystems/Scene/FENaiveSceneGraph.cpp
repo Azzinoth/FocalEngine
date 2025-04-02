@@ -346,7 +346,7 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 		std::string ParentID = NodeData["ParentID"].asString();
 
 		FENaiveSceneGraphNode* ParentNode = LoadedNodes[ParentID];
-		// If we can not find parent, it is root
+		// If we cannot find the parent, it is the root.
 		if (ParentNode == nullptr)
 		{
 			this->Root->AddChild(CurrentNode, false);

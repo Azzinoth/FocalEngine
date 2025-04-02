@@ -108,7 +108,7 @@ void FEScene::Clear()
 
 	SceneGraph.Clear();
 
-	// Some entities could be not in the scene graph, so we need to delete them manually.
+	// Some entities might not be in the scene graph, so we need to delete them manually.
 	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
@@ -124,7 +124,7 @@ void FEScene::Clear()
 	bIsSceneClearing = false;
 }
 
-// In case that game model is used in some entities, we need to replace it with default game model.
+// If a game model is used in some entities, we need to replace it with the default game model.
 // TODO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
@@ -176,27 +176,27 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		return Result;
 	}
 
-	std::string FileExtention = FILE_SYSTEM.GetFileExtension(FileName);
-	std::transform(FileExtention.begin(), FileExtention.end(), FileExtention.begin(), [](const unsigned char C) { return std::tolower(C); });
+	std::string FileExtension = FILE_SYSTEM.GetFileExtension(FileName);
+	std::transform(FileExtension.begin(), FileExtension.end(), FileExtension.begin(), [](const unsigned char C) { return std::tolower(C); });
 
-	if (FileExtention == ".png" || FileExtention == ".jpg" || FileExtention == ".bmp")
+	if (FileExtension == ".png" || FileExtension == ".jpg" || FileExtension == ".bmp")
 	{
 		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FileName.c_str());
 		if (LoadedTexture != nullptr)
 			Result.push_back(LoadedTexture);
 	}
-	else if (FileExtention == ".obj")
+	else if (FileExtension == ".obj")
 	{
 		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName.c_str(), true);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
 	}
-	else if (FileExtention == ".ply")
+	else if (FileExtension == ".ply")
 	{
 		FEObject* LoadedObject = RESOURCE_MANAGER.ImportPLYFile(FileName);
 		Result.push_back(LoadedObject);
 	}
-	// .gltf could contain scene, so EntityIterator should be loaded in FEScene
-	else if (FileExtention == ".gltf")
+	// .gltf could contain scene, it should be loaded in FEScene.
+	else if (FileExtension == ".gltf")
 	{
 		std::vector<FEObject*> LoadedObjects = LoadGLTF(FileName);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
@@ -414,7 +414,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 	return Result;
 }
 
-std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNodes& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID)
+std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNode& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID)
 {
 	std::vector<FEObject*> Result;
 
@@ -477,7 +477,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 			continue;
 		}
 
-		GLTFNodes ChildNode = GLTF.Nodes[Node.Children[i]];
+		GLTFNode ChildNode = GLTF.Nodes[Node.Children[i]];
 		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetObjectID());
 		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
 	}
@@ -638,7 +638,7 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 		Result = Entity->GetComponent<FEVirtualUIComponent>().GetAABB();
 	}
 
-	if (Entity->HasComponent<FEPointCloudComponent>())
+	if (Entity->HasComponent<FEPointCloudComponent>() && Entity->GetComponent<FEPointCloudComponent>().GetPointCloud() != nullptr)
 	{
 		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}

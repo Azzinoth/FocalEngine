@@ -38,6 +38,8 @@ namespace FocalEngine
 		bool SetCameraRenderingPipeline(FEEntity* CameraEntity, FERenderingPipeline NewPipeline);
 
 		bool SetCameraRenderScale(FEEntity* CameraEntity, float NewValue);
+
+		void PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f));
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

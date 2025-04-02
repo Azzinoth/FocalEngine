@@ -19,14 +19,14 @@ void FERenderer::Init()
 																				  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str(),
 																				  nullptr, nullptr, nullptr, nullptr,
 																				  "7E0826291010377D564F6115");
-	RESOURCE_MANAGER.SetTagIternal(RENDERER.InstancedLineShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(RENDERER.InstancedLineShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
 																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str()).c_str(),
 																					   nullptr, nullptr, nullptr, nullptr,
 																					   "7933272551311F3A1A5B2363");
 
-	RESOURCE_MANAGER.SetTagIternal(FEScreenQuadShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(FEScreenQuadShader, ENGINE_RESOURCE_TAG);
 
 	glGenBuffers(1, &UniformBufferForLights);
 	glBindBuffer(GL_UNIFORM_BUFFER, UniformBufferForLights);
@@ -122,70 +122,95 @@ void FERenderer::Init()
 																						RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomThreshold_FS.glsl").c_str()).c_str(),
 																						nullptr, nullptr, nullptr, nullptr,
 																						"0C19574118676C2E5645200E");
-	RESOURCE_MANAGER.SetTagIternal(BloomThresholdShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(BloomThresholdShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* BloomBlurShader = RESOURCE_MANAGER.CreateShader("FEBloomBlur", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
 																				RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomBlur_FS.glsl").c_str()).c_str(),
 																				nullptr, nullptr, nullptr, nullptr,
 																				"7F3E4F5C130B537F0846274F");
-	RESOURCE_MANAGER.SetTagIternal(BloomBlurShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(BloomBlurShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* BloomCompositionShader = RESOURCE_MANAGER.CreateShader("FEBloomComposition", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_Bloom_VS.glsl").c_str()).c_str(),
 																							RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_Bloom//FE_BloomComposition_FS.glsl").c_str()).c_str(),
 																							nullptr, nullptr, nullptr, nullptr,
 																							"1833272551376C2E5645200E");
-	RESOURCE_MANAGER.SetTagIternal(BloomCompositionShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(BloomCompositionShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* GammaHDRShader = RESOURCE_MANAGER.CreateShader("FEGammaAndHDRShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_VS.glsl").c_str()).c_str(),
 																					RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_GammaAndHDRCorrection//FE_Gamma_and_HDR_Correction_FS.glsl").c_str()).c_str(),
 																					nullptr, nullptr, nullptr, nullptr,
 																					"3417497A5E0C0C2A07456E44");
-	RESOURCE_MANAGER.SetTagIternal(GammaHDRShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(GammaHDRShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* FEFXAAShader = RESOURCE_MANAGER.CreateShader("FEFXAAShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_VS.glsl").c_str()).c_str(),
 																			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_FXAA//FE_FXAA_FS.glsl").c_str()).c_str(),
 																			nullptr, nullptr, nullptr, nullptr,
 																			"1E69744A10604C2A1221426B");
-	RESOURCE_MANAGER.SetTagIternal(FEFXAAShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(FEFXAAShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* DOFShader = RESOURCE_MANAGER.CreateShader("DOF", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_VS.glsl").c_str()).c_str(),
 																RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_DOF//FE_DOF_FS.glsl").c_str()).c_str(),
 																nullptr, nullptr, nullptr, nullptr,
 																"7800253C244442155D0F3C7B");
-	RESOURCE_MANAGER.SetTagIternal(DOFShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(DOFShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* ChromaticAberrationShader = RESOURCE_MANAGER.CreateShader("chromaticAberrationShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_VS.glsl").c_str()).c_str(),
 																										RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ChromaticAberration//FE_ChromaticAberration_FS.glsl").c_str()).c_str(),
 																										nullptr, nullptr, nullptr, nullptr,
 																										"9A41665B5E2B05321A332D09");
-	RESOURCE_MANAGER.SetTagIternal(ChromaticAberrationShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(ChromaticAberrationShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* FESSAOShader = RESOURCE_MANAGER.CreateShader("FESSAOShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_VS.glsl").c_str()).c_str(),
 																			RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_FS.glsl").c_str()).c_str(),
 																			nullptr, nullptr, nullptr, nullptr,
 																			"1037115B676E383E36345079");
 
-	RESOURCE_MANAGER.SetTagIternal(FESSAOShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(FESSAOShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* FESSAOBlurShader = RESOURCE_MANAGER.CreateShader("FESSAOBlurShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
 																					RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_SSAO//FE_SSAO_Blur_FS.glsl").c_str()).c_str(),
 																					nullptr, nullptr, nullptr, nullptr,
 																					"0B5770660B6970800D776542");
-	RESOURCE_MANAGER.SetTagIternal(FESSAOBlurShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(FESSAOBlurShader, ENGINE_RESOURCE_TAG);
 
 	RENDERER.ShadowMapMaterial = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterial", "7C41565B2E2B05321A182D89" /*"FEShadowMapShader"*/);
 	RENDERER.ShadowMapMaterial->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_VS.glsl").c_str()).c_str(),
 																							RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
 
-	RESOURCE_MANAGER.SetTagIternal(RENDERER.ShadowMapMaterial->Shader, ENGINE_RESOURCE_TAG);
-	RESOURCE_MANAGER.SetTagIternal(RENDERER.ShadowMapMaterial, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(RENDERER.ShadowMapMaterial->Shader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(RENDERER.ShadowMapMaterial, ENGINE_RESOURCE_TAG);
 
 	RENDERER.ShadowMapMaterialInstanced = RESOURCE_MANAGER.CreateMaterial("shadowMapMaterialInstanced", "5634765B2E2A05321A182D1A"/*"FEShadowMapShaderInstanced"*/);
 	RENDERER.ShadowMapMaterialInstanced->Shader = RESOURCE_MANAGER.CreateShader("FEShadowMapShaderInstanced", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_INSTANCED_VS.glsl").c_str()).c_str(),
 																											  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//ShadowMapMaterial//FE_ShadowMap_FS.glsl").c_str()).c_str());
 
-	RESOURCE_MANAGER.SetTagIternal(RENDERER.ShadowMapMaterialInstanced->Shader, ENGINE_RESOURCE_TAG);
-	RESOURCE_MANAGER.SetTagIternal(RENDERER.ShadowMapMaterialInstanced, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(RENDERER.ShadowMapMaterialInstanced->Shader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(RENDERER.ShadowMapMaterialInstanced, ENGINE_RESOURCE_TAG);
+
+	FEShader* FESceneFusionShader = RESOURCE_MANAGER.CreateShader("FESceneFusionShader",
+																  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_SceneFusion_FS.glsl").c_str()).c_str(),
+																  nullptr, nullptr,
+																  nullptr, nullptr);
+
+	FEShader* FuseFrameBufferDataAndCameraDataDeferred = RESOURCE_MANAGER.CreateShader("FE_FuseFrameBufferDataAndCameraDataDeferred",
+																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_FuseFrameBufferDataAndCameraDataDeferred_FS.glsl").c_str()).c_str(),
+																					   nullptr, nullptr,
+																					   nullptr, nullptr);
+
+	FEShader* FESceneFusionShaderDeferred = RESOURCE_MANAGER.CreateShader("FE_SceneFusionDeferred",
+																		  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																		  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_SceneFusionDeferred_FS.glsl").c_str()).c_str(),
+																		  nullptr, nullptr,
+																		  nullptr, nullptr);
+
+
+	FEShader* FEFuseTwoFrameBuffers = RESOURCE_MANAGER.CreateShader("FE_FuseTwoFrameBuffers",
+																	RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+																	RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PostProcessEffects//FE_FuseTwoFrameBuffers_FS.glsl").c_str()).c_str(),
+																	nullptr, nullptr,
+																	nullptr, nullptr); 
 }
 
 void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, const bool IsReceivingShadows, const bool IsUniformLighting)
@@ -265,7 +290,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 			Shader->UpdateUniformData("FETiling", Material->GetTiling());
 
 		if (Shader->GetUniform("compactMaterialPacking") != nullptr)
-			Shader->UpdateUniformData("compactMaterialPacking", Material->IsCompackPacking());
+			Shader->UpdateUniformData("compactMaterialPacking", Material->IsCompactPacking());
 	}
 }
 
@@ -394,7 +419,7 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 		{
 			if (IteratorBlock->first == LightInfoHash)
 			{
-				// if shader uniform block was not asigned yet.
+				// If shader uniform block was not assigned yet.
 				if (IteratorBlock->second == GL_INVALID_INDEX)
 					IteratorBlock->second = UniformBufferForLights;
 				// adding 4 because vec3 in shader buffer will occupy 16 bytes not 12.
@@ -1034,12 +1059,12 @@ void FERenderer::Render(FEScene* CurrentScene)
 	CurrentCameraRenderingData->GBuffer->GFrameBuffer->Bind();
 
 	const unsigned int FrameBufferColorAttachments[7] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 };
-	glDrawBuffers(7, FrameBufferColorAttachments);
+	FE_GL_ERROR(glDrawBuffers(7, FrameBufferColorAttachments));
 
 	if (CurrentCameraComponent.IsClearColorEnabled())
 	{
 		glm::vec4 ClearColor = CurrentCameraComponent.GetClearColor();
-		glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w);
+		FE_GL_ERROR(glClearColor(ClearColor.x, ClearColor.y, ClearColor.z, ClearColor.w));
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
@@ -1101,6 +1126,9 @@ void FERenderer::Render(FEScene* CurrentScene)
 		RenderTerrainComponent(Entity, MainCameraEntity);
 	}
 
+	// Because we have old-style rendering and compute shader based rendering, we need to render point clouds in a different way.
+	// Sorting is done in a non optimal way, but it is not a big deal for now.
+	std::vector<FEEntity*> ComputeShaderPointClouds;
 	for (auto [EnTTEntity, PointCloudComponent, TransformComponent] : PointCloudView.each())
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
@@ -1110,10 +1138,46 @@ void FERenderer::Render(FEScene* CurrentScene)
 		if (!PointCloudComponent.IsVisible())
 			continue;
 
-		POINT_CLOUD_SYSTEM.Render(Entity, MainCameraEntity);
+		if (PointCloudComponent.GetPointCloud() == nullptr)
+			continue;
+
+		if (!PointCloudComponent.GetPointCloud()->IsAdvancedRenderingEnabled())
+		{
+			POINT_CLOUD_SYSTEM.RenderStandard(Entity, MainCameraEntity);
+			continue;
+		}
+
+		ComputeShaderPointClouds.push_back(Entity);
 	}
 
 	CurrentCameraRenderingData->GBuffer->GFrameBuffer->UnBind();
+	
+	// After the usual rendering is complete, we need to render point clouds using compute shaders.
+	if (!ComputeShaderPointClouds.empty())
+	{
+		if (!CurrentCameraRenderingData->IsAdvancedPointCloudRenderingInitialized())
+		{
+			if (!RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity))
+			{
+				LOG.Add("Function FERenderer::Render, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			}
+		}
+
+		if (CurrentCameraRenderingData->IsAdvancedPointCloudRenderingInitialized())
+		{
+			int ScreenWidth = CurrentCameraComponent.GetRenderTargetWidth();
+			int ScreenHeight = CurrentCameraComponent.GetRenderTargetHeight();
+
+			for (size_t i = 0; i < ComputeShaderPointClouds.size(); i++)
+			{
+				FETransformComponent& TransformComponent = ComputeShaderPointClouds[i]->GetComponent<FETransformComponent>();
+				POINT_CLOUD_SYSTEM.RenderWithComputeShaders(TransformComponent, ComputeShaderPointClouds[i]->GetComponent<FEPointCloudComponent>(), MainCameraEntity);
+			}
+
+			POINT_CLOUD_SYSTEM.FuseComputeRenderedToFramebuffer(MainCameraEntity);
+		}
+	}
+
 	ForceShader(nullptr);
 
 	CurrentCameraRenderingData->GBuffer->Albedo->Bind(0);
@@ -1143,8 +1207,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 	CurrentCameraRenderingData->GBuffer->MotionVectors->Bind(6);
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
 
-	const unsigned int attachments_[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(3, attachments_);
+	const unsigned int ColorAttachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, ColorAttachments);
 
 	glDepthMask(GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
@@ -1229,7 +1293,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 	// ********* RENDER SCENE END *********
 	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 
-	//Generate the mipmaps of colorAttachment
+	//Generate the mipmaps of ColorAttachment
 	CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment()->Bind();
 	glGenerateMipmap(GL_TEXTURE_2D);
 
@@ -1324,7 +1388,7 @@ void FERenderer::Render(FEScene* CurrentScene)
 		
 		if (Effect.bActive)
 		{
-			// That is where final rendering to screen is happening if Viewport is default.
+			// This is where final rendering to screen is happening if Viewport is default.
 			if (CurrentCameraRenderingData->CameraEntity->GetComponent<FECameraComponent>().Viewport == ENGINE.GetDefaultViewport())
 				Effect.RenderResult();
 			// TO_DO: With introduction of multiple scenes\cameras, this code probably should be changed.
@@ -1617,7 +1681,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 	{
 		for (size_t i = 0; i < TerrainComponent.Layers.size(); i++)
 		{
-			if (TerrainComponent.Layers[i] != nullptr && TerrainComponent.Layers[i]->GetMaterial()->IsCompackPacking())
+			if (TerrainComponent.Layers[i] != nullptr && TerrainComponent.Layers[i]->GetMaterial()->IsCompactPacking())
 			{
 				if (TerrainComponent.Layers[i]->GetMaterial()->GetAlbedoMap() != nullptr)
 					TerrainComponent.Layers[i]->GetMaterial()->GetAlbedoMap()->Bind(static_cast<int>(i * 3));
@@ -1648,7 +1712,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 	const int LayersUsed = TerrainComponent.LayersUsed();
 	if (LayersUsed == 0)
 	{
-		// 0 index is for hightMap.
+		// 0 index is for HeightMap.
 		RESOURCE_MANAGER.NoTexture->Bind(1);
 	}
 
@@ -1660,19 +1724,19 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 		TerrainComponent.Shader->UpdateUniformData("usedLayersCount", static_cast<float>(LayersUsed));
 	// ************ Load materials data for all Terrain layers END ************
 
-	TerrainComponent.Shader->UpdateUniformData("hightScale", TerrainComponent.HightScale);
+	TerrainComponent.Shader->UpdateUniformData("HeightScale", TerrainComponent.HeightScale);
 	TerrainComponent.Shader->UpdateUniformData("scaleFactor", TerrainComponent.ScaleFactor);
 	if (TerrainComponent.Shader->GetName() != "FESMTerrainShader")
 		TerrainComponent.Shader->UpdateUniformData("tileMult", TerrainComponent.TileMult);
 	TerrainComponent.Shader->UpdateUniformData("LODlevel", TerrainComponent.LODLevel);
-	TerrainComponent.Shader->UpdateUniformData("hightMapShift", TerrainComponent.HightMapShift);
+	TerrainComponent.Shader->UpdateUniformData("HeightMapShift", TerrainComponent.HeightMapShift);
 
 	glm::vec3 PivotPosition = TransformComponent.GetPosition();
 	TerrainComponent.ScaleFactor = 1.0f * TerrainComponent.ChunkPerSide;
 
 	static int PVMHash = static_cast<int>(std::hash<std::string>{}("FEPVMMatrix"));
 	static int WorldMatrixHash = static_cast<int>(std::hash<std::string>{}("FEWorldMatrix"));
-	static int HightMapShiftHash = static_cast<int>(std::hash<std::string>{}("hightMapShift"));
+	static int HeightMapShiftHash = static_cast<int>(std::hash<std::string>{}("HeightMapShift"));
 
 	TerrainComponent.Shader->LoadUniformsDataToGPU();
 	FETransformComponent OldState = TransformComponent;
@@ -1695,14 +1759,14 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 			TerrainComponent.Shader->UpdateUniformData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * TransformComponent.GetWorldMatrix());
 			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
 				TerrainComponent.Shader->UpdateUniformData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
-			TerrainComponent.Shader->UpdateUniformData("hightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
+			TerrainComponent.Shader->UpdateUniformData("HeightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
 			TerrainComponent.Shader->LoadUniformDataToGPU("FEPVMMatrix");
 
 			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
 				TerrainComponent.Shader->LoadUniformDataToGPU("FEWorldMatrix");
 
-			TerrainComponent.Shader->LoadUniformDataToGPU("hightMapShift");
+			TerrainComponent.Shader->LoadUniformDataToGPU("HeightMapShift");
 
 			FE_GL_ERROR(glDrawArraysInstanced(GL_PATCHES, 0, 4, 64 * 64));
 		}
@@ -1957,7 +2021,7 @@ void FERenderer::UpdateSSAO(FEEntity* Camera)
 
 	CurrentCameraRenderingData->SSAO->Shader->Stop();
 
-	if (CameraComponent.IsSSAOResultBlured())
+	if (CameraComponent.IsSSAOResultBlurred())
 	{
 		// First blur stage
 		FEShader* BlurShader = RESOURCE_MANAGER.GetShader("0B5770660B6970800D776542"/*"FESSAOBlurShader"*/);
@@ -2103,6 +2167,7 @@ void FERenderer::RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target)
 		FE_GL_ERROR(glBindFramebuffer(GL_FRAMEBUFFER, 0));
 }
 
+// FIX ME! That should be replaced. 
 bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target)
 {
 	if (FirstSource == nullptr)
@@ -2135,11 +2200,11 @@ bool FERenderer::CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* 
 		return false;
 	}
 
-	if (FirstSource == Target || SecondSource == Target)
+	/*if (FirstSource == Target || SecondSource == Target)
 	{
 		LOG.Add("In FERenderer::CombineFrameBuffers, Sources and Target should be different framebuffers.", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
-	}
+	}*/
 
 	if (FirstSource->GetColorAttachment()->GetWidth() != SecondSource->GetColorAttachment()->GetWidth() ||
 		FirstSource->GetColorAttachment()->GetHeight() != SecondSource->GetColorAttachment()->GetHeight())
@@ -2334,6 +2399,437 @@ void FERenderer::DrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
 	RENDERER.DrawLine(NearBottomRight, FarBottomRight, Color, LineWidth);
 }
 
+bool FERenderer::FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEFramebuffer* ResultingFrameBuffer)
+{
+	FECameraRenderingData* FirstCameraRenderingData = GetCameraRenderingData(FirstSceneCamera);
+	FECameraComponent& FirstCameraComponent = FirstSceneCamera->GetComponent<FECameraComponent>();
+	FECameraRenderingData* SecondCameraRenderingData = GetCameraRenderingData(SecondSceneCamera);
+	FECameraComponent& SecondCameraComponent = SecondSceneCamera->GetComponent<FECameraComponent>();
+
+	if (FirstCameraRenderingData == nullptr || SecondCameraRenderingData == nullptr || ResultingFrameBuffer == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseSceneRenderings, either FirstCameraRenderingData, SecondCameraRenderingData or ResultingFrameBuffer is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstCameraComponent.GetRenderingPipeline() != SecondCameraComponent.GetRenderingPipeline())
+	{
+		LOG.Add("In FERenderer::FuseSceneRenderings, FirstCamera and SecondCamera have different rendering pipelines.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+	
+	// Although we are using screen quad texture, in this case we need to write to a depth buffer.
+	glDepthMask(GL_TRUE);
+	// But we should not check depth buffer.
+	glDepthFunc(GL_ALWAYS);
+
+	// Temporary solution for debugging.
+	FEShader* FESceneFusionShader = RESOURCE_MANAGER.GetShaderByName("FESceneFusionShader")[0];
+	FESceneFusionShader->Start();
+	FESceneFusionShader->UpdateUniformData("FirstNearPlane", FirstCameraComponent.GetNearPlane());
+	FESceneFusionShader->UpdateUniformData("FirstFarPlane", FirstCameraComponent.GetFarPlane());
+	FESceneFusionShader->UpdateUniformData("SecondNearPlane", SecondCameraComponent.GetNearPlane());
+	FESceneFusionShader->UpdateUniformData("SecondFarPlane", SecondCameraComponent.GetFarPlane());
+	FESceneFusionShader->LoadUniformsDataToGPU();
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->Bind(0);
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->Bind(1);
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->Bind(2);
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->Bind(3);
+
+	ResultingFrameBuffer->Bind();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	FESceneFusionShader->Stop();
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->UnBind();
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->UnBind();
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->UnBind();
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->UnBind();
+
+	ResultingFrameBuffer->UnBind();
+
+	// Return to default value
+	glDepthFunc(GL_LESS);
+
+	return true;
+}
+
+bool FERenderer::FuseFrameBufferDataAndCameraData(FEFramebuffer* Source, FEEntity* TargetCamera,
+												  float SourceNearPlane, float SourceFarPlane,
+												  glm::vec3 NormalsToWrite, glm::vec4 MaterialPropertiesToWrite,
+												  glm::vec4 ShaderPropertiesToWrite, glm::vec2 MotionVectorsToWrite)
+{
+	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(TargetCamera);
+
+	if (CameraRenderingData == nullptr || Source == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, either CameraRenderingData or Source is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	return FuseFrameBufferDataAndCameraData(Source->GetColorAttachment(), Source->GetDepthAttachment(),TargetCamera,
+										    SourceNearPlane, SourceFarPlane,
+										    NormalsToWrite, MaterialPropertiesToWrite,
+										    ShaderPropertiesToWrite, MotionVectorsToWrite);
+}
+
+bool FERenderer::FuseFrameBufferDataAndCameraData(FETexture* SourceColor, FETexture* SourceDepth, FEEntity* TargetCamera,
+												  float SourceNearPlane, float SourceFarPlane,
+												  glm::vec3 NormalsToWrite, glm::vec4 MaterialPropertiesToWrite,
+												  glm::vec4 ShaderPropertiesToWrite, glm::vec2 MotionVectorsToWrite)
+{
+	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(TargetCamera);
+	FECameraComponent& CameraComponent = TargetCamera->GetComponent<FECameraComponent>();
+
+	if (CameraRenderingData == nullptr || SourceColor == nullptr || SourceDepth == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, either CameraRenderingData, SourceColor or SourceDepth is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (SourceNearPlane <= 0.0f || SourceFarPlane <= 0.0f)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, SourceNearPlane or SourceFarPlane is 0.0f or less.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (SourceColor->GetWidth() != CameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->GetWidth() ||
+		SourceColor->GetHeight() != CameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->GetHeight())
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, Source and Target ColorAttachment have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	CameraRenderingData->GBuffer->GFrameBuffer->Bind();
+	const unsigned int FrameBufferColorAttachments[7] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 };
+	FE_GL_ERROR(glDrawBuffers(7, FrameBufferColorAttachments));
+
+	// Although we are using screen quad texture, in this case we need to write to a depth buffer.
+	glDepthMask(GL_TRUE);
+	// But we should not check depth buffer.
+	glDepthFunc(GL_ALWAYS);
+
+	FEShader* FuseFrameBufferDataAndCameraDataDeferred = RESOURCE_MANAGER.GetShaderByName("FE_FuseFrameBufferDataAndCameraDataDeferred")[0];
+	FuseFrameBufferDataAndCameraDataDeferred->Start();
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("FirstNearPlane", CameraComponent.GetNearPlane());
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("FirstFarPlane", CameraComponent.GetFarPlane());
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("SecondNearPlane", SourceNearPlane);
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("SecondFarPlane", SourceFarPlane);
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("NormalsToWrite", NormalsToWrite);
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("MaterialPropertiesToWrite", MaterialPropertiesToWrite);
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("ShaderPropertiesToWrite", ShaderPropertiesToWrite);
+	FuseFrameBufferDataAndCameraDataDeferred->UpdateUniformData("MotionVectorsToWrite", MotionVectorsToWrite);
+	FuseFrameBufferDataAndCameraDataDeferred->LoadUniformsDataToGPU();
+
+	CameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->Bind(0);
+	CameraRenderingData->GBuffer->Positions->Bind(1);
+	CameraRenderingData->GBuffer->Normals->Bind(2);
+	CameraRenderingData->GBuffer->Albedo->Bind(3);
+	CameraRenderingData->GBuffer->MaterialProperties->Bind(4);
+	CameraRenderingData->GBuffer->ShaderProperties->Bind(5);
+	CameraRenderingData->GBuffer->MotionVectors->Bind(6);
+	CameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->Bind(7);
+
+	SourceColor->Bind(8);
+	SourceDepth->Bind(9);
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	FuseFrameBufferDataAndCameraDataDeferred->Stop();
+
+	CameraRenderingData->GBuffer->GFrameBuffer->UnBind();
+
+	CameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->UnBind();
+	CameraRenderingData->GBuffer->Positions->UnBind();
+	CameraRenderingData->GBuffer->Normals->UnBind();
+	CameraRenderingData->GBuffer->Albedo->UnBind();
+	CameraRenderingData->GBuffer->MaterialProperties->UnBind();
+	CameraRenderingData->GBuffer->ShaderProperties->UnBind();
+	CameraRenderingData->GBuffer->MotionVectors->UnBind();
+	CameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->UnBind();
+
+	SourceColor->UnBind();
+	SourceDepth->UnBind();
+
+	// Return to default value
+	glDepthFunc(GL_LESS);
+
+	return true;
+}
+
+bool FERenderer::FuseTwoFrameBuffers(FEFramebuffer* FirstSource, float FirstNearPlane, float FirstFarPlane,
+									 FEFramebuffer* SecondSource, float SecondNearPlane, float SecondFarPlane, FEFramebuffer* Target)
+{
+	if (FirstNearPlane <= 0.0f || FirstFarPlane <= 0.0f || SecondNearPlane <= 0.0f || SecondFarPlane <= 0.0f)
+	{
+		LOG.Add("In FERenderer::FuseTwoFrameBuffers, FirstNearPlane, FirstFarPlane, SecondNearPlane or SecondFarPlane is 0.0f or less.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource == nullptr || SecondSource == nullptr || Target == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, either FirstSource, SecondSource or Target is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstSource->GetWidth() != SecondSource->GetWidth() || FirstSource->GetHeight() != SecondSource->GetHeight() ||
+		FirstSource->GetWidth() != Target->GetWidth() || FirstSource->GetHeight() != Target->GetHeight())
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, FirstSource, SecondSource and Target have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	Target->Bind();
+
+	// Although we are using screen quad texture, in this case we need to write to a depth buffer.
+	glDepthMask(GL_TRUE);
+	// But we should not check depth buffer.
+	glDepthFunc(GL_ALWAYS);
+
+	FEShader* FEFuseTwoFrameBuffers = RESOURCE_MANAGER.GetShaderByName("FE_FuseTwoFrameBuffers")[0];
+	if (FEFuseTwoFrameBuffers == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, FEFuseTwoFrameBuffers is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+	FEFuseTwoFrameBuffers->Start();
+	FEFuseTwoFrameBuffers->UpdateUniformData("FirstNearPlane", FirstNearPlane);
+	FEFuseTwoFrameBuffers->UpdateUniformData("FirstFarPlane", FirstFarPlane);
+	FEFuseTwoFrameBuffers->UpdateUniformData("SecondNearPlane", SecondNearPlane);
+	FEFuseTwoFrameBuffers->UpdateUniformData("SecondFarPlane", SecondFarPlane);
+	
+	if (FirstSource->GetColorAttachment() != nullptr)
+		FirstSource->GetColorAttachment()->Bind(0);
+
+	if (FirstSource->GetDepthAttachment() != nullptr)
+		FirstSource->GetDepthAttachment()->Bind(1);
+
+	if (SecondSource->GetColorAttachment() != nullptr)
+		SecondSource->GetColorAttachment()->Bind(2);
+
+	if (SecondSource->GetDepthAttachment() != nullptr)
+	{
+		SecondSource->GetDepthAttachment()->Bind(3);
+		FEFuseTwoFrameBuffers->UpdateUniformData("bSecondDepthMapIsInvaild", false);
+	}
+	else
+	{
+		FEFuseTwoFrameBuffers->UpdateUniformData("bSecondDepthMapIsInvaild", true);
+	}
+	FEFuseTwoFrameBuffers->LoadUniformsDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	FEFuseTwoFrameBuffers->Stop();
+
+	if (FirstSource->GetColorAttachment() != nullptr)
+		FirstSource->GetColorAttachment()->UnBind();
+
+	if (FirstSource->GetDepthAttachment() != nullptr)
+		FirstSource->GetDepthAttachment()->UnBind();
+
+	if (SecondSource->GetColorAttachment() != nullptr)
+		SecondSource->GetColorAttachment()->UnBind();
+
+	if (SecondSource->GetDepthAttachment() != nullptr)
+		SecondSource->GetDepthAttachment()->UnBind();
+
+	Target->UnBind();
+
+	// Return to default value
+	glDepthFunc(GL_LESS);
+	
+	return true;
+}
+
+bool FERenderer::FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEEntity* CameraToPutResultIn)
+{
+	FECameraRenderingData* FirstCameraRenderingData = GetCameraRenderingData(FirstSceneCamera);
+	FECameraComponent& FirstCameraComponent = FirstSceneCamera->GetComponent<FECameraComponent>();
+
+	FECameraRenderingData* SecondCameraRenderingData = GetCameraRenderingData(SecondSceneCamera);
+	FECameraComponent& SecondCameraComponent = SecondSceneCamera->GetComponent<FECameraComponent>();
+
+	FECameraRenderingData* CameraToPutResultInRenderingData = GetCameraRenderingData(CameraToPutResultIn);
+	FECameraComponent& CameraToPutResultInComponent = CameraToPutResultIn->GetComponent<FECameraComponent>();
+
+	if (FirstCameraRenderingData == nullptr || SecondCameraRenderingData == nullptr || CameraToPutResultInRenderingData == nullptr)
+	{
+		LOG.Add("In FERenderer::FuseSceneRenderings, either FirstCameraRenderingData, SecondCameraRenderingData or CameraToPutResultInRenderingData is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstCameraComponent.GetRenderingPipeline() != SecondCameraComponent.GetRenderingPipeline() ||
+		FirstCameraComponent.GetRenderingPipeline() != CameraToPutResultInComponent.GetRenderingPipeline())
+	{
+		LOG.Add("In FERenderer::FuseSceneRenderings, FirstCamera, SecondCamera and CameraToPutResultIn have different rendering pipelines.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (FirstCameraComponent.RenderTargetWidth != SecondCameraComponent.RenderTargetWidth ||
+		FirstCameraComponent.RenderTargetHeight != SecondCameraComponent.RenderTargetHeight ||
+		FirstCameraComponent.RenderTargetWidth != CameraToPutResultInComponent.RenderTargetWidth ||
+		FirstCameraComponent.RenderTargetHeight != CameraToPutResultInComponent.RenderTargetHeight)
+	{
+		LOG.Add("In FERenderer::FuseSceneRenderings, FirstCamera, SecondCamera and CameraToPutResultIn have different render target sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	CameraToPutResultInRenderingData->GBuffer->GFrameBuffer->Bind();
+	const unsigned int FrameBufferColorAttachments[7] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6 };
+	FE_GL_ERROR(glDrawBuffers(7, FrameBufferColorAttachments));
+
+	// Although we are using screen quad texture, in this case we need to write to a depth buffer.
+	glDepthMask(GL_TRUE);
+	// But we should not check depth buffer.
+	glDepthFunc(GL_ALWAYS);
+
+	FEShader* FESceneFusionShaderDeferred = RESOURCE_MANAGER.GetShaderByName("FE_SceneFusionDeferred")[0];
+	FESceneFusionShaderDeferred->Start();
+	FESceneFusionShaderDeferred->UpdateUniformData("FirstNearPlane", FirstCameraComponent.GetNearPlane());
+	FESceneFusionShaderDeferred->UpdateUniformData("FirstFarPlane", FirstCameraComponent.GetFarPlane());
+	FESceneFusionShaderDeferred->UpdateUniformData("SecondNearPlane", SecondCameraComponent.GetNearPlane());
+	FESceneFusionShaderDeferred->UpdateUniformData("SecondFarPlane", SecondCameraComponent.GetFarPlane());
+	FESceneFusionShaderDeferred->LoadUniformsDataToGPU();
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->Bind(0);
+	FirstCameraRenderingData->GBuffer->Positions->Bind(1);
+	FirstCameraRenderingData->GBuffer->Normals->Bind(2);
+	FirstCameraRenderingData->GBuffer->Albedo->Bind(3);
+	FirstCameraRenderingData->GBuffer->MaterialProperties->Bind(4);
+	FirstCameraRenderingData->GBuffer->ShaderProperties->Bind(5);
+	FirstCameraRenderingData->GBuffer->MotionVectors->Bind(6);
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->Bind(7);
+
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->Bind(8);
+	SecondCameraRenderingData->GBuffer->Positions->Bind(9);
+	SecondCameraRenderingData->GBuffer->Normals->Bind(10);
+	SecondCameraRenderingData->GBuffer->Albedo->Bind(11);
+	SecondCameraRenderingData->GBuffer->MaterialProperties->Bind(12);
+	SecondCameraRenderingData->GBuffer->ShaderProperties->Bind(13);
+	SecondCameraRenderingData->GBuffer->MotionVectors->Bind(14);
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->Bind(15);
+
+	FE_GL_ERROR(glBindVertexArray(RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVaoID()));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/)->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glBindVertexArray(0));
+
+	FESceneFusionShaderDeferred->Stop();
+
+	CameraToPutResultInRenderingData->GBuffer->GFrameBuffer->UnBind();
+
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->UnBind();
+	FirstCameraRenderingData->GBuffer->Positions->UnBind();
+	FirstCameraRenderingData->GBuffer->Normals->UnBind();;
+	FirstCameraRenderingData->GBuffer->Albedo->UnBind();
+	FirstCameraRenderingData->GBuffer->MaterialProperties->UnBind();
+	FirstCameraRenderingData->GBuffer->ShaderProperties->UnBind();
+	FirstCameraRenderingData->GBuffer->MotionVectors->UnBind();
+	FirstCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->UnBind();
+
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetColorAttachment()->UnBind();
+	SecondCameraRenderingData->GBuffer->Positions->UnBind();;
+	SecondCameraRenderingData->GBuffer->Normals->UnBind();;
+	SecondCameraRenderingData->GBuffer->Albedo->UnBind();
+	SecondCameraRenderingData->GBuffer->MaterialProperties->UnBind();
+	SecondCameraRenderingData->GBuffer->ShaderProperties->UnBind();
+	SecondCameraRenderingData->GBuffer->MotionVectors->UnBind();
+	SecondCameraRenderingData->GBuffer->GFrameBuffer->GetDepthAttachment()->UnBind();
+
+	// Return to default value
+	glDepthFunc(GL_LESS);
+
+	return true;
+}
+
+bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity)
+{
+	if (CameraEntity == nullptr)
+	{
+		LOG.Add("In FERenderer::InitializeComputeShaderPointCloudRendering, CameraEntity is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (!CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("In FERenderer::InitializeComputeShaderPointCloudRendering, CameraEntity does not have FECameraComponent.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+
+	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(CameraEntity);
+	if (CameraRenderingData == nullptr)
+	{
+		LOG.Add("In FERenderer::InitializeComputeShaderPointCloudRendering, CameraRenderingData is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (CameraRenderingData->IsAdvancedPointCloudRenderingInitialized())
+	{
+		LOG.Add("In FERenderer::InitializeComputeShaderPointCloudRendering, PointCloud64bitFrameBuffer and PointCloudIntermediateFrameBuffer are already initialized.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	int RenderTargetWidth = CameraComponent.GetRenderTargetWidth();
+	int RenderTargetHeight = CameraComponent.GetRenderTargetHeight();
+
+	// Create your data first
+	uint64_t* InitialData = new uint64_t[RenderTargetWidth * RenderTargetHeight];
+
+	float FarPlane = CameraComponent.GetFarPlane();
+	uint32_t FarPlaneBits = *reinterpret_cast<uint32_t*>(&FarPlane);
+	uint32_t PackedColorBits = (0u << 0) | (0u << 8) | (0u << 16) | (0xFF << 24);
+	uint64_t PixelDepthAndColor = ((uint64_t)FarPlaneBits << 32) | PackedColorBits;
+
+	for (int i = 0; i < RenderTargetWidth * RenderTargetHeight; i++)
+	{
+		InitialData[i] = PixelDepthAndColor;
+	}
+
+	FE_GL_ERROR(glGenBuffers(1, &CameraRenderingData->PointCloud64bitFrameBuffer));
+	FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, CameraRenderingData->PointCloud64bitFrameBuffer));
+	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, CameraRenderingData->PointCloud64bitFrameBuffer));
+	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, RenderTargetWidth * RenderTargetHeight * 8, InitialData, GL_DYNAMIC_DRAW));
+	
+	CameraRenderingData->PointCloudIntermediateFrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, RenderTargetWidth, RenderTargetHeight);
+
+	FETexture* IntermediateDepthBuffer = RESOURCE_MANAGER.CreateTexture(GL_R32F, GL_RED, RenderTargetWidth, RenderTargetHeight, true, "IntermediateDepthBuffer");
+	if (IntermediateDepthBuffer == nullptr)
+	{
+		LOG.Add("In FERenderer::InitializeComputeShaderPointCloudRendering, IntermediateDepthBuffer is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+	IntermediateDepthBuffer->Bind();
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+	IntermediateDepthBuffer->UnBind();
+
+	CameraRenderingData->PointCloudIntermediateFrameBuffer->SetDepthAttachment(IntermediateDepthBuffer);
+
+	return true;
+}
+
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
 {
 	GFrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight());
@@ -2344,7 +2840,7 @@ void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
 	Normals = RESOURCE_MANAGER.CreateTexture(GL_RGB16F, GL_RGB, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight());
 	GFrameBuffer->SetColorAttachment(Normals, 2);
 
-	Albedo = RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight());
+	Albedo = RESOURCE_MANAGER.CreateTexture(GL_RGBA, GL_RGBA, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight());
 	GFrameBuffer->SetColorAttachment(Albedo, 3);
 
 	MaterialProperties = RESOURCE_MANAGER.CreateTexture(GL_RGBA16F, GL_RGBA, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight());
@@ -2383,4 +2879,9 @@ void FESSAO::RenderTargetResize(FEFramebuffer* MainFrameBuffer)
 {
 	delete FB;
 	InitializeResources(MainFrameBuffer);
+}
+
+bool FECameraRenderingData::IsAdvancedPointCloudRenderingInitialized()
+{
+	return PointCloud64bitFrameBuffer != GLuint(-1) && PointCloudIntermediateFrameBuffer != nullptr;
 }

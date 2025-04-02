@@ -168,7 +168,7 @@ namespace FocalEngine
 		int MeshParent = -1;
 	};
 
-	struct GLTFNodes
+	struct GLTFNode
 	{
 		std::string Name;
 		std::vector<int> Children;
@@ -179,7 +179,7 @@ namespace FocalEngine
 		glm::quat Rotation = glm::quat();
 		glm::vec3 Scale = glm::vec3(1);
 
-		// That is alternative to Translation, Rotation and Scale
+		// This is alternative to Translation, Rotation and Scale
 		// A floating-point 4x4 transformation matrix stored in column-major order.
 		std::vector<float> Matrix;
 
@@ -220,7 +220,7 @@ namespace FocalEngine
 		std::vector<GLTFTexture> Textures;
 		std::vector<GLTFMaterial> Materials;
 
-		std::vector<GLTFNodes> Nodes;
+		std::vector<GLTFNode> Nodes;
 		// A glTF asset that does not contain any scenes SHOULD be treated as a library of individual entities such as materials or meshes.
 		std::vector<GLTFScene> Scenes;
 
@@ -230,7 +230,7 @@ namespace FocalEngine
 		void LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPrimitive);
 		bool LoadMeshRawData(GLTFPrimitive& Primitive);
 		bool LoadPositions(GLTFPrimitive& Primitive);
-		bool LoadNomals(GLTFPrimitive& Primitive);
+		bool LoadNormals(GLTFPrimitive& Primitive);
 		bool LoadTangents(GLTFPrimitive& Primitive);
 		bool LoadUV(GLTFPrimitive& Primitive);
 		bool LoadIndices(GLTFPrimitive& Primitive);

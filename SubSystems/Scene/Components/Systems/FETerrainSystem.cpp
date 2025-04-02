@@ -20,7 +20,7 @@ FETerrainSystem::FETerrainSystem()
 																			   nullptr,
 																			   "5A3E4F5C13115856401F1D1C");
 
-	RESOURCE_MANAGER.SetTagIternal(TerrainShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(TerrainShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* ShadowMapTerrainShader = RESOURCE_MANAGER.CreateShader("FESMTerrainShader", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_VS.glsl").c_str()).c_str(),
 																						  RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_FS.glsl").c_str()).c_str(),
@@ -28,27 +28,27 @@ FETerrainSystem::FETerrainSystem()
 																						  RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//ShadowMapShader//FE_SMTerrain_TES.glsl").c_str()).c_str(),
 																						  nullptr, nullptr,
 																					      "50064D3C4D0B537F0846274F");
-	RESOURCE_MANAGER.SetTagIternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
 	ShadowMapTerrainShader->UpdateUniformData("baseColor", glm::vec3(1.0f, 1.0f, 1.0f));
-	RESOURCE_MANAGER.SetTagIternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(ShadowMapTerrainShader, ENGINE_RESOURCE_TAG);
 
 	FEShader* TerrainBrushOutput = RESOURCE_MANAGER.CreateShader("terrainBrushOutput", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str()).c_str(),
 																					   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_FS.glsl").c_str()).c_str(),
 																					   nullptr, nullptr, nullptr, nullptr,
 																					   "49654A4A10604C2A1221426B");
-	RESOURCE_MANAGER.SetTagIternal(TerrainBrushOutput, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(TerrainBrushOutput, ENGINE_RESOURCE_TAG);
 
 	FEShader* TerrainBrushVisual = RESOURCE_MANAGER.CreateShader("terrainBrushVisual", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_VS.glsl").c_str()).c_str(),
 																					   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushVisual_FS.glsl").c_str()).c_str(),
 																					   nullptr, nullptr, nullptr, nullptr,
 																					   "40064B7B4287805B296E526E");
-	RESOURCE_MANAGER.SetTagIternal(TerrainBrushVisual, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(TerrainBrushVisual, ENGINE_RESOURCE_TAG);
 
 	FEShader* TerrainLayersNormalize = RESOURCE_MANAGER.CreateShader("terrainLayersNormalize", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_BrushOutput_VS.glsl").c_str()).c_str(),
 																							   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//TerrainMaterial//EditTools//FE_LayersNormalize_FS.glsl").c_str()).c_str(),
 																							   nullptr, nullptr, nullptr, nullptr,
 																							   "19294C00394A346A576F401C");
-	RESOURCE_MANAGER.SetTagIternal(TerrainLayersNormalize, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(TerrainLayersNormalize, ENGINE_RESOURCE_TAG);
 
 	BrushOutputShader = RESOURCE_MANAGER.GetShader("49654A4A10604C2A1221426B"/*"terrainBrushOutput"*/);
 	LayersNormalizeShader = RESOURCE_MANAGER.GetShader("19294C00394A346A576F401C"/*"terrainLayersNormalize"*/);
@@ -120,12 +120,12 @@ void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneCleari
 	if (bIsSceneClearing)
 		return;
 	
-	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
+	for (size_t i = 0; i < TerrainComponent.SnappedInstancedEntities.size(); i++)
 	{
-		FEInstancedComponent& InstancedComponent = TerrainComponent.SnapedInstancedEntities[i]->GetComponent<FEInstancedComponent>();
+		FEInstancedComponent& InstancedComponent = TerrainComponent.SnappedInstancedEntities[i]->GetComponent<FEInstancedComponent>();
 		InstancedComponent.UnSnapFromTerrain();
 	}
-	TerrainComponent.SnapedInstancedEntities.clear();
+	TerrainComponent.SnappedInstancedEntities.clear();
 }
 
 FETerrainSystem::~FETerrainSystem() {};
@@ -151,8 +151,8 @@ FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity)
 		glm::vec3 Min = glm::vec3(-32.0f - 0.5f, TerrainComponent.AABB.GetMin()[1], -32.0f - 0.5f);
 		glm::vec3 Max = glm::vec3(32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f, TerrainComponent.AABB.GetMax()[1], 32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f);
 		Result = FEAABB(Min, Max);
-		Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMin()[2]),
-						glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMax()[2]));
+		Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMin()[2]),
+						glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMax()[2]));
 	
 		TerrainComponent.FinalAABB = Result.Transform(TransformComponent.GetWorldMatrix());
 	
@@ -174,8 +174,8 @@ FEAABB FETerrainSystem::GetPureAABB(FEEntity* TerrainEntity)
 	glm::vec3 Min = glm::vec3(-32.0f, TerrainComponent.AABB.GetMin()[1], -32.0f);
 	glm::vec3 Max = glm::vec3(32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1), TerrainComponent.AABB.GetMax()[1], 32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1));
 	Result = FEAABB(Min, Max);
-	Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMin()[2]),
-					glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale, Result.GetMax()[2]));
+	Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMin()[2]),
+					glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMax()[2]));
 	
 	return Result;
 }
@@ -284,7 +284,7 @@ float FETerrainSystem::GetHeightAt(FEEntity* TerrainEntity, glm::vec2 XZWorldPos
 		LocalZ = static_cast<float>(static_cast<int>(LocalZ * TerrainComponent.HeightMap->GetHeight()));
 
 		const int Index = static_cast<int>(LocalZ * TerrainComponent.HeightMap->GetWidth() + LocalX);
-		return (TerrainComponent.HeightMapArray[Index] * 2 * TerrainComponent.HightScale - TerrainComponent.HightScale) * TerrainEntity->GetComponent<FETransformComponent>().GetScale()[1] + TerrainEntity->GetComponent<FETransformComponent>().GetPosition()[1];
+		return (TerrainComponent.HeightMapArray[Index] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale) * TerrainEntity->GetComponent<FETransformComponent>().GetScale()[1] + TerrainEntity->GetComponent<FETransformComponent>().GetPosition()[1];
 	}
 
 	return -FLT_MAX;
@@ -372,7 +372,7 @@ void FETerrainSystem::SnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* Ent
 	}
 
 	EntityToSnap->GetComponent<FEInstancedComponent>().SnapToTerrain(TerrainEntity);
-	TerrainEntity->GetComponent<FETerrainComponent>().SnapedInstancedEntities.push_back(EntityToSnap);
+	TerrainEntity->GetComponent<FETerrainComponent>().SnappedInstancedEntities.push_back(EntityToSnap);
 }
 
 // There should be third system to manage that.
@@ -386,17 +386,17 @@ void FETerrainSystem::UpdateSnapedInstancedEntities(FEEntity* TerrainEntity)
 	}
 
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
-	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
+	for (size_t i = 0; i < TerrainComponent.SnappedInstancedEntities.size(); i++)
 	{
-		if (TerrainComponent.SnapedInstancedEntities[i] == nullptr)
+		if (TerrainComponent.SnappedInstancedEntities[i] == nullptr)
 			continue;
 
 		// If entity is still snapped.
-		if (TerrainComponent.SnapedInstancedEntities[i]->GetComponent<FEInstancedComponent>().GetSnappedToTerrain() != TerrainEntity)
+		if (TerrainComponent.SnappedInstancedEntities[i]->GetComponent<FEInstancedComponent>().GetSnappedToTerrain() != TerrainEntity)
 			continue;
 
-		INSTANCED_RENDERING_SYSTEM.ClearInstance(TerrainComponent.SnapedInstancedEntities[i]);
-		INSTANCED_RENDERING_SYSTEM.PopulateInstance(TerrainComponent.SnapedInstancedEntities[i], TerrainComponent.SnapedInstancedEntities[i]->GetComponent<FEInstancedComponent>().SpawnInfo);
+		INSTANCED_RENDERING_SYSTEM.ClearInstance(TerrainComponent.SnappedInstancedEntities[i]);
+		INSTANCED_RENDERING_SYSTEM.PopulateInstance(TerrainComponent.SnappedInstancedEntities[i], TerrainComponent.SnappedInstancedEntities[i]->GetComponent<FEInstancedComponent>().SpawnInfo);
 		//SnapedInstancedEntities[i]->Clear();
 		//SnapedInstancedEntities[i]->Populate(SnapedInstancedEntities[i]->SpawnInfo);
 	}
@@ -411,11 +411,11 @@ void FETerrainSystem::UnSnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* E
 	}
 
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
-	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
+	for (size_t i = 0; i < TerrainComponent.SnappedInstancedEntities.size(); i++)
 	{
-		if (TerrainComponent.SnapedInstancedEntities[i] == EntityToUnSnap)
+		if (TerrainComponent.SnappedInstancedEntities[i] == EntityToUnSnap)
 		{
-			TerrainComponent.SnapedInstancedEntities.erase(TerrainComponent.SnapedInstancedEntities.begin() + i);
+			TerrainComponent.SnappedInstancedEntities.erase(TerrainComponent.SnappedInstancedEntities.begin() + i);
 			break;
 		}
 	}
@@ -663,9 +663,9 @@ void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEE
 		return;
 	}
 
-	for (size_t i = 0; i < TerrainComponent.SnapedInstancedEntities.size(); i++)
+	for (size_t i = 0; i < TerrainComponent.SnappedInstancedEntities.size(); i++)
 	{
-		if (TerrainComponent.SnapedInstancedEntities[i]->GetObjectID() == EntityWithTerrainComponent->GetObjectID())
+		if (TerrainComponent.SnappedInstancedEntities[i]->GetObjectID() == EntityWithTerrainComponent->GetObjectID())
 		{
 			//EntityWithTerrainComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(this, LayerIndex, &FETerrainComponent::GetLayerIntensityAt);
 			EntityWithTerrainComponent->GetComponent<FEInstancedComponent>().ConnectToTerrainLayer(TerrainEntity, LayerIndex);
@@ -707,7 +707,7 @@ void FETerrainSystem::LoadHeightMap(std::string FileName, FEEntity* TerrainEntit
 	SetHeightMap(NewTexture, TerrainEntity);
 }
 
-void FETerrainSystem::SetHeightMap(FETexture* HightMap, FEEntity* TerrainEntity)
+void FETerrainSystem::SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
@@ -716,16 +716,16 @@ void FETerrainSystem::SetHeightMap(FETexture* HightMap, FEEntity* TerrainEntity)
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
 
-	if (HightMap == nullptr || HightMap->GetInternalFormat() != GL_R16)
+	if (HeightMap == nullptr || HeightMap->GetInternalFormat() != GL_R16)
 		return;
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, HightMap->GetTextureID()));
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, HeightMap->GetTextureID()));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 
 	size_t TextureDataSize = 0;
-	unsigned short* TextureData = reinterpret_cast<unsigned short*>(HightMap->GetRawData(&TextureDataSize));
-	RESOURCE_MANAGER.SetTag(HightMap, TERRAIN_SYSTEM_RESOURCE_TAG);
+	unsigned short* TextureData = reinterpret_cast<unsigned short*>(HeightMap->GetRawData(&TextureDataSize));
+	RESOURCE_MANAGER.SetTag(HeightMap, TERRAIN_SYSTEM_RESOURCE_TAG);
 	if (TextureData == nullptr || TextureDataSize == 0)
 		return;
 
@@ -750,7 +750,7 @@ void FETerrainSystem::SetHeightMap(FETexture* HightMap, FEEntity* TerrainEntity)
 	const glm::vec3 MaxPoint = glm::vec3(1.0f, Max, 1.0f);
 	TerrainComponent.AABB = FEAABB(MinPoint, MaxPoint);
 
-	TerrainComponent.HeightMap = HightMap;
+	TerrainComponent.HeightMap = HeightMap;
 	InitTerrainEditTools(TerrainEntity);
 	UpdateCPUHeightInfo(TerrainEntity);
 }
@@ -873,13 +873,13 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 
 	if (RawData == nullptr)
 	{
-		LOG.Add("FETerrainSystem::fillTerrainLayerMaskWithRawData with nullptr rawData", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::FillTerrainLayerMaskWithRawData with nullptr rawData", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrainSystem::fillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::FillTerrainLayerMaskWithRawData with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -984,13 +984,13 @@ void FETerrainSystem::FillTerrainLayerMask(FEEntity* TerrainEntity, const size_t
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrainSystem::fillTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::FillTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (TerrainComponent.Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FETerrainSystem::fillTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::FillTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
@@ -1368,7 +1368,7 @@ Json::Value FETerrainSystem::TerrainComponentToJson(FEEntity* Entity)
 	Root["Height map"]["Name"] = TerrainComponent.HeightMap->GetName();
 	Root["Height map"]["FileName"] = TerrainComponent.HeightMap->GetObjectID() + ".texture";
 
-	Root["Hight scale"] = TerrainComponent.GetHightScale();
+	Root["Height scale"] = TerrainComponent.GetHeightScale();
 	Root["Displacement scale"] = TerrainComponent.GetDisplacementScale();
 	Root["Tile multiplicator"]["X"] = TerrainComponent.GetTileMult().x;
 	Root["Tile multiplicator"]["Y"] = TerrainComponent.GetTileMult().y;
@@ -1414,10 +1414,10 @@ void FETerrainSystem::TerrainComponentFromJson(FEEntity* Entity, Json::Value Roo
 	Entity->AddComponent<FETerrainComponent>();
 	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
 
-	FETexture* HightMapTexture = RESOURCE_MANAGER.GetTexture(Root["Height map"]["ID"].asString());
-	TERRAIN_SYSTEM.SetHeightMap(HightMapTexture, Entity);
+	FETexture* HeightMapTexture = RESOURCE_MANAGER.GetTexture(Root["Height map"]["ID"].asString());
+	TERRAIN_SYSTEM.SetHeightMap(HeightMapTexture, Entity);
 
-	TerrainComponent.SetHightScale(Root["Hight scale"].asFloat());
+	TerrainComponent.SetHeightScale(Root["Height scale"].asFloat());
 	TerrainComponent.SetDisplacementScale(Root["Displacement scale"].asFloat());
 	TerrainComponent.SetTileMult(glm::vec2(Root["Tile multiplicator"]["X"].asFloat(), Root["Tile multiplicator"]["Y"].asFloat()));
 	TerrainComponent.SetLODLevel(Root["LODlevel"].asFloat());

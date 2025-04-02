@@ -71,7 +71,7 @@ void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* Nod
 	// First we need to check if current parent is not root node
 	if (OldParent != nullptr && OldParent->GetParent() != nullptr)
 	{
-		// In case it is not root we need to reverce old parent influence.
+		// In case it is not root, we need to reverse the old parent's influence.
 		if (OldParent->Parent != nullptr)
 		{
 			glm::mat4 ChildLocalMatrix = ChildTransform.GetLocalMatrix();

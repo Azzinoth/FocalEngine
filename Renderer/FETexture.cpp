@@ -14,7 +14,7 @@ FETexture::FETexture(const int Width, const int Height, const std::string Name) 
 	this->Height = Height;
 	GetNewGlTextureID();
 	Bind(0);
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	UnBind();
@@ -28,7 +28,7 @@ FETexture::FETexture(const GLint InternalFormat, const GLenum Format, const int 
 	this->Format = Format;
 	GetNewGlTextureID();
 	Bind(0);
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Format, GL_UNSIGNED_BYTE, nullptr);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Format, GL_UNSIGNED_BYTE, nullptr);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	// to-do: it is needed for screen space effects but could interfere with other purposes
@@ -47,9 +47,9 @@ void FETexture::GetNewGlTextureID()
 
 FETexture::~FETexture()
 {
-	for (size_t i = 0; i < NoDeletingList.size(); i++)
+	for (size_t i = 0; i < PreventAutoDeletionList.size(); i++)
 	{
-		if (NoDeletingList[i] == TextureID)
+		if (PreventAutoDeletionList[i] == TextureID)
 			return;
 	}
 	//LOG.add("Texture deletion with textureID: " + std::to_string(textureID));
@@ -97,10 +97,10 @@ int FETexture::GetHeight()
 	return Height;
 }
 
-void FETexture::GPUAllocateTeture(const GLenum Target, const GLint Level, const GLint Internalformat, const GLsizei Width, const GLsizei Height, const GLint Border, const GLenum Format, const GLenum Type, const void* Data)
+void FETexture::GPUAllocateTexture(const GLenum Target, const GLint Level, const GLint Internalformat, const GLsizei Width, const GLsizei Height, const GLint Border, const GLenum Format, const GLenum Type, const void* Data)
 {
 	FE_GL_ERROR(glTexImage2D(Target, Level, Internalformat, Width, Height, Border, Format, Type, Data));
-#ifdef FE_GPUMEM_ALLOCATION_LOGING
+#ifdef FE_GPUMEM_ALLOCATION_LOGGING
 	LOG.logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
 #endif
 }
@@ -150,10 +150,10 @@ std::string FETexture::TextureInternalFormatToString(const GLint InternalFormat)
 	return Result;
 }
 
-std::vector<GLuint> FETexture::NoDeletingList = std::vector<GLuint>();
-void FETexture::AddToNoDeletingList(const GLuint TextureID)
+std::vector<GLuint> FETexture::PreventAutoDeletionList = std::vector<GLuint>();
+void FETexture::MarkAsPersistent(const GLuint TextureID)
 {
-	NoDeletingList.push_back(TextureID);
+	PreventAutoDeletionList.push_back(TextureID);
 }
 
 unsigned char* FETexture::GetRawData(size_t* RawDataSize)

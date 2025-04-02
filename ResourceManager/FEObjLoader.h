@@ -56,7 +56,7 @@ namespace FocalEngine
 		std::vector<int> FInd;
 		// material records
 		std::vector<MaterialRecord> MaterialRecords;
-		std::vector<float> MatIDs;
+		std::vector<float> MaterialIDs;
 
 		// Used for saving
 		std::vector<int> NormalIndices;
@@ -84,7 +84,7 @@ namespace FocalEngine
 		void ReadFile(const char* FileName);
 
 		// Use to get raw data from the loaded file.
-		// Recommenede only if you know what you are doing.
+		// Recommended only if you know what you are doing.
 		std::vector<FERawOBJData*>* GetLoadedObjects();
 
 		bool SaveToOBJ(const char* FileName, FERawOBJData* Data);
@@ -119,18 +119,18 @@ namespace FocalEngine
 
 		struct VertexThatNeedDoubling
 		{
-			VertexThatNeedDoubling(const int IndexInArray, const int AcctualIndex, const int TexIndex, const int NormIndex) : IndexInArray(IndexInArray),
-																															  AcctualIndex(AcctualIndex), TexIndex(TexIndex), NormIndex(NormIndex), bWasDone(false) {};
+			VertexThatNeedDoubling(const int IndexInArray, const int ActualIndex, const int TexIndex, const int NormIndex) : IndexInArray(IndexInArray),
+																															  ActualIndex(ActualIndex), TexIndex(TexIndex), NormIndex(NormIndex), bWasDone(false) {};
 
 			int IndexInArray;
-			int AcctualIndex;
+			int ActualIndex;
 			int TexIndex;
 			int NormIndex;
 			bool bWasDone;
 
 			friend bool operator==(const VertexThatNeedDoubling& Lhs, const VertexThatNeedDoubling& Rhs)
 			{
-				return Lhs.AcctualIndex == Rhs.AcctualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TexIndex == Rhs.TexIndex && Lhs.NormIndex == Rhs.NormIndex;
+				return Lhs.ActualIndex == Rhs.ActualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TexIndex == Rhs.TexIndex && Lhs.NormIndex == Rhs.NormIndex;
 			}
 		};
 	};

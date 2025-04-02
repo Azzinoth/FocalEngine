@@ -37,7 +37,7 @@ namespace FocalEngine
 
 		float GetPositionDeviation();
 		float GetScaleDeviation();
-		int GetRotaionDeviation(glm::vec3 Axis);
+		int GetRotationDeviation(glm::vec3 Axis);
 
 	private:
 		float MinScale = 1.0f;
@@ -96,8 +96,8 @@ namespace FocalEngine
 
 		size_t GetInstanceCount();
 
-		FE_CULING_TYPE GetCullingType();
-		void SetCullingType(FE_CULING_TYPE NewValue);
+		FE_CULLING_TYPE GetCullingType();
+		void SetCullingType(FE_CULLING_TYPE NewValue);
 
 		FEEntity* GetSnappedToTerrain();
 		int GetTerrainLayer();
@@ -140,7 +140,7 @@ namespace FocalEngine
 		void ConnectToTerrainLayer(FEEntity* Terrain, int LayerIndex);
 		void UnConnectFromTerrainLayer();
 
-		FE_CULING_TYPE CullingType = FE_CULLING_LODS;
+		FE_CULLING_TYPE CullingType = FE_CULLING_LODS;
 
 		std::vector<FEInstanceModification> Modifications;
 	};

@@ -491,14 +491,14 @@ void FECameraComponent::SetSSAOSmallDetailsEnabled(const bool NewValue)
 	bSSAOSmallDetails = NewValue;
 }
 
-bool FECameraComponent::IsSSAOResultBlured()
+bool FECameraComponent::IsSSAOResultBlurred()
 {
-	return bSSAOBlured;
+	return bSSAOBlurred;
 }
 
-void FECameraComponent::SetSSAOResultBlured(const bool NewValue)
+void FECameraComponent::SetSSAOResultBlurred(const bool NewValue)
 {
-	bSSAOBlured = NewValue;
+	bSSAOBlurred = NewValue;
 }
 
 float FECameraComponent::GetSSAOBias()

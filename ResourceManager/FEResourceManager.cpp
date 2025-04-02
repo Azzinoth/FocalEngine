@@ -37,15 +37,15 @@ bool FEResourceManager::SetTag(FEObject* Object, std::string NewTag)
 		return false;
 	}
 
-	SetTagIternal(Object, NewTag);
+	SetTagInternal(Object, NewTag);
 	return true;
 }
 
-void FEResourceManager::SetTagIternal(FEObject* Object, std::string NewTag)
+void FEResourceManager::SetTagInternal(FEObject* Object, std::string NewTag)
 {
 	if (Object == nullptr)
 	{
-		LOG.Add("Object is nullptr in function FEResourceManager::SetTagIternal.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("Object is nullptr in function FEResourceManager::SetTagInternal.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -118,7 +118,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 		// lodepng returns 16-bit data with different bytes order that OpenGL expects.
 		FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
-		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, RawExtractedData.data());
+		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, RawExtractedData.data());
 		FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -132,7 +132,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		NewTexture->InternalFormat = bUsingAlpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-		FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
+		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
 
 		if (NewTexture->MipEnabled)
 		{
@@ -287,7 +287,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	}
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
 
 	if (NewTexture->MipEnabled)
 	{
@@ -700,17 +700,51 @@ FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string
 	if (Name.empty())
 		Name = "unnamedMesh";
 
-	bool bIsMesh = IsPLYCointainMesh(PLYData);
+	bool bIsMesh = DoesPLYContainMesh(PLYData);
 	if (!bIsMesh)
 	{
 		LOG.Add("PLYData is not a mesh in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return NewMesh;
 	}
 
-	std::vector<glm::vec3> Vertices = ExtractPositionsFromPLYData(PLYData);
-	if (Vertices.empty())
+	//std::vector<glm::vec3> Vertices;
+	std::vector<float> PositionsRawData;
+	std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> Positions = ExtractPositionsFromPLYData(PLYData);
+	if (auto* FloatPositionVector = std::get_if<std::vector<glm::vec3>>(&Positions))
 	{
-		LOG.Add("Can't extract positions from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		if (FloatPositionVector->empty())
+		{
+			LOG.Add("Can't extract positions from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return NewMesh;
+		}
+
+		for (size_t i = 0; i < FloatPositionVector->size(); i++)
+		{
+			PositionsRawData.push_back(FloatPositionVector->at(i).x);
+			PositionsRawData.push_back(FloatPositionVector->at(i).y);
+			PositionsRawData.push_back(FloatPositionVector->at(i).z);
+		}
+	}
+	else if (auto* DoublePositionVector = std::get_if<std::vector<glm::dvec3>>(&Positions))
+	{
+		if (DoublePositionVector->empty())
+		{
+			LOG.Add("Can't extract positions from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return NewMesh;
+		}
+
+		// Right now we are not supporting double precision positions.
+		// So we will convert them to float.
+		for (size_t i = 0; i < DoublePositionVector->size(); i++)
+		{
+			PositionsRawData.push_back(static_cast<float>(DoublePositionVector->at(i).x));
+			PositionsRawData.push_back(static_cast<float>(DoublePositionVector->at(i).y));
+			PositionsRawData.push_back(static_cast<float>(DoublePositionVector->at(i).z));
+		}
+	}
+	else
+	{
+		LOG.Add("Can't extract positions from PLYData in function FEResourceManager::RawPLYDataToFEMesh.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 		return NewMesh;
 	}
 
@@ -730,14 +764,6 @@ FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string
 		ConvertedColors.push_back(static_cast<float>(Color[i][2]) / 255.0f);
 	}
 
-	std::vector<float> Positions;
-	for (size_t i = 0; i < Vertices.size(); i++)
-	{
-		Positions.push_back(Vertices[i].x);
-		Positions.push_back(Vertices[i].y);
-		Positions.push_back(Vertices[i].z);
-	}
-
 	bool bTextureCoordinatesArePartOfVertex = false;
 	std::vector<glm::vec2> UV = ExtractUVsFromPLYData(PLYData, bTextureCoordinatesArePartOfVertex);
 	std::vector<float> ConvertedUV;
@@ -751,8 +777,8 @@ FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string
 	std::vector<float> ConvertedNormals;
 	if (Normals.empty())
 	{
-		ConvertedNormals.resize(Positions.size());
-		GEOMETRY.CalculateNormals(Indices, Positions, ConvertedNormals);
+		ConvertedNormals.resize(PositionsRawData.size());
+		GEOMETRY.CalculateNormals(Indices, PositionsRawData, ConvertedNormals);
 	}
 	else
 	{
@@ -768,10 +794,10 @@ FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string
 	if (ConvertedUV.size() > 0 && ConvertedNormals.size() > 0)
 	{
 		Tangents.resize(ConvertedNormals.size());
-		GEOMETRY.CalculateTangents(Indices, Positions, ConvertedUV, ConvertedNormals, Tangents);
+		GEOMETRY.CalculateTangents(Indices, PositionsRawData, ConvertedUV, ConvertedNormals, Tangents);
 	}
 
-	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()),
+	return RawDataToMesh(PositionsRawData.data(), static_cast<int>(PositionsRawData.size()),
 						 ConvertedUV.data(), static_cast<int>(ConvertedUV.size()),
 						 ConvertedNormals.data(), static_cast<int>(ConvertedNormals.size()),
 						 Tangents.data(), static_cast<int>(Tangents.size()),
@@ -1273,7 +1299,7 @@ FEResourceManager::FEResourceManager()
 
 	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
 	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
-	FETexture::AddToNoDeletingList(NoTexture->GetTextureID());
+	FETexture::MarkAsPersistent(NoTexture->GetTextureID());
 
 	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
@@ -1319,7 +1345,7 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 			OBJLoader.LoadedObjects[i]->FTanC.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FTanC.size()),
 			OBJLoader.LoadedObjects[i]->FInd.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->FInd.size()),
 			nullptr, 0,
-			OBJLoader.LoadedObjects[i]->MatIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MatIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
+			OBJLoader.LoadedObjects[i]->MaterialIDs.data(), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialIDs.size()), static_cast<int>(OBJLoader.LoadedObjects[i]->MaterialRecords.size()), name));
 
 
 		// in rawDataToMesh() hidden FEMesh allocation and TextureIterator will go to hash table so we need to use setMeshName() not setName.
@@ -1486,7 +1512,7 @@ Json::Value FEResourceManager::SaveMaterialToJSON(FEMaterial* Material)
 	Root["RoughnessMap intensity"] = Material->GetRoughnessMapIntensity();
 	Root["MetalnessMap intensity"] = Material->GetMetalnessMapIntensity();
 	Root["Tiling"] = Material->GetTiling();
-	Root["Compack packing"] = Material->IsCompackPacking();
+	Root["Compack packing"] = Material->IsCompactPacking();
 
 	return Root;
 }
@@ -1551,7 +1577,7 @@ FEMaterial* FEResourceManager::LoadMaterialFromJSON(Json::Value& Root)
 
 	if (Root.isMember("Tiling"))
 		NewMaterial->SetTiling(Root["Tiling"].asFloat());
-	NewMaterial->SetCompackPacking(Root["Compack packing"].asBool());
+	NewMaterial->SetCompactPacking(Root["Compack packing"].asBool());
 
 	return NewMaterial;
 }
@@ -1964,7 +1990,7 @@ Json::Value FEResourceManager::SaveGameModelToJSON(FEGameModel* GameModel)
 	if (GameModel->IsUsingLOD())
 	{
 		Root["LODs"]["CullDistance"] = GameModel->GetCullDistance();
-		Root["LODs"]["Billboard zero rotaion"] = GameModel->GetBillboardZeroRotaion();
+		Root["LODs"]["Billboard zero rotaion"] = GameModel->GetBillboardZeroRotation();
 		Root["LODs"]["LODCount"] = GameModel->GetLODCount();
 		for (size_t i = 0; i < GameModel->GetLODCount(); i++)
 		{
@@ -2002,7 +2028,7 @@ FEGameModel* FEResourceManager::LoadGameModelFromJSON(Json::Value& Root)
 	if (bHaveLODLevels)
 	{
 		NewGameModel->SetCullDistance(Root["LODs"]["CullDistance"].asFloat());
-		NewGameModel->SetBillboardZeroRotaion(Root["LODs"]["Billboard zero rotaion"].asFloat());
+		NewGameModel->SetBillboardZeroRotation(Root["LODs"]["Billboard zero rotaion"].asFloat());
 
 		size_t LODCount = Root["LODs"]["LODCount"].asInt();
 		for (size_t i = 0; i < LODCount; i++)
@@ -2045,6 +2071,7 @@ FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* Ve
 	if (!ForceObjectID.empty())
 		NewShader->SetID(ForceObjectID);
 	Shaders[NewShader->GetObjectID()] = NewShader;
+
 	return NewShader;
 }
 
@@ -2128,7 +2155,7 @@ bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* N
 }
 
 // TO-DO: That function should be in TERRAIN_SYSTEM and FEResourceManager should just exepct general settings to create texture.
-FETexture* FEResourceManager::CreateBlankHightMapTexture(int Width, int Height, std::string Name)
+FETexture* FEResourceManager::CreateBlankHeightMapTexture(int Width, int Height, std::string Name)
 {
 	if (Name.empty())
 		Name = "UnnamedHeightMap";
@@ -2148,7 +2175,7 @@ FETexture* FEResourceManager::CreateBlankHightMapTexture(int Width, int Height, 
 		RawPixels[i] = static_cast<unsigned short>(0xffff * 0.5);
 	}
 
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
 	delete[] RawPixels;
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -2164,10 +2191,10 @@ std::string FEResourceManager::LoadGLSL(const char* FileName)
 
 	if (File.is_open())
 	{
-		std::string line;
-		while (getline(File, line))
+		std::string CurrentLine;
+		while (getline(File, CurrentLine))
 		{
-			ShaderData += line;
+			ShaderData += CurrentLine;
 			ShaderData += "\n";
 		}
 		File.close();
@@ -2373,7 +2400,7 @@ FETexture* FEResourceManager::CreateCopyOfTexture(FETexture* ReferenceTexture, b
 	Result = CreateSameFormatTexture(ReferenceTexture, 0, 0, bUnManaged, Name);
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, Result->InternalFormat, Result->Width, Result->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, Result->InternalFormat, Result->Width, Result->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
 
 	return Result;
 }
@@ -2962,7 +2989,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
 	delete RawData;
 	NewTexture->InternalFormat = InternalFormat;
 
@@ -3238,7 +3265,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
-	FETexture::GPUAllocateTeture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
 	Result->InternalFormat = InternalFormat;
 
 	if (Result->MipEnabled)
@@ -3889,7 +3916,7 @@ FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
 	{
 		if (AllFiles[i].substr(AllFiles[i].size() - 2) == ".h" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".hpp" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".inl")
 		{
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
 			// But we will erase the engine folder path from the file name.
 			EntryData.Name = AllFiles[i].substr(EnginePath.size());
@@ -4007,7 +4034,7 @@ FEAssetPackage* FEResourceManager::CreateEngineSourceFilesAssetPackage()
 	{
 		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".cpp" || AllFiles[i].substr(AllFiles[i].size() - 2) == ".c")
 		{
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
 			// But we will erase the engine folder path from the file name.
 			EntryData.Name = AllFiles[i].substr(EnginePath.size());
@@ -4133,7 +4160,7 @@ FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
 				continue;
 
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			EntryData.Name = FILE_SYSTEM.GetFileName(AllFiles[i]);
 			DebugStrings.push_back(EntryData.Name);
 			EntryData.Type = "BINARY";
@@ -4272,7 +4299,7 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 			AllFiles[i].substr(AllFiles[i].size() - 6) == ".model" ||
 			AllFiles[i].substr(AllFiles[i].size() - 19) == ".nativescriptmodule")
 		{
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
 			// But we will erase the engine folder path from the file name.
 			EntryData.Name = AllFiles[i].substr(FILE_SYSTEM.GetCurrentWorkingPath().size());
@@ -4290,7 +4317,7 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 	{
 		if (AllFiles[i].substr(AllFiles[i].size() - 5) == ".glsl")
 		{
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
 			// But we will erase the engine folder path from the file name.
 			EntryData.Name = AllFiles[i].substr(FILE_SYSTEM.GetCurrentWorkingPath().size());
@@ -4418,13 +4445,19 @@ std::vector<FEPointCloud*> FEResourceManager::GetPointCloudByName(const std::str
 	return Result;
 }
 
-FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions)
+FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering)
 {
 	FEPointCloud* NewPointCloud = new FEPointCloud();
 	NewPointCloud->SetName(Name);
 
 	if (!ForceObjectID.empty())	
 		NewPointCloud->SetID(ForceObjectID);
+
+	if (RawPointCloudData.empty())
+	{
+		LOG.Add("FEResourceManager::RawDataToFEPointCloud: RawPointCloudData is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return NewPointCloud;
+	}
 
 	if (bCenterPositions && !RawPointCloudData.empty())
 	{
@@ -4467,24 +4500,61 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 
 	PointClouds[NewPointCloud->GetObjectID()] = NewPointCloud;
 	NewPointCloud->PointCount = RawPointCloudData.size();
+	NewPointCloud->bUseAdvancedRendering = bAdvancedRendering;
 
-	glGenBuffers(1, &NewPointCloud->VboID);
+	if (RawPointCloudData.size() >= FEPointCloud::MaxPointsPerBuffer)
+	{
+		LOG.Add("FEResourceManager::RawDataToFEPointCloud: Point cloud has too many points for rendering. Forcing advanced rendering instead.", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		NewPointCloud->bUseAdvancedRendering = true;
+	}
 
-	// Bind and upload vertex data to the VBO.
-	glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW);
+	if (!NewPointCloud->IsAdvancedRenderingEnabled())
+	{
+		FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->VboID));
 
-	glGenVertexArrays(1, &NewPointCloud->VaoID);
+		// Bind and upload vertex data to the VBO.
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW));
 
-	// Bind and link VAO and VBO.
-	glBindVertexArray(NewPointCloud->VaoID);
-	glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID);
+		FE_GL_ERROR(glGenVertexArrays(1, &NewPointCloud->VaoID));
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0);
-	glEnableVertexAttribArray(0);
+		// Bind and link VAO and VBO.
+		FE_GL_ERROR(glBindVertexArray(NewPointCloud->VaoID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID));
 
-	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
+		FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0));
+		FE_GL_ERROR(glEnableVertexAttribArray(0));
+
+		FE_GL_ERROR(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float))));
+		FE_GL_ERROR(glEnableVertexAttribArray(1));
+	}
+	else
+	{
+		FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->ComputeShaderBuffer));
+		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, NewPointCloud->ComputeShaderBuffer));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NewPointCloud->ComputeShaderBuffer));
+		// If we have more points than the maximum points per buffer, we will split the data into multiple buffers.
+		if (NewPointCloud->PointCount > FEPointCloud::MaxPointsPerBuffer)
+		{
+			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
+
+			for (size_t i = FEPointCloud::MaxPointsPerBuffer; i < NewPointCloud->PointCount; i += FEPointCloud::MaxPointsPerBuffer)
+			{
+				NewPointCloud->ComputeShaderBuffers.resize(NewPointCloud->ComputeShaderBuffers.size() + 1);
+				FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->ComputeShaderBuffers.back()));
+				FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, NewPointCloud->ComputeShaderBuffers.back()));
+				FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NewPointCloud->ComputeShaderBuffers.back()));
+
+				// Calculate the number of points for the current buffer
+				size_t NumberOfPoints = std::min(FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.size() - i);
+				FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * NumberOfPoints, RawPointCloudData.data() + i, GL_DYNAMIC_DRAW));
+			}
+		}
+		else
+		{
+			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
+		}
+	}
 
 	return NewPointCloud;
 }
@@ -4499,7 +4569,7 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 		return LoadedPointCloud;
 	}
 
-	bool bIsPointCloud = IsPLYCointainPointCloud(PLYData);
+	bool bIsPointCloud = DoesPLYContainPointCloud(PLYData);
 	if (!bIsPointCloud)
 	{
 		LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: PLY file does not contain point cloud data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
@@ -4507,23 +4577,53 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 	}
 
 	std::vector<FEPointCloudVertex> Vertices;
-	std::vector<glm::vec3> Positions = ExtractPositionsFromPLYData(PLYData);
-	if (Positions.empty())
+	std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> Positions = ExtractPositionsFromPLYData(PLYData);
+	if (auto* FloatPositionVector = std::get_if<std::vector<glm::vec3>>(&Positions))
+	{
+		if (FloatPositionVector->empty())
+		{
+			LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: Error extracting positions from PLY data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return LoadedPointCloud;
+		}
+
+		Vertices.resize(FloatPositionVector->size());
+		for (size_t i = 0; i < FloatPositionVector->size(); i++)
+		{
+			Vertices[i].X = FloatPositionVector->at(i).x;
+			Vertices[i].Y = FloatPositionVector->at(i).y;
+			Vertices[i].Z = FloatPositionVector->at(i).z;
+		}
+
+		FloatPositionVector->clear();
+	}
+	else if (auto* DoublePositionVector = std::get_if<std::vector<glm::dvec3>>(&Positions))
+	{
+		if (DoublePositionVector->empty())
+		{
+			LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: Error extracting positions from PLY data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return LoadedPointCloud;
+		}
+
+		// Right now we are not supporting double precision positions.
+		// So we will convert them to float.
+		Vertices.resize(DoublePositionVector->size());
+		for (size_t i = 0; i < DoublePositionVector->size(); i++)
+		{
+			Vertices[i].X = static_cast<float>(DoublePositionVector->at(i).x);
+			Vertices[i].Y = static_cast<float>(DoublePositionVector->at(i).y);
+			Vertices[i].Z = static_cast<float>(DoublePositionVector->at(i).z);
+		}
+
+		DoublePositionVector->clear();
+	}
+	else
 	{
 		LOG.Add("FEResourceManager::RawPLYDataToFEPointCloud: Error extracting positions from PLY data.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 		return LoadedPointCloud;
 	}
 
-	Vertices.resize(Positions.size());
-	for (size_t i = 0; i < Positions.size(); i++)
-	{
-		Vertices[i].X = Positions[i].x;
-		Vertices[i].Y = Positions[i].y;
-		Vertices[i].Z = Positions[i].z;
-	}
-
 	std::vector<std::vector<unsigned char>> Colors = ExtractColorsFromPLYData(PLYData);
-	if (!Colors.empty() && Positions.size() == Colors.size())
+	if (!Colors.empty() && Vertices.size() == Colors.size())
 	{
 		for (size_t i = 0; i < Colors.size(); i++)
 		{
@@ -4535,6 +4635,8 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 				Vertices[i].A = Colors[i][3];
 			}
 		}
+
+		Colors.clear();
 	}
 
 	LoadedPointCloud = RawDataToFEPointCloud(Vertices, Name, ForceObjectID, bCenterPositions);
@@ -4648,6 +4750,10 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::str
 		PointCloudData[i].B = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char) + sizeof(unsigned char) * 2);
 		PointCloudData[i].A = *(unsigned char*)(ColorBuffer + i * 4 * sizeof(unsigned char) + sizeof(unsigned char) * 3);
 	}
+
+	char BoolBuffer[sizeof(bool)];
+	File.read(BoolBuffer, sizeof(bool));
+	bool bAdvancedRendering = *reinterpret_cast<bool*>(BoolBuffer);
 	
 	FEAABB PointCloudAABB;
 	for (int i = 0; i <= 2; i++)
@@ -4664,7 +4770,7 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::str
 
 	File.close();
 
-	FEPointCloud* NewPointCloud = RawDataToFEPointCloud(PointCloudData, Name, LoadedObjectID, false);
+	FEPointCloud* NewPointCloud = RawDataToFEPointCloud(PointCloudData, Name, LoadedObjectID, false, bAdvancedRendering);
 
 	delete[] Buffer;
 	delete[] Buffer_8Byte;
@@ -4716,6 +4822,9 @@ void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string F
 	File.write((char*)&Count, sizeof(size_t));
 	File.write((char*)Colors, sizeof(unsigned char) * Count);
 
+	bool bAdvancedRendering = PointCloud->IsAdvancedRenderingEnabled();
+	File.write((char*)&bAdvancedRendering, sizeof(bool));
+
 	File.write((char*)&PointCloud->AABB.Min[0], sizeof(float));
 	File.write((char*)&PointCloud->AABB.Min[1], sizeof(float));
 	File.write((char*)&PointCloud->AABB.Min[2], sizeof(float));
@@ -4729,23 +4838,23 @@ void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string F
 	delete[] Positions;
 }
 
-bool FEResourceManager::IsPLYCointainMesh(FERawPLYData* PLYData)
+bool FEResourceManager::DoesPLYContainMesh(FERawPLYData* PLYData)
 {
 	if (PLYData == nullptr)
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainMesh: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (PLYData->Header == nullptr)
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainMesh: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (PLYData->Header->ElementSchemas.empty())
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainMesh: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -4800,27 +4909,27 @@ bool FEResourceManager::IsPLYCointainMesh(FERawPLYData* PLYData)
 	return bHasFace && bHasVertex;
 }
 
-bool FEResourceManager::IsPLYCointainPointCloud(FERawPLYData* PLYData)
+bool FEResourceManager::DoesPLYContainPointCloud(FERawPLYData* PLYData)
 {
 	if (PLYData == nullptr)
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainPointCloud: PLYData is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (PLYData->Header == nullptr)
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainPointCloud: PLYData->Header is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (PLYData->Header->ElementSchemas.empty())
 	{
-		LOG.Add("FEResourceManager::IsPLYCointainMesh: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::DoesPLYContainPointCloud: PLYData->Header->Elements is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
 	}
 
-	if (IsPLYCointainMesh(PLYData))
+	if (DoesPLYContainMesh(PLYData))
 		return false;
 	
 	bool bHasVertex = false;
@@ -4963,9 +5072,9 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 	return bResult;
 }
 
-std::vector<glm::vec3> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYData* PLYData)
+std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYData* PLYData)
 {
-	std::vector<glm::vec3> Positions;
+	std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> Positions;
 
 	if (PLYData == nullptr)
 	{
@@ -4973,15 +5082,68 @@ std::vector<glm::vec3> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYDa
 		return Positions;
 	}
 
+	std::string ElementName = "vertex";
+
+	bool bHaveFloatPositions = false;
+	bool bHaveDoublePositions = false;
 	for (size_t i = 0; i < PLYData->Elements.size(); i++)
 	{
-		if (PLYData->Elements[i].Description.Name == "vertex")
+		if (PLYData->Elements[i].Description.Name == ElementName)
 		{
-			Positions.reserve(PLYData->Elements[i].Entries.size());
+			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
+			{
+				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
+				{
+					auto Property = PLYData->Header->ElementSchemas[i].PropertyDefinitions[k];
+					if (std::holds_alternative<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
+					{
+						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if (Property.Name == "x" || Property.Name == "y" || Property.Name == "z" ||
+							Property.Name == "X" || Property.Name == "Y" || Property.Name == "Z")
+						{
+							if (Property.Type == PLYPropertyType::FLOAT)
+							{
+								bHaveFloatPositions = true;
+								break;
+							}
+							else if (Property.Type == PLYPropertyType::DOUBLE)
+							{
+								bHaveDoublePositions = true;
+								break;
+							}
+						}
+					}
+
+					if (bHaveFloatPositions || bHaveDoublePositions)
+						break;
+				}
+
+				if (bHaveFloatPositions || bHaveDoublePositions)
+					break;
+			}
+		}
+	}
+
+	for (size_t i = 0; i < PLYData->Elements.size(); i++)
+	{
+		if (PLYData->Elements[i].Description.Name == ElementName)
+		{
+			if (bHaveFloatPositions)
+			{
+				Positions = std::vector<glm::vec3>();
+				std::get<std::vector<glm::vec3>>(Positions).reserve(PLYData->Elements[i].Entries.size());
+			}
+			else if (bHaveDoublePositions)
+			{
+				Positions = std::vector<glm::dvec3>();
+				std::get<std::vector<glm::dvec3>>(Positions).reserve(PLYData->Elements[i].Entries.size());
+			}
 
 			for (size_t j = 0; j < PLYData->Elements[i].Entries.size(); j++)
 			{
-				glm::vec3 CurrentVertex;
+				glm::vec3 CurrentVertex = glm::vec3(0.0f);
+				glm::dvec3 CurrentVertexDouble = glm::dvec3(0.0);
+				bool bReadSomeData = false;
 
 				for (size_t k = 0; k < PLYData->Elements[i].Entries[j].PropertyValues.size(); k++)
 				{
@@ -4990,13 +5152,43 @@ std::vector<glm::vec3> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYDa
 					{
 						const PLYScalarValue& CurrentValue = std::get<PLYScalarValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
 
-						if (Property.Name == "x" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.x = std::get<float>(CurrentValue);
-						else if (Property.Name == "y" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.y = std::get<float>(CurrentValue);
-						else if (Property.Name == "z" && Property.Type == PLYPropertyType::FLOAT) CurrentVertex.z = std::get<float>(CurrentValue);
+						if ((Property.Name == "x" || Property.Name == "X"))
+						{
+							if (bHaveFloatPositions)
+								CurrentVertex.x = std::get<float>(CurrentValue);
+							else if (bHaveDoublePositions)
+								CurrentVertexDouble.x = std::get<double>(CurrentValue);
+
+							bReadSomeData = true;
+						}
+						else if ((Property.Name == "y" || Property.Name == "Y"))
+						{
+							if (bHaveFloatPositions)
+								CurrentVertex.y = std::get<float>(CurrentValue);
+							else if (bHaveDoublePositions)
+								CurrentVertexDouble.y = std::get<double>(CurrentValue);
+
+							bReadSomeData = true;
+						}
+						else if ((Property.Name == "z" || Property.Name == "Z"))
+						{
+							if (bHaveFloatPositions)
+								CurrentVertex.z = std::get<float>(CurrentValue);
+							else if (bHaveDoublePositions)
+								CurrentVertexDouble.z = std::get<double>(CurrentValue);
+
+							bReadSomeData = true;
+						}
 					}
 				}
 
-				Positions.push_back(CurrentVertex);
+				if (bReadSomeData)
+				{
+					if (bHaveFloatPositions)
+						std::get<std::vector<glm::vec3>>(Positions).push_back(CurrentVertex);
+					else if (bHaveDoublePositions)
+						std::get<std::vector<glm::dvec3>>(Positions).push_back(CurrentVertexDouble);
+				}
 			}
 
 			break;
@@ -5102,6 +5294,12 @@ std::vector<int> FEResourceManager::ExtractIndicesFromPLYData(FERawPLYData* PLYD
 					if (std::holds_alternative<PLYListValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]))
 					{
 						const PLYListValue& CurrentValue = std::get<PLYListValue>(PLYData->Elements[i].Entries[j].PropertyValues[k]);
+						if (CurrentValue.size() != 3)
+						{
+							LOG.Add("FEResourceManager::ExtractIndicesFromPLYData: Indices size is not 3", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+							return std::vector<int>();
+						}
+						
 						if ((Property.Name == "vertex_indices" || Property.Name == "vertex_index" || Property.Name == "indices") && Property.bIsList)
 						{
 							if (Property.Type == PLYPropertyType::INT)
@@ -5372,4 +5570,9 @@ std::vector<glm::vec3> FEResourceManager::ExtractNormalsFromPLYData(FERawPLYData
 	}
 
 	return Normals;
+}
+
+std::string FEResourceManager::GetEngineFolder()
+{
+	return EngineFolder;
 }

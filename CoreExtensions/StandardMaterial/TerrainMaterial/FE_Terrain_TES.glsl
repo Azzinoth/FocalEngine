@@ -1,6 +1,6 @@
 layout (quads, fractional_even_spacing) in;
 
-uniform float hightScale;
+uniform float HeightScale;
 uniform vec2 tileMult;
 
 @Texture@ heightMap;
@@ -11,11 +11,11 @@ out vec3 TES_normal;
 
 float height(float u, float v)
 {
-	//float min = -hightScale;
-	//float max = hightScale;
-	return texture(heightMap, vec2(u,v)).r * 2 * hightScale - hightScale;
+	//float min = -HeightScale;
+	//float max = HeightScale;
+	return texture(heightMap, vec2(u,v)).r * 2 * HeightScale - HeightScale;
 	
-	//return (texture(heightMap, vec2(u,v)).r * hightScale);
+	//return (texture(heightMap, vec2(u,v)).r * HeightScale);
 }
 
 void main(void)

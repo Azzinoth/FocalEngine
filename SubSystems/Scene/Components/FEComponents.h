@@ -40,7 +40,7 @@ namespace FocalEngine
         std::vector<FEComponentConstraint> Constraints;
         int MaxSceneComponentCount = -1;
 		bool bCanNotBeRemoved = false;
-        // That variable defines the priority of loading the component. Relevant for the entities components list.
+        // This variable defines the priority of loading the component, relevant for the entity's component list.
         // The lower the value, the earlier the component will be loaded.
         int LoadingPriority = INT_MAX;
 

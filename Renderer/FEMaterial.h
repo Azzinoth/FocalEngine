@@ -95,10 +95,10 @@ namespace FocalEngine
 		void ClearAllTexturesInfo();
 		int GetUsedTexturesCount() const;
 
-		bool IsCompackPacking();
-		void SetCompackPacking(bool NewValue);
+		bool IsCompactPacking();
+		void SetCompactPacking(bool NewValue);
 
-		bool IsCompackPackingPossible();
+		bool IsCompactPackingPossible();
 
 		float GetTiling() const;
 		void SetTiling(float NewValue);
@@ -125,7 +125,7 @@ namespace FocalEngine
 		float AmbientOcclusionIntensity = 1.0f;
 		float DisplacementMapIntensity = 1.0f;
 		float Tiling = 1.0f;
-		bool bCompackPacking = false;
+		bool bCompactPacking = false;
 
 		FETexture* GetSpecifiedMap(int BindingIndex, int SubMaterial = 0);
 	};

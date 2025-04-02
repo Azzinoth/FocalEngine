@@ -13,16 +13,16 @@ FEGameModel* FESkyDomeSystem::SkyDomeGameModel = nullptr;
 FESkyDomeSystem::FESkyDomeSystem()
 {
 	FEMaterial* SkyDomeMaterial = RESOURCE_MANAGER.CreateMaterial("skyDomeMaterial", "5A649B9E0F36073D4939313H");
-	RESOURCE_MANAGER.SetTagIternal(SkyDomeMaterial, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(SkyDomeMaterial, ENGINE_RESOURCE_TAG);
 	SkyDomeMaterial->Shader = RESOURCE_MANAGER.CreateShader("FESkyDome", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str()).c_str(),
 																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str()).c_str(),
 																		 nullptr, nullptr, nullptr, nullptr,
 																		 "3A69744E831A574E4857361B");
-	RESOURCE_MANAGER.SetTagIternal(SkyDomeMaterial->Shader, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(SkyDomeMaterial->Shader, ENGINE_RESOURCE_TAG);
 	
 	SkyDomeGameModel = new FEGameModel(RESOURCE_MANAGER.GetMesh("7F251E3E0D08013E3579315F"), RESOURCE_MANAGER.GetMaterial("5A649B9E0F36073D4939313H"/*"skyDomeMaterial"*/), "skyDomeGameModel");
 	SkyDomeGameModel->SetID("17271E603508013IO77931TY");
-	RESOURCE_MANAGER.SetTagIternal(SkyDomeGameModel, ENGINE_RESOURCE_TAG);
+	RESOURCE_MANAGER.SetTagInternal(SkyDomeGameModel, ENGINE_RESOURCE_TAG);
 
 	RegisterOnComponentCallbacks();
 	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FESkyDomeComponent>(SkyDomeComponentToJson);

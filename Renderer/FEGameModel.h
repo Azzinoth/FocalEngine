@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	enum FE_CULING_TYPE
+	enum FE_CULLING_TYPE
 	{
 		FE_CULLING_NONE = 0,
 		FE_CULLING_LODS = 1,
@@ -59,8 +59,8 @@ namespace FocalEngine
 		size_t GetMaxLODCount();
 		size_t GetLODCount();
 
-		float GetBillboardZeroRotaion();
-		void SetBillboardZeroRotaion(float NewValue);
+		float GetBillboardZeroRotation();
+		void SetBillboardZeroRotation(float NewValue);
 
 		float GetCullDistance();
 		void SetCullDistance(float NewValue);
@@ -74,7 +74,7 @@ namespace FocalEngine
 
 		FEMaterial* BillboardMaterial = nullptr;
 		std::vector<FELODRecord> LODRecords;
-		float BillboardZeroRotaion = 0.0f;
+		float BillboardZeroRotation = 0.0f;
 		float ScaleFactor = 1.0f;
 
 		void CorrectLODDistances();

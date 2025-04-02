@@ -159,14 +159,14 @@ void FEGameModel::SetBillboardMaterial(FEMaterial* NewValue)
 	BillboardMaterial = NewValue;
 }
 
-float FEGameModel::GetBillboardZeroRotaion()
+float FEGameModel::GetBillboardZeroRotation()
 {
-	return BillboardZeroRotaion;
+	return BillboardZeroRotation;
 }
 
-void FEGameModel::SetBillboardZeroRotaion(const float NewValue)
+void FEGameModel::SetBillboardZeroRotation(const float NewValue)
 {
-	BillboardZeroRotaion = NewValue;
+	BillboardZeroRotation = NewValue;
 }
 
 float FEGameModel::GetCullDistance()

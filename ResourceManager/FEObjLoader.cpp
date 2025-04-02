@@ -86,12 +86,12 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 			NewVec[i] = std::stof(STemp);
 		}
 		
-		glm::vec3 NormilizedVector = glm::normalize(NewVec);
+		glm::vec3 NormalizedVector = glm::normalize(NewVec);
 
-		if (isnan(NormilizedVector.x) || isnan(NormilizedVector.y) || isnan(NormilizedVector.z))
-			NormilizedVector = glm::vec3(0.0f);
+		if (isnan(NormalizedVector.x) || isnan(NormalizedVector.y) || isnan(NormalizedVector.z))
+			NormalizedVector = glm::vec3(0.0f);
 
-		Data->RawNormalCoordinates.push_back(NormilizedVector);
+		Data->RawNormalCoordinates.push_back(NormalizedVector);
 	}
 	// if this line contains indices
 	else if (STemp[0] == 'f' && STemp.size() == 1)
@@ -120,7 +120,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 					}
 					else
 					{
-						LOG.Add(std::string("Texture coordinates was absent in face description in function FEObjLoader::readFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+						LOG.Add(std::string("Texture coordinates were absent in face description in function FEObjLoader::readFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 					}
 				}
 
@@ -221,7 +221,7 @@ void FEObjLoader::ReadFile(const char* FileName)
 
 	if (!bForceOneMesh)
 	{
-		// Each material should represented by different FERawOBJData
+		// Each material should be represented by different FERawOBJData
 		std::vector<FERawOBJData*> ObjectsPerMaterialList;
 		for (size_t i = 0; i < LoadedObjects.size(); i++)
 		{
@@ -469,7 +469,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 	if (bHaveTextureCoord && bHaveNormalCoord)
 	{
-		std::vector<std::pair<int, float>> DoubledVertexMatIndecies;
+		std::vector<std::pair<int, float>> DoubledVertexMatIndices;
 		if (bDoubleVertexOnSeams)
 		{
 			std::vector<FEObjLoader::VertexThatNeedDoubling> VertexList;
@@ -507,7 +507,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			{
 				if (Vertex.bWasDone) continue;
 
-				Data->RawVertexCoordinates.push_back(Data->RawVertexCoordinates[Vertex.AcctualIndex - 1]);
+				Data->RawVertexCoordinates.push_back(Data->RawVertexCoordinates[Vertex.ActualIndex - 1]);
 
 				int NewVertexIndex = static_cast<int>(Data->RawVertexCoordinates.size());
 				Data->RawIndices[Vertex.IndexInArray] = NewVertexIndex;
@@ -516,9 +516,9 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 				// Preserve matIndex!
 				for (size_t i = 0; i < Data->MaterialRecords.size(); i++)
 				{
-					if (Vertex.AcctualIndex >= (static_cast<int>(Data->MaterialRecords[i].MinVertexIndex + 1)) && Vertex.AcctualIndex <= (static_cast<int>(Data->MaterialRecords[i].MaxVertexIndex + 1)))
+					if (Vertex.ActualIndex >= (static_cast<int>(Data->MaterialRecords[i].MinVertexIndex + 1)) && Vertex.ActualIndex <= (static_cast<int>(Data->MaterialRecords[i].MaxVertexIndex + 1)))
 					{
-						DoubledVertexMatIndecies.push_back(std::make_pair(NewVertexIndex, static_cast<float>(i)));
+						DoubledVertexMatIndices.push_back(std::make_pair(NewVertexIndex, static_cast<float>(i)));
 					}
 				}
 
@@ -541,7 +541,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTanC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FInd.resize(0);
-		Data->MatIDs.resize(Data->RawVertexCoordinates.size());
+		Data->MaterialIDs.resize(Data->RawVertexCoordinates.size());
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i += 3)
 		{
@@ -569,7 +569,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			{
 				if (VIndex >= static_cast<int>(Data->MaterialRecords[j].MinVertexIndex - 1) && VIndex <= static_cast<int>(Data->MaterialRecords[j].MaxVertexIndex - 1))
 				{
-					Data->MatIDs[VIndex] = static_cast<float>(j);
+					Data->MaterialIDs[VIndex] = static_cast<float>(j);
 				}
 			}
 
@@ -585,9 +585,9 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 		if (bDoubleVertexOnSeams)
 		{
-			for (size_t j = 0; j < DoubledVertexMatIndecies.size(); j++)
+			for (size_t j = 0; j < DoubledVertexMatIndices.size(); j++)
 			{
-				Data->MatIDs[DoubledVertexMatIndecies[j].first - 1] = DoubledVertexMatIndecies[j].second;
+				Data->MaterialIDs[DoubledVertexMatIndices[j].first - 1] = DoubledVertexMatIndices[j].second;
 			}
 		}
 
@@ -602,7 +602,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTanC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FInd.resize(0);
-		Data->MatIDs.resize(Data->RawVertexCoordinates.size());
+		Data->MaterialIDs.resize(Data->RawVertexCoordinates.size());
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i+=2)
 		{
@@ -629,7 +629,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			{
 				if (VIndex >= int(Data->MaterialRecords[i].MinVertexIndex - 1) && VIndex <= int(Data->MaterialRecords[i].MaxVertexIndex - 1))
 				{
-					Data->MatIDs[VIndex] = float(i);
+					Data->MaterialIDs[VIndex] = float(i);
 				}
 			}
 
@@ -651,7 +651,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		Data->FNorC.resize(Data->RawVertexCoordinates.size() * 3);
 		Data->FTanC.resize(0);
 		Data->FInd.resize(0);
-		Data->MatIDs.resize(0);
+		Data->MaterialIDs.resize(0);
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i += 2)
 		{
@@ -688,7 +688,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 		Data->FNorC.resize(0);
 		Data->FTanC.resize(0);
 		Data->FInd.resize(0);
-		Data->MatIDs.resize(0);
+		Data->MaterialIDs.resize(0);
 
 		for (size_t i = 0; i < Data->RawIndices.size(); i++)
 		{
@@ -751,7 +751,7 @@ void FEObjLoader::ReadMaterialFile(const char* OriginalOBJFile)
 
 	if ((File.rdstate() & std::ifstream::failbit) != 0)
 	{
-		LOG.Add(std::string("can't load material file: ") + MaterialFileFullPath + " in function FEObjLoader::readMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("can't load material file: ") + MaterialFileFullPath + " in function FEObjLoader::ReadMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -774,13 +774,13 @@ bool FEObjLoader::CheckCurrentMaterialObject()
 {
 	if (CurrentMaterialObject == nullptr)
 	{
-		LOG.Add("currentMaterialObject is nullptr in function FEObjLoader::readMaterialLine.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("currentMaterialObject is nullptr in function FEObjLoader::ReadMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (CurrentMaterialObject->MaterialRecords.empty())
 	{
-		LOG.Add("MaterialRecords is empty in function FEObjLoader::readMaterialLine.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("MaterialRecords is empty in function FEObjLoader::ReadMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -843,7 +843,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			}
 		}
 		
-		LOG.Add(std::string("can't find material: ") + MaterialName + " from material file in function FEObjLoader::readMaterialLine.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("can't find material: ") + MaterialName + " from material file in function FEObjLoader::ReadMaterialLine.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 	// The diffuse texture map.
 	else if (STemp.find("map_kd") != std::string::npos)

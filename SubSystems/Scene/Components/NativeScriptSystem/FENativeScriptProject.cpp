@@ -108,7 +108,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 				continue;
 			}
 
-			FEAssetPackageEntryIntializeData EntryData;
+			FEAssetPackageEntryInitializeData EntryData;
 			EntryData.Name = SourceFileList[i];
 			EntryData.Type = "Text";
 			DataToRecoverVSProject->ImportAssetFromFile(FullFilePath, EntryData);

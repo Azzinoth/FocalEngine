@@ -1,7 +1,7 @@
 #include "FEFramebuffer.h"
 using namespace FocalEngine;
 
-FEFramebuffer::FEFramebuffer() : FEObject(FE_FRAME_BUFFER, "unnamedFrameBuffer")
+FEFramebuffer::FEFramebuffer() : FEObject(FE_FRAME_BUFFER, "Unnamed FrameBuffer")
 {
 }
 
@@ -57,6 +57,9 @@ void FEFramebuffer::AttachTexture(const GLenum Attachment, const GLenum Textarge
 
 void FEFramebuffer::SetColorAttachment(FETexture* NewTexture, const size_t Index)
 {
+	if (Index >= ColorAttachments.size())
+		return;
+
 	if (ColorAttachments[Index] != nullptr)
 		ColorAttachments[Index]->EraseFromOnDeleteCallBackList(GetObjectID());
 
@@ -79,10 +82,15 @@ void FEFramebuffer::SetColorAttachment(FETexture* NewTexture, const size_t Index
 void FEFramebuffer::SetDepthAttachment(FETexture* NewTexture)
 {
 	const bool bWasBind = bBinded;
-	if (!bWasBind) Bind();
-		DepthAttachment = NewTexture;
-	AttachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthAttachment);
-	if (!bWasBind) UnBind();
+	if (!bWasBind)
+		Bind();
+
+	DepthAttachment = NewTexture;
+	if (NewTexture != nullptr)
+		AttachTexture(GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthAttachment);
+
+	if (!bWasBind)
+		UnBind();
 }
 
 void FEFramebuffer::SetStencilAttachment(FETexture* NewTexture)

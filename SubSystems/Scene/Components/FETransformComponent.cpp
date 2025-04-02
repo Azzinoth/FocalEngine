@@ -72,8 +72,11 @@ FETransformComponent::~FETransformComponent()
 {
 }
 
-glm::vec3 FETransformComponent::GetPosition(FE_COORDIANTE_SPACE_TYPE SpaceType) const
+glm::vec3 FETransformComponent::GetPosition(FE_COORDINATE_SPACE_TYPE SpaceType) const
 {
+	if (bSceneIndependent)
+		return Position;
+
 	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
@@ -88,8 +91,11 @@ glm::vec3 FETransformComponent::GetPosition(FE_COORDIANTE_SPACE_TYPE SpaceType) 
 	return Position;
 }
 
-glm::vec3 FETransformComponent::GetRotation(FE_COORDIANTE_SPACE_TYPE SpaceType) const
+glm::vec3 FETransformComponent::GetRotation(FE_COORDINATE_SPACE_TYPE SpaceType) const
 {
+	if (bSceneIndependent)
+		return RotationAngles;
+
 	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
@@ -107,8 +113,11 @@ glm::vec3 FETransformComponent::GetRotation(FE_COORDIANTE_SPACE_TYPE SpaceType) 
 	return RotationAngles;
 }
 
-glm::quat FETransformComponent::GetQuaternion(FE_COORDIANTE_SPACE_TYPE SpaceType) const
+glm::quat FETransformComponent::GetQuaternion(FE_COORDINATE_SPACE_TYPE SpaceType) const
 {
+	if (bSceneIndependent)
+		return RotationQuaternion;
+
 	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::dvec3 DoubleScale;
@@ -123,7 +132,7 @@ glm::quat FETransformComponent::GetQuaternion(FE_COORDIANTE_SPACE_TYPE SpaceType
 	return RotationQuaternion;
 }
 
-glm::vec3 FETransformComponent::GetScale(FE_COORDIANTE_SPACE_TYPE SpaceType) const
+glm::vec3 FETransformComponent::GetScale(FE_COORDINATE_SPACE_TYPE SpaceType) const
 {
 	if (SpaceType == FE_WORLD_SPACE)
 	{
@@ -151,7 +160,7 @@ glm::mat4 FETransformComponent::GetParentMatrix() const
 	return ParentWorldSpace;
 }
 
-void FETransformComponent::MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::MoveAlongAxis(const glm::vec3& Axis, float MovementValue, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	glm::vec3 NewPosition = GetPosition();
 	glm::vec3 LocalAlternativeAxis = Axis * MovementValue;
@@ -163,7 +172,7 @@ void FETransformComponent::MoveAlongAxis(const glm::vec3& Axis, float MovementVa
 	SetPosition(NewPosition);
 }
 
-void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	if (SpaceType == FE_LOCAL_SPACE)
 	{
@@ -198,7 +207,7 @@ void FETransformComponent::RotateQuaternion(const float Angle, const glm::vec3 A
 								   Axis.z * sin(Angle / 2)) * RotationQuaternion;
 }
 
-void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& RotationAmount, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	glm::vec3 FinalAxis = Axis;
 
@@ -226,7 +235,7 @@ void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& 
 	Update();
 }
 
-void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	if (RotationAngles == NewRotation)
 		return;
@@ -253,7 +262,7 @@ void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDIANT
 	SetDirtyFlag(true);
 }
 
-void FETransformComponent::SetQuaternion(glm::quat Quaternion, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::SetQuaternion(glm::quat Quaternion, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	glm::mat4 ParentMatrix;
 	if (SpaceType == FE_WORLD_SPACE)
@@ -307,7 +316,7 @@ void FETransformComponent::RotateByQuaternion(const glm::quat Quaternion)
 	SetDirtyFlag(true);
 }
 
-void FETransformComponent::SetScale(const glm::vec3 NewScale, FE_COORDIANTE_SPACE_TYPE SpaceType)
+void FETransformComponent::SetScale(const glm::vec3 NewScale, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
 	glm::mat4 ParentMatrix;
 	if (SpaceType == FE_WORLD_SPACE)
