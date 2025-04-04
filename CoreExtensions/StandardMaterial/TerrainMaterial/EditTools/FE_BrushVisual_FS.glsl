@@ -9,8 +9,8 @@ void main(void)
 	float distanceToBrush = distance(brushCenter, textureCoords);
 	if (distanceToBrush < brushSize)
 	{
-		float persentage = (distanceToBrush / brushSize);
-		float displacement = 1.0 * (1 - persentage);
+		float Percentage = (distanceToBrush / brushSize);
+		float displacement = 1.0 * (1 - Percentage);
 		out_Color = vec4(0.0) + displacement;
 	}
 	else
