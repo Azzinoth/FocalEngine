@@ -590,7 +590,60 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 		}
 	}
 
+	entt::basic_view PointCloudView = CurrentScene->Registry.view<FEPointCloudComponent, FETransformComponent>();
+	// Because we have old-style rendering and compute shader based rendering, we need to render point clouds in a different way.
+	// Sorting is done in a non optimal way, but it is not a big deal for now.
+	std::vector<FEEntity*> ComputeShaderPointClouds;
+	for (auto [EnTTEntity, PointCloudComponent, TransformComponent] : PointCloudView.each())
+	{
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
+		if (!PointCloudComponent.IsVisible())
+			continue;
+
+		if (PointCloudComponent.GetPointCloud() == nullptr)
+			continue;
+
+		if (!PointCloudComponent.GetPointCloud()->IsAdvancedRenderingEnabled())
+		{
+			POINT_CLOUD_SYSTEM.RenderStandard(Entity, MainCameraEntity);
+			continue;
+		}
+
+		ComputeShaderPointClouds.push_back(Entity);
+	}
+
 	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
+
+	// After the usual rendering is complete, we need to render point clouds using compute shaders.
+	if (!ComputeShaderPointClouds.empty())
+	{
+		if (!CurrentCameraRenderingData->IsAdvancedPointCloudRenderingInitialized())
+		{
+			if (!RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity))
+			{
+				LOG.Add("Function FERenderer::Render, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			}
+		}
+
+		if (CurrentCameraRenderingData->IsAdvancedPointCloudRenderingInitialized())
+		{
+			int ScreenWidth = CurrentCameraComponent.GetRenderTargetWidth();
+			int ScreenHeight = CurrentCameraComponent.GetRenderTargetHeight();
+
+			for (size_t i = 0; i < ComputeShaderPointClouds.size(); i++)
+			{
+				FETransformComponent& TransformComponent = ComputeShaderPointClouds[i]->GetComponent<FETransformComponent>();
+				POINT_CLOUD_SYSTEM.RenderWithComputeShaders(TransformComponent, ComputeShaderPointClouds[i]->GetComponent<FEPointCloudComponent>(), MainCameraEntity);
+			}
+
+			POINT_CLOUD_SYSTEM.FuseComputeRenderedToFramebuffer(MainCameraEntity);
+		}
+	}
+
+	
 	CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 	CurrentCameraRenderingData->FinalScene->Bind();
 
@@ -2475,10 +2528,36 @@ bool FERenderer::FuseFrameBufferDataAndCameraData(FEFramebuffer* Source, FEEntit
 		return false;
 	}
 
-	return FuseFrameBufferDataAndCameraData(Source->GetColorAttachment(), Source->GetDepthAttachment(),TargetCamera,
-										    SourceNearPlane, SourceFarPlane,
-										    NormalsToWrite, MaterialPropertiesToWrite,
-										    ShaderPropertiesToWrite, MotionVectorsToWrite);
+	if (TargetCamera->HasComponent<FECameraComponent>() == false)
+	{
+		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, TargetCamera does not have FECameraComponent.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	FECameraComponent& CameraComponent = TargetCamera->GetComponent<FECameraComponent>();
+	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
+	{
+		FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(TargetCamera);
+		if (CameraRenderingData == nullptr)
+		{
+			LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData CameraRenderingData is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			return false;
+		}
+
+		return FuseTwoFrameBuffers(Source, SourceNearPlane, SourceFarPlane, 
+								   CameraRenderingData->SceneToTextureFB, CameraComponent.GetNearPlane(),
+								   CameraComponent.GetFarPlane(), CameraRenderingData->SceneToTextureFB);
+	}
+	else if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Deferred)
+	{
+		return FuseFrameBufferDataAndCameraData(Source->GetColorAttachment(), Source->GetDepthAttachment(), TargetCamera,
+												SourceNearPlane, SourceFarPlane,
+												NormalsToWrite, MaterialPropertiesToWrite,
+												ShaderPropertiesToWrite, MotionVectorsToWrite);
+	}
+
+	LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, Camera has unsupported rendering pipeline.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+	return false;
 }
 
 bool FERenderer::FuseFrameBufferDataAndCameraData(FETexture* SourceColor, FETexture* SourceDepth, FEEntity* TargetCamera,

@@ -349,9 +349,9 @@ bool FEPointCloudSystem::FuseComputeRenderedToFramebuffer(FEEntity* Camera)
 
 	// We are rendering point clouds using same near and far plane values as main camera.
 	return RENDERER.FuseFrameBufferDataAndCameraData(CameraRenderingData->PointCloudIntermediateFrameBuffer, Camera,
-												   CameraComponent.GetNearPlane(), CameraComponent.GetFarPlane(),
-												   glm::vec3(1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f),
-												   glm::vec4(0.5f, 0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
+												     CameraComponent.GetNearPlane(), CameraComponent.GetFarPlane(),
+												     glm::vec3(1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f),
+												     glm::vec4(0.5f, 0.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f));
 }
 
 bool FEPointCloudSystem::FuseComputeRenderedToFramebuffer(FEEntity* CameraUsed, FEFramebuffer* TargetFrameBuffer)
