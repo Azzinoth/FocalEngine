@@ -195,6 +195,11 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		FEObject* LoadedObject = RESOURCE_MANAGER.ImportPLYFile(FileName);
 		Result.push_back(LoadedObject);
 	}
+	else if (FileExtension == ".las" || FileExtension == ".laz")
+	{
+		FEPointCloud* LoadedPointCloud = RESOURCE_MANAGER.ImportPointCloud(FileName);
+		Result.push_back(LoadedPointCloud);
+	}
 	// .gltf could contain scene, it should be loaded in FEScene.
 	else if (FileExtension == ".gltf")
 	{

@@ -10,6 +10,64 @@ extern "C" __declspec(dllexport) void* GetResourceManager()
 }
 #endif
 
+FEResourceManager::FEResourceManager()
+{
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
+
+	if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
+	{
+		PrivateEngineAssetPackage = new FEAssetPackage();
+		if (!PrivateEngineAssetPackage->LoadFromFile((FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage").c_str()))
+		{
+			LOG.Add("FEResourceManager::FEResourceManager: Can't load EngineResources.fepackage file!", "FE_LOG_LOADING", FE_LOG_ERROR);
+			delete PrivateEngineAssetPackage;
+			PrivateEngineAssetPackage = nullptr;
+		}
+
+		UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
+	}
+
+	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
+	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
+	FETexture::MarkAsPersistent(NoTexture->GetTextureID());
+
+	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
+		LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"5C267A01466A545E7D1A2E66");
+	NewShader->SetTag(ENGINE_RESOURCE_TAG);
+
+	LoadStandardMaterial();
+	LoadStandardMeshes();
+	LoadStandardGameModels();
+
+	// Load all standard script modules.
+	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
+	for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
+	{
+		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 19, 19) == ".nativescriptmodule")
+		{
+			LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]).c_str());
+		}
+	}
+
+	if (laszip_load_dll() != 0)
+	{
+		LOG.Add("DLL ERROR: loading LASzip DLL failed.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		bIsLasLazFilesEnabled = false;
+		LOG.Add("Loading LAS/LAZ files is disabled.", "FE_LOG_LOADING", FE_LOG_WARNING);
+	}
+	else
+	{
+		bIsLasLazFilesEnabled = true;
+	}
+}
+
+FEResourceManager::~FEResourceManager()
+{
+	Clear();
+}
+
 FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
@@ -1278,53 +1336,6 @@ void FEResourceManager::LoadStandardMeshes()
 	NewMesh->SetName("FESphere");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
 	Meshes[NewMesh->GetObjectID()] = NewMesh;
-}
-
-FEResourceManager::FEResourceManager()
-{
-	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
-
-	if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
-	{
-		PrivateEngineAssetPackage = new FEAssetPackage();
-		if (!PrivateEngineAssetPackage->LoadFromFile((FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage").c_str()))
-		{
-			LOG.Add("FEResourceManager::FEResourceManager: Can't load EngineResources.fepackage file!", "FE_LOG_LOADING", FE_LOG_ERROR);
-			delete PrivateEngineAssetPackage;
-			PrivateEngineAssetPackage = nullptr;
-		}
-
-		UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
-	}
-
-	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture").c_str(), "noTexture");
-	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
-	FETexture::MarkAsPersistent(NoTexture->GetTextureID());
-
-	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-		LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
-		nullptr, nullptr, nullptr, nullptr,
-		"5C267A01466A545E7D1A2E66");
-	NewShader->SetTag(ENGINE_RESOURCE_TAG);
-
-	LoadStandardMaterial();
-	LoadStandardMeshes();
-	LoadStandardGameModels();
-
-	// Load all standard script modules.
-	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
-	for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
-	{
-		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 19, 19) == ".nativescriptmodule")
-		{
-			LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]).c_str());
-		}
-	}
-}
-
-FEResourceManager::~FEResourceManager()
-{
-	Clear();
 }
 
 std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const bool bForceOneMesh)
@@ -4445,6 +4456,69 @@ std::vector<FEPointCloud*> FEResourceManager::GetPointCloudByName(const std::str
 	return Result;
 }
 
+FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering)
+{
+	if (RawPointCloudDataDouble.empty())
+	{
+		LOG.Add("FEResourceManager::RawDataToFEPointCloud: RawPointCloudDataDouble is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return nullptr;
+	}
+
+	// Before converting to float, we need to center the point cloud using 64 bit precision.
+	if (bCenterPositions && !RawPointCloudDataDouble.empty())
+	{
+		glm::dvec3 Min = glm::dvec3(DBL_MAX);
+		glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+
+		for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
+		{
+			if (RawPointCloudDataDouble[i].X < Min.x)
+				Min.x = RawPointCloudDataDouble[i].X;
+
+			if (RawPointCloudDataDouble[i].X > Max.x)
+				Max.x = RawPointCloudDataDouble[i].X;
+
+			if (RawPointCloudDataDouble[i].Y < Min.y)
+				Min.y = RawPointCloudDataDouble[i].Y;
+
+			if (RawPointCloudDataDouble[i].Y > Max.y)
+				Max.y = RawPointCloudDataDouble[i].Y;
+
+			if (RawPointCloudDataDouble[i].Z < Min.z)
+				Min.z = RawPointCloudDataDouble[i].Z;
+
+			if (RawPointCloudDataDouble[i].Z > Max.z)
+				Max.z = RawPointCloudDataDouble[i].Z;
+		}
+
+		glm::dvec3 Extent = Max - Min;
+		glm::dvec3 Center = Min + Extent / 2.0;
+
+		for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
+		{
+			RawPointCloudDataDouble[i].X = RawPointCloudDataDouble[i].X - Center.x;
+			RawPointCloudDataDouble[i].Y = RawPointCloudDataDouble[i].Y - Center.y;
+			RawPointCloudDataDouble[i].Z = RawPointCloudDataDouble[i].Z - Center.z;
+		}
+	}
+
+	std::vector<FEPointCloudVertex> RawPointCloudData;
+	RawPointCloudData.resize(RawPointCloudDataDouble.size());
+	for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
+	{
+		RawPointCloudData[i].X = static_cast<float>(RawPointCloudDataDouble[i].X);
+		RawPointCloudData[i].Y = static_cast<float>(RawPointCloudDataDouble[i].Y);
+		RawPointCloudData[i].Z = static_cast<float>(RawPointCloudDataDouble[i].Z);
+		RawPointCloudData[i].R = RawPointCloudDataDouble[i].R;
+		RawPointCloudData[i].G = RawPointCloudDataDouble[i].G;
+		RawPointCloudData[i].B = RawPointCloudDataDouble[i].B;
+		RawPointCloudData[i].A = RawPointCloudDataDouble[i].A;
+	}
+
+	RawPointCloudDataDouble.clear();
+	return RawDataToFEPointCloud(RawPointCloudData, Name, ForceObjectID, bCenterPositions, bAdvancedRendering);
+}
+
 FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering)
 {
 	FEPointCloud* NewPointCloud = new FEPointCloud();
@@ -4643,6 +4717,104 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 	return LoadedPointCloud;
 }
 
+FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, std::string Name, std::string ForceObjectID, bool bCenterPositions)
+{
+	FEPointCloud* LoadedPointCloud = nullptr;
+	if (FilePath.empty())
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return LoadedPointCloud;
+	}
+
+	if (!FILE_SYSTEM.DoesFileExist(FilePath))
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return LoadedPointCloud;
+	}
+
+	if (!bIsLasLazFilesEnabled)
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return LoadedPointCloud;
+	}
+
+	laszip_POINTER LaszipReader;
+	laszip_I32 Error = laszip_create(&LaszipReader);
+	if (Error)
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: Creating laszip reader failed with error: " + std::to_string(Error), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	laszip_BOOL bIsCompressed = 0;
+	bool bIsLASOrLAZFile = !laszip_open_reader(LaszipReader, FilePath.c_str(), &bIsCompressed);
+	if (!bIsLASOrLAZFile)
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: File is not a valid LAS/LAZ file", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		if (laszip_destroy(LaszipReader))
+		{
+			LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		}
+		return LoadedPointCloud;
+	}
+
+	laszip_header* FileHeader;
+	if (laszip_get_header_pointer(LaszipReader, &FileHeader))
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: getting header pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	laszip_point* CurrentPointPointer;
+	if (laszip_get_point_pointer(LaszipReader, &CurrentPointPointer))
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: getting point pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	laszip_U64 PointCount = (FileHeader->number_of_point_records ? FileHeader->number_of_point_records : FileHeader->extended_number_of_point_records);
+	if (PointCount == 0)
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: Point count is zero", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
+
+	std::vector<FEPointCloudVertexDouble> RawDataDouble;
+	RawDataDouble.resize(PointCount);
+
+	laszip_U64 PointIndex = 0;
+	while (PointIndex < PointCount)
+	{
+		if (laszip_read_point(LaszipReader))
+		{
+			LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: reading point from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return LoadedPointCloud;
+		}
+
+		RawDataDouble[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor;
+		RawDataDouble[PointIndex].Y = -(CurrentPointPointer->Y * FileHeader->z_scale_factor);
+		RawDataDouble[PointIndex].Z = CurrentPointPointer->Z * FileHeader->y_scale_factor;
+
+		RawDataDouble[PointIndex].R = unsigned char(CurrentPointPointer->rgb[0] / float(1 << 16) * 255);
+		RawDataDouble[PointIndex].G = unsigned char(CurrentPointPointer->rgb[1] / float(1 << 16) * 255);
+		RawDataDouble[PointIndex].B = unsigned char(CurrentPointPointer->rgb[2] / float(1 << 16) * 255);
+
+		PointIndex++;
+	}
+
+	if (laszip_close_reader(LaszipReader))
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: closing laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+	}
+
+	if (laszip_destroy(LaszipReader))
+	{
+		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+	}
+
+	return RawDataToFEPointCloud(RawDataDouble, Name, ForceObjectID, bCenterPositions);
+}
+
 FEPointCloud* FEResourceManager::ImportPointCloud(std::string FileName)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
@@ -4652,19 +4824,28 @@ FEPointCloud* FEResourceManager::ImportPointCloud(std::string FileName)
 		return LoadedPointCloud;
 	}
 
-	bool bIsPLYFile = false;
-	bool bIsLASFile = false;
-
-	FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FileName);
-
-	LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FileName));
-	
-	/*if (!bIsPLYFile && !bIsLASFile)
+	if (!FILE_SYSTEM.DoesFileExist(FileName))
 	{
-		LOG.Add("FEResourceManager::ImportPointCloud: File format is not supported", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::ImportPointCloud: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return LoadedPointCloud;
-	}*/
+	}
 
+	bool bIsPLYFile = PLY_MANAGER.IsPLYFile(FileName);
+	if (bIsPLYFile)
+	{
+		FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FileName);
+		LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FileName));
+	}
+	else
+	{
+		LoadedPointCloud = LasOrLazToFEPointCloud(FileName);
+	}
+
+	if (LoadedPointCloud == nullptr)
+	{
+		LOG.Add("FEResourceManager::ImportPointCloud: Error creating point cloud from file: " + FileName, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return LoadedPointCloud;
+	}
 	return LoadedPointCloud;
 }
 
@@ -5001,7 +5182,7 @@ void FEResourceManager::DeleteFEPointCloud(FEPointCloud* PointCloud)
 	delete PointCloud;
 }
 
-bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FileName)
+bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath)
 {
 	bool bResult = false;
 
@@ -5011,9 +5192,9 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 		return bResult;
 	}
 
-	if (FileName.empty())
+	if (FilePath.empty())
 	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToPLY: FileName is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::ExportFEPointCloudToPLY: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return bResult;
 	}
 
@@ -5068,8 +5249,141 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 		std::get<PLYScalarValue>(PLYData->Elements[0].Entries[i].PropertyValues[6]) = PointCloudData[i].A;
 	}
 
-	bResult = PLY_MANAGER.SaveToPLY(FileName, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
+	bResult = PLY_MANAGER.SaveToPLY(FilePath, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
 	return bResult;
+}
+
+bool FEResourceManager::ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath)
+{
+	return InternalExportFEPointCloudToLASOrLAZ(PointCloudToExport, FilePath, false);
+}
+
+bool FEResourceManager::ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath)
+{
+	return InternalExportFEPointCloudToLASOrLAZ(PointCloudToExport, FilePath, true);
+}
+
+bool FEResourceManager::InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed)
+{
+	if (PointCloudToExport == nullptr)
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: PointCloudToExport is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (FilePath.empty())
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!bIsLasLazFilesEnabled)
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::vector<FEPointCloudVertex> PointCloudData = PointCloudToExport->GetRawData();
+	size_t PointCount = PointCloudData.size();
+	if (PointCount == 0)
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: PointCount is zero", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	laszip_POINTER LaszipWriter;
+	if (laszip_create(&LaszipWriter))
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Creating laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	laszip_header* FileHeader;
+	if (laszip_get_header_pointer(LaszipWriter, &FileHeader))
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Getting header for a file failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Indicate that we have RGB color data in our point format
+	FileHeader->point_data_format = 2;  // Format 2 includes RGB values
+
+	// Update the point data record length to account for RGB data
+	// Standard record length is 20 bytes, plus 6 bytes for RGB (2 bytes per color channel)
+	FileHeader->point_data_record_length = 26;
+
+	// Set appropriate scale factors for data
+	// The LAS format stores coordinates as integers internally,
+	// but these integers represent real-world coordinates (typically in meters)
+	// Scale factors convert between floating-point and integer representations:
+	//   integer_value = real_world_value / scale_factor
+	//   real_world_value = integer_value * scale_factor
+	// 
+	// For example, with scale_factor = 0.001:
+	// - A real-world coordinate of 10.523 meters becomes integer 10523
+	// - An integer value of 8421 represents 8.421 meters in real-world space
+	//
+	FileHeader->x_scale_factor = 0.001;  // 1 mm precision
+	FileHeader->y_scale_factor = 0.001;
+	FileHeader->z_scale_factor = 0.001;
+
+	FileHeader->number_of_point_records = static_cast<laszip_U32>(PointCount);
+
+	if (laszip_open_writer(LaszipWriter, FilePath.c_str(), bIsCompressed))
+	{
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Opening laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+		laszip_CHAR* Error;
+		if (laszip_get_error(LaszipWriter, &Error))
+			LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Getting laszip error failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: " + std::string(Error), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	laszip_point_struct* CurrentPoint = nullptr;
+	CurrentPoint = new laszip_point_struct();
+	for (size_t i = 0; i < PointCloudData.size(); i++)
+	{
+		CurrentPoint->X = static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].X) / FileHeader->x_scale_factor);
+		CurrentPoint->Y = -static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].Y) / FileHeader->y_scale_factor);
+		CurrentPoint->Z = static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].Z) / FileHeader->z_scale_factor);
+
+		// Convert 8-bit colors (0-255) to 16-bit colors (0-65535)
+		int CoefficientToConvertTo16Bit = UINT16_MAX / UINT8_MAX;
+		CurrentPoint->rgb[0] = static_cast<laszip_U16>(PointCloudData[i].R * CoefficientToConvertTo16Bit);
+		CurrentPoint->rgb[1] = static_cast<laszip_U16>(PointCloudData[i].G * CoefficientToConvertTo16Bit);
+		CurrentPoint->rgb[2] = static_cast<laszip_U16>(PointCloudData[i].B * CoefficientToConvertTo16Bit);
+
+		if (laszip_set_point(LaszipWriter, CurrentPoint))
+		{
+			LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Setting point with index " + std::to_string(i) + " failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			delete CurrentPoint;
+
+			if (laszip_close_writer(LaszipWriter))
+				LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Closing laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+			if (laszip_destroy(LaszipWriter))
+				LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Destroying laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+			return false;
+		}
+
+		if (laszip_write_point(LaszipWriter))
+		{
+			LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Writing point with index " + std::to_string(i) + " failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	if (laszip_close_writer(LaszipWriter))
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Closing laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+	if (laszip_destroy(LaszipWriter))
+		LOG.Add("FEResourceManager::InternalExportFEPointCloudToLASOrLAZ: Destroying laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+
+	delete CurrentPoint;
+	return true;
 }
 
 std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYData* PLYData)

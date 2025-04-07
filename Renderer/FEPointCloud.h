@@ -17,6 +17,20 @@ namespace FocalEngine
 		unsigned char A = 255;
 	};
 
+	// Mainly used as temporary storage for the point cloud data
+	// when using 64 bit precision, later converted to 32 bit
+	struct FEPointCloudVertexDouble
+	{
+		double X = 0.0;
+		double Y = 0.0;
+		double Z = 0.0;
+
+		unsigned char R = 0;
+		unsigned char G = 0;
+		unsigned char B = 0;
+		unsigned char A = 255;
+	};
+
 	class FEPointCloud : public FEObject
 	{
 		friend class FEEntity;

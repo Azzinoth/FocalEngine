@@ -70,8 +70,6 @@ The Focal Engine provides specialized capabilities for working with large-scale 
 
 - LAS/LAZ File Format Support
 
-  ⚠️ Work in progress ⚠️
-
 - High-Performance Rendering: Support for real-time visualization of massive point clouds (hundreds of millions to billions of points)
 
   *Implementation based on:*  
@@ -215,3 +213,5 @@ This project uses the following third-party libraries:
 6) **googletest**: This library is under the BSD-3-Clause license. The full license text can be found at [googletest's GitHub repository](https://github.com/google/googletest?tab=BSD-3-Clause-1-ov-file).
 
 7) **EnTT**: This library is under the MIT License. The full license text can be found at [EnTT's GitHub repository](https://github.com/skypjack/entt?tab=MIT-1-ov-file).
+
+8) **LASzip**: This library is licensed under the Apache License 2.0. The full license text can be found at [LASzip's GitHub repository](https://github.com/LASzip/LASzip).

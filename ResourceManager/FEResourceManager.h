@@ -9,6 +9,8 @@
 #include "../Renderer/FEPointCloud.h"
 #include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
+
+#include "../ThirdParty/laszip/laszip_api.h"
 #include "Config.h"
 
 #define ENGINE_RESOURCE_TAG "ENGINE_PRIVATE_RESOURCE"
@@ -99,12 +101,16 @@ namespace FocalEngine
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();
 		FEPointCloud* GetPointCloud(std::string ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
 		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
 		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
+		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
 		FEPointCloud* ImportPointCloud(std::string FileName);
 		FEPointCloud* LoadFEPointCloud(std::string FileName, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName);
-		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FileName);
+		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
+		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath);
+		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);
 
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
@@ -234,6 +240,9 @@ namespace FocalEngine
 		std::vector<std::vector<unsigned char>> ExtractColorsFromPLYData(FERawPLYData* PLYData);
 		std::vector<glm::vec2> ExtractUVsFromPLYData(FERawPLYData* PLYData, bool& bTextureCoordinatesArePartOfVertex);
 		std::vector<glm::vec3> ExtractNormalsFromPLYData(FERawPLYData* PLYData);
+
+		bool bIsLasLazFilesEnabled = false;
+		bool InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed = true);
 	};
 #include "FEResourceManager.inl"
 
