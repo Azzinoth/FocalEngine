@@ -268,6 +268,7 @@ bool FEPointCloudSystem::RenderWithComputeShaders(FETransformComponent& Transfor
 	if (PointCloud->PointCount > FEPointCloud::MaxPointsPerBuffer)
 	{
 		POINT_CLOUD_SYSTEM.ComputePointCloudShader->Dispatch(static_cast<GLuint>((FEPointCloud::MaxPointsPerBuffer / 1024) + 1), 1, 1);
+		FE_GL_ERROR(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
 		size_t BufferIndex = 0;
 
 		for (size_t i = FEPointCloud::MaxPointsPerBuffer; i < PointCloud->PointCount; i += FEPointCloud::MaxPointsPerBuffer)
@@ -285,15 +286,16 @@ bool FEPointCloudSystem::RenderWithComputeShaders(FETransformComponent& Transfor
 				// Calculate the number of points for the current buffer
 				size_t NumberOfPoints = std::min(FEPointCloud::MaxPointsPerBuffer, PointCloud->PointCount - i);
 				POINT_CLOUD_SYSTEM.ComputePointCloudShader->Dispatch(static_cast<GLuint>((NumberOfPoints / 1024) + 1), 1, 1);
+				FE_GL_ERROR(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
 			}
 		}
 	}
 	else
 	{
 		POINT_CLOUD_SYSTEM.ComputePointCloudShader->Dispatch(static_cast<GLuint>((PointCloud->GetPointCount() / 1024) + 1), 1, 1);
+		FE_GL_ERROR(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
 	}
 
-	FE_GL_ERROR(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
 	return true;
 }
 

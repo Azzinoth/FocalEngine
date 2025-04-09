@@ -4792,8 +4792,8 @@ FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, st
 		}
 
 		RawDataDouble[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor;
-		RawDataDouble[PointIndex].Y = -(CurrentPointPointer->Y * FileHeader->z_scale_factor);
-		RawDataDouble[PointIndex].Z = CurrentPointPointer->Z * FileHeader->y_scale_factor;
+		RawDataDouble[PointIndex].Y = CurrentPointPointer->Y * FileHeader->y_scale_factor;
+		RawDataDouble[PointIndex].Z = CurrentPointPointer->Z * FileHeader->z_scale_factor;
 
 		RawDataDouble[PointIndex].R = unsigned char(CurrentPointPointer->rgb[0] / float(1 << 16) * 255);
 		RawDataDouble[PointIndex].G = unsigned char(CurrentPointPointer->rgb[1] / float(1 << 16) * 255);
@@ -5346,7 +5346,7 @@ bool FEResourceManager::InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* Point
 	for (size_t i = 0; i < PointCloudData.size(); i++)
 	{
 		CurrentPoint->X = static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].X) / FileHeader->x_scale_factor);
-		CurrentPoint->Y = -static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].Y) / FileHeader->y_scale_factor);
+		CurrentPoint->Y = static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].Y) / FileHeader->y_scale_factor);
 		CurrentPoint->Z = static_cast<laszip_I32>(static_cast<double>(PointCloudData[i].Z) / FileHeader->z_scale_factor);
 
 		// Convert 8-bit colors (0-255) to 16-bit colors (0-65535)
