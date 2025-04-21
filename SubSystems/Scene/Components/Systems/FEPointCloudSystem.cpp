@@ -295,7 +295,7 @@ bool FEPointCloudSystem::RenderWithComputeShaders(FETransformComponent& Transfor
 		POINT_CLOUD_SYSTEM.ComputePointCloudShader->Dispatch(static_cast<GLuint>((PointCloud->GetPointCount() / 1024) + 1), 1, 1);
 		FE_GL_ERROR(glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT));
 	}
-
+	
 	return true;
 }
 
@@ -443,6 +443,12 @@ bool FEPointCloudSystem::SetAdvancedRendering(FEPointCloud* PointCloud, bool bUs
 	if (PointCloud->GetPointCount() == 0)
 		return true;
 
+	if (PointCloud->bUseAdvancedRendering == bUseAdvancedRendering)
+	{
+		LOG.Add("FEPointCloudSystem::SetAdvancedRendering: Point cloud already has the same advanced rendering setting", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		return false;
+	}
+
 	std::vector<FEPointCloudVertex> RawPointCloudData = PointCloud->GetRawData();
 	if (RawPointCloudData.empty())
 	{
@@ -450,55 +456,12 @@ bool FEPointCloudSystem::SetAdvancedRendering(FEPointCloud* PointCloud, bool bUs
 		return false;
 	}
 
-	if (!PointCloud->IsAdvancedRenderingEnabled())
+	PointCloud->bUseAdvancedRendering = bUseAdvancedRendering;
+	if (!RESOURCE_MANAGER.SetUpPointCloudGPUBuffers(PointCloud, RawPointCloudData))
 	{
-		if (PointCloud->VaoID != GLuint(-1))
-		{
-			FE_GL_ERROR(glDeleteVertexArrays(1, &PointCloud->VaoID));
-			PointCloud->VaoID = GLuint(-1);
-		}
-			
-		if (PointCloud->VboID != GLuint(-1))
-		{
-			FE_GL_ERROR(glDeleteBuffers(1, &PointCloud->VboID));
-			PointCloud->VboID = GLuint(-1);
-		}
-
-		FE_GL_ERROR(glGenBuffers(1, &PointCloud->ComputeShaderBuffer));
-		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, PointCloud->ComputeShaderBuffer));
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, PointCloud->ComputeShaderBuffer));
-		FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * PointCloud->PointCount, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
-
-		return true;
-	}
-	else
-	{
-		if (PointCloud->ComputeShaderBuffer != GLuint(-1))
-		{
-			FE_GL_ERROR(glDeleteBuffers(1, &PointCloud->ComputeShaderBuffer));
-			PointCloud->ComputeShaderBuffer = GLuint(-1);
-		}
-
-		FE_GL_ERROR(glGenBuffers(1, &PointCloud->VboID));
-
-		// Bind and upload vertex data to the VBO.
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PointCloud->VboID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * PointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW));
-
-		FE_GL_ERROR(glGenVertexArrays(1, &PointCloud->VaoID));
-
-		// Bind and link VAO and VBO.
-		FE_GL_ERROR(glBindVertexArray(PointCloud->VaoID));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PointCloud->VboID));
-
-		FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-
-		FE_GL_ERROR(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float))));
-		FE_GL_ERROR(glEnableVertexAttribArray(1));
-
-		return true;
+		LOG.Add("FEPointCloudSystem::SetAdvancedRendering: Failed to set up GPU buffers for point cloud.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
 	}
 
-	return false;
+	return true;
 }

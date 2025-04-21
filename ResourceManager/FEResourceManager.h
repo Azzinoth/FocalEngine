@@ -27,6 +27,7 @@ namespace FocalEngine
 		friend class FEVirtualUIContext;
 		friend class FEVirtualUISystem;
 		friend class FENativeScriptSystem;
+		friend class FEPointCloudSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -105,9 +106,9 @@ namespace FocalEngine
 		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
 		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
 		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
-		FEPointCloud* ImportPointCloud(std::string FileName);
-		FEPointCloud* LoadFEPointCloud(std::string FileName, std::string Name = "");
-		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName);
+		FEPointCloud* ImportPointCloud(std::string FilePath);
+		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
+		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
 		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
 		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath);
 		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
@@ -243,6 +244,7 @@ namespace FocalEngine
 
 		bool bIsLasLazFilesEnabled = false;
 		bool InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed = true);
+		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
 	};
 #include "FEResourceManager.inl"
 

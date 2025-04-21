@@ -4464,6 +4464,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		return nullptr;
 	}
 
+	FEAABB PointCloudAABB;
 	// Before converting to float, we need to center the point cloud using 64 bit precision.
 	if (bCenterPositions && !RawPointCloudDataDouble.empty())
 	{
@@ -4500,6 +4501,8 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 			RawPointCloudDataDouble[i].Y = RawPointCloudDataDouble[i].Y - Center.y;
 			RawPointCloudDataDouble[i].Z = RawPointCloudDataDouble[i].Z - Center.z;
 		}
+
+		PointCloudAABB = FEAABB(Min - Center, Max - Center);
 	}
 
 	std::vector<FEPointCloudVertex> RawPointCloudData;
@@ -4516,7 +4519,100 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	}
 
 	RawPointCloudDataDouble.clear();
-	return RawDataToFEPointCloud(RawPointCloudData, Name, ForceObjectID, bCenterPositions, bAdvancedRendering);
+
+	FEPointCloud* LoadedPointCloud = RawDataToFEPointCloud(RawPointCloudData, Name, ForceObjectID, false, bAdvancedRendering);
+	LoadedPointCloud->AABB = PointCloudAABB;
+	return LoadedPointCloud;
+}
+
+bool FEResourceManager::SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData)
+{
+	if (PointCloud == nullptr)
+	{
+		LOG.Add("FEResourceManager::SetUpPointCloudGPUBuffers: PointCloud is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (RawPointCloudData.empty())
+	{
+		LOG.Add("FEResourceManager::SetUpPointCloudGPUBuffers: RawPointCloudData is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (RawPointCloudData.size() >= FEPointCloud::MaxPointsPerBuffer)
+	{
+		LOG.Add("FEResourceManager::SetUpPointCloudGPUBuffers: Point cloud has too many points for rendering. Forcing advanced rendering instead.", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		PointCloud->bUseAdvancedRendering = true;
+	}
+
+	if (PointCloud->VaoID != GLuint(-1))
+	{
+		FE_GL_ERROR(glDeleteVertexArrays(1, &PointCloud->VaoID));
+		PointCloud->VaoID = GLuint(-1);
+	}
+
+	if (PointCloud->VboID != GLuint(-1))
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &PointCloud->VboID));
+		PointCloud->VboID = GLuint(-1);
+	}
+
+	if (PointCloud->ComputeShaderBuffer != GLuint(-1))
+	{
+		FE_GL_ERROR(glDeleteBuffers(1, &PointCloud->ComputeShaderBuffer));
+		PointCloud->ComputeShaderBuffer = GLuint(-1);
+	}
+
+	if (!PointCloud->IsAdvancedRenderingEnabled())
+	{
+		FE_GL_ERROR(glGenBuffers(1, &PointCloud->VboID));
+
+		// Bind and upload vertex data to the VBO.
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PointCloud->VboID));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * PointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW));
+
+		FE_GL_ERROR(glGenVertexArrays(1, &PointCloud->VaoID));
+
+		// Bind and link VAO and VBO.
+		FE_GL_ERROR(glBindVertexArray(PointCloud->VaoID));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PointCloud->VboID));
+
+		FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0));
+		FE_GL_ERROR(glEnableVertexAttribArray(0));
+
+		FE_GL_ERROR(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float))));
+		FE_GL_ERROR(glEnableVertexAttribArray(1));
+	}
+	else
+	{
+		FE_GL_ERROR(glGenBuffers(1, &PointCloud->ComputeShaderBuffer));
+		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, PointCloud->ComputeShaderBuffer));
+		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, PointCloud->ComputeShaderBuffer));
+		// If we have more points than the maximum points per buffer, we will split the data into multiple buffers.
+		if (PointCloud->PointCount > FEPointCloud::MaxPointsPerBuffer)
+		{
+			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
+
+			for (size_t i = FEPointCloud::MaxPointsPerBuffer; i < PointCloud->PointCount; i += FEPointCloud::MaxPointsPerBuffer)
+			{
+				PointCloud->ComputeShaderBuffers.resize(PointCloud->ComputeShaderBuffers.size() + 1);
+				FE_GL_ERROR(glGenBuffers(1, &PointCloud->ComputeShaderBuffers.back()));
+				FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, PointCloud->ComputeShaderBuffers.back()));
+				FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, PointCloud->ComputeShaderBuffers.back()));
+
+				// Calculate the number of points for the current buffer
+				size_t NumberOfPoints = std::min(FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.size() - i);
+				FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * NumberOfPoints, RawPointCloudData.data() + i, GL_DYNAMIC_DRAW));
+			}
+		}
+		else
+		{
+			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * PointCloud->PointCount, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
+		}
+	}
+
+	PointCloud->PointCount = RawPointCloudData.size();
+	return true;
 }
 
 FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering)
@@ -4576,58 +4672,11 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	NewPointCloud->PointCount = RawPointCloudData.size();
 	NewPointCloud->bUseAdvancedRendering = bAdvancedRendering;
 
-	if (RawPointCloudData.size() >= FEPointCloud::MaxPointsPerBuffer)
+	if (!SetUpPointCloudGPUBuffers(NewPointCloud, RawPointCloudData))
 	{
-		LOG.Add("FEResourceManager::RawDataToFEPointCloud: Point cloud has too many points for rendering. Forcing advanced rendering instead.", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		NewPointCloud->bUseAdvancedRendering = true;
-	}
-
-	if (!NewPointCloud->IsAdvancedRenderingEnabled())
-	{
-		FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->VboID));
-
-		// Bind and upload vertex data to the VBO.
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_STATIC_DRAW));
-
-		FE_GL_ERROR(glGenVertexArrays(1, &NewPointCloud->VaoID));
-
-		// Bind and link VAO and VBO.
-		FE_GL_ERROR(glBindVertexArray(NewPointCloud->VaoID));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NewPointCloud->VboID));
-
-		FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(FEPointCloudVertex), (void*)0));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-
-		FE_GL_ERROR(glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(FEPointCloudVertex), (void*)(3 * sizeof(float))));
-		FE_GL_ERROR(glEnableVertexAttribArray(1));
-	}
-	else
-	{
-		FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->ComputeShaderBuffer));
-		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, NewPointCloud->ComputeShaderBuffer));
-		FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NewPointCloud->ComputeShaderBuffer));
-		// If we have more points than the maximum points per buffer, we will split the data into multiple buffers.
-		if (NewPointCloud->PointCount > FEPointCloud::MaxPointsPerBuffer)
-		{
-			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
-
-			for (size_t i = FEPointCloud::MaxPointsPerBuffer; i < NewPointCloud->PointCount; i += FEPointCloud::MaxPointsPerBuffer)
-			{
-				NewPointCloud->ComputeShaderBuffers.resize(NewPointCloud->ComputeShaderBuffers.size() + 1);
-				FE_GL_ERROR(glGenBuffers(1, &NewPointCloud->ComputeShaderBuffers.back()));
-				FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, NewPointCloud->ComputeShaderBuffers.back()));
-				FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, NewPointCloud->ComputeShaderBuffers.back()));
-
-				// Calculate the number of points for the current buffer
-				size_t NumberOfPoints = std::min(FEPointCloud::MaxPointsPerBuffer, RawPointCloudData.size() - i);
-				FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * NumberOfPoints, RawPointCloudData.data() + i, GL_DYNAMIC_DRAW));
-			}
-		}
-		else
-		{
-			FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(FEPointCloudVertex) * NewPointCloud->PointCount, RawPointCloudData.data(), GL_DYNAMIC_DRAW));
-		}
+		LOG.Add("FEResourceManager::RawDataToFEPointCloud: Failed to set up GPU buffers for point cloud.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		delete NewPointCloud;
+		return nullptr;
 	}
 
 	return NewPointCloud;
@@ -4815,35 +4864,35 @@ FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, st
 	return RawDataToFEPointCloud(RawDataDouble, Name, ForceObjectID, bCenterPositions);
 }
 
-FEPointCloud* FEResourceManager::ImportPointCloud(std::string FileName)
+FEPointCloud* FEResourceManager::ImportPointCloud(std::string FilePath)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
-	if (FileName.empty())
+	if (FilePath.empty())
 	{
 		LOG.Add("FEResourceManager::ImportPointCloud: FileName is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return LoadedPointCloud;
 	}
 
-	if (!FILE_SYSTEM.DoesFileExist(FileName))
+	if (!FILE_SYSTEM.DoesFileExist(FilePath))
 	{
 		LOG.Add("FEResourceManager::ImportPointCloud: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return LoadedPointCloud;
 	}
 
-	bool bIsPLYFile = PLY_MANAGER.IsPLYFile(FileName);
+	bool bIsPLYFile = PLY_MANAGER.IsPLYFile(FilePath);
 	if (bIsPLYFile)
 	{
-		FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FileName);
-		LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FileName));
+		FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FilePath);
+		LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FilePath));
 	}
 	else
 	{
-		LoadedPointCloud = LasOrLazToFEPointCloud(FileName);
+		LoadedPointCloud = LasOrLazToFEPointCloud(FilePath, FILE_SYSTEM.GetFileName(FilePath));
 	}
 
 	if (LoadedPointCloud == nullptr)
 	{
-		LOG.Add("FEResourceManager::ImportPointCloud: Error creating point cloud from file: " + FileName, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ImportPointCloud: Error creating point cloud from file: " + FilePath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 		return LoadedPointCloud;
 	}
 	return LoadedPointCloud;
@@ -4877,15 +4926,15 @@ FEObject* FEResourceManager::ImportPLYFile(std::string FileName)
 	return LoadedObject;
 }
 
-FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::string Name)
+FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FilePath, std::string Name)
 {
 	std::fstream File;
 
-	File.open(FileName, std::ios::in | std::ios::binary);
+	File.open(FilePath, std::ios::in | std::ios::binary);
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEPointCloud.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEPointCloud.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -4899,7 +4948,7 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::str
 	std::string LoadedName;
 	if (Version != FE_POINT_CLOUD_VERSION)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFEPointCloud. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEPointCloud. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -4965,10 +5014,10 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(std::string FileName, std::str
 	return NewPointCloud;
 }
 
-void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string FileName)
+void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath)
 {
 	std::fstream File;
-	File.open(FileName, std::ios::out | std::ios::binary);
+	File.open(FilePath, std::ios::out | std::ios::binary);
 
 	// Version of FEPointCloud File type.
 	float Version = FE_POINT_CLOUD_VERSION;
