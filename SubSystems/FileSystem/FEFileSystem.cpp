@@ -26,7 +26,7 @@ bool FEFileSystem::RenameFile(const std::string& Path, const std::string& NewPat
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::ChangeFileName: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::RenameFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -330,7 +330,7 @@ std::vector<std::string> FEFileSystem::GetDirectoryList(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::GetFolderList: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::GetDirectoryList: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 	}
 
 	return Result;
@@ -364,7 +364,8 @@ std::vector<std::string> FEFileSystem::GetFileList(const std::string& Path)
 }
 
 #ifdef FE_WIN_32
-// open dialog staff
+// open dialog stuff
+
 std::string FEFileSystem::PWSTRtoString(const PWSTR WString)
 {
 	const std::wstring WFileName = WString;
