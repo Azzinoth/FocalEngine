@@ -1,34 +1,41 @@
 #include "FETexture.h"
+#include "../ResourceManager/FEResourceManager.h"
 using namespace FocalEngine;
 
-FETexture::FETexture(const std::string Name) : FEObject(FE_TEXTURE, Name)
+FETexture::FETexture(const std::string Name, FE_TEXTURE_TYPE TextureType) : FEObject(FE_TEXTURE, Name)
 {
+	this->Type = TextureType;
 	this->Name = Name;
+
 	GetNewGlTextureID();
 }
 
-FETexture::FETexture(const int Width, const int Height, const std::string Name) : FEObject(FE_TEXTURE, Name)
+FETexture::FETexture(const int Width, const int Height, const std::string Name, FE_TEXTURE_TYPE TextureType) : FEObject(FE_TEXTURE, Name)
 {
+	this->Type = TextureType;
 	this->Name = Name;
 	this->Width = Width;
 	this->Height = Height;
+
 	GetNewGlTextureID();
 	Bind(0);
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+	RESOURCE_MANAGER.Upload2DTextureDataToGPU(this, 0, GL_RGB, Width, Height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	UnBind();
 }
 
-FETexture::FETexture(const GLint InternalFormat, const GLenum Format, const int Width, const int Height, const std::string Name) : FEObject(FE_TEXTURE, Name)
+FETexture::FETexture(const GLint InternalFormat, const GLenum Format, const int Width, const int Height, const std::string Name, FE_TEXTURE_TYPE TextureType) : FEObject(FE_TEXTURE, Name)
 {
+	this->Type = TextureType;
 	this->Width = Width;
 	this->Height = Height;
 	this->InternalFormat = InternalFormat;
 	this->Format = Format;
+
 	GetNewGlTextureID();
 	Bind(0);
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Format, GL_UNSIGNED_BYTE, nullptr);
+	RESOURCE_MANAGER.Upload2DTextureDataToGPU(this, 0, InternalFormat, Width, Height, Format, GL_UNSIGNED_BYTE, nullptr);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	// to-do: it is needed for screen space effects but could interfere with other purposes
@@ -39,10 +46,14 @@ FETexture::FETexture(const GLint InternalFormat, const GLenum Format, const int 
 		bHDR = true;
 }
 
+FE_TEXTURE_TYPE FETexture::GetType() const
+{
+	return Type;
+}
+
 void FETexture::GetNewGlTextureID()
 {
 	FE_GL_ERROR(glGenTextures(1, &TextureID));
-	//LOG.add("Texture creation with textureID: " + std::to_string(textureID));
 }
 
 FETexture::~FETexture()
@@ -52,7 +63,9 @@ FETexture::~FETexture()
 		if (PreventAutoDeletionList[i] == TextureID)
 			return;
 	}
-	//LOG.add("Texture deletion with textureID: " + std::to_string(textureID));
+#ifdef FE_GPUMEM_ALLOCATION_LOGGING
+	LOG.Add("Texture deleted with width: " + std::to_string(Width) + " height: " + std::to_string(Height), "FE_GPU_ALLOCATIONS");
+#endif
 	FE_GL_ERROR(glDeleteTextures(1, &TextureID));
 }
 
@@ -65,7 +78,12 @@ void FETexture::Bind(const unsigned int TextureUnit)
 {
 	DefaultTextureUnit = TextureUnit;
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0 + TextureUnit));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
+
+	if (Type == FE_TEXTURE_TYPE::FE_TEXTURE_2D)
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
+
+	if (Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D)
+		FE_GL_ERROR(glBindTexture(GL_TEXTURE_3D, TextureID));
 }
 
 void FETexture::UnBind()
@@ -95,14 +113,6 @@ int FETexture::GetWidth()
 int FETexture::GetHeight()
 {
 	return Height;
-}
-
-void FETexture::GPUAllocateTexture(const GLenum Target, const GLint Level, const GLint Internalformat, const GLsizei Width, const GLsizei Height, const GLint Border, const GLenum Format, const GLenum Type, const void* Data)
-{
-	FE_GL_ERROR(glTexImage2D(Target, Level, Internalformat, Width, Height, Border, Format, Type, Data));
-#ifdef FE_GPUMEM_ALLOCATION_LOGGING
-	LOG.logError("Texture creation with width: " + std::to_string(width) + " height: " + std::to_string(height));
-#endif
 }
 
 void FETexture::AddToOnDeleteCallBackList(const std::string ObjectID)

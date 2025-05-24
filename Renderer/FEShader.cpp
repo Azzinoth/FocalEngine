@@ -366,6 +366,10 @@ void FEShader::RegisterUniforms()
 				}
 				else
 				{
+					// I need to look into this, I have to much predefined textures in the shader.
+					//if (std::find(TextureUniforms.begin(), TextureUniforms.end(), UniformName) == TextureUniforms.end())
+					//	TextureUniforms.push_back(UniformName);
+					
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_2D, 0, UniformName, Locations));
 				}
 
@@ -380,6 +384,9 @@ void FEShader::RegisterUniforms()
 				}
 				else
 				{
+					if (std::find(TextureUniforms.begin(), TextureUniforms.end(), UniformName) == TextureUniforms.end())
+						TextureUniforms.push_back(UniformName);
+
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_3D, 0, UniformName, Locations));
 				}
 

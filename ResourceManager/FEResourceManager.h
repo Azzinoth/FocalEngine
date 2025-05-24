@@ -19,6 +19,7 @@ namespace FocalEngine
 {
 	class FOCAL_ENGINE_API FEResourceManager
 	{
+		friend class FETexture;
 		friend class FEngine;
 		friend class FEScene;
 		friend class FERenderer;
@@ -51,6 +52,7 @@ namespace FocalEngine
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureAsync(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
+		FETexture* RawDataTo3DFETexture(unsigned char* TextureData, int Width, int Height, int Depth, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
 		unsigned char* ResizeTextureRawData(FETexture* SourceTexture, size_t TargetWidth, size_t TargetHeight, int FiltrationLevel = 0);
 		unsigned char* ResizeTextureRawData(const unsigned char* TextureData, size_t Width, size_t Height, size_t TargetWidth, size_t TargetHeight, GLint InternalFormat, int FiltrationLevel = 0);
@@ -70,6 +72,7 @@ namespace FocalEngine
 		FETexture* CreateCopyOfTexture(FETexture* ReferenceTexture, bool bUnManaged = true, std::string Name = "");
 		FETexture* CreateBlankHeightMapTexture(int Width, int Height, std::string Name = "");
 		void AddTextureToManaged(FETexture* Texture);
+		FETexture* Create3DTexture(GLint InternalFormat, GLenum Format, int Width, int Height, int Depth, bool bUnManaged = true, std::string Name = "");
 
 		FETexture* ImportTexture(const char* FileName);
 
@@ -202,6 +205,8 @@ namespace FocalEngine
 		std::unordered_map<std::string, FENativeScriptModule*> NativeScriptModules;
 
 		FETexture* CreateTexture(std::string Name = "", std::string ForceObjectID = "");
+		void Upload2DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLenum Format, GLenum DataType, const void* Data);
+		void Upload3DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLsizei Depth, GLenum Format, GLenum DataType, const void* Data);
 		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
 
 		FEPostProcess* CreatePostProcess(int ScreenWidth, int ScreenHeight, std::string Name);

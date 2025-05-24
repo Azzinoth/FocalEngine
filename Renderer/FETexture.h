@@ -4,6 +4,15 @@
 
 namespace FocalEngine
 {
+	enum class FE_TEXTURE_TYPE
+	{
+		FE_TEXTURE_NONE = 0,
+		FE_TEXTURE_1D = 1,
+		FE_TEXTURE_2D = 2,
+		FE_TEXTURE_3D = 3,
+		FE_TEXTURE_CUBE = 4
+	};
+
 	enum FE_TEXTURE_MAG_FILTER
 	{
 		FE_NEAREST = 0,
@@ -22,14 +31,14 @@ namespace FocalEngine
 		friend FEPostProcess;
 		friend FEFramebuffer;
 	public:
-		static void GPUAllocateTexture(GLenum Target, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLint Border, GLenum Format, GLenum Type, const void* Data);
 		static std::string TextureInternalFormatToString(GLint InternalFormat);
 
-		FETexture(std::string Name);
-		FETexture(int Width, int Height, std::string Name);
-		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name);
+		FETexture(std::string Name, FE_TEXTURE_TYPE TextureType = FE_TEXTURE_TYPE::FE_TEXTURE_2D);
+		FETexture(int Width, int Height, std::string Name, FE_TEXTURE_TYPE TextureType = FE_TEXTURE_TYPE::FE_TEXTURE_2D);
+		FETexture(GLint InternalFormat, GLenum Format, int Width, int Height, std::string Name, FE_TEXTURE_TYPE TextureType = FE_TEXTURE_TYPE::FE_TEXTURE_2D);
 		~FETexture();
 
+		FE_TEXTURE_TYPE GetType() const;
 		GLuint GetTextureID();
 
 		std::string GetFileName();
@@ -44,6 +53,7 @@ namespace FocalEngine
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
 		void UpdateRawData(unsigned char* NewRawData, size_t MipCount = 1);
 	private:
+		FE_TEXTURE_TYPE Type = FE_TEXTURE_TYPE::FE_TEXTURE_NONE;
 		GLuint TextureID = -1;
 		void GetNewGlTextureID();
 		std::string FileName;
@@ -51,6 +61,7 @@ namespace FocalEngine
 
 		int Width = 0;
 		int Height = 0;
+		int Depth = 1;
 		GLint InternalFormat;
 		GLenum Format;
 		GLuint DefaultTextureUnit = -1;

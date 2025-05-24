@@ -253,7 +253,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 	if (Shader->GetUniform("textureChannels") != nullptr)
 		Shader->GetUniform("textureChannels")->SetValue<std::vector<int>>(Material->TextureChannels);
 
-	if (Shader->GetUniform("FEWorldMatrix") != nullptr && Transform != nullptr)
+	if (Shader->GetUniform("FEWorldMatrix") != nullptr)
 		Shader->UpdateUniformData("FEWorldMatrix", Transform->GetWorldMatrix());
 
 	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
@@ -1351,6 +1351,44 @@ void FERenderer::Render(FEScene* CurrentScene)
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 
+	// ********* VOLUMETRIC PASS *************
+	std::vector<FEShader*> VolumetricShaders = RESOURCE_MANAGER.GetShaderByName("FEVolumetricShader");
+	if (!VolumetricShaders.empty() && VolumetricShaders[0] != nullptr && !RESOURCE_MANAGER.GetTextureByName("My_First_3D_Texture").empty())
+	{
+		FEShader* VolumetricShader = RESOURCE_MANAGER.GetShaderByName("FEVolumetricShader")[0];
+		VolumetricShader->Start();
+		LoadStandardUniforms(VolumetricShader, nullptr, nullptr, MainCameraEntity);
+
+		VolumetricShader->UpdateUniformData("NearPlane", CurrentCameraComponent.GetNearPlane());
+		VolumetricShader->UpdateUniformData("FarPlane", CurrentCameraComponent.GetFarPlane());
+
+		VolumetricShader->UpdateUniformData("invViewMatrix", glm::inverse(CurrentCameraComponent.GetViewMatrix()));
+		VolumetricShader->UpdateUniformData("invProjectionMatrix", glm::inverse(CurrentCameraComponent.GetProjectionMatrix()));
+
+		VolumetricShader->LoadUniformsDataToGPU();
+
+		glDepthMask(GL_FALSE);
+		CurrentCameraRenderingData->SceneToTextureFB->Bind();
+		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		FETexture* Texture3D = RESOURCE_MANAGER.GetTextureByName("My_First_3D_Texture")[0];
+		Texture3D->Bind(2);
+
+		FEMesh* ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+		FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));
+		FE_GL_ERROR(glEnableVertexAttribArray(0));
+		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, ScreenQuad->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
+		FE_GL_ERROR(glDisableVertexAttribArray(0));
+		FE_GL_ERROR(glBindVertexArray(0));
+
+		CurrentCameraRenderingData->SceneToTextureFB->UnBind();
+		glDepthMask(GL_TRUE);
+	}
+	else
+	{
+		LOG.Add("Function FERenderer::Render, VolumetricShader is not found!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+	}
+	// ********* VOLUMETRIC PASS END *********
+	
 	// ********* Upscale rendering result if needed *************
 
 	// Nothing here for now.

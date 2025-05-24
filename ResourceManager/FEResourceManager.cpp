@@ -71,7 +71,7 @@ FEResourceManager::~FEResourceManager()
 FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
 {
 	if (Name.empty())
-		Name = "unnamedTexture";
+		Name = "UnnamedTexture";
 
 	FETexture* NewTexture = new FETexture(Name);
 	if (!ForceObjectID.empty())
@@ -120,6 +120,36 @@ FEMesh* FEResourceManager::CreateMesh(const GLuint VaoID, const unsigned int Ver
 	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
 	return NewMesh;
+}
+
+void FEResourceManager::Upload2DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLenum Format, GLenum DataType, const void* Data)
+{
+	if (Texture == nullptr)
+	{
+		LOG.Add("FEResourceManager::Upload2DTextureDataToGPU Texture is null", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
+	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, Level, Internalformat, Width, Height, 0, Format, DataType, Data));
+	
+#ifdef FE_GPUMEM_ALLOCATION_LOGGING
+	LOG.Add("2D Texture created with width: " + std::to_string(Width) + " height: " + std::to_string(Height), "FE_GPU_ALLOCATIONS");
+#endif
+}
+
+void FEResourceManager::Upload3DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLsizei Depth, GLenum Format, GLenum DataType, const void* Data)
+{
+	if (Texture == nullptr)
+	{
+		LOG.Add("FEResourceManager::Upload3DTextureDataToGPU Texture is null", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return;
+	}
+
+	FE_GL_ERROR(glTexImage3D(GL_TEXTURE_3D, Level, Internalformat, Width, Height, Depth, 0, Format, DataType, Data));
+
+#ifdef FE_GPUMEM_ALLOCATION_LOGGING
+	LOG.Add("3D Texture created with width: " + std::to_string(Width) + " height: " + std::to_string(Height) + " depth: " + std::to_string(Depth), "FE_GPU_ALLOCATIONS");
+#endif
 }
 
 FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::string Name)
@@ -176,7 +206,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 		// lodepng returns 16-bit data with different bytes order that OpenGL expects.
 		FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, TRUE));
-		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, RawExtractedData.data());
+		Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RED, GL_UNSIGNED_SHORT, RawExtractedData.data());
 		FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -190,7 +220,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		NewTexture->InternalFormat = bUsingAlpha ? GL_COMPRESSED_RGBA_S3TC_DXT5_EXT : GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
+		Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
 
 		if (NewTexture->MipEnabled)
 		{
@@ -322,6 +352,12 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 
 FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, const int Width, const int Height, GLint Internalformat, const GLenum Format, GLenum Type)
 {
+	if (Width < 1 || Height < 1)
+	{
+		LOG.Add("FEResourceManager::RawDataToFETexture: Texture dimensions are invalid.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
 	FETexture* NewTexture = CreateTexture();
 	NewTexture->Width = Width;
 	NewTexture->Height = Height;
@@ -345,7 +381,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	}
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
+	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, Format, GL_UNSIGNED_BYTE, TextureData);
 
 	if (NewTexture->MipEnabled)
 	{
@@ -369,6 +405,79 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
+
+	return NewTexture;
+}
+
+FETexture* FEResourceManager::RawDataTo3DFETexture(unsigned char* TextureData, int Width, int Height, int Depth, GLint InternalFormat, GLenum Format, GLenum Type)
+{
+	if (Width < 1 || Height < 1 || Depth < 1)
+	{
+		LOG.Add("FEResourceManager::RawDataTo3DFETexture: Texture dimensions are invalid.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	FETexture* NewTexture = CreateTexture();
+	NewTexture->Type = FE_TEXTURE_TYPE::FE_TEXTURE_3D;
+	NewTexture->Width = Width;
+	NewTexture->Height = Height;
+	NewTexture->Depth = Depth;
+	NewTexture->InternalFormat = InternalFormat;
+	if (Format == GL_RED)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_3D, NewTexture->TextureID));
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	GLenum DataType = GL_UNSIGNED_BYTE;
+	if (Format == GL_RED && InternalFormat == GL_R16)
+	{
+		DataType = GL_UNSIGNED_SHORT;
+	}
+	else if (Format == GL_RGBA && InternalFormat == GL_RGBA16)
+	{
+		DataType = GL_UNSIGNED_SHORT;
+	}
+	else if (Format == GL_RGBA && InternalFormat == GL_RGBA32F)
+	{
+		DataType = GL_FLOAT;
+	}
+	else if (Format == GL_RED && InternalFormat == GL_R16F)
+	{
+		DataType = GL_HALF_FLOAT;
+	}
+	else if (Format == GL_RED && InternalFormat == GL_R32F)
+	{
+		DataType = GL_FLOAT;
+	}
+
+	Upload3DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, NewTexture->Depth, Format, DataType, TextureData);
+
+	//if (NewTexture->MipEnabled)
+	//{
+	//	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+	//	// TO-DO: make it configurable.
+	//	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
+	//	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	//}
+
+	/*FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+	if (NewTexture->MagFilter == FE_LINEAR)
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	}*/
+
+	if (Format == GL_RED)
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
 	return NewTexture;
 }
@@ -1753,6 +1862,14 @@ void FEResourceManager::LoadStandardMaterial()
 																				  nullptr, nullptr, nullptr, nullptr);
 
 	// ****************************** POINT CLOUD SHADERS END **************************
+
+	// ********************************* VOLUMETRIC ************************************
+
+	FEShader* VolumetricShader = CreateShader("FEVolumetricShader", LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
+											  LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS.glsl").c_str()).c_str(),
+											  nullptr, nullptr, nullptr, nullptr);
+
+	// ********************************* VOLUMETRIC END ********************************
 }
 
 void FEResourceManager::LoadStandardGameModels()
@@ -2186,7 +2303,7 @@ FETexture* FEResourceManager::CreateBlankHeightMapTexture(int Width, int Height,
 		RawPixels[i] = static_cast<unsigned short>(0xffff * 0.5);
 	}
 
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
+	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
 	delete[] RawPixels;
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -2411,7 +2528,7 @@ FETexture* FEResourceManager::CreateCopyOfTexture(FETexture* ReferenceTexture, b
 	Result = CreateSameFormatTexture(ReferenceTexture, 0, 0, bUnManaged, Name);
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, Result->InternalFormat, Result->Width, Result->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
+	Upload2DTextureDataToGPU(Result, 0, Result->InternalFormat, Result->Width, Result->Height, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
 
 	return Result;
 }
@@ -3000,7 +3117,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGB, GL_UNSIGNED_BYTE, RawData);
+	Upload2DTextureDataToGPU(NewTexture, 0, InternalFormat, NewTexture->Width, NewTexture->Height, GL_RGB, GL_UNSIGNED_BYTE, RawData);
 	delete RawData;
 	NewTexture->InternalFormat = InternalFormat;
 
@@ -3276,7 +3393,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
+	Upload2DTextureDataToGPU(Result, 0, InternalFormat, Result->Width, Result->Height, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
 	Result->InternalFormat = InternalFormat;
 
 	if (Result->MipEnabled)
