@@ -38,7 +38,7 @@ namespace FocalEngine
 		friend class FEResourceManager;
 		friend class FEPointCloudSystem;
 	public:
-		FEPointCloud() : FEObject(FE_POINT_CLOUD, "Unnamed point cloud") {};
+		FEPointCloud();
 		~FEPointCloud();
 
 		GLuint GetVboID() const;

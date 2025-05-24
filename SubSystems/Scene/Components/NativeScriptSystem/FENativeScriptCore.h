@@ -16,7 +16,7 @@ namespace FocalEngine
 		virtual void OnDestroy() {}
 		virtual void OnUpdate(double DeltaTime) {}
 
-		class FEEntity* ParentEntity;
+		class FEEntity* ParentEntity = nullptr;
 	};
 
 	struct FEScriptVariableInfo
@@ -33,16 +33,5 @@ namespace FocalEngine
 		std::string Name;
 		bool bRunInEditor = false;
 		std::unordered_map<std::string, FEScriptVariableInfo> VariablesRegistry;
-	};
-
-	struct FENativeScriptModuleData
-	{
-		std::string Name;
-		std::string DLLPath;
-		std::string PDBPath;
-		std::string ID;
-
-		HMODULE DLLHandle;
-		std::unordered_map<std::string, FEScriptData> Registry;
 	};
 }

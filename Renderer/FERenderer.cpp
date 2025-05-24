@@ -253,7 +253,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 	if (Shader->GetUniform("textureChannels") != nullptr)
 		Shader->GetUniform("textureChannels")->SetValue<std::vector<int>>(Material->TextureChannels);
 
-	if (Shader->GetUniform("FEWorldMatrix") != nullptr)
+	if (Shader->GetUniform("FEWorldMatrix") != nullptr && Transform != nullptr)
 		Shader->UpdateUniformData("FEWorldMatrix", Transform->GetWorldMatrix());
 
 	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
