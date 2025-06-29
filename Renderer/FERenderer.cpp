@@ -559,6 +559,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 	if (CurrentCameraRenderingData == nullptr)
 		return;
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
+	SetGLViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 
 	if (CurrentCameraComponent.IsClearColorEnabled())
 	{
@@ -1645,24 +1646,6 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Cam
 	if (GameModelComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-	FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
-
-	FEShader* OriginalShader = nullptr;
-	if (!(CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified) || RENDERER.bVRActive)
-	{
-		OriginalShader = GameModel->Material->Shader;
-		// FIXME: This should not depend on RENDERER.bVRActive!
-		if (RENDERER.bVRActive)
-		{
-			if (OriginalShader->GetObjectID() != "6917497A5E0C05454876186F"/*"SolidColorMaterial"*/)
-				GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-		}
-		else
-		{
-			GameModel->Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-		}
-	}
-
 	GameModel->Material->Bind();
 	LoadStandardUniforms(GameModel->Material->Shader, GameModel->Material, &TransformComponent, Camera, GameModelComponent.IsReceivingShadows(), GameModelComponent.IsUniformLighting());
 	GameModel->Material->Shader->LoadUniformsDataToGPU();
@@ -1683,9 +1666,6 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Cam
 	FE_GL_ERROR(glBindVertexArray(0));
 
 	GameModel->Material->UnBind();
-
-	if (!(CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified) || RENDERER.bVRActive)
-		GameModel->Material->Shader = OriginalShader;
 
 	if (GameModelComponent.IsWireframeMode())
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

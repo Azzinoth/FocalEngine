@@ -37,7 +37,7 @@ void FEOpenXRRendering::CreateSwapChain()
 		SwapChainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
 		SwapChainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
 		SwapChainCreateInfo.createFlags = 0;
-		SwapChainCreateInfo.format = /*GL_RGBA16F*/ 34842;
+		SwapChainCreateInfo.format = GL_RGBA16F; // GL_RGB 6407; GL_RGBA16F 34842; GL_SRGB8_ALPHA8 35907
 		SwapChainCreateInfo.sampleCount = ViewConfigs[i].recommendedSwapchainSampleCount;
 		SwapChainCreateInfo.width = ViewConfigs[i].recommendedImageRectWidth;
 		SwapChainCreateInfo.height = ViewConfigs[i].recommendedImageRectHeight;
@@ -104,7 +104,7 @@ glm::mat4 CreateVRProjectionFov(const XrFovf& VRFov, float NearZ, float FarZ)
 	return Result;
 }
 
-void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage, int64_t SwapchainFormat)
+void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage)
 {
 	SwapChainFB->Bind();
 
@@ -221,7 +221,7 @@ bool FEOpenXRRendering::RenderLayer(XrTime PredictedDisplayTime, std::vector<XrC
 		ProjectionLayerViews[i].subImage.imageRect.extent = { int(ViewConfigs[i].recommendedImageRectWidth), int(ViewConfigs[i].recommendedImageRectHeight) };
 		
 		const XrSwapchainImageBaseHeader* const SwapChainImage = reinterpret_cast<XrSwapchainImageBaseHeader*>(&SwapChainImages[i][SwapChainImageIndex]);
-		OpenGLRenderLoop(ProjectionLayerViews[i], SwapChainImage, /*m_colorSwapchainFormat*//*GL_RGBA16F*/ /*34842*/ -1);
+		OpenGLRenderLoop(ProjectionLayerViews[i], SwapChainImage);
 
 		XrSwapchainImageReleaseInfo ReleaseInfo{ XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
 		FE_OPENXR_ERROR(xrReleaseSwapchainImage(SwapChains[i], &ReleaseInfo));

@@ -100,10 +100,7 @@ void FEngine::Render(const bool InternalCall)
 	}
 
 	if (bVRActive)
-	{
 		OpenXR_MANAGER.Update();
-		RENDERER.SetGLViewport(0, 0, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
-	}
 
 	APPLICATION.GetMainWindow()->Render();
 
@@ -264,7 +261,6 @@ void FEngine::SetVsyncEnabled(bool NewValue)
 void FEngine::DisableVR()
 {
 	bVRActive = false;
-	RENDERER.bVRActive = false;
 }
 
 bool FEngine::EnableVR()
@@ -272,16 +268,7 @@ bool FEngine::EnableVR()
 	if (!bVRInitializedCorrectly)
 		bVRInitializedCorrectly = OpenXR_MANAGER.Init();
 	
-	if (bVRInitializedCorrectly)
-	{
-		bVRActive = true;
-		RENDERER.bVRActive = true;
-	}
-	else
-	{
-		bVRActive = false;
-		RENDERER.bVRActive = false;
-	}
+	bVRActive = bVRInitializedCorrectly;
 
 	return bVRActive;
 }

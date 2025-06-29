@@ -298,3 +298,8 @@ void FEOpenXR::SceneNodesUpdate()
 		}
 	}
 }
+
+FEEntity* FEOpenXR::GetVRRigEntity() const
+{
+	return VRRigEntity;
+}

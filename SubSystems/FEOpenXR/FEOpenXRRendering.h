@@ -54,7 +54,7 @@ namespace FocalEngine
 		void CreateSwapChain();
 
 		bool RenderLayer(XrTime PredictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& ProjectionLayerViews, XrCompositionLayerProjection& Layer);
-		void OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage, int64_t SwapchainFormat);
+		void OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage);
 		void RenderLoop();
 	};
 

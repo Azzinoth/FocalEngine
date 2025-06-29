@@ -15,6 +15,8 @@ namespace FocalEngine
 		void Update();
 
 		glm::vec2 EyeResolution();
+
+		FEEntity* GetVRRigEntity() const;
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXR)
 

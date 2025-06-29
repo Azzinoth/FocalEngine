@@ -111,12 +111,6 @@ namespace FocalEngine
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 		void SimplifiedRender(FEScene* CurrentScene);
 
-		// *********** VR Rendering ***********
-
-		bool bVRActive = false;
-
-		// *********** VR Rendering END ***********
-
 		void RenderToFrameBuffer(FETexture* SceneTexture, FEFramebuffer* Target);
 		void RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target);
 
