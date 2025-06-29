@@ -878,9 +878,6 @@ void FERenderer::Render(FEScene* CurrentScene)
 												  ViewportPosition, ViewportSize);
 	}
 
-	if (bVRActive)
-		return;
-
 	if (CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 	{
 		SimplifiedRender(CurrentScene);
@@ -2116,62 +2113,6 @@ void FERenderer::UpdateSSAO(FEEntity* Camera)
 
 		CurrentCameraRenderingData->SSAO->FB->GetColorAttachment()->UnBind();
 		CurrentCameraRenderingData->SSAO->FB->UnBind();
-	}
-}
-
-void FERenderer::InitVR(int VRScreenW, int VRScreenH)
-{
-	UpdateVRRenderTargetSize( VRScreenW, VRScreenH);
-}
-
-void FERenderer::UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH)
-{
-	this->VRScreenW = VRScreenW;
-	this->VRScreenH = VRScreenH;
-
-	if (VRScreenW != 0 && VRScreenH != 0)
-	{
-		delete SceneToVRTextureFB;
-		SceneToVRTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, VRScreenW, VRScreenH);
-	}
-}
-
-void FERenderer::RenderVR(FEScene* CurrentScene)
-{
-	if (CurrentScene == nullptr || SceneToVRTextureFB == nullptr)
-		return;
-
-	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCamera(CurrentScene);
-	if (MainCameraEntity == nullptr)
-		return;
-
-	SceneToVRTextureFB->Bind();
-	glClearColor(0.55f, 0.73f, 0.87f, 1.0f);
-	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-	LoadUniformBlocks(CurrentScene);
-
-	// No instanced rendering for now.
-	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>, entt::exclude<FEInstancedComponent>);
-	for (entt::entity CurrentEnTTEntity : GameModelGroup)
-	{
-		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(CurrentEnTTEntity);
-
-		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(CurrentEnTTEntity);
-		if (CurrentEntity == nullptr)
-			continue;
-
-		if (GameModelComponent.IsVisible() && GameModelComponent.IsPostprocessApplied())
-		{
-			RenderGameModelComponentForward(CurrentEntity, MainCameraEntity);
-		}
-	}
-
-	SceneToVRTextureFB->UnBind();
-
-	for (size_t i = 0; i < AfterRenderCallbacks.size(); i++)
-	{
-		AfterRenderCallbacks[i]();
 	}
 }
 

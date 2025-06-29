@@ -160,7 +160,13 @@ namespace FocalEngine
 		return Result;
 	}
 
-#define FE_OPENXR_ERROR(cmd) CheckXrResult(cmd, #cmd, FILE_AND_LINE);
+#define FE_OPENXR_ERROR(Command) CheckXrResult(Command, #Command, FILE_AND_LINE);
+
+	struct FEOpenXRExtensionInfo
+	{
+		std::string Name;
+		uint32_t Version;
+	};
 
 	class FEOpenXRCore
 	{
@@ -172,7 +178,9 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXRCore)
 
-		void Init(std::string VRAppName = "");
+		void Init();
+		std::string GetActiveRuntimeInfo();
+		std::vector<FEOpenXRExtensionInfo> GetAvailableExtensionsInfo();
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRCore)
 
@@ -183,8 +191,6 @@ namespace FocalEngine
 		XrSession Session;
 		XrSessionState SessionState;
 		XrSpace ApplicationSpace{ XR_NULL_HANDLE };
-
-		std::string VRAppName = "Test_XR";
 
 		void CreateInstance();
 		void InitializeSystem();

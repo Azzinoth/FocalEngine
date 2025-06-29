@@ -499,6 +499,26 @@ void FEOpenXRInput::UpdateControllerSpaceLocation()
     }
 }
 
+bool FEOpenXRInput::IsLeftControllerConnectedAndTracked() const
+{
+    if (CurrentInputState.HandActive[Side::LEFT] != XR_TRUE)
+        return false;
+
+    // Check if position and orientation are valid
+    return (LeftControllerLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
+           (LeftControllerLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+}
+
+bool FEOpenXRInput::IsRightControllerConnectedAndTracked() const
+{
+    if (CurrentInputState.HandActive[Side::RIGHT] != XR_TRUE)
+        return false;
+
+    // Check if position and orientation are valid
+    return (RightControllerLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
+           (RightControllerLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+}
+
 glm::vec3 FEOpenXRInput::GetLeftControllerPosition()
 {
     glm::vec3 Result = glm::vec3(0.0f);
@@ -628,19 +648,19 @@ std::string FEOpenXRInput::CurrentlyActiveInteractionProfile(bool bLeftControlle
 {
     XrPath TopLevelUserPath;
     std::string Hand = bLeftController ? "left" : "right";
-    xrStringToPath(FEOpenXR_CORE.OpenXRInstance, ("/user/hand/" + Hand).c_str(), &TopLevelUserPath);
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, ("/user/hand/" + Hand).c_str(), &TopLevelUserPath));
 
     XrInteractionProfileState InteractionProfileState{ XR_TYPE_INTERACTION_PROFILE_STATE };
-    xrGetCurrentInteractionProfile(FEOpenXR_CORE.Session, TopLevelUserPath, &InteractionProfileState);
+    FE_OPENXR_ERROR(xrGetCurrentInteractionProfile(FEOpenXR_CORE.Session, TopLevelUserPath, &InteractionProfileState));
 
-    char InteractionProfileStr[XR_MAX_PATH_LENGTH];
-    uint32_t StrLength = 0;
-    xrPathToString(FEOpenXR_CORE.OpenXRInstance, InteractionProfileState.interactionProfile, XR_MAX_PATH_LENGTH, &StrLength, InteractionProfileStr);
+    char InteractionProfileString[XR_MAX_PATH_LENGTH];
+    uint32_t StringLength = 0;
+    FE_OPENXR_ERROR(xrPathToString(FEOpenXR_CORE.OpenXRInstance, InteractionProfileState.interactionProfile, XR_MAX_PATH_LENGTH, &StringLength, InteractionProfileString));
 
-    if (!StrLength)
+    if (!StringLength)
         return "";
 
-    return std::string(InteractionProfileStr);
+    return std::string(InteractionProfileString);
 }
 
 void FEOpenXRInput::SetLeftBButtonPressCallBack(std::function<void()> UserCallBack)
@@ -765,7 +785,13 @@ void FEOpenXRInput::SetRightThumbstickTouchActivateCallBack(std::function<void()
 void FEOpenXRInput::SetLeftViveSqueezePressCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::SetLeftValveSqueezeValueCallBack(std::function<void(float)> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("valve_squeeze_force");
+    reinterpret_cast<FEVRActionFloatData*>(Action)->LeftChangedValueUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveSqueezePressCallBack(std::function<void()> UserCallBack)

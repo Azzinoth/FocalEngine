@@ -1,19 +1,18 @@
-in vec3 normal;
-in vec3 fragPosition;
+in vec3 Normal;
+in vec3 FragmentPosition;
 
 out vec4 out_Color;
 
-uniform vec3 baseColor;
+uniform vec3 BaseColor;
+uniform float BrightnessFactor;
 @CameraPosition@
 
 void main(void)
 {
-	vec3 lightDirection = normalize(vec3(0.0, 1.0, 0.2));
-	// diffuse part
-	float diffuseFactor = max(dot(normal, lightDirection), 0.15);
-	vec3 diffuseColor = diffuseFactor * vec3(2.0, 2.0, 2.0);
-	vec3 ambientColor = vec3(0.55f, 0.73f, 0.87f) * 0.8f;
+	vec3 LightDirection = normalize(vec3(0.0, 1.0, 0.2));
+	float DiffuseFactor = max(dot(Normal, LightDirection), 0.15);
+	vec3 DiffuseColor = DiffuseFactor * vec3(2.0, 2.0, 2.0);
+	vec3 AmbientColor = vec3(0.55f, 0.73f, 0.87f) * 0.8f;
 
-	// "* 5.0" is temporarily here.
-	out_Color = vec4(baseColor * ambientColor * diffuseColor * 5.0, 1.0f);
+	out_Color = vec4(BaseColor * AmbientColor * DiffuseColor * BrightnessFactor, 1.0f);
 }

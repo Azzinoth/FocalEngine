@@ -1336,6 +1336,8 @@ void FEResourceManager::LoadStandardMeshes()
 	NewMesh->SetName("FESphere");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
 	Meshes[NewMesh->GetObjectID()] = NewMesh;
+
+	NewMesh = LoadFEMesh((ResourcesFolder + "Generic_VR_Controller.model").c_str(), "Generic_VR_Controller");
 }
 
 std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const bool bForceOneMesh)
@@ -1683,9 +1685,20 @@ void FEResourceManager::LoadStandardMaterial()
 		"6917497A5E0C05454876186F");
 	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
 
-	FEShaderUniformValue Color("baseColor", glm::vec3(1.0f, 0.4f, 0.6f));
+	FEShaderUniformValue Color("BaseColor", glm::vec3(1.0f, 0.4f, 0.6f));
 	NewMaterial->SetUniformVariation(Color);
+
+	FEShaderUniformValue BrightnessFactor("BrightnessFactor", 1.0f);
+	NewMaterial->SetUniformVariation(BrightnessFactor);
+
+	// Generic VR controller material
+	NewMaterial = CreateMaterial("FEGenericVRControllerMaterial", "6F381A367E2D683A753C2A79");
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
+	NewMaterial->Shader = GetShader("6917497A5E0C05454876186F");
+
+	Color.SetValue(glm::vec3(0.1f, 0.1f, 0.1f));
+	NewMaterial->SetUniformVariation(Color);
+	NewMaterial->SetUniformVariation(BrightnessFactor);
 
 	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl").c_str()).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl").c_str()).c_str(),
@@ -1761,6 +1774,14 @@ void FEResourceManager::LoadStandardGameModels()
 	GameModels.erase(NewGameModel->GetObjectID());
 	NewGameModel->SetID("67251E393508013ZV579315F");
 	NewGameModel->SetTag(ENGINE_RESOURCE_TAG);
+	GameModels[NewGameModel->GetObjectID()] = NewGameModel;
+
+	// Generic VR controller game model
+	NewGameModel = new FEGameModel(GetMesh("7F784407607A39545A65033A"), GetMaterial("6F381A367E2D683A753C2A79"), "FEGenericVRControllerGameModel");
+	GameModels.erase(NewGameModel->GetObjectID());
+	NewGameModel->SetID("504029555848336725615C49");
+	NewGameModel->SetTag(ENGINE_RESOURCE_TAG);
+	NewGameModel->SetScaleFactor(20.0f);
 	GameModels[NewGameModel->GetObjectID()] = NewGameModel;
 }
 

@@ -31,6 +31,9 @@ namespace FocalEngine
 		void Init();
 		void Update();
 
+		bool IsLeftControllerConnectedAndTracked() const;
+		bool IsRightControllerConnectedAndTracked() const;
+
 		glm::vec3 GetLeftControllerPosition();
 		glm::vec3 GetRightControllerPosition();
 
@@ -93,6 +96,8 @@ namespace FocalEngine
 
 		void SetLeftViveSqueezeReleaseCallBack(std::function<void()> UserCallBack);
 		void SetRightViveSqueezeReleaseCallBack(std::function<void()> UserCallBack);
+
+		void SetLeftValveSqueezeValueCallBack(std::function<void(float)> UserCallBack);
 
 		void TriggerHapticFeedback(float Amplitude, float Duration, float Frequency, bool bLeftHand);
 

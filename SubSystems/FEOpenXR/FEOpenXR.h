@@ -7,10 +7,11 @@ namespace FocalEngine
 {
 	class FEOpenXR
 	{
+		friend class FEOpenXRRendering;
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXR)
 
-		bool Init(std::string VRAppName = "");
+		bool Init();
 		void Update();
 
 		glm::vec2 EyeResolution();
@@ -18,6 +19,14 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEOpenXR)
 
 		void PollEvents();
+
+		// Scene representation of VR rig, like headset, controllers, etc.
+		FEEntity* VRRigEntity = nullptr;
+		FEEntity* VRHeadsetEntity = nullptr;
+		FEEntity* LeftController = nullptr;
+		FEEntity* RightController = nullptr;
+
+		void SceneNodesUpdate();
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

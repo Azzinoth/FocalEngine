@@ -97,30 +97,30 @@ FEShaderUniformValue* FEMaterial::GetUniformVariation(std::string Name)
 
 glm::vec3 FEMaterial::GetBaseColor()
 {
-	if (Shader->GetUniform("baseColor") == nullptr)
+	if (Shader->GetUniform("BaseColor") == nullptr)
 	{
 		LOG.Add("FEMaterial::GetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return glm::vec3();
 	}
 
-	if (UniformVariations.find("baseColor") == UniformVariations.end())
+	if (UniformVariations.find("BaseColor") == UniformVariations.end())
 	{
 		LOG.Add("FEMaterial::GetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return glm::vec3();
 	}
 	
-	return UniformVariations["baseColor"].GetValue<glm::vec3>();
+	return UniformVariations["BaseColor"].GetValue<glm::vec3>();
 }
 
 void FEMaterial::SetBaseColor(const glm::vec3 NewValue)
 {
-	if (Shader->GetUniform("baseColor") == nullptr)
+	if (Shader->GetUniform("BaseColor") == nullptr)
 	{
 		LOG.Add("FEMaterial::SetBaseColor() failed to set base color on non existing uniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
-	UniformVariations["baseColor"] = FEShaderUniformValue("baseColor", NewValue);
+	UniformVariations["BaseColor"] = FEShaderUniformValue("BaseColor", NewValue);
 }
 
 float FEMaterial::GetMetalness() const

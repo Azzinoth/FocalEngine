@@ -5,13 +5,13 @@
 @ViewMatrix@
 @ProjectionMatrix@
 
-out vec3 normal;
-out vec3 fragPosition;
+out vec3 Normal;
+out vec3 FragmentPosition;
 
 void main(void)
 {
-	normal = normalize(mat3(transpose(inverse(FEWorldMatrix))) * FENormal);
-	fragPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
+	Normal = normalize(mat3(transpose(inverse(FEWorldMatrix))) * FENormal);
+	FragmentPosition = vec3(FEWorldMatrix * vec4(FEPosition, 1.0));
 
 	gl_Position = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(FEPosition, 1.0);
 }

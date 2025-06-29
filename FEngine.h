@@ -57,6 +57,9 @@ namespace FocalEngine
 		void AddOnViewportResizeCallback(std::function<void(std::string)> Callback);
 
 		unsigned long long GetCurrentFrameIndex();
+
+		std::string GetVRApplicationVisibleName() const;
+		void SetVRApplicationVisibleName(const std::string& NewName);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
@@ -65,8 +68,10 @@ namespace FocalEngine
 
 		bool bSimplifiedRendering = false;
 		bool bVsyncEnabled = true;
+
 		bool bVRInitializedCorrectly = false;
 		bool bVRActive = false;
+		std::string VRApplicationVisibleName = "VR Focal Engine Application";
 
 		static void WindowResizeCallback(int Width, int Height);
 		std::vector<void(*)(int, int)> ClientWindowResizeCallbacks;

@@ -1,4 +1,5 @@
 #include "FEOpenXRRendering.h"
+#include "FEOpenXR.h"
 
 using namespace FocalEngine;
 
@@ -111,35 +112,72 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	FE_GL_ERROR(glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ColorTexture, 0));
 
 	RENDERER.SetGLViewport(static_cast<int>(LayerView.subImage.imageRect.offset.x),
-						 static_cast<int>(LayerView.subImage.imageRect.offset.y),
-						 static_cast<int>(LayerView.subImage.imageRect.extent.width),
-						 static_cast<int>(LayerView.subImage.imageRect.extent.height));
+						   static_cast<int>(LayerView.subImage.imageRect.offset.y),
+						   static_cast<int>(LayerView.subImage.imageRect.extent.width),
+						   static_cast<int>(LayerView.subImage.imageRect.extent.height));
 
 	glEnable(GL_DEPTH_TEST);
 
 	glClearColor(0.7f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	CurrentProjectionMatrix = CreateVRProjectionFov(LayerView.fov, 0.1f, 30000.0f);
-	CurrentViewMatrix = glm::mat4(1.0f);
-	glm::vec3 EyePosition = glm::vec3(LayerView.pose.position.x, LayerView.pose.position.y, LayerView.pose.position.z);
-	CurrentViewMatrix = glm::translate(CurrentViewMatrix, EyePosition);
-
-	glm::quat EyeOrientation = glm::quat(LayerView.pose.orientation.w, LayerView.pose.orientation.x, LayerView.pose.orientation.y, LayerView.pose.orientation.z);
-	CurrentViewMatrix *= glm::toMat4(EyeOrientation);
-	CurrentViewMatrix = glm::inverse(CurrentViewMatrix);
-
-	// FIXME: Need proper camera implementation for VR rendering.
-	//static FEBasicCamera* CurrentCamera = new FEBasicCamera("VRCamera");
-	//CurrentCamera->SetPosition(EyePosition);
-	//CurrentCamera->ProjectionMatrix = CurrentProjectionMatrix;
-	//CurrentCamera->ViewMatrix = CurrentViewMatrix;
+	
 
 	bValidSwapChain = true;
 	// FIXME: Temporary solution, only supports one scene.
 	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
-	RENDERER.RenderVR(CurrentScene);
+
+	if (OpenXR_MANAGER.VRRigEntity == nullptr ||
+		CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetObjectID()) == nullptr ||
+		CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID()) == nullptr)
+		return;
+
+	FECameraComponent& CurrentCameraComponent = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FECameraComponent>();
+
+	CurrentProjectionMatrix = CreateVRProjectionFov(LayerView.fov, CurrentCameraComponent.GetNearPlane(), CurrentCameraComponent.GetFarPlane());
+	// This part is for information purposes, later SetProjectionMatrix will rewrite the FOV.
+	CurrentCameraComponent.SetFOV(glm::degrees(LayerView.fov.angleUp + std::abs(LayerView.fov.angleDown)));
+	CurrentCameraComponent.SetProjectionMatrix(CurrentProjectionMatrix);
+
+	FETransformComponent& TransformComponent = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FETransformComponent>();
+	glm::vec3 EyePosition = glm::vec3(LayerView.pose.position.x, LayerView.pose.position.y, LayerView.pose.position.z);
+	glm::quat EyeOrientation = glm::quat(LayerView.pose.orientation.w, LayerView.pose.orientation.x, LayerView.pose.orientation.y, LayerView.pose.orientation.z);
+	TransformComponent.SetPosition(EyePosition);
+	TransformComponent.SetQuaternion(EyeOrientation);
+	TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
+	
+	TRANSFORM_SYSTEM.UpdateInternal(CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID()));
+	glm::mat4 WorldMatrix = TransformComponent.GetWorldMatrix();
+	CurrentCameraComponent.SetViewMatrix(glm::inverse(WorldMatrix));
+
+	FEEntity* PreviousMainCamera = CAMERA_SYSTEM.GetMainCamera(CurrentScene);
+	if (PreviousMainCamera == nullptr)
+	{
+		CAMERA_SYSTEM.SetMainCamera(OpenXR_MANAGER.VRHeadsetEntity);
+	}
+	else if (PreviousMainCamera->GetObjectID() != OpenXR_MANAGER.VRHeadsetEntity->GetObjectID())
+	{
+		CAMERA_SYSTEM.SetMainCamera(OpenXR_MANAGER.VRHeadsetEntity);
+	}
+
+	FEViewport* CurrentViewport = CAMERA_SYSTEM.GetMainCameraViewport(CurrentScene);
+	if (CurrentViewport->GetWidth() != static_cast<int>(LayerView.subImage.imageRect.extent.width) ||
+		CurrentViewport->GetHeight() != static_cast<int>(LayerView.subImage.imageRect.extent.height))
+	{
+		CurrentViewport->SetWidth(static_cast<int>(LayerView.subImage.imageRect.extent.width));
+		CurrentViewport->SetHeight(static_cast<int>(LayerView.subImage.imageRect.extent.height));
+	}
+
+	RENDERER.Render(CurrentScene);
 	bValidSwapChain = false;
+
+	if (PreviousMainCamera != nullptr)
+	{
+		CAMERA_SYSTEM.SetMainCamera(PreviousMainCamera);
+	}
+
+	FETexture* CameraResult = RENDERER.GetCameraResult(OpenXR_MANAGER.VRHeadsetEntity);
+	RENDERER.RenderToFrameBuffer(CameraResult, SwapChainFB);
 }
 
 bool FEOpenXRRendering::RenderLayer(XrTime PredictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& ProjectionLayerViews, XrCompositionLayerProjection& Layer)

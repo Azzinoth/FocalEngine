@@ -270,15 +270,12 @@ void FEngine::DisableVR()
 bool FEngine::EnableVR()
 {
 	if (!bVRInitializedCorrectly)
-	{
-		bVRInitializedCorrectly = OpenXR_MANAGER.Init(APPLICATION.GetMainWindow()->GetTitle());
-	}
-
+		bVRInitializedCorrectly = OpenXR_MANAGER.Init();
+	
 	if (bVRInitializedCorrectly)
 	{
 		bVRActive = true;
 		RENDERER.bVRActive = true;
-		RENDERER.UpdateVRRenderTargetSize(static_cast<int>(OpenXR_MANAGER.EyeResolution().x), static_cast<int>(OpenXR_MANAGER.EyeResolution().y));
 	}
 	else
 	{
@@ -287,6 +284,22 @@ bool FEngine::EnableVR()
 	}
 
 	return bVRActive;
+}
+
+std::string FEngine::GetVRApplicationVisibleName() const
+{ 
+	return VRApplicationVisibleName;
+}
+
+void FEngine::SetVRApplicationVisibleName(const std::string& NewName)
+{ 
+	if (NewName.empty())
+	{
+		LOG.Add("VR Application Visible Name cannot be empty.", "FE_LOG_OPENXR");
+		return;
+	}
+
+	VRApplicationVisibleName = NewName; 
 }
 
 bool FEngine::IsVRInitializedCorrectly()

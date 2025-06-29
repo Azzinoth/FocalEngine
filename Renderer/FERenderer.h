@@ -114,13 +114,6 @@ namespace FocalEngine
 		// *********** VR Rendering ***********
 
 		bool bVRActive = false;
-		void InitVR(int VRScreenW, int VRScreenH);
-		int VRScreenW = 0;
-		int VRScreenH = 0;
-		FEFramebuffer* SceneToVRTextureFB = nullptr;
-		void RenderVR(FEScene* CurrentScene);
-
-		void UpdateVRRenderTargetSize(int VRScreenW, int VRScreenH);
 
 		// *********** VR Rendering END ***********
 

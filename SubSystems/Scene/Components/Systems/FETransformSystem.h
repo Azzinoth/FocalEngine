@@ -8,6 +8,7 @@ namespace FocalEngine
 		friend class FEScene;
 		friend class FESceneManager;
 		friend class FERenderer;
+		friend class FEOpenXRRendering;
 		friend class FEngine;
 		
 		SINGLETON_PRIVATE_PART(FETransformSystem)

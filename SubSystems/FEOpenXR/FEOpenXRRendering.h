@@ -13,7 +13,6 @@ namespace FocalEngine
 		void Init();
 		void Update();
 
-		//bool bShowCube = true;
 		glm::vec2 EyeResolution();
 
 		// Returns the current swap chain for rendering.

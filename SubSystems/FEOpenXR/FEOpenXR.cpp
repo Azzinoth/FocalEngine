@@ -14,10 +14,9 @@ FEOpenXR::~FEOpenXR()
 {
 	if (FEOpenXR_INPUT.CurrentInputState.ActionSet != XR_NULL_HANDLE)
 	{
-		for (auto hand : { Side::LEFT, Side::RIGHT })
-		{
-			xrDestroySpace(FEOpenXR_INPUT.CurrentInputState.HandSpace[hand]);
-		}
+		for (auto Hand : { Side::LEFT, Side::RIGHT })
+			xrDestroySpace(FEOpenXR_INPUT.CurrentInputState.HandSpace[Hand]);
+		
 		xrDestroyActionSet(FEOpenXR_INPUT.CurrentInputState.ActionSet);
 	}
 
@@ -36,9 +35,9 @@ FEOpenXR::~FEOpenXR()
 		xrDestroyInstance(FEOpenXR_CORE.OpenXRInstance);
 }
 
-bool FEOpenXR::Init(std::string VRAppName)
+bool FEOpenXR::Init()
 {
-	FEOpenXR_CORE.Init(VRAppName);
+	FEOpenXR_CORE.Init();
 	FEOpenXR_INPUT.Init();
 	FEOpenXR_RENDERING.Init();
 
@@ -49,43 +48,43 @@ bool FEOpenXR::Init(std::string VRAppName)
 
 void FEOpenXR::PollEvents()
 {
-	bool session_stopping = false;
+	bool bSessionStopping = false;
 
 	// --- Handle runtime Events
 	// we do this before xrWaitFrame() so we can go idle or
 	// break out of the main render loop as early as possible and don't have to
 	// uselessly render or submit one. Calling xrWaitFrame commits you to
 	// calling xrBeginFrame eventually.
-	XrEventDataBuffer runtime_event;
-	runtime_event.type = XR_TYPE_EVENT_DATA_BUFFER;
-	runtime_event.next = nullptr;
+	XrEventDataBuffer RuntimeEvent;
+	RuntimeEvent.type = XR_TYPE_EVENT_DATA_BUFFER;
+	RuntimeEvent.next = nullptr;
 
-	XrResult poll_result = xrPollEvent(FEOpenXR_CORE.OpenXRInstance, &runtime_event);
-	while (poll_result == XR_SUCCESS)
+	XrResult PollResult = xrPollEvent(FEOpenXR_CORE.OpenXRInstance, &RuntimeEvent);
+	while (PollResult == XR_SUCCESS)
 	{
-		switch (runtime_event.type)
+		switch (RuntimeEvent.type)
 		{
 		case XR_TYPE_EVENT_DATA_EVENTS_LOST:
 		{
-			XrEventDataEventsLost* event = (XrEventDataEventsLost*)&runtime_event;
+			XrEventDataEventsLost* Event = (XrEventDataEventsLost*)&RuntimeEvent;
 
-			LOG.Add("EVENT: " + std::to_string(event->lostEventCount) + " events data lost!", "FE_LOG_OPENXR");
+			LOG.Add("EVENT: " + std::to_string(Event->lostEventCount) + " events data lost!", "FE_LOG_OPENXR");
 			// do we care if the runtime loses events?
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING:
 		{
-			XrEventDataInstanceLossPending* event = (XrEventDataInstanceLossPending*)&runtime_event;
-			LOG.Add("EVENT: instance loss pending at " + std::to_string(event->lossTime) + "! Destroying instance.", "FE_LOG_OPENXR");
-			session_stopping = true;
+			XrEventDataInstanceLossPending* Event = (XrEventDataInstanceLossPending*)&RuntimeEvent;
+			LOG.Add("EVENT: instance loss pending at " + std::to_string(Event->lossTime) + "! Destroying instance.", "FE_LOG_OPENXR");
+			bSessionStopping = true;
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
 		{
-			XrEventDataSessionStateChanged* event = (XrEventDataSessionStateChanged*)&runtime_event;
+			XrEventDataSessionStateChanged* Event = (XrEventDataSessionStateChanged*)&RuntimeEvent;
 			//printf("EVENT: session state changed from %d to %d\n", SessionState, event->state);
 
-			FEOpenXR_CORE.SessionState = event->state;
+			FEOpenXR_CORE.SessionState = Event->state;
 
 			switch (FEOpenXR_CORE.SessionState)
 			{
@@ -125,21 +124,19 @@ void FEOpenXR::PollEvents()
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
 		{
 			//printf("EVENT: reference space change pending!\n");
-			XrEventDataReferenceSpaceChangePending* event =
-				(XrEventDataReferenceSpaceChangePending*)&runtime_event;
-			(void)event;
+			XrEventDataReferenceSpaceChangePending* Event = (XrEventDataReferenceSpaceChangePending*)&RuntimeEvent;
+			(void)Event;
 			// TODO: do something
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
 		{
 			//printf("EVENT: interaction profile changed!\n");
-			XrEventDataInteractionProfileChanged* event =
-				(XrEventDataInteractionProfileChanged*)&runtime_event;
-			(void)event;
+			XrEventDataInteractionProfileChanged* Event = (XrEventDataInteractionProfileChanged*)&RuntimeEvent;
+			(void)Event;
 
-			XrInteractionProfileState state;
-			state.type = XR_TYPE_INTERACTION_PROFILE_STATE;
+			XrInteractionProfileState State;
+			State.type = XR_TYPE_INTERACTION_PROFILE_STATE;
 
 			/*for (int i = 0; i < 2; i++)
 			{
@@ -166,17 +163,16 @@ void FEOpenXR::PollEvents()
 		case XR_TYPE_EVENT_DATA_VISIBILITY_MASK_CHANGED_KHR:
 		{
 			//printf("EVENT: visibility mask changed!!\n");
-			XrEventDataVisibilityMaskChangedKHR* event =
-				(XrEventDataVisibilityMaskChangedKHR*)&runtime_event;
-			(void)event;
+			XrEventDataVisibilityMaskChangedKHR* Event = (XrEventDataVisibilityMaskChangedKHR*)&RuntimeEvent;
+			(void)Event;
 			// this event is from an extension
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_PERF_SETTINGS_EXT:
 		{
 			//printf("EVENT: perf settings!\n");
-			XrEventDataPerfSettingsEXT* event = (XrEventDataPerfSettingsEXT*)&runtime_event;
-			(void)event;
+			XrEventDataPerfSettingsEXT* Event = (XrEventDataPerfSettingsEXT*)&RuntimeEvent;
+			(void)Event;
 			// this event is from an extension
 			break;
 		}
@@ -184,22 +180,23 @@ void FEOpenXR::PollEvents()
 		default:;//printf("Unhandled event type %d\n", runtime_event.type);
 		}
 
-		runtime_event.type = XR_TYPE_EVENT_DATA_BUFFER;
-		poll_result = xrPollEvent(FEOpenXR_CORE.OpenXRInstance, &runtime_event);
+		RuntimeEvent.type = XR_TYPE_EVENT_DATA_BUFFER;
+		PollResult = xrPollEvent(FEOpenXR_CORE.OpenXRInstance, &RuntimeEvent);
 	}
-	if (poll_result == XR_EVENT_UNAVAILABLE)
+
+	if (PollResult == XR_EVENT_UNAVAILABLE)
 	{
 		// processed all events in the queue
 	}
 	else
 	{
-		printf("Failed to poll events!\n");
+		//printf("Failed to poll events!\n");
 		//break;
 	}
 
-	if (session_stopping)
+	if (bSessionStopping)
 	{
-		printf("Quitting main render loop\n");
+		//printf("Quitting main render loop\n");
 		return;
 	}
 }
@@ -209,9 +206,95 @@ void FEOpenXR::Update()
 	PollEvents();
 	FEOpenXR_RENDERING.Update();
 	FEOpenXR_INPUT.Update();
+
+	SceneNodesUpdate();
 }
 
 glm::vec2 FEOpenXR::EyeResolution()
 {
 	return FEOpenXR_RENDERING.EyeResolution();
+}
+
+void FEOpenXR::SceneNodesUpdate()
+{
+	// FIXME: Temporary solution, only supports one scene.
+	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
+	if (CurrentScene == nullptr)
+		return;
+
+	if (VRRigEntity == nullptr)
+	{
+		if (VRRigEntity == nullptr)
+			VRRigEntity = CurrentScene->CreateEntity("VRRig");
+
+		if (VRHeadsetEntity == nullptr)
+		{
+			VRHeadsetEntity = CurrentScene->CreateEntity("VRHeadset");
+			VRHeadsetEntity->AddComponent<FECameraComponent>();
+			FECameraComponent& VRHeadsetCamera = VRHeadsetEntity->GetComponent<FECameraComponent>();
+			// FIXME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
+			VRHeadsetCamera.SetSSAOEnabled(false);
+
+			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
+			FENaiveSceneGraphNode* VRHeadsetNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRHeadsetEntity->GetObjectID());
+			CurrentScene->SceneGraph.MoveNode(VRHeadsetNode->GetObjectID(), VRRigNode->GetObjectID());
+		}
+	}
+
+	if (CurrentScene->GetEntity(VRRigEntity->GetObjectID()) == nullptr || CurrentScene->GetEntity(VRHeadsetEntity->GetObjectID()) == nullptr)
+		return;
+
+	if (FEOpenXR_INPUT.IsLeftControllerConnectedAndTracked())
+	{
+		if (LeftController == nullptr)
+		{
+			LeftController = CurrentScene->CreateEntity("LeftController");
+			LeftController->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+			FETransformComponent& LeftControllerTransform = LeftController->GetComponent<FETransformComponent>();
+			LeftControllerTransform.SetScale(glm::vec3(10.0f));
+
+			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
+			FENaiveSceneGraphNode* LeftControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(LeftController->GetObjectID());
+			CurrentScene->SceneGraph.MoveNode(LeftControllerNode->GetObjectID(), VRRigNode->GetObjectID());
+		}
+
+		FETransformComponent& LeftControllerTransform = LeftController->GetComponent<FETransformComponent>();
+		LeftControllerTransform.SetPosition(FEOpenXR_INPUT.GetLeftControllerPosition());
+		LeftControllerTransform.SetQuaternion(FEOpenXR_INPUT.GetLeftControllerOrientation());
+	}
+	else
+	{
+		if (LeftController != nullptr)
+		{
+			CurrentScene->DeleteEntity(LeftController);
+			LeftController = nullptr;
+		}
+	}
+
+	if (FEOpenXR_INPUT.IsRightControllerConnectedAndTracked())
+	{
+		if (RightController == nullptr)
+		{
+			RightController = CurrentScene->CreateEntity("RightController");
+			RightController->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+			FETransformComponent& RightControllerTransform = RightController->GetComponent<FETransformComponent>();
+			RightControllerTransform.SetScale(glm::vec3(10.0f));
+
+			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
+			FENaiveSceneGraphNode* RightControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(RightController->GetObjectID());
+			CurrentScene->SceneGraph.MoveNode(RightControllerNode->GetObjectID(), VRRigNode->GetObjectID());
+		}
+
+		FETransformComponent& RightControllerTransform = RightController->GetComponent<FETransformComponent>();
+		RightControllerTransform.SetPosition(FEOpenXR_INPUT.GetRightControllerPosition());
+		RightControllerTransform.SetQuaternion(FEOpenXR_INPUT.GetRightControllerOrientation());
+	}
+	else
+	{
+		if (RightController != nullptr)
+		{
+			CurrentScene->DeleteEntity(RightController);
+			RightController = nullptr;
+		}
+	}
 }
