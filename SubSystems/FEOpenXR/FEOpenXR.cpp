@@ -218,7 +218,11 @@ glm::vec2 FEOpenXR::EyeResolution()
 void FEOpenXR::SceneNodesUpdate()
 {
 	// FIXME: Temporary solution, only supports one scene.
-	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
+	if (ActiveScenes.empty())
+		return;
+
+	FEScene* CurrentScene = ActiveScenes[0];
 	if (CurrentScene == nullptr)
 		return;
 

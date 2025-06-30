@@ -125,7 +125,11 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 
 	bValidSwapChain = true;
 	// FIXME: Temporary solution, only supports one scene.
-	FEScene* CurrentScene = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active)[0];
+	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
+	if (ActiveScenes.empty())
+		return;
+
+	FEScene* CurrentScene = ActiveScenes[0];
 
 	if (OpenXR_MANAGER.VRRigEntity == nullptr ||
 		CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetObjectID()) == nullptr ||
