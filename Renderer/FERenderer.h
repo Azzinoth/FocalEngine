@@ -63,6 +63,7 @@ namespace FocalEngine
 		bool IsAdvancedPointCloudRenderingInitialized();
 
 		FETexture* FinalScene = nullptr;
+		bool bTemporaryForceHDROutput = false;
 
 		~FECameraRenderingData()
 		{

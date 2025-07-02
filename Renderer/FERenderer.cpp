@@ -644,7 +644,6 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene)
 		}
 	}
 
-	
 	CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 	CurrentCameraRenderingData->FinalScene->Bind();
 
@@ -1361,6 +1360,10 @@ void FERenderer::Render(FEScene* CurrentScene)
 	glDepthMask(GL_FALSE);
 
 	FETexture* PreviousStageTexture = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+
+	// FIXME: Temporary hack to force HDR output.
+	if (CurrentCameraRenderingData->bTemporaryForceHDROutput)
+		CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 	for (size_t i = 0; i < CurrentCameraRenderingData->PostProcessEffects.size(); i++)
 	{
 		FEPostProcess& Effect = *CurrentCameraRenderingData->PostProcessEffects[i];
@@ -1446,7 +1449,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 			// Temporary solution, now Engine will not render to default screen buffer, user would be responsible for it.
 			// Maybe use ENGINE.GetRenderTargetMode() to determine if it should render to default screen buffer.
 			//Effect.RenderResult();
-			CurrentCameraRenderingData->FinalScene = Effect.Stages.back()->OutTexture;
+			if (!CurrentCameraRenderingData->bTemporaryForceHDROutput)
+				CurrentCameraRenderingData->FinalScene = Effect.Stages.back()->OutTexture;
 			break;
 		}
 	}

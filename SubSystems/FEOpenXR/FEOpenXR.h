@@ -17,6 +17,9 @@ namespace FocalEngine
 		glm::vec2 EyeResolution();
 
 		FEEntity* GetVRRigEntity() const;
+		FEEntity* GetVRHeadsetEntity() const;
+
+		bool SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLeftController);
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXR)
 

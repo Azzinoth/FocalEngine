@@ -207,6 +207,14 @@ void FEOpenXR::Update()
 	FEOpenXR_RENDERING.Update();
 	FEOpenXR_INPUT.Update();
 
+	// Force HDR output in VR
+	if (VRHeadsetEntity != nullptr)
+	{
+		FECameraRenderingData* CameraData = RENDERER.GetCameraRenderingData(VRHeadsetEntity);
+		if (CameraData != nullptr)
+			CameraData->bTemporaryForceHDROutput = true; 
+	}
+
 	SceneNodesUpdate();
 }
 
@@ -306,4 +314,27 @@ void FEOpenXR::SceneNodesUpdate()
 FEEntity* FEOpenXR::GetVRRigEntity() const
 {
 	return VRRigEntity;
+}
+
+FEEntity* FEOpenXR::GetVRHeadsetEntity() const
+{
+	return VRHeadsetEntity;
+}
+
+bool FEOpenXR::SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLeftController)
+{
+	if (CustomGameModel == nullptr)
+	{
+		LOG.Add("Custom game model is null in function SetCustomVRControllerModel()", "FE_LOG_OPENXR", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (LeftController != nullptr && bLeftController)
+		LeftController->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
+	
+
+	if (RightController != nullptr && !bLeftController)
+		RightController->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
+	
+	return true;
 }
