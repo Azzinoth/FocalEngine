@@ -1980,6 +1980,11 @@ void FERenderer::GPUCullingIndividual(FEEntity* EntityWithInstancedComponent, FE
 	FrustumCullingShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 	FrustumCullingShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 	FrustumCullingShader->UpdateUniformData("useOcclusionCulling", bUseOcclusionCulling);
+	if (CurrentCameraRenderingData->GBuffer == nullptr)
+	{
+		LOG.Add("FERenderer::GPUCullingIndividual CurrentCameraRenderingData->GBuffer is nullptr", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
 	// It should be last frame size!
 	const glm::vec2 RenderTargetSize = glm::vec2(CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetWidth(), CurrentCameraRenderingData->GBuffer->GFrameBuffer->DepthAttachment->GetHeight());
 	FrustumCullingShader->UpdateUniformData("renderTargetSize", RenderTargetSize);

@@ -234,6 +234,7 @@ void FEOpenXR::SceneNodesUpdate()
 	if (CurrentScene == nullptr)
 		return;
 
+	// FIXME: VRRigEntity also should be deleted if VR is not enabled?
 	if (VRRigEntity == nullptr)
 	{
 		if (VRRigEntity == nullptr)
@@ -278,6 +279,16 @@ void FEOpenXR::SceneNodesUpdate()
 	{
 		if (LeftController != nullptr)
 		{
+			// Before we delete controller from a scene, we should check if it has childs
+			// and move them to the VRRigEntity, so they are not lost.
+			FENaiveSceneGraphNode* LeftControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(LeftController->GetObjectID());
+			if (LeftControllerNode != nullptr && LeftControllerNode->GetRecursiveChildCount() > 0)
+			{
+				FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
+				for (auto Child : LeftControllerNode->GetChildren())
+					CurrentScene->SceneGraph.MoveNode(Child->GetObjectID(), VRRigNode->GetObjectID());
+			}
+
 			CurrentScene->DeleteEntity(LeftController);
 			LeftController = nullptr;
 		}
@@ -305,6 +316,16 @@ void FEOpenXR::SceneNodesUpdate()
 	{
 		if (RightController != nullptr)
 		{
+			// Before we delete controller from a scene, we should check if it has childs
+			// and move them to the VRRigEntity, so they are not lost.
+			FENaiveSceneGraphNode* RightControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(RightController->GetObjectID());
+			if (RightControllerNode != nullptr && RightControllerNode->GetRecursiveChildCount() > 0)
+			{
+				FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
+				for (auto Child : RightControllerNode->GetChildren())
+					CurrentScene->SceneGraph.MoveNode(Child->GetObjectID(), VRRigNode->GetObjectID());
+			}
+
 			CurrentScene->DeleteEntity(RightController);
 			RightController = nullptr;
 		}
@@ -337,4 +358,14 @@ bool FEOpenXR::SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLe
 		RightController->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
 	
 	return true;
+}
+
+FEEntity* FEOpenXR::GetLeftControllerEntity() const
+{
+	return LeftController;
+}
+
+FEEntity* FEOpenXR::GetRightControllerEntity() const
+{
+	return RightController;
 }

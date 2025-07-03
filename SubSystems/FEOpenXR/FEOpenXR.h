@@ -18,6 +18,8 @@ namespace FocalEngine
 
 		FEEntity* GetVRRigEntity() const;
 		FEEntity* GetVRHeadsetEntity() const;
+		FEEntity* GetLeftControllerEntity() const;
+		FEEntity* GetRightControllerEntity() const;
 
 		bool SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLeftController);
 	private:
