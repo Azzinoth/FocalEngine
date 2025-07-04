@@ -166,6 +166,13 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* F
 	}
 	FEVirtualUIComponent& VirtualUIComponent = Entity->GetComponent<FEVirtualUIComponent>();
 
+	FEVirtualUI* VirtualUI = VirtualUIComponent.GetVirtualUI();
+	if (VirtualUI == nullptr)
+		return;
+
+	if (!VirtualUIComponent.IsVisible())
+		return;
+
 	ForceMaterial->SetAlbedoMap(VirtualUIComponent.Framebuffer->GetColorAttachment());
 	DummyGameModel->SetMaterial(ForceMaterial);
 	DummyGameModel->SetMesh(VirtualUIComponent.CanvasMesh);
@@ -208,7 +215,6 @@ void FEVirtualUISystem::Update()
 			if (VirtualUIComponent.bMouseMovePassThrough)
 				VirtualUIComponent.UpdateInteractionRay(CameraEntity->GetComponent<FETransformComponent>().GetPosition(FE_WORLD_SPACE), MouseRay);
 		}
-		
 	}
 }
 
@@ -248,5 +254,27 @@ void FEVirtualUISystem::DummyRenderFunction(FEVirtualUI* VirtualUI)
 		ImGui::Text("Dummy UI");
 
 		ImGui::End();
+	}
+}
+
+bool FEVirtualUISystem::IsVirtualUIVisible(const std::string& VirtualUIID) const
+{
+	auto VisibilityUIIterator = VirtualUIIDToVisibilityMap.find(VirtualUIID);
+	if (VisibilityUIIterator != VirtualUIIDToVisibilityMap.end())
+		return VisibilityUIIterator->second;
+
+	return false;
+}
+
+void FEVirtualUISystem::SetVirtualUIVisible(const std::string& VirtualUIID, bool bVisible)
+{
+	auto VisibilityUIIterator = VirtualUIIDToVisibilityMap.find(VirtualUIID);
+	if (VisibilityUIIterator != VirtualUIIDToVisibilityMap.end())
+	{
+		VisibilityUIIterator->second = bVisible;
+	}
+	else
+	{
+		VirtualUIIDToVisibilityMap[VirtualUIID] = bVisible;
 	}
 }
