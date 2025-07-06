@@ -463,3 +463,38 @@ void FECameraSystem::PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm
 
 	CameraComponent.SetViewMatrix(NewViewMatrix);
 }
+
+glm::dvec3 FECameraSystem::GetMouseRayToWorld(FEEntity* CameraEntity) const
+{
+	glm::dvec3 Result = glm::dvec3(0.0);
+
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FEScene* CameraScene = CameraEntity->GetParentScene();
+	if (CameraScene == nullptr)
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CameraEntity does not have a parent scene.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	FEViewport* CameraViewport = CAMERA_SYSTEM.GetMainCameraViewport(CameraScene);
+	if (CameraViewport == nullptr)
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CurrentViewport is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	glm::ivec2 ViewportPosition = glm::ivec2(CameraViewport->GetX(), CameraViewport->GetY());
+	glm::ivec2 ViewportSize = glm::ivec2(CameraViewport->GetWidth(), CameraViewport->GetHeight());
+
+	Result = GEOMETRY.CreateMouseRayToWorld(INPUT.GetMouseX(), INPUT.GetMouseY(),
+											CameraComponent.GetViewMatrix(), CameraComponent.GetProjectionMatrix(),
+											ViewportPosition, ViewportSize);
+
+	return Result;
+}

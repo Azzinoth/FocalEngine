@@ -139,6 +139,9 @@ namespace FocalEngine
 		bool FuseTwoFrameBuffers(FEFramebuffer* FirstSource, float FirstNearPlane, float FirstFarPlane,
 								 FEFramebuffer* SecondSource, float SecondNearPlane, float SecondFarPlane, FEFramebuffer* Target);
 		bool FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEEntity* CameraToPutResultIn);
+
+		FETexture* CreateScreenshot(FEScene* Scene);
+		FETexture* CreateScreenshot(FEEntity* CameraEntity);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 

@@ -473,7 +473,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 
 	FEGameModel* CurrentGameModel = GameModelComponent.GetGameModel();
 	FEShader* OriginalShader = CurrentGameModel->GetMaterial()->Shader;
-	if (OriginalShader->GetName() == "FEPBRShader")
+	if (OriginalShader->GetName() == "FEPBRShader" || OriginalShader->GetName() == "FESolidColorShader")
 	{
 		if (ShaderToForce)
 		{
@@ -492,7 +492,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 	INSTANCED_RENDERING_SYSTEM.Render(Entity, GameModelComponent, PrefabIndex);
 
 	CurrentGameModel->GetMaterial()->UnBind();
-	if (OriginalShader->GetName() == "FEPBRShader")
+	if (OriginalShader->GetName() == "FEPBRShader" || OriginalShader->GetName() == "FESolidColorShader")
 	{
 		CurrentGameModel->GetMaterial()->Shader = OriginalShader;
 		if (CurrentGameModel->GetBillboardMaterial() != nullptr)
@@ -1539,25 +1539,61 @@ void FERenderer::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
 		return;
 	}
 
-	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(MainCameraEntity);
-	if (CameraRenderingData == nullptr)
+	FETexture* TempTexture = CreateScreenshot(MainCameraEntity);
+	if (TempTexture == nullptr)
 	{
-		LOG.Add("Camera rendering data is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("Temp texture is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
-	FETexture* CameraResult = RENDERER.GetCameraResult(MainCameraEntity);
+	RESOURCE_MANAGER.SaveFETexture(TempTexture, FileName.c_str());
+	RESOURCE_MANAGER.DeleteFETexture(TempTexture);
+}
+
+FETexture* FERenderer::CreateScreenshot(FEScene* Scene)
+{
+	if (Scene == nullptr)
+	{
+		LOG.Add("Scene is nullptr in FERenderer::CreateScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	FEEntity* MainCameraEntity = CAMERA_SYSTEM.GetMainCamera(Scene);
+	return CreateScreenshot(MainCameraEntity);
+}
+
+FETexture* FERenderer::CreateScreenshot(FEEntity* CameraEntity)
+{
+	FETexture* Result = nullptr;
+	if (CameraEntity == nullptr)
+	{
+		LOG.Add("Camera entity is nullptr in FERenderer::CreateScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(CameraEntity);
+	if (CameraRenderingData == nullptr)
+	{
+		LOG.Add("Camera rendering data is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FETexture* CameraResult = RENDERER.GetCameraResult(CameraEntity);
+	if (CameraResult == nullptr)
+	{
+		LOG.Add("Camera result is nullptr in FERenderer::CreateScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return Result;
+	}
 
 	unsigned char* Pixels = new unsigned char[4 * CameraResult->GetWidth() * CameraResult->GetHeight()];
 	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, CameraResult->GetTextureID()));
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Pixels));
 
-	FETexture* TempTexture = RESOURCE_MANAGER.RawDataToFETexture(Pixels, CameraResult->GetWidth(), CameraResult->GetHeight());
-	RESOURCE_MANAGER.SaveFETexture(TempTexture, FileName.c_str());
-	RESOURCE_MANAGER.DeleteFETexture(TempTexture);
-
+	Result = RESOURCE_MANAGER.RawDataToFETexture(Pixels, CameraResult->GetWidth(), CameraResult->GetHeight());
 	delete[] Pixels;
+
+	return Result;
 }
 
 void FERenderer::RenderGameModelComponent(FEEntity* Entity, FEEntity* Camera, bool bReloadUniformBlocks)
