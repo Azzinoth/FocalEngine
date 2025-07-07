@@ -114,6 +114,7 @@ namespace FocalEngine
 		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);
 
+		FEFramebuffer* CreateFramebuffer();
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
 		std::vector<std::string> GetMaterialIDList();

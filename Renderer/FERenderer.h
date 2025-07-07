@@ -110,14 +110,14 @@ namespace FocalEngine
 		void UpdateSSAO(FEEntity* Camera);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
-		void SimplifiedRender(FEScene* CurrentScene);
+		void SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
 
 		void RenderToFrameBuffer(FETexture* SceneTexture, FEFramebuffer* Target);
 		void RenderToFrameBuffer(FETexture* SceneTexture, GLuint Target);
 
 		bool CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target);
 
-		void AddAfterRenderCallback(std::function<void()> Callback);
+		void AddCameraPostRenderCallback(std::string CameraEntityID, std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)> Callback);
 
 		void SetGLViewport(int X, int Y, int Width, int Height);
 		void SetGLViewport(glm::ivec4 ViewPortData);
@@ -144,6 +144,8 @@ namespace FocalEngine
 		FETexture* CreateScreenshot(FEEntity* CameraEntity);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
+
+		void RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
 
 		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
 		void LoadStandardUniforms(FEShader* Shader, bool IsReceivingShadows, FEEntity* Camera, const bool IsUniformLighting = false);
@@ -197,7 +199,7 @@ namespace FocalEngine
 
 		void Init();
 
-		std::vector<std::function<void()>> AfterRenderCallbacks;
+		std::unordered_map<std::string, std::vector<std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)>>> CameraPostRenderCallbacks;
 
 		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);

@@ -32,9 +32,9 @@ FEResourceManager::FEResourceManager()
 	FETexture::MarkAsPersistent(NoTexture->GetTextureID());
 
 	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
-		LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
-		nullptr, nullptr, nullptr, nullptr,
-		"5C267A01466A545E7D1A2E66");
+																LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl").c_str()).c_str(),
+																nullptr, nullptr, nullptr, nullptr,
+																"5C267A01466A545E7D1A2E66");
 	NewShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	LoadStandardMaterial();
@@ -2297,6 +2297,19 @@ FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const
 	}
 
 	NewFramebuffer->UnBind();
+	return NewFramebuffer;
+}
+
+FEFramebuffer* FEResourceManager::CreateFramebuffer()
+{
+	FEFramebuffer* NewFramebuffer = new FEFramebuffer();
+	NewFramebuffer->ColorAttachments.resize(MaxColorAttachments);
+	for (size_t i = 0; i < static_cast<size_t>(MaxColorAttachments); i++)
+	{
+		NewFramebuffer->ColorAttachments[i] = nullptr;
+	}
+
+	FE_GL_ERROR(glGenFramebuffers(1, &NewFramebuffer->FBO));
 	return NewFramebuffer;
 }
 
