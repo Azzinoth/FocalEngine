@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	#define FE_MAX_LINES 200000
+	#define FE_MAX_LINES 400000
 
 	class FEngine;
 	class FERenderer;
@@ -174,6 +174,7 @@ namespace FocalEngine
 		int LineCounter = 0;
 		GLuint InstancedLineVAO = 0;
 		GLenum InstancedLineBuffer = 0;
+		void RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
 
 		glm::dvec3 MouseRay = glm::dvec3(0.0);
 

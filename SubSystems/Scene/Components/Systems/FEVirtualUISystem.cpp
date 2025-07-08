@@ -138,7 +138,7 @@ void FEVirtualUISystem::VirtualUIComponentFromJson(FEEntity* Entity, Json::Value
 	VirtualUIComponent.SetDropPassThrough(Root["Drop PassThrough"].asBool());
 }
 
-void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity)
+void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FECameraComponent& CameraComponent)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEVirtualUIComponent>())
 	{
@@ -147,8 +147,15 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity)
 	}
 	FEVirtualUIComponent& VirtualUIComponent = Entity->GetComponent<FEVirtualUIComponent>();
 
+	FEShader* OriginalShader = CanvasMaterial->Shader;
+	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
+		CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+
 	RenderVirtualUIComponent(Entity, CanvasMaterial);
 	CanvasMaterial->ClearAllTexturesInfo();
+
+	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
+		CanvasMaterial->Shader = OriginalShader;
 }
 
 void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* ForceMaterial)

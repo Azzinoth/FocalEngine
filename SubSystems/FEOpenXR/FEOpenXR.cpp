@@ -245,6 +245,7 @@ void FEOpenXR::SceneNodesUpdate()
 			VRHeadsetEntity = CurrentScene->CreateEntity("VRHeadset");
 			VRHeadsetEntity->AddComponent<FECameraComponent>();
 			FECameraComponent& VRHeadsetCamera = VRHeadsetEntity->GetComponent<FECameraComponent>();
+			//CAMERA_SYSTEM.SetCameraRenderingPipeline(VRHeadsetEntity, FERenderingPipeline::Forward_Simplified);
 			// FIXME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
 			VRHeadsetCamera.SetSSAOEnabled(false);
 

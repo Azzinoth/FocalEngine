@@ -555,6 +555,8 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
+	LoadUniformBlocks(CurrentScene);
+
 	entt::basic_group GameModelGroup = CurrentScene->Registry.group<FEGameModelComponent>(entt::get<FETransformComponent>);
 	for (entt::entity EnTTEntity : GameModelGroup)
 	{
@@ -569,13 +571,36 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
+			FEMaterial* Material = GameModelComponent.GetGameModel()->GetMaterial();
+			FEShader* OriginalShader = Material->Shader;
+			if (OriginalShader->GetName() == "FEPBRShader")
+				Material->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
+			
 			RenderGameModelComponentForward(Entity, MainCameraEntity);
+
+			if (OriginalShader->GetName() == "FEPBRShader")
+				Material->Shader = OriginalShader;
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
 			RenderGameModelComponentWithInstanced(Entity, MainCameraEntity);
 		}
+	}
+
+	RenderLinesInternal(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
+
+	entt::basic_view VirtualUIView = CurrentScene->Registry.view<FEVirtualUIComponent, FETransformComponent>();
+	for (auto [EnTTEntity, VirtualUIComponent, TransformComponent] : VirtualUIView.each())
+	{
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
+		//if (!VirtualUIComponent.IsVisible())
+		//	continue;
+
+		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
 
 	entt::basic_view PointCloudView = CurrentScene->Registry.view<FEPointCloudComponent, FETransformComponent>();
@@ -1091,7 +1116,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		//if (!VirtualUIComponent.IsVisible())
 		//	continue;
 
-		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity);
+		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
 
 	for (auto [EnTTEntity, TerrainComponent, TransformComponent] : TerrainView.each())
@@ -1218,37 +1243,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	// Could impact depth pyramid construction( min vs max ).
 	glDepthFunc(GL_LESS);
 
-	// ********* RENDER INSTANCED LINE *********
-	//FE_GL_ERROR(glDisable(GL_CULL_FACE));
-
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-
-	InstancedLineShader->Start();
-	InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
-	InstancedLineShader->LoadUniformsDataToGPU();
-
-	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
-	FE_GL_ERROR(glEnableVertexAttribArray(0));
-	FE_GL_ERROR(glEnableVertexAttribArray(1));
-	FE_GL_ERROR(glEnableVertexAttribArray(2));
-	FE_GL_ERROR(glEnableVertexAttribArray(3));
-	FE_GL_ERROR(glEnableVertexAttribArray(4));
-	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
-	FE_GL_ERROR(glDisableVertexAttribArray(0));
-	FE_GL_ERROR(glDisableVertexAttribArray(1));
-	FE_GL_ERROR(glDisableVertexAttribArray(2));
-	FE_GL_ERROR(glDisableVertexAttribArray(3));
-	FE_GL_ERROR(glDisableVertexAttribArray(4));
-	FE_GL_ERROR(glBindVertexArray(0));
-	InstancedLineShader->Stop();
-
-	/*FE_GL_ERROR(glEnable(GL_CULL_FACE));
-	FE_GL_ERROR(glCullFace(GL_BACK));*/
-	// ********* RENDER INSTANCED LINE END *********
+	RenderLinesInternal(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
 
 	// ********* RENDER SKY *********
 	entt::basic_view SkyDomeView = CurrentScene->Registry.view<FESkyDomeComponent, FETransformComponent>();
@@ -1411,8 +1406,6 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	TERRAIN_SYSTEM.UpdateBrush(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE), MouseRay);
 	// **************************** TERRAIN EDITOR TOOLS END ****************************
 
-	RENDERER.LineCounter = 0;
-
 	// **************************** DEPTH PYRAMID ****************************
 #ifdef USE_OCCLUSION_CULLING
 
@@ -1442,6 +1435,36 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	}
 #endif // USE_OCCLUSION_CULLING
 	// **************************** DEPTH PYRAMID END ****************************
+}
+
+void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
+{
+	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
+
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+
+	InstancedLineShader->Start();
+	InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
+	InstancedLineShader->LoadUniformsDataToGPU();
+
+	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+	FE_GL_ERROR(glEnableVertexAttribArray(0));
+	FE_GL_ERROR(glEnableVertexAttribArray(1));
+	FE_GL_ERROR(glEnableVertexAttribArray(2));
+	FE_GL_ERROR(glEnableVertexAttribArray(3));
+	FE_GL_ERROR(glEnableVertexAttribArray(4));
+	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+	FE_GL_ERROR(glDisableVertexAttribArray(0));
+	FE_GL_ERROR(glDisableVertexAttribArray(1));
+	FE_GL_ERROR(glDisableVertexAttribArray(2));
+	FE_GL_ERROR(glDisableVertexAttribArray(3));
+	FE_GL_ERROR(glDisableVertexAttribArray(4));
+	FE_GL_ERROR(glBindVertexArray(0));
+	InstancedLineShader->Stop();
 }
 
 void FERenderer::Render(FEScene* CurrentScene)
@@ -1829,7 +1852,7 @@ void FERenderer::DrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, 
 {
 	if (LineCounter >= FE_MAX_LINES)
 	{
-		LOG.Add("Tring to draw more than maxLines", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		//LOG.Add("Tring to draw more than maxLines", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 

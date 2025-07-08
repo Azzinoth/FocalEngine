@@ -109,6 +109,8 @@ void FEngine::Render(const bool InternalCall)
 
 void FEngine::EndFrame(const bool InternalCall)
 {
+	RENDERER.LineCounter = 0;
+
 	INPUT.EndFrame();
 
 	if (!InternalCall) TIME.BeginTimeStamp();

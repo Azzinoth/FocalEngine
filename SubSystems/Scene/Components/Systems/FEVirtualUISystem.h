@@ -37,7 +37,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEVirtualUISystem)
 
-		void RenderVirtualUIComponent(FEEntity* Entity);
+		void RenderVirtualUIComponent(FEEntity* Entity, FECameraComponent& CameraComponent);
 		void RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* ForceMaterial);
 		FEEntity* GetParentEntity(FEVirtualUI* VirtualUI);
 	};
