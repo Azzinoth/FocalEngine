@@ -97,6 +97,9 @@ namespace FocalEngine
 		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
 		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
 		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
+		// FIXME: Remove this function. And redo vertex attributes management.
+		// Data of such user defined vertex attributes will not be stored along FEMesh.
+		void SetUserDataVertexAttributeActive(FEMesh* Mesh);
 
 		std::vector<std::string> GetPointCloudIDList();
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();

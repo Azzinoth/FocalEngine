@@ -3476,6 +3476,14 @@ void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, in
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }
 
+void FEResourceManager::SetUserDataVertexAttributeActive(FEMesh* Mesh)
+{
+	if (Mesh == nullptr)
+		return;
+
+	Mesh->VertexAttributes |= FE_VERTEX_ATTRIBUTES::FE_USER_DEFINED_DATA;
+}
+
 Json::Value FEResourceManager::SaveFEObjectPart(FEObject* Object)
 {
 	Json::Value Root;

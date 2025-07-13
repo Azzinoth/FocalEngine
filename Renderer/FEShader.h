@@ -43,7 +43,8 @@ namespace FocalEngine
 		FE_UV = 1 << 4,
 		FE_INDEX = 1 << 5,
 		FE_MATINDEX = 1 << 6,
-		FE_INSTANCEDATA = 1 << 7
+		FE_INSTANCEDATA = 1 << 7,
+		FE_USER_DEFINED_DATA = 1 << 8
 	};
 
 	class FEShader : public FEObject

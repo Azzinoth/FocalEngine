@@ -1643,6 +1643,8 @@ void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelCompone
 	if ((GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
 	if ((GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
 
+	if ((GameModel->Mesh->VertexAttributes & FE_USER_DEFINED_DATA) == FE_USER_DEFINED_DATA) FE_GL_ERROR(glEnableVertexAttribArray(8));
+
 	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
 		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
 	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) != FE_INDEX)
@@ -1696,6 +1698,8 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Cam
 	if ((GameModel->Mesh->VertexAttributes & FE_TANGENTS) == FE_TANGENTS) FE_GL_ERROR(glEnableVertexAttribArray(3));
 	if ((GameModel->Mesh->VertexAttributes & FE_UV) == FE_UV) FE_GL_ERROR(glEnableVertexAttribArray(4));
 	if ((GameModel->Mesh->VertexAttributes & FE_MATINDEX) == FE_MATINDEX) FE_GL_ERROR(glEnableVertexAttribArray(5));
+
+	if ((GameModel->Mesh->VertexAttributes & FE_USER_DEFINED_DATA) == FE_USER_DEFINED_DATA) FE_GL_ERROR(glEnableVertexAttribArray(8));
 
 	if ((GameModel->Mesh->VertexAttributes & FE_INDEX) == FE_INDEX)
 		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, GameModel->Mesh->GetVertexCount(), GL_UNSIGNED_INT, 0));
