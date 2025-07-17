@@ -2,6 +2,8 @@
 #include "../FEScene.h"
 using namespace FocalEngine;
 
+#define FE_TRANSFORM_COMPARISON_EPSILON 0.0001f
+
 FETransformComponent::FETransformComponent()
 {
 	Position = glm::vec3(0.0f);
@@ -176,7 +178,7 @@ void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDINAT
 {
 	if (SpaceType == FE_LOCAL_SPACE)
 	{
-		if (glm::all(glm::epsilonEqual(Position, NewPosition, 0.0001f)))
+		if (glm::all(glm::epsilonEqual(Position, NewPosition, FE_TRANSFORM_COMPARISON_EPSILON)))
 			return;
 
 		Position = NewPosition;
@@ -186,7 +188,7 @@ void FETransformComponent::SetPosition(const glm::vec3 NewPosition, FE_COORDINAT
 	if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::vec3 CurrentWorldPosition = GetPosition(FE_WORLD_SPACE);
-		if (glm::all(glm::epsilonEqual(CurrentWorldPosition, NewPosition, 0.0001f)))
+		if (glm::all(glm::epsilonEqual(CurrentWorldPosition, NewPosition, FE_TRANSFORM_COMPARISON_EPSILON)))
 			return;
 
 		glm::vec3 Difference = NewPosition - CurrentWorldPosition;
@@ -237,11 +239,11 @@ void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& 
 
 void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
-	if (RotationAngles == NewRotation)
-		return;
-
 	if (SpaceType == FE_LOCAL_SPACE)
 	{
+		if (glm::all(glm::epsilonEqual(RotationAngles, NewRotation, FE_TRANSFORM_COMPARISON_EPSILON)))
+			return;
+
 		RotationQuaternion = glm::quat(1.0f, glm::vec3(0.0f));
 		RotateQuaternion(static_cast<float>(NewRotation.x) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
 		RotateQuaternion(static_cast<float>(NewRotation.y) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
@@ -253,6 +255,9 @@ void FETransformComponent::SetRotation(const glm::vec3 NewRotation, FE_COORDINAT
 	else if (SpaceType == FE_WORLD_SPACE)
 	{
 		glm::vec3 CurrentWorldRotation = GetRotation(FE_WORLD_SPACE);
+		if (glm::all(glm::epsilonEqual(CurrentWorldRotation, NewRotation, FE_TRANSFORM_COMPARISON_EPSILON)))
+			return;
+
 		glm::vec3 Difference = NewRotation - CurrentWorldRotation;
 		RotateAroundAxis(glm::vec3(1, 0, 0), Difference.x, FE_WORLD_SPACE);
 		RotateAroundAxis(glm::vec3(0, 1, 0), Difference.y, FE_WORLD_SPACE);
@@ -318,6 +323,9 @@ void FETransformComponent::RotateByQuaternion(const glm::quat Quaternion)
 
 void FETransformComponent::SetScale(const glm::vec3 NewScale, FE_COORDINATE_SPACE_TYPE SpaceType)
 {
+	if (glm::all(glm::epsilonEqual(Scale, NewScale, FE_TRANSFORM_COMPARISON_EPSILON)))
+		return;
+
 	glm::mat4 ParentMatrix;
 	if (SpaceType == FE_WORLD_SPACE)
 	{
