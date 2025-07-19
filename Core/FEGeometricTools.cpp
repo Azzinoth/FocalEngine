@@ -176,6 +176,12 @@ FEAABB::FEAABB(std::vector<double>& VertexPositions)
 
 FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 {
+	if (VertexCount == 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexCount is 0, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	Min.x = VertexPositions[0];
 	Min.y = VertexPositions[1];
 	Min.z = VertexPositions[2];

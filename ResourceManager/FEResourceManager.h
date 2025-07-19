@@ -74,13 +74,13 @@ namespace FocalEngine
 		FETexture* ImportTexture(const char* FileName);
 
 		FEMesh* RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name = "");
-		FEMesh* RawDataToMesh(float* Positions, int PosSize,
-							  float* UV, int UVSize,
-							  float* Normals, int NormSize,
-							  float* Tangents, int TanSize,
-							  int* Indices, int IndexSize,
-							  float* Colors = nullptr, int ColorSize = 0,
-							  float* MatIndexs = nullptr, int MatIndexsSize = 0, int MatCount = 0,
+		FEMesh* RawDataToMesh(float* Positions, int PositionsCount,
+							  float* UV, int UVCount,
+							  float* Normals, int NormalsCount,
+							  float* Tangents, int TangentsCount,
+							  int* Indices, int IndicesCount,
+							  float* Colors = nullptr, int ColorsCount = 0,
+							  float* MaterialIndices = nullptr, int MaterialIndicesCount = 0, int MaterialCount = 0,
 							  std::string Name = "");
 		FEMesh* RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "");
 

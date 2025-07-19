@@ -395,6 +395,8 @@ file(GLOB lodepng_SRC
 	"ThirdParty/lodepng/lodepng.h"
 )
 
+set_source_files_properties(${lodepng_SRC} PROPERTIES COMPILE_OPTIONS "/W0")
+
 file(GLOB stb_image_SRC
 	"ThirdParty/stb_image/stb_image.h"
 )

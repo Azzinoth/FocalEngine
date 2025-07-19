@@ -625,15 +625,27 @@ FEMesh* FEResourceManager::RawDataToMesh(std::vector<float>& Positions, std::vec
 	return RawDataToMesh(Positions.data(), static_cast<int>(Positions.size()), UV.data(), static_cast<int>(UV.size()), Normals.data(), static_cast<int>(Normals.size()), Tangents.data(), static_cast<int>(Tangents.size()), Index.data(), static_cast<int>(Index.size()), nullptr, 0, nullptr, 0, 0, Name);
 }
 
-FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
-										 float* UV, const int UVSize,
-										 float* Normals, const int NormSize,
-										 float* Tangents, const int TanSize,
-										 int* Indices, const int IndexSize,
-										 float* Colors, int ColorSize,
-										 float* MatIndexs, const int MatIndexsSize, const int MatCount,
+FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PositionsCount,
+										 float* UV, const int UVCount,
+										 float* Normals, const int NormalsCount,
+										 float* Tangents, const int TangentsCount,
+										 int* Indices, const int IndicesCount,
+										 float* Colors, int ColorsCount,
+										 float* MaterialIndices, const int MaterialIndicesCount, const int MaterialCount,
 										 const std::string Name)
 {
+	if (PositionsCount == 0)
+	{
+		LOG.Add("FEResourceManager::RawDataToMesh: PositionsCount is 0, can't create mesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (IndicesCount == 0)
+	{
+		LOG.Add("FEResourceManager::RawDataToMesh: IndicesCount is 0, can't create mesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
 	int VertexType = FE_POSITION | FE_INDEX;
 
 	GLuint VaoID;
@@ -644,104 +656,104 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PosSize,
 	// Index
 	FE_GL_ERROR(glGenBuffers(1, &IndicesBufferID));
 	FE_GL_ERROR(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndicesBufferID));
-	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * IndexSize, Indices, GL_STATIC_DRAW));
+	FE_GL_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int) * IndicesCount, Indices, GL_STATIC_DRAW));
 
 	GLuint PositionsBufferID;
 	// verCoords
 	FE_GL_ERROR(glGenBuffers(1, &PositionsBufferID));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, PositionsBufferID));
-	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * PosSize, Positions, GL_STATIC_DRAW));
+	FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * PositionsCount, Positions, GL_STATIC_DRAW));
 	FE_GL_ERROR(glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, nullptr));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	GLuint ColorsBufferID = 0;
-	if (Colors != nullptr && ColorSize != 0)
+	if (Colors != nullptr && ColorsCount != 0)
 	{
 		VertexType |= FE_COLOR;
 		// colors
 		FE_GL_ERROR(glGenBuffers(1, &ColorsBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, ColorsBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ColorSize, Colors, GL_STATIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * ColorsCount, Colors, GL_STATIC_DRAW));
 		FE_GL_ERROR(glVertexAttribPointer(1/*FE_COLOR*/, 3, GL_FLOAT, false, 0, 0));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	GLuint NormalsBufferID = 0;
-	if (Normals != nullptr && NormSize != 0)
+	if (Normals != nullptr && NormalsCount != 0)
 	{
 		VertexType |= FE_NORMAL;
 		// normals
 		FE_GL_ERROR(glGenBuffers(1, &NormalsBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, NormalsBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * NormSize, Normals, GL_STATIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * NormalsCount, Normals, GL_STATIC_DRAW));
 		FE_GL_ERROR(glVertexAttribPointer(2/*FE_NORMAL*/, 3, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	GLuint TangentsBufferID = 0;
-	if (Tangents != nullptr && TanSize != 0)
+	if (Tangents != nullptr && TangentsCount != 0)
 	{
 		VertexType |= FE_TANGENTS;
 		// tangents
 		FE_GL_ERROR(glGenBuffers(1, &TangentsBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, TangentsBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * TanSize, Tangents, GL_STATIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * TangentsCount, Tangents, GL_STATIC_DRAW));
 		FE_GL_ERROR(glVertexAttribPointer(3/*FE_TANGENTS*/, 3, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	GLuint UVBufferID = 0;
-	if (UV != nullptr && UVSize != 0)
+	if (UV != nullptr && UVCount != 0)
 	{
 		VertexType |= FE_UV;
 		// UV
 		FE_GL_ERROR(glGenBuffers(1, &UVBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, UVBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UVSize, UV, GL_STATIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * UVCount, UV, GL_STATIC_DRAW));
 		FE_GL_ERROR(glVertexAttribPointer(4/*FE_UV*/, 2, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	GLuint MaterialsIndicesBufferID = -1;
-	if (MatIndexs != nullptr && MatIndexsSize > 1)
+	if (MaterialIndices != nullptr && MaterialIndicesCount > 1)
 	{
 		// Material ID
 		FE_GL_ERROR(glGenBuffers(1, &MaterialsIndicesBufferID));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, MaterialsIndicesBufferID));
-		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * MatIndexsSize, MatIndexs, GL_STATIC_DRAW));
+		FE_GL_ERROR(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * MaterialIndicesCount, MaterialIndices, GL_STATIC_DRAW));
 		FE_GL_ERROR(glVertexAttribPointer(5/*FE_MATINDEX*/, 1, GL_FLOAT, false, 0, nullptr));
 		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 	}
 
 	//int vertexType = FE_POSITION | FE_UV | FE_NORMAL | FE_TANGENTS | FE_INDEX;
-	if (MatCount > 1)
+	if (MaterialCount > 1)
 	{
 		VertexType |= FE_MATINDEX;
 	}
 
-	FEMesh* NewMesh = CreateMesh(VaoID, IndexSize, VertexType, FEAABB(Positions, PosSize), Name);
-	NewMesh->IndicesCount = IndexSize;
+	FEMesh* NewMesh = CreateMesh(VaoID, IndicesCount, VertexType, FEAABB(Positions, PositionsCount), Name);
+	NewMesh->IndicesCount = IndicesCount;
 	NewMesh->IndicesBufferID = IndicesBufferID;
 
-	NewMesh->PositionsCount = PosSize;
+	NewMesh->PositionsCount = PositionsCount;
 	NewMesh->PositionsBufferID = PositionsBufferID;
 
-	NewMesh->ColorCount = ColorSize;
+	NewMesh->ColorCount = ColorsCount;
 	NewMesh->ColorBufferID = ColorsBufferID;
 
-	NewMesh->NormalsCount = NormSize;
+	NewMesh->NormalsCount = NormalsCount;
 	NewMesh->NormalsBufferID = NormalsBufferID;
 
-	NewMesh->TangentsCount = TanSize;
+	NewMesh->TangentsCount = TangentsCount;
 	NewMesh->TangentsBufferID = TangentsBufferID;
 
-	NewMesh->UVCount = UVSize;
+	NewMesh->UVCount = UVCount;
 	NewMesh->UVBufferID = UVBufferID;
 
-	NewMesh->MaterialsIndicesCount = MatIndexsSize;
+	NewMesh->MaterialsIndicesCount = MaterialIndicesCount;
 	NewMesh->MaterialsIndicesBufferID = MaterialsIndicesBufferID;
 
-	NewMesh->MaterialsCount = MatCount;
+	NewMesh->MaterialsCount = MaterialCount;
 
 	return NewMesh;
 }
