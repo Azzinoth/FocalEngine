@@ -604,6 +604,16 @@ void FEInstancedSystem::Render(FEEntity* Entity, FEGameModelComponent& GameModel
 
 	CheckDirtyFlag(Entity);
 
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	{
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		for (const auto& ExistingCallback : Callbacks)
+		{
+			if (ExistingCallback != nullptr)
+				ExistingCallback(Entity);
+		}
+	}
+
 	RenderGameModelComponent(GameModelComponent, InstancedComponent, BufferIndex);
 }
 
@@ -1410,4 +1420,38 @@ void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value 
 	{
 		InstancedComponent.PostponedModificationsData = Data["Modifications"];
 	}
+}
+
+FEEntity* FEInstancedSystem::GetEntityWithGameModelComponent(std::string EntityID)
+{
+	FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
+	if (Object == nullptr || Object->GetType() != FE_ENTITY)
+		return nullptr;
+
+	FEEntity* Entity = reinterpret_cast<FEEntity*>(Object);
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
+		return nullptr;
+
+	return Entity;
+}
+
+void FEInstancedSystem::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback)
+{
+	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+		return;
+
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	{
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		/*for (const auto& ExistingCallback : Callbacks)
+		{
+			if (ExistingCallback.target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+			{
+				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_ECS", FE_LOG_WARNING);
+				return;
+			}
+		}*/
+	}
+
+	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
 }

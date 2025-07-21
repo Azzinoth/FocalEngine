@@ -51,6 +51,8 @@ namespace FocalEngine
 
 		static Json::Value InstanceComponentToJson(FEEntity* Entity);
 		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
+
+		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 	public:
 		SINGLETON_PUBLIC_PART(FEInstancedSystem)
 
@@ -75,18 +77,9 @@ namespace FocalEngine
 		void SetIndividualSelectMode(FEEntity* EntityWithInstancedComponent, const bool NewValue);
 		void SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const bool NewValue);
 
-		FEEntity* GetEntityWithGameModelComponent(std::string EntityID)
-		{
-			FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
-			if (Object == nullptr || Object->GetType() != FE_ENTITY)
-				return nullptr;
+		FEEntity* GetEntityWithGameModelComponent(std::string EntityID);
 
-			FEEntity* Entity = reinterpret_cast<FEEntity*>(Object);
-			if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
-				return nullptr;
-
-			return Entity;
-		}
+		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED
