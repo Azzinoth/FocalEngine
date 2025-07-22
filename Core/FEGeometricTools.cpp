@@ -36,6 +36,9 @@ FEAABB::FEAABB(glm::dvec3 Min, glm::dvec3 Max)
 
 FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
 {
+	if (VertexPositions.empty())
+		return;
+
 	Min.x = VertexPositions[0].x;
 	Min.y = VertexPositions[0].y;
 	Min.z = VertexPositions[0].z;
