@@ -523,7 +523,8 @@ FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity)
 	FEAABB Result = FEAABB();
 	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
 	{
-		Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB.Transform(TransformComponent.GetWorldMatrix()));
+		Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB);
+		//Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB.Transform(TransformComponent.GetWorldMatrix()));
 	}
 
 	if (TransformComponent.IsDirty())
@@ -1454,4 +1455,73 @@ void FEInstancedSystem::AddBeforeRenderCallback(FEEntity* Entity, std::function<
 	}
 
 	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
+}
+
+void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
+{
+	if (!Entity->HasComponent<FEGameModelComponent>() && !Entity->HasComponent<FEPrefabInstanceComponent>())
+	{
+		LOG.Add("FEInstancedSystem::ForceUpdateAABB: Entity does not have FEGameModelComponent or FEPrefabInstanceComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	if (!Entity->HasComponent<FEInstancedComponent>())
+	{
+		LOG.Add("FEInstancedSystem::ForceUpdateAABB: Entity does not have FEInstancedComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+
+	size_t CurrentBufferIndex = 0;
+	if (Entity->HasComponent<FEPrefabInstanceComponent>())
+	{
+		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = FEAABB();
+
+		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
+		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
+
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
+		{
+			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
+			if (CurrentPrefabEntity != nullptr)
+			{
+				FEGameModelComponent& GameModelComponent = CurrentPrefabEntity->GetComponent<FEGameModelComponent>();
+				glm::vec3 Position = TransformComponent.GetPosition();
+				for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
+				{
+					glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+					MatWithoutTranslate[3][0] -= Position.x;
+					MatWithoutTranslate[3][1] -= Position.y;
+					MatWithoutTranslate[3][2] -= Position.z;
+
+					InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatWithoutTranslate));
+				}
+				CurrentBufferIndex++;
+			}
+		}
+	}
+	else
+	{
+		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = FEAABB();
+
+		auto& InstancedElementData = InstancedComponent.InstancedElementsData[CurrentBufferIndex];
+		FEAABB& MeshAABB = GameModelComponent.GetGameModel()->GetMesh()->GetAABB();
+		glm::vec3 Position = TransformComponent.GetPosition();
+		for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
+		{
+			glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+			MatWithoutTranslate[3][0] -= Position.x;
+			MatWithoutTranslate[3][1] -= Position.y;
+			MatWithoutTranslate[3][2] -= Position.z;
+
+			InstancedElementData->AllInstancesAABB = InstancedElementData->AllInstancesAABB.Merge(MeshAABB.Transform(MatWithoutTranslate));
+		}
+	}
+
+	TransformComponent.SetDirtyFlag(true);
+	GetAABB(Entity);
 }

@@ -59,6 +59,16 @@ void FECameraComponent::SetActive(const bool Active)
 	bIsActive = Active;
 }
 
+bool FECameraComponent::IsRenderingEnabled() const
+{
+	return bRenderingEnabled;
+}
+
+void FECameraComponent::SetRenderingEnabled(const bool bEnabled)
+{
+	bRenderingEnabled = bEnabled;
+}
+
 float FECameraComponent::GetFOV() const
 {
 	return FOV;

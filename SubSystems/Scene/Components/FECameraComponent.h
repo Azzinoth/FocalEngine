@@ -46,6 +46,9 @@ namespace FocalEngine
 		bool IsActive() const;
 		void SetActive(const bool Active);
 
+		bool IsRenderingEnabled() const;
+		void SetRenderingEnabled(const bool bEnabled);
+
 		bool IsClearColorEnabled() const;
 		void SetIsClearColorEnabled(const bool bEnabled);
 
@@ -163,6 +166,7 @@ namespace FocalEngine
 		glm::vec2 GetTemporalJitterOffset();
 	private:
 		bool bIsActive = false;
+		bool bRenderingEnabled = true;
 		bool bIsMainCamera = false;
 
 		FERenderingPipeline RenderingPipeline = FERenderingPipeline::Deferred;

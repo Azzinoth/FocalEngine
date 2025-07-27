@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	#define FE_MAX_LINES 400000
+	#define FE_MAX_LINES 50000
 
 	class FEngine;
 	class FERenderer;
@@ -142,6 +142,9 @@ namespace FocalEngine
 
 		FETexture* CreateScreenshot(FEScene* Scene);
 		FETexture* CreateScreenshot(FEEntity* CameraEntity);
+
+		void SetWorldMatrixForLines(glm::mat4 NewWorldMatrix);
+		glm::mat4 GetWorldMatrixForLines() const;
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -175,6 +178,7 @@ namespace FocalEngine
 		GLuint InstancedLineVAO = 0;
 		GLenum InstancedLineBuffer = 0;
 		void RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
+		glm::mat4 WorldMatrixForLines = glm::mat4(1.0f);
 
 		glm::dvec3 MouseRay = glm::dvec3(0.0);
 

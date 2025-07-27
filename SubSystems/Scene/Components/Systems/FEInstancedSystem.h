@@ -80,6 +80,8 @@ namespace FocalEngine
 		FEEntity* GetEntityWithGameModelComponent(std::string EntityID);
 
 		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
+
+		void ForceUpdateAABB(FEEntity* Entity);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

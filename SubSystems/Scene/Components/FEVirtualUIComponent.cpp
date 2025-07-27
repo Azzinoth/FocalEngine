@@ -549,3 +549,8 @@ void FEVirtualUIComponent::ExecuteFunctionToAddFont(std::function<void()> Func, 
 {
 	VirtualUI->ExecuteFunctionToAddFont(Func, CallbackOnFontReady);
 }
+
+bool FEVirtualUIComponent::IsLastProvidedRayIntersectingCanvas() const
+{
+	return bRayColidingWithCanvas;
+}

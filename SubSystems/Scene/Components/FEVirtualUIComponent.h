@@ -92,6 +92,8 @@ namespace FocalEngine
 		// Use that instead of directly adding fonts to ImGui
 		// to ensure that font addition is done in the correct way.
 		void ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady);
+
+		bool IsLastProvidedRayIntersectingCanvas() const;
 	private:
 		FEEntity* ParentEntity = nullptr;
 

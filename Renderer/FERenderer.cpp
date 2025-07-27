@@ -1439,15 +1439,22 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
+	static bool bNeedToUpdate = true;
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	if (bNeedToUpdate && LineCounter != 0)
+	{
+		bNeedToUpdate = false;
+
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+		FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
+	}
 
 	InstancedLineShader->Start();
 	InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 	InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	InstancedLineShader->UpdateUniformData("FEWorldMatrix", WorldMatrixForLines);
 	InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
 	InstancedLineShader->LoadUniformsDataToGPU();
 
@@ -1481,6 +1488,9 @@ void FERenderer::Render(FEScene* CurrentScene)
 		return;
 	
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
+	if (!CurrentCameraComponent.IsRenderingEnabled())
+		return;
+
 	if (CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 	{
 		SimplifiedRender(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
@@ -2889,6 +2899,16 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 	CameraRenderingData->PointCloudIntermediateFrameBuffer->SetDepthAttachment(IntermediateDepthBuffer);
 
 	return true;
+}
+
+void FERenderer::SetWorldMatrixForLines(glm::mat4 NewWorldMatrix)
+{
+	WorldMatrixForLines = NewWorldMatrix;
+}
+
+glm::mat4 FERenderer::GetWorldMatrixForLines() const
+{
+	return WorldMatrixForLines;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)
