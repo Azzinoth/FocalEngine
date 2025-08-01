@@ -52,6 +52,9 @@ namespace FocalEngine
 
 		bool IsAdvancedRenderingEnabled() const;
 		void SetAdvancedRenderingEnabled(const bool bUseAdvancedRendering);
+
+		bool GetComputeShaderBuffer(GLuint& OutBufferID) const;
+		bool GetComputeShaderBuffers(std::vector<GLuint>& OutBufferIDs) const;
 	private:
 		static const size_t MaxBytesPerBuffer = UINT32_MAX - 1;
 		static const size_t MaxPointsPerBuffer = MaxBytesPerBuffer / sizeof(FEPointCloudVertex);

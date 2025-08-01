@@ -86,3 +86,45 @@ void FEPointCloud::SetAdvancedRenderingEnabled(const bool bUseAdvancedRendering)
 	if (POINT_CLOUD_SYSTEM.SetAdvancedRendering(this, bUseAdvancedRendering))
 		this->bUseAdvancedRendering = bUseAdvancedRendering;
 }
+
+bool FEPointCloud::GetComputeShaderBuffer(GLuint& BufferIDToFill) const
+{
+	if (ComputeShaderBuffer == GLuint(-1))
+	{
+		LOG.Add("FEPointCloud::GetComputeShaderBuffer() called on object with invalid ComputeShaderBuffer", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!bUseAdvancedRendering)
+	{
+		LOG.Add("FEPointCloud::GetComputeShaderBuffer() called on object with advanced rendering disabled", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!ComputeShaderBuffers.empty())
+	{
+		LOG.Add("FEPointCloud::GetComputeShaderBuffer() called on object with multiple ComputeShaderBuffers", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return false;
+	}
+
+	BufferIDToFill = ComputeShaderBuffer;
+	return true;
+}
+
+bool FEPointCloud::GetComputeShaderBuffers(std::vector<GLuint>& OutBufferIDs) const
+{
+	if (ComputeShaderBuffers.empty())
+	{
+		LOG.Add("FEPointCloud::GetComputeShaderBuffers() called on object with empty ComputeShaderBuffers", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (!bUseAdvancedRendering)
+	{
+		LOG.Add("FEPointCloud::GetComputeShaderBuffers() called on object with advanced rendering disabled", "FE_POINT_CLOUD", FE_LOG_WARNING);
+		return false;
+	}
+
+	OutBufferIDs = ComputeShaderBuffers;
+	return true;
+}
