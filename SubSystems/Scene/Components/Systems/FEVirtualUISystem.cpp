@@ -64,7 +64,13 @@ void FEVirtualUISystem::DuplicateVirtualUIComponent(FEEntity* SourceEntity, FEEn
 	NewVirtualUIComponent.SetDropPassThrough(VirtualUIComponent.bDropPassThrough);
 	NewVirtualUIComponent.SetScrollPassThrough(VirtualUIComponent.bScrollPassThrough);
 	
-	NewVirtualUIComponent.SetVisibility(VirtualUIComponent.IsVisible());
+	// Additional checks needed not to add visibility component if not needed.
+	if (!SourceEntity->IsComponentVisible(ComponentVisibilityType::ALL) || !TargetEntity->IsComponentVisible(ComponentVisibilityType::ALL))
+	{
+		bool bIsVisible = SourceEntity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI);
+		TargetEntity->SetComponentVisible(ComponentVisibilityType::VIRTUAL_UI, bIsVisible);
+	}
+
 	NewVirtualUIComponent.SetInputActive(VirtualUIComponent.IsInputActive());
 
 	NewVirtualUIComponent.InvokeResize(VirtualUIComponent.GetWidth(), VirtualUIComponent.GetHeight());
@@ -97,7 +103,6 @@ Json::Value FEVirtualUISystem::VirtualUIComponentToJson(FEEntity* Entity)
 	Root["Internal resolution"]["Width"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().x);
 	Root["Internal resolution"]["Height"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().y);
 
-	Root["Visibility"] = VirtualUIComponent.IsVisible();
 	Root["Input Active"] = VirtualUIComponent.IsInputActive();
 
 	// TO-DO: How to save function pointers?
@@ -177,7 +182,7 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* F
 	if (VirtualUI == nullptr)
 		return;
 
-	if (!VirtualUIComponent.IsVisible())
+	if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 		return;
 
 	ForceMaterial->SetAlbedoMap(VirtualUIComponent.Framebuffer->GetColorAttachment());
@@ -261,27 +266,5 @@ void FEVirtualUISystem::DummyRenderFunction(FEVirtualUI* VirtualUI)
 		ImGui::Text("Dummy UI");
 
 		ImGui::End();
-	}
-}
-
-bool FEVirtualUISystem::IsVirtualUIVisible(const std::string& VirtualUIID) const
-{
-	auto VisibilityUIIterator = VirtualUIIDToVisibilityMap.find(VirtualUIID);
-	if (VisibilityUIIterator != VirtualUIIDToVisibilityMap.end())
-		return VisibilityUIIterator->second;
-
-	return false;
-}
-
-void FEVirtualUISystem::SetVirtualUIVisible(const std::string& VirtualUIID, bool bVisible)
-{
-	auto VisibilityUIIterator = VirtualUIIDToVisibilityMap.find(VirtualUIID);
-	if (VisibilityUIIterator != VirtualUIIDToVisibilityMap.end())
-	{
-		VisibilityUIIterator->second = bVisible;
-	}
-	else
-	{
-		VirtualUIIDToVisibilityMap[VirtualUIID] = bVisible;
 	}
 }

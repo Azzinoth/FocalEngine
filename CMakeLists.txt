@@ -210,29 +210,32 @@ file(GLOB Renderer_SRC
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
 	"Renderer/FEGameModel.h"
-	"Renderer/FELine.cpp"
-	"Renderer/FELine.h"
-	"Renderer/FEMaterial.cpp"
-	"Renderer/FEMaterial.h"
-	"Renderer/FEMesh.cpp"
-	"Renderer/FEMesh.h"
-	"Renderer/FEPointCloud.cpp"
-	"Renderer/FEPointCloud.h"
 	"Renderer/FEPostProcess.cpp"
 	"Renderer/FEPostProcess.h"
 	"Renderer/FERenderer.cpp"
 	"Renderer/FERenderer.h"
-	"Renderer/FEShader.cpp"
-	"Renderer/FEShader.h"
-	"Renderer/FEShader.inl"
-	"Renderer/FEShaderUniform.cpp"
-	"Renderer/FEShaderUniform.h"
-	"Renderer/FEShaderUniform.inl"
-	"Renderer/FETexture.cpp"
-	"Renderer/FETexture.h"
 )
 
 # *************** RESOURCE MANAGER ***************
+
+file(GLOB BaseResources_SRC
+	"ResourceManager/BaseResources/FEMesh.h"
+	"ResourceManager/BaseResources/FEMesh.cpp"
+	"ResourceManager/BaseResources/FELineCollection.h"
+	"ResourceManager/BaseResources/FELineCollection.cpp"
+	"ResourceManager/BaseResources/FEPointCloud.cpp"
+	"ResourceManager/BaseResources/FEPointCloud.h"
+	"ResourceManager/BaseResources/FETexture.cpp"
+	"ResourceManager/BaseResources/FETexture.h"
+	"ResourceManager/BaseResources/FEShader.cpp"
+	"ResourceManager/BaseResources/FEShader.h"
+	"ResourceManager/BaseResources/FEShader.inl"
+	"ResourceManager/BaseResources/FEShaderUniform.cpp"
+	"ResourceManager/BaseResources/FEShaderUniform.h"
+	"ResourceManager/BaseResources/FEShaderUniform.inl"
+	"ResourceManager/BaseResources/FEMaterial.cpp"
+	"ResourceManager/BaseResources/FEMaterial.h"
+)
 
 file(GLOB ResourceManager_SRC
 	"ResourceManager/FEObjLoader.cpp"
@@ -269,6 +272,8 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FETagComponent.h"
 	"SubSystems/Scene/Components/FETransformComponent.cpp"
 	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FEVisibilityComponent.cpp"
+	"SubSystems/Scene/Components/FEVisibilityComponent.h"
 	"SubSystems/Scene/Components/FECameraComponent.cpp"
 	"SubSystems/Scene/Components/FECameraComponent.h"
 	"SubSystems/Scene/Components/FELightComponent.cpp"
@@ -277,6 +282,10 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEGameModelComponent.h"
 	"SubSystems/Scene/Components/FEPointCloudComponent.cpp"
 	"SubSystems/Scene/Components/FEPointCloudComponent.h"
+	"SubSystems/Scene/Components/FEVolumeComponent.cpp"
+	"SubSystems/Scene/Components/FEVolumeComponent.h"
+	"SubSystems/Scene/Components/FELineComponent.cpp"
+	"SubSystems/Scene/Components/FELineComponent.h"
 	"SubSystems/Scene/Components/FEInstancedComponent.cpp"
 	"SubSystems/Scene/Components/FEInstancedComponent.h"
 	"SubSystems/Scene/Components/FETerrainComponent.cpp"
@@ -299,10 +308,14 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEPointCloudSystem.h"
 	"SubSystems/Scene/Components/Systems/FEPointCloudSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FELineSystem.h"
+	"SubSystems/Scene/Components/Systems/FELineSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEVolumeSystem.h"
+	"SubSystems/Scene/Components/Systems/FEVolumeSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.h"
@@ -441,6 +454,7 @@ list(APPEND ALL_SOURCE_FILES
 			${Renderer_SRC}
 			# *************** RESOURCE MANAGER ***************
 			${ResourceManager_SRC}
+			${BaseResources_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
 			${FileSystem_SubSystems_SRC}
@@ -606,6 +620,7 @@ source_group("Source Files/CoreExtensions/PointCloudShaders/" FILES ${PointCloud
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
+source_group("Source Files/ResourceManager/BaseResources" FILES ${BaseResources_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 source_group("Source Files/SubSystems/FileSystem" FILES ${FileSystem_SubSystems_SRC})

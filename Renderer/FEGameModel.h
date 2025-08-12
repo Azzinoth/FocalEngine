@@ -3,7 +3,7 @@
 #ifndef FEGAMEMODEL_H
 #define FEGAMEMODEL_H
 
-#include "FEMesh.h"
+#include "../ResourceManager/BaseResources/FEMesh.h"
 #include "FEFramebuffer.h"
 
 namespace FocalEngine

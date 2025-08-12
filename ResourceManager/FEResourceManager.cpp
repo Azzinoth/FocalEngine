@@ -1801,6 +1801,7 @@ void FEResourceManager::Clear()
 {
 	ClearResource(Materials);
 	ClearResource(Meshes);
+	ClearResource(LineCollections);
 	ClearResource(PointClouds);
 	ClearResource(Textures);
 	ClearResource(GameModels);
@@ -5992,4 +5993,160 @@ std::vector<glm::vec3> FEResourceManager::ExtractNormalsFromPLYData(FERawPLYData
 std::string FEResourceManager::GetEngineFolder()
 {
 	return EngineFolder;
+}
+
+FELineCollection* FEResourceManager::RawDataToFELineCollection(std::vector<FELine> Lines, std::string Name)
+{
+	FELineCollection* NewLineCollection = new FELineCollection(Lines);
+	if (!Name.empty())
+		NewLineCollection->SetName(Name);
+
+	LineCollections[NewLineCollection->GetObjectID()] = NewLineCollection;
+	return NewLineCollection;
+}
+
+void FEResourceManager::DeleteFELineCollection(const FELineCollection* LineCollection)
+{
+	if (LineCollection == nullptr)
+	{
+		LOG.Add("FEResourceManager::DeleteFELineCollection: LineCollection is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return;
+	}
+
+	auto LineCollectionIterator = LineCollections.find(LineCollection->GetObjectID());
+	if (LineCollectionIterator != LineCollections.end())
+	{
+		delete LineCollectionIterator->second;
+		LineCollections.erase(LineCollectionIterator);
+	}
+	else
+	{
+		LOG.Add("FEResourceManager::DeleteFELineCollection: LineCollection not found in LineCollections map", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+	}
+}
+
+std::vector<std::string> FEResourceManager::GetFELineCollectionIDList()
+{
+	FE_MAP_TO_STR_VECTOR(LineCollections)
+}
+
+std::vector<std::string> FEResourceManager::GetEnginePrivateFELineCollectionIDList()
+{
+	return GetResourceIDListByTag(LineCollections, ENGINE_RESOURCE_TAG);
+}
+
+FELineCollection* FEResourceManager::GetLineCollection(std::string ID)
+{
+	if (LineCollections.find(ID) == LineCollections.end())
+		return nullptr;
+
+	return LineCollections[ID];
+}
+
+std::vector<FELineCollection*> FEResourceManager::GetLineCollectionByName(std::string Name)
+{
+	std::vector<FELineCollection*> Result;
+	auto LineCollectionIterator = LineCollections.begin();
+	while (LineCollectionIterator != LineCollections.end())
+	{
+		if (LineCollectionIterator->second->GetName() == Name)
+			Result.push_back(LineCollectionIterator->second);
+
+		LineCollectionIterator++;
+	}
+
+	return Result;
+}
+
+FELineCollection* FEResourceManager::LoadFELineCollection(std::string FilePath, std::string Name)
+{
+	if (FILE_SYSTEM.DoesFileExist(FilePath) == false)
+	{
+		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFELineCollection.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::fstream File;
+	File.open(FilePath, std::ios::in | std::ios::binary);
+	const std::streamsize FileSize = File.tellg();
+	if (FileSize < 0)
+	{
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadFELineCollection.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	char* Buffer = new char[4];
+	File.read(Buffer, 4);
+	const float Version = *(float*)Buffer;
+	if (Version != FE_LINE_COLLECTION_VERSION)
+	{
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadFELineCollection. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	std::string LoadedObjectID;
+	std::string LoadedName;
+	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
+	LoadedObjectID = ObjectData.ID;
+	LoadedName = ObjectData.Name;
+
+	std::vector<FELine> RawData;
+	char* BigBuffer = new char[8];
+	File.read(BigBuffer, 8);
+	const size_t LineCount = *(size_t*)BigBuffer;
+	size_t FELineSize = sizeof(FELine);
+
+	char* LineBuffer = new char[LineCount * FELineSize];
+	File.read(LineBuffer, LineCount * FELineSize);
+	RawData.resize(LineCount);
+	for (size_t i = 0; i < LineCount; i++)
+	{
+		FELine* CurrentLine = reinterpret_cast<FELine*>(LineBuffer + i * FELineSize);
+		RawData[i] = *CurrentLine;
+	}
+		
+	File.close();
+
+	FELineCollection* NewLineCollection = new FELineCollection(RawData);
+	const std::string OldID = NewLineCollection->ID;
+	// Overwrite ID with Loaded ID.
+	if (!LoadedObjectID.empty())
+	{
+		NewLineCollection->SetID(LoadedObjectID);
+		LineCollections.erase(OldID);
+		LineCollections[NewLineCollection->GetObjectID()] = NewLineCollection;
+	}
+
+	NewLineCollection->SetName(Name);
+	NewLineCollection->Tag = ObjectData.Tag;
+
+	delete[] Buffer;
+	delete[] BigBuffer;
+	delete[] LineBuffer;
+
+	return NewLineCollection;
+}
+
+void FEResourceManager::SaveFELineCollection(FELineCollection* LineCollection, std::string FilePath)
+{
+	if (LineCollection == nullptr)
+	{
+		LOG.Add("FEResourceManager::SaveFELineCollection: LineCollection is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		return;
+	}
+
+	std::fstream File;
+	File.open(FilePath, std::ios::out | std::ios::binary);
+
+	float Version = FE_LINE_COLLECTION_VERSION;
+	File.write((char*)&Version, sizeof(float));
+
+	OBJECT_MANAGER.SaveFEObjectPart(File, LineCollection);
+
+	std::vector<FELine> RawData = LineCollection->GetRawData();
+	size_t LineCount = RawData.size();
+	File.write((char*)&LineCount, sizeof(size_t));
+	File.write((char*)RawData.data(), sizeof(FELine) * LineCount);
+	
+	File.close();
 }

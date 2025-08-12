@@ -67,7 +67,13 @@ void FEPointCloudSystem::DuplicatePointCloudComponent(FEEntity* SourceEntity, FE
 	NewPointCloudComponent.SetPointCloud(PointCloudComponent.GetPointCloud());
 	NewPointCloudComponent.SetGlobalColorOverride(PointCloudComponent.GetGlobalColorOverride());
 	NewPointCloudComponent.SetUseGlobalColorOverride(PointCloudComponent.IsUsingGlobalColorOverride());
-	NewPointCloudComponent.SetVisibility(PointCloudComponent.IsVisible());
+
+	// Additional checks needed not to add visibility component if not needed.
+	if (!SourceEntity->IsComponentVisible(ComponentVisibilityType::ALL) || !TargetEntity->IsComponentVisible(ComponentVisibilityType::ALL))
+	{
+		bool bIsVisible = SourceEntity->IsComponentVisible(ComponentVisibilityType::POINT_CLOUD);
+		TargetEntity->SetComponentVisible(ComponentVisibilityType::POINT_CLOUD, bIsVisible);
+	}
 
 	NewPointCloudComponent = PointCloudComponent;
 }

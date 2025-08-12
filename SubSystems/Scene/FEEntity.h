@@ -84,5 +84,8 @@ namespace FocalEngine
 		FEScene* GetParentScene();
 		
 		Json::Value ToJson();
+
+		bool IsComponentVisible(ComponentVisibilityType Type);
+		void SetComponentVisible(ComponentVisibilityType Type, bool Value);
 	};
 }

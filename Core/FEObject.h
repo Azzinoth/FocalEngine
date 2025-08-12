@@ -24,7 +24,8 @@ namespace FocalEngine
 		FE_SCENE = 12,
 		FE_ASSET_PACKAGE = 13,
 		FE_NATIVE_SCRIPT_MODULE = 14,
-		FE_POINT_CLOUD = 15
+		FE_POINT_CLOUD = 15,
+		FE_LINE_COLLECTION = 16
 	};
 
 	struct FEObjectLoadedData
@@ -85,9 +86,17 @@ namespace FocalEngine
 			{
 				return "FE_MESH";
 			}
+			case FocalEngine::FE_LINE_COLLECTION:
+			{
+				return "FE_LINE_COLLECTION";
+			}
 			case FocalEngine::FE_MATERIAL:
 			{
 				return "FE_MATERIAL";
+			}
+			case FocalEngine::FE_TERRAIN_LAYER:
+			{
+				return "FE_TERRAIN_LAYER";
 			}
 			case FocalEngine::FE_GAMEMODEL:
 			{

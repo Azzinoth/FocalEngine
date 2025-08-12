@@ -6,7 +6,8 @@
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
 #include "../FileSystem/FEAssetPackage.h"
-#include "../Renderer/FEPointCloud.h"
+#include "BaseResources/FELineCollection.h"
+#include "BaseResources/FEPointCloud.h"
 #include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 
@@ -28,6 +29,7 @@ namespace FocalEngine
 		friend class FEVirtualUISystem;
 		friend class FENativeScriptSystem;
 		friend class FEPointCloudSystem;
+		friend class FELineSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -100,6 +102,19 @@ namespace FocalEngine
 		// FIXME: Remove this function. And redo vertex attributes management.
 		// Data of such user defined vertex attributes will not be stored along FEMesh.
 		void SetUserDataVertexAttributeActive(FEMesh* Mesh);
+
+		FELineCollection* RawDataToFELineCollection(std::vector<FELine> Lines, std::string Name = "");
+		void DeleteFELineCollection(const FELineCollection* LineCollection);
+
+		//bool ExportLineCollectionToShapeFile(FELineCollection* LineCollectionToExport, std::string FilePath);
+
+		std::vector<std::string> GetFELineCollectionIDList();
+		std::vector<std::string> GetEnginePrivateFELineCollectionIDList();
+		FELineCollection* GetLineCollection(std::string ID);
+		std::vector<FELineCollection*> GetLineCollectionByName(std::string Name);
+
+		FELineCollection* LoadFELineCollection(std::string FilePath, std::string Name = "");
+		void SaveFELineCollection(FELineCollection* LineCollection, std::string FilePath);
 
 		std::vector<std::string> GetPointCloudIDList();
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();
@@ -200,6 +215,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FETexture*> Textures;
 		std::unordered_map<std::string, FEMaterial*> Materials;
 		std::unordered_map<std::string, FEMesh*> Meshes;
+		std::unordered_map<std::string, FELineCollection*> LineCollections;
 		std::unordered_map<std::string, FEPointCloud*> PointClouds;
 		std::unordered_map<std::string, FEGameModel*> GameModels;
 		std::unordered_map<std::string, FEPrefab*> Prefabs;

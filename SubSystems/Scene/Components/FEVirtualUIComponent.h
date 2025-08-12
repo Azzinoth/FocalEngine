@@ -21,9 +21,6 @@ namespace FocalEngine
 		int GetWidth() const;
 		int GetHeight() const;
 
-		bool IsVisible() const;
-		void SetVisibility(bool NewValue);
-
 		bool IsInputActive() const;
 		void SetInputActive(bool NewValue);
 

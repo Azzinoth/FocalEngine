@@ -15,12 +15,6 @@ FERenderer::FERenderer()
 
 void FERenderer::Init()
 {
-	RENDERER.InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
-																				  RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str(),
-																				  nullptr, nullptr, nullptr, nullptr,
-																				  "7E0826291010377D564F6115");
-	RESOURCE_MANAGER.SetTagInternal(RENDERER.InstancedLineShader, ENGINE_RESOURCE_TAG);
-
 	FEShader* FEScreenQuadShader = RESOURCE_MANAGER.CreateShader("FEScreenQuadShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl").c_str()).c_str(),
 																					   RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_FS.glsl").c_str()).c_str(),
 																					   nullptr, nullptr, nullptr, nullptr,
@@ -562,11 +556,11 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 	{
 		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
-		if (!GameModelComponent.IsVisible() /*|| !GameModelComponent.IsPostprocessApplied()*/)
-			continue;
-
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) /*|| !GameModelComponent.IsPostprocessApplied()*/)
 			continue;
 
 		if (!Entity->HasComponent<FEInstancedComponent>())
@@ -588,6 +582,16 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		}
 	}
 
+	entt::basic_view LinesView = CurrentScene->Registry.view<FELineComponent, FETransformComponent>();
+	for (auto [EnTTEntity, LineComponent, TransformComponent] : LinesView.each())
+	{
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
+		LINE_SYSTEM.Render(Entity, MainCameraEntity);
+	}
+
 	RenderLinesInternal(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
 
 	entt::basic_view VirtualUIView = CurrentScene->Registry.view<FEVirtualUIComponent, FETransformComponent>();
@@ -597,8 +601,8 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
-		//if (!VirtualUIComponent.IsVisible())
-		//	continue;
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
+			continue;
 
 		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
@@ -613,7 +617,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
-		if (!PointCloudComponent.IsVisible())
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::POINT_CLOUD))
 			continue;
 
 		if (PointCloudComponent.GetPointCloud() == nullptr)
@@ -937,7 +941,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 					if (Entity == nullptr)
 						continue;
 
-					if (!TerrainComponent.IsCastingShadows() || !TerrainComponent.IsVisible())
+					if (!TerrainComponent.IsCastingShadows() || !Entity->IsComponentVisible(ComponentVisibilityType::TERRAIN))
 						continue;
 
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
@@ -949,10 +953,13 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 				{
 					auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
-					if (!GameModelComponent.IsCastShadows() || !GameModelComponent.IsVisible())
+					FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+					if (Entity == nullptr)
 						continue;
 
-					FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+					if (!GameModelComponent.IsCastShadows() || !Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL))
+						continue;
+
 					if (GameModelComponent.GetGameModel() == nullptr)
 						continue;
 					FEMaterial* OriginalMaterial = GameModelComponent.GetGameModel()->Material;
@@ -1079,10 +1086,13 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	{
 		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
-		if (!GameModelComponent.IsVisible() || !GameModelComponent.IsPostprocessApplied())
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
 			continue;
 
-		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) || !GameModelComponent.IsPostprocessApplied())
+			continue;
+
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
@@ -1113,8 +1123,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
-		//if (!VirtualUIComponent.IsVisible())
-		//	continue;
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
+			continue;
 
 		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
@@ -1125,7 +1135,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
-		if (!TerrainComponent.IsVisible())
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::TERRAIN))
 			continue;
 
 		RenderTerrainComponent(Entity, MainCameraEntity);
@@ -1140,7 +1150,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
-		if (!PointCloudComponent.IsVisible())
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::POINT_CLOUD))
 			continue;
 
 		if (PointCloudComponent.GetPointCloud() == nullptr)
@@ -1255,13 +1265,13 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 		if (!SKY_DOME_SYSTEM.IsEnabled())
 		{
-			CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(false);
+			CurrentEntity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, false);
 			break;
 		}
 
-		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(true);
+		CurrentEntity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, true);
 		RenderGameModelComponent(CurrentEntity, MainCameraEntity);
-		CurrentEntity->GetComponent<FEGameModelComponent>().SetVisibility(false);
+		CurrentEntity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, false);
 		// Only one sky dome is supported.
 		break;
 	}
@@ -1384,10 +1394,13 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	{
 		auto& [GameModelComponent, TransformComponent] = GameModelGroup.get<FEGameModelComponent, FETransformComponent>(EnTTEntity);
 
-		if (!GameModelComponent.IsVisible() || GameModelComponent.IsPostprocessApplied())
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
 			continue;
 
-		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) || GameModelComponent.IsPostprocessApplied())
+			continue;
+
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			RenderGameModelComponent(Entity, MainCameraEntity);
@@ -1439,24 +1452,19 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
-	static bool bNeedToUpdate = true;
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 
-	if (bNeedToUpdate && LineCounter != 0)
-	{
-		bNeedToUpdate = false;
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-		FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
-		FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
-	}
-
-	InstancedLineShader->Start();
-	InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
-	InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	InstancedLineShader->UpdateUniformData("FEWorldMatrix", WorldMatrixForLines);
-	InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
-	InstancedLineShader->LoadUniformsDataToGPU();
+	LINE_SYSTEM.InstancedLineShader->Start();
+	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
+	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
+	glm::mat4 IdentityMat4(1.0f);
+	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEWorldMatrix", IdentityMat4);
+	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
+	LINE_SYSTEM.InstancedLineShader->LoadUniformsDataToGPU();
 
 	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1464,14 +1472,15 @@ void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCamera
 	FE_GL_ERROR(glEnableVertexAttribArray(2));
 	FE_GL_ERROR(glEnableVertexAttribArray(3));
 	FE_GL_ERROR(glEnableVertexAttribArray(4));
-	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, LineCounter));
+	FE_GL_ERROR(glDrawArraysInstanced(GL_TRIANGLES, 0, 6, DebugLineCounter));
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glDisableVertexAttribArray(1));
 	FE_GL_ERROR(glDisableVertexAttribArray(2));
 	FE_GL_ERROR(glDisableVertexAttribArray(3));
 	FE_GL_ERROR(glDisableVertexAttribArray(4));
 	FE_GL_ERROR(glBindVertexArray(0));
-	InstancedLineShader->Stop();
+
+	LINE_SYSTEM.InstancedLineShader->Stop();
 }
 
 void FERenderer::Render(FEScene* CurrentScene)
@@ -1862,20 +1871,20 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void FERenderer::DrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, const glm::vec3 Color, const float Width)
+void FERenderer::DebugDrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, const glm::vec3 Color, const float Width)
 {
-	if (LineCounter >= FE_MAX_LINES)
+	if (DebugLineCounter >= FE_MAX_LINES)
 	{
 		//LOG.Add("Tring to draw more than maxLines", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
-	LinesBuffer[LineCounter].Begin = BeginPoint;
-	LinesBuffer[LineCounter].End = EndPoint;
-	LinesBuffer[LineCounter].Color = Color;
-	LinesBuffer[LineCounter].Width = Width;
+	LinesBuffer[DebugLineCounter].Begin = BeginPoint;
+	LinesBuffer[DebugLineCounter].End = EndPoint;
+	LinesBuffer[DebugLineCounter].Color = Color;
+	LinesBuffer[DebugLineCounter].Width = Width;
 
-	LineCounter++;
+	DebugLineCounter++;
 }
 
 void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
@@ -1953,25 +1962,25 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	// **************************** Distance Fog END ****************************
 }
 
-void FERenderer::DrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
+void FERenderer::DebugDrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
 {
 	// bottom plane
-	DrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
 
 	// upper plane
-	DrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
 
 	// connect two planes
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
+	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
 }
 
 void FERenderer::ForceShader(FEShader* Shader)
@@ -2332,7 +2341,7 @@ glm::ivec4 FERenderer::GetGLViewport()
 	return Viewport;
 }
 
-void FERenderer::DrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
+void FERenderer::DebugDrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
 {
 	if (Camera == nullptr)
 		return;
@@ -2389,10 +2398,10 @@ void FERenderer::DrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
 	glm::vec3 NearBottomLeft = IntersectionPoint.value();
 
 	// After we have 4 corners of near plane, we can draw lines between them.
-	RENDERER.DrawLine(NearTopRight, NearTopLeft, Color, LineWidth);
-	RENDERER.DrawLine(NearTopLeft, NearBottomLeft, Color, LineWidth);
-	RENDERER.DrawLine(NearBottomLeft, NearBottomRight, Color, LineWidth);
-	RENDERER.DrawLine(NearBottomRight, NearTopRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearTopRight, NearTopLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearTopLeft, NearBottomLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearBottomLeft, NearBottomRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearBottomRight, NearTopRight, Color, LineWidth);
 
 	// Find far plane corners
 	IntersectionPoint = Frustum.FarPlane.DoesIntersectPlanes(Frustum.TopPlane, Frustum.RightPlane);
@@ -2432,16 +2441,16 @@ void FERenderer::DrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
 	glm::vec3 FarBottomLeft = IntersectionPoint.value();
 
 	// Draw lines between far plane corners
-	RENDERER.DrawLine(FarTopRight, FarTopLeft, Color, LineWidth);
-	RENDERER.DrawLine(FarTopLeft, FarBottomLeft, Color, LineWidth);
-	RENDERER.DrawLine(FarBottomLeft, FarBottomRight, Color, LineWidth);
-	RENDERER.DrawLine(FarBottomRight, FarTopRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(FarTopRight, FarTopLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(FarTopLeft, FarBottomLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(FarBottomLeft, FarBottomRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(FarBottomRight, FarTopRight, Color, LineWidth);
 
 	// Draw lines between near and far plane corners
-	RENDERER.DrawLine(NearTopRight, FarTopRight, Color, LineWidth);
-	RENDERER.DrawLine(NearTopLeft, FarTopLeft, Color, LineWidth);
-	RENDERER.DrawLine(NearBottomLeft, FarBottomLeft, Color, LineWidth);
-	RENDERER.DrawLine(NearBottomRight, FarBottomRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearTopRight, FarTopRight, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearTopLeft, FarTopLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearBottomLeft, FarBottomLeft, Color, LineWidth);
+	RENDERER.DebugDrawLine(NearBottomRight, FarBottomRight, Color, LineWidth);
 }
 
 bool FERenderer::FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEFramebuffer* ResultingFrameBuffer)
@@ -2899,16 +2908,6 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 	CameraRenderingData->PointCloudIntermediateFrameBuffer->SetDepthAttachment(IntermediateDepthBuffer);
 
 	return true;
-}
-
-void FERenderer::SetWorldMatrixForLines(glm::mat4 NewWorldMatrix)
-{
-	WorldMatrixForLines = NewWorldMatrix;
-}
-
-glm::mat4 FERenderer::GetWorldMatrixForLines() const
-{
-	return WorldMatrixForLines;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

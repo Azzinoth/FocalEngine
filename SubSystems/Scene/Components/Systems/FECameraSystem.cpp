@@ -297,7 +297,6 @@ FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
 	return nullptr;
 }
 
-
 Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 {
 	Json::Value Root;

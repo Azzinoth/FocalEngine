@@ -10,7 +10,7 @@ extern "C" __declspec(dllexport) void* GetObjectManager()
 
 FEObjectManager::FEObjectManager()
 {
-	ObjectsByType.resize(16);
+	ObjectsByType.resize(17);
 }
 
 FEObjectManager::~FEObjectManager()

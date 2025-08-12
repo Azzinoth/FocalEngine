@@ -16,12 +16,6 @@ namespace FocalEngine
 		FEGameModel* DummyGameModel = nullptr;
 		FEGameModelComponent DummyGameModelComponent;
 
-		// FIXME: Not sure that using one game model for all virtual UIs is a good idea
-		// An unordered map will be used to control visibility
-		std::unordered_map<std::string, bool> VirtualUIIDToVisibilityMap;
-		bool IsVirtualUIVisible(const std::string& VirtualUIID) const;
-		void SetVirtualUIVisible(const std::string& VirtualUIID, bool bVisible);
-
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();

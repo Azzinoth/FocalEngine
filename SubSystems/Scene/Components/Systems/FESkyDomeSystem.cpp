@@ -47,7 +47,7 @@ void FESkyDomeSystem::OnMyComponentAdded(FEEntity* Entity)
 		return;
 
 	Entity->AddComponent<FEGameModelComponent>(SkyDomeGameModel);
-	Entity->GetComponent<FEGameModelComponent>().SetVisibility(false);
+	Entity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, false);
 }
 
 void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)

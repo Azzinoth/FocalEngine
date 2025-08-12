@@ -12,7 +12,7 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FEResourceManager;
 	public:
-		FEMesh() : FEObject(FE_MESH, "Name") {};
+		FEMesh() : FEObject(FE_MESH, "Unnamed Mesh") {};
 		FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name);
 		~FEMesh();
 

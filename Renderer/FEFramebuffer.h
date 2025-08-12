@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FEMaterial.h"
+#include "../ResourceManager/BaseResources/FEMaterial.h"
 
 namespace FocalEngine
 {

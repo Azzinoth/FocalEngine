@@ -2,7 +2,7 @@
 
 #include"FEEntity.h"
 #include "../ResourceManager/FEResourceManager.h"
-#include "../Renderer/FELine.h"
+#include "../ResourceManager/BaseResources/FELineCollection.h"
 #include "FENaiveSceneGraph.h"
 #include <typeindex>
 #include "entt.hpp"

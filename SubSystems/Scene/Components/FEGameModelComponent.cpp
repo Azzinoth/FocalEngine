@@ -9,7 +9,6 @@ FEGameModelComponent::FEGameModelComponent(FEGameModel* GameModelToSet)
 FEGameModelComponent::FEGameModelComponent(const FEGameModelComponent& Other)
 {
 	GameModel = Other.GameModel;
-	bVisible = Other.bVisible;
 	bCastShadows = Other.bCastShadows;
 	bReceiveShadows = Other.bReceiveShadows;
 	bUniformLighting = Other.bUniformLighting;
@@ -20,22 +19,11 @@ FEGameModelComponent::FEGameModelComponent(const FEGameModelComponent& Other)
 void FEGameModelComponent::operator=(const FEGameModelComponent& Other)
 {
 	GameModel = Other.GameModel;
-	bVisible = Other.bVisible;
 	bCastShadows = Other.bCastShadows;
 	bReceiveShadows = Other.bReceiveShadows;
 	bUniformLighting = Other.bUniformLighting;
 	bApplyPostprocess = Other.bApplyPostprocess;
 	bWireframeMode = Other.bWireframeMode;
-}
-
-bool FEGameModelComponent::IsVisible() const
-{
-	return bVisible;
-}
-
-void FEGameModelComponent::SetVisibility(bool NewValue)
-{
-	bVisible = NewValue;
 }
 
 bool FEGameModelComponent::IsCastShadows() const

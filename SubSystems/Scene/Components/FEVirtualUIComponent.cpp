@@ -2,7 +2,6 @@
 #include "../ResourceManager/FEResourceManager.h"
 #include "../FEEntity.h"
 
-#include "../Components/Systems/FEVirtualUISystem.h"
 using namespace FocalEngine;
 
 FEVirtualUIComponent::FEVirtualUIComponent(int Width, int Height, FEMesh* CanvasMesh)
@@ -529,20 +528,6 @@ void FEVirtualUIComponent::SetWindowToListen(FEWindow* Window)
 FEWindow* FEVirtualUIComponent::GetWindowToListen() const
 {
 	return WindowToListen;
-}
-
-bool FEVirtualUIComponent::IsVisible() const
-{
-	if (VirtualUI != nullptr)
-		return VIRTUAL_UI_SYSTEM.IsVirtualUIVisible(VirtualUI->GetID());
-
-	return false;
-}
-
-void FEVirtualUIComponent::SetVisibility(bool NewValue)
-{
-	if (VirtualUI != nullptr)
-		VIRTUAL_UI_SYSTEM.SetVirtualUIVisible(VirtualUI->GetID(), NewValue);
 }
 
 void FEVirtualUIComponent::ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady)

@@ -36,16 +36,6 @@ FETerrainComponent::FETerrainComponent()
 
 FETerrainComponent::~FETerrainComponent() {}
 
-bool FETerrainComponent::IsVisible()
-{
-	return bVisible;
-}
-
-void FETerrainComponent::SetVisibility(const bool NewValue)
-{
-	bVisible = NewValue;
-}
-
 bool FETerrainComponent::IsCastingShadows()
 {
 	return bCastShadows;

@@ -108,3 +108,21 @@ FEScene* FEEntity::GetParentScene()
 {
 	return ParentScene;
 }
+
+bool FEEntity::IsComponentVisible(ComponentVisibilityType Type)
+{
+	if (!HasComponent<FEVisibilityComponent>())
+		return true;
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	return VisibilityComponent.IsVisible(Type);
+}
+
+void FEEntity::SetComponentVisible(ComponentVisibilityType Type, bool Value)
+{
+	if (!HasComponent<FEVisibilityComponent>())
+		AddComponent<FEVisibilityComponent>();
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	VisibilityComponent.SetVisible(Type, Value);
+}
