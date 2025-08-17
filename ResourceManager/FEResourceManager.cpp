@@ -468,12 +468,18 @@ FETexture* FEResourceManager::LoadFETextureAsync(const char* FileName, const std
 
 FETexture* FEResourceManager::LoadFETexture(const char* FileName, const std::string Name, FETexture* ExistingTexture)
 {
+	if (FILE_SYSTEM.DoesFileExist(FileName) == false)
+	{
+		LOG.Add("File does not exist: " + std::string(FileName) + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return this->NoTexture;
+	}
+
 	std::fstream File;
 	File.open(FileName, std::ios::in | std::ios::binary | std::ios::ate);
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("Can't load file: ") + FileName + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 
@@ -1385,8 +1391,13 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const 
 
 FEMesh* FEResourceManager::LoadFEMesh(const char* FileName, const std::string Name)
 {
-	std::fstream File;
+	if (FILE_SYSTEM.DoesFileExist(FileName) == false)
+	{
+		LOG.Add("File does not exist: " + std::string(FileName) + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
+	}
 
+	std::fstream File;
 	File.open(FileName, std::ios::in | std::ios::binary);
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)

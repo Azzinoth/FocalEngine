@@ -12,6 +12,7 @@ namespace FocalEngine
 		
 		SINGLETON_PRIVATE_PART(FEVirtualUISystem)
 
+		FEShader* CanvasShader = nullptr;
 		FEMaterial* CanvasMaterial = nullptr;
 		FEGameModel* DummyGameModel = nullptr;
 		FEGameModelComponent DummyGameModelComponent;

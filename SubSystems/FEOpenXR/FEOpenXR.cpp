@@ -265,7 +265,7 @@ void FEOpenXR::SceneNodesUpdate()
 			LeftController = CurrentScene->CreateEntity("LeftController");
 			LeftController->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
 			FETransformComponent& LeftControllerTransform = LeftController->GetComponent<FETransformComponent>();
-			LeftControllerTransform.SetScale(glm::vec3(10.0f));
+			LeftControllerTransform.SetScale(StandardControllerScale);
 
 			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
 			FENaiveSceneGraphNode* LeftControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(LeftController->GetObjectID());
@@ -302,7 +302,7 @@ void FEOpenXR::SceneNodesUpdate()
 			RightController = CurrentScene->CreateEntity("RightController");
 			RightController->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
 			FETransformComponent& RightControllerTransform = RightController->GetComponent<FETransformComponent>();
-			RightControllerTransform.SetScale(glm::vec3(10.0f));
+			RightControllerTransform.SetScale(StandardControllerScale);
 
 			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(VRRigEntity->GetObjectID());
 			FENaiveSceneGraphNode* RightControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(RightController->GetObjectID());
@@ -345,18 +345,37 @@ FEEntity* FEOpenXR::GetVRHeadsetEntity() const
 
 bool FEOpenXR::SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLeftController)
 {
+	FEEntity* ControllerEntity = bLeftController ? LeftController : RightController;
+	std::string ControllerName = bLeftController ? "Left" : "Right";
+
 	if (CustomGameModel == nullptr)
 	{
-		LOG.Add("Custom game model is null in function SetCustomVRControllerModel()", "FE_LOG_OPENXR", FE_LOG_ERROR);
-		return false;
+		if (ControllerEntity == nullptr)
+		{
+			LOG.Add(ControllerName + " controller is null in function SetCustomVRControllerModel()", "FE_LOG_OPENXR", FE_LOG_ERROR);
+			return false;
+		}
+
+		if (!ControllerEntity->HasComponent<FEGameModelComponent>())
+		{
+			LOG.Add(ControllerName + " controller does not have FEGameModelComponent in function SetCustomVRControllerModel()", "FE_LOG_OPENXR", FE_LOG_ERROR);
+			return false;
+		}
+
+		ControllerEntity->GetComponent<FEGameModelComponent>().SetGameModel(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+		FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
+		ControllerTransform.SetScale(StandardControllerScale);
+
+		return true;
 	}
 
-	if (LeftController != nullptr && bLeftController)
-		LeftController->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
-	
+	if (CustomGameModel != nullptr && ControllerEntity != nullptr)
+	{
+		ControllerEntity->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
 
-	if (RightController != nullptr && !bLeftController)
-		RightController->GetComponent<FEGameModelComponent>().SetGameModel(CustomGameModel);
+		FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
+		ControllerTransform.SetScale(glm::vec3(1.0f));
+	}
 	
 	return true;
 }

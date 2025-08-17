@@ -163,6 +163,7 @@ namespace FocalEngine
 		friend class FETerrainSystem;
 		friend class FESkyDomeSystem;
 		friend class FENativeScriptSystem;
+		friend class FEVirtualUISystem;
 	public:
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();

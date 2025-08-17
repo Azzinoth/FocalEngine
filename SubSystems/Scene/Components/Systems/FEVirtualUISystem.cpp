@@ -12,21 +12,28 @@ extern "C" __declspec(dllexport) void* GetVirtualUISystem()
 
 FEVirtualUISystem::FEVirtualUISystem()
 {
+	RegisterOnComponentCallbacks();
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEVirtualUIComponent>(VirtualUIComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVirtualUIComponent>(VirtualUIComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVirtualUIComponent>(DuplicateVirtualUIComponent);
+
+	CanvasShader = RESOURCE_MANAGER.CreateShader("FEVirtualUISystem_CanvasShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_VS.glsl").c_str()).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_FS.glsl").c_str()).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"647C6C768E60130C68724124");
+
+	CanvasShader->SetTag(ENGINE_RESOURCE_TAG);
+
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();
 	CanvasMaterial->SetName("VirtualUISystem_CanvasMaterial");
 	RESOURCE_MANAGER.SetTagInternal(CanvasMaterial, ENGINE_RESOURCE_TAG);
-	CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	CanvasMaterial->Shader = CanvasShader;
 
 	DummyGameModel = RESOURCE_MANAGER.CreateGameModel();
 	DummyGameModel->SetName("VirtualUISystem_DummyGameModel");
 	DummyGameModel->SetMaterial(CanvasMaterial);
 	RESOURCE_MANAGER.SetTagInternal(DummyGameModel, ENGINE_RESOURCE_TAG);
 	DummyGameModelComponent.SetGameModel(DummyGameModel);
-
-	RegisterOnComponentCallbacks();
-	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEVirtualUIComponent>(VirtualUIComponentToJson);
-	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVirtualUIComponent>(VirtualUIComponentFromJson);
-	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVirtualUIComponent>(DuplicateVirtualUIComponent);
 }
 
 void FEVirtualUISystem::RegisterOnComponentCallbacks()
@@ -152,15 +159,8 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FECameraCompo
 	}
 	FEVirtualUIComponent& VirtualUIComponent = Entity->GetComponent<FEVirtualUIComponent>();
 
-	FEShader* OriginalShader = CanvasMaterial->Shader;
-	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
-		CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("5E45017E664A62273E191500"/*"FEPBRShaderForward"*/);
-
 	RenderVirtualUIComponent(Entity, CanvasMaterial);
 	CanvasMaterial->ClearAllTexturesInfo();
-
-	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
-		CanvasMaterial->Shader = OriginalShader;
 }
 
 void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* ForceMaterial)
@@ -185,13 +185,14 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* F
 	if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 		return;
 
-	ForceMaterial->SetAlbedoMap(VirtualUIComponent.Framebuffer->GetColorAttachment());
 	DummyGameModel->SetMaterial(ForceMaterial);
 	DummyGameModel->SetMesh(VirtualUIComponent.CanvasMesh);
+	VirtualUIComponent.Framebuffer->GetColorAttachment()->Bind(0);
 
-	RENDERER.RenderGameModelComponent(DummyGameModelComponent, Entity->GetComponent<FETransformComponent>(), Entity->GetParentScene(), nullptr, true);
+	FEEntity* CameraEntity = CAMERA_SYSTEM.GetMainCamera(Entity->GetParentScene());
+	RENDERER.RenderGameModelComponent(DummyGameModelComponent, Entity->GetComponent<FETransformComponent>(), Entity->GetParentScene(), CameraEntity, true);
 
-	ForceMaterial->SetAlbedoMap(nullptr);
+	VirtualUIComponent.Framebuffer->GetColorAttachment()->UnBind();
 	DummyGameModel->SetMaterial(nullptr);
 	DummyGameModel->SetMesh(nullptr);
 	CanvasMaterial->SetAlbedoMap(nullptr);

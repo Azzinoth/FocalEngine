@@ -27,6 +27,8 @@ namespace FocalEngine
 
 		void PollEvents();
 
+		const glm::vec3 StandardControllerScale = glm::vec3(5.0f);
+
 		// Scene representation of VR rig, like headset, controllers, etc.
 		FEEntity* VRRigEntity = nullptr;
 		FEEntity* VRHeadsetEntity = nullptr;

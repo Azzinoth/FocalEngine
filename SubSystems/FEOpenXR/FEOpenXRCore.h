@@ -165,7 +165,7 @@ namespace FocalEngine
 	struct FEOpenXRExtensionInfo
 	{
 		std::string Name;
-		uint32_t Version;
+		uint32_t Version = 0;
 	};
 
 	class FEOpenXRCore
@@ -186,10 +186,10 @@ namespace FocalEngine
 
 		bool bInitializedCorrectly = false;
 
-		XrInstance OpenXRInstance;
-		XrSystemId SystemID;
-		XrSession Session;
-		XrSessionState SessionState;
+		XrInstance OpenXRInstance = nullptr;
+		XrSystemId SystemID = 0;
+		XrSession Session = nullptr;
+		XrSessionState SessionState = XrSessionState::XR_SESSION_STATE_UNKNOWN;
 		XrSpace ApplicationSpace{ XR_NULL_HANDLE };
 
 		void CreateInstance();
