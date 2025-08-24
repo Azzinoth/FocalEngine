@@ -120,11 +120,13 @@ namespace FocalEngine
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();
 		FEPointCloud* GetPointCloud(std::string ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
-		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
-		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
-		FEPointCloud* ImportPointCloud(std::string FilePath);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		bool ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData);
+		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* ImportPointCloud(std::string FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
 		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
@@ -265,6 +267,8 @@ namespace FocalEngine
 		bool bIsLasLazFilesEnabled = false;
 		bool InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed = true);
 		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
+
+		static void LoadPointCloudFileAsyncCallBack(void* OutputData);
 	};
 #include "FEResourceManager.inl"
 

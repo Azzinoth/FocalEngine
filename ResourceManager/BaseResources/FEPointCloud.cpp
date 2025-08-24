@@ -126,5 +126,6 @@ bool FEPointCloud::GetComputeShaderBuffers(std::vector<GLuint>& OutBufferIDs) co
 	}
 
 	OutBufferIDs = ComputeShaderBuffers;
+	OutBufferIDs.insert(OutBufferIDs.begin(), ComputeShaderBuffer);
 	return true;
 }

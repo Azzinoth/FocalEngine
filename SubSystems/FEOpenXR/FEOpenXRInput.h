@@ -101,6 +101,9 @@ namespace FocalEngine
 
 		void TriggerHapticFeedback(float Amplitude, float Duration, float Frequency, bool bLeftHand);
 
+		void SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack);
+		void SetRightViveMenuClickCallBack(std::function<void()> UserCallBack);
+
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRInput)
 

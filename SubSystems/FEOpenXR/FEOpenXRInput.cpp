@@ -811,3 +811,15 @@ void FEOpenXRInput::SetRightViveSqueezeReleaseCallBack(std::function<void()> Use
 	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
 	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
+
+void FEOpenXRInput::SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("vive_menu_click");
+    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::SetRightViveMenuClickCallBack(std::function<void()> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("vive_menu_click");
+    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+}
