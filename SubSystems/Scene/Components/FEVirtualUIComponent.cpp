@@ -349,7 +349,7 @@ FEAABB FEVirtualUIComponent::GetAABB() const
 
 void FEVirtualUIComponent::MouseMoveListener(double Xpos, double Ypos)
 {
-	// Not useing bRayColidingWithCanvas here because we want to call UpdateRayIntersection() to determine bRayColidingWithCanvas value.
+	// Not using bRayColidingWithCanvas here because we want to call UpdateRayIntersection() to determine the bRayColidingWithCanvas value.
 	if (!bActiveInput || !bMouseMovePassThrough)
 		return;
 
@@ -382,7 +382,10 @@ bool FEVirtualUIComponent::SetMouseMovePassThrough(bool NewValue)
 
 void FEVirtualUIComponent::CharListener(unsigned int Codepoint)
 {
-	if (!bActiveInput || !bRayColidingWithCanvas || !bCharPassThrough)
+	if (!bActiveInput || !bCharPassThrough)
+		return;
+
+	if (!bRayColidingWithCanvas && bKeyboardInputRequiresRayCollision)
 		return;
 
 	InvokeCharInput(Codepoint);
@@ -407,7 +410,10 @@ bool FEVirtualUIComponent::SetCharPassThrough(bool NewValue)
 
 void FEVirtualUIComponent::KeyListener(int Key, int Scancode, int Action, int Mods)
 {
-	if (!bActiveInput || !bRayColidingWithCanvas || !bKeyPassThrough)
+	if (!bActiveInput || !bKeyPassThrough)
+		return;
+
+	if (!bRayColidingWithCanvas && bKeyboardInputRequiresRayCollision)
 		return;
 
 	InvokeKeyInput(Key, Scancode, Action, Mods);
@@ -538,4 +544,14 @@ void FEVirtualUIComponent::ExecuteFunctionToAddFont(std::function<void()> Func, 
 bool FEVirtualUIComponent::IsLastProvidedRayIntersectingCanvas() const
 {
 	return bRayColidingWithCanvas;
+}
+
+bool FEVirtualUIComponent::IsKeyboardInputRequiresRayCollision() const
+{
+	return bKeyboardInputRequiresRayCollision;
+}
+
+void FEVirtualUIComponent::SetKeyboardInputRequiresRayCollision(bool NewValue)
+{
+	bKeyboardInputRequiresRayCollision = NewValue;
 }

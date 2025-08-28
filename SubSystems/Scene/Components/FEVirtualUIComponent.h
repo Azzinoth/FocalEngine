@@ -91,6 +91,9 @@ namespace FocalEngine
 		void ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady);
 
 		bool IsLastProvidedRayIntersectingCanvas() const;
+
+		bool IsKeyboardInputRequiresRayCollision() const;
+		void SetKeyboardInputRequiresRayCollision(bool NewValue);
 	private:
 		FEEntity* ParentEntity = nullptr;
 
@@ -140,5 +143,7 @@ namespace FocalEngine
 
 		bool InteractionRayToCanvasSpace(glm::dvec3 RayOrigin, glm::dvec3 RayDirection, glm::vec2* IntersectionPointInUVCanvasSpace, glm::vec3* IntersectionPointIn3DSpace = nullptr);
 		void InvokeMouseEnterCallback(int Entered);
+
+		bool bKeyboardInputRequiresRayCollision = true;
 	};
 }

@@ -11,12 +11,19 @@ namespace FocalEngine
 		const int COUNT = 2;
 	}
 
-	enum FE_VR_CONTROLLER_TYPE
+	enum class FE_VR_CONTROLLER_STATE_CHANGE
 	{
-		FE_VR_CONTROLLER_TYPE_NONE = 0,
-		FE_VR_CONTROLLER_TYPE_ANY = 1,
-		FE_VR_CONTROLLER_TYPE_VALVE_INDEX = 2,
-		FE_VR_CONTROLLER_TYPE_VIVE = 3
+		CONNECTED = 0,
+		DISCONNECTED = 1,
+		RECONNECTED = 2
+	};
+
+	enum class FE_VR_CONTROLLER_TYPE
+	{
+		NONE = 0,
+		ANY = 1,
+		VALVE_INDEX = 2,
+		VIVE = 3
 	};
 
 #define FE_DEBUG_VR_CONTROLLER_LOGGING 0
@@ -43,7 +50,7 @@ namespace FocalEngine
 		std::string CurrentlyActiveInteractionProfile(bool bLeftController);
 
 		// "Trigger" Button
-		void SetLeftTriggerPressCallBack(std::function<void ()> UserCallBack);
+		void SetLeftTriggerPressCallBack(std::function<void()> UserCallBack);
 		void SetRightTriggerPressCallBack(std::function<void()> UserCallBack);
 
 		void SetLeftTriggerReleaseCallBack(std::function<void()> UserCallBack);
@@ -104,6 +111,7 @@ namespace FocalEngine
 		void SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack);
 		void SetRightViveMenuClickCallBack(std::function<void()> UserCallBack);
 
+		void AddControllerStateChangeCallback(std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)> UserCallBack);
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRInput)
 
@@ -143,7 +151,7 @@ namespace FocalEngine
 			XrAction ActionHandle{ XR_NULL_HANDLE };
 			XrActionType ActionType;
 			std::vector<FE_VR_CONTROLLER_TYPE> WorksWith;
-			std::string Name = "none";
+			std::string Name = "None";
 
 			std::string LeftComponentPath;
 			std::string RightComponentPath;
@@ -205,6 +213,12 @@ namespace FocalEngine
 		void HandleAction(FEVRActionData* Action);
 
 		void RegisterAllControllersInOpenXR();
+
+		unsigned long long LastFrameInsexLeftControllerWasActive = -1;
+		unsigned long long LastFrameInsexRightControllerWasActive = -1;
+		void CheckControllerConnectionStatusChanges();
+		void TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change);
+		std::vector<std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)>> ControllerConnectionStatusChangeUserCallBacks;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

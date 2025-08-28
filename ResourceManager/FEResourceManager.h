@@ -129,7 +129,9 @@ namespace FocalEngine
 		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
+		bool SaveRawDataToPLY(std::vector<FEPointCloudVertex>& RawData, std::string FilePath);
 		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
+		bool SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, std::string FilePath, bool bIsCompressed = true);
 		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath);
 		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);
@@ -265,7 +267,6 @@ namespace FocalEngine
 		std::vector<glm::vec3> ExtractNormalsFromPLYData(FERawPLYData* PLYData);
 
 		bool bIsLasLazFilesEnabled = false;
-		bool InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed = true);
 		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
 
 		static void LoadPointCloudFileAsyncCallBack(void* OutputData);

@@ -36,6 +36,9 @@ namespace FocalEngine
 		FEEntity* RightController = nullptr;
 
 		void SceneNodesUpdate();
+
+		bool TryToAddVRRigToScene(FEScene* Scene);
+		static void OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

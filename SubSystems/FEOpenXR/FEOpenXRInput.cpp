@@ -1,6 +1,7 @@
 #include "FEOpenXRInput.h"
-
 using namespace FocalEngine;
+
+#include "../FEngine.h"
 
 #ifdef FOCAL_ENGINE_SHARED
 extern "C" __declspec(dllexport) void* GetOpenXRInput()
@@ -12,169 +13,169 @@ extern "C" __declspec(dllexport) void* GetOpenXRInput()
 FEOpenXRInput::FEOpenXRInput()
 {
     FEVRControllerActionBindings ValveIndex;
-    ValveIndex.ControllerType = FE_VR_CONTROLLER_TYPE::FE_VR_CONTROLLER_TYPE_VALVE_INDEX;
+    ValveIndex.ControllerType = FE_VR_CONTROLLER_TYPE::VALVE_INDEX;
     ValveIndex.OpenXRPath = "/interaction_profiles/valve/index_controller";
-    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE_VALVE_INDEX] = ValveIndex;
+    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE::VALVE_INDEX] = ValveIndex;
 
     FEVRControllerActionBindings Vive;
-    Vive.ControllerType = FE_VR_CONTROLLER_TYPE::FE_VR_CONTROLLER_TYPE_VIVE;
+    Vive.ControllerType = FE_VR_CONTROLLER_TYPE::VIVE;
     Vive.OpenXRPath = "/interaction_profiles/htc/vive_controller";
-    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE_VIVE] = Vive;
+    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE::VIVE] = Vive;
 
     FEVRActionPoseData* ControllerPose = new FEVRActionPoseData();
-    ControllerPose->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_ANY);
+    ControllerPose->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::ANY);
     ControllerPose->Name = "controller_pose";
     ControllerPose->LeftComponentPath = "/user/hand/left/input/grip/pose";
     ControllerPose->RightComponentPath = "/user/hand/right/input/grip/pose";
     AllActions.push_back(ControllerPose);
 
     FEVRActionBooleanData* TriggerClick = new FEVRActionBooleanData();
-    TriggerClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_ANY);
+    TriggerClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::ANY);
     TriggerClick->Name = "trigger_click";
     TriggerClick->LeftComponentPath = "/user/hand/left/input/trigger/click";
     TriggerClick->RightComponentPath = "/user/hand/right/input/trigger/click";
     AllActions.push_back(TriggerClick);
 
     FEVRActionBooleanData* AButtonClick = new FEVRActionBooleanData();
-    AButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    AButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     AButtonClick->Name = "a_button_click";
     AButtonClick->LeftComponentPath = "/user/hand/left/input/a/click";
     AButtonClick->RightComponentPath = "/user/hand/right/input/a/click";
     AllActions.push_back(AButtonClick);
 
     FEVRActionBooleanData* BButtonClick = new FEVRActionBooleanData();
-    BButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    BButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     BButtonClick->Name = "b_button_click";
     BButtonClick->LeftComponentPath = "/user/hand/left/input/b/click";
     BButtonClick->RightComponentPath = "/user/hand/right/input/b/click";
     AllActions.push_back(BButtonClick);
 
     FEVRActionBooleanData* AButtonTouch = new FEVRActionBooleanData();
-    AButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    AButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     AButtonTouch->Name = "a_button_touch";
     AButtonTouch->LeftComponentPath = "/user/hand/left/input/a/touch";
     AButtonTouch->RightComponentPath = "/user/hand/right/input/a/touch";
     AllActions.push_back(AButtonTouch);
 
     FEVRActionBooleanData* BButtonTouch = new FEVRActionBooleanData();
-    BButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    BButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     BButtonTouch->Name = "b_button_touch";
     BButtonTouch->LeftComponentPath = "/user/hand/left/input/b/touch";
     BButtonTouch->RightComponentPath = "/user/hand/right/input/b/touch";
     AllActions.push_back(BButtonTouch);
 
     FEVRActionBooleanData* TriggerTouch = new FEVRActionBooleanData();
-    TriggerTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    TriggerTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     TriggerTouch->Name = "trigger_touch";
     TriggerTouch->LeftComponentPath = "/user/hand/left/input/trigger/touch";
     TriggerTouch->RightComponentPath = "/user/hand/right/input/trigger/touch";
     AllActions.push_back(TriggerTouch);
 
     FEVRActionFloatData* TriggerValue = new FEVRActionFloatData();
-    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     TriggerValue->Name = "trigger_value";
     TriggerValue->LeftComponentPath = "/user/hand/left/input/trigger/value";
     TriggerValue->RightComponentPath = "/user/hand/right/input/trigger/value";
     AllActions.push_back(TriggerValue);
 
     FEVRActionBooleanData* ThumbstickTouch = new FEVRActionBooleanData();
-    ThumbstickTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ThumbstickTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ThumbstickTouch->Name = "thumbstick_touch";
     ThumbstickTouch->LeftComponentPath = "/user/hand/left/input/thumbstick/touch";
     ThumbstickTouch->RightComponentPath = "/user/hand/right/input/thumbstick/touch";
     AllActions.push_back(ThumbstickTouch);
 
     FEVRActionBooleanData* ThumbstickClick = new FEVRActionBooleanData();
-    ThumbstickClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ThumbstickClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ThumbstickClick->Name = "thumbstick_click";
     ThumbstickClick->LeftComponentPath = "/user/hand/left/input/thumbstick/click";
     ThumbstickClick->RightComponentPath = "/user/hand/right/input/thumbstick/click";
     AllActions.push_back(ThumbstickClick);
 
     FEVRActionFloatData* ValveThumbstickX = new FEVRActionFloatData();
-    ValveThumbstickX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ValveThumbstickX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ValveThumbstickX->Name = "valve_thumbstick_x";
     ValveThumbstickX->LeftComponentPath = "/user/hand/left/input/thumbstick/x";
     ValveThumbstickX->RightComponentPath = "/user/hand/right/input/thumbstick/x";
     AllActions.push_back(ValveThumbstickX);
 
     FEVRActionFloatData* ValveThumbstickY = new FEVRActionFloatData();
-    ValveThumbstickY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ValveThumbstickY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ValveThumbstickY->Name = "valve_thumbstick_y";
     ValveThumbstickY->LeftComponentPath = "/user/hand/left/input/thumbstick/y";
     ValveThumbstickY->RightComponentPath = "/user/hand/right/input/thumbstick/y";
     AllActions.push_back(ValveThumbstickY);
 
     FEVRActionBooleanData* TrackpadTouch = new FEVRActionBooleanData();
-    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     TrackpadTouch->Name = "trackpad_touch";
     TrackpadTouch->LeftComponentPath = "/user/hand/left/input/trackpad/touch";
     TrackpadTouch->RightComponentPath = "/user/hand/right/input/trackpad/touch";
     AllActions.push_back(TrackpadTouch);
 
     FEVRActionFloatData* ValveTrackpadForce = new FEVRActionFloatData();
-    ValveTrackpadForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ValveTrackpadForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ValveTrackpadForce->Name = "valve_trackpad_force";
     ValveTrackpadForce->LeftComponentPath = "/user/hand/left/input/trackpad/force";
     ValveTrackpadForce->RightComponentPath = "/user/hand/right/input/trackpad/force";
     AllActions.push_back(ValveTrackpadForce);
 
     FEVRActionFloatData* TrackpadX = new FEVRActionFloatData();
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     TrackpadX->Name = "trackpad_x";
     TrackpadX->LeftComponentPath = "/user/hand/left/input/trackpad/x";
     TrackpadX->RightComponentPath = "/user/hand/right/input/trackpad/x";
     AllActions.push_back(TrackpadX);
 
     FEVRActionFloatData* TrackpadY = new FEVRActionFloatData();
-    TrackpadY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    TrackpadY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     TrackpadY->Name = "trackpad_y";
     TrackpadY->LeftComponentPath = "/user/hand/left/input/trackpad/y";
     TrackpadY->RightComponentPath = "/user/hand/right/input/trackpad/y";
     AllActions.push_back(TrackpadY);
 
     FEVRActionFloatData* ValveSqueezeValue = new FEVRActionFloatData();
-    ValveSqueezeValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ValveSqueezeValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ValveSqueezeValue->Name = "valve_squeeze_value";
     ValveSqueezeValue->LeftComponentPath = "/user/hand/left/input/squeeze/value";
     ValveSqueezeValue->RightComponentPath = "/user/hand/right/input/squeeze/value";
     AllActions.push_back(ValveSqueezeValue);
 
     FEVRActionFloatData* ValveSqueezeForce = new FEVRActionFloatData();
-    ValveSqueezeForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
+    ValveSqueezeForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
     ValveSqueezeForce->Name = "valve_squeeze_force";
     ValveSqueezeForce->LeftComponentPath = "/user/hand/left/input/squeeze/force";
     ValveSqueezeForce->RightComponentPath = "/user/hand/right/input/squeeze/force";
     AllActions.push_back(ValveSqueezeForce);
 
     FEVRActionVibrationOutputData* Vibrate = new FEVRActionVibrationOutputData();
-    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     Vibrate->Name = "vibrate_hand";
     Vibrate->LeftComponentPath = "/user/hand/left/output/haptic";
     Vibrate->RightComponentPath = "/user/hand/right/output/haptic";
     AllActions.push_back(Vibrate);
 
     FEVRActionBooleanData* ViveSqueezeClick = new FEVRActionBooleanData();
-    ViveSqueezeClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    ViveSqueezeClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     ViveSqueezeClick->Name = "vive_squeeze_click";
     ViveSqueezeClick->LeftComponentPath = "/user/hand/left/input/squeeze/click";
     ViveSqueezeClick->RightComponentPath = "/user/hand/right/input/squeeze/click";
     AllActions.push_back(ViveSqueezeClick);
 
     FEVRActionBooleanData* ViveMenuClick = new FEVRActionBooleanData();
-    ViveMenuClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    ViveMenuClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     ViveMenuClick->Name = "vive_menu_click";
     ViveMenuClick->LeftComponentPath = "/user/hand/left/input/menu/click";
     ViveMenuClick->RightComponentPath = "/user/hand/right/input/menu/click";
     AllActions.push_back(ViveMenuClick);
 
     FEVRActionBooleanData* TrackpadClick = new FEVRActionBooleanData();
-    TrackpadClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
+    TrackpadClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
     TrackpadClick->Name = "trackpad_click";
     TrackpadClick->LeftComponentPath = "/user/hand/left/input/trackpad/click";
     TrackpadClick->RightComponentPath = "/user/hand/right/input/trackpad/click";
@@ -203,7 +204,7 @@ void FEOpenXRInput::RegisterAllControllersInOpenXR()
             bool bWorksWith = false;
             for (size_t j = 0; j < AllActions[i]->WorksWith.size(); j++)
             {
-                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE_ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
+                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE::ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
 				{
 					bWorksWith = true;
 					break;
@@ -379,6 +380,60 @@ void FEOpenXRInput::HandleBooleanAction(FEVRActionBooleanData& CurrentActionBool
     }
 }
 
+void FEOpenXRInput::CheckControllerConnectionStatusChanges()
+{
+    if (IsLeftControllerConnectedAndTracked() && LastFrameInsexLeftControllerWasActive == unsigned long long(-1))
+    {
+        TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::CONNECTED);
+        LastFrameInsexLeftControllerWasActive = ENGINE.GetCurrentFrameIndex();
+    }
+
+    if (LastFrameInsexLeftControllerWasActive != unsigned long long(-1))
+    {
+		unsigned long long FramesSinceLastActive = ENGINE.GetCurrentFrameIndex() - LastFrameInsexLeftControllerWasActive;
+        if (FramesSinceLastActive > 1)
+        {
+            if (IsLeftControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::RECONNECTED);
+            }
+            else if (!IsLeftControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::DISCONNECTED);
+            }
+        }
+    }
+
+    if (IsLeftControllerConnectedAndTracked())
+        LastFrameInsexLeftControllerWasActive = ENGINE.GetCurrentFrameIndex();
+
+	// Right controller
+    if (IsRightControllerConnectedAndTracked() && LastFrameInsexRightControllerWasActive == unsigned long long(-1))
+    {
+        TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::CONNECTED);
+        LastFrameInsexRightControllerWasActive = ENGINE.GetCurrentFrameIndex();
+    }
+    
+    if (LastFrameInsexRightControllerWasActive != unsigned long long(-1))
+    {
+        unsigned long long FramesSinceLastActive = ENGINE.GetCurrentFrameIndex() - LastFrameInsexRightControllerWasActive;
+        if (FramesSinceLastActive > 1)
+        {
+            if (IsRightControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::RECONNECTED);
+            }
+            else if (!IsRightControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::DISCONNECTED);
+            }
+        }
+    }
+
+    if (IsRightControllerConnectedAndTracked())
+        LastFrameInsexRightControllerWasActive = ENGINE.GetCurrentFrameIndex();
+}
+
 void FEOpenXRInput::Update()
 {
     CurrentInputState.HandActive = { XR_FALSE, XR_FALSE };
@@ -396,6 +451,7 @@ void FEOpenXRInput::Update()
     }
 
     UpdateControllerSpaceLocation();
+    CheckControllerConnectionStatusChanges();
 }
 
 void FEOpenXRInput::HandleAction(FEVRActionData* Action)
@@ -822,4 +878,19 @@ void FEOpenXRInput::SetRightViveMenuClickCallBack(std::function<void()> UserCall
 {
     FEVRActionData* Action = GetActionDataByName("vive_menu_click");
     reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change)
+{
+    for (size_t i = 0; i < ControllerConnectionStatusChangeUserCallBacks.size(); i++)
+    {
+        if (ControllerConnectionStatusChangeUserCallBacks[i] != nullptr)
+			ControllerConnectionStatusChangeUserCallBacks[i](bLeftController, Change);
+    }
+}
+
+void FEOpenXRInput::AddControllerStateChangeCallback(std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)> UserCallBack)
+{
+    if (UserCallBack != nullptr)
+        ControllerConnectionStatusChangeUserCallBacks.push_back(UserCallBack);
 }
