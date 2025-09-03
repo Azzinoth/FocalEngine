@@ -509,7 +509,7 @@ void FEInstancedSystem::AddInstances(FEEntity* Entity, FEGameModelComponent& Gam
 	}
 }
 
-FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity)
+FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity, bool bLocalAABB)
 {
 	if (Entity == nullptr)
 		return FEAABB();

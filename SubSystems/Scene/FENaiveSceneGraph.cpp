@@ -52,7 +52,7 @@ std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTran
 	NewNode = GetNodeByEntityID(Entity->GetObjectID());
 	if (NewNode != nullptr)
 	{
-		LOG.Add("Entity already exists in the scene graph", "FE_LOG_SCENE", FE_LOG_WARNING);
+		LOG.Add("Entity already exists in the scene graph", "FE_SCENE_GRAPH", FE_LOG_WARNING);
 		// Entity already exists in the scene graph
 		return NewNode->GetObjectID();
 	}
@@ -177,14 +177,14 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* Node
 	FENaiveSceneGraphNode* Result = nullptr;
 	if (NodeFromDifferentSceneGraph == nullptr)
 	{
-		LOG.Add("NodeFromDifferentSceneGraph is nullptr in FENaiveSceneGraph::ImportEntity", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("NodeFromDifferentSceneGraph is nullptr in FENaiveSceneGraph::ImportEntity", "FE_SCENE_GRAPH", FE_LOG_ERROR);
 		return Result;
 	}
 	
 	FEEntity* EntityFromDifferentScene = NodeFromDifferentSceneGraph->Entity;
 	if (EntityFromDifferentScene->GetParentScene() == ParentScene)
 	{
-		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_LOG_ECS", FE_LOG_WARNING);
+		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_SCENE_GRAPH", FE_LOG_WARNING);
 		return Result;
 	}
 

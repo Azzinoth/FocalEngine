@@ -83,7 +83,7 @@ namespace FocalEngine
 		void DeleteEntity(FEEntity* Entity);
 
 		FEAABB GetEntityAABB(std::string ID);
-		FEAABB GetEntityAABB(FEEntity* Entity);
+		FEAABB GetEntityAABB(FEEntity* Entity, bool bLocalAABB = false);
 		FEAABB GetSceneAABB(std::function<bool(FEEntity*)> Filter = nullptr);
 
 		// Asset Management

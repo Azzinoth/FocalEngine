@@ -612,7 +612,7 @@ FEAABB FEScene::GetEntityAABB(std::string ID)
 	return GetEntityAABB(EntityMap[ID]);
 }
 
-FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
+FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
 {
 	FEAABB Result;
 
@@ -625,7 +625,11 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 	if (Entity->HasComponent<FEGameModelComponent>())
 	{
 		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GetGameModel();
-		Result = GameModel->GetMesh()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		Result = GameModel->GetMesh()->GetAABB();
+		if (Result.GetLongestAxisLength() == 0.0f)
+			Result = Result.Transform(glm::mat4(1.0f));
+		if (!bLocalAABB)
+			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 
 	if (Entity->HasComponent<FEInstancedComponent>())
@@ -645,7 +649,9 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 
 	if (Entity->HasComponent<FEPointCloudComponent>() && Entity->GetComponent<FEPointCloudComponent>().GetPointCloud() != nullptr)
 	{
-		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB();
+		if (!bLocalAABB)
+			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 
 	// If entity has no renderable components, we can have FEAABB with zero volume.

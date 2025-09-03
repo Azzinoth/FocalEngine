@@ -42,7 +42,8 @@ namespace FocalEngine
 		void SetVsyncEnabled(bool NewValue);
 
 		void DisableVR();
-		bool EnableVR();
+		bool EnableVR(FERenderingPipeline VRRenderingPipeline = FERenderingPipeline::Deferred);
+		FERenderingPipeline GetVRRenderingPipeline() const;
 		bool IsVRInitializedCorrectly();
 		bool IsVREnabled();
 
@@ -90,6 +91,7 @@ namespace FocalEngine
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
 
 		unsigned long long CurentFrameIndex = 0;
+		FERenderingPipeline VRRenderingPipeline = FERenderingPipeline::Deferred;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

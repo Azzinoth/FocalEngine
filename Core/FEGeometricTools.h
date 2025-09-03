@@ -73,6 +73,8 @@ namespace FocalEngine
 
 		float GetLongestAxisLength();
 		bool ContainsPoint(const glm::vec3& Point) const;
+
+		glm::vec3 GetAproximateForwardDirection() const;
 	private:
 		glm::vec3 Min = glm::vec3(0.0f);
 		glm::vec3 Max = glm::vec3(0.0f);

@@ -64,7 +64,7 @@ namespace FocalEngine
 
 		void ClearInstance(FEEntity* Entity);
 
-		FEAABB GetAABB(FEEntity* Entity);
+		FEAABB GetAABB(FEEntity* Entity, bool bLocalAABB = false);
 
 		bool PopulateInstance(FEEntity* Entity, FESpawnInfo SpawnInfo);
 		

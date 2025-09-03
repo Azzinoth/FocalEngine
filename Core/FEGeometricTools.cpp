@@ -572,6 +572,63 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
+glm::vec3 FEAABB::GetAproximateForwardDirection() const
+{
+	glm::vec3 Result = glm::vec3(0.0f);
+	if (glm::all(glm::epsilonEqual(Size, glm::vec3(0.0f), glm::vec3(1e-6f))))
+		return Result;
+
+	// Find the largest and second largest axes
+	float Axes[3] = { Size.x, Size.y, Size.z };
+	int PrimaryAxis = 0;
+	int SecondaryAxis = 1;
+	int TertiaryAxis = 2;
+
+	// Sort to find primary (largest), secondary (middle), and tertiary (smallest) axes
+	if (Axes[1] > Axes[PrimaryAxis])
+	{
+		SecondaryAxis = PrimaryAxis;
+		PrimaryAxis = 1;
+	}
+	if (Axes[2] > Axes[PrimaryAxis])
+	{
+		TertiaryAxis = SecondaryAxis;
+		SecondaryAxis = PrimaryAxis;
+		PrimaryAxis = 2;
+	}
+	else if (Axes[2] > Axes[SecondaryAxis])
+	{
+		TertiaryAxis = SecondaryAxis;
+		SecondaryAxis = 2;
+	}
+
+	// Ensure tertiary axis is the remaining one
+	for (int i = 0; i < 3; i++)
+	{
+		if (i != PrimaryAxis && i != SecondaryAxis)
+		{
+			TertiaryAxis = i;
+			break;
+		}
+	}
+
+	// If it is a cube, return zero vector
+	if (abs(Axes[0] - Axes[1]) < 1e-6f && abs(Axes[1] - Axes[2]) < 1e-6f && abs(Axes[0] - Axes[2]) < 1e-6f)
+		return Result;
+
+	// Calculate the magnitude based on how much larger the primary axis is
+	if (Axes[PrimaryAxis] < 1e-6f || Axes[SecondaryAxis] < 1e-6f)
+	{
+		Result[TertiaryAxis] = 1.0f;
+		return Result;
+	}
+
+	float Magnitude = Axes[PrimaryAxis] / Axes[SecondaryAxis];
+	Result[TertiaryAxis] = Magnitude;
+
+	return Result;
+}
+
 bool FEGeometry::IsEpsilonEqual(const glm::dvec3& FirstVector, const glm::dvec3& SecondVector, double Epsilon)
 {
 	return std::abs(FirstVector.x - SecondVector.x) < Epsilon &&

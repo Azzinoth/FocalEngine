@@ -130,7 +130,7 @@ void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneCleari
 
 FETerrainSystem::~FETerrainSystem() {};
 
-FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity)
+FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity, bool bLocalAABB)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 		return FEAABB();
@@ -138,46 +138,26 @@ FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity)
 	FETransformComponent& TransformComponent = TerrainEntity->GetComponent<FETransformComponent>();
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
 	
-	if (TransformComponent.IsDirty() || TerrainComponent.bDirtyFlag)
-	{
-		if (TerrainComponent.bDirtyFlag)
-			TerrainComponent.bDirtyFlag = true;
-
-		if (TransformComponent.IsDirty())
-			TransformComponent.SetDirtyFlag(false);
-
-		FEAABB Result = TerrainComponent.AABB;
-		// -0.5f it is a little hack, because this -0.5f should be made during tessellation.
-		glm::vec3 Min = glm::vec3(-32.0f - 0.5f, TerrainComponent.AABB.GetMin()[1], -32.0f - 0.5f);
-		glm::vec3 Max = glm::vec3(32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f, TerrainComponent.AABB.GetMax()[1], 32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f);
-		Result = FEAABB(Min, Max);
-		Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMin()[2]),
-						glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMax()[2]));
-	
-		TerrainComponent.FinalAABB = Result.Transform(TransformComponent.GetWorldMatrix());
-	
-		TerrainComponent.XSize = TerrainComponent.FinalAABB.GetMax()[0] - TerrainComponent.FinalAABB.GetMin()[0];
-		TerrainComponent.ZSize = TerrainComponent.FinalAABB.GetMax()[2] - TerrainComponent.FinalAABB.GetMin()[2];
-	}
-	
-	return TerrainComponent.FinalAABB;
-}
-
-FEAABB FETerrainSystem::GetPureAABB(FEEntity* TerrainEntity)
-{
-	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
-		return FEAABB();
-
-	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
+	if (TransformComponent.IsDirty())
+		TransformComponent.SetDirtyFlag(false);
 
 	FEAABB Result = TerrainComponent.AABB;
-	glm::vec3 Min = glm::vec3(-32.0f, TerrainComponent.AABB.GetMin()[1], -32.0f);
-	glm::vec3 Max = glm::vec3(32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1), TerrainComponent.AABB.GetMax()[1], 32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1));
+	// -0.5f it is a little hack, because this -0.5f should be made during tessellation.
+	glm::vec3 Min = glm::vec3(-32.0f - 0.5f, TerrainComponent.AABB.GetMin()[1], -32.0f - 0.5f);
+	glm::vec3 Max = glm::vec3(32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f, TerrainComponent.AABB.GetMax()[1], 32.0f + 64.0f * (TerrainComponent.ChunkPerSide - 1) - 0.5f);
 	Result = FEAABB(Min, Max);
 	Result = FEAABB(glm::vec3(Result.GetMin()[0], Result.GetMin()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMin()[2]),
 					glm::vec3(Result.GetMax()[0], Result.GetMax()[1] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale, Result.GetMax()[2]));
 	
-	return Result;
+	TerrainComponent.FinalAABB = Result.Transform(TransformComponent.GetWorldMatrix());
+	
+	TerrainComponent.XSize = TerrainComponent.FinalAABB.GetMax()[0] - TerrainComponent.FinalAABB.GetMin()[0];
+	TerrainComponent.ZSize = TerrainComponent.FinalAABB.GetMax()[2] - TerrainComponent.FinalAABB.GetMin()[2];
+	
+	if (!bLocalAABB)
+		return Result;
+
+	return TerrainComponent.FinalAABB;
 }
 
 // **************************** TERRAIN EDITOR TOOLS ****************************

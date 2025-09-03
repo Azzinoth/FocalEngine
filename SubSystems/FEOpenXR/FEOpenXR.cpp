@@ -1,6 +1,7 @@
 #include "FEOpenXR.h"
-
 using namespace FocalEngine;
+
+#include "../FEngine.h"
 
 #ifdef FOCAL_ENGINE_SHARED
 extern "C" __declspec(dllexport) void* GetOpenXR()
@@ -332,7 +333,7 @@ bool FEOpenXR::TryToAddVRRigToScene(FEScene* Scene)
 			OpenXR_MANAGER.VRHeadsetEntity = Scene->CreateEntity("VRHeadset");
 			OpenXR_MANAGER.VRHeadsetEntity->AddComponent<FECameraComponent>();
 			FECameraComponent& VRHeadsetCamera = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FECameraComponent>();
-			//CAMERA_SYSTEM.SetCameraRenderingPipeline(VRHeadsetEntity, FERenderingPipeline::Forward_Simplified);
+			CAMERA_SYSTEM.SetCameraRenderingPipeline(VRHeadsetEntity, ENGINE.GetVRRenderingPipeline());
 			// FIXME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
 			VRHeadsetCamera.SetSSAOEnabled(false);
 
@@ -368,27 +369,6 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 		return;
 
 	OpenXR_MANAGER.TryToAddVRRigToScene(CurrentScene);
-
-	// FIXME: VRRigEntity also should be deleted if VR is not enabled?
-	if (OpenXR_MANAGER.VRRigEntity == nullptr)
-	{
-		if (OpenXR_MANAGER.VRRigEntity == nullptr)
-			OpenXR_MANAGER.VRRigEntity = CurrentScene->CreateEntity("VRRig");
-
-		if (OpenXR_MANAGER.VRHeadsetEntity == nullptr)
-		{
-			OpenXR_MANAGER.VRHeadsetEntity = CurrentScene->CreateEntity("VRHeadset");
-			OpenXR_MANAGER.VRHeadsetEntity->AddComponent<FECameraComponent>();
-			FECameraComponent& VRHeadsetCamera = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FECameraComponent>();
-			//CAMERA_SYSTEM.SetCameraRenderingPipeline(VRHeadsetEntity, FERenderingPipeline::Forward_Simplified);
-			// FIXME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
-			VRHeadsetCamera.SetSSAOEnabled(false);
-
-			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
-			FENaiveSceneGraphNode* VRHeadsetNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID());
-			CurrentScene->SceneGraph.MoveNode(VRHeadsetNode->GetObjectID(), VRRigNode->GetObjectID());
-		}
-	}
 
 	if (CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetObjectID()) == nullptr || CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID()) == nullptr)
 		return;

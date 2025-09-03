@@ -4532,7 +4532,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 
 	FEAABB PointCloudAABB;
 	// Before converting to float, we need to center the point cloud using 64 bit precision.
-	if (bCenterPositions && !RawPointCloudDataDouble.empty())
+	if (!RawPointCloudDataDouble.empty())
 	{
 		glm::dvec3 Min = glm::dvec3(DBL_MAX);
 		glm::dvec3 Max = glm::dvec3(-DBL_MAX);
@@ -4561,14 +4561,21 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		glm::dvec3 Extent = Max - Min;
 		glm::dvec3 Center = Min + Extent / 2.0;
 
-		for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
+		if (bCenterPositions)
 		{
-			RawPointCloudDataDouble[i].X = RawPointCloudDataDouble[i].X - Center.x;
-			RawPointCloudDataDouble[i].Y = RawPointCloudDataDouble[i].Y - Center.y;
-			RawPointCloudDataDouble[i].Z = RawPointCloudDataDouble[i].Z - Center.z;
-		}
+			for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
+			{
+				RawPointCloudDataDouble[i].X = RawPointCloudDataDouble[i].X - Center.x;
+				RawPointCloudDataDouble[i].Y = RawPointCloudDataDouble[i].Y - Center.y;
+				RawPointCloudDataDouble[i].Z = RawPointCloudDataDouble[i].Z - Center.z;
+			}
 
-		PointCloudAABB = FEAABB(Min - Center, Max - Center);
+			PointCloudAABB = FEAABB(Min - Center, Max - Center);
+		}
+		else
+		{
+			PointCloudAABB = FEAABB(Min, Max);
+		}
 	}
 
 	std::vector<FEPointCloudVertex> RawPointCloudData;
@@ -4586,7 +4593,36 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	RawPointCloudDataDouble.clear();
 
 	if (UserDataProcessor)
+	{
 		UserDataProcessor(RawPointCloudData);
+
+		// Points might have been removed or changed in the user data processor.
+		glm::dvec3 Min = glm::dvec3(DBL_MAX);
+		glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+
+		for (size_t i = 0; i < RawPointCloudData.size(); i++)
+		{
+			if (RawPointCloudData[i].X < Min.x)
+				Min.x = RawPointCloudData[i].X;
+
+			if (RawPointCloudData[i].X > Max.x)
+				Max.x = RawPointCloudData[i].X;
+
+			if (RawPointCloudData[i].Y < Min.y)
+				Min.y = RawPointCloudData[i].Y;
+
+			if (RawPointCloudData[i].Y > Max.y)
+				Max.y = RawPointCloudData[i].Y;
+
+			if (RawPointCloudData[i].Z < Min.z)
+				Min.z = RawPointCloudData[i].Z;
+
+			if (RawPointCloudData[i].Z > Max.z)
+				Max.z = RawPointCloudData[i].Z;
+		}
+
+		PointCloudAABB = FEAABB(Min, Max);
+	}
 
 	FEPointCloud* LoadedPointCloud = RawDataToFEPointCloud(RawPointCloudData, Name, ForceObjectID, false, bAdvancedRendering);
 	LoadedPointCloud->AABB = PointCloudAABB;
@@ -5071,7 +5107,7 @@ struct LoadPointCloudAsyncInfo
 {
 	std::string FilePath;
 	std::function<void(FEPointCloud*)> UserCallBack;
-	std::function<void(std::vector<FEPointCloudVertex>&)> UserDataProcessor;
+	std::function<void(std::vector<FEPointCloudVertexDouble>&)> UserDataProcessor;
 	std::vector<FEPointCloudVertex> RawData;
 	bool bSuccess = false;
 	bool bCenterPositions = true;
@@ -5090,7 +5126,7 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 	{
 		FEAABB PointCloudAABB;
 		// Before converting to float, we need to center the point cloud using 64 bit precision.
-		if (Input->bCenterPositions && !TempRawData.empty())
+		if (!TempRawData.empty())
 		{
 			glm::dvec3 Min = glm::dvec3(DBL_MAX);
 			glm::dvec3 Max = glm::dvec3(-DBL_MAX);
@@ -5119,14 +5155,53 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 			glm::dvec3 Extent = Max - Min;
 			glm::dvec3 Center = Min + Extent / 2.0;
 
+			if (Input->bCenterPositions)
+			{
+				for (size_t i = 0; i < TempRawData.size(); i++)
+				{
+					TempRawData[i].X = TempRawData[i].X - Center.x;
+					TempRawData[i].Y = TempRawData[i].Y - Center.y;
+					TempRawData[i].Z = TempRawData[i].Z - Center.z;
+				}
+
+				PointCloudAABB = FEAABB(Min - Center, Max - Center);
+			}
+			else
+			{
+				PointCloudAABB = FEAABB(Min, Max);
+			}
+		}
+
+		if (Input->UserDataProcessor)
+		{
+			Input->UserDataProcessor(TempRawData);
+
+			// Points might have been removed or changed in the user data processor.
+			glm::dvec3 Min = glm::dvec3(DBL_MAX);
+			glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+
 			for (size_t i = 0; i < TempRawData.size(); i++)
 			{
-				TempRawData[i].X = TempRawData[i].X - Center.x;
-				TempRawData[i].Y = TempRawData[i].Y - Center.y;
-				TempRawData[i].Z = TempRawData[i].Z - Center.z;
+				if (TempRawData[i].X < Min.x)
+					Min.x = TempRawData[i].X;
+
+				if (TempRawData[i].X > Max.x)
+					Max.x = TempRawData[i].X;
+
+				if (TempRawData[i].Y < Min.y)
+					Min.y = TempRawData[i].Y;
+
+				if (TempRawData[i].Y > Max.y)
+					Max.y = TempRawData[i].Y;
+
+				if (TempRawData[i].Z < Min.z)
+					Min.z = TempRawData[i].Z;
+
+				if (TempRawData[i].Z > Max.z)
+					Max.z = TempRawData[i].Z;
 			}
 
-			PointCloudAABB = FEAABB(Min - Center, Max - Center);
+			PointCloudAABB = FEAABB(Min, Max);
 		}
 
 		Output->RawData.resize(TempRawData.size());
@@ -5141,9 +5216,6 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 			Output->RawData[i].A = TempRawData[i].A;
 		}
 		TempRawData.clear();
-
-		if (Input->UserDataProcessor)
-			Input->UserDataProcessor(Output->RawData);
 
 		Output->AABB = PointCloudAABB;
 	}
@@ -5170,7 +5242,7 @@ void FEResourceManager::LoadPointCloudFileAsyncCallBack(void* OutputData)
 	delete ResultInfo;
 }
 
-void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
+void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
 	if (FilePath.empty())
@@ -5189,7 +5261,7 @@ void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std:
 	InputData->FilePath = FilePath;
 	InputData->UserCallBack = CallBack;
 	InputData->UserDataProcessor = UserDataProcessor;
-	InputData->bCenterPositions = true;
+	InputData->bCenterPositions = bCenterPositions;
 
 	LoadPointCloudAsyncInfo* OutputData = new LoadPointCloudAsyncInfo();
 	THREAD_POOL.Execute(LoadPointCloudFileAsync, InputData, OutputData, &LoadPointCloudFileAsyncCallBack);
@@ -5612,7 +5684,7 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 	return SaveRawDataToPLY(PointCloudData, FilePath);
 }
 
-bool FEResourceManager::SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, std::string FilePath, bool bIsCompressed)
+bool FEResourceManager::SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, std::string FilePath, bool bIsCompressed, double ScaleFactor)
 {
 	if (RawData.empty())
 	{
@@ -5652,9 +5724,9 @@ bool FEResourceManager::SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& R
 	// - A real-world coordinate of 10.523 meters becomes integer 10523
 	// - An integer value of 8421 represents 8.421 meters in real-world space
 	//
-	FileHeader->x_scale_factor = 0.001;  // 1 mm precision
-	FileHeader->y_scale_factor = 0.001;
-	FileHeader->z_scale_factor = 0.001;
+	FileHeader->x_scale_factor = ScaleFactor;
+	FileHeader->y_scale_factor = ScaleFactor;
+	FileHeader->z_scale_factor = ScaleFactor;
 
 	FileHeader->number_of_point_records = static_cast<laszip_U32>(RawData.size());
 

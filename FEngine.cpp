@@ -265,14 +265,21 @@ void FEngine::DisableVR()
 	bVRActive = false;
 }
 
-bool FEngine::EnableVR()
+bool FEngine::EnableVR(FERenderingPipeline VRRenderingPipeline)
 {
+	this->VRRenderingPipeline = VRRenderingPipeline;
+
 	if (!bVRInitializedCorrectly)
 		bVRInitializedCorrectly = OpenXR_MANAGER.Init();
 	
 	bVRActive = bVRInitializedCorrectly;
 
 	return bVRActive;
+}
+
+FERenderingPipeline FEngine::GetVRRenderingPipeline() const
+{
+	return VRRenderingPipeline;
 }
 
 std::string FEngine::GetVRApplicationVisibleName() const

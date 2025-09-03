@@ -87,5 +87,14 @@ namespace FocalEngine
 
 		bool IsComponentVisible(ComponentVisibilityType Type);
 		void SetComponentVisible(ComponentVisibilityType Type, bool Value);
+
+		bool AttachTo(FEEntity* Parent, bool bPreserveWorldTransform = true);
+		bool AttachChild(FEEntity* Child, bool bPreserveWorldTransform = true);
+		bool Detach(bool bPreserveWorldTransform = true);
+		FEEntity* GetParentEntity() const;
+		std::vector<FEEntity*> GetChildEntities() const;
+		bool IsChildOf(FEEntity* PotentialParent) const;
+		bool IsDescendantOf(FEEntity* PotentialAncestor) const;
+		bool IsAncestorOf(FEEntity* PotentialDescendant);
 	};
 }

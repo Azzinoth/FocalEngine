@@ -126,12 +126,12 @@ namespace FocalEngine
 		bool ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData);
 		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* ImportPointCloud(std::string FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
-		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
 		bool SaveRawDataToPLY(std::vector<FEPointCloudVertex>& RawData, std::string FilePath);
 		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
-		bool SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, std::string FilePath, bool bIsCompressed = true);
+		bool SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, std::string FilePath, bool bIsCompressed = true, double ScaleFactor = 0.001);
 		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath);
 		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);

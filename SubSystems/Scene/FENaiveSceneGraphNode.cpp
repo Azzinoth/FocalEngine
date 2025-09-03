@@ -241,7 +241,7 @@ void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 {
 	if (Entity == nullptr)
 	{
-		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_SCENE_GRAPH", FE_LOG_ERROR);
 		return;
 	}
 
