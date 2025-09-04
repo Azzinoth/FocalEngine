@@ -4873,7 +4873,7 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 	return LoadedPointCloud;
 }
 
-FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, std::string Name, std::string ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
+FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, std::string Name, std::string ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
 	if (FilePath.empty())
@@ -4920,6 +4920,9 @@ FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, st
 		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: getting header pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 		return LoadedPointCloud;
 	}
+
+	if (OutHeaderCopy != nullptr)
+		std::memcpy(OutHeaderCopy, FileHeader, sizeof(laszip_header));
 
 	laszip_point* CurrentPointPointer;
 	if (laszip_get_point_pointer(LaszipReader, &CurrentPointPointer))
@@ -4971,7 +4974,7 @@ FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(std::string FilePath, st
 	return RawDataToFEPointCloud(RawDataDouble, Name, ForceObjectID, bCenterPositions, false, UserDataProcessor);
 }
 
-bool FEResourceManager::ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData)
+bool FEResourceManager::ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy)
 {
 	if (FilePath.empty())
 	{
@@ -5017,6 +5020,9 @@ bool FEResourceManager::ReadLasOrLaz(std::string FilePath, std::vector<FEPointCl
 		LOG.Add("FEResourceManager::ReadLasOrLaz: getting header pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 		return false;
 	}
+
+	if (OutHeaderCopy != nullptr)
+		std::memcpy(OutHeaderCopy, FileHeader, sizeof(laszip_header));
 
 	laszip_point* CurrentPointPointer;
 	if (laszip_get_point_pointer(LaszipReader, &CurrentPointPointer))
@@ -5112,6 +5118,7 @@ struct LoadPointCloudAsyncInfo
 	bool bSuccess = false;
 	bool bCenterPositions = true;
 	FEAABB AABB;
+	laszip_header* OutHeaderCopy = nullptr;
 };
 
 void LoadPointCloudFileAsync(void* InputData, void* OutputData)
@@ -5120,7 +5127,7 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 	auto* Output = reinterpret_cast<LoadPointCloudAsyncInfo*>(OutputData);
 
 	std::vector<FEPointCloudVertexDouble> TempRawData;
-	Output->bSuccess = RESOURCE_MANAGER.ReadLasOrLaz(Input->FilePath, TempRawData);
+	Output->bSuccess = RESOURCE_MANAGER.ReadLasOrLaz(Input->FilePath, TempRawData, Input->OutHeaderCopy);
 
 	if (Output->bSuccess)
 	{
@@ -5242,7 +5249,7 @@ void FEResourceManager::LoadPointCloudFileAsyncCallBack(void* OutputData)
 	delete ResultInfo;
 }
 
-void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor)
+void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
 	if (FilePath.empty())
@@ -5262,6 +5269,7 @@ void FEResourceManager::ImportLasOrLazPointCloudAsync(std::string FilePath, std:
 	InputData->UserCallBack = CallBack;
 	InputData->UserDataProcessor = UserDataProcessor;
 	InputData->bCenterPositions = bCenterPositions;
+	InputData->OutHeaderCopy = OutHeaderCopy;
 
 	LoadPointCloudAsyncInfo* OutputData = new LoadPointCloudAsyncInfo();
 	THREAD_POOL.Execute(LoadPointCloudFileAsync, InputData, OutputData, &LoadPointCloudFileAsyncCallBack);

@@ -540,10 +540,13 @@ std::string FEFileSystem::GetDirectoryPath(const std::string& FullPath)
 	return Path.parent_path().string();
 }
 
-std::string FEFileSystem::GetFileName(const std::string& FullPath)
+std::string FEFileSystem::GetFileName(const std::string& FullPath, bool bWithExtension)
 {
 	std::filesystem::path Path(FullPath);
-	return Path.filename().string();
+	if (bWithExtension)
+		return Path.filename().string();
+	else
+		return Path.stem().string();
 }
 
 std::string FEFileSystem::ReadFEString(std::fstream& File)

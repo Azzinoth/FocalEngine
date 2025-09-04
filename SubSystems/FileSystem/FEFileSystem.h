@@ -26,7 +26,7 @@ namespace FocalEngine
 
 		std::string GetFileExtension(const std::string& Path);
 		std::string GetDirectoryPath(const std::string& FullPath);
-		std::string GetFileName(const std::string& FullPath);
+		std::string GetFileName(const std::string& FullPath, bool bWithExtension = true);
 
 		bool DoesDirectoryExist(const std::string& Path);
 		bool RenameDirectory(const std::string& Path, const std::string& NewPath);

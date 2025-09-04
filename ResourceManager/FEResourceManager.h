@@ -123,10 +123,10 @@ namespace FocalEngine
 		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
-		bool ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData);
-		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		bool ReadLasOrLaz(std::string FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy = nullptr);
+		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
 		FEPointCloud* ImportPointCloud(std::string FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
-		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor = nullptr);
+		void ImportLasOrLazPointCloudAsync(std::string FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
 		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
 		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
 		bool SaveRawDataToPLY(std::vector<FEPointCloudVertex>& RawData, std::string FilePath);
