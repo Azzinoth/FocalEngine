@@ -4590,7 +4590,6 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		RawPointCloudData[i].B = RawPointCloudDataDouble[i].B;
 		RawPointCloudData[i].A = RawPointCloudDataDouble[i].A;
 	}
-	RawPointCloudDataDouble.clear();
 
 	if (UserDataProcessor)
 	{
