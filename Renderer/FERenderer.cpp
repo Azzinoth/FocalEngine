@@ -560,6 +560,16 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
+
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) /*|| !GameModelComponent.IsPostprocessApplied()*/)
 			continue;
 
@@ -1089,6 +1099,16 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) || !GameModelComponent.IsPostprocessApplied())
 			continue;
@@ -2908,6 +2928,27 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 	CameraRenderingData->PointCloudIntermediateFrameBuffer->SetDepthAttachment(IntermediateDepthBuffer);
 
 	return true;
+}
+
+void FERenderer::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback)
+{
+	if (Entity == nullptr)
+		return;
+
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	{
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		/*for (const auto& ExistingCallback : Callbacks)
+		{
+			if (ExistingCallback.target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+			{
+				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_ECS", FE_LOG_WARNING);
+				return;
+			}
+		}*/
+	}
+
+	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

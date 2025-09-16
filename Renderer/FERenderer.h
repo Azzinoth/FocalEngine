@@ -142,6 +142,9 @@ namespace FocalEngine
 
 		FETexture* CreateScreenshot(FEScene* Scene);
 		FETexture* CreateScreenshot(FEEntity* CameraEntity);
+
+		// FIX ME: Is this system good solution?
+		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -208,6 +211,8 @@ namespace FocalEngine
 		void UpdateShadersForCamera(FECameraRenderingData* CameraData);
 
 		bool InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity);
+
+		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

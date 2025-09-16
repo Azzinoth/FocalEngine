@@ -52,6 +52,7 @@ namespace FocalEngine
 		static Json::Value InstanceComponentToJson(FEEntity* Entity);
 		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
 
+		// FIX ME: That system is redundant, Renderer have similar one.
 		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 	public:
 		SINGLETON_PUBLIC_PART(FEInstancedSystem)
