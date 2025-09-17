@@ -145,6 +145,7 @@ namespace FocalEngine
 
 		// FIX ME: Is this system good solution?
 		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
+		void RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 

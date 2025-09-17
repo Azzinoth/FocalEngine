@@ -599,6 +599,16 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
+
 		LINE_SYSTEM.Render(Entity, MainCameraEntity);
 	}
 
@@ -610,6 +620,16 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 			continue;
@@ -626,6 +646,16 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::POINT_CLOUD))
 			continue;
@@ -1143,6 +1173,16 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
+
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 			continue;
 
@@ -1154,6 +1194,16 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::TERRAIN))
 			continue;
@@ -1169,6 +1219,16 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::POINT_CLOUD))
 			continue;
@@ -2949,6 +3009,25 @@ void FERenderer::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FE
 	}
 
 	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
+}
+
+void FERenderer::RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback)
+{
+	if (Entity == nullptr)
+		return;
+
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) == BeforeRenderCallbacks.end())
+		return;
+
+	std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+	for (auto CallbackIterator = Callbacks.begin(); CallbackIterator != Callbacks.end(); ++CallbackIterator)
+	{
+		if (CallbackIterator->target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+		{
+			Callbacks.erase(CallbackIterator);
+			return;
+		}
+	}
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

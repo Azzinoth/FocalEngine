@@ -8,12 +8,21 @@ FEPointCloudComponent::FEPointCloudComponent(FEPointCloud* PointCloudToSet)
 
 FEPointCloudComponent::FEPointCloudComponent(const FEPointCloudComponent& Other)
 {
-	
+	PointCloud = Other.PointCloud;
+	GlobalColorOverride = Other.GlobalColorOverride;
+	bUseGlobalColorOverride = Other.bUseGlobalColorOverride;
 }
 
 void FEPointCloudComponent::operator=(const FEPointCloudComponent& Other)
 {
-	
+	PointCloud = Other.PointCloud;
+	GlobalColorOverride = Other.GlobalColorOverride;
+	bUseGlobalColorOverride = Other.bUseGlobalColorOverride;
+}
+
+FEPointCloudComponent::~FEPointCloudComponent()
+{
+
 }
 
 FEPointCloud* FEPointCloudComponent::GetPointCloud() const

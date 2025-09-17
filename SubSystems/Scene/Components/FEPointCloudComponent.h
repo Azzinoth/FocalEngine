@@ -9,6 +9,7 @@ namespace FocalEngine
 		FEPointCloudComponent(FEPointCloud* PointCloudToSet);
 		FEPointCloudComponent(const FEPointCloudComponent& Other);
 		void operator=(const FEPointCloudComponent& Other);
+		~FEPointCloudComponent();
 
 		FEPointCloud* GetPointCloud() const;
 		void SetPointCloud(FEPointCloud* NewPointCloud);
