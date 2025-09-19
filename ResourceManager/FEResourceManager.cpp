@@ -4732,7 +4732,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		return NewPointCloud;
 	}
 
-	if (bCenterPositions && !RawPointCloudData.empty())
+	if (!RawPointCloudData.empty())
 	{
 		glm::vec3 Min = glm::vec3(FLT_MAX);
 		glm::vec3 Max = glm::vec3(-FLT_MAX);
@@ -4758,17 +4758,21 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 				Max.z = RawPointCloudData[i].Z;
 		}
 
-		glm::vec3 Extent = Max - Min;
-		glm::vec3 Center = Min + Extent / 2.0f;
-
-		for (size_t i = 0; i < RawPointCloudData.size(); i++)
+		NewPointCloud->AABB = FEAABB(Min, Max);
+		if (bCenterPositions)
 		{
-			RawPointCloudData[i].X = RawPointCloudData[i].X - Center.x;
-			RawPointCloudData[i].Y = RawPointCloudData[i].Y - Center.y;
-			RawPointCloudData[i].Z = RawPointCloudData[i].Z - Center.z;
-		}
+			glm::vec3 Extent = Max - Min;
+			glm::vec3 Center = Min + Extent / 2.0f;
 
-		NewPointCloud->AABB = FEAABB(Min - Center, Max - Center);
+			for (size_t i = 0; i < RawPointCloudData.size(); i++)
+			{
+				RawPointCloudData[i].X = RawPointCloudData[i].X - Center.x;
+				RawPointCloudData[i].Y = RawPointCloudData[i].Y - Center.y;
+				RawPointCloudData[i].Z = RawPointCloudData[i].Z - Center.z;
+			}
+
+			NewPointCloud->AABB = FEAABB(Min - Center, Max - Center);
+		}
 	}
 
 	if (UserDataProcessor)
