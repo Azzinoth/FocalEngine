@@ -47,9 +47,41 @@ std::vector<FEPointCloudVertex> FEPointCloud::GetRawData() const
 			return RawData;
 		}
 
-		RawData.resize(PointCount);
-		FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, ComputeShaderBuffer));
-		FE_GL_ERROR(glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+		RawData.resize(GetPointCount());
+		// If we have more points than the maximum points per buffer, we will run the compute shader multiple times.
+		if (GetPointCount() > FEPointCloud::MaxPointsPerBuffer)
+		{
+			std::vector<GLuint> BufferIDs;
+			GetComputeShaderBuffers(BufferIDs);
+			std::vector<FEPointCloudVertex> TemporaryBuffer;
+
+			size_t BufferIndex = 0;
+			for (size_t i = 0; i < GetPointCount(); i += FEPointCloud::MaxPointsPerBuffer)
+			{
+				if (BufferIndex >= BufferIDs.size())
+				{
+					LOG.Add("FEPointCloud::GetRawData: BufferIndex is out of range", "FE_POINT_CLOUD", FE_LOG_ERROR);
+				}
+				else
+				{
+					FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, BufferIDs[BufferIndex]));
+					FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, BufferIDs[BufferIndex]));
+					BufferIndex++;
+
+					// Calculate the number of points for the current buffer
+					size_t NumberOfPoints = std::min(FEPointCloud::MaxPointsPerBuffer, GetPointCount() - i);
+					TemporaryBuffer.resize(NumberOfPoints);
+					FE_GL_ERROR(glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(FEPointCloudVertex) * NumberOfPoints, TemporaryBuffer.data()));
+
+					std::copy(TemporaryBuffer.begin(), TemporaryBuffer.end(), RawData.begin() + i);
+				}
+			}
+		}
+		else
+		{
+			FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, ComputeShaderBuffer));
+			FE_GL_ERROR(glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(FEPointCloudVertex) * PointCount, RawData.data()));
+		}
 
 		return RawData;
 	}

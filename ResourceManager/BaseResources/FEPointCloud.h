@@ -41,6 +41,9 @@ namespace FocalEngine
 		FEPointCloud();
 		~FEPointCloud();
 
+		static const size_t MaxBytesPerBuffer = UINT32_MAX - 1;
+		static const size_t MaxPointsPerBuffer = MaxBytesPerBuffer / (sizeof(FEPointCloudVertex));
+
 		GLuint GetVboID() const;
 		GLuint GetVaoID() const;
 
@@ -56,9 +59,6 @@ namespace FocalEngine
 		bool GetComputeShaderBuffer(GLuint& OutBufferID) const;
 		bool GetComputeShaderBuffers(std::vector<GLuint>& OutBufferIDs) const;
 	private:
-		static const size_t MaxBytesPerBuffer = UINT32_MAX - 1;
-		static const size_t MaxPointsPerBuffer = MaxBytesPerBuffer / sizeof(FEPointCloudVertex);
-
 		GLuint VboID = -1;
 		GLuint VaoID = -1;
 		GLuint ComputeShaderBuffer = -1;
