@@ -257,12 +257,12 @@ FEAABB::~FEAABB()
 {
 }
 
-glm::vec3 FEAABB::GetMin()
+glm::vec3 FEAABB::GetMin() const
 {
 	return Min;
 }
 
-glm::vec3 FEAABB::GetMax()
+glm::vec3 FEAABB::GetMax() const
 {
 	return Max;
 }
@@ -1426,4 +1426,28 @@ glm::dvec3 FEGeometry::CreateMouseRayToWorld(const double MouseScreenX, const do
 	WorldRay = glm::normalize(WorldRay);
 
 	return WorldRay;
+}
+
+std::vector<FELine> FEGeometry::GetAABBEdges(const FEAABB& AABB)
+{
+	std::vector<FELine> Result;
+	// Bottom plane.
+	Result.push_back(FELine(AABB.GetMin(), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2])));
+	Result.push_back(FELine(AABB.GetMin(), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2])));
+
+	// Upper plane.
+	Result.push_back(FELine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2])));
+
+	// Connect two planes.
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2])));
+	Result.push_back(FELine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2])));
+
+	return Result;
 }

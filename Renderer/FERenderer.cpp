@@ -35,7 +35,7 @@ void FERenderer::Init()
 	glBindBufferRange(GL_UNIFORM_BUFFER, UniformBufferCount++, UniformBufferForDirectionalLight, 0, UBufferForDirectionalLightSize);
 
 	// Instanced lines
-	LinesBuffer.resize(FE_MAX_LINES);
+	DebugLines.resize(FE_MAX_DEBUG_LINES);
 
 	const float QuadVertices[] = {
 		0.0f,  -0.5f,  0.0f,
@@ -46,8 +46,8 @@ void FERenderer::Init()
 		1.0f,  0.5f,   1.0f,
 		0.0f,  0.5f,   0.0f,
 	};
-	glGenVertexArrays(1, &InstancedLineVAO);
-	glBindVertexArray(InstancedLineVAO);
+	glGenVertexArrays(1, &DebugLinesVAO);
+	glBindVertexArray(DebugLinesVAO);
 
 	unsigned int QuadVBO;
 	glGenBuffers(1, &QuadVBO);
@@ -55,9 +55,9 @@ void FERenderer::Init()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
-	glGenBuffers(1, &InstancedLineBuffer);
-	glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer);
-	glBufferData(GL_ARRAY_BUFFER, LinesBuffer.size() * sizeof(FELine), LinesBuffer.data(), GL_DYNAMIC_DRAW);
+	glGenBuffers(1, &DebugLinesBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, DebugLinesBuffer);
+	glBufferData(GL_ARRAY_BUFFER, DebugLines.size() * sizeof(FELine), DebugLines.data(), GL_DYNAMIC_DRAW);
 
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), static_cast<void*>(nullptr));
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(FELine), (void*)(3 * sizeof(float)));
@@ -612,7 +612,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		LINE_SYSTEM.Render(Entity, MainCameraEntity);
 	}
 
-	RenderLinesInternal(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
+	RenderDebugLines(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
 
 	entt::basic_view VirtualUIView = CurrentScene->Registry.view<FEVirtualUIComponent, FETransformComponent>();
 	for (auto [EnTTEntity, VirtualUIComponent, TransformComponent] : VirtualUIView.each())
@@ -1333,7 +1333,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	// Could impact depth pyramid construction( min vs max ).
 	glDepthFunc(GL_LESS);
 
-	RenderLinesInternal(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
+	RenderDebugLines(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
 
 	// ********* RENDER SKY *********
 	entt::basic_view SkyDomeView = CurrentScene->Registry.view<FESkyDomeComponent, FETransformComponent>();
@@ -1530,12 +1530,12 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	// **************************** DEPTH PYRAMID END ****************************
 }
 
-void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
+void FERenderer::RenderDebugLines(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 
-	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, InstancedLineBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_LINES * sizeof(FELine), this->LinesBuffer.data()));
+	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, DebugLinesBuffer));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_DEBUG_LINES * sizeof(FELine), this->DebugLines.data()));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	LINE_SYSTEM.InstancedLineShader->Start();
@@ -1546,7 +1546,7 @@ void FERenderer::RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCamera
 	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
 	LINE_SYSTEM.InstancedLineShader->LoadUniformsDataToGPU();
 
-	FE_GL_ERROR(glBindVertexArray(InstancedLineVAO));
+	FE_GL_ERROR(glBindVertexArray(DebugLinesVAO));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
 	FE_GL_ERROR(glEnableVertexAttribArray(1));
 	FE_GL_ERROR(glEnableVertexAttribArray(2));
@@ -1953,17 +1953,29 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 
 void FERenderer::DebugDrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, const glm::vec3 Color, const float Width)
 {
-	if (DebugLineCounter >= FE_MAX_LINES)
+	if (DebugLineCounter >= FE_MAX_DEBUG_LINES)
 	{
-		//LOG.Add("Tring to draw more than maxLines", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		//LOG.Add("Tring to draw more than FE_MAX_DEBUG_LINES", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
-	LinesBuffer[DebugLineCounter].Begin = BeginPoint;
-	LinesBuffer[DebugLineCounter].End = EndPoint;
-	LinesBuffer[DebugLineCounter].Color = Color;
-	LinesBuffer[DebugLineCounter].Width = Width;
+	DebugLines[DebugLineCounter].Begin = BeginPoint;
+	DebugLines[DebugLineCounter].End = EndPoint;
+	DebugLines[DebugLineCounter].Color = Color;
+	DebugLines[DebugLineCounter].Width = Width;
 
+	DebugLineCounter++;
+}
+
+void FERenderer::DebugDrawLine(FELine LineToRender)
+{
+	if (DebugLineCounter >= FE_MAX_DEBUG_LINES)
+	{
+		//LOG.Add("Tring to draw more than FE_MAX_DEBUG_LINES", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return;
+	}
+
+	DebugLines[DebugLineCounter] = LineToRender;
 	DebugLineCounter++;
 }
 
@@ -2044,23 +2056,13 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 
 void FERenderer::DebugDrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
 {
-	// bottom plane
-	DebugDrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMin()), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), Color, LineWidth);
-
-	// upper plane
-	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-
-	// connect two planes
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMax()[0], AABB.GetMin()[1], AABB.GetMax()[2]), glm::vec3(AABB.GetMax()[0], AABB.GetMax()[1], AABB.GetMax()[2]), Color, LineWidth);
-	DebugDrawLine(glm::vec3(AABB.GetMin()[0], AABB.GetMin()[1], AABB.GetMin()[2]), glm::vec3(AABB.GetMin()[0], AABB.GetMax()[1], AABB.GetMin()[2]), Color, LineWidth);
+	std::vector<FELine> LinesToRender = GEOMETRY.GetAABBEdges(AABB);
+	for (size_t i = 0; i < LinesToRender.size(); i++)
+	{
+		LinesToRender[i].Color = Color;
+		LinesToRender[i].Width = LineWidth;
+		DebugDrawLine(LinesToRender[i]);
+	}
 }
 
 void FERenderer::ForceShader(FEShader* Shader)

@@ -8,7 +8,7 @@
 
 namespace FocalEngine
 {
-	#define FE_MAX_LINES 50000
+	#define FE_MAX_DEBUG_LINES 50000
 
 	class FEngine;
 	class FERenderer;
@@ -96,6 +96,7 @@ namespace FocalEngine
 		FETexture* GetCameraResult(FEEntity* CameraEntity);
 
 		void DebugDrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
+		void DebugDrawLine(FELine LineToRender);
 		void DebugDrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
 		void DebugDrawFrustum(FEEntity* Camera, glm::vec3 Color = glm::vec3(0.3f, 0.6f, 0.1f), float LineWidth = 0.2f);
 
@@ -172,12 +173,12 @@ namespace FocalEngine
 		FETexture* CSM2 = nullptr;
 		FETexture* CSM3 = nullptr;
 
-		// Instanced lines
-		std::vector<FELine> LinesBuffer;
+		// Debug lines
+		std::vector<FELine> DebugLines;
 		int DebugLineCounter = 0;
-		GLuint InstancedLineVAO = 0;
-		GLenum InstancedLineBuffer = 0;
-		void RenderLinesInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
+		GLuint DebugLinesVAO = 0;
+		GLenum DebugLinesBuffer = 0;
+		void RenderDebugLines(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
 
 		glm::dvec3 MouseRay = glm::dvec3(0.0);
 

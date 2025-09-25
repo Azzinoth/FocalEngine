@@ -1,17 +1,10 @@
 #pragma once
 
 #include "../Core/FEObject.h"
+#include "../Core/FEGeometricTools.h"
 
 namespace FocalEngine
 {
-	struct FELine
-	{
-		glm::vec3 Begin;
-		glm::vec3 End;
-		glm::vec3 Color = glm::vec3(1.0f);
-		float Width = 1.0f;
-	};
-
 	class FELineCollection : public FEObject
 	{
 		friend class FEEntity;

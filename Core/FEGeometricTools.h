@@ -24,8 +24,8 @@ namespace FocalEngine
 		FEAABB(FEAABB Other, glm::mat4 TransformMatrix);
 		~FEAABB();
 
-		glm::vec3 GetMin();
-		glm::vec3 GetMax();
+		glm::vec3 GetMin() const;
+		glm::vec3 GetMax() const;
 
 		bool RayIntersect(glm::vec3 RayOrigin, glm::vec3 RayDirection, float& Distance);
 		bool RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDirection, std::vector<glm::dvec3>& HitPoints);
@@ -83,6 +83,19 @@ namespace FocalEngine
 		float LongestAxisLength = 0.0f;
 	};
 
+	struct FELine
+	{
+		glm::vec3 Begin;
+		glm::vec3 End;
+		glm::vec3 Color = glm::vec3(1.0f);
+		float Width = 1.0f;
+
+		FELine() = default;
+		FELine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 LineColor = glm::vec3(1.0f), float LineWidth = 1.0f)
+			: Begin(BeginPoint), End(EndPoint), Color(LineColor), Width(LineWidth) {
+		};
+	};
+
 	class FOCAL_ENGINE_API FEGeometry
 	{
 	public:
@@ -117,6 +130,8 @@ namespace FocalEngine
 		bool IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::dvec3>& TriangleVertices);
 
 		std::vector<glm::dvec3> GetIntersectionPoints(FEAABB& AABB, std::vector<glm::dvec3> TriangleVertices);
+
+		std::vector<FELine> GetAABBEdges(const FEAABB& AABB);
 	private:
 		SINGLETON_PRIVATE_PART(FEGeometry)
 	};
