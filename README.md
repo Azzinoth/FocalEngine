@@ -215,3 +215,5 @@ This project uses the following third-party libraries:
 7) **EnTT**: This library is under the MIT License. The full license text can be found at [EnTT's GitHub repository](https://github.com/skypjack/entt?tab=MIT-1-ov-file).
 
 8) **LASzip**: This library is licensed under the Apache License 2.0. The full license text can be found at [LASzip's GitHub repository](https://github.com/LASzip/LASzip).
+
+9) **pybind11**: This library is licensed under the BSD-3-Clause License. The full license text can be found at [pybind11's GitHub repository](https://github.com/pybind/pybind11).

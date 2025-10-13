@@ -3,6 +3,16 @@
 #include "Renderer\FERenderer.h"
 #include "..\SubSystems\FEOpenXR\FEOpenXR.h"
 
+// Python debug libraries are not included PythonCodeStream standard installations.
+// Temporarily undefine _DEBUG to use release Python library PythonCodeStream debug builds.
+#ifdef _DEBUG
+#undef _DEBUG
+#include <Python.h>
+#define _DEBUG
+#else
+#include <Python.h>
+#endif
+
 namespace FocalEngine
 {
 	class FOCAL_ENGINE_API FEngine

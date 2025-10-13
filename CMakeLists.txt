@@ -79,6 +79,48 @@ if(ENABLE_TESTS)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MP")
 endif()
 
+# Probe Python quietly to choose a default for the option.
+# Do not use REQUIRED here or configuration will fail if Python isn't present.
+find_package(Python3 COMPONENTS Interpreter Development QUIET)
+
+set(DEFAULT_ENABLE_PYTHON_BINDINGS OFF)
+if (Python3_Interpreter_FOUND AND Python3_Development_FOUND)
+  set(DEFAULT_ENABLE_PYTHON_BINDINGS ON)
+endif()
+
+# Users can still override this in CMake GUI/CLI; we just pick a smart default.
+option(ENABLE_PYTHON_BINDINGS "Build Python/pybind11 bindings" ${DEFAULT_ENABLE_PYTHON_BINDINGS})
+
+set(PYTHON_INCLUDES "")
+set(PYTHON_SCRIPTS_SRC "")
+
+# If enabled, now enforce that Python is present and wire things up.
+if (ENABLE_PYTHON_BINDINGS)
+	find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+	add_subdirectory(SubSystems/Python)
+
+	list(APPEND PYTHON_INCLUDES
+		${Python3_INCLUDE_DIRS}
+	)
+
+	if (Python3_FOUND AND Python3_LIBRARY_RELEASE)
+		message (STATUS "Python3 found: ${Python3_EXECUTABLE} (found version \"${Python3_VERSION}\")")
+		message (STATUS "Python3 include dirs: ${Python3_INCLUDE_DIRS}")
+		message (STATUS "Python3 libraries: ${Python3_LIBRARY_RELEASE}")
+		message (STATUS "Python3 library: ${Python3_LIBRARY}")
+	endif()
+
+	get_filename_component(PYTHON_LIB_DIR ${Python3_LIBRARY_RELEASE} DIRECTORY)
+	set(PYTHON_LIB_DIR ${PYTHON_LIB_DIR})
+	set(PYTHON_LIB_DIR ${PYTHON_LIB_DIR} PARENT_SCOPE)
+
+	list(APPEND PYTHON_SCRIPTS_SRC
+		"SubSystems/Python/MCPClient.py"
+		"SubSystems/Python/MCPServer.py"
+	)
+endif()
+
 # Turn on the ability to create folders to organize projects (.vcproj)
 # It creates "CMakePredefinedTargets" folder by default and adds CMake
 # defined projects like INSTALL.vcproj and ZERO_CHECK.vcproj
@@ -470,6 +512,12 @@ list(APPEND ALL_SOURCE_FILES
 			${LAS_LAZ_SRC}
 )
 
+if (ENABLE_PYTHON_BINDINGS)
+	list(APPEND ALL_SOURCE_FILES
+		${PYTHON_SCRIPTS_SRC}
+	)
+endif()
+
 if(USE_STATIC_RUNTIME)
 	list(APPEND ALL_SOURCE_FILES
 		${Unpacked_NativeScript_Connector_SRC}
@@ -565,8 +613,11 @@ set(FOCAL_ENGINE_INCLUDES "")
 list(APPEND FOCAL_ENGINE_INCLUDES
     ${FOCAL_ENGINE_THIRD_PARTY_DIR}
     ${FOCAL_ENGINE_ENTT_DIR}
+	${PYTHON_INCLUDES}
 )
 set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
+
+target_link_directories(FocalEngine PRIVATE ${PYTHON_LIB_DIR})
 
 if(NOT ENGINE_HEADERS_ONLY)
 	target_link_libraries(FocalEngine 
@@ -582,14 +633,19 @@ if(NOT ENGINE_HEADERS_ONLY)
 	)
 
 	target_include_directories(FocalEngine
-			PUBLIC
-				${GLEW_INCLUDE_DIR}
-				${BASICAPP_THIRDPARTY_DIR}
-				${BASICAPP_DIR}
-				${FOCAL_ENGINE_INCLUDES}
-			PRIVATE
-				${TEST_INCLUDE_FILES}
+		PUBLIC
+			${GLEW_INCLUDE_DIR}
+			${BASICAPP_THIRDPARTY_DIR}
+			${BASICAPP_DIR}
+			${FOCAL_ENGINE_INCLUDES}
+		PRIVATE
+			${TEST_INCLUDE_FILES}
 	)
+
+	set_source_files_properties(${PYTHON_SCRIPTS_SRC} PROPERTIES
+        VS_TOOL_OVERRIDE "None"
+        HEADER_FILE_ONLY TRUE
+    )
 endif()
 
 if(ENABLE_TESTS)
@@ -632,6 +688,9 @@ if(USE_STATIC_RUNTIME)
 	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
 endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
+if (ENABLE_PYTHON_BINDINGS)
+	source_group("Source Files/SubSystems/Python/Scripts" FILES ${PYTHON_SCRIPTS_SRC})
+endif()
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
@@ -710,4 +769,13 @@ if(NOT ENGINE_HEADERS_ONLY)
 		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
 			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
     )
+
+	# FIX ME: Problem is that FocalEnginePython.pyd would be created after FocalEngine
+	if (ENABLE_PYTHON_BINDINGS)
+		add_custom_command(TARGET FocalEngine POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/Python/$<CONFIG>/FocalEnginePython.pyd"
+				"$<TARGET_FILE_DIR:FocalEngine>"
+		)
+	endif()
 endif()
