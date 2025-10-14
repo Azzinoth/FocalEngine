@@ -9,96 +9,114 @@ class EngineAPIHandler(BaseHTTPRequestHandler):
 		data = json.loads(post_data)
 
 		if self.path == '/api/get_start_scene_id':
-			sm = FocalEngine.SceneManager.instance
-			scene = sm.get_starting_scene()
-			if scene is not None:
-				scene_id = scene.get_ID()
+			SceneManager = FocalEngine.SceneManager.instance
+			Scene = SceneManager.get_starting_scene()
+			if Scene is not None:
+				SceneID = Scene.get_ID()
 			else:
-				scene_id = None
+				SceneID = None
 			self.send_response(200)
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
-			self.wfile.write(json.dumps({'scene_id': scene_id}).encode())
-		
+			self.wfile.write(json.dumps({'scene_id': SceneID}).encode())
+
+		elif self.path == '/api/screenshot_scene':
+			SceneID = data.get('scene_id', '')
+			try:
+				Saved = FocalEngine.create_screenshot(SceneID)
+				Result = {'success': True, 'path': Saved}
+			except Exception as e:
+				Result = {'success': False, 'error': str(e)}
+
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
 		# Get scene by ID
 		elif self.path == '/api/get_scene':
-			sm = FocalEngine.SceneManager.instance
-			scene_id = data.get('scene_id')
-			scene = sm.get_scene(scene_id)
-			result = {'scene_id': scene.get_ID()} if scene is not None else {'scene_id': None}
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			Scene = SceneManager.get_scene(SceneID)
+			result = {'scene_id': Scene.get_ID()} if Scene is not None else {'scene_id': None}
 			self.send_response(200)
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
 			self.wfile.write(json.dumps(result).encode())
 
 		elif self.path == '/api/get_entities':
-			sm = FocalEngine.SceneManager.instance
-			scene_id = data.get('scene_id')
-			scene = sm.get_scene(scene_id)
-			if scene is not None:
-				entity_ids = scene.get_entity_id_list()
-				entities = []
-				for entity_id in entity_ids:
-					entity = scene.get_entity(entity_id)
-					if entity is not None:
-						entities.append({
-							'id': entity.GetID(),
-							'name': entity.GetName()
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				EntityIDS = Scene.get_entity_id_list()
+				Entities = []
+				for EntityID in EntityIDS:
+					Entity = Scene.get_entity(EntityID)
+					if Entity is not None:
+						Entities.append({
+							'id': Entity.GetID(),
+							'name': Entity.GetName()
 						})
 			else:
-				entities = []
+				Entities = []
 			self.send_response(200)
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
-			self.wfile.write(json.dumps({'entities': entities, 'count': len(entities)}).encode())
-
-		# for resource-based approach
-		#elif self.path == '/api/get_entities':
-		#	sm = FocalEngine.SceneManager.instance
-		#	scene_id = data.get('scene_id')
-		#	scene = sm.get_scene(scene_id)
-		#	if scene is not None:
-		#		entity_ids = scene.get_entity_id_list()
-		#		entities = []
-		#		for entity_id in entity_ids:
-		#			entity = scene.get_entity(entity_id)
-		#			if entity is not None:
-		#				entities.append({
-		#					'ID': entity.GetID(),
-		#					'Name': entity.GetName()
-		#				})
-		#	else:
-		#		entities = []
-		#	self.send_response(200)
-		#	self.send_header('Content-type', 'application/json')
-		#	self.end_headers()
-		#	self.wfile.write(json.dumps({'Entities': entities, 'Count': len(entities)}).encode())
+			self.wfile.write(json.dumps({'entities': Entities, 'count': len(Entities)}).encode())
 		
 		# Set entity position (absolute)
 		elif self.path == '/api/set_entity_position':
-			sm = FocalEngine.SceneManager.instance
-			scene_id = data.get('scene_id')
-			entity_id = data.get('entity_id')
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
 			x = data.get('x', 0.0)
 			y = data.get('y', 0.0)
 			z = data.get('z', 0.0)
-			scene = sm.get_scene(scene_id)
-			if scene is not None:
-				entity = scene.get_entity(entity_id)
-				if entity is not None:
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
 					try:
-						entity.SetPosition(FocalEngine.Vector3(x, y, z))
-						result = {'success': True}
-					except Exception as e:
-						result = {'success': False, 'error': str(e)}
+						Entity.SetPosition(FocalEngine.Vector3(x, y, z))
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
 				else:
-					result = {'success': False, 'error': 'Entity not found'}
+					Result = {'success': False, 'error': 'Entity not found'}
 			else:
-				result = {'success': False, 'error': 'Scene not found'}
+				Result = {'success': False, 'error': 'Scene not found'}
 			self.send_response(200)
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
-			self.wfile.write(json.dumps(result).encode())
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_entity_position':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Position = Entity.GetPosition()
+						Result = {
+							'success': True,
+							'position': {'x': float(Position.x), 'y': float(Position.y), 'z': float(Position.z)}
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
 
 		else:
 			self.send_response(404)
@@ -129,6 +147,3 @@ def start_server(port=5187):
 import threading
 server_thread = threading.Thread(target=start_server)
 server_thread.start()
-
-import time
-time.sleep(0.5)

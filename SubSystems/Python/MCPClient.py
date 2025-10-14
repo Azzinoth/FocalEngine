@@ -4,37 +4,25 @@ import requests
 from mcp.server.fastmcp import FastMCP
 mcp = FastMCP('focalengine')
 
-#@mcp.resource("scene://{scene_id}/entities")
-#async def get_entities_resource(scene_id: str) -> str:
-#    """List of all entities in a scene with their IDs and names
-    
-#    URI format: scene://{scene_id}/entities
-#    """
-    # Parse the scene_id from the URI
-    # URI format: scene://{scene_id}/entities
-#    parts = uri.split('/')
-#    if len(parts) < 4 or parts[0] != 'scene:':
-#        return json.dumps({'error': 'Invalid URI format'})
-    
-#    scene_id = parts[2]
-    
-#    response = requests.post('http://localhost:5187/api/get_entities', 
-#                            json={'scene_id': scene_id})
-#    data = response.json()
-    
-    # Format as readable string for the LLM
-#    result = f"Scene {scene_id} contains {data['Count']} entities:\n\n"
-#    for entity in data['Entities']:
-#        result += f"- ID: {entity['ID']}, Name: {entity['Name']}\n"
-
-#    return result
-
 @mcp.tool()
 def get_start_scene_id() -> str | None:
     """Get the current start scene ID from FocalEngine"""
     response = requests.post('http://localhost:5187/api/get_start_scene_id', 
                             json={})
     return response.json()['scene_id']
+
+# Need to fix issue with multi threading in FocalEngine before enabling this
+#@mcp.tool()
+#def screenshot_scene(scene_id: str) -> dict:
+#    """Render scene with ID to a PNG on disk and return the file path.
+#    Args:
+#        scene_id: Scene ID.
+#    Returns:
+#        {'success': bool, 'path': 'C:/...', 'error': '...'} 
+#    """
+#    payload = {'scene_id': scene_id}
+#    r = requests.post('http://localhost:5187/api/screenshot_scene', json=payload)
+#    return r.json()
 
 @mcp.tool()
 def get_entities(scene_id: str) -> dict:
@@ -44,8 +32,26 @@ def get_entities(scene_id: str) -> dict:
     data = response.json()
     return {
         'count': data['count'],
-        'entities': data['entities']  # List of dicts with 'id' and 'name'
+        'entities': data['entities']
     }
+
+@mcp.tool()
+def get_entity_position(scene_id: str, entity_id: str) -> dict:
+    """Get an entity's world position (x, y, z)
+    
+    Args:
+        scene_id: The ID of the scene containing the entity
+        entity_id: The ID of the entity to query
+
+    Returns:
+        Dictionary with 'x', 'y', 'z' coordinates with 'success' boolean and optional 'error' message
+    """
+    response = requests.post(
+        'http://localhost:5187/api/get_entity_position',
+        json={'scene_id': scene_id, 'entity_id': entity_id}
+    )
+    data = response.json()
+    return data
 
 @mcp.tool()
 def move_entity(scene_id: str, entity_id: str, x: float, y: float, z: float) -> dict:

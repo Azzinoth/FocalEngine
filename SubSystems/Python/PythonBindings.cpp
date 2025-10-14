@@ -8,6 +8,28 @@ namespace py = pybind11;
 PYBIND11_MODULE(FocalEnginePython, m) {
     m.doc() = "Python bindings for Focal Engine";
 
+    // FIX ME: All other functions are a little less susceptible to multithreading issues
+    m.def("create_screenshot",
+        [](const std::string& SceneID) -> pybind11::str {
+			FEScene* Scene = SCENE_MANAGER.GetScene(SceneID);
+			if (Scene == nullptr)
+				throw py::value_error("Scene with ID '" + SceneID + "' does not exist");
+
+            FETexture* Screenshot = RENDERER.CreateScreenshot(Scene);
+			if (Screenshot == nullptr)
+				throw py::value_error("Failed to create screenshot for scene with ID '" + SceneID + "'");
+
+			std::string FilePath = RESOURCE_MANAGER.GetEngineFolder() + "/screenshot.png";
+			RESOURCE_MANAGER.ExportFETextureToPNG(Screenshot, FilePath.c_str());
+            return FilePath;
+        },
+        py::arg("SceneID"),
+        py::return_value_policy::reference,
+        "Create a screenshot of a scene and save it to PNG.\n"
+        "Args:\n"
+        "  SceneID: Scene ID.\n"
+        "Returns: Absolute PNG file path.");
+
     py::class_<glm::vec3>(m, "Vector3")
         .def(py::init<float, float, float>())
         .def_readwrite("x", &glm::vec3::x)

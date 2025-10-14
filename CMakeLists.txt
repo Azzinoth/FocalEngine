@@ -93,6 +93,7 @@ option(ENABLE_PYTHON_BINDINGS "Build Python/pybind11 bindings" ${DEFAULT_ENABLE_
 
 set(PYTHON_INCLUDES "")
 set(PYTHON_SCRIPTS_SRC "")
+set(PYTHON_MANAGER_SRC "")
 
 # If enabled, now enforce that Python is present and wire things up.
 if (ENABLE_PYTHON_BINDINGS)
@@ -118,6 +119,11 @@ if (ENABLE_PYTHON_BINDINGS)
 	list(APPEND PYTHON_SCRIPTS_SRC
 		"SubSystems/Python/MCPClient.py"
 		"SubSystems/Python/MCPServer.py"
+	)
+
+	list(APPEND PYTHON_MANAGER_SRC
+		"SubSystems/Python/FEPythonManager.h"
+		"SubSystems/Python/FEPythonManager.cpp"
 	)
 endif()
 
@@ -515,6 +521,7 @@ list(APPEND ALL_SOURCE_FILES
 if (ENABLE_PYTHON_BINDINGS)
 	list(APPEND ALL_SOURCE_FILES
 		${PYTHON_SCRIPTS_SRC}
+		${PYTHON_MANAGER_SRC}
 	)
 endif()
 
@@ -617,7 +624,10 @@ list(APPEND FOCAL_ENGINE_INCLUDES
 )
 set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
 
-target_link_directories(FocalEngine PRIVATE ${PYTHON_LIB_DIR})
+if (ENABLE_PYTHON_BINDINGS)
+	target_compile_definitions(FocalEngine PRIVATE ENABLE_PYTHON_BINDINGS)
+	target_link_directories(FocalEngine PRIVATE ${PYTHON_LIB_DIR})
+endif()
 
 if(NOT ENGINE_HEADERS_ONLY)
 	target_link_libraries(FocalEngine 
@@ -690,6 +700,7 @@ endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 if (ENABLE_PYTHON_BINDINGS)
 	source_group("Source Files/SubSystems/Python/Scripts" FILES ${PYTHON_SCRIPTS_SRC})
+	source_group("Source Files/SubSystems/Python" FILES ${PYTHON_MANAGER_SRC})
 endif()
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})

@@ -53,6 +53,10 @@ void FEngine::InternalUpdate()
 	TRANSFORM_SYSTEM.Update();
 
 	INPUT.Update();
+
+#ifdef ENABLE_PYTHON_BINDINGS
+	PYTHON_MANAGER.Update();
+#endif
 }
 
 void FEngine::BeginFrame(const bool InternalCall)
