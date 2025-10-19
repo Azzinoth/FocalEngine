@@ -780,13 +780,4 @@ if(NOT ENGINE_HEADERS_ONLY)
 		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
 			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
     )
-
-	# FIX ME: Problem is that FocalEnginePython.pyd would be created after FocalEngine
-	if (ENABLE_PYTHON_BINDINGS)
-		add_custom_command(TARGET FocalEngine POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-				"${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/Python/$<CONFIG>/FocalEnginePython.pyd"
-				"$<TARGET_FILE_DIR:FocalEngine>"
-		)
-	endif()
 endif()

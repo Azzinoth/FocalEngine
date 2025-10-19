@@ -29,6 +29,7 @@ namespace FocalEngine
 
 		void Update();
 
+		bool IsModuleAvailable(const std::string& ModuleName);
 	private:
 		SINGLETON_PRIVATE_PART(FEPythonManager)
 

@@ -184,3 +184,16 @@ void FEPythonManager::Update()
 
 	PyGILState_Release(GState);
 }
+
+bool FEPythonManager::IsModuleAvailable(const std::string& ModuleName)
+{
+	if (!IsInitialized())
+		return false;
+
+	PyObject* Module = PyImport_ImportModule(ModuleName.c_str());
+	if (Module == nullptr)
+		return false;
+
+	Py_DECREF(Module);
+	return true;
+}

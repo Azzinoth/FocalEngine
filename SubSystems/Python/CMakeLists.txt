@@ -19,3 +19,10 @@ set_target_properties(FocalEnginePython PROPERTIES PREFIX "")
 if (WIN32)
     set_target_properties(FocalEnginePython PROPERTIES SUFFIX ".pyd")
 endif()
+
+add_custom_command(TARGET FocalEnginePython POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_if_different
+		"$<TARGET_FILE:FocalEnginePython>"
+		"$<TARGET_FILE_DIR:FocalEngine>"
+	COMMENT "Copying FocalEnginePython.pyd to output directory"
+)
