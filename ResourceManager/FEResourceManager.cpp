@@ -2717,6 +2717,16 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
 		const unsigned char* TextreData = TextureToExport->GetRawData();
 
+		// Flip image vertically.
+		const size_t RowBytes = TextureToExport->GetWidth() * 4;
+		unsigned char* RowBuffer = new unsigned char[RowBytes];
+		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
+		{
+			std::memcpy(RowBuffer, TextreData + y * RowBytes, RowBytes);
+			std::memcpy(const_cast<unsigned char*>(TextreData) + y * RowBytes, TextreData + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBytes);
+			std::memcpy(const_cast<unsigned char*>(TextreData) + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
+		}
+
 		for (size_t i = 0; i < RawData.size(); i++)
 		{
 			RawData[i] = TextreData[i];

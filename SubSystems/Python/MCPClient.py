@@ -11,18 +11,36 @@ def get_start_scene_id() -> str | None:
                             json={})
     return response.json()['scene_id']
 
-# Need to fix issue with multi threading in FocalEngine before enabling this
-#@mcp.tool()
-#def screenshot_scene(scene_id: str) -> dict:
-#    """Render scene with ID to a PNG on disk and return the file path.
-#    Args:
-#        scene_id: Scene ID.
-#    Returns:
-#        {'success': bool, 'path': 'C:/...', 'error': '...'} 
-#    """
-#    payload = {'scene_id': scene_id}
-#    r = requests.post('http://localhost:5187/api/screenshot_scene', json=payload)
-#    return r.json()
+from mcp import types
+
+@mcp.tool()
+def capture_scene_screenshot() -> list[types.TextContent | types.ImageContent]:
+    """Capture a screenshot of the current scene in FocalEngine.
+    
+    Use this to see the current state of the scene before making decisions
+    about entity placement, movements, or other modifications.
+    
+    Returns:
+        Base64 encoded JPEG image of the current scene
+    """
+    response = requests.post('http://localhost:5187/api/capture_screenshot', json={})
+    data = response.json()
+    
+    if data['success']:
+        return [
+            types.ImageContent(
+                type="image",
+                data=data['data'],
+                mimeType="image/jpeg"
+            )
+        ]
+    else:
+        return [
+            types.TextContent(
+                type="text",
+                text=f"Error capturing screenshot: {data.get('error', 'Unknown error')}"
+            )
+        ]
 
 @mcp.tool()
 def get_entities(scene_id: str) -> dict:

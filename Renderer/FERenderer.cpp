@@ -1620,6 +1620,9 @@ void FERenderer::Render(FEScene* CurrentScene)
 		FinalSceneTexture->UnBind();
 		ScreenQuadShader->Stop();
 	}
+
+	if (CurrentScene == SCENE_MANAGER.GetStartingScene())
+		CheckAndWriteScreenshot();
 }
 
 void FERenderer::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
@@ -3029,6 +3032,31 @@ void FERenderer::RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void
 			Callbacks.erase(CallbackIterator);
 			return;
 		}
+	}
+}
+
+void FERenderer::CheckAndWriteScreenshot()
+{
+	// Check if Python is requesting a screenshot
+	if (NeedToWriteScreenshotFlag.load(std::memory_order_acquire))
+	{
+		// Capture the screenshot
+		FEScene* Scene = SCENE_MANAGER.GetStartingScene();
+		if (Scene != nullptr)
+		{
+			FETexture* Screenshot = RENDERER.CreateScreenshot(Scene);
+			if (Screenshot != nullptr)
+			{
+				std::string FilePath = "D:\\test.png";
+				RESOURCE_MANAGER.ExportFETextureToPNG(Screenshot, FilePath.c_str());
+
+				// Clean up
+				RESOURCE_MANAGER.DeleteFETexture(Screenshot);
+			}
+		}
+
+		// Clear the flag to signal Python that screenshot is ready
+		NeedToWriteScreenshotFlag.store(false, std::memory_order_release);
 	}
 }
 

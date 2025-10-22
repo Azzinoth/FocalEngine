@@ -2,6 +2,76 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import FocalEnginePython as FocalEngine
 
+
+import base64
+# pip install Pillow
+from PIL import Image
+import io
+import os
+
+def image_to_base64_compressed(image_path: str, max_size_kb: int = 950) -> str:
+    """
+    Convert an image to base64, compressing if necessary to stay under size limit.
+    
+    Args:
+        image_path: Path to the PNG image file
+        max_size_kb: Maximum size in kilobytes (default 950KB)
+    
+    Returns:
+        tuple: base64_string
+    """
+    max_size_bytes = max_size_kb * 1024
+    
+    # Need to compress - open with PIL
+    img = Image.open(image_path)
+    
+    # Convert RGBA to RGB if necessary (for JPEG compatibility)
+    if img.mode in ('RGBA', 'LA', 'P'):
+        background = Image.new('RGB', img.size, (255, 255, 255))
+        if img.mode == 'P':
+            img = img.convert('RGBA')
+        background.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+        img = background
+    
+    # Start with high quality JPEG
+    quality = 95
+    
+    while quality >= 5:  # Don't go below quality 5
+        buffer = io.BytesIO()
+        img.save(buffer, format='JPEG', quality=quality, optimize=True)
+        
+        # Get base64 encoded data
+        jpeg_data = buffer.getvalue()
+        jpeg_base64 = base64.b64encode(jpeg_data).decode('utf-8')
+        
+        # Check size
+        if len(jpeg_base64.encode('utf-8')) <= max_size_bytes:
+            return jpeg_base64
+        
+        # Reduce quality for next iteration
+        quality -= 5
+    
+    # If still too large, try resizing
+    scale_factor = 0.9
+    while scale_factor >= 0.3:  # Don't shrink more than 70%
+        new_width = int(img.width * scale_factor)
+        new_height = int(img.height * scale_factor)
+        resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+        
+        buffer = io.BytesIO()
+        resized_img.save(buffer, format='JPEG', quality=85, optimize=True)
+        
+        jpeg_data = buffer.getvalue()
+        jpeg_base64 = base64.b64encode(jpeg_data).decode('utf-8')
+        
+        if len(jpeg_base64.encode('utf-8')) <= max_size_bytes:
+            return jpeg_base64
+        
+        scale_factor -= 0.1
+    
+    # Return best effort (shouldn't normally reach here)
+    return jpeg_base64
+
 class EngineAPIHandler(BaseHTTPRequestHandler):
 	def do_POST(self):
 		content_length = int(self.headers['Content-Length'])
@@ -117,6 +187,52 @@ class EngineAPIHandler(BaseHTTPRequestHandler):
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
 			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/capture_screenshot':
+			import base64
+			try:
+				sm = FocalEngine.SceneManager.instance
+				scene = sm.get_starting_scene()
+
+				# Signal to C++ that we want a screenshot
+				FocalEngine.set_render_flag(True)
+
+				# Wait for C++ to capture screenshot and clear the flag
+				FocalEngine.wait_for_screenshot()
+        
+				if scene is None:
+					result = {'success': False, 'error': 'No active scene'}
+				else:
+					# Assume C++ saved the screenshot to a known path
+					screenshot_path = "D:\\test.png"
+					success = True
+            
+					if success:
+						image_base64 = image_to_base64_compressed(screenshot_path, max_size_kb=950)
+
+						# For debugging: save the compressed image to verify
+						debug_output_path = "D:\\temp_screenshot_compressed.jpg"
+						with open(debug_output_path, 'wb') as f:
+							f.write(base64.b64decode(image_base64))
+                
+						result = {
+							'success': True,
+							'type': 'image',
+							'data': image_base64,
+							'mimeType': 'image/jpeg'
+						}
+					else:
+						result = {'success': False, 'error': 'Screenshot capture failed'}
+
+			except Exception as e:
+				result = {'success': False, 'error': str(e)}
+				# Make sure to clear flag on error
+				FocalEngine.set_render_flag(False)
+    
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(result).encode())
 
 		else:
 			self.send_response(404)

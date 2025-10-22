@@ -147,6 +147,12 @@ namespace FocalEngine
 		// FIX ME: Is this system good solution?
 		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 		void RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
+
+		std::atomic<bool>& GetScreenshotFlag()
+		{ 
+			return NeedToWriteScreenshotFlag;
+		}
+
 	private:
 		SINGLETON_PRIVATE_PART(FERenderer)
 
@@ -215,6 +221,9 @@ namespace FocalEngine
 		bool InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity);
 
 		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
+
+		std::atomic<bool> NeedToWriteScreenshotFlag{ false };
+		void CheckAndWriteScreenshot();
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

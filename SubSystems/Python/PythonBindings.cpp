@@ -5,8 +5,54 @@ using namespace FocalEngine;
 
 namespace py = pybind11;
 
+class ScreenshotFlag {
+private:
+    std::atomic<bool> flag{ false };
+
+public:
+    void set(bool value) {
+        flag.store(value, std::memory_order_release);
+    }
+
+    bool get() const {
+        return flag.load(std::memory_order_acquire);
+    }
+
+    void wait_until_clear() {
+        // Busy wait until flag is false
+        while (flag.load(std::memory_order_acquire)) {
+            std::this_thread::yield();
+        }
+    }
+};
+
 PYBIND11_MODULE(FocalEnginePython, m) {
     m.doc() = "Python bindings for Focal Engine";
+
+    m.def("get_render_flag",
+        []() -> bool {
+            return RENDERER.GetScreenshotFlag().load(std::memory_order_acquire);
+        },
+        "Check if screenshot is being requested");
+
+    m.def("set_render_flag",
+        [](bool value) {
+            RENDERER.GetScreenshotFlag().store(value, std::memory_order_release);
+        },
+        py::arg("value"),
+        "Set screenshot request flag");
+
+    m.def("wait_for_screenshot",
+        []() {
+            // Release GIL while waiting so C++ thread can run
+            py::gil_scoped_release release;
+
+            // Wait until flag is set back to false by C++
+            while (RENDERER.GetScreenshotFlag().load(std::memory_order_acquire)) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        },
+        "Wait until screenshot is complete (blocks until C++ clears the flag)");
 
     // FIX ME: All other functions are a little less susceptible to multithreading issues
     m.def("create_screenshot",
