@@ -1344,9 +1344,12 @@ Json::Value FETerrainSystem::TerrainComponentToJson(FEEntity* Entity)
 	}
 	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
 
-	Root["Height map"]["ID"] = TerrainComponent.HeightMap->GetObjectID();
-	Root["Height map"]["Name"] = TerrainComponent.HeightMap->GetName();
-	Root["Height map"]["FileName"] = TerrainComponent.HeightMap->GetObjectID() + ".texture";
+	if (TerrainComponent.HeightMap != nullptr)
+	{
+		Root["Height map"]["ID"] = TerrainComponent.HeightMap->GetObjectID();
+		Root["Height map"]["Name"] = TerrainComponent.HeightMap->GetName();
+		Root["Height map"]["FileName"] = TerrainComponent.HeightMap->GetObjectID() + ".texture";
+	}
 
 	Root["Height scale"] = TerrainComponent.GetHeightScale();
 	Root["Displacement scale"] = TerrainComponent.GetDisplacementScale();
@@ -1394,8 +1397,11 @@ void FETerrainSystem::TerrainComponentFromJson(FEEntity* Entity, Json::Value Roo
 	Entity->AddComponent<FETerrainComponent>();
 	FETerrainComponent& TerrainComponent = Entity->GetComponent<FETerrainComponent>();
 
-	FETexture* HeightMapTexture = RESOURCE_MANAGER.GetTexture(Root["Height map"]["ID"].asString());
-	TERRAIN_SYSTEM.SetHeightMap(HeightMapTexture, Entity);
+	if (Root.isMember("Height map"))
+	{
+		FETexture* HeightMapTexture = RESOURCE_MANAGER.GetTexture(Root["Height map"]["ID"].asString());
+		TERRAIN_SYSTEM.SetHeightMap(HeightMapTexture, Entity);
+	}
 
 	TerrainComponent.SetHeightScale(Root["Height scale"].asFloat());
 	TerrainComponent.SetDisplacementScale(Root["Displacement scale"].asFloat());
