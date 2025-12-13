@@ -55,8 +55,11 @@ FEComponentsTools::FEComponentsTools()
 	};
 
 	VisibilityComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
-		FEVisibilityComponent& CurrentComponent = ParentEntity->GetComponent<FEVisibilityComponent>();
-		CurrentComponent.VisibleTypes = Root["VisibleTypes"].asUInt();
+		if (ParentEntity->AddComponent<FEVisibilityComponent>())
+		{
+			FEVisibilityComponent& CurrentComponent = ParentEntity->GetComponent<FEVisibilityComponent>();
+			CurrentComponent.VisibleTypes = Root["VisibleTypes"].asUInt();
+		}
 	};
 
 	VisibilityComponentInfo.DuplicateComponent = [](FEEntity* SourceEntity, FEEntity* TargetEntity) {

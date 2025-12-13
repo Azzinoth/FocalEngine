@@ -90,19 +90,6 @@ class EngineAPIHandler(BaseHTTPRequestHandler):
 			self.end_headers()
 			self.wfile.write(json.dumps({'scene_id': SceneID}).encode())
 
-		elif self.path == '/api/screenshot_scene':
-			SceneID = data.get('scene_id', '')
-			try:
-				Saved = FocalEngine.create_screenshot(SceneID)
-				Result = {'success': True, 'path': Saved}
-			except Exception as e:
-				Result = {'success': False, 'error': str(e)}
-
-			self.send_response(200)
-			self.send_header('Content-type', 'application/json')
-			self.end_headers()
-			self.wfile.write(json.dumps(Result).encode())
-
 		# Get scene by ID
 		elif self.path == '/api/get_scene':
 			SceneManager = FocalEngine.SceneManager.instance
@@ -135,6 +122,48 @@ class EngineAPIHandler(BaseHTTPRequestHandler):
 			self.end_headers()
 			self.wfile.write(json.dumps({'entities': Entities, 'count': len(Entities)}).encode())
 		
+		elif self.path == '/api/get_entity_name':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					EntityName = Entity.GetName()
+					Result = {'success': True, 'name': EntityName}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/set_entity_name':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			NewName = data.get('name', '')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.SetName(NewName)
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
 		# Set entity position (absolute)
 		elif self.path == '/api/set_entity_position':
 			SceneManager = FocalEngine.SceneManager.instance
@@ -183,6 +212,331 @@ class EngineAPIHandler(BaseHTTPRequestHandler):
 			else:
 				Result = {'success': False, 'error': 'Scene not found'}
 
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/set_entity_rotation':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			pitch = data.get('pitch', 0.0)
+			yaw = data.get('yaw', 0.0)
+			roll = data.get('roll', 0.0)
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.SetRotation(FocalEngine.Vector3(pitch, yaw, roll))
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_entity_rotation':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Rotation = Entity.GetRotation()
+						Result = {
+							'success': True,
+							'rotation': {'pitch': float(Rotation.x), 'yaw': float(Rotation.y), 'roll': float(Rotation.z)}
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_entity_scale':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Scale = Entity.GetScale()
+						Result = {
+							'success': True,
+							'scale': {'x': float(Scale.x), 'y': float(Scale.y), 'z': float(Scale.z)}
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/set_entity_scale':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			x = data.get('x', 1.0)
+			y = data.get('y', 1.0)
+			z = data.get('z', 1.0)
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.SetScale(FocalEngine.Vector3(x, y, z))
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_parent_entity':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						ParentEntity = Entity.GetParent()
+						if ParentEntity is not None:
+							ParentID = ParentEntity.GetID()
+						else:
+							ParentID = None
+						Result = {
+							'success': True,
+							'parent_entity_id': ParentID
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/attach_to_entity':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			ChildEntityID = data.get('entity_id')
+			ParentEntityID = data.get('parent_entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				ChildEntity = Scene.get_entity(ChildEntityID)
+				ParentEntity = Scene.get_entity(ParentEntityID)
+				if ChildEntity is not None and ParentEntity is not None:
+					try:
+						ChildEntity.AttachTo(ParentEntity)
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'One or both entities not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/detach_from_entity':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.Detach()
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/is_child_of':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			ChildEntityID = data.get('entity_id')
+			ParentEntityID = data.get('parent_entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				ChildEntity = Scene.get_entity(ChildEntityID)
+				ParentEntity = Scene.get_entity(ParentEntityID)
+				if ChildEntity is not None and ParentEntity is not None:
+					try:
+						IsChild = ChildEntity.IsChildOf(ParentEntity)
+						Result = {
+							'success': True,
+							'is_child': IsChild
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'One or both entities not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_child_entities':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			ParentEntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				ParentEntity = Scene.get_entity(ParentEntityID)
+				if ParentEntity is not None:
+					try:
+						ChildEntities = ParentEntity.GetChildEntities()
+						ChildEntityIDs = [child.GetID() for child in ChildEntities]
+						Result = {
+							'success': True,
+							'child_entity_ids': ChildEntityIDs
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Parent entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_entity_instance_seed':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						InstanceSeed = Entity.GetInstanceSeed()
+						Result = {
+							'success': True,
+							'instance_seed': InstanceSeed
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/set_entity_instance_seed':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			NewSeed = data.get('seed', 0)
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.SetInstanceSeed(NewSeed)
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/get_entity_instance_count':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						InstanceCount = Entity.GetInstanceCount()
+						Result = {
+							'success': True,
+							'instance_count': InstanceCount
+						}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
+			self.send_response(200)
+			self.send_header('Content-type', 'application/json')
+			self.end_headers()
+			self.wfile.write(json.dumps(Result).encode())
+
+		elif self.path == '/api/set_entity_instance_count':
+			SceneManager = FocalEngine.SceneManager.instance
+			SceneID = data.get('scene_id')
+			EntityID = data.get('entity_id')
+			NewCount = data.get('count', 1)
+			Scene = SceneManager.get_scene(SceneID)
+			if Scene is not None:
+				Entity = Scene.get_entity(EntityID)
+				if Entity is not None:
+					try:
+						Entity.SetInstanceCount(NewCount)
+						Result = {'success': True}
+					except Exception as Error:
+						Result = {'success': False, 'error': str(Error)}
+				else:
+					Result = {'success': False, 'error': 'Entity not found'}
+			else:
+				Result = {'success': False, 'error': 'Scene not found'}
 			self.send_response(200)
 			self.send_header('Content-type', 'application/json')
 			self.end_headers()
