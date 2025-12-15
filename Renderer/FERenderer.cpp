@@ -460,6 +460,9 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 
 	FEGameModelComponent& GameModelComponent = EntityWithGameModel->GetComponent<FEGameModelComponent>();
 
+	if (Camera == nullptr)
+		return;
+
 	if (bReloadUniformBlocks)
 		LoadUniformBlocks(Entity->ParentScene);
 
