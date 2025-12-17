@@ -2268,6 +2268,12 @@ FETexture* FEResourceManager::CreateTexture(const GLint InternalFormat, const GL
 	if (Name.empty())
 		Name = "unnamedTexture";
 
+	if (Width <= 0 || Height <= 0)
+	{
+		LOG.Add("Invalid texture dimensions in function FEResourceManager::CreateTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
 	FETexture* NewTexture = new FETexture(InternalFormat, Format, Width, Height, Name);
 	if (!bUnManaged)
 		Textures[NewTexture->GetObjectID()] = NewTexture;
@@ -2277,6 +2283,12 @@ FETexture* FEResourceManager::CreateTexture(const GLint InternalFormat, const GL
 
 FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const int Width, const int Height, const bool bHDR)
 {
+	if (Width <= 0 || Height <= 0)
+	{
+		LOG.Add("Invalid framebuffer dimensions in function FEResourceManager::CreateFramebuffer.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
 	FEFramebuffer* NewFramebuffer = new FEFramebuffer();
 	NewFramebuffer->ColorAttachments.resize(MaxColorAttachments);
 	for (size_t i = 0; i < static_cast<size_t>(MaxColorAttachments); i++)
