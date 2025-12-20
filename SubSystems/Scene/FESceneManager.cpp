@@ -332,7 +332,6 @@ bool FESceneManager::AreSceneGraphHierarchiesEquivalent(FENaiveSceneGraphNode* F
 std::vector<FEEntity*> FESceneManager::InstantiatePrefab(FEPrefab* Prefab, FEScene* Scene, bool bAddToSceneRoot)
 {
 	std::vector<FEEntity*> Result;
-
 	if (Prefab == nullptr || Scene == nullptr)
 	{
 		LOG.Add("FESceneManager::InstantiatePrefab: Prefab or Scene is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);

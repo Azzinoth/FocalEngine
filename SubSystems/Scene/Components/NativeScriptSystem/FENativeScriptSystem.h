@@ -45,6 +45,10 @@ namespace FocalEngine
 		std::vector<FEModuleScriptInstance> GetModuleScriptInstances(FENativeScriptModule* Module);
 		void GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID);
 
+		// Returns array of information about components associated with module that was not loaded properly.
+		std::vector<FEModuleScriptInstance> GetFailedToLoadModuleScriptInstances(FENativeScriptModule* Module);
+		void GetFailedToLoadModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID);
+
 		// Function will check component for user altered variables, if any found, it will update list of components accordingly.
 		void CheckForAlteredVariables(std::vector<FEModuleScriptInstance>& ModuleScriptInstancesToUpdate);
 		std::any CreateEngineLocalScriptVariableCopy(FEScriptVariableInfo& Info, std::any Value);
@@ -91,13 +95,6 @@ namespace FocalEngine
 
 		void DeleteNativeScriptModule(std::string ModuleID);
 		void DeleteNativeScriptModule(FENativeScriptModule* Module);
-
-		// Try to update module with new one. It will succeed only if new module has some script names that old module has.
-		// Should be used only for hot-reloading of new version of same module.
-		bool UpdateNativeScriptModule(std::string CurrentModuleID, std::string UpdatedModuleID);
-		// Try to update module with new one. It will succeed only if new module has some script names that old module has.
-		// Should be used only for hot-reloading of new version of same module.
-		bool UpdateNativeScriptModule(FENativeScriptModule* CurrentModule, FENativeScriptModule* UpdatedModule);
 
 		bool ReloadDLL(FENativeScriptModule* ModuleToUpdate);
 
