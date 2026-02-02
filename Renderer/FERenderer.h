@@ -95,7 +95,9 @@ namespace FocalEngine
 		
 		FETexture* GetCameraResult(FEEntity* CameraEntity);
 
-		void DebugDrawLine(glm::vec3 BeginPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
+		std::vector<FELine> GetFrustumLines(FEEntity* Camera, glm::vec3 Color = glm::vec3(0.3f, 0.6f, 0.1f), float LineWidth = 0.2f);
+
+		void DebugDrawLine(glm::vec3 StartPoint, glm::vec3 EndPoint, glm::vec3 Color = glm::vec3(1.0f), float Width = 0.1f);
 		void DebugDrawLine(FELine LineToRender);
 		void DebugDrawAABB(FEAABB AABB, glm::vec3 Color = glm::vec3(0.1f, 0.6f, 0.1f), float LineWidth = 0.2f);
 		void DebugDrawFrustum(FEEntity* Camera, glm::vec3 Color = glm::vec3(0.3f, 0.6f, 0.1f), float LineWidth = 0.2f);

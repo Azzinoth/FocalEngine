@@ -1,6 +1,6 @@
 #pragma once
 #include "../Renderer/FEViewport.h"
-#include "../Core/FEPlane.h"
+#include "../Core/Geometry/FEGeometry.h"
 
 namespace FocalEngine
 {
@@ -8,18 +8,6 @@ namespace FocalEngine
 	{
 		Deferred,
 		Forward_Simplified,
-	};
-
-	struct FEFrustum
-	{
-		FEPlane<float> LeftPlane;
-		FEPlane<float> RightPlane;
-		FEPlane<float> BottomPlane;
-		FEPlane<float> TopPlane;
-		FEPlane<float> NearPlane;
-		FEPlane<float> FarPlane;
-
-		std::vector<float> GetAllPlanesCoefficients();
 	};
 
 	struct FOCAL_ENGINE_API FECameraComponent

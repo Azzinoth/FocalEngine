@@ -1954,7 +1954,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void FERenderer::DebugDrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPoint, const glm::vec3 Color, const float Width)
+void FERenderer::DebugDrawLine(const glm::vec3 StartPoint, const glm::vec3 EndPoint, const glm::vec3 Color, const float Width)
 {
 	if (DebugLineCounter >= FE_MAX_DEBUG_LINES)
 	{
@@ -1962,8 +1962,8 @@ void FERenderer::DebugDrawLine(const glm::vec3 BeginPoint, const glm::vec3 EndPo
 		return;
 	}
 
-	DebugLines[DebugLineCounter].Begin = BeginPoint;
-	DebugLines[DebugLineCounter].End = EndPoint;
+	DebugLines[DebugLineCounter].StartPoint = StartPoint;
+	DebugLines[DebugLineCounter].EndPoint = EndPoint;
 	DebugLines[DebugLineCounter].Color = Color;
 	DebugLines[DebugLineCounter].Width = Width;
 
@@ -2426,116 +2426,28 @@ glm::ivec4 FERenderer::GetGLViewport()
 	return Viewport;
 }
 
-void FERenderer::DebugDrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
+std::vector<FELine> FERenderer::GetFrustumLines(FEEntity* Camera, glm::vec3 Color, float LineWidth)
 {
+	std::vector<FELine> Result;
 	if (Camera == nullptr)
-		return;
+		return Result;
 
 	if (!Camera->HasComponent<FECameraComponent>())
-		return;
+		return Result;
 
 	FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
-	// Camera could not be active, so we should force update frustum.
+	// Camera could be inactive, so we should force update frustum.
 	CurrentCameraComponent.UpdateFrustum();
-	FEFrustum Frustum = CurrentCameraComponent.GetFrustum();
 
-	// Frustum could be drawn in different ways, this particular way is not most efficient.
-	// But I wanted to try out geometric approach to draw frustum.
+	Result = CurrentCameraComponent.GetFrustum().GetFrustumLines(Color, LineWidth);
+	return Result;
+}
 
-	// In frustum, we have 6 planes. We can find intersection of 3 planes to get 8 corners of frustum.
-	// Then we can draw lines between these corners to get frustum.
-
-	// Draw near plane
-	std::optional<glm::vec3> IntersectionPoint = Frustum.NearPlane.DoesIntersectPlanes(Frustum.TopPlane, Frustum.RightPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 NearTopRight = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.NearPlane.DoesIntersectPlanes(Frustum.BottomPlane, Frustum.RightPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 NearBottomRight = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.NearPlane.DoesIntersectPlanes(Frustum.TopPlane, Frustum.LeftPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 NearTopLeft = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.NearPlane.DoesIntersectPlanes(Frustum.BottomPlane, Frustum.LeftPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 NearBottomLeft = IntersectionPoint.value();
-
-	// After we have 4 corners of near plane, we can draw lines between them.
-	RENDERER.DebugDrawLine(NearTopRight, NearTopLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearTopLeft, NearBottomLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearBottomLeft, NearBottomRight, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearBottomRight, NearTopRight, Color, LineWidth);
-
-	// Find far plane corners
-	IntersectionPoint = Frustum.FarPlane.DoesIntersectPlanes(Frustum.TopPlane, Frustum.RightPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 FarTopRight = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.FarPlane.DoesIntersectPlanes(Frustum.BottomPlane, Frustum.RightPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 FarBottomRight = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.FarPlane.DoesIntersectPlanes(Frustum.TopPlane, Frustum.LeftPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 FarTopLeft = IntersectionPoint.value();
-
-	IntersectionPoint = Frustum.FarPlane.DoesIntersectPlanes(Frustum.BottomPlane, Frustum.LeftPlane);
-	if (!IntersectionPoint.has_value())
-	{
-		// With proper frustum, this should never happen.
-		LOG.Add("Incorrect frustum planes in FERenderer::DrawFrustum", "FE_LOG_RENDERING", FE_LOG_ERROR);
-		return;
-	}
-	glm::vec3 FarBottomLeft = IntersectionPoint.value();
-
-	// Draw lines between far plane corners
-	RENDERER.DebugDrawLine(FarTopRight, FarTopLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(FarTopLeft, FarBottomLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(FarBottomLeft, FarBottomRight, Color, LineWidth);
-	RENDERER.DebugDrawLine(FarBottomRight, FarTopRight, Color, LineWidth);
-
-	// Draw lines between near and far plane corners
-	RENDERER.DebugDrawLine(NearTopRight, FarTopRight, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearTopLeft, FarTopLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearBottomLeft, FarBottomLeft, Color, LineWidth);
-	RENDERER.DebugDrawLine(NearBottomRight, FarBottomRight, Color, LineWidth);
+void FERenderer::DebugDrawFrustum(FEEntity* Camera, glm::vec3 Color, float LineWidth)
+{
+	std::vector<FELine> FrustumLines = GetFrustumLines(Camera, Color, LineWidth);
+	for (const FELine& Line : FrustumLines)
+		DebugDrawLine(Line);
 }
 
 bool FERenderer::FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEFramebuffer* ResultingFrameBuffer)

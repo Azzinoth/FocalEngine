@@ -250,15 +250,26 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/Config.h"
 )
 
+# *************** GEOMETRY ***************
+
+file(GLOB Geometry_SRC
+	"Core/Geometry/FELine.cpp"
+	"Core/Geometry/FELine.h"
+	"Core/Geometry/FEPlane.cpp"
+	"Core/Geometry/FEPlane.h"
+	"Core/Geometry/FEAABB.cpp"
+	"Core/Geometry/FEAABB.h"
+	"Core/Geometry/FEFrustum.cpp"
+	"Core/Geometry/FEFrustum.h"
+	"Core/Geometry/FEGeometry.cpp"
+	"Core/Geometry/FEGeometry.h"
+)
+
 # *************** CORE ***************
 
 file(GLOB Core_SRC
 	"Core/FocalEngineAPI.h"
 	"Core/FECoreIncludes.h"
-	"Core/FEPlane.cpp"
-	"Core/FEPlane.h"
-	"Core/FEGeometricTools.cpp"
-	"Core/FEGeometricTools.h"
 	"Core/FEObject.cpp"
 	"Core/FEObject.h"
 )
@@ -449,6 +460,7 @@ list(APPEND ALL_SOURCE_FILES
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
 			${PointCloudShaders_SRC}
+			${Geometry_SRC}
 			${Core_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
@@ -598,6 +610,7 @@ endif()
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/Core" FILES ${Core_SRC})
+source_group("Source Files/Core/Geometry" FILES ${Geometry_SRC})
 source_group("Source Files/CoreExtensions/Materials/InstancedLineMaterial" FILES ${InstancedLineMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PBRMaterial" FILES ${PBRMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PhongMaterial" FILES ${PhongMaterial_SRC})

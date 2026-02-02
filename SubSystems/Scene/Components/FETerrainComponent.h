@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/FEGeometricTools.h"
+#include "../Core/Geometry/FEGeometry.h"
 #include "../ResourceManager/BaseResources/FEMaterial.h"
 
 namespace FocalEngine

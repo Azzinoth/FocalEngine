@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Core/FECoreIncludes.h"
+#include "../Core/Geometry/FELine.h"
 #include <optional>
 
 namespace FocalEngine
