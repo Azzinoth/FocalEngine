@@ -77,6 +77,13 @@ namespace FocalEngine
 				FE_GL_ERROR(glDeleteBuffers(1, &PointCloud64bitFrameBuffer));
 		}
 	};
+
+	struct FEDebugLineDirtyFlag
+	{
+		bool bCurrentlyInUse = false;
+		bool bSeenStartFrame = false;
+		bool bSeenEndFrame = false;
+	};
 	
 	class FOCAL_ENGINE_API FERenderer
 	{
@@ -177,6 +184,9 @@ namespace FocalEngine
 
 		// Debug lines
 		std::vector<FELine> DebugLines;
+		std::vector<FEDebugLineDirtyFlag> DebugLinesDirtyFlags;
+		void BeginFrameDebugLines();
+		void EndFrameDebugLines();
 		int DebugLineCounter = 0;
 		GLuint DebugLinesVAO = 0;
 		GLenum DebugLinesBuffer = 0;

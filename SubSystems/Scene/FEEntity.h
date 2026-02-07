@@ -55,7 +55,7 @@ namespace FocalEngine
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
-				// FIXME: Should return nullptr or similar instead of throwing an exception.
+				// FE_FIX_ME: Should return nullptr or similar instead of throwing an exception.
 				throw std::runtime_error("Component does not exist in entity");
 			}
 

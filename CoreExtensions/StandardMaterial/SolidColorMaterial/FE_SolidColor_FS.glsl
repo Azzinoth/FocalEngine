@@ -4,7 +4,7 @@ in vec3 FragmentPosition;
 out vec4 out_Color;
 
 uniform vec3 BaseColor;
-// FIXME: Work of this uniform is not correct.
+// FE_FIX_ME: Work of this uniform is not correct.
 uniform float BrightnessFactor;
 @CameraPosition@
 

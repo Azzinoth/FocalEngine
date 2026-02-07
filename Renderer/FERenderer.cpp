@@ -36,6 +36,7 @@ void FERenderer::Init()
 
 	// Instanced lines
 	DebugLines.resize(FE_MAX_DEBUG_LINES);
+	DebugLinesDirtyFlags.resize(FE_MAX_DEBUG_LINES);
 
 	const float QuadVertices[] = {
 		0.0f,  -0.5f,  0.0f,
@@ -239,11 +240,11 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 			Shader->UpdateUniformData("FEExposure", CurrentCameraComponent.GetExposure());
 	}
 	
-	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
+	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Shader->GetUniform("textureBindings") != nullptr)
 		Shader->GetUniform("textureBindings")->SetValue<std::vector<int>>(Material->TextureBindings);
 
-	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
+	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Shader->GetUniform("textureChannels") != nullptr)
 		Shader->GetUniform("textureChannels")->SetValue<std::vector<int>>(Material->TextureChannels);
 
@@ -256,7 +257,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 	if (Shader->GetUniform("FEUniformLighting") != nullptr)
 		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
 
-	// TODO: Maybe it should be removed from here, because material->bind() should handle it.
+	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Material != nullptr)
 	{
 		if (Shader->GetUniform("FEAOIntensity") != nullptr)
@@ -1379,7 +1380,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 	FETexture* PreviousStageTexture = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 
-	// FIXME: Temporary hack to force HDR output.
+	// FE_FIX_ME: Temporary hack to force HDR output.
 	if (CurrentCameraRenderingData->bTemporaryForceHDROutput)
 		CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 	for (size_t i = 0; i < CurrentCameraRenderingData->PostProcessEffects.size(); i++)
@@ -1766,7 +1767,7 @@ void FERenderer::RenderGameModelComponent(FEGameModelComponent& GameModelCompone
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-// FIXME: Should this be implemented as a separate function, or should it only be called when the camera is in forward rendering mode?
+// FE_FIX_ME: Should this be implemented as a separate function, or should it only be called when the camera is in forward rendering mode?
 // Note: This function is currently only used in VR rendering and Simplified mode!
 void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Camera, bool bReloadUniformBlocks)
 {
@@ -1979,7 +1980,54 @@ void FERenderer::DebugDrawLine(FELine LineToRender)
 	}
 
 	DebugLines[DebugLineCounter] = LineToRender;
+	DebugLinesDirtyFlags[DebugLineCounter].bSeenStartFrame = false;
+	DebugLinesDirtyFlags[DebugLineCounter].bSeenEndFrame = false;
+	DebugLinesDirtyFlags[DebugLineCounter].bCurrentlyInUse = true;
 	DebugLineCounter++;
+}
+
+void FERenderer::BeginFrameDebugLines()
+{
+	for (size_t i = 0; i < DebugLines.size(); i++)
+	{
+		if (!DebugLinesDirtyFlags[i].bCurrentlyInUse)
+			continue;
+
+		DebugLinesDirtyFlags[i].bSeenStartFrame = true;
+	}
+}
+
+void FERenderer::EndFrameDebugLines()
+{
+	// Go through all lines and if debug dirty flag seen both start and end of frame, remove line.
+	for (size_t i = 0; i < DebugLines.size(); i++)
+	{
+		if (!DebugLinesDirtyFlags[i].bCurrentlyInUse)
+			continue;
+
+		if (DebugLinesDirtyFlags[i].bSeenStartFrame && DebugLinesDirtyFlags[i].bSeenEndFrame)
+		{
+			DebugLinesDirtyFlags[i].bSeenStartFrame = false;
+			DebugLinesDirtyFlags[i].bSeenEndFrame = false;
+			DebugLinesDirtyFlags[i].bCurrentlyInUse = false;
+			DebugLines[i] = FELine();
+			
+			// Also shift all lines after this one to the left by one.
+			// We need to keep lines array compact for rendering.
+			for (size_t j = i; j < DebugLines.size() - 1; j++)
+			{
+				DebugLines[j] = DebugLines[j + 1];
+				DebugLinesDirtyFlags[j] = DebugLinesDirtyFlags[j + 1];
+			}
+
+			DebugLineCounter--;
+			i--;
+		}
+		else
+		{
+			DebugLinesDirtyFlags[i].bSeenEndFrame = true;
+		}
+	}
 }
 
 void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)

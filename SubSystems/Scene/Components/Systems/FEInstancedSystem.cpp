@@ -809,7 +809,7 @@ bool FEInstancedSystem::TryToSnapIndividualInstance(FEEntity* Entity, size_t Ins
 		return false;
 
 	const float Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.InstancedElementsData[0]->TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.InstancedElementsData[0]->TransformedInstancedMatrices[InstanceIndex][3][2]));
-	if (Y == -FLT_MAX)
+	if (Y == -std::numeric_limits<float>::max())
 		return false;
 
 	if (InstancedComponent.TerrainLayer != -1)
@@ -1109,27 +1109,27 @@ bool FEInstancedSystem::PopulateInstanceInternal(FEEntity* Entity, FEGameModelCo
 		{
 			Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
-			if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
+			if (InstancedComponent.TerrainLayer != -1 && Y != -std::numeric_limits<float>::max())
 			{
 				FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
 				const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 				if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
-					Y = -FLT_MAX;
+					Y = -std::numeric_limits<float>::max();
 			}
 
 			int CountOfTries = 0;
-			while (Y == -FLT_MAX)
+			while (Y == -std::numeric_limits<float>::max())
 			{
 				X = SpawnInfo.GetPositionDeviation();
 				Z = SpawnInfo.GetPositionDeviation();
 				Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
-				if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
+				if (InstancedComponent.TerrainLayer != -1 && Y != -std::numeric_limits<float>::max())
 				{
 					FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
 					const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 					if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
-						Y = -FLT_MAX;
+						Y = -std::numeric_limits<float>::max();
 				}
 
 				CountOfTries++;

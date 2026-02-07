@@ -99,7 +99,7 @@ namespace FocalEngine
 		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
 		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
 		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
-		// FIXME: Remove this function. And redo vertex attributes management.
+		// FE_FIX_ME: Remove this function. And redo vertex attributes management.
 		// Data of such user defined vertex attributes will not be stored along FEMesh.
 		void SetUserDataVertexAttributeActive(FEMesh* Mesh);
 
@@ -212,6 +212,9 @@ namespace FocalEngine
 		bool DoesPLYContainPointCloud(FERawPLYData* PLYData);
 
 		std::string GetEngineFolder();
+
+		glm::dvec3 GetLastLoadedMeshAppliedShift();
+		glm::dvec3 GetLastLoadedPointCloudAppliedShift();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -255,7 +258,7 @@ namespace FocalEngine
 
 		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
 
-		// TODO: Find a better way to handle resource extraction.
+		// FE_TO_DO: Find a better way to handle resource extraction.
 		// These variables are used to extract engine resources after application build.
 		bool bUsePackageForPrivateResources = false;
 		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
@@ -270,6 +273,7 @@ namespace FocalEngine
 		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
 
 		static void LoadPointCloudFileAsyncCallBack(void* OutputData);
+		glm::dvec3 LastPointCloudAppliedShift;
 	};
 #include "FEResourceManager.inl"
 

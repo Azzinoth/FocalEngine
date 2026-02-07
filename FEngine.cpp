@@ -65,6 +65,8 @@ void FEngine::BeginFrame(const bool InternalCall)
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
+	RENDERER.BeginFrameDebugLines();
+
 	APPLICATION.BeginFrame();
 	if (APPLICATION.GetMainWindow() == nullptr)
 		return;
@@ -109,7 +111,7 @@ void FEngine::Render(const bool InternalCall)
 
 void FEngine::EndFrame(const bool InternalCall)
 {
-	RENDERER.DebugLineCounter = 0;
+	RENDERER.EndFrameDebugLines();
 
 	INPUT.EndFrame();
 
@@ -118,7 +120,7 @@ void FEngine::EndFrame(const bool InternalCall)
 	APPLICATION.EndFrame();
 	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
 
-	// FIXME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
+	// FE_FIX_ME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
 	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)
 	{
 		FILE_SYSTEM.DeleteDirectory(FILE_SYSTEM.GetCurrentWorkingPath() + "/SubSystems");

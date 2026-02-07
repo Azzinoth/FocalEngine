@@ -408,7 +408,7 @@ void FEShader::RegisterUniforms()
 				}
 				else
 				{
-					// TODO: check if this make sense
+					// FE_TO_DO: Check if this make sense.
 					GLint BindingPoint;
 					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_1D, BindingPoint, UniformName, Locations));
@@ -425,7 +425,7 @@ void FEShader::RegisterUniforms()
 				}
 				else
 				{
-					// TODO: check if this make sense
+					// FE_TO_DO: Check if this make sense.
 					GLint BindingPoint;
 					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_2D, BindingPoint, UniformName, Locations));
@@ -442,7 +442,7 @@ void FEShader::RegisterUniforms()
 				}
 				else
 				{
-					// TODO: check if this make sense
+					// FE_TO_DO: Check if this make sense.
 					GLint BindingPoint;
 					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D, BindingPoint, UniformName, Locations));

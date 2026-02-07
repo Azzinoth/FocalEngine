@@ -67,7 +67,6 @@ namespace FocalEngine
 		double CPUTime = 0.0, GPUTime = 0.0;
 		double CurrentDeltaTime = 0.0;
 
-		bool bSimplifiedRendering = false;
 		bool bVsyncEnabled = true;
 
 		bool bVRInitializedCorrectly = false;

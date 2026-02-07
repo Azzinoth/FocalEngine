@@ -699,7 +699,7 @@ void FEOpenXRInput::SetRightAButtonReleaseCallBack(std::function<void()> UserCal
     reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
-// TODO: Need to implement a simpler function to determine controller type.
+// FE_TO_DO: Need to implement a simpler function to determine controller type.
 std::string FEOpenXRInput::CurrentlyActiveInteractionProfile(bool bLeftController)
 {
     XrPath TopLevelUserPath;

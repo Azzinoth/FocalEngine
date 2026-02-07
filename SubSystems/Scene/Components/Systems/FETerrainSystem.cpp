@@ -242,7 +242,7 @@ void FETerrainSystem::SetBrushLayerIndex(const size_t NewValue)
 float FETerrainSystem::GetHeightAt(FEEntity* TerrainEntity, glm::vec2 XZWorldPosition)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
-		return -FLT_MAX;
+		return -std::numeric_limits<float>::max();
 
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
 
@@ -267,7 +267,7 @@ float FETerrainSystem::GetHeightAt(FEEntity* TerrainEntity, glm::vec2 XZWorldPos
 		return (TerrainComponent.HeightMapArray[Index] * 2 * TerrainComponent.HeightScale - TerrainComponent.HeightScale) * TerrainEntity->GetComponent<FETransformComponent>().GetScale()[1] + TerrainEntity->GetComponent<FETransformComponent>().GetPosition()[1];
 	}
 
-	return -FLT_MAX;
+	return -std::numeric_limits<float>::max();
 }
 
 glm::dvec3 FETerrainSystem::GetPointOnTerrain(FEEntity* TerrainEntity, const glm::dvec3 MouseRayStart, const glm::dvec3 MouseRayDirection, const float StartDistance, const float EndDistance)
@@ -279,17 +279,19 @@ glm::dvec3 FETerrainSystem::GetPointOnTerrain(FEEntity* TerrainEntity, const glm
 		if ((GetHeightAt(TerrainEntity, glm::vec2(PointOnTerrain.x, PointOnTerrain.z)) + 1.0f) > PointOnTerrain.y)
 			return PointOnTerrain;
 
-		return glm::dvec3(FLT_MAX);
+		// FE_FIX_ME: should it be std::numeric_limits<double>::max()
+		return glm::dvec3(std::numeric_limits<float>::max());
 	}
 
-	return glm::dvec3(FLT_MAX);
+	// FE_FIX_ME: should it be std::numeric_limits<double>::max()
+	return glm::dvec3(std::numeric_limits<float>::max());
 }
 
 bool FETerrainSystem::IsUnderGround(FEEntity* TerrainEntity, const glm::dvec3 TestPoint)
 {
 	const float Height = GetHeightAt(TerrainEntity, glm::vec2(TestPoint.x, TestPoint.z));
 	// If we go outside terrain.
-	if (Height == -FLT_MAX)
+	if (Height == -std::numeric_limits<float>::max())
 		return true;
 
 	return TestPoint.y < Height ? true : false;
@@ -323,7 +325,8 @@ glm::dvec3 FETerrainSystem::BinarySearch(FEEntity* TerrainEntity, const int Coun
 		}
 		else
 		{
-			return glm::dvec3(FLT_MAX);
+			// FE_FIX_ME: should it be std::numeric_limits<double>::max()
+			return glm::dvec3(std::numeric_limits<float>::max());
 		}
 	}
 
@@ -590,8 +593,8 @@ void FETerrainSystem::UpdateCPUHeightInfo(FEEntity* TerrainEntity)
 	size_t RawDataLenght;
 	unsigned char* RawData = TerrainComponent.HeightMap->GetRawData(&RawDataLenght);
 
-	float Max = FLT_MIN;
-	float Min = FLT_MAX;
+	float Min = std::numeric_limits<float>::max();
+	float Max = -std::numeric_limits<float>::max();
 	int Iterator = 0;
 	for (size_t i = 0; i < RawDataLenght; i += 2)
 	{
@@ -712,8 +715,8 @@ void FETerrainSystem::SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity
 	size_t ElemntCount = TextureDataSize / sizeof(unsigned short);
 	TerrainComponent.HeightMapArray.resize(ElemntCount);
 
-	float Max = FLT_MIN;
-	float Min = FLT_MAX;
+	float Min = std::numeric_limits<float>::max();
+	float Max = -std::numeric_limits<float>::max();
 	for (size_t i = 0; i < ElemntCount; i++)
 	{
 		const unsigned short TemporaryValue = TextureData[i];
@@ -1012,6 +1015,7 @@ void FETerrainSystem::ActivateVacantLayerSlot(FEEntity* TerrainEntity, FEMateria
 			RawData[i] = 0;
 		}
 
+		// FE_TO_DO: Clean up commented code.
 		//FETexture* NewTexture = RESOURCE_MANAGER.RawDataToFETexture(RawData.data(), TextureWidth, TextureHeight, -1, GL_RGBA);
 
 		/*FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));

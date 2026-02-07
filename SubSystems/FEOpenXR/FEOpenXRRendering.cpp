@@ -124,7 +124,7 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	
 
 	bValidSwapChain = true;
-	// FIXME: Temporary solution, only supports one scene.
+	// FE_FIX_ME: Temporary solution, only supports one scene.
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	if (ActiveScenes.empty())
 		return;

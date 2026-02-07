@@ -1,7 +1,7 @@
 #include "FEFrustum.h"
 using namespace FocalEngine;
 
-std::vector<float> FEFrustum::GetAllPlanesCoefficients()
+std::vector<float> FEFrustum::GetAllPlanesCoefficients() const
 {
 	std::vector<float> Coefficients;
 
@@ -44,7 +44,7 @@ std::vector<float> FEFrustum::GetAllPlanesCoefficients()
 	return Coefficients;
 }
 
-std::vector<FELine> FEFrustum::GetFrustumLines(glm::vec3 Color, float LineWidth)
+std::vector<FELine> FEFrustum::GetFrustumLines(glm::vec3 Color, float LineWidth) const
 {
 	std::vector<FELine> Result;
 
@@ -147,4 +147,86 @@ std::vector<FELine> FEFrustum::GetFrustumLines(glm::vec3 Color, float LineWidth)
 	Result.push_back(FELine(NearBottomRight, FarBottomRight, Color, LineWidth));
 
 	return Result;
+}
+
+bool FEFrustum::ContainsPoint(const glm::vec3& Point) const
+{
+	// A point is inside the frustum if it is on the negative side of all planes
+	if (LeftPlane.SignedDistanceTo(Point) < 0) return false;
+	if (RightPlane.SignedDistanceTo(Point) < 0) return false;
+	if (BottomPlane.SignedDistanceTo(Point) < 0) return false;
+	if (TopPlane.SignedDistanceTo(Point) < 0) return false;
+	if (NearPlane.SignedDistanceTo(Point) < 0) return false;
+	if (FarPlane.SignedDistanceTo(Point) < 0) return false;
+
+	return true;
+}
+
+int FEFrustum::TestAABB(const FEAABB& Box) const
+{
+	int Result = 1;
+
+	// First check all points of the AABB against the frustum planes.
+	std::vector<glm::vec3> Corners = Box.GetCorners();
+	int InsideCornersCount = 0;
+	for (size_t i = 0; i < Corners.size(); i++)
+	{
+		if (ContainsPoint(Corners[i]))
+			InsideCornersCount++;
+	}
+
+	if (InsideCornersCount == Corners.size())
+		return 1; // Fully inside
+
+	if (InsideCornersCount > 0)
+		return 0; // Intersecting
+
+	// All corners are outside but we can not be sure yet.
+	if (InsideCornersCount == 0)
+		Result = -1; 
+
+	// FE_FIX_ME: That portion of code is not always working correctly.
+	// If we reach here, we need to do a more thorough test.
+	// Test against each plane.
+	const FEPlane<float>* Planes[6] = { &LeftPlane, &RightPlane, &BottomPlane, &TopPlane, &NearPlane, &FarPlane };
+
+	glm::vec3 Min = Box.GetMin();
+	glm::vec3 Max = Box.GetMax();
+
+	for (int i = 0; i < 6; i++)
+	{
+		const glm::vec3& Normal = Planes[i]->GetNormal();
+
+		// Find the positive vertex (furthest along plane normal)
+		glm::vec3 PositiveVertex;
+		PositiveVertex.x = (Normal.x >= 0) ? Max.x : Min.x;
+		PositiveVertex.y = (Normal.y >= 0) ? Max.y : Min.y;
+		PositiveVertex.z = (Normal.z >= 0) ? Max.z : Min.z;
+
+		// Find the negative vertex (furthest against plane normal)
+		glm::vec3 NegativeVertex;
+		NegativeVertex.x = (Normal.x >= 0) ? Min.x : Max.x;
+		NegativeVertex.y = (Normal.y >= 0) ? Min.y : Max.y;
+		NegativeVertex.z = (Normal.z >= 0) ? Min.z : Max.z;
+
+		// If positive vertex is outside, the entire box is outside
+		if (Planes[i]->SignedDistanceTo(PositiveVertex) < 0)
+			return -1; // Outside
+
+		// If negative vertex is outside, the box is intersecting
+		if (Planes[i]->SignedDistanceTo(NegativeVertex) < 0)
+			Result = 0; // Intersecting
+	}
+
+	return Result;
+}
+
+bool FEFrustum::IntersectsAABB(const FEAABB& Box) const
+{
+	return TestAABB(Box) != -1;
+}
+
+bool FEFrustum::ContainsAABB(const FEAABB& Box) const
+{
+	return TestAABB(Box) == 1;
 }

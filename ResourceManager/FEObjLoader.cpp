@@ -341,12 +341,12 @@ void FEObjLoader::CalculateTangents(FERawOBJData* Data)
 
 void FEObjLoader::NormalizeVertexPositions(FERawOBJData* Data)
 {
-	float MinX = FLT_MAX;
-	float MaxX = -FLT_MAX;
-	float MinY = FLT_MAX;
-	float MaxY = -FLT_MAX;
-	float MinZ = FLT_MAX;
-	float MaxZ = -FLT_MAX;
+	float MinX = std::numeric_limits<float>::max();
+	float MaxX = -std::numeric_limits<float>::max();
+	float MinY = std::numeric_limits<float>::max();
+	float MaxY = -std::numeric_limits<float>::max();
+	float MinZ = std::numeric_limits<float>::max();
+	float MaxZ = -std::numeric_limits<float>::max();
 
 	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
 	{
@@ -381,24 +381,24 @@ void FEObjLoader::NormalizeVertexPositions(FERawOBJData* Data)
 		ScaleFactor = 1.0f / MinRange;
 	}
 
+	glm::vec3 ShiftToApply(-MinX, -MinY, -MinZ);
 	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
 	{
-		Data->RawVertexCoordinates[i].x -= MinX;
-		Data->RawVertexCoordinates[i].y -= MinY;
-		Data->RawVertexCoordinates[i].z -= MinZ;
-
+		Data->RawVertexCoordinates[i] -= ShiftToApply;
 		Data->RawVertexCoordinates[i] *= ScaleFactor;
 	}
+
+	LastAppliedShift = ShiftToApply;
 }
 
 void FEObjLoader::NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data)
 {
-	double MinX = DBL_MAX;
-	double MaxX = -DBL_MAX;
-	double MinY = DBL_MAX;
-	double MaxY = -DBL_MAX;
-	double MinZ = DBL_MAX;
-	double MaxZ = -DBL_MAX;
+	double MinX = std::numeric_limits<double>::max();
+	double MaxX = -std::numeric_limits<double>::max();
+	double MinY = std::numeric_limits<double>::max();
+	double MaxY = -std::numeric_limits<double>::max();
+	double MinZ = std::numeric_limits<double>::max();
+	double MaxZ = -std::numeric_limits<double>::max();
 
 	for (size_t i = 0; i < Data->RawVertexCoordinatesDoublePrecision.size(); i++)
 	{
@@ -433,14 +433,14 @@ void FEObjLoader::NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data)
 		ScaleFactor = 1.0 / MinRange;
 	}
 
+	glm::dvec3 ShiftToApply(-MinX, -MinY, -MinZ);
 	for (size_t i = 0; i < Data->RawVertexCoordinatesDoublePrecision.size(); i++)
 	{
-		Data->RawVertexCoordinatesDoublePrecision[i].x -= MinX;
-		Data->RawVertexCoordinatesDoublePrecision[i].y -= MinY;
-		Data->RawVertexCoordinatesDoublePrecision[i].z -= MinZ;
-
+		Data->RawVertexCoordinatesDoublePrecision[i] -= ShiftToApply;
 		Data->RawVertexCoordinatesDoublePrecision[i] *= ScaleFactor;
 	}
+
+	LastAppliedShift = ShiftToApply;
 }
 
 void FEObjLoader::ProcessRawData(FERawOBJData* Data)
@@ -1149,4 +1149,9 @@ bool FEObjLoader::SaveToOBJ(const char* FileName, FERawOBJData* Data)
 	File.close();
 	LOG.Add(std::string("Successfully saved OBJ file: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
 	return true;
+}
+
+glm::dvec3 FEObjLoader::GetLastAppliedShift() const
+{
+	return LastAppliedShift;
 }

@@ -88,6 +88,8 @@ namespace FocalEngine
 		std::vector<FERawOBJData*>* GetLoadedObjects();
 
 		bool SaveToOBJ(const char* FileName, FERawOBJData* Data);
+		
+		glm::dvec3 GetLastAppliedShift() const;
 	private:
 		SINGLETON_PRIVATE_PART(FEObjLoader)
 			
@@ -133,5 +135,7 @@ namespace FocalEngine
 				return Lhs.ActualIndex == Rhs.ActualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TexIndex == Rhs.TexIndex && Lhs.NormIndex == Rhs.NormIndex;
 			}
 		};
+
+		glm::dvec3 LastAppliedShift = glm::dvec3(0.0);
 	};
 }

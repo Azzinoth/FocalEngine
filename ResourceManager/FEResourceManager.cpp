@@ -4243,7 +4243,7 @@ FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 	{
 		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".lib")
 		{
-			// FIXME: Currently projects only need debug lib files. Is this correct?
+			// FE_FIX_ME: Currently projects only need debug lib files. Is this correct?
 			// The code will grab either Debug or Release lib files. We should make this more deterministic.
 			// Note: Only FocalEngine.lib and FEBasicApplication.lib are needed.
 			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
@@ -4379,7 +4379,7 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 		return nullptr;
 	}
 
-	// TODO: Check if we need to add more files to the asset package.
+	// FE_TO_DO: Check if we need to add more files to the asset package.
 	// Currently dumping all related files from the engine folder into the asset package.
 	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath + "/Resources/", false);
 	for (size_t i = 0; i < AllFiles.size(); i++)
@@ -4543,11 +4543,12 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	}
 
 	FEAABB PointCloudAABB;
+	glm::dvec3 AppliedShift = glm::dvec3(0.0);
 	// Before converting to float, we need to center the point cloud using 64 bit precision.
 	if (!RawPointCloudDataDouble.empty())
 	{
-		glm::dvec3 Min = glm::dvec3(DBL_MAX);
-		glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+		glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
+		glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
 		for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
 		{
@@ -4575,6 +4576,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 
 		if (bCenterPositions)
 		{
+			LastPointCloudAppliedShift = Center;
 			for (size_t i = 0; i < RawPointCloudDataDouble.size(); i++)
 			{
 				RawPointCloudDataDouble[i].X = RawPointCloudDataDouble[i].X - Center.x;
@@ -4608,8 +4610,8 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		UserDataProcessor(RawPointCloudData);
 
 		// Points might have been removed or changed in the user data processor.
-		glm::dvec3 Min = glm::dvec3(DBL_MAX);
-		glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+		glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
+		glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
 		for (size_t i = 0; i < RawPointCloudData.size(); i++)
 		{
@@ -4746,8 +4748,8 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 
 	if (!RawPointCloudData.empty())
 	{
-		glm::vec3 Min = glm::vec3(FLT_MAX);
-		glm::vec3 Max = glm::vec3(-FLT_MAX);
+		glm::vec3 Min = glm::vec3(std::numeric_limits<float>::max());
+		glm::vec3 Max = glm::vec3(-std::numeric_limits<float>::max());
 
 		for (size_t i = 0; i < RawPointCloudData.size(); i++)
 		{
@@ -4775,6 +4777,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 		{
 			glm::vec3 Extent = Max - Min;
 			glm::vec3 Center = Min + Extent / 2.0f;
+			LastPointCloudAppliedShift = Center;
 
 			for (size_t i = 0; i < RawPointCloudData.size(); i++)
 			{
@@ -5133,6 +5136,7 @@ struct LoadPointCloudAsyncInfo
 	bool bSuccess = false;
 	bool bCenterPositions = true;
 	FEAABB AABB;
+	glm::dvec3 AppliedShift;
 	laszip_header* OutHeaderCopy = nullptr;
 };
 
@@ -5150,8 +5154,8 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 		// Before converting to float, we need to center the point cloud using 64 bit precision.
 		if (!TempRawData.empty())
 		{
-			glm::dvec3 Min = glm::dvec3(DBL_MAX);
-			glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
+			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
 			for (size_t i = 0; i < TempRawData.size(); i++)
 			{
@@ -5186,6 +5190,7 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 					TempRawData[i].Z = TempRawData[i].Z - Center.z;
 				}
 
+				Input->AppliedShift = Center;
 				PointCloudAABB = FEAABB(Min - Center, Max - Center);
 			}
 			else
@@ -5199,8 +5204,8 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 			Input->UserDataProcessor(TempRawData);
 
 			// Points might have been removed or changed in the user data processor.
-			glm::dvec3 Min = glm::dvec3(DBL_MAX);
-			glm::dvec3 Max = glm::dvec3(-DBL_MAX);
+			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
+			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
 			for (size_t i = 0; i < TempRawData.size(); i++)
 			{
@@ -5254,8 +5259,11 @@ void FEResourceManager::LoadPointCloudFileAsyncCallBack(void* OutputData)
 	if (ResultInfo->bSuccess)
 	{
 		LoadedPointCloud = RESOURCE_MANAGER.RawDataToFEPointCloud(ResultInfo->RawData, FILE_SYSTEM.GetFileName(ResultInfo->FilePath), "", false, false, nullptr);
-		if (LoadedPointCloud)
+		if (LoadedPointCloud != nullptr)
+		{
+			RESOURCE_MANAGER.LastPointCloudAppliedShift = ResultInfo->AppliedShift;
 			LoadedPointCloud->AABB = ResultInfo->AABB;
+		}
 	}
 
 	if (ResultInfo->UserCallBack)
@@ -6517,4 +6525,14 @@ void FEResourceManager::SaveFELineCollection(FELineCollection* LineCollection, s
 	File.write((char*)RawData.data(), sizeof(FELine) * LineCount);
 	
 	File.close();
+}
+
+glm::dvec3 FEResourceManager::GetLastLoadedMeshAppliedShift()
+{
+	return FEObjLoader::GetInstance().GetLastAppliedShift();
+}
+
+glm::dvec3 FEResourceManager::GetLastLoadedPointCloudAppliedShift()
+{
+	return LastPointCloudAppliedShift;
 }

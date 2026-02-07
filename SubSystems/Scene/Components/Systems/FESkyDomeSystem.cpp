@@ -67,7 +67,7 @@ void FESkyDomeSystem::DuplicateSkyDomeComponent(FEEntity* SourceEntity, FEEntity
 	if (!SourceEntity->HasComponent<FESkyDomeComponent>())
 		return;
 
-	// TODO: Make sky dome component not depend on game model component
+	// FE_TO_DO: Make sky dome component not depend on game model component.
 	// Currently, we will support duplication of sky dome component only if targer entity is in a different scene.
 	if (SourceEntity->GetParentScene() != TargetEntity->GetParentScene())
 		TargetEntity->AddComponent<FESkyDomeComponent>();
@@ -108,7 +108,7 @@ void FESkyDomeSystem::SkyDomeComponentFromJson(FEEntity* Entity, Json::Value Roo
 		return;
 	}
 
-	// TODO: Make sky dome component not depend on game model component
+	// FE_TO_DO: Make sky dome component not depend on game model component.
 	// GameModelComponent could load faster, so we need to remove it
 	if (Entity->HasComponent<FEGameModelComponent>())
 		Entity->RemoveComponent<FEGameModelComponent>();

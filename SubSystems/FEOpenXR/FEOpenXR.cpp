@@ -128,7 +128,7 @@ void FEOpenXR::PollEvents()
 			//printf("EVENT: reference space change pending!\n");
 			XrEventDataReferenceSpaceChangePending* Event = (XrEventDataReferenceSpaceChangePending*)&RuntimeEvent;
 			(void)Event;
-			// TODO: do something
+			// FE_TO_DO: Do something.
 			break;
 		}
 		case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED:
@@ -158,7 +158,7 @@ void FEOpenXR::PollEvents()
 				printf("Event: Interaction profile changed for %s: %s\n", h_p_str(i), profile_str);
 			}*/
 
-			// TODO: do something
+			// FE_TO_DO: Do something.
 			break;
 		}
 
@@ -227,7 +227,7 @@ glm::vec2 FEOpenXR::EyeResolution()
 
 void FEOpenXR::SceneNodesUpdate()
 {
-	// FIXME: Temporary solution, only supports one scene.
+	// FE_FIX_ME: Temporary solution, only supports one scene.
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	if (ActiveScenes.empty())
 		return;
@@ -318,7 +318,7 @@ bool FEOpenXR::TryToAddVRRigToScene(FEScene* Scene)
 	if (Scene == nullptr)
 		return false;
 
-	// FIXME: VRRigEntity also should be deleted if VR is not enabled?
+	// FE_FIX_ME: VRRigEntity also should be deleted if VR is not enabled?
 	if (OpenXR_MANAGER.VRRigEntity == nullptr)
 	{
 		if (OpenXR_MANAGER.VRRigEntity == nullptr)
@@ -334,7 +334,7 @@ bool FEOpenXR::TryToAddVRRigToScene(FEScene* Scene)
 			OpenXR_MANAGER.VRHeadsetEntity->AddComponent<FECameraComponent>();
 			FECameraComponent& VRHeadsetCamera = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FECameraComponent>();
 			CAMERA_SYSTEM.SetCameraRenderingPipeline(VRHeadsetEntity, ENGINE.GetVRRenderingPipeline());
-			// FIXME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
+			// FE_FIX_ME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
 			VRHeadsetCamera.SetSSAOEnabled(false);
 
 			FENaiveSceneGraphNode* VRRigNode = Scene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
@@ -359,7 +359,7 @@ bool FEOpenXR::TryToAddVRRigToScene(FEScene* Scene)
 
 void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change)
 {
-	// FIXME: Temporary solution, only supports one scene.
+	// FE_FIX_ME: Temporary solution, only supports one scene.
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	if (ActiveScenes.empty())
 		return;

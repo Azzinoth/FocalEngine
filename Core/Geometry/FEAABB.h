@@ -19,7 +19,6 @@ namespace FocalEngine
 		FEAABB(std::vector<double>& VertexPositions);
 		FEAABB(float* VertexPositions, int VertexCount);
 		FEAABB(double* VertexPositions, int VertexCount);
-		// only for uniform sized AABB
 		FEAABB(glm::vec3 Center, float Size);
 		FEAABB(FEAABB Other, glm::mat4 TransformMatrix);
 		~FEAABB();
@@ -31,7 +30,7 @@ namespace FocalEngine
 		bool RayIntersect(const glm::vec3& RayOrigin, const glm::vec3& RayDirection, std::vector<glm::vec3>& HitPoints);
 		bool RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDirection, double& Distance);
 		bool RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDirection, std::vector<glm::dvec3>& HitPoints);
-		inline bool FEAABB::AABBIntersect(FEAABB Other)
+		inline bool AABBIntersect(FEAABB Other)
 		{
 			if (Max[0] < Other.Min[0] || Min[0] > Other.Max[0]) return false;
 			if (Max[1] < Other.Min[1] || Min[1] > Other.Max[1]) return false;
@@ -53,10 +52,10 @@ namespace FocalEngine
 									  _mm256_set_ps(other.min[0], other.min[1], other.min[2], other.min[2], min[0], min[1], min[2], min[2]), _CMP_GT_OS)) == 255;*/
 		}
 
-		FEAABB FEAABB::GetIntersectionAABB(FEAABB& Other);
-		float FEAABB::GetVolume();
+		FEAABB GetIntersectionAABB(FEAABB& Other);
+		float GetVolume();
 
-		inline bool FEAABB::AABBContain(FEAABB& Other)
+		inline bool AABBContain(FEAABB& Other)
 		{
 			if (Min[0] > Other.Min[0] || Max[0] < Other.Max[0]) return false;
 			if (Min[1] > Other.Min[1] || Max[1] < Other.Max[1]) return false;
@@ -67,16 +66,18 @@ namespace FocalEngine
 									  _mm256_set_ps(min[0], min[1], min[2], min[2], other.max[0], other.max[1], other.max[2], other.max[2]), _CMP_GT_OS)) == 255;*/
 		}
 
-		FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix);
-		FEAABB FEAABB::Merge(FEAABB& Other);
+		FEAABB Transform(const glm::mat4 TransformMatrix);
+		FEAABB Merge(FEAABB& Other);
 
-		glm::vec3 FEAABB::GetCenter();
-		glm::vec3 FEAABB::GetSize();
+		glm::vec3 GetCenter();
+		glm::vec3 GetSize();
 
 		float GetLongestAxisLength();
 		bool ContainsPoint(const glm::vec3& Point) const;
 
 		glm::vec3 GetAproximateForwardDirection() const;
+
+		std::vector<glm::vec3> GetCorners() const;
 	private:
 		template<typename T>
 		bool RayIntersectInternal(const T& RayOrigin, const T& RayDirection, typename T::value_type& HitMin, typename T::value_type& HitMax);

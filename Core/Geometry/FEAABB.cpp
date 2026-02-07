@@ -64,6 +64,12 @@ FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
 
 FEAABB::FEAABB(std::vector<glm::dvec3>& VertexPositions)
 {
+	if (VertexPositions.empty())
+	{
+		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	Min.x = static_cast<float>(VertexPositions[0].x);
 	Min.y = static_cast<float>(VertexPositions[0].y);
 	Min.z = static_cast<float>(VertexPositions[0].z);
@@ -99,6 +105,18 @@ FEAABB::FEAABB(std::vector<glm::dvec3>& VertexPositions)
 
 FEAABB::FEAABB(std::vector<float>& VertexPositions)
 {
+	if (VertexPositions.empty())
+	{
+		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	if (VertexPositions.size() % 3 != 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexPositions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	Min.x = VertexPositions[0];
 	Min.y = VertexPositions[1];
 	Min.z = VertexPositions[2];
@@ -134,6 +152,18 @@ FEAABB::FEAABB(std::vector<float>& VertexPositions)
 
 FEAABB::FEAABB(std::vector<double>& VertexPositions)
 {
+	if (VertexPositions.empty())
+	{
+		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	if (VertexPositions.size() % 3 != 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexPositions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	Min.x = static_cast<float>(VertexPositions[0]);
 	Min.y = static_cast<float>(VertexPositions[1]);
 	Min.z = static_cast<float>(VertexPositions[2]);
@@ -171,7 +201,13 @@ FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 {
 	if (VertexCount == 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexCount is 0, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: VertexCount is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	if (VertexCount % 3 != 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexCount is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -210,6 +246,18 @@ FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
 
 FEAABB::FEAABB(double* VertexPositions, const int VertexCount)
 {
+	if (VertexCount == 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexCount is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	if (VertexCount % 3 != 0)
+	{
+		LOG.Add("FEAABB::FEAABB: VertexCount is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	Min.x = static_cast<float>(VertexPositions[0]);
 	Min.y = static_cast<float>(VertexPositions[1]);
 	Min.z = static_cast<float>(VertexPositions[2]);
@@ -301,7 +349,7 @@ bool FEAABB::RayIntersect(const glm::vec3& RayOrigin, const glm::vec3& RayDirect
 	if (!RayIntersectInternal(RayOrigin, RayDirection, HitMin, HitMax))
 		return false;
 
-	Distance = std::fmax(HitMin, HitMax);
+	Distance = (HitMin >= 0.0f) ? HitMin : HitMax;
 	return true;
 }
 
@@ -330,7 +378,7 @@ bool FEAABB::RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDire
 	if (!RayIntersectInternal(RayOrigin, RayDirection, HitMin, HitMax))
 		return false;
 
-	Distance = std::fmax(HitMin, HitMax);
+	Distance = (HitMin >= 0.0) ? HitMin : HitMax;
 	return true;
 }
 
@@ -351,9 +399,14 @@ bool FEAABB::RayIntersect(const glm::dvec3& RayOrigin, const glm::dvec3& RayDire
 	return true;
 }
 
-// only for uniform sized AABB
 FEAABB::FEAABB(glm::vec3 Center, const float Size)
 {
+	if (Size < 0.0f)
+	{
+		LOG.Add("FEAABB::FEAABB: Size is negative, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	const float HalfSize = Size / 2.0f;
 	Min[0] = Center[0] - HalfSize;
 	Min[1] = Center[1] - HalfSize;
@@ -404,8 +457,8 @@ FEAABB::FEAABB(FEAABB Other, glm::mat4 TransformMatrix)
 	AllPoints.push_back(TopRightBack);
 	AllPoints.push_back(TopLeftBack);
 
-	Min = glm::vec3(FLT_MAX);
-	Max = glm::vec3(-FLT_MAX);
+	Min = glm::vec3(std::numeric_limits<float>::max());
+	Max = glm::vec3(-std::numeric_limits<float>::max());
 	for (auto Point : AllPoints)
 	{
 		if (Point.x < Min.x)
@@ -470,8 +523,8 @@ FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix)
 	AllPoints.push_back(TopRightBack);
 	AllPoints.push_back(TopLeftBack);
 
-	Result.Min = glm::vec3(FLT_MAX);
-	Result.Max = glm::vec3(-FLT_MAX);
+	Result.Min = glm::vec3(std::numeric_limits<float>::max());
+	Result.Max = glm::vec3(-std::numeric_limits<float>::max());
 	for (const auto Point : AllPoints)
 	{
 		if (Point.x < Result.Min.x)
@@ -620,5 +673,23 @@ glm::vec3 FEAABB::GetAproximateForwardDirection() const
 	float Magnitude = Axes[PrimaryAxis] / Axes[SecondaryAxis];
 	Result[TertiaryAxis] = Magnitude;
 
+	return Result;
+}
+
+std::vector<glm::vec3> FEAABB::GetCorners() const
+{
+	std::vector<glm::vec3> Result;
+	
+	// Bottom face
+	Result.push_back(glm::vec3(Min.x, Min.y, Min.z));
+	Result.push_back(glm::vec3(Max.x, Min.y, Min.z));
+	Result.push_back(glm::vec3(Max.x, Min.y, Max.z));
+	Result.push_back(glm::vec3(Min.x, Min.y, Max.z));
+	// Top face
+	Result.push_back(glm::vec3(Min.x, Max.y, Min.z));
+	Result.push_back(glm::vec3(Max.x, Max.y, Min.z));
+	Result.push_back(glm::vec3(Max.x, Max.y, Max.z));
+	Result.push_back(glm::vec3(Min.x, Max.y, Max.z));
+	
 	return Result;
 }

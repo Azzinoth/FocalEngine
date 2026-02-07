@@ -93,6 +93,7 @@ void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* Nod
 	}
 }
 
+// FE_FIX_ME: This function should return a bool indicating success or failure, and if it is true, it should break the loop. for (size_t i = 0; i < Children.size(); i++)
 void FENaiveSceneGraphNode::DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform)
 {
 	for (size_t i = 0; i < Children.size(); i++)

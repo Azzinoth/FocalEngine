@@ -125,7 +125,7 @@ void FEScene::Clear()
 }
 
 // If a game model is used in some entities, we need to replace it with the default game model.
-// TODO: Implement more efficient solution without iterating through all entities.
+// FE_TO_DO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
 	auto GameModelComponentsView = this->Registry.view<FEGameModelComponent>();
@@ -143,7 +143,7 @@ void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 }
 
 // In case that prefab is used in some entities, we need to delete it's reference.
-// TODO: Implement more efficient solution without iterating through all entities.
+// FE_TO_DO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 {
 	auto PrefabInstanceComponentsView = this->Registry.view<FEPrefabInstanceComponent>();
