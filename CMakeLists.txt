@@ -721,6 +721,6 @@ if(NOT ENGINE_HEADERS_ONLY)
 
 	add_custom_command(TARGET FocalEngine PRE_BUILD
 		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
-			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
+			-P ${CMAKE_CURRENT_SOURCE_DIR}/Core/UpdateEngineVersion.cmake
     )
 endif()

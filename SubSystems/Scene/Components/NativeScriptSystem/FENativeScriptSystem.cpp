@@ -590,7 +590,11 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(std::string ModuleID)
 	return ActivateNativeScriptModule(Module);
 }
 
-#include "../../ResourceManager/Timestamp.h"
+// Included in .cpp rather than .h to prevent engine version macros from being
+// exposed to script DLLs built in header-only mode (ENGINE_HEADERS_ONLY).
+// Script DLLs capture their own build version at compile time, allowing the
+// engine to detect version mismatches when loading them at runtime.
+#include "../../Core/EngineVersion.h"
 bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Module)
 {
 	if (Module == nullptr)
@@ -708,6 +712,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 #endif
 	}
 
+	// FE_FIX_ME: Instead of timestamp we should use engine git commit hash and dirty flag.
 	typedef unsigned long long (*Get_EngineHeaders_BuildVersion_Function)(void);
 	Get_EngineHeaders_BuildVersion_Function GetEngineHeadersBuildVersion = (Get_EngineHeaders_BuildVersion_Function)GetProcAddress(DLLHandle, "GetEngineHeadersBuildVersion");
 	if (GetEngineHeadersBuildVersion)

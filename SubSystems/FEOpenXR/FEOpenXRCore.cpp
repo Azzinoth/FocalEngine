@@ -160,10 +160,10 @@ std::vector<FEOpenXRExtensionInfo> FEOpenXRCore::GetAvailableExtensionsInfo()
 	Extensions.reserve(ExtensionCount);
 	for (const auto& Extension : AvailableExtensions)
 	{
-		FEOpenXRExtensionInfo ExtInfo;
-		ExtInfo.Name = Extension.extensionName;
-		ExtInfo.Version = Extension.extensionVersion;
-		Extensions.push_back(ExtInfo);
+		FEOpenXRExtensionInfo ExtensionInfo;
+		ExtensionInfo.Name = Extension.extensionName;
+		ExtensionInfo.Version = Extension.extensionVersion;
+		Extensions.push_back(ExtensionInfo);
 	}
 
 	return Extensions;

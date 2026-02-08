@@ -19,7 +19,7 @@ imgui.ini
 *.txt
 cmake_install.cmake
 Config.h
-Timestamp.h
+EngineVersion.h
 
 #Folders
 Debug/

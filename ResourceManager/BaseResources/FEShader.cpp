@@ -911,23 +911,23 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 		CounterVariable += "u);\n";
 		ParsedShaderText.insert(ParsedShaderText.begin() + FirstOccurrenceIndex, CounterVariable.begin(), CounterVariable.end());
 
-		size_t version = ParsedShaderText.find("#version");
-		size_t extension = ParsedShaderText.rfind("#extension");
-		if (extension != std::string::npos)
-			version = extension > version ? extension : version;
+		size_t Version = ParsedShaderText.find("#version");
+		size_t Extension = ParsedShaderText.rfind("#extension");
+		if (Extension != std::string::npos)
+			Version = Extension > Version ? Extension : Version;
 
 		size_t LineAfterVersion = 2, BufferInsertOffset = 0;
 
-		if (version != std::string::npos)
+		if (Version != std::string::npos)
 		{
-			for (size_t i = 0; i < version; ++i)
+			for (size_t i = 0; i < Version; ++i)
 			{
 				if (ParsedShaderText[i] == '\n')
 					LineAfterVersion++;
 			}
 
-			BufferInsertOffset = version;
-			for (size_t i = version; i < ParsedShaderText.length(); ++i)
+			BufferInsertOffset = Version;
+			for (size_t i = Version; i < ParsedShaderText.length(); ++i)
 			{
 				BufferInsertOffset += 1;
 				if (ParsedShaderText[i] == '\n')

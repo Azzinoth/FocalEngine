@@ -16,10 +16,47 @@ FEngine::~FEngine()
 {
 }
 
-#include "ResourceManager/Timestamp.h"
-std::string FEngine::GetEngineBuildVersion()
+// Included in .cpp rather than .h to prevent engine version macros from being
+// exposed to script DLLs built in header-only mode (ENGINE_HEADERS_ONLY).
+// Script DLLs capture their own build version at compile time, allowing the
+// engine to detect version mismatches when loading them at runtime.
+#include "Core/EngineVersion.h"
+std::string FEngine::GetEngineVersion()
+{
+	return std::to_string(ENGINE_VERSION_MAJOR) + "."
+		   + std::to_string(ENGINE_VERSION_MINOR) + "."
+		   + std::to_string(ENGINE_VERSION_PATCH);
+}
+
+int FEngine::GetEngineBuildNumber()
+{
+	return ENGINE_BUILD_NUMBER;
+}
+
+std::string FEngine::GetEngineBuildTimestamp()
 {
 	return ENGINE_BUILD_TIMESTAMP;
+}
+
+std::string FEngine::GetEngineBuildInfo()
+{
+	std::string Result = "build " + std::to_string(ENGINE_BUILD_NUMBER);
+	if (ENGINE_BUILD_BRANCH_OFFSET > 0)
+	{
+		Result += "+" + std::to_string(ENGINE_BUILD_BRANCH_OFFSET)
+			+ " (" + std::string(ENGINE_GIT_BRANCH) + ", "
+			+ ENGINE_GIT_HASH + std::string(ENGINE_GIT_DIRTY ? "-dirty" : "") + ")";
+	}
+	else if (ENGINE_GIT_DIRTY)
+	{
+		Result += " (dirty)";
+	}
+	return Result;
+}
+
+std::string FEngine::GetEngineFullVersion()
+{
+	return "Focal Engine " + GetEngineVersion() + " " + GetEngineBuildInfo();
 }
 
 bool FEngine::IsNotTerminated()
