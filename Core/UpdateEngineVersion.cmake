@@ -3,7 +3,7 @@
 # 
 # Pre-build script that generates version information for Focal Engine.
 # Runs every build to capture: git commit counts, branch, hash,
-# dirty status and timestamp, . Outputs are written to EngineVersion.h via configure_file.
+# dirty status and timestamp. Outputs are written to EngineVersion.h via configure_file.
 #
 # Produces version strings like:
 #   Release (on master):  "1.0.0 build 231"
@@ -20,9 +20,9 @@ if(GIT_FOUND)
     # --- Commit counts ---
     # Count total commits on master — this is the stable build number.
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-list --count master
+        COMMAND ${GIT_EXECUTABLE} rev-list --count origin/master
         WORKING_DIRECTORY ${ENGINE_FOLDER}
-        OUTPUT_VARIABLE ENGINE_MAIN_COMMIT_COUNT
+        OUTPUT_VARIABLE ENGINE_MASTER_COMMIT_COUNT
         OUTPUT_STRIP_TRAILING_WHITESPACE
         ERROR_QUIET
     )
@@ -30,7 +30,7 @@ if(GIT_FOUND)
     # Count commits ahead of master on current branch.
     # Will be 0 when building on master itself.
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-list --count master..HEAD
+        COMMAND ${GIT_EXECUTABLE} rev-list --count origin/master..HEAD
         WORKING_DIRECTORY ${ENGINE_FOLDER}
         OUTPUT_VARIABLE ENGINE_BRANCH_COMMIT_COUNT
         OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -70,7 +70,7 @@ if(GIT_FOUND)
     endif()
 else()
     # Fallback when git is not available (e.g. source archive without .git)
-    set(ENGINE_MAIN_COMMIT_COUNT 0)
+    set(ENGINE_MASTER_COMMIT_COUNT 0)
     set(ENGINE_BRANCH_COMMIT_COUNT 0)
     set(ENGINE_GIT_HASH "unknown")
     set(ENGINE_GIT_BRANCH "unknown")
