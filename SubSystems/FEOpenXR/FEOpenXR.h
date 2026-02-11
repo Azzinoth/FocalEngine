@@ -7,6 +7,7 @@ namespace FocalEngine
 {
 	class FEOpenXR
 	{
+		friend class FEOpenXRInput;
 		friend class FEOpenXRRendering;
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXR)

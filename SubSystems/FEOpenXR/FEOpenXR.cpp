@@ -405,7 +405,7 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 			{
 				FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
 				for (auto Child : ControllerNode->GetChildren())
-					CurrentScene->SceneGraph.MoveNode(Child->GetObjectID(), VRRigNode->GetObjectID());
+					CurrentScene->SceneGraph.MoveNode(Child->GetObjectID(), VRRigNode->GetObjectID(), false);
 			}
 
 			CurrentScene->DeleteEntity(ControllerEntity);

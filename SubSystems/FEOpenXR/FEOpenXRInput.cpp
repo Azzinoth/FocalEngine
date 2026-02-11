@@ -1,4 +1,5 @@
 #include "FEOpenXRInput.h"
+#include "FEOpenXRCore.h"
 using namespace FocalEngine;
 
 #include "../FEngine.h"
@@ -882,6 +883,8 @@ void FEOpenXRInput::SetRightViveMenuClickCallBack(std::function<void()> UserCall
 
 void FEOpenXRInput::TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change)
 {
+    OpenXR_MANAGER.OnControllerConnectionChanges(bLeftController, Change);
+
     for (size_t i = 0; i < ControllerConnectionStatusChangeUserCallBacks.size(); i++)
     {
         if (ControllerConnectionStatusChangeUserCallBacks[i] != nullptr)
