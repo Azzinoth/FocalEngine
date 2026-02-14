@@ -40,17 +40,15 @@ std::string FEngine::GetEngineBuildTimestamp()
 
 std::string FEngine::GetEngineBuildInfo()
 {
-	std::string Result = "build " + std::to_string(ENGINE_BUILD_NUMBER);
+	std::string Result = "build " + std::to_string(ENGINE_BUILD_NUMBER) + " (" + std::string(ENGINE_GIT_HASH);
+
 	if (ENGINE_BUILD_BRANCH_OFFSET > 0)
-	{
-		Result += "+" + std::to_string(ENGINE_BUILD_BRANCH_OFFSET)
-			+ " (" + std::string(ENGINE_GIT_BRANCH) + ", "
-			+ ENGINE_GIT_HASH + std::string(ENGINE_GIT_DIRTY ? "-dirty" : "") + ")";
-	}
-	else if (ENGINE_GIT_DIRTY)
-	{
-		Result += " (dirty)";
-	}
+		Result += " " + std::string(ENGINE_GIT_BRANCH) + " +" + std::to_string(ENGINE_BUILD_BRANCH_OFFSET) + " from master";
+
+	if (ENGINE_GIT_DIRTY)
+		Result += ", dirty";
+
+	Result += ")";
 	return Result;
 }
 

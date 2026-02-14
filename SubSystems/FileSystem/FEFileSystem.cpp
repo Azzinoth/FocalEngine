@@ -549,6 +549,20 @@ std::string FEFileSystem::GetFileName(const std::string& FullPath, bool bWithExt
 		return Path.stem().string();
 }
 
+std::string FEFileSystem::GetAbsolutePath(const std::string& Path)
+{
+	try
+	{
+		std::filesystem::path AbsolutePath = std::filesystem::absolute(Path);
+		return AbsolutePath.string();
+	}
+	catch (const std::filesystem::filesystem_error& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetAbsolutePath: failed to get absolute path " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return Path;
+	}
+}
+
 std::string FEFileSystem::ReadFEString(std::fstream& File)
 {
 	char* Buffer = new char[4];

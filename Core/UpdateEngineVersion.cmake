@@ -18,7 +18,7 @@ set(ENGINE_VERSION_PATCH 4)
 find_package(Git QUIET)
 if(GIT_FOUND)
     # --- Commit counts ---
-    # Count total commits on master — this is the stable build number.
+    # Count total commits on master, this is the stable build number.
     execute_process(
         COMMAND ${GIT_EXECUTABLE} rev-list --count origin/master
         WORKING_DIRECTORY ${ENGINE_FOLDER}
