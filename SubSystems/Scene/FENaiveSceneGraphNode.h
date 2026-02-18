@@ -10,6 +10,7 @@ namespace FocalEngine
 		friend class FENaiveSceneGraph;
 		friend class FEScene;
 	public:
+		size_t GetDepth();
 		FENaiveSceneGraphNode* GetParent();
 
 		void AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);

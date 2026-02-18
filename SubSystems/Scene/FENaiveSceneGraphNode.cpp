@@ -15,6 +15,21 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 	Children.clear();
 }
 
+// FE_FIX_ME: This function should be optimized by caching the depth value and updating it whenever the hierarchy changes.
+// FE_TO_DO: Write test cases for this function.
+size_t FENaiveSceneGraphNode::GetDepth()
+{
+	size_t Result = 0;
+	FENaiveSceneGraphNode* CurrentNode = this;
+	while (CurrentNode->Parent != nullptr)
+	{
+		Result++;
+		CurrentNode = CurrentNode->Parent;
+	}
+
+	return Result;
+}
+
 void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
 	if (NodeToWorkOn == nullptr)
