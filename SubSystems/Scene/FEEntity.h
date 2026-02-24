@@ -85,6 +85,9 @@ namespace FocalEngine
 		
 		Json::Value ToJson();
 
+		bool IsVisible();
+		void SetVisible(bool Value);
+
 		bool IsComponentVisible(ComponentVisibilityType Type);
 		void SetComponentVisible(ComponentVisibilityType Type, bool Value);
 

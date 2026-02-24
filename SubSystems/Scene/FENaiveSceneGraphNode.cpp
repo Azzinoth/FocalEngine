@@ -16,7 +16,6 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 }
 
 // FE_FIX_ME: This function should be optimized by caching the depth value and updating it whenever the hierarchy changes.
-// FE_TO_DO: Write test cases for this function.
 size_t FENaiveSceneGraphNode::GetDepth()
 {
 	size_t Result = 0;

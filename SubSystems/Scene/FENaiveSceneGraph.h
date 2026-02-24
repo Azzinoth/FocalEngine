@@ -12,6 +12,7 @@ namespace FocalEngine
 		~FENaiveSceneGraph();
 	public:
 		FENaiveSceneGraphNode* GetRoot() const;
+		FEScene* GetParentScene() const;
 
 		std::string AddNode(FEEntity* Entity, bool bPreserveWorldTransform = true);
 		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
@@ -27,7 +28,7 @@ namespace FocalEngine
 		bool IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant);
         bool HasCycle(FENaiveSceneGraphNode* NodeToCheck);
 
-		FENaiveSceneGraphNode* GetNode(std::string ID);
+		FENaiveSceneGraphNode* GetNodeByID(std::string ID);
 		FENaiveSceneGraphNode* GetNodeByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
@@ -63,6 +64,8 @@ namespace FocalEngine
 		void Initialize(FEScene* Scene);
 
 		bool DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName = true);
+
+		std::vector<FENaiveSceneGraphNode*> GetNodeByNameInternal(std::string Name, FENaiveSceneGraphNode* CurrentNode, std::vector<FENaiveSceneGraphNode*> CurrentResult);
 	};
 #include "FENaiveSceneGraph.inl"
 }

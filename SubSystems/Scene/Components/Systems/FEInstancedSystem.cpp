@@ -934,7 +934,7 @@ void FEInstancedSystem::Update()
 		std::string SceneID = EnitityIDListToInitialize[i].first;
 		std::string EntityID = EnitityIDListToInitialize[i].second;
 
-		FEScene* Scene = SCENE_MANAGER.GetScene(SceneID);
+		FEScene* Scene = SCENE_MANAGER.GetSceneByID(SceneID);
 		if (Scene == nullptr)
 		{
 			EnitityIDListToInitialize.erase(EnitityIDListToInitialize.begin() + i);

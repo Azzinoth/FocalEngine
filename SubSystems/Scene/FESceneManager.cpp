@@ -12,12 +12,24 @@ FESceneManager::FESceneManager()
 {
 }
 
-FEScene* FESceneManager::GetScene(std::string ID)
+FEScene* FESceneManager::GetSceneByID(std::string ID)
 {
 	if (Scenes.find(ID) == Scenes.end())
 		return nullptr;
 
 	return Scenes[ID];
+}
+
+FEScene* FESceneManager::GetSceneByNodeID(std::string NodeID)
+{
+	for (auto& SceneIDAndPointer : Scenes)
+	{
+		FEScene* Scene = SceneIDAndPointer.second;
+		if (Scene->SceneGraph.GetNodeByID(NodeID) != nullptr)
+			return Scene;
+	}
+
+	return nullptr;
 }
 
 FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID, FESceneFlag Flags)
@@ -249,7 +261,7 @@ std::vector<FEScene*> FESceneManager::GetScenesByFlagMask(FESceneFlag FlagMask)
 
 FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
 {
-	FEScene* SceneToDuplicate = GetScene(ID);
+	FEScene* SceneToDuplicate = GetSceneByID(ID);
 	if (SceneToDuplicate == nullptr)
 		return nullptr;
 
@@ -457,7 +469,7 @@ void FESceneManager::Clear()
 
 FEScene* FESceneManager::GetStartingScene()
 {
-	if (StartingSceneID.empty() || GetScene(StartingSceneID) == nullptr)
+	if (StartingSceneID.empty() || GetSceneByID(StartingSceneID) == nullptr)
 	{
 		std::vector<std::string> TagsToAvoid = RESOURCE_MANAGER.GetTagsThatWillPreventDeletion();
 		TagsToAvoid.push_back(PREFAB_SCENE_DESCRIPTION_TAG);
@@ -482,12 +494,12 @@ FEScene* FESceneManager::GetStartingScene()
 		return nullptr;
 	}
 
-	return GetScene(StartingSceneID);
+	return GetSceneByID(StartingSceneID);
 }
 
 bool FESceneManager::SetStartingScene(std::string SceneID)
 {
-	if (GetScene(StartingSceneID) == nullptr)
+	if (GetSceneByID(StartingSceneID) == nullptr)
 	{
 		LOG.Add("FESceneManager::SetStartingScene: Scene with ID " + SceneID + " does not exist.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return false;

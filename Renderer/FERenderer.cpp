@@ -453,6 +453,9 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 	if (!Entity->HasComponent<FEGameModelComponent>() && !Entity->HasComponent<FEPrefabInstanceComponent>())
 		return;
 
+	if (!Entity->IsVisible())
+		return;
+
 	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
 	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
 	FEEntity* EntityWithGameModel = INSTANCED_RENDERING_SYSTEM.GetEntityWithGameModelComponent(InstancedComponent.InstancedElementsData[PrefabIndex]->EntityIDWithGameModelComponent);
@@ -564,6 +567,9 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
+		if (!Entity->IsVisible())
+			continue;
+
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
 		{
 			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
@@ -625,6 +631,9 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (Entity == nullptr)
 			continue;
 
+		if (!Entity->IsVisible())
+			continue;
+
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
 		{
 			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
@@ -649,6 +658,9 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->IsVisible())
 			continue;
 
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
@@ -985,6 +997,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 					if (Entity == nullptr)
 						continue;
 
+					if (!Entity->IsVisible())
+						continue;
+
 					if (!TerrainComponent.IsCastingShadows() || !Entity->IsComponentVisible(ComponentVisibilityType::TERRAIN))
 						continue;
 
@@ -1134,6 +1149,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
+		if (!Entity->IsVisible())
+			continue;
+
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
 		{
 			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
@@ -1177,6 +1195,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (Entity == nullptr)
 			continue;
 
+		if (!Entity->IsVisible())
+			continue;
+
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
 		{
 			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
@@ -1197,6 +1218,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->IsVisible())
 			continue;
 
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
@@ -1222,6 +1246,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->IsVisible())
 			continue;
 
 		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
@@ -1345,6 +1372,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	{
 		FEEntity* CurrentEntity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (CurrentEntity == nullptr)
+			continue;
+
+		if (!CurrentEntity->IsVisible())
 			continue;
 
 		if (!SKY_DOME_SYSTEM.IsEnabled())
@@ -1480,6 +1510,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
+			continue;
+
+		if (!Entity->IsVisible())
 			continue;
 
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) || GameModelComponent.IsPostprocessApplied())

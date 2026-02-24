@@ -1356,6 +1356,7 @@ void FEResourceManager::LoadStandardMeshes()
 	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
 	NewMesh = LoadFEMesh((ResourcesFolder + "Generic_VR_Controller.model").c_str(), "Generic_VR_Controller");
+	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
 }
 
 std::vector<FEObject*> FEResourceManager::ImportOBJ(const char* FileName, const bool bForceOneMesh)
@@ -3473,7 +3474,7 @@ FEPrefab* FEResourceManager::LoadPrefabFromJSON(Json::Value& Root)
 		SceneID = Root["SceneID"].asCString();
 	}
 
-	FEScene* Scene = SCENE_MANAGER.GetScene(SceneID);
+	FEScene* Scene = SCENE_MANAGER.GetSceneByID(SceneID);
 	if (Scene == nullptr)
 	{
 		LOG.Add("FEResourceManager::LoadPrefabFromJSON: Prefab scene is missing!", "FE_LOG_LOADING", FE_LOG_ERROR);

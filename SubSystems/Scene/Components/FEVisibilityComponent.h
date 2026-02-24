@@ -23,6 +23,7 @@ namespace FocalEngine
 
         bool IsVisible(ComponentVisibilityType Type = ALL) const;
         void SetVisible(ComponentVisibilityType Type, bool bVisible);
+        void SetVisible(bool bVisible);
 	private:
         uint32_t VisibleTypes = ALL;
 	};

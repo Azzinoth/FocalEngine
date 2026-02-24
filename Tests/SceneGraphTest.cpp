@@ -15,14 +15,14 @@ TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 	ASSERT_NE(RootNode, nullptr);
 
 	// Root node can be found by its ID.
-	FENaiveSceneGraphNode* RootNodeByID = CurrentScene->SceneGraph.GetNode(RootNode->GetObjectID());
+	FENaiveSceneGraphNode* RootNodeByID = CurrentScene->SceneGraph.GetNodeByID(RootNode->GetObjectID());
 	ASSERT_EQ(RootNode, RootNodeByID);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Root node can not be deleted.
 	CurrentScene->SceneGraph.DeleteNode(RootNode);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
-	ASSERT_NE(CurrentScene->SceneGraph.GetNode(RootNode->GetObjectID()), nullptr);
+	ASSERT_NE(CurrentScene->SceneGraph.GetNodeByID(RootNode->GetObjectID()), nullptr);
 
 	// Add a new node to the CurrentScene->
 	FEEntity* Node_A = CurrentScene->CreateEntity("Node_A");
@@ -31,7 +31,7 @@ TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 1);
 
 	// New node could be found by its ID.
-	FENaiveSceneGraphNode* NodeByID = CurrentScene->SceneGraph.GetNode(Node_A_ID);
+	FENaiveSceneGraphNode* NodeByID = CurrentScene->SceneGraph.GetNodeByID(Node_A_ID);
 	ASSERT_NE(NodeByID, nullptr);
 
 	// Delete the new node.
@@ -39,7 +39,7 @@ TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Check that deleted node can not be found.
-	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(Node_A_ID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(Node_A_ID), nullptr);
 
 	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 
@@ -65,9 +65,9 @@ TEST(SceneGraph, Check_For_Cycles)
 	std::string Node_B_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_B->GetObjectID())->GetObjectID();
 	std::string Node_C_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_C->GetObjectID())->GetObjectID();
 
-	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNode(Node_A_ID);
-	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNode(Node_B_ID);
-	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNode(Node_C_ID);
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByID(Node_A_ID);
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByID(Node_B_ID);
+	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNodeByID(Node_C_ID);
 
 	// Create a valid hierarchy.
 	CurrentScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID());
@@ -1169,7 +1169,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
 	for (const std::string& NodeID : NodeIDs)
 	{
-		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNode(NodeID));
+		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNodeByID(NodeID));
 		ASSERT_NE(LoadedNodes.back(), nullptr);
 	}
 
@@ -1288,7 +1288,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
 	for (const std::string& NodeID : NodeIDs)
 	{
-		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNode(NodeID));
+		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNodeByID(NodeID));
 		ASSERT_NE(LoadedNodes.back(), nullptr);
 	}
 
@@ -1510,7 +1510,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 
 	// Check if the entity and the node are deleted.
 	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
-	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(NodeToDeleteID), nullptr);
 
 	// Basic check if the hierarchy is correct.
 	NodeCount--;
@@ -1528,10 +1528,10 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	CurrentScene->DeleteEntity(Nodes[16]->GetEntity());
 	
 	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
-	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(NodeToDeleteID), nullptr);
 
 	ASSERT_EQ(CurrentScene->GetEntity(ChildEntityToDeleteID), nullptr);
-	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(ChildNodeToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(ChildNodeToDeleteID), nullptr);
 
 	// Basic check if the hierarchy is correct.
 	NodeCount -= 2;
@@ -1556,12 +1556,12 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	CurrentScene->DeleteEntity(Nodes[1]->GetEntity());
 
 	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
-	ASSERT_EQ(CurrentScene->SceneGraph.GetNode(NodeToDeleteID), nullptr);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(NodeToDeleteID), nullptr);
 
 	for (size_t i = 0; i < ChildEntitiesToDelete.size(); i++)
 	{
 		ASSERT_EQ(CurrentScene->GetEntity(ChildEntitiesToDelete[i]), nullptr);
-		ASSERT_EQ(CurrentScene->SceneGraph.GetNode(ChildNodesToDelete[i]), nullptr);
+		ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(ChildNodesToDelete[i]), nullptr);
 	}
 
 	// Basic check if the hierarchy is correct.
@@ -1767,4 +1767,202 @@ TEST_F(SceneGraphTest, Simple_Check_Of_AreSceneGraphHierarchiesEquivalent)
 	SCENE_MANAGER.DeleteScene(SecondMediumSizeScene->GetObjectID());
 
 	LOG.Add("Ending SceneGraphTest::Simple_Check_Of_AreSceneGraphHierarchiesEquivalent", "FE_LOG_TEST", FE_LOG_INFO);
+}
+
+TEST_F(SceneGraphTest, GetNodeByName)
+{
+	FEScene* MediumSizeScene = SCENE_MANAGER.CreateScene("MediumSizeScene");
+	PopulateSceneGraphMediumSize(MediumSizeScene);
+	ASSERT_EQ(MediumSizeScene->SceneGraph.GetNodeCount(), 30);
+
+	std::vector<FENaiveSceneGraphNode*> Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_0");
+	ASSERT_EQ(Nodes.size(), 1);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_1");
+	ASSERT_EQ(Nodes.size(), 1);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_10");
+	ASSERT_EQ(Nodes.size(), 1);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_8");
+	ASSERT_EQ(Nodes.size(), 1);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_23");
+	ASSERT_EQ(Nodes.size(), 1);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_100");
+	ASSERT_EQ(Nodes.size(), 0);
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("sewertr");
+	ASSERT_EQ(Nodes.size(), 0);
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("2132rg%");
+	ASSERT_EQ(Nodes.size(), 0);
+}
+
+TEST_F(SceneGraphTest, GetDepth)
+{
+	FEScene* MediumSizeScene = SCENE_MANAGER.CreateScene("MediumSizeScene");
+	PopulateSceneGraphMediumSize(MediumSizeScene);
+	ASSERT_EQ(MediumSizeScene->SceneGraph.GetNodeCount(), 30);
+
+	ASSERT_EQ(MediumSizeScene->SceneGraph.GetRoot()->GetDepth(), 0);
+
+	// Depth of 0.
+	FENaiveSceneGraphNode* CurrentNode = MediumSizeScene->SceneGraph.GetRoot();
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 0);
+
+	// Depth of 1.
+	std::vector<FENaiveSceneGraphNode*> Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_0");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 1);
+
+	// Depth of 2.
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_1");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 2);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_2");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 2);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_3");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 2);
+
+	// Depth of 3.
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_4");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_5");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_6");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_7");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_8");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_9");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_10");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_11");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_12");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 3);
+
+	// Depth of 4.
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_13");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_14");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_15");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_16");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_17");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_18");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_19");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_20");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_21");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_22");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 4);
+
+	// Depth of 5.
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_23");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_24");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_25");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_26");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_27");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_28");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	Nodes = MediumSizeScene->SceneGraph.GetNodeByName("Node_29");
+	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
+	ASSERT_NE(CurrentNode, nullptr);
+	ASSERT_EQ(CurrentNode->GetDepth(), 5);
 }

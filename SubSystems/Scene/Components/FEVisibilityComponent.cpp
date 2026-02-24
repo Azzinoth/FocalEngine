@@ -13,3 +13,8 @@ void FEVisibilityComponent::SetVisible(ComponentVisibilityType Type, bool bVisib
     else
         VisibleTypes &= ~Type;
 }
+
+void FEVisibilityComponent::SetVisible(bool bVisible)
+{
+    VisibleTypes = bVisible ? ALL : 0;
+}

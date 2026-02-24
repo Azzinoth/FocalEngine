@@ -34,6 +34,8 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
+		// FE_FIX_ME: Do not store Entity as a pointer, store it as an ID to prevent dangling pointer issues.
+		//std::string EntityID;
 		FEEntity* Entity = nullptr;
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);

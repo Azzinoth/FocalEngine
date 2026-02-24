@@ -33,7 +33,12 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetRoot() const
 	return Root;
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::GetNode(std::string ID)
+FEScene* FENaiveSceneGraph::GetParentScene() const
+{
+	return ParentScene;
+}
+
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByID(std::string ID)
 {
 	if (ID == Root->GetObjectID())
 		return Root;
@@ -66,8 +71,8 @@ std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTran
 
 bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform)
 {
-	FENaiveSceneGraphNode* NodeToMove = GetNode(NodeID);
-	FENaiveSceneGraphNode* NewParent = GetNode(NewParentID);
+	FENaiveSceneGraphNode* NodeToMove = GetNodeByID(NodeID);
+	FENaiveSceneGraphNode* NewParent = GetNodeByID(NewParentID);
 
 	if (NodeToMove == nullptr || NewParent == nullptr)
 		return false;
@@ -99,8 +104,8 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bo
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName)
 {
-	FENaiveSceneGraphNode* NodeToDuplicate = GetNode(NodeIDToDuplicate);
-	FENaiveSceneGraphNode* NewParent = GetNode(NewParentID);
+	FENaiveSceneGraphNode* NodeToDuplicate = GetNodeByID(NodeIDToDuplicate);
+	FENaiveSceneGraphNode* NewParent = GetNodeByID(NewParentID);
 
 	if (NodeToDuplicate == nullptr || NewParent == nullptr)
 		return nullptr;
@@ -221,16 +226,19 @@ void FENaiveSceneGraph::DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPr
 
 std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetNodeByName(std::string Name)
 {
-	std::vector<FENaiveSceneGraphNode*> Entities;
-	std::vector<FENaiveSceneGraphNode*> Children = Root->GetChildren();
+	return GetNodeByNameInternal(Name, Root, std::vector<FENaiveSceneGraphNode*>());
+}
 
+std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraph::GetNodeByNameInternal(std::string Name, FENaiveSceneGraphNode* CurrentNode, std::vector<FENaiveSceneGraphNode*> CurrentResult)
+{
+	if (CurrentNode->GetName() == Name)
+		CurrentResult.push_back(CurrentNode);
+
+	std::vector<FENaiveSceneGraphNode*> Children = CurrentNode->GetChildren();
 	for (size_t i = 0; i < Children.size(); i++)
-	{
-		if (Children[i]->GetName() == Name)
-			Entities.push_back(Children[i]);
-	}
-
-	return Entities;
+		CurrentResult = GetNodeByNameInternal(Name, Children[i], CurrentResult);
+	
+	return CurrentResult;
 }
 
 bool FENaiveSceneGraph::IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant)
