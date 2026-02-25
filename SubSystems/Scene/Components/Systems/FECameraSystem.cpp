@@ -62,6 +62,12 @@ void FECameraSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearin
 	auto DataIterator = RENDERER.CameraRenderingDataMap.begin();
 	while (DataIterator != RENDERER.CameraRenderingDataMap.end())
 	{
+		if (DataIterator->second == nullptr)
+		{
+			DataIterator++;
+			continue;
+		}
+
 		if (DataIterator->second->CameraEntity == Entity)
 		{
 			delete DataIterator->second;
