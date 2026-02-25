@@ -595,6 +595,7 @@ if(NOT ENGINE_HEADERS_ONLY)
 
 	target_include_directories(FocalEngine
 			PUBLIC
+				${CMAKE_CURRENT_SOURCE_DIR}
 				${GLEW_INCLUDE_DIR}
 				${BASICAPP_THIRDPARTY_DIR}
 				${BASICAPP_DIR}

@@ -39,6 +39,8 @@ The Focal Engine project consists of four modular components that work together 
 
 Focal Engine (this repository) - The engine with all core functionality.
 
+[Focal Engine Scene Graph UI](https://github.com/Azzinoth/FESceneGraphUI) - A reusable scene graph UI component, that provides a hierarchical tree view for visualizing and interacting with scene graph nodes.
+
 [Focal Engine Editor](https://github.com/Azzinoth/FocalEngineEditor) - A comprehensive editor for the engine.
 
 This modularity makes it easier to include just the engine in applications that don't need the editor's complexity. It also simplifies the implementation of export functionality in the editor, allowing users to compile their projects into standalone executable applications with all necessary resources.
