@@ -18,6 +18,13 @@
 
 namespace FocalEngine
 {
+	enum FE_DEPTH_EXPORT_MODE
+	{
+		FE_DEPTH_EXPORT_GRAYSCALE_PNG = 0,  // Normalized to [0,1], 8-bit grayscale PNG
+		FE_DEPTH_EXPORT_16BIT_PNG = 1,      // Normalized to [0,1], 16-bit grayscale PNG  
+		FE_DEPTH_EXPORT_32BIT_TIFF = 2      // FE_TO_DO: Implement raw float values, 32-bit float TIFF
+	};
+
 	class FOCAL_ENGINE_API FEResourceManager
 	{
 		friend class FEngine;
@@ -60,7 +67,7 @@ namespace FocalEngine
 		FETexture* CreateTextureWithTransparency(FETexture* OriginalTexture, FETexture* MaskTexture);
 
 		void SaveFETexture(FETexture* Texture, const char* FileName);
-		bool ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName);
+		bool ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName, FE_DEPTH_EXPORT_MODE DepthExportMode = FE_DEPTH_EXPORT_GRAYSCALE_PNG);
 		bool ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
 		void DeleteFETexture(const FETexture* Texture);
 		std::vector<std::string> GetTextureIDList();

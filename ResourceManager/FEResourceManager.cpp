@@ -2604,7 +2604,9 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	return Result;
 }
 
-bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName)
+
+
+bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName, FE_DEPTH_EXPORT_MODE DepthExportMode)
 {
 	if (TextureToExport == nullptr)
 	{
@@ -2618,7 +2620,9 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
 		TextureToExport->InternalFormat != GL_RGBA16F &&
-		TextureToExport->InternalFormat != GL_RG16F)
+		TextureToExport->InternalFormat != GL_RG16F &&
+		TextureToExport->InternalFormat != GL_DEPTH24_STENCIL8 &&
+		TextureToExport->InternalFormat != GL_DEPTH_COMPONENT32)
 	{
 		LOG.Add("FEResourceManager::ExportFETextureToPNG InternalFormat of TextureToExport is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
@@ -2635,11 +2639,16 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		return *reinterpret_cast<float*>(&FloatValue);
 	};
 
+	GLint Format = TextureToExport->InternalFormat;
+
+	int TextureWidth = TextureToExport->GetWidth();
+	int TextureHeight = TextureToExport->GetHeight();
+
+	const unsigned char* TextureData = TextureToExport->GetRawData();
 	std::vector<unsigned char> RawData;
 	if (TextureToExport->InternalFormat == GL_RGBA16F)
 	{
-		const unsigned char* TextureData = TextureToExport->GetRawData();
-		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
+		RawData.resize(TextureWidth * TextureHeight * 4);
 
 		size_t RawDataIndex = 0;
 		for (size_t i = 0; i < RawData.size() * sizeof(unsigned short); i += 2)
@@ -2654,27 +2663,26 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		}
 
 		// Flip image vertically
-		const size_t RowBytes = TextureToExport->GetWidth() * 4;
+		const size_t RowBytes = TextureWidth * 4;
 		unsigned char* RowBuffer = new unsigned char[RowBytes];
-		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
+		for (size_t y = 0; y < TextureHeight / 2; y++)
 		{
 			// Copy the top row to a buffer
 			std::memcpy(RowBuffer, RawData.data() + y * RowBytes, RowBytes);
 
 			// Copy the bottom row to the top
-			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBytes);
+			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureHeight - 1 - y) * RowBytes, RowBytes);
 
 			// Copy the buffer contents (original top row) to the bottom
-			std::memcpy(RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
+			std::memcpy(RawData.data() + (TextureHeight - 1 - y) * RowBytes, RowBuffer, RowBytes);
 		}
 
 		delete[] RowBuffer;
 	}
 	else if (TextureToExport->InternalFormat == GL_RG16F)
 	{
-		const unsigned char* TextureData = TextureToExport->GetRawData();
-		// Two channels per pixel (R and G) – output 8 bits per channel.
-		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 2);
+		// Two channels per pixel (R and G) - output 8 bits per channel.
+		RawData.resize(TextureWidth * TextureHeight * 2);
 
 		size_t RawDataIndex = 0;
 		// Total half-floats = width * height * 2; each half-float is 2 bytes.
@@ -2687,71 +2695,145 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const c
 		}
 
 		// Flip image vertically.
-		const size_t RowBytes = TextureToExport->GetWidth() * 2;  // 2 bytes per pixel row
+		const size_t RowBytes = TextureWidth * 2;  // 2 bytes per pixel row
 		unsigned char* RowBuffer = new unsigned char[RowBytes];
-		for (size_t y = 0; y < TextureToExport->GetHeight() / 2; y++)
+		for (size_t y = 0; y < TextureHeight / 2; y++)
 		{
 			std::memcpy(RowBuffer, RawData.data() + y * RowBytes, RowBytes);
-			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBytes);
-			std::memcpy(RawData.data() + (TextureToExport->GetHeight() - 1 - y) * RowBytes, RowBuffer, RowBytes);
+			std::memcpy(RawData.data() + y * RowBytes, RawData.data() + (TextureHeight - 1 - y) * RowBytes, RowBytes);
+			std::memcpy(RawData.data() + (TextureHeight - 1 - y) * RowBytes, RowBuffer, RowBytes);
 		}
 		delete[] RowBuffer;
 	}
 	else if (TextureToExport->InternalFormat == GL_RED)
 	{
-		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
-		const unsigned char* TextreData = TextureToExport->GetRawData();
+		RawData.resize(TextureWidth * TextureHeight * 4);
 
 		for (size_t i = 0; i < RawData.size(); i += 4)
 		{
-			RawData[i] = TextreData[i / 4];
-			RawData[i + 1] = TextreData[i / 4];
-			RawData[i + 2] = TextreData[i / 4];
+			RawData[i] = TextureData[i / 4];
+			RawData[i + 1] = TextureData[i / 4];
+			RawData[i + 2] = TextureData[i / 4];
 			RawData[i + 3] = 255;
 		}
 	}
 	else if (TextureToExport->InternalFormat == GL_R16)
 	{
-		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 2);
-		const unsigned char* TextreData = TextureToExport->GetRawData();
+		RawData.resize(TextureWidth * TextureHeight * 2);
 
 		for (size_t i = 0; i < RawData.size(); i++)
-		{
-			RawData[i] = TextreData[i];
-		}
+			RawData[i] = TextureData[i];
 
 		for (size_t i = 0; i < RawData.size(); i += 2)
-		{
 			std::swap(RawData[i], RawData[i + 1]);
-		}
 	}
-	else
+	else if (TextureToExport->InternalFormat == GL_DEPTH24_STENCIL8 || TextureToExport->InternalFormat == GL_DEPTH_COMPONENT32)
 	{
-		RawData.resize(TextureToExport->GetWidth() * TextureToExport->GetHeight() * 4);
-		const unsigned char* TextreData = TextureToExport->GetRawData();
+		const float* DepthFloats = reinterpret_cast<const float*>(TextureData);
+		const size_t PixelCount = TextureWidth * TextureHeight;
 
-		for (size_t i = 0; i < RawData.size(); i++)
+		// Same min/max scan as grayscale mode
+		float MinDepth = std::numeric_limits<float>::max();
+		float MaxDepth = std::numeric_limits<float>::lowest();
+		for (size_t i = 0; i < PixelCount; i++)
 		{
-			RawData[i] = TextreData[i];
+			if (DepthFloats[i] >= 1.0f)
+				continue;
+			if (DepthFloats[i] < MinDepth)
+				MinDepth = DepthFloats[i];
+			if (DepthFloats[i] > MaxDepth)
+				MaxDepth = DepthFloats[i];
 		}
-	}
 
-	const std::string FilePath = FileName;
-	int Error = 0;
-	if (TextureToExport->InternalFormat == GL_R16)
-	{
-		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight(), LCT_GREY, 16);
-	}
-	if (TextureToExport->InternalFormat == GL_RG16F)
-	{
-		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight(), LCT_GREY_ALPHA);
+		if (MinDepth > MaxDepth)
+		{
+			MinDepth = 0.0f;
+			MaxDepth = 1.0f;
+		}
+
+		const float Range = MaxDepth - MinDepth;
+		const float InverseRange = (Range > 1e-6f) ? 1.0f / Range : 1.0f;
+		
+		if (DepthExportMode == FE_DEPTH_EXPORT_GRAYSCALE_PNG)
+		{
+			RawData.resize(PixelCount * 4);
+
+			for (size_t i = 0; i < PixelCount; i++)
+			{
+				float Normalized = (DepthFloats[i] - MinDepth) * InverseRange;
+				Normalized = std::max(0.0f, std::min(1.0f, Normalized));
+				unsigned char Gray = static_cast<unsigned char>(Normalized * 255.0f);
+
+				RawData[i * 4 + 0] = Gray;
+				RawData[i * 4 + 1] = Gray;
+				RawData[i * 4 + 2] = Gray;
+				RawData[i * 4 + 3] = 255;
+			}
+
+			// Flip vertically
+			const size_t RowBytes = TextureWidth * 4;
+			std::vector<unsigned char> RowBuffer(RowBytes);
+			for (int y = 0; y < TextureHeight / 2; y++)
+			{
+				unsigned char* TopRow = RawData.data() + y * RowBytes;
+				unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
+				std::memcpy(RowBuffer.data(), TopRow, RowBytes);
+				std::memcpy(TopRow, BotRow, RowBytes);
+				std::memcpy(BotRow, RowBuffer.data(), RowBytes);
+			}
+
+			Format = GL_RGBA;
+		}
+		else if (DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG)
+		{
+			RawData.resize(PixelCount * 2);
+
+			for (size_t i = 0; i < PixelCount; i++)
+			{
+				float Normalized = (DepthFloats[i] - MinDepth) * InverseRange;
+				Normalized = std::max(0.0f, std::min(1.0f, Normalized));
+				unsigned short FinalValue = static_cast<unsigned short>(Normalized * 65535.0f);
+
+				RawData[i * 2 + 0] = (FinalValue >> 8) & 0xFF;
+				RawData[i * 2 + 1] = FinalValue & 0xFF;
+			}
+
+			// Flip vertically
+			const size_t RowBytes = TextureWidth * 2;
+			std::vector<unsigned char> RowBuffer(RowBytes);
+			for (int y = 0; y < TextureHeight / 2; y++)
+			{
+				unsigned char* TopRow = RawData.data() + y * RowBytes;
+				unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
+				std::memcpy(RowBuffer.data(), TopRow, RowBytes);
+				std::memcpy(TopRow, BotRow, RowBytes);
+				std::memcpy(BotRow, RowBuffer.data(), RowBytes);
+			}
+
+			Format = GL_R16;
+		}
 	}
 	else
 	{
-		Error = lodepng::encode(FilePath, RawData, TextureToExport->GetWidth(), TextureToExport->GetHeight());
+		RawData.resize(TextureWidth * TextureHeight * 4);
+		for (size_t i = 0; i < RawData.size(); i++)
+			RawData[i] = TextureData[i];
+
+		// Flip vertically
+		const size_t RowBytes = TextureWidth * 4;
+		std::vector<unsigned char> RowBuffer(RowBytes);
+		for (int y = 0; y < TextureHeight / 2; y++)
+		{
+			unsigned char* TopRow = RawData.data() + y * RowBytes;
+			unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
+			std::memcpy(RowBuffer.data(), TopRow, RowBytes);
+			std::memcpy(TopRow, BotRow, RowBytes);
+			std::memcpy(BotRow, RowBuffer.data(), RowBytes);
+		}
 	}
 
-	return Error == 0;
+	delete[] TextureData;
+	return ExportRawDataToPNG(FileName, RawData.data(), TextureWidth, TextureHeight, Format);
 }
 
 bool FEResourceManager::ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, const int Width, const int Height, const GLint Internalformat)
@@ -2759,10 +2841,12 @@ bool FEResourceManager::ExportRawDataToPNG(const char* FileName, const unsigned 
 	if (Internalformat != GL_RGBA &&
 		Internalformat != GL_RED &&
 		Internalformat != GL_R16 &&
+		Internalformat != GL_RG16F &&
+		Internalformat != GL_RGBA16F &&
 		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		Internalformat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::exportRawDataToPNG internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ExportRawDataToPNG internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -2771,6 +2855,10 @@ bool FEResourceManager::ExportRawDataToPNG(const char* FileName, const unsigned 
 	if (Internalformat == GL_R16)
 	{
 		Error = lodepng::encode(FilePath, TextureData, Width, Height, LCT_GREY, 16);
+	}
+	else if (Internalformat == GL_RG16F)
+	{
+		Error = lodepng::encode(FilePath, TextureData, Width, Height, LCT_GREY_ALPHA);
 	}
 	else
 	{
@@ -2784,19 +2872,19 @@ unsigned char* FEResourceManager::ResizeTextureRawData(FETexture* SourceTexture,
 {
 	if (SourceTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2811,7 +2899,7 @@ unsigned char* FEResourceManager::ResizeTextureRawData(FETexture* SourceTexture,
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2829,25 +2917,25 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 {
 	if (TextureData == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData with nullptr textureData", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData with nullptr textureData", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (Width <= 0 || Height <= 0 || Width > 8192 || Height > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported current resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData unsupported current resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth == Width && TargetHeight == Height)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2856,7 +2944,7 @@ unsigned char* FEResourceManager::ResizeTextureRawData(const unsigned char* Text
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTextureRawData internalFormat of textureData is not supported", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTextureRawData internalFormat of textureData is not supported", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -2982,19 +3070,19 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 {
 	if (SourceTexture == nullptr)
 	{
-		LOG.Add("FEResourceManager::resizeTexture with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTexture with nullptr sourceTexture", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
 	if (TargetWidth <= 0 || TargetHeight <= 0 || TargetWidth > 8192 || TargetHeight > 8192)
 	{
-		LOG.Add("FEResourceManager::resizeTexture unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTexture unsupported target resolution", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
 	if (TargetWidth == SourceTexture->GetWidth() && TargetHeight == SourceTexture->GetHeight())
 	{
-		LOG.Add("FEResourceManager::resizeTexture no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTexture no operation needed", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -3003,7 +3091,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		SourceTexture->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FEResourceManager::resizeTexture internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::ResizeTexture internalFormat of sourceTexture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return;
 	}
 
