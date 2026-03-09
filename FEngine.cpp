@@ -20,41 +20,33 @@ FEngine::~FEngine()
 // exposed to script DLLs built in header-only mode (ENGINE_HEADERS_ONLY).
 // Script DLLs capture their own build version at compile time, allowing the
 // engine to detect version mismatches when loading them at runtime.
-#include "Core/EngineVersion.h"
+#include "Core/VersionInfo/FOCAL_ENGINE_Version.h"
+#include "Core/VersionInfo/FEVersionInfo.h"
+FE_DEFINE_VERSION_INFO(FOCAL_ENGINE_)
+
 std::string FEngine::GetEngineVersion()
 {
-	return std::to_string(ENGINE_VERSION_MAJOR) + "."
-		   + std::to_string(ENGINE_VERSION_MINOR) + "."
-		   + std::to_string(ENGINE_VERSION_PATCH);
+	return GetFOCAL_ENGINE_VersionInfo().GetVersion();
 }
 
 int FEngine::GetEngineBuildNumber()
 {
-	return ENGINE_BUILD_NUMBER;
+	return GetFOCAL_ENGINE_VersionInfo().BuildNumber;
 }
 
 std::string FEngine::GetEngineBuildTimestamp()
 {
-	return ENGINE_BUILD_TIMESTAMP;
+	return GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
 }
 
 std::string FEngine::GetEngineBuildInfo()
 {
-	std::string Result = "build " + std::to_string(ENGINE_BUILD_NUMBER) + " (" + std::string(ENGINE_GIT_HASH);
-
-	if (ENGINE_BUILD_BRANCH_OFFSET > 0)
-		Result += " " + std::string(ENGINE_GIT_BRANCH) + " +" + std::to_string(ENGINE_BUILD_BRANCH_OFFSET) + " from master";
-
-	if (ENGINE_GIT_DIRTY)
-		Result += ", dirty";
-
-	Result += ")";
-	return Result;
+	return GetFOCAL_ENGINE_VersionInfo().GetBuildInfo();
 }
 
-std::string FEngine::GetEngineFullVersion()
+std::string FEngine::GetFullVersion()
 {
-	return "Focal Engine " + GetEngineVersion() + " " + GetEngineBuildInfo();
+	return "Focal Engine " + GetFOCAL_ENGINE_VersionInfo().GetFullVersionString();/* GetEngineVersion() + " " + GetEngineBuildInfo();*/
 }
 
 bool FEngine::IsNotTerminated()

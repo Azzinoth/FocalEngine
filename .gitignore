@@ -19,7 +19,7 @@ imgui.ini
 *.txt
 cmake_install.cmake
 Config.h
-EngineVersion.h
+FOCAL_ENGINE_Version.h
 
 #Folders
 Debug/

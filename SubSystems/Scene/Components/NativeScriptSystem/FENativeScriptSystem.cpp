@@ -594,7 +594,10 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(std::string ModuleID)
 // exposed to script DLLs built in header-only mode (ENGINE_HEADERS_ONLY).
 // Script DLLs capture their own build version at compile time, allowing the
 // engine to detect version mismatches when loading them at runtime.
-#include "../../Core/EngineVersion.h"
+#include "Core/VersionInfo/FOCAL_ENGINE_Version.h"
+#include "Core/VersionInfo/FEVersionInfo.h"
+FE_DEFINE_VERSION_INFO(FOCAL_ENGINE_)
+
 bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Module)
 {
 	if (Module == nullptr)
@@ -718,7 +721,13 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (GetEngineHeadersBuildVersion)
 	{
 		unsigned long long EngineHeadersBuildVersion = GetEngineHeadersBuildVersion();
-		unsigned long long EngineBuildVersion = std::stoull(ENGINE_BUILD_TIMESTAMP);
+		std::string BuildTimestamp = GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
+		// Remove quotes from the timestamp.
+		BuildTimestamp.erase(std::remove_if(BuildTimestamp.begin(), BuildTimestamp.end(),
+			[](char Character) { return Character == '\"'; }),
+			BuildTimestamp.end());
+
+		unsigned long long EngineBuildVersion = std::stoull(BuildTimestamp);
 		if (EngineHeadersBuildVersion != EngineBuildVersion)
 		{
 			// Currently we will just log this error, but in the future we should handle this more gracefully.

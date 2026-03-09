@@ -721,7 +721,12 @@ if(NOT ENGINE_HEADERS_ONLY)
 	endif()
 
 	add_custom_command(TARGET FocalEngine PRE_BUILD
-		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
-			-P ${CMAKE_CURRENT_SOURCE_DIR}/Core/UpdateEngineVersion.cmake
-    )
+    COMMAND ${CMAKE_COMMAND}
+        -D PROJECT_VERSION_PREFIX=FOCAL_ENGINE_
+        -D PROJECT_VERSION_MAJOR=0
+        -D PROJECT_VERSION_MINOR=2
+        -D PROJECT_VERSION_PATCH=4
+        -D PROJECT_VERSION_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Core/VersionInfo
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/Core/VersionInfo/UpdateProjectVersion.cmake
+	)
 endif()
