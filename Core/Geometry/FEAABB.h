@@ -75,7 +75,7 @@ namespace FocalEngine
 		float GetLongestAxisLength();
 		bool ContainsPoint(const glm::vec3& Point) const;
 
-		glm::vec3 GetAproximateForwardDirection() const;
+		glm::vec3 GetApproximateForwardDirection() const;
 
 		std::vector<glm::vec3> GetCorners() const;
 	private:

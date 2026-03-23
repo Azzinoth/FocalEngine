@@ -32,7 +32,7 @@ namespace FocalEngine
 		glm::vec3 GetRight() const;
 
 		bool IsActive() const;
-		void SetActive(const bool Active);
+		void SetActive(const bool bActive);
 
 		bool IsRenderingEnabled() const;
 		void SetRenderingEnabled(const bool bEnabled);

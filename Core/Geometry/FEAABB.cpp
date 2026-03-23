@@ -619,7 +619,7 @@ float FEAABB::GetVolume()
 	return Size.x * Size.y * Size.z;
 }
 
-glm::vec3 FEAABB::GetAproximateForwardDirection() const
+glm::vec3 FEAABB::GetApproximateForwardDirection() const
 {
 	glm::vec3 Result = glm::vec3(0.0f);
 	if (glm::all(glm::epsilonEqual(Size, glm::vec3(0.0f), glm::vec3(1e-6f))))

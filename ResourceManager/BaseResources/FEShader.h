@@ -57,7 +57,7 @@ namespace FocalEngine
 	public:
 		FEShader(std::string Name, const char* VertexText, const char* FragmentText,
 				 const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
-				 const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool TestCompilation = false, int GlslVersion = 450);
+				 const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool bTestCompilation = false, int GlslVersion = 450);
 		~FEShader();
 
 		FEShader(const FEShader& Shader);
@@ -153,7 +153,7 @@ namespace FocalEngine
 #endif
 		void ReCompile(std::string Name, const char* VertexText, const char* FragmentText,
 					   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
-					   const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool TestCompilation = false, int GlslVersion = 450);
+					   const char* GeometryText = nullptr, const char* ComputeText = nullptr, bool bTestCompilation = false, int GlslVersion = 450);
 	};
 
 #include "FEShader.inl"

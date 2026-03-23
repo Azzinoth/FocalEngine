@@ -221,11 +221,9 @@ void FETransformComponent::RotateAroundAxis(const glm::vec3& Axis, const float& 
 		glm::dvec3 DoubleSkew;
 		glm::dvec4 DoublePerspective;
 		glm::dmat4 ParentMatrix = GetParentMatrix();
-		bool Success = glm::decompose(ParentMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
-		if (Success)
-		{
+		bool bSuccess = glm::decompose(ParentMatrix, DoubleScale, DoubleRotation, DoubleTranslation, DoubleSkew, DoublePerspective);
+		if (bSuccess)
 			FinalAxis = glm::inverse(glm::quat(DoubleRotation)) * glm::vec3(Axis);
-		}
 	}
 
 	glm::quat LocalRotationQuaternion = glm::quat(cos(RotationAmount * ANGLE_TORADIANS_COF / 2),

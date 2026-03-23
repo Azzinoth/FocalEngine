@@ -174,7 +174,7 @@ namespace FocalEngine
 		std::string GetTag() const;
 
 		bool IsDirty() const;
-		void SetDirtyFlag(bool NewValue);
+		void SetDirtyFlag(bool bNewValue);
 
 		std::string GetName() const;
 		void SetName(std::string NewValue);

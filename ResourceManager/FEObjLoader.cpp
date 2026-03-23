@@ -13,27 +13,27 @@ FEObjLoader::~FEObjLoader()
 
 void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 {
-	std::string STemp;
+	std::string CurrentLine;
 
-	LineStream >> STemp;
+	LineStream >> CurrentLine;
 	// To lower case
-	std::transform(STemp.begin(), STemp.end(), STemp.begin(), [](const unsigned char C) { return std::tolower(C); });
+	std::transform(CurrentLine.begin(), CurrentLine.end(), CurrentLine.begin(), [](const unsigned char C) { return std::tolower(C); });
 
 	// if it is comment or object declaration or other not relevant info
-	if (STemp[0] == '#' || STemp[0] == 'o')
+	if (CurrentLine[0] == '#' || CurrentLine[0] == 'o')
 	{
 		// get to the next line
 		return;
 	}
 
 	// if this line contains vertex coordinates
-	if (STemp[0] == 'v' && STemp.size() == 1)
+	if (CurrentLine[0] == 'v' && CurrentLine.size() == 1)
 	{
 		glm::dvec3 NewVec;
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stod(STemp);
+			LineStream >> CurrentLine;
+			NewVec[i] = std::stod(CurrentLine);
 		}
 
 		if (bUseDoublePrecisionForReadingCoordinates)
@@ -50,10 +50,10 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		{
 			for (int i = 0; i <= 2; i++)
 			{
-				if (!(LineStream >> STemp) || STemp.empty())
+				if (!(LineStream >> CurrentLine) || CurrentLine.empty())
 					break;
 
-				NewVec[i] = std::stof(STemp);
+				NewVec[i] = std::stof(CurrentLine);
 				bHaveColors = true;
 			}
 
@@ -61,32 +61,32 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		}
 	}
 	// if this line contains vertex texture coordinates
-	else if (STemp[0] == 'v' && STemp.size() == 2 && STemp[1] == 't')
+	else if (CurrentLine[0] == 'v' && CurrentLine.size() == 2 && CurrentLine[1] == 't')
 	{
 		bHaveTextureCoord = true;
 
 		glm::vec2 NewVec;
 		for (int i = 0; i <= 1; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stof(STemp);
+			LineStream >> CurrentLine;
+			NewVec[i] = std::stof(CurrentLine);
 		}
 
 		Data->RawTextureCoordinates.push_back(NewVec);
 	}
 	// if this line contains vertex texture coordinates
-	else if (STemp[0] == 'v' && STemp.size() == 2 && STemp[1] == 'n')
+	else if (CurrentLine[0] == 'v' && CurrentLine.size() == 2 && CurrentLine[1] == 'n')
 	{
 		bHaveNormalCoord = true;
 
-		glm::vec3 NewVec;
+		glm::vec3 NewVector;
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stof(STemp);
+			LineStream >> CurrentLine;
+			NewVector[i] = std::stof(CurrentLine);
 		}
 		
-		glm::vec3 NormalizedVector = glm::normalize(NewVec);
+		glm::vec3 NormalizedVector = glm::normalize(NewVector);
 
 		if (isnan(NormalizedVector.x) || isnan(NormalizedVector.y) || isnan(NormalizedVector.z))
 			NormalizedVector = glm::vec3(0.0f);
@@ -94,26 +94,26 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		Data->RawNormalCoordinates.push_back(NormalizedVector);
 	}
 	// if this line contains indices
-	else if (STemp[0] == 'f' && STemp.size() == 1)
+	else if (CurrentLine[0] == 'f' && CurrentLine.size() == 1)
 	{
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
+			LineStream >> CurrentLine;
 
-			std::stringstream TempLineStrem;
-			TempLineStrem << STemp;
+			std::stringstream TemporaryLineStream;
+			TemporaryLineStream << CurrentLine;
 
-			int iterations = 0;
-			while (std::getline(TempLineStrem, STemp, '/'))
+			int Iterations = 0;
+			while (std::getline(TemporaryLineStream, CurrentLine, '/'))
 			{
-				if (!STemp.empty())
+				if (!CurrentLine.empty())
 				{
-					Data->RawIndices.push_back(std::stoi(STemp));
+					Data->RawIndices.push_back(std::stoi(CurrentLine));
 				}
 				else
 				{
 					// Texture coordinates are optional.
-					if (bHaveTextureCoord && iterations == 1)
+					if (bHaveTextureCoord && Iterations == 1)
 					{
 						// It is not proper fix!
 						Data->RawIndices.push_back(1);
@@ -126,7 +126,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 
 				if (!Data->MaterialRecords.empty())
 				{
-					if (iterations == 0)
+					if (Iterations == 0)
 					{
 						if (Data->MaterialRecords.back().MinVertexIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -134,7 +134,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 						if (Data->MaterialRecords.back().MaxVertexIndex < static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MaxVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
-					else if (iterations == 1)
+					else if (Iterations == 1)
 					{
 						if (Data->MaterialRecords.back().MinTextureIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -142,7 +142,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 						if (Data->MaterialRecords.back().MaxTextureIndex < static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MaxTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
-					else if (iterations == 2)
+					else if (Iterations == 2)
 					{
 						if (Data->MaterialRecords.back().MinNormalIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinNormalIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -154,12 +154,12 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 					Data->MaterialRecords.back().FaceCount++;
 				}
 				
-				iterations++;
+				Iterations++;
 			}
 		}
 	}
 	// if this line contains new material declaration
-	else if (STemp.find("usemtl") != std::string::npos)
+	else if (CurrentLine.find("usemtl") != std::string::npos)
 	{
 		Data->MaterialRecords.push_back(MaterialRecord());
 		if (Data->MaterialRecords.size() > 1)
@@ -168,7 +168,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		LineStream >> Data->MaterialRecords.back().Name;
 	}
 	// file with materials data
-	else if (STemp.find("mtllib") != std::string::npos)
+	else if (CurrentLine.find("mtllib") != std::string::npos)
 	{
 		LineStream >> MaterialFileName;
 	}
@@ -196,15 +196,15 @@ void FEObjLoader::ReadFile(const char* FileName)
 	}
 
 	std::ifstream File(FileName, std::ios::binary);
-	const auto begin = File.tellg();
+	const auto Begin = File.tellg();
 	File.seekg(0, std::ios::end);
-	const auto end = File.tellg();
-	const auto fsize = static_cast<size_t>(end - begin);
+	const auto End = File.tellg();
+	const auto FileSize = static_cast<size_t>(End - Begin);
 
 	File.seekg(0, 0);
 
 	std::string CurrentLine;
-	for (size_t i = 0; i < fsize; i++)
+	for (size_t i = 0; i < FileSize; i++)
 	{
 		char NewChar;
 		File.read(&NewChar, 1);
@@ -487,9 +487,9 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 					size_t j = IndexesMap.find(Data->RawIndices[i])->second;
 					std::swap(i, j);
 
-					const bool TexD = Data->RawIndices[i + 1] != Data->RawIndices[j + 1];
-					const bool NormD = Data->RawIndices[i + 2] != Data->RawIndices[j + 2];
-					if (Data->RawIndices[i] == Data->RawIndices[j] && (TexD || NormD))
+					const bool bTextureCoordRequiresSplit = Data->RawIndices[i + 1] != Data->RawIndices[j + 1];
+					const bool bNormalRequiresSplit = Data->RawIndices[i + 2] != Data->RawIndices[j + 2];
+					if (Data->RawIndices[i] == Data->RawIndices[j] && (bTextureCoordRequiresSplit || bNormalRequiresSplit))
 					{
 						// We do not need to add first appearance of vertex that we need to double.
 						FEObjLoader::VertexThatNeedDoubling NewVertex = FEObjLoader::VertexThatNeedDoubling(static_cast<int>(j), Data->RawIndices[j], Data->RawIndices[j + 1], Data->RawIndices[j + 2]);

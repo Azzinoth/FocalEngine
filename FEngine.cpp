@@ -82,12 +82,12 @@ void FEngine::InternalUpdate()
 	INPUT.Update();
 }
 
-void FEngine::BeginFrame(const bool InternalCall)
+void FEngine::BeginFrame(const bool bInternalCall)
 {
 	if (!APPLICATION.IsNotTerminated())
 		return;
 
-	if (!InternalCall)
+	if (!bInternalCall)
 		TIME.BeginTimeStamp();
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -120,7 +120,7 @@ void FEngine::BeginFrame(const bool InternalCall)
 	InternalUpdate();
 }
 
-void FEngine::Render(const bool InternalCall)
+void FEngine::Render(const bool bInternalCall)
 {
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
@@ -133,19 +133,22 @@ void FEngine::Render(const bool InternalCall)
 
 	APPLICATION.GetMainWindow()->Render();
 
-	if (!InternalCall) CPUTime = TIME.EndTimeStamp();
+	if (!bInternalCall)
+		CPUTime = TIME.EndTimeStamp();
 }
 
-void FEngine::EndFrame(const bool InternalCall)
+void FEngine::EndFrame(const bool bInternalCall)
 {
 	RENDERER.EndFrameDebugLines();
 
 	INPUT.EndFrame();
 
-	if (!InternalCall) TIME.BeginTimeStamp();
+	if (!bInternalCall)
+		TIME.BeginTimeStamp();
 	APPLICATION.GetMainWindow()->EndFrame();
 	APPLICATION.EndFrame();
-	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
+	if (!bInternalCall)
+		GPUTime = TIME.EndTimeStamp();
 
 	// FE_FIX_ME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
 	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)

@@ -18,10 +18,10 @@ namespace FocalEngine
 
 		void InitWindow(int Width = 1920 * 2, int Height = 1080 * 2, std::string WindowTitle = "FEWindow");
 
-		void BeginFrame(bool InternalCall = false);
-		void EndFrame(bool InternalCall = false);
+		void BeginFrame(bool bInternalCall = false);
+		void EndFrame(bool bInternalCall = false);
 
-		void Render(bool InternalCall = false);
+		void Render(bool bInternalCall = false);
 
 		bool IsNotTerminated();
 		void Terminate();

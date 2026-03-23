@@ -192,7 +192,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const char* FileName, const std::st
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
 
-		if (NewTexture->MipEnabled)
+		if (NewTexture->bMipEnabled)
 		{
 			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 			// TO-DO: make it configurable.
@@ -257,8 +257,8 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const char* FileName)
 		return;
 	}
 
-	const int MaxDimention = std::max(Texture->Width, Texture->Height);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	const int MaxDimension = std::max(Texture->Width, Texture->Height);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 	char** PixelData = new char* [MipCount];
 
 	for (size_t i = 0; i < MipCount; i++)
@@ -347,7 +347,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
 
-	if (NewTexture->MipEnabled)
+	if (NewTexture->bMipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -554,8 +554,8 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	}
 	else
 	{
-		const int MaxDimention = std::max(NewTexture->Width, NewTexture->Height);
-		const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+		const int MaxDimension = std::max(NewTexture->Width, NewTexture->Height);
+		const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height));
 
 		int MipW = NewTexture->Width / 2;
@@ -594,7 +594,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
-	if (NewTexture->MipEnabled)
+	if (NewTexture->bMipEnabled)
 	{
 		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -1020,7 +1020,7 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* File
 	}
 
 	// Use FEObjLoader to save the file
-	bool Result = OBJLoader.SaveToOBJ(FileName, &Data);
+	bool bResult = OBJLoader.SaveToOBJ(FileName, &Data);
 
 	// Clean up allocated memory
 	delete[] Positions;
@@ -1030,7 +1030,7 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* File
 	if (Colors) delete[] Colors;
 	if (MaterialIndices) delete[] MaterialIndices;
 
-	if (Result)
+	if (bResult)
 	{
 		LOG.Add(std::string("Successfully exported mesh to: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
 	}
@@ -1039,7 +1039,7 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* File
 		LOG.Add(std::string("Failed to export mesh to: ") + FileName, "FE_LOG_SAVING", FE_LOG_ERROR);
 	}
 
-	return Result;
+	return bResult;
 }
 
 bool FEResourceManager::ExportFEMeshToPLY(FEMesh* MeshToExport, std::string FileName)
@@ -2552,36 +2552,28 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 {
 	std::vector<FETexture*> Result;
 
-	size_t TextureDataLenght = 0;
-	const unsigned char* pixels = SourceTexture->GetRawData(&TextureDataLenght);
+	size_t TextureDataLength = 0;
+	const unsigned char* Pixels = SourceTexture->GetRawData(&TextureDataLength);
 
-	unsigned char* RedChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
-	int index = 0;
-	for (size_t i = 0; i < TextureDataLenght; i += 4)
-	{
-		RedChannel[index++] = pixels[i];
-	}
+	unsigned char* RedChannel = new unsigned char[static_cast<size_t>(TextureDataLength / 4.0f)];
+	int Index = 0;
+	for (size_t i = 0; i < TextureDataLength; i += 4)
+		RedChannel[Index++] = Pixels[i];
 
-	unsigned char* GreenChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
-	index = 0;
-	for (size_t i = 1; i < TextureDataLenght; i += 4)
-	{
-		GreenChannel[index++] = pixels[i];
-	}
+	unsigned char* GreenChannel = new unsigned char[static_cast<size_t>(TextureDataLength / 4.0f)];
+	Index = 0;
+	for (size_t i = 1; i < TextureDataLength; i += 4)
+		GreenChannel[Index++] = Pixels[i];
 
-	unsigned char* BlueChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
-	index = 0;
-	for (size_t i = 2; i < TextureDataLenght; i += 4)
-	{
-		BlueChannel[index++] = pixels[i];
-	}
+	unsigned char* BlueChannel = new unsigned char[static_cast<size_t>(TextureDataLength / 4.0f)];
+	Index = 0;
+	for (size_t i = 2; i < TextureDataLength; i += 4)
+		BlueChannel[Index++] = Pixels[i];
 
-	unsigned char* AlphaChannel = new unsigned char[static_cast<size_t>(TextureDataLenght / 4.0f)];
-	index = 0;
-	for (size_t i = 3; i < TextureDataLenght; i += 4)
-	{
-		AlphaChannel[index++] = pixels[i];
-	}
+	unsigned char* AlphaChannel = new unsigned char[static_cast<size_t>(TextureDataLength / 4.0f)];
+	Index = 0;
+	for (size_t i = 3; i < TextureDataLength; i += 4)
+		AlphaChannel[Index++] = Pixels[i];
 
 	Result.push_back(RawDataToFETexture(RedChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
 	Result.back()->SetName(SourceTexture->GetName() + "_R");
@@ -2595,7 +2587,7 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	Result.push_back(RawDataToFETexture(AlphaChannel, SourceTexture->GetWidth(), SourceTexture->GetHeight(), GL_RED, GL_RED));
 	Result.back()->SetName(SourceTexture->GetName() + "_A");
 
-	delete[] pixels;
+	delete[] Pixels;
 	delete[] RedChannel;
 	delete[] GreenChannel;
 	delete[] BlueChannel;
@@ -2603,8 +2595,6 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 
 	return Result;
 }
-
-
 
 bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName, FE_DEPTH_EXPORT_MODE DepthExportMode)
 {
@@ -3109,8 +3099,8 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 
 	SourceTexture->Width = TargetWidth;
 	SourceTexture->Height = TargetHeight;
-	const int MaxDimention = std::max(SourceTexture->Width, SourceTexture->Height);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	const int MaxDimension = std::max(SourceTexture->Width, SourceTexture->Height);
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	if (SourceTexture->InternalFormat == GL_RGBA)
 	{
@@ -3163,7 +3153,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const char* FileName, const std::st
 	delete RawData;
 	NewTexture->InternalFormat = InternalFormat;
 
-	if (NewTexture->MipEnabled)
+	if (NewTexture->bMipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -3438,7 +3428,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
 	Result->InternalFormat = InternalFormat;
 
-	if (Result->MipEnabled)
+	if (Result->bMipEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.

@@ -510,7 +510,7 @@ void FEMaterial::ClearAllTexturesInfo()
 
 bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 {
-	bool Result = false;
+	bool bResult = false;
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (Textures[i] == nullptr)
@@ -518,12 +518,12 @@ bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 
 		if (Textures[i]->GetObjectID() == Texture->GetObjectID())
 		{
-			Result = true;
-			return Result;
+			bResult = true;
+			return bResult;
 		}
 	}
 
-	return Result;
+	return bResult;
 }
 
 bool FEMaterial::IsCompactPacking()

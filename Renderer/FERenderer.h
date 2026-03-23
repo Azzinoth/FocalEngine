@@ -134,7 +134,7 @@ namespace FocalEngine
 		glm::ivec4 GetGLViewport();
 
 		FECameraRenderingData* GetCameraRenderingData(FEEntity* CameraEntity);
-		void AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing = false);
+		void AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool bNoProcessing = false);
 
 		// TO-DO: This function is not ready yet. The main problem is that fused data would not be fed into postprocess.
 		bool FuseSceneRenderings(FEEntity* FirstSceneCamera, FEEntity* SecondSceneCamera, FEFramebuffer* ResultingFrameBuffer);
@@ -161,8 +161,8 @@ namespace FocalEngine
 
 		void RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
 
-		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, bool IsReceivingShadows = false, const bool IsUniformLighting = false);
-		void LoadStandardUniforms(FEShader* Shader, bool IsReceivingShadows, FEEntity* Camera, const bool IsUniformLighting = false);
+		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, bool bReceivingShadows = false, const bool IsUniformLighting = false);
+		void LoadStandardUniforms(FEShader* Shader, bool bReceivingShadows, FEEntity* Camera, const bool bUniformLighting = false);
 		void LoadUniformBlocks(FEScene* CurrentScene);
 
 		void SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith);

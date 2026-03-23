@@ -65,9 +65,9 @@ FEScene* FEPrefab::GetScene() const
 	return Scene;
 }
 
-void FEPrefab::SetScene(FEScene* Scene, bool DeleteOldScene)
+void FEPrefab::SetScene(FEScene* Scene, bool bDeleteOldScene)
 {
-	if (DeleteOldScene)
+	if (bDeleteOldScene)
 		SCENE_MANAGER.DeleteScene(this->Scene);
 
 	this->Scene = Scene;

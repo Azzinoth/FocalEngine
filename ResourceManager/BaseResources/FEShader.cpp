@@ -3,60 +3,60 @@ using namespace FocalEngine;
 
 FEShader::FEShader(const std::string Name, const char* VertexText, const char* FragmentText,
                    const char* TessControlText, const char* TessEvalText,
-                   const char* GeometryText, const char* ComputeText, const bool TestCompilation, const int GlslVersion) : FEObject(FE_SHADER, Name)
+                   const char* GeometryText, const char* ComputeText, const bool bTestCompilation, const int GlslVersion) : FEObject(FE_SHADER, Name)
 {
 	this->GlslVersion = GlslVersion;
-	bTestCompilationMode = TestCompilation;
+	bTestCompilationMode = bTestCompilation;
 	SetName(Name);
-	size_t TextLenght = 0;
+	size_t TextLength = 0;
 
 	if (VertexText != nullptr)
 	{
 		VertexShaderID = LoadShader(VertexText, GL_VERTEX_SHADER);
-		TextLenght = strlen(VertexText);
-		VertexShaderText = new char[TextLenght + 1];
-		strcpy_s(VertexShaderText, TextLenght + 1, VertexText);
+		TextLength = strlen(VertexText);
+		VertexShaderText = new char[TextLength + 1];
+		strcpy_s(VertexShaderText, TextLength + 1, VertexText);
 	}
 
 	if (TessControlText != nullptr)
 	{
 		TessControlShaderID = LoadShader(TessControlText, GL_TESS_CONTROL_SHADER);
-		TextLenght = strlen(TessControlText);
-		TessControlShaderText = new char[TextLenght + 1];
-		strcpy_s(TessControlShaderText, TextLenght + 1, TessControlText);
+		TextLength = strlen(TessControlText);
+		TessControlShaderText = new char[TextLength + 1];
+		strcpy_s(TessControlShaderText, TextLength + 1, TessControlText);
 	}
 	
 	if (TessEvalText != nullptr)
 	{
 		TessEvalShaderID = LoadShader(TessEvalText, GL_TESS_EVALUATION_SHADER);
-		TextLenght = strlen(TessEvalText);
-		TessEvalShaderText = new char[TextLenght + 1];
-		strcpy_s(TessEvalShaderText, TextLenght + 1, TessEvalText);
+		TextLength = strlen(TessEvalText);
+		TessEvalShaderText = new char[TextLength + 1];
+		strcpy_s(TessEvalShaderText, TextLength + 1, TessEvalText);
 	}
 
 	if (GeometryText != nullptr)
 	{
 		GeometryShaderID = LoadShader(GeometryText, GL_GEOMETRY_SHADER);
-		TextLenght = strlen(GeometryText);
-		GeometryShaderText = new char[TextLenght + 1];
-		strcpy_s(GeometryShaderText, TextLenght + 1, GeometryText);
+		TextLength = strlen(GeometryText);
+		GeometryShaderText = new char[TextLength + 1];
+		strcpy_s(GeometryShaderText, TextLength + 1, GeometryText);
 	}
 
 	if (FragmentText != nullptr)
 	{
 		FragmentShaderID = LoadShader(FragmentText, GL_FRAGMENT_SHADER);
-		TextLenght = strlen(FragmentText);
-		FragmentShaderText = new char[TextLenght + 1];
-		strcpy_s(FragmentShaderText, TextLenght + 1, FragmentText);
+		TextLength = strlen(FragmentText);
+		FragmentShaderText = new char[TextLength + 1];
+		strcpy_s(FragmentShaderText, TextLength + 1, FragmentText);
 	}
 
 	if (ComputeText != nullptr)
 	{
-		bTestCompilationMode = TestCompilation;
+		bTestCompilationMode = bTestCompilation;
 		ComputeShaderID = LoadShader(ComputeText, GL_COMPUTE_SHADER);
-		TextLenght = strlen(ComputeText);
-		ComputeShaderText = new char[TextLenght + 1];
-		strcpy_s(ComputeShaderText, TextLenght + 1, ComputeText);
+		TextLength = strlen(ComputeText);
+		ComputeShaderText = new char[TextLength + 1];
+		strcpy_s(ComputeShaderText, TextLength + 1, ComputeText);
 	}
 
 	if (bTestCompilationMode && !CompilationErrors.empty() && !LinkErrors.empty() && !ValidateErrors.empty())
@@ -201,8 +201,6 @@ void FEShader::RegisterUniforms()
 		std::string UniformNameString = UniformName;
 		if (UniformNameString.find("debugFlag") != std::string::npos)
 		{
-			int y = 0;
-			y++;
 			//bDebugRequest = true;
 			//continue;
 		}
@@ -797,17 +795,17 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 		ParsedShaderText.replace(Index, strlen(FE_TEXTURE_MACRO), "uniform sampler2D");
 
 		// several shaders could use same texture
-		bool WasAlreadyDefined = false;
+		bool bWasAlreadyDefined = false;
 		for (size_t i = 0; i < TextureUniforms.size(); i++)
 		{
 			if (TextureName == TextureUniforms[i])
 			{
-				WasAlreadyDefined = true;
+				bWasAlreadyDefined = true;
 				break;
 			}
 		}
 
-		if (WasAlreadyDefined)
+		if (bWasAlreadyDefined)
 		{
 			Index = ParsedShaderText.find(FE_TEXTURE_MACRO);
 			continue;
@@ -1096,62 +1094,62 @@ void FEShader::Dispatch(const GLuint GroupXCount, const GLuint GroupYCount, cons
 
 void FEShader::ReCompile(const std::string Name, const char* VertexText, const char* FragmentText,
                          const char* TessControlText, const char* TessEvalText,
-                         const char* GeometryText, const char* ComputeText, const bool TestCompilation, const int GlslVersion)
+                         const char* GeometryText, const char* ComputeText, const bool bTestCompilation, const int GlslVersion)
 {
 	CleanUp();
 
 	this->GlslVersion = GlslVersion;
-	bTestCompilationMode = TestCompilation;
+	bTestCompilationMode = bTestCompilation;
 	SetName(Name);
-	size_t TextLenght;
+	size_t TextLength;
 
 	if (VertexText != nullptr)
 	{
 		VertexShaderID = LoadShader(VertexText, GL_VERTEX_SHADER);
-		TextLenght = strlen(VertexText);
-		VertexShaderText = new char[TextLenght + 1];
-		strcpy_s(VertexShaderText, TextLenght + 1, VertexText);
+		TextLength = strlen(VertexText);
+		VertexShaderText = new char[TextLength + 1];
+		strcpy_s(VertexShaderText, TextLength + 1, VertexText);
 	}
 
 	if (TessControlText != nullptr)
 	{
 		TessControlShaderID = LoadShader(TessControlText, GL_TESS_CONTROL_SHADER);
-		TextLenght = strlen(TessControlText);
-		TessControlShaderText = new char[TextLenght + 1];
-		strcpy_s(TessControlShaderText, TextLenght + 1, TessControlText);
+		TextLength = strlen(TessControlText);
+		TessControlShaderText = new char[TextLength + 1];
+		strcpy_s(TessControlShaderText, TextLength + 1, TessControlText);
 	}
 
 	if (TessEvalText != nullptr)
 	{
 		TessEvalShaderID = LoadShader(TessEvalText, GL_TESS_EVALUATION_SHADER);
-		TextLenght = strlen(TessEvalText);
-		TessEvalShaderText = new char[TextLenght + 1];
-		strcpy_s(TessEvalShaderText, TextLenght + 1, TessEvalText);
+		TextLength = strlen(TessEvalText);
+		TessEvalShaderText = new char[TextLength + 1];
+		strcpy_s(TessEvalShaderText, TextLength + 1, TessEvalText);
 	}
 
 	if (GeometryText != nullptr)
 	{
 		GeometryShaderID = LoadShader(GeometryText, GL_GEOMETRY_SHADER);
-		TextLenght = strlen(GeometryText);
-		GeometryShaderText = new char[TextLenght + 1];
-		strcpy_s(GeometryShaderText, TextLenght + 1, GeometryText);
+		TextLength = strlen(GeometryText);
+		GeometryShaderText = new char[TextLength + 1];
+		strcpy_s(GeometryShaderText, TextLength + 1, GeometryText);
 	}
 
 	if (FragmentText != nullptr)
 	{
 		FragmentShaderID = LoadShader(FragmentText, GL_FRAGMENT_SHADER);
-		TextLenght = strlen(FragmentText);
-		FragmentShaderText = new char[TextLenght + 1];
-		strcpy_s(FragmentShaderText, TextLenght + 1, FragmentText);
+		TextLength = strlen(FragmentText);
+		FragmentShaderText = new char[TextLength + 1];
+		strcpy_s(FragmentShaderText, TextLength + 1, FragmentText);
 	}
 
 	if (ComputeText != nullptr)
 	{
-		bTestCompilationMode = TestCompilation;
+		bTestCompilationMode = bTestCompilation;
 		ComputeShaderID = LoadShader(ComputeText, GL_COMPUTE_SHADER);
-		TextLenght = strlen(ComputeText);
-		ComputeShaderText = new char[TextLenght + 1];
-		strcpy_s(ComputeShaderText, TextLenght + 1, ComputeText);
+		TextLength = strlen(ComputeText);
+		ComputeShaderText = new char[TextLength + 1];
+		strcpy_s(ComputeShaderText, TextLength + 1, ComputeText);
 	}
 
 	if (bTestCompilationMode && !CompilationErrors.empty() && !LinkErrors.empty() && !ValidateErrors.empty())
@@ -1300,89 +1298,57 @@ void FEShader::RegisterActiveAttributes()
 
 			case GL_INT:
 			{
-				int y = 0;
-				y++;
 
 				break;
 			}
 
 			case GL_INT_VEC2:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_INT_VEC3:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_INT_VEC4:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_VEC2:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_VEC3:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_VEC4:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_MAT2:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_MAT3:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 
 			case GL_FLOAT_MAT4:
 			{
-				int y = 0;
-				y++;
-
 				break;
 			}
 

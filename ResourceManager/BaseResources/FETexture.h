@@ -56,7 +56,7 @@ namespace FocalEngine
 		GLuint DefaultTextureUnit = -1;
 
 		FE_TEXTURE_MAG_FILTER MagFilter = FE_LINEAR;
-		bool MipEnabled = true;
+		bool bMipEnabled = true;
 		void AddToOnDeleteCallBackList(std::string ObjectID);
 		void EraseFromOnDeleteCallBackList(std::string ObjectID);
 

@@ -139,13 +139,13 @@ bool FEEntity::IsVisible()
 	return VisibilityComponent.IsVisible();
 }
 
-void FEEntity::SetVisible(bool Value)
+void FEEntity::SetVisible(bool bNewValue)
 {
 	if (!HasComponent<FEVisibilityComponent>())
 		AddComponent<FEVisibilityComponent>();
 
 	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
-	VisibilityComponent.SetVisible(Value);
+	VisibilityComponent.SetVisible(bNewValue);
 }
 
 bool FEEntity::IsComponentVisible(ComponentVisibilityType Type)
@@ -160,11 +160,11 @@ bool FEEntity::IsComponentVisible(ComponentVisibilityType Type)
 	return VisibilityComponent.IsVisible(Type);
 }
 
-void FEEntity::SetComponentVisible(ComponentVisibilityType Type, bool Value)
+void FEEntity::SetComponentVisible(ComponentVisibilityType Type, bool bNewValue)
 {
 	if (Type == ComponentVisibilityType::ALL)
 	{
-		SetVisible(Value);
+		SetVisible(bNewValue);
 		return;
 	}
 
@@ -172,7 +172,7 @@ void FEEntity::SetComponentVisible(ComponentVisibilityType Type, bool Value)
 		AddComponent<FEVisibilityComponent>();
 
 	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
-	VisibilityComponent.SetVisible(Type, Value);
+	VisibilityComponent.SetVisible(Type, bNewValue);
 }
 
 bool FEEntity::AttachTo(FEEntity* Parent, bool bPreserveWorldTransform)

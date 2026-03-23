@@ -739,11 +739,11 @@ bool FENativeScriptProject::Update()
 	if (!IsVSProjectFolderValidAndIntact())
 		return false;
 
-	bool CheckForReload = false;
+	bool bCheckForReload = false;
 	if (IsFileChanged(DebugDllFileData) && IsFileChanged(DebugPdbFileData) || IsFileChanged(ReleaseDllFileData))
-		CheckForReload = true;
+		bCheckForReload = true;
 
-	if (!CheckForReload)
+	if (!bCheckForReload)
 		return false;
 
 	// Waiting for external build system to finish.

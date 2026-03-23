@@ -54,9 +54,9 @@ bool FECameraComponent::IsActive() const
 	return bIsActive;
 }
 
-void FECameraComponent::SetActive(const bool Active)
+void FECameraComponent::SetActive(const bool bActive)
 {
-	bIsActive = Active;
+	bIsActive = bActive;
 }
 
 bool FECameraComponent::IsRenderingEnabled() const

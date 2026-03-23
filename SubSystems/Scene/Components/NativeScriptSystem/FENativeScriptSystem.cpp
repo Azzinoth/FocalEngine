@@ -696,17 +696,17 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	IsCompiledInDebugMode_Function IsCompiledInDebugMode = (IsCompiledInDebugMode_Function)GetProcAddress(DLLHandle, "IsCompiledInDebugMode");
 	if (IsCompiledInDebugMode)
 	{
-		bool DLLInDebug = IsCompiledInDebugMode();
+		bool bDLLInDebug = IsCompiledInDebugMode();
 
 #ifdef _DEBUG
-		if (!DLLInDebug)
+		if (!bDLLInDebug)
 		{
 			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled in release mode, while engine is in debug mode.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			FreeLibrary(DLLHandle);
 			return false;
 		}
 #else
-		if (DLLInDebug)
+		if (bDLLInDebug)
 		{
 			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because DLL with path: " + DLLPath + " was compiled in debug mode, while engine is in release mode.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			FreeLibrary(DLLHandle);

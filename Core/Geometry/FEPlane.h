@@ -128,10 +128,10 @@ namespace FocalEngine
 		{
 			// Two planes are equal if they have parallel normals and the same distance from origin
 			// First check if normals are parallel or anti-parallel
-			bool NormalAlignment = glm::all(glm::epsilonEqual(Normal, Other.Normal, Epsilon)) ||
-								   glm::all(glm::epsilonEqual(Normal, -Other.Normal, Epsilon));
+			bool bNormalAlignment = glm::all(glm::epsilonEqual(Normal, Other.Normal, Epsilon)) ||
+								    glm::all(glm::epsilonEqual(Normal, -Other.Normal, Epsilon));
 
-			if (!NormalAlignment)
+			if (!bNormalAlignment)
 				return false;
 
 			// Then check if a point from one plane lies on the other.

@@ -14,9 +14,9 @@ FEScene::~FEScene()
 }
 
 #include "FESceneManager.h"
-void FEScene::SetFlag(FESceneFlag Flag, bool Value)
+void FEScene::SetFlag(FESceneFlag Flag, bool bNewValue)
 {
-	if (Value)
+	if (bNewValue)
 		Flags |= Flag;
 	else
 		Flags = static_cast<FESceneFlag>(

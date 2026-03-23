@@ -777,13 +777,13 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
 		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
-		int iteration = 0;
+		int Iteration = 0;
 		for (size_t i = 0; i < TempBuffer.size(); i++)
 		{
-			iteration++;
-			if (iteration == 4)
+			Iteration++;
+			if (Iteration == 4)
 			{
-				iteration = 0;
+				Iteration = 0;
 				continue;
 			}
 			Primitive.RawData.Tangents.push_back(TempBuffer[i]);

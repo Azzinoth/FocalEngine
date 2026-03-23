@@ -257,7 +257,7 @@ void FETerrainComponent::DeleteLayerInSlot(const size_t LayerIndex)
 
 void FETerrainComponent::LoadLayersDataToGPU()
 {
-	bool GPUDataIsStale = false;
+	bool bGPUDataIsStale = false;
 	for (size_t i = 0; i < Layers.size(); i++)
 	{
 		const size_t index = i * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER;
@@ -296,13 +296,13 @@ void FETerrainComponent::LoadLayersDataToGPU()
 	{
 		if (GPULayersData[i] != OldGPULayersData[i])
 		{
-			GPUDataIsStale = true;
+			bGPUDataIsStale = true;
 			OldGPULayersData = GPULayersData;
 			break;
 		}
 	}
 
-	if (GPUDataIsStale)
+	if (bGPUDataIsStale)
 	{
 		float* TerrainLayersDataPtr = static_cast<float*>(glMapNamedBufferRange(GPULayersDataBuffer, 0,
 			sizeof(float) * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER *

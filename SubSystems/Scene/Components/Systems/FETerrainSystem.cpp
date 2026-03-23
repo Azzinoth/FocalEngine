@@ -583,20 +583,20 @@ void FETerrainSystem::UpdateCPUHeightInfo(FEEntity* TerrainEntity)
 
 	/*FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, heightMap->getTextureID()));
 
-	size_t rawDataLenght = heightMap->getWidth() * heightMap->getHeight() * 2;
-	unsigned char* rawData = new unsigned char[rawDataLenght];
+	size_t rawDataLength = heightMap->getWidth() * heightMap->getHeight() * 2;
+	unsigned char* rawData = new unsigned char[rawDataLength];
 	glPixelStorei(GL_PACK_ALIGNMENT, 2);
 	FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, rawData));
 	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	heightMap->unBind();*/
 
-	size_t RawDataLenght;
-	unsigned char* RawData = TerrainComponent.HeightMap->GetRawData(&RawDataLenght);
+	size_t RawDataLength;
+	unsigned char* RawData = TerrainComponent.HeightMap->GetRawData(&RawDataLength);
 
 	float Min = std::numeric_limits<float>::max();
 	float Max = -std::numeric_limits<float>::max();
 	int Iterator = 0;
-	for (size_t i = 0; i < RawDataLenght; i += 2)
+	for (size_t i = 0; i < RawDataLength; i += 2)
 	{
 		const unsigned short Temp = *(unsigned short*)(&RawData[i]);
 		TerrainComponent.HeightMapArray[Iterator] = Temp / static_cast<float>(0xFFFF);
@@ -867,7 +867,7 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 	}
 
 	int Index = 0;
-	const size_t TextureWidht = TerrainComponent.LayerMaps[0]->GetWidth();
+	const size_t TextureWidth = TerrainComponent.LayerMaps[0]->GetWidth();
 	const size_t TextureHeight = TerrainComponent.LayerMaps[0]->GetHeight();
 
 	std::vector<unsigned char*> LayersPerTextureData;
@@ -879,7 +879,7 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 	LayersPerChannelData.resize(FE_TERRAIN_MAX_LAYERS);
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
-		LayersPerChannelData[i] = new unsigned char[TextureWidht * TextureHeight];
+		LayersPerChannelData[i] = new unsigned char[TextureWidth * TextureHeight];
 	}
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
@@ -887,14 +887,14 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 		Index = 0;
 		if (LayerIndex == i)
 		{
-			for (size_t j = 0; j < TextureWidht * TextureHeight; j++)
+			for (size_t j = 0; j < TextureWidth * TextureHeight; j++)
 			{
 				LayersPerChannelData[i][Index++] = RawData[j];
 			}
 		}
 		else
 		{
-			for (size_t j = i % FE_TERRAIN_LAYER_PER_TEXTURE; j < TextureWidht * TextureHeight * 4; j += 4)
+			for (size_t j = i % FE_TERRAIN_LAYER_PER_TEXTURE; j < TextureWidth * TextureHeight * 4; j += 4)
 			{
 				LayersPerChannelData[i][Index++] = LayersPerTextureData[i / FE_TERRAIN_LAYER_PER_TEXTURE][j];
 			}
@@ -903,20 +903,16 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 
 	std::vector<unsigned char*> FinalTextureChannels;
 	FinalTextureChannels.resize(2);
-	FinalTextureChannels[0] = new unsigned char[TextureWidht * TextureHeight * 4];
-	FinalTextureChannels[1] = new unsigned char[TextureWidht * TextureHeight * 4];
+	FinalTextureChannels[0] = new unsigned char[TextureWidth * TextureHeight * 4];
+	FinalTextureChannels[1] = new unsigned char[TextureWidth * TextureHeight * 4];
 
 	Index = 0;
 
 	int* AllChannelsPixels = new int[8];
-
-	for (size_t i = 0; i < TextureWidht * TextureHeight * 4; i += 4)
+	for (size_t i = 0; i < TextureWidth * TextureHeight * 4; i += 4)
 	{
-		float sum = 0.0f;
 		for (size_t j = 0; j < 8; j++)
-		{
 			AllChannelsPixels[j] = LayersPerChannelData[j][Index];
-		}
 
 		FinalTextureChannels[0][i] = static_cast<unsigned char>(AllChannelsPixels[0]);
 		FinalTextureChannels[0][i + 1] = static_cast<unsigned char>(AllChannelsPixels[1]);
@@ -931,8 +927,8 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 		Index++;
 	}
 
-	const int MaxDimention = std::max(static_cast<int>(TextureWidht), static_cast<int>(TextureHeight));
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	const int MaxDimension = std::max(static_cast<int>(TextureWidth), static_cast<int>(TextureHeight));
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	TerrainComponent.LayerMaps[0]->UpdateRawData(FinalTextureChannels[0], MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -978,10 +974,10 @@ void FETerrainSystem::FillTerrainLayerMask(FEEntity* TerrainEntity, const size_t
 	}
 
 	FETexture* CorrectLayer = TerrainComponent.LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	const size_t TextureWidht = CorrectLayer->GetWidth();
+	const size_t TextureWidth = CorrectLayer->GetWidth();
 	const size_t TextureHeight = CorrectLayer->GetHeight();
-	unsigned char* FilledChannel = new unsigned char[TextureWidht * TextureHeight];
-	for (size_t i = 0; i < TextureWidht * TextureHeight; i++)
+	unsigned char* FilledChannel = new unsigned char[TextureWidth * TextureHeight];
+	for (size_t i = 0; i < TextureWidth * TextureHeight; i++)
 	{
 		FilledChannel[i] = 255;
 	}
@@ -1008,9 +1004,9 @@ void FETerrainSystem::ActivateVacantLayerSlot(FEEntity* TerrainEntity, FEMateria
 		//NewTexture->InternalFormat = GL_RGBA;
 
 		std::vector<unsigned char> RawData;
-		const size_t DataLenght = TextureWidth * TextureHeight * 4;
-		RawData.resize(DataLenght);
-		for (size_t i = 0; i < DataLenght; i++)
+		const size_t DataLength = TextureWidth * TextureHeight * 4;
+		RawData.resize(DataLength);
+		for (size_t i = 0; i < DataLength; i++)
 		{
 			RawData[i] = 0;
 		}
@@ -1075,10 +1071,10 @@ void FETerrainSystem::ClearTerrainLayerMask(FEEntity* TerrainEntity, size_t Laye
 	}
 
 	FETexture* CorrectLayer = TerrainComponent.LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	const size_t TextureWidht = CorrectLayer->GetWidth();
+	const size_t TextureWidth = CorrectLayer->GetWidth();
 	const size_t TextureHeight = CorrectLayer->GetHeight();
-	unsigned char* FilledChannel = new unsigned char[TextureWidht * TextureHeight];
-	for (size_t i = 0; i < TextureWidht * TextureHeight; i++)
+	unsigned char* FilledChannel = new unsigned char[TextureWidth * TextureHeight];
+	for (size_t i = 0; i < TextureWidth * TextureHeight; i++)
 	{
 		FilledChannel[i] = 0;
 	}
@@ -1169,8 +1165,8 @@ void FETerrainSystem::DeleteTerrainLayerMask(FEEntity* TerrainEntity, size_t Lay
 		ChannelIndex++;
 	}
 
-	const int MaxDimention = std::max(TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight());
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	const int MaxDimension = std::max(TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight());
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	TerrainComponent.LayerMaps[0]->UpdateRawData(FirstTextureData, MipCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -1269,9 +1265,9 @@ void FETerrainSystem::LoadTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 
 			// Fix problem, both LayerMaps would be cleared.
 			std::vector<unsigned char> RawData;
-			const size_t DataLenght = LoadedTexture->GetWidth() * LoadedTexture->GetHeight() * 4;
-			RawData.resize(DataLenght);
-			for (size_t i = 0; i < DataLenght; i++)
+			const size_t DataLength = LoadedTexture->GetWidth() * LoadedTexture->GetHeight() * 4;
+			RawData.resize(DataLength);
+			for (size_t i = 0; i < DataLength; i++)
 			{
 				RawData[i] = 0;
 			}
@@ -1321,12 +1317,12 @@ void FETerrainSystem::SaveTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 	}
 
 	// Reading data from current layer map texture.
-	size_t ResultingTextureDataLenght = 0;
+	size_t ResultingTextureDataLength = 0;
 	FETexture* CorrectLayer = TerrainComponent.LayerMaps[LayerIndex / FE_TERRAIN_LAYER_PER_TEXTURE];
-	const unsigned char* RawData = CorrectLayer->GetRawData(&ResultingTextureDataLenght);
-	unsigned char* ResultingData = new unsigned char[ResultingTextureDataLenght];
+	const unsigned char* RawData = CorrectLayer->GetRawData(&ResultingTextureDataLength);
+	unsigned char* ResultingData = new unsigned char[ResultingTextureDataLength];
 
-	for (size_t i = 0; i < ResultingTextureDataLenght; i += 4)
+	for (size_t i = 0; i < ResultingTextureDataLength; i += 4)
 	{
 		const size_t index = i + LayerIndex % FE_TERRAIN_LAYER_PER_TEXTURE;
 		ResultingData[i] = RawData[index];

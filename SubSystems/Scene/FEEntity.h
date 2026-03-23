@@ -86,10 +86,10 @@ namespace FocalEngine
 		Json::Value ToJson();
 
 		bool IsVisible();
-		void SetVisible(bool Value);
+		void SetVisible(bool bNewValue);
 
 		bool IsComponentVisible(ComponentVisibilityType Type);
-		void SetComponentVisible(ComponentVisibilityType Type, bool Value);
+		void SetComponentVisible(ComponentVisibilityType Type, bool bNewValue);
 
 		bool AttachTo(FEEntity* Parent, bool bPreserveWorldTransform = true);
 		bool AttachChild(FEEntity* Child, bool bPreserveWorldTransform = true);

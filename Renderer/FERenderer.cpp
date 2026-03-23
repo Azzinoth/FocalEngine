@@ -208,7 +208,7 @@ void FERenderer::Init()
 																	nullptr, nullptr); 
 }
 
-void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, const bool IsReceivingShadows, const bool IsUniformLighting)
+void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, const bool bReceivingShadows, const bool IsUniformLighting)
 {
 	if (Camera != nullptr)
 	{
@@ -252,7 +252,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 		Shader->UpdateUniformData("FEWorldMatrix", Transform->GetWorldMatrix());
 
 	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
-		Shader->UpdateUniformData("FEReceiveShadows", IsReceivingShadows);
+		Shader->UpdateUniformData("FEReceiveShadows", bReceivingShadows);
 
 	if (Shader->GetUniform("FEUniformLighting") != nullptr)
 		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
@@ -289,7 +289,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 	}
 }
 
-void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool IsReceivingShadows, FEEntity* Camera, const bool IsUniformLighting)
+void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool bReceivingShadows, FEEntity* Camera, const bool bUniformLighting)
 {
 	if (Camera != nullptr)
 	{
@@ -313,20 +313,20 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool IsReceivingSh
 	}
 
 	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
-		Shader->UpdateUniformData("FEReceiveShadows", IsReceivingShadows);
+		Shader->UpdateUniformData("FEReceiveShadows", bReceivingShadows);
 
 	if (Shader->GetUniform("FEUniformLighting") != nullptr)
-		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
+		Shader->UpdateUniformData("FEUniformLighting", bUniformLighting);
 }
 
-void FERenderer::AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool NoProcessing)
+void FERenderer::AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool bNoProcessing)
 {
 	if (CameraRenderingData == nullptr)
 		return;
 
 	CameraRenderingData->PostProcessEffects.push_back(NewPostProcess);
 
-	if (NoProcessing)
+	if (bNoProcessing)
 		return;
 
 	for (size_t i = 0; i < CameraRenderingData->PostProcessEffects.back()->Stages.size(); i++)
@@ -752,8 +752,8 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
 
-	const int MaxDimention = std::max(CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimention)) + 1);
+	const int MaxDimension = std::max(CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
+	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight()));
 	Result->DepthPyramid->Width = CameraComponent.GetRenderTargetWidth();
 	Result->DepthPyramid->Height = CameraComponent.GetRenderTargetHeight();
@@ -933,7 +933,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	LoadUniformBlocks(CurrentScene);
 
 	// ********* GENERATE SHADOW MAPS *********
-	const bool PreviousState = bUseOcclusionCulling;
+	const bool bPreviousState = bUseOcclusionCulling;
 	// Currently OCCLUSION_CULLING is not supported in shadow maps pass.
 	bUseOcclusionCulling = false;
 
@@ -1112,7 +1112,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		}
 	}
 
-	bUseOcclusionCulling = PreviousState;
+	bUseOcclusionCulling = bPreviousState;
 	// ********* GENERATE SHADOW MAPS END *********
 
 	// in current version only shadows from one directional light is supported.

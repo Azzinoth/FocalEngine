@@ -61,7 +61,7 @@ namespace FocalEngine
 	public:
 		FEScene();
 
-		void SetFlag(FESceneFlag Flag, bool Value);
+		void SetFlag(FESceneFlag Flag, bool bNewValue);
 		bool HasFlag(FESceneFlag Flag) const;
 
 		// Entity Management
