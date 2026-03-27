@@ -6,11 +6,14 @@ namespace FocalEngine
 {
 	class FEOpenXRRendering
 	{
+		friend class FEOpenXRCore;
 		friend class FEOpenXR;
+		friend class FEOpenXRInput;
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXRRendering)
 
 		void Init();
+		void Shutdown();
 		void Update();
 
 		glm::vec2 EyeResolution();

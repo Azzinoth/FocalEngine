@@ -18,6 +18,17 @@ void FEOpenXRCore::CreateInstance()
 	std::vector<const char*> ExtensionToRequest;
 	ExtensionToRequest.push_back(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME);
 
+	std::vector<FEOpenXRExtensionInfo> AvailableExtensions = GetAvailableExtensionsInfo();
+	for (size_t i = 0; i < AvailableExtensions.size(); i++)
+	{
+		if (AvailableExtensions[i].Name == XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME)
+		{
+			bGazeSupported = true;
+			ExtensionToRequest.push_back(XR_EXT_EYE_GAZE_INTERACTION_EXTENSION_NAME);
+			break;
+		}	
+	}
+
 	XrInstanceCreateInfo CreateInfo{ XR_TYPE_INSTANCE_CREATE_INFO };
 	strcpy_s(CreateInfo.applicationInfo.applicationName, sizeof(CreateInfo.applicationInfo.applicationName), ENGINE.GetVRApplicationVisibleName().c_str());
 	CreateInfo.applicationInfo.applicationVersion = 1;
@@ -30,7 +41,12 @@ void FEOpenXRCore::CreateInstance()
 
 	FE_OPENXR_ERROR(xrCreateInstance(&CreateInfo, &OpenXRInstance));
 	if (OpenXRInstance == nullptr)
+	{
 		bInitializedCorrectly = false;
+		return;
+	}
+
+	ReadRuntimeInfo();
 }
 
 void FEOpenXRCore::InitializeSystem()
@@ -107,26 +123,74 @@ void FEOpenXRCore::Init()
 	CreateReferenceSpace();
 }
 
-std::string FEOpenXRCore::GetActiveRuntimeInfo()
+void FEOpenXRCore::Shutdown()
 {
-	if (!bInitializedCorrectly || OpenXRInstance == nullptr)
-		return "OpenXR not initialized";
+	bInitializedCorrectly = false;
+	bSessionIsRunning = false;
 
-	XrInstanceProperties InstanceProperties{ XR_TYPE_INSTANCE_PROPERTIES };
-	XrResult Result = xrGetInstanceProperties(OpenXRInstance, &InstanceProperties);
-
-	if (Result != XR_SUCCESS)
+	if (ApplicationSpace != nullptr)
 	{
-		LOG.Add("Failed to get OpenXR instance properties: " + XrResultToString(Result), "FE_LOG_OPENXR", FE_LOG_WARNING);
-		return "Failed to retrieve runtime information";
+		FE_OPENXR_ERROR(xrDestroySpace(ApplicationSpace));
+		ApplicationSpace = nullptr;
 	}
 
-	std::string RuntimeInfo = std::string(InstanceProperties.runtimeName) +
-										  " v" + std::to_string(XR_VERSION_MAJOR(InstanceProperties.runtimeVersion)) + "." +
-										  std::to_string(XR_VERSION_MINOR(InstanceProperties.runtimeVersion)) + "." +
-										  std::to_string(XR_VERSION_PATCH(InstanceProperties.runtimeVersion));
+	if (Session != nullptr)
+	{
+		FE_OPENXR_ERROR(xrDestroySession(Session));
+		Session = nullptr;
+	}
 
-	return RuntimeInfo;
+	if (OpenXRInstance != nullptr)
+	{
+		FE_OPENXR_ERROR(xrDestroyInstance(OpenXRInstance));
+		OpenXRInstance = nullptr;
+	}
+
+	SystemID = 0;
+	SessionState = XR_SESSION_STATE_UNKNOWN;
+}
+
+FEOpenXRRuntimeInfo FEOpenXRCore::GetRuntimeInfo()
+{
+	return ActiveRuntimeInfo;
+}
+
+bool FEOpenXRCore::ReadRuntimeInfo()
+{
+	if (OpenXRInstance == nullptr)
+		return false;
+
+	XrInstanceProperties InstanceProperties{ XR_TYPE_INSTANCE_PROPERTIES };
+	XrResult Result = FE_OPENXR_ERROR(xrGetInstanceProperties(OpenXRInstance, &InstanceProperties));
+	if (Result != XR_SUCCESS)
+		return false;
+
+	ActiveRuntimeInfo.Name = InstanceProperties.runtimeName;
+	ActiveRuntimeInfo.Version = std::to_string(XR_VERSION_MAJOR(InstanceProperties.runtimeVersion)) + "." +
+								std::to_string(XR_VERSION_MINOR(InstanceProperties.runtimeVersion)) + "." +
+								std::to_string(XR_VERSION_PATCH(InstanceProperties.runtimeVersion));
+
+	std::string LowerCaseName = ActiveRuntimeInfo.Name;
+	std::transform(LowerCaseName.begin(), LowerCaseName.end(), LowerCaseName.begin(), ::tolower);
+
+	if (LowerCaseName.find("somnium") != std::string::npos)
+	{
+		ActiveRuntimeInfo.Type = FE_VR_OPENXR_RUNTIME::SOMNIUM;
+	}
+	else if (LowerCaseName.find("steamVR") != std::string::npos)
+	{
+		ActiveRuntimeInfo.Type = FE_VR_OPENXR_RUNTIME::STEAM_VR;
+	}
+	else if (LowerCaseName.find("oculus") != std::string::npos || LowerCaseName.find("meta") != std::string::npos)
+	{
+		ActiveRuntimeInfo.Type = FE_VR_OPENXR_RUNTIME::META;
+	}
+	else if (LowerCaseName.find("varjo") != std::string::npos)
+	{
+		ActiveRuntimeInfo.Type = FE_VR_OPENXR_RUNTIME::VARJO;
+	}
+
+	return true;
 }
 
 std::vector<FEOpenXRExtensionInfo> FEOpenXRCore::GetAvailableExtensionsInfo()

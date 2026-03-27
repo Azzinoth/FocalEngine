@@ -11,7 +11,130 @@ extern "C" __declspec(dllexport) void* GetOpenXRInput()
 }
 #endif
 
-FEOpenXRInput::FEOpenXRInput()
+FEOpenXRInput::FEOpenXRInput() {}
+FEOpenXRInput::~FEOpenXRInput() {}
+
+void FEOpenXRInput::RegisterActionsAndControllers()
+{
+    for (size_t i = 0; i < AllActions.size(); i++)
+        RegisterActionInOpenXR(*AllActions[i]);
+    
+    RegisterAllControllersInOpenXR();
+}
+
+void FEOpenXRInput::RegisterAllControllersInOpenXR()
+{
+    auto ControllerIterator = SupportedControllersBindings.begin();
+    while (ControllerIterator != SupportedControllersBindings.end())
+    {
+        for (size_t i = 0; i < AllActions.size(); i++)
+        {
+            bool bWorksWith = false;
+            for (size_t j = 0; j < AllActions[i]->WorksWith.size(); j++)
+            {
+                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE::ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
+				{
+					bWorksWith = true;
+					break;
+				}
+            }
+
+            if (bWorksWith)
+            {
+                std::array<XrPath, Side::COUNT> Path;
+                FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, AllActions[i]->LeftComponentPath.c_str(), &Path[Side::LEFT]));
+                FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, AllActions[i]->RightComponentPath.c_str(), &Path[Side::RIGHT]));
+                ControllerIterator->second.Bindings.push_back({ AllActions[i]->ActionHandle, Path[Side::LEFT] });
+                ControllerIterator->second.Bindings.push_back({ AllActions[i]->ActionHandle, Path[Side::RIGHT] });
+            }
+        }
+
+        FEVRControllerActionBindings& CurrentController = ControllerIterator->second;
+
+        XrPath CurrentControllerInteractionProfilePath;
+        FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, CurrentController.OpenXRPath.c_str(), &CurrentControllerInteractionProfilePath));
+
+        XrInteractionProfileSuggestedBinding SuggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+        SuggestedBindings.interactionProfile = CurrentControllerInteractionProfilePath;
+        SuggestedBindings.suggestedBindings = CurrentController.Bindings.data();
+        SuggestedBindings.countSuggestedBindings = (uint32_t)CurrentController.Bindings.size();
+        FE_OPENXR_ERROR(xrSuggestInteractionProfileBindings(FEOpenXR_CORE.OpenXRInstance, &SuggestedBindings));
+
+        ControllerIterator++;
+    }
+}
+
+void FEOpenXRInput::RegisterActionInOpenXR(FEVRActionData& Action)
+{
+    XrActionCreateInfo ActionInfo{ XR_TYPE_ACTION_CREATE_INFO };
+    ActionInfo.actionType = Action.ActionType;
+    strcpy_s(ActionInfo.actionName, Action.Name.c_str());
+    strcpy_s(ActionInfo.localizedActionName, Action.Name.c_str());
+    ActionInfo.countSubactionPaths = uint32_t(HandSubactionPath.size());
+    ActionInfo.subactionPaths = HandSubactionPath.data();
+    FE_OPENXR_ERROR(xrCreateAction(CurrentInputState.ActionSet, &ActionInfo, &Action.ActionHandle));
+}
+
+FEOpenXRInput::FEVRActionData* FEOpenXRInput::GetActionDataByName(std::string Name)
+{
+    for (size_t i = 0; i < AllActions.size(); i++)
+    {
+        if (AllActions[i]->Name == Name)
+        {
+            return AllActions[i];
+        }
+    }
+
+    return nullptr;
+}
+
+void FEOpenXRInput::TriggerHapticFeedback(float Amplitude, float Frequency, float Duration, bool bLeftHand)
+{
+	XrHapticVibration Vibration{ XR_TYPE_HAPTIC_VIBRATION };
+	Vibration.amplitude = Amplitude;
+	Vibration.frequency = Frequency;
+    Vibration.duration = static_cast<XrDuration>(Duration);
+
+    XrHapticActionInfo HapticActionInfo{ XR_TYPE_HAPTIC_ACTION_INFO };
+    FEVRActionData* HapticAction = GetActionDataByName("vibrate_hand");
+    HapticActionInfo.action = HapticAction->ActionHandle;
+    HapticActionInfo.subactionPath = bLeftHand ? HandSubactionPath[Side::LEFT] : HandSubactionPath[Side::RIGHT];
+	FE_OPENXR_ERROR(xrApplyHapticFeedback(FEOpenXR_CORE.Session, &HapticActionInfo, (XrHapticBaseHeader*)&Vibration));
+}
+
+void FEOpenXRInput::CreateaActionSet()
+{
+    XrActionSetCreateInfo ActionSetInfo{ XR_TYPE_ACTION_SET_CREATE_INFO };
+    strcpy_s(ActionSetInfo.actionSetName, "focal_engine_actions");
+    strcpy_s(ActionSetInfo.localizedActionSetName, "Focal Engine Actions");
+    ActionSetInfo.priority = 0;
+    FE_OPENXR_ERROR(xrCreateActionSet(FEOpenXR_CORE.OpenXRInstance, &ActionSetInfo, &CurrentInputState.ActionSet));
+}
+
+void FEOpenXRInput::CreateEyeGazeAction()
+{
+    XrActionCreateInfo ActionInfo{ XR_TYPE_ACTION_CREATE_INFO };
+    ActionInfo.actionType = XR_ACTION_TYPE_POSE_INPUT;
+    strcpy_s(ActionInfo.actionName, "eye_gaze");
+    strcpy_s(ActionInfo.localizedActionName, "Eye Gaze");
+    FE_OPENXR_ERROR(xrCreateAction(CurrentInputState.ActionSet, &ActionInfo, &EyeGazeAction));
+
+    // Bind to the standard eye gaze pose path
+    XrPath EyeGazePath;
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/user/eyes_ext/input/gaze_ext/pose", &EyeGazePath));
+
+    XrPath InteractionProfilePath;
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/interaction_profiles/ext/eye_gaze_interaction", &InteractionProfilePath));
+
+    XrActionSuggestedBinding Binding{ EyeGazeAction, EyeGazePath };
+    XrInteractionProfileSuggestedBinding SuggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+    SuggestedBindings.interactionProfile = InteractionProfilePath;
+    SuggestedBindings.suggestedBindings = &Binding;
+    SuggestedBindings.countSuggestedBindings = 1;
+    FE_OPENXR_ERROR(xrSuggestInteractionProfileBindings(FEOpenXR_CORE.OpenXRInstance, &SuggestedBindings));
+}
+
+void FEOpenXRInput::InitializeActionsAndControllers()
 {
     FEVRControllerActionBindings ValveIndex;
     ValveIndex.ControllerType = FE_VR_CONTROLLER_TYPE::VALVE_INDEX;
@@ -181,108 +304,6 @@ FEOpenXRInput::FEOpenXRInput()
     TrackpadClick->LeftComponentPath = "/user/hand/left/input/trackpad/click";
     TrackpadClick->RightComponentPath = "/user/hand/right/input/trackpad/click";
     AllActions.push_back(TrackpadClick);
-}
-
-FEOpenXRInput::~FEOpenXRInput() {}
-
-void FEOpenXRInput::RegisterActionsAndControllers()
-{
-    for (size_t i = 0; i < AllActions.size(); i++)
-    {
-        RegisterActionInOpenXR(*AllActions[i]);
-    }
-
-    RegisterAllControllersInOpenXR();
-}
-
-void FEOpenXRInput::RegisterAllControllersInOpenXR()
-{
-    auto ControllerIterator = SupportedControllersBindings.begin();
-    while (ControllerIterator != SupportedControllersBindings.end())
-    {
-        for (size_t i = 0; i < AllActions.size(); i++)
-        {
-            bool bWorksWith = false;
-            for (size_t j = 0; j < AllActions[i]->WorksWith.size(); j++)
-            {
-                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE::ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
-				{
-					bWorksWith = true;
-					break;
-				}
-            }
-
-            if (bWorksWith)
-            {
-                std::array<XrPath, Side::COUNT> Path;
-                FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, AllActions[i]->LeftComponentPath.c_str(), &Path[Side::LEFT]));
-                FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, AllActions[i]->RightComponentPath.c_str(), &Path[Side::RIGHT]));
-                ControllerIterator->second.Bindings.push_back({ AllActions[i]->ActionHandle, Path[Side::LEFT] });
-                ControllerIterator->second.Bindings.push_back({ AllActions[i]->ActionHandle, Path[Side::RIGHT] });
-            }
-        }
-
-        FEVRControllerActionBindings& CurrentController = ControllerIterator->second;
-
-        XrPath CurrentControllerInteractionProfilePath;
-        FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, CurrentController.OpenXRPath.c_str(), &CurrentControllerInteractionProfilePath));
-
-        XrInteractionProfileSuggestedBinding SuggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
-        SuggestedBindings.interactionProfile = CurrentControllerInteractionProfilePath;
-        SuggestedBindings.suggestedBindings = CurrentController.Bindings.data();
-        SuggestedBindings.countSuggestedBindings = (uint32_t)CurrentController.Bindings.size();
-        FE_OPENXR_ERROR(xrSuggestInteractionProfileBindings(FEOpenXR_CORE.OpenXRInstance, &SuggestedBindings));
-
-        ControllerIterator++;
-    }
-}
-
-void FEOpenXRInput::RegisterActionInOpenXR(FEVRActionData& Action)
-{
-    XrActionCreateInfo ActionInfo{ XR_TYPE_ACTION_CREATE_INFO };
-    ActionInfo.actionType = Action.ActionType;
-    strcpy_s(ActionInfo.actionName, Action.Name.c_str());
-    strcpy_s(ActionInfo.localizedActionName, Action.Name.c_str());
-    ActionInfo.countSubactionPaths = uint32_t(HandSubactionPath.size());
-    ActionInfo.subactionPaths = HandSubactionPath.data();
-    FE_OPENXR_ERROR(xrCreateAction(CurrentInputState.ActionSet, &ActionInfo, &Action.ActionHandle));
-}
-
-FEOpenXRInput::FEVRActionData* FEOpenXRInput::GetActionDataByName(std::string Name)
-{
-    for (size_t i = 0; i < AllActions.size(); i++)
-    {
-        if (AllActions[i]->Name == Name)
-        {
-            return AllActions[i];
-        }
-    }
-
-    return nullptr;
-}
-
-void FEOpenXRInput::TriggerHapticFeedback(float Amplitude, float Frequency, float Duration, bool bLeftHand)
-{
-	XrHapticVibration Vibration{ XR_TYPE_HAPTIC_VIBRATION };
-	Vibration.amplitude = Amplitude;
-	Vibration.frequency = Frequency;
-    Vibration.duration = static_cast<XrDuration>(Duration);
-
-    XrHapticActionInfo HapticActionInfo{ XR_TYPE_HAPTIC_ACTION_INFO };
-    FEVRActionData* HapticAction = GetActionDataByName("vibrate_hand");
-    HapticActionInfo.action = HapticAction->ActionHandle;
-    HapticActionInfo.subactionPath = bLeftHand ? HandSubactionPath[Side::LEFT] : HandSubactionPath[Side::RIGHT];
-	FE_OPENXR_ERROR(xrApplyHapticFeedback(FEOpenXR_CORE.Session, &HapticActionInfo, (XrHapticBaseHeader*)&Vibration));
-}
-
-void FEOpenXRInput::InitializeActionsAndControllers()
-{
-    // Create an action set.
-    XrActionSetCreateInfo ActionSetInfo{ XR_TYPE_ACTION_SET_CREATE_INFO };
-    strcpy_s(ActionSetInfo.actionSetName, "gameplay");
-    strcpy_s(ActionSetInfo.localizedActionSetName, "Gameplay");
-    ActionSetInfo.priority = 0;
-    FE_OPENXR_ERROR(xrCreateActionSet(FEOpenXR_CORE.OpenXRInstance, &ActionSetInfo, &CurrentInputState.ActionSet));
 
     // Get the XrPath for the left and right hands - we will use them as subaction paths.
     FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/user/hand/left", &HandSubactionPath[Side::LEFT]));
@@ -302,6 +323,14 @@ void FEOpenXRInput::InitializeActionsAndControllers()
     AttachInfo.countActionSets = 1;
     AttachInfo.actionSets = &CurrentInputState.ActionSet;
     FE_OPENXR_ERROR(xrAttachSessionActionSets(FEOpenXR_CORE.Session, &AttachInfo));
+
+    if (FEOpenXR_CORE.bGazeSupported)
+    {
+        XrActionSpaceCreateInfo SpaceInfo{ XR_TYPE_ACTION_SPACE_CREATE_INFO };
+        SpaceInfo.action = EyeGazeAction;
+        SpaceInfo.poseInActionSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        FE_OPENXR_ERROR(xrCreateActionSpace(FEOpenXR_CORE.Session, &SpaceInfo, &EyeSpace));
+    }
 }
 
 void FEOpenXRInput::Init()
@@ -309,7 +338,75 @@ void FEOpenXRInput::Init()
     if (!FEOpenXR_CORE.bInitializedCorrectly)
         return;
 
+    if (FEOpenXR_CORE.bGazeSupported)
+    {
+        // Create an eye tracking space.
+        XrReferenceSpaceCreateInfo eyeSpaceCreateInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+        eyeSpaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
+        eyeSpaceCreateInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        xrCreateReferenceSpace(FEOpenXR_CORE.Session, &eyeSpaceCreateInfo, &EyeSpace);
+
+        /*XrReferenceSpaceCreateInfo ViewSpaceInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+        ViewSpaceInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
+        ViewSpaceInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        xrCreateReferenceSpace(Session, &ViewSpaceInfo, &ViewSpace);*/
+    }
+
+    CreateaActionSet();
+    CreateEyeGazeAction();
     InitializeActionsAndControllers();
+}
+
+void FEOpenXRInput::Shutdown()
+{
+    if (EyeSpace != nullptr)
+    {
+        xrDestroySpace(EyeSpace);
+        EyeSpace = nullptr;
+    }
+
+    for (int i = 0; i < Side::COUNT; i++)
+    {
+        if (CurrentInputState.HandSpace[i] != nullptr)
+        {
+            xrDestroySpace(CurrentInputState.HandSpace[i]);
+            CurrentInputState.HandSpace[i] = nullptr;
+        }
+    }
+
+    for (size_t i = 0; i < AllActions.size(); i++)
+    {
+        if (AllActions[i]->ActionHandle != nullptr)
+        {
+            xrDestroyAction(AllActions[i]->ActionHandle);
+            AllActions[i]->ActionHandle = nullptr;
+        }
+        delete AllActions[i];
+    }
+    AllActions.clear();
+
+    if (EyeGazeAction != nullptr)
+    {
+        xrDestroyAction(EyeGazeAction);
+        EyeGazeAction = nullptr;
+    }
+
+    if (CurrentInputState.ActionSet != nullptr)
+    {
+        xrDestroyActionSet(CurrentInputState.ActionSet);
+        CurrentInputState.ActionSet = nullptr;
+    }
+
+    // Clear controller bindings.
+    for (auto& [Type, Bindings] : SupportedControllersBindings)
+        Bindings.Bindings.clear();
+
+    // Reset state.
+    CurrentInputState.HandActive = { XR_FALSE, XR_FALSE };
+    ControllerConnectionStatusChangeUserCallBacks.clear();
+    FrameState = nullptr;
+    LastFrameInsexLeftControllerWasActive = -1;
+    LastFrameInsexRightControllerWasActive = -1;
 }
 
 void FEOpenXRInput::HandleBooleanAction(FEVRActionBooleanData& CurrentActionBoolean)
@@ -440,8 +537,8 @@ void FEOpenXRInput::Update()
     CurrentInputState.HandActive = { XR_FALSE, XR_FALSE };
 
     // Sync actions
-    const XrActiveActionSet ActiveActionSet{ CurrentInputState.ActionSet, XR_NULL_PATH };
     XrActionsSyncInfo SyncInfo{ XR_TYPE_ACTIONS_SYNC_INFO };
+    const XrActiveActionSet ActiveActionSet{ CurrentInputState.ActionSet, XR_NULL_PATH };
     SyncInfo.countActiveActionSets = 1;
     SyncInfo.activeActionSets = &ActiveActionSet;
     FE_OPENXR_ERROR(xrSyncActions(FEOpenXR_CORE.Session, &SyncInfo));
@@ -453,6 +550,7 @@ void FEOpenXRInput::Update()
 
     UpdateControllerSpaceLocation();
     CheckControllerConnectionStatusChanges();
+    UpdateEyeGaze();
 }
 
 void FEOpenXRInput::HandleAction(FEVRActionData* Action)
@@ -896,4 +994,27 @@ void FEOpenXRInput::AddControllerStateChangeCallback(std::function<void(bool, FE
 {
     if (UserCallBack != nullptr)
         ControllerConnectionStatusChangeUserCallBacks.push_back(UserCallBack);
+}
+
+std::pair<glm::vec3, glm::vec3> FEOpenXRInput::GetEyeGazeOriginAndDirection()
+{
+    glm::vec3 RayDirection = glm::normalize(EyeGazeOrientation * glm::vec3(0.0f, 0.0f, -1.0f));
+	return { EyeGazePosition, RayDirection };
+}
+
+void FEOpenXRInput::UpdateEyeGaze()
+{
+    XrEyeGazeSampleTimeEXT GazeSampleTime{ XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
+    XrSpaceLocation GazeLocation{ XR_TYPE_SPACE_LOCATION };
+    GazeLocation.next = &GazeSampleTime;
+
+    XrResult Result = xrLocateSpace(EyeSpace, /*ViewSpace*/FEOpenXR_CORE.ApplicationSpace, FEOpenXR_RENDERING.FrameState.predictedDisplayTime, &GazeLocation);
+
+    if (Result == XR_SUCCESS &&
+        (GazeLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) &&
+        (GazeLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT))
+    {
+        EyeGazePosition = glm::vec3(GazeLocation.pose.position.x, GazeLocation.pose.position.y, GazeLocation.pose.position.z);
+        EyeGazeOrientation = glm::quat(GazeLocation.pose.orientation.w, GazeLocation.pose.orientation.x, GazeLocation.pose.orientation.y, GazeLocation.pose.orientation.z);
+    }
 }

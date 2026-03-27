@@ -37,7 +37,7 @@ void FEOpenXRRendering::CreateSwapChain()
 		SwapChainCreateInfo.type = XR_TYPE_SWAPCHAIN_CREATE_INFO;
 		SwapChainCreateInfo.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
 		SwapChainCreateInfo.createFlags = 0;
-		SwapChainCreateInfo.format = GL_RGBA16F; // GL_RGB 6407; GL_RGBA16F 34842; GL_SRGB8_ALPHA8 35907
+		SwapChainCreateInfo.format = FEOpenXR_CORE.GetRuntimeInfo().Type == FE_VR_OPENXR_RUNTIME::SOMNIUM ? GL_RGBA8 : GL_RGBA16F;
 		SwapChainCreateInfo.sampleCount = ViewConfigs[i].recommendedSwapchainSampleCount;
 		SwapChainCreateInfo.width = ViewConfigs[i].recommendedImageRectWidth;
 		SwapChainCreateInfo.height = ViewConfigs[i].recommendedImageRectHeight;
@@ -69,6 +69,33 @@ void FEOpenXRRendering::Init()
 {
 	GetViews();
 	CreateSwapChain();
+}
+
+void FEOpenXRRendering::Shutdown()
+{
+	for (auto& SwapChain : SwapChains)
+	{
+		if (SwapChain != nullptr)
+		{
+			xrDestroySwapchain(SwapChain);
+			SwapChain = nullptr;
+		}
+	}
+	SwapChains.clear();
+	SwapChainImages.clear();
+
+	if (SwapChainFB != nullptr)
+	{
+		delete SwapChainFB;
+		SwapChainFB = nullptr;
+	}
+
+	ViewConfigs.clear();
+	Projections.clear();
+	Views.clear();
+	ViewCount = 0;
+
+	bValidSwapChain = false;
 }
 
 /**
@@ -244,10 +271,16 @@ bool FEOpenXRRendering::RenderLayer(XrTime PredictedDisplayTime, std::vector<XrC
 
 void FEOpenXRRendering::RenderLoop()
 {
+	if (!FEOpenXR_CORE.bSessionIsRunning)
+		return;
+
 	XrFrameWaitInfo FrameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
+	FrameState = { XR_TYPE_FRAME_STATE };
+	FrameState.next = nullptr;
 	FE_OPENXR_ERROR(xrWaitFrame(FEOpenXR_CORE.Session, &FrameWaitInfo, &FrameState));
 
 	XrFrameBeginInfo FrameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
+	FrameBeginInfo.next = nullptr;
 	FE_OPENXR_ERROR(xrBeginFrame(FEOpenXR_CORE.Session, &FrameBeginInfo));
 
 	std::vector<XrCompositionLayerBaseHeader*> Layers;

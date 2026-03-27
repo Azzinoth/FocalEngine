@@ -48,6 +48,41 @@ bool FEOpenXR::Init()
 	return FEOpenXR_CORE.bInitializedCorrectly;
 }
 
+void FEOpenXR::Shutdown()
+{
+	if (LeftController != nullptr)
+	{
+		FEScene* Scene = LeftController->GetParentScene();
+		Scene->DeleteEntity(LeftController);
+		LeftController = nullptr;
+	}
+
+	if (RightController != nullptr)
+	{
+		FEScene* Scene = RightController->GetParentScene();
+		Scene->DeleteEntity(RightController);
+		RightController = nullptr;
+	}
+
+	if (VRHeadsetEntity != nullptr)
+	{
+		FEScene* Scene = VRHeadsetEntity->GetParentScene();
+		Scene->DeleteEntity(VRHeadsetEntity);
+		VRHeadsetEntity = nullptr;
+	}
+
+	if (VRRigEntity != nullptr)
+	{
+		FEScene* Scene = VRRigEntity->GetParentScene();
+		Scene->DeleteEntity(VRRigEntity);
+		VRRigEntity = nullptr;
+	}
+
+	FEOpenXR_RENDERING.Shutdown();
+	FEOpenXR_INPUT.Shutdown();
+	FEOpenXR_CORE.Shutdown();
+}
+
 void FEOpenXR::PollEvents()
 {
 	bool bSessionStopping = false;
@@ -84,8 +119,6 @@ void FEOpenXR::PollEvents()
 		case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED:
 		{
 			XrEventDataSessionStateChanged* Event = (XrEventDataSessionStateChanged*)&RuntimeEvent;
-			//printf("EVENT: session state changed from %d to %d\n", SessionState, event->state);
-
 			FEOpenXR_CORE.SessionState = Event->state;
 
 			switch (FEOpenXR_CORE.SessionState)
@@ -95,33 +128,46 @@ void FEOpenXR::PollEvents()
 					XrSessionBeginInfo SessionBeginInfo{ XR_TYPE_SESSION_BEGIN_INFO };
 					SessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
 					FE_OPENXR_ERROR(xrBeginSession(FEOpenXR_CORE.Session, &SessionBeginInfo));
-					//m_sessionRunning = true;
+					FEOpenXR_CORE.bSessionIsRunning = true;
+
+					// Run first frame loop right after xrBeginSession.
+					// Some runtimes need this.(Somnium VR1).
+					XrFrameWaitInfo FrameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
+					XrFrameState FrameState{ XR_TYPE_FRAME_STATE };
+					if (xrWaitFrame(FEOpenXR_CORE.Session, &FrameWaitInfo, &FrameState) == XR_SUCCESS)
+					{
+						XrFrameBeginInfo FrameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
+						FE_OPENXR_ERROR(xrBeginFrame(FEOpenXR_CORE.Session, &FrameBeginInfo));
+
+						XrFrameEndInfo FrameEndInfo{ XR_TYPE_FRAME_END_INFO };
+						FrameEndInfo.displayTime = FrameState.predictedDisplayTime;
+						FrameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+						FrameEndInfo.layerCount = 0;
+						FrameEndInfo.layers = nullptr;
+						FE_OPENXR_ERROR(xrEndFrame(FEOpenXR_CORE.Session, &FrameEndInfo));
+					}
+
 					break;
 				}
 				case XR_SESSION_STATE_STOPPING:
 				{
-					//CHECK(m_session != XR_NULL_HANDLE);
-					//m_sessionRunning = false;
-					//CHECK_XRCMD(xrEndSession(m_session))
-						break;
+					FEOpenXR_CORE.bSessionIsRunning = false;
+					break;
 				}
 				case XR_SESSION_STATE_EXITING:
 				{
-					//*exitRenderLoop = true;
-					// Do not attempt to restart because user closed this session.
-					//*requestRestart = false;
+					FEOpenXR_CORE.bSessionIsRunning = false;
 					break;
 				}
 				case XR_SESSION_STATE_LOSS_PENDING:
 				{
-					//*exitRenderLoop = true;
-					// Poll for a new instance.
-					//*requestRestart = true;
+					FEOpenXR_CORE.bSessionIsRunning = false;
 					break;
 				}
 				default:
 					break;
 			}
+			break;
 		}
 		case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING:
 		{

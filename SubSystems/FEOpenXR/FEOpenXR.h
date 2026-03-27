@@ -13,6 +13,7 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEOpenXR)
 
 		bool Init();
+		void Shutdown();
 		void Update();
 
 		glm::vec2 EyeResolution();

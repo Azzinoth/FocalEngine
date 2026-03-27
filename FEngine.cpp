@@ -168,6 +168,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
+	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { OpenXR_MANAGER.Shutdown(); });
 	CreateViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
@@ -249,6 +250,7 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 
 void FEngine::Terminate()
 {
+	OpenXR_MANAGER.Shutdown();
 	APPLICATION.Close();
 }
 
@@ -295,6 +297,8 @@ void FEngine::SetVsyncEnabled(bool NewValue)
 void FEngine::DisableVR()
 {
 	bVRActive = false;
+	bVRInitializedCorrectly = false;
+	OpenXR_MANAGER.Shutdown();
 }
 
 bool FEngine::EnableVR(FERenderingPipeline VRRenderingPipeline)

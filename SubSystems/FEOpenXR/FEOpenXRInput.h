@@ -36,7 +36,10 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEOpenXRInput)
 
 		void Init();
+		void Shutdown();
 		void Update();
+
+		std::pair<glm::vec3, glm::vec3> GetEyeGazeOriginAndDirection();
 
 		bool IsLeftControllerConnectedAndTracked() const;
 		bool IsRightControllerConnectedAndTracked() const;
@@ -138,13 +141,23 @@ namespace FocalEngine
 
 		InputState CurrentInputState;
 
+		void CreateaActionSet();
 		void InitializeActionsAndControllers();
 		void RegisterActionsAndControllers();
+		void CreateEyeGazeAction();
 
 		XrSpaceLocation LeftControllerLocation{ XR_TYPE_SPACE_LOCATION };
 		XrSpaceLocation RightControllerLocation{ XR_TYPE_SPACE_LOCATION };
 
 		void UpdateControllerSpaceLocation();
+
+		XrSpace EyeSpace;
+		//XrSpace ViewSpace;
+		XrAction EyeGazeAction{ XR_NULL_HANDLE };
+
+		glm::vec3 EyeGazePosition;
+		glm::quat EyeGazeOrientation;
+		void UpdateEyeGaze();
 
 		struct FEVRActionData
 		{

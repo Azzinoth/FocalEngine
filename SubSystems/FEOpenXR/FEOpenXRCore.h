@@ -168,6 +168,22 @@ namespace FocalEngine
 		uint32_t Version = 0;
 	};
 
+	enum class FE_VR_OPENXR_RUNTIME
+	{
+		UNKNOWN = 0,
+		STEAM_VR = 1,
+		SOMNIUM = 2,
+		META = 3,
+		VARJO = 4
+	};
+
+	struct FEOpenXRRuntimeInfo
+	{
+		FE_VR_OPENXR_RUNTIME Type = FE_VR_OPENXR_RUNTIME::UNKNOWN;
+		std::string Name;
+		std::string Version;
+	};
+
 	class FEOpenXRCore
 	{
 		friend class FEOpenXRInput;
@@ -179,12 +195,19 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEOpenXRCore)
 
 		void Init();
-		std::string GetActiveRuntimeInfo();
+		void Shutdown();
+
+		FEOpenXRRuntimeInfo GetRuntimeInfo();
 		std::vector<FEOpenXRExtensionInfo> GetAvailableExtensionsInfo();
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRCore)
 
 		bool bInitializedCorrectly = false;
+		bool bSessionIsRunning = false;
+		bool bGazeSupported = false;
+
+		FEOpenXRRuntimeInfo ActiveRuntimeInfo;
+		bool ReadRuntimeInfo();
 
 		XrInstance OpenXRInstance = nullptr;
 		XrSystemId SystemID = 0;
