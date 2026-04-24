@@ -24,267 +24,311 @@ FEAABB::FEAABB(glm::dvec3 Min, glm::dvec3 Max)
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(std::vector<glm::vec3>& VertexPositions)
+FEAABB::FEAABB(std::vector<glm::vec3>& Positions)
 {
-	if (VertexPositions.empty())
-		return;
-
-	Min.x = VertexPositions[0].x;
-	Min.y = VertexPositions[0].y;
-	Min.z = VertexPositions[0].z;
-
-	Max.x = VertexPositions[0].x;
-	Max.y = VertexPositions[0].y;
-	Max.z = VertexPositions[0].z;
-
-	for (size_t i = 1; i < VertexPositions.size(); i++)
+	if (Positions.empty())
 	{
-		if (Min.x > VertexPositions[i].x)
-			Min.x = VertexPositions[i].x;
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
 
-		if (Min.y > VertexPositions[i].y)
-			Min.y = VertexPositions[i].y;
+	Min = glm::vec3(Positions[0].x, Positions[0].y, Positions[0].z);
+	Max = Min;
 
-		if (Min.z > VertexPositions[i].z)
-			Min.z = VertexPositions[i].z;
+	for (size_t i = 1; i < Positions.size(); i++)
+	{
+		if (Min.x > Positions[i].x)
+			Min.x = Positions[i].x;
 
-		if (Max.x < VertexPositions[i].x)
-			Max.x = VertexPositions[i].x;
+		if (Min.y > Positions[i].y)
+			Min.y = Positions[i].y;
 
-		if (Max.y < VertexPositions[i].y)
-			Max.y = VertexPositions[i].y;
+		if (Min.z > Positions[i].z)
+			Min.z = Positions[i].z;
 
-		if (Max.z < VertexPositions[i].z)
-			Max.z = VertexPositions[i].z;
+		if (Max.x < Positions[i].x)
+			Max.x = Positions[i].x;
+
+		if (Max.y < Positions[i].y)
+			Max.y = Positions[i].y;
+
+		if (Max.z < Positions[i].z)
+			Max.z = Positions[i].z;
 	}
 
 	Size = Max - Min;
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(std::vector<glm::dvec3>& VertexPositions)
+FEAABB::FEAABB(std::vector<glm::dvec3>& Positions)
 {
-	if (VertexPositions.empty())
+	if (Positions.empty())
 	{
-		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	Min.x = static_cast<float>(VertexPositions[0].x);
-	Min.y = static_cast<float>(VertexPositions[0].y);
-	Min.z = static_cast<float>(VertexPositions[0].z);
+	Min = glm::vec3(static_cast<float>(Positions[0].x), static_cast<float>(Positions[0].y), static_cast<float>(Positions[0].z));
+	Max = Min;
 
-	Max.x = static_cast<float>(VertexPositions[0].x);
-	Max.y = static_cast<float>(VertexPositions[0].y);
-	Max.z = static_cast<float>(VertexPositions[0].z);
-
-	for (size_t i = 1; i < VertexPositions.size(); i++)
+	for (size_t i = 1; i < Positions.size(); i++)
 	{
-		if (Min.x > static_cast<float>(VertexPositions[i].x))
-			Min.x = static_cast<float>(VertexPositions[i].x);
+		if (Min.x > static_cast<float>(Positions[i].x))
+			Min.x = static_cast<float>(Positions[i].x);
 
-		if (Min.y > static_cast<float>(VertexPositions[i].y))
-			Min.y = static_cast<float>(VertexPositions[i].y);
+		if (Min.y > static_cast<float>(Positions[i].y))
+			Min.y = static_cast<float>(Positions[i].y);
 
-		if (Min.z > static_cast<float>(VertexPositions[i].z))
-			Min.z = static_cast<float>(VertexPositions[i].z);
+		if (Min.z > static_cast<float>(Positions[i].z))
+			Min.z = static_cast<float>(Positions[i].z);
 
-		if (Max.x < static_cast<float>(VertexPositions[i].x))
-			Max.x = static_cast<float>(VertexPositions[i].x);
+		if (Max.x < static_cast<float>(Positions[i].x))
+			Max.x = static_cast<float>(Positions[i].x);
 
-		if (Max.y < static_cast<float>(VertexPositions[i].y))
-			Max.y = static_cast<float>(VertexPositions[i].y);
+		if (Max.y < static_cast<float>(Positions[i].y))
+			Max.y = static_cast<float>(Positions[i].y);
 
-		if (Max.z < static_cast<float>(VertexPositions[i].z))
-			Max.z = static_cast<float>(VertexPositions[i].z);
+		if (Max.z < static_cast<float>(Positions[i].z))
+			Max.z = static_cast<float>(Positions[i].z);
 	}
 
 	Size = Max - Min;
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(std::vector<float>& VertexPositions)
+FEAABB::FEAABB(std::vector<glm::vec2>& Positions)
 {
-	if (VertexPositions.empty())
+	if (Positions.empty())
 	{
-		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	if (VertexPositions.size() % 3 != 0)
+	Min = glm::vec3(Positions[0].x, Positions[0].y, 0.0f);
+	Max = Min;
+
+	for (size_t i = 1; i < Positions.size(); i++)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexPositions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		if (Positions[i].x < Min.x) Min.x = Positions[i].x;
+		if (Positions[i].y < Min.y) Min.y = Positions[i].y;
+
+		if (Positions[i].x > Max.x) Max.x = Positions[i].x;
+		if (Positions[i].y > Max.y) Max.y = Positions[i].y;
+	}
+
+	Size = Max - Min;
+	LongestAxisLength = glm::max(Size.x, Size.y);
+}
+
+FEAABB::FEAABB(std::vector<glm::dvec2>& Positions)
+{
+	if (Positions.empty())
+	{
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	Min.x = VertexPositions[0];
-	Min.y = VertexPositions[1];
-	Min.z = VertexPositions[2];
+	Min = glm::vec3(static_cast<float>(Positions[0].x), static_cast<float>(Positions[0].y), 0.0f);
+	Max = Min;
 
-	Max.x = VertexPositions[0];
-	Max.y = VertexPositions[1];
-	Max.z = VertexPositions[2];
-
-	for (size_t i = 3; i < VertexPositions.size(); i += 3)
+	for (size_t i = 1; i < Positions.size(); i++)
 	{
-		if (Min.x > VertexPositions[i])
-			Min.x = VertexPositions[i];
+		float X = static_cast<float>(Positions[i].x);
+		float Y = static_cast<float>(Positions[i].y);
 
-		if (Min.y > VertexPositions[i + 1])
-			Min.y = VertexPositions[i + 1];
+		if (X < Min.x) Min.x = X;
+		if (Y < Min.y) Min.y = Y;
 
-		if (Min.z > VertexPositions[i + 2])
-			Min.z = VertexPositions[i + 2];
+		if (X > Max.x) Max.x = X;
+		if (Y > Max.y) Max.y = Y;
+	}
 
-		if (Max.x < VertexPositions[i])
-			Max.x = VertexPositions[i];
+	Size = Max - Min;
+	LongestAxisLength = glm::max(Size.x, Size.y);
+}
 
-		if (Max.y < VertexPositions[i + 1])
-			Max.y = VertexPositions[i + 1];
+FEAABB::FEAABB(std::vector<float>& Positions)
+{
+	if (Positions.empty())
+	{
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
 
-		if (Max.z < VertexPositions[i + 2])
-			Max.z = VertexPositions[i + 2];
+	if (Positions.size() % 3 != 0)
+	{
+		LOG.Add("FEAABB::FEAABB: Positions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
+	Min.x = Positions[0];
+	Min.y = Positions[1];
+	Min.z = Positions[2];
+
+	Max.x = Positions[0];
+	Max.y = Positions[1];
+	Max.z = Positions[2];
+
+	for (size_t i = 3; i < Positions.size(); i += 3)
+	{
+		if (Min.x > Positions[i])
+			Min.x = Positions[i];
+
+		if (Min.y > Positions[i + 1])
+			Min.y = Positions[i + 1];
+
+		if (Min.z > Positions[i + 2])
+			Min.z = Positions[i + 2];
+
+		if (Max.x < Positions[i])
+			Max.x = Positions[i];
+
+		if (Max.y < Positions[i + 1])
+			Max.y = Positions[i + 1];
+
+		if (Max.z < Positions[i + 2])
+			Max.z = Positions[i + 2];
 	}
 
 	Size = Max - Min;
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(std::vector<double>& VertexPositions)
+FEAABB::FEAABB(std::vector<double>& Positions)
 {
-	if (VertexPositions.empty())
+	if (Positions.empty())
 	{
-		LOG.Add("FEAABB::FEAABB: VertexPositions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Positions is empty, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	if (VertexPositions.size() % 3 != 0)
+	if (Positions.size() % 3 != 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexPositions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Positions size is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	Min.x = static_cast<float>(VertexPositions[0]);
-	Min.y = static_cast<float>(VertexPositions[1]);
-	Min.z = static_cast<float>(VertexPositions[2]);
+	Min.x = static_cast<float>(Positions[0]);
+	Min.y = static_cast<float>(Positions[1]);
+	Min.z = static_cast<float>(Positions[2]);
 
-	Max.x = static_cast<float>(VertexPositions[0]);
-	Max.y = static_cast<float>(VertexPositions[1]);
-	Max.z = static_cast<float>(VertexPositions[2]);
+	Max.x = static_cast<float>(Positions[0]);
+	Max.y = static_cast<float>(Positions[1]);
+	Max.z = static_cast<float>(Positions[2]);
 
-	for (size_t i = 3; i < VertexPositions.size(); i += 3)
+	for (size_t i = 3; i < Positions.size(); i += 3)
 	{
-		if (Min.x > static_cast<float>(VertexPositions[i]))
-			Min.x = static_cast<float>(VertexPositions[i]);
+		if (Min.x > static_cast<float>(Positions[i]))
+			Min.x = static_cast<float>(Positions[i]);
 
-		if (Min.y > static_cast<float>(VertexPositions[i + 1]))
-			Min.y = static_cast<float>(VertexPositions[i + 1]);
+		if (Min.y > static_cast<float>(Positions[i + 1]))
+			Min.y = static_cast<float>(Positions[i + 1]);
 
-		if (Min.z > static_cast<float>(VertexPositions[i + 2]))
-			Min.z = static_cast<float>(VertexPositions[i + 2]);
+		if (Min.z > static_cast<float>(Positions[i + 2]))
+			Min.z = static_cast<float>(Positions[i + 2]);
 
-		if (Max.x < static_cast<float>(VertexPositions[i]))
-			Max.x = static_cast<float>(VertexPositions[i]);
+		if (Max.x < static_cast<float>(Positions[i]))
+			Max.x = static_cast<float>(Positions[i]);
 
-		if (Max.y < static_cast<float>(VertexPositions[i + 1]))
-			Max.y = static_cast<float>(VertexPositions[i + 1]);
+		if (Max.y < static_cast<float>(Positions[i + 1]))
+			Max.y = static_cast<float>(Positions[i + 1]);
 
-		if (Max.z < static_cast<float>(VertexPositions[i + 2]))
-			Max.z = static_cast<float>(VertexPositions[i + 2]);
+		if (Max.z < static_cast<float>(Positions[i + 2]))
+			Max.z = static_cast<float>(Positions[i + 2]);
 	}
 
 	Size = Max - Min;
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(float* VertexPositions, const int VertexCount)
+FEAABB::FEAABB(float* Positions, const int Count)
 {
-	if (VertexCount == 0)
+	if (Count == 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexCount is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Count is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	if (VertexCount % 3 != 0)
+	if (Count % 3 != 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexCount is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Count is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	Min.x = VertexPositions[0];
-	Min.y = VertexPositions[1];
-	Min.z = VertexPositions[2];
+	Min.x = Positions[0];
+	Min.y = Positions[1];
+	Min.z = Positions[2];
 
-	Max.x = VertexPositions[0];
-	Max.y = VertexPositions[1];
-	Max.z = VertexPositions[2];
+	Max.x = Positions[0];
+	Max.y = Positions[1];
+	Max.z = Positions[2];
 
-	for (size_t i = 3; i < static_cast<size_t>(VertexCount); i += 3)
+	for (size_t i = 3; i < static_cast<size_t>(Count); i += 3)
 	{
-		if (Min.x > VertexPositions[i])
-			Min.x = VertexPositions[i];
+		if (Min.x > Positions[i])
+			Min.x = Positions[i];
 
-		if (Min.y > VertexPositions[i + 1])
-			Min.y = VertexPositions[i + 1];
+		if (Min.y > Positions[i + 1])
+			Min.y = Positions[i + 1];
 
-		if (Min.z > VertexPositions[i + 2])
-			Min.z = VertexPositions[i + 2];
+		if (Min.z > Positions[i + 2])
+			Min.z = Positions[i + 2];
 
-		if (Max.x < VertexPositions[i])
-			Max.x = VertexPositions[i];
+		if (Max.x < Positions[i])
+			Max.x = Positions[i];
 
-		if (Max.y < VertexPositions[i + 1])
-			Max.y = VertexPositions[i + 1];
+		if (Max.y < Positions[i + 1])
+			Max.y = Positions[i + 1];
 
-		if (Max.z < VertexPositions[i + 2])
-			Max.z = VertexPositions[i + 2];
+		if (Max.z < Positions[i + 2])
+			Max.z = Positions[i + 2];
 	}
 
 	Size = Max - Min;
 	LongestAxisLength = std::max({ Size.x, Size.y, Size.z });
 }
 
-FEAABB::FEAABB(double* VertexPositions, const int VertexCount)
+FEAABB::FEAABB(double* Positions, const int Count)
 {
-	if (VertexCount == 0)
+	if (Count == 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexCount is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Count is zero, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	if (VertexCount % 3 != 0)
+	if (Count % 3 != 0)
 	{
-		LOG.Add("FEAABB::FEAABB: VertexCount is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		LOG.Add("FEAABB::FEAABB: Count is not a multiple of 3, cannot create AABB.", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
-	Min.x = static_cast<float>(VertexPositions[0]);
-	Min.y = static_cast<float>(VertexPositions[1]);
-	Min.z = static_cast<float>(VertexPositions[2]);
+	Min.x = static_cast<float>(Positions[0]);
+	Min.y = static_cast<float>(Positions[1]);
+	Min.z = static_cast<float>(Positions[2]);
 
-	Max.x = static_cast<float>(VertexPositions[0]);
-	Max.y = static_cast<float>(VertexPositions[1]);
-	Max.z = static_cast<float>(VertexPositions[2]);
+	Max.x = static_cast<float>(Positions[0]);
+	Max.y = static_cast<float>(Positions[1]);
+	Max.z = static_cast<float>(Positions[2]);
 
-	for (size_t i = 3; i < static_cast<size_t>(VertexCount); i += 3)
+	for (size_t i = 3; i < static_cast<size_t>(Count); i += 3)
 	{
-		if (Min.x > static_cast<float>(VertexPositions[i]))
-			Min.x = static_cast<float>(VertexPositions[i]);
+		if (Min.x > static_cast<float>(Positions[i]))
+			Min.x = static_cast<float>(Positions[i]);
 
-		if (Min.y > static_cast<float>(VertexPositions[i + 1]))
-			Min.y = static_cast<float>(VertexPositions[i + 1]);
+		if (Min.y > static_cast<float>(Positions[i + 1]))
+			Min.y = static_cast<float>(Positions[i + 1]);
 
-		if (Min.z > static_cast<float>(VertexPositions[i + 2]))
-			Min.z = static_cast<float>(VertexPositions[i + 2]);
+		if (Min.z > static_cast<float>(Positions[i + 2]))
+			Min.z = static_cast<float>(Positions[i + 2]);
 
-		if (Max.x < static_cast<float>(VertexPositions[i]))
-			Max.x = static_cast<float>(VertexPositions[i]);
+		if (Max.x < static_cast<float>(Positions[i]))
+			Max.x = static_cast<float>(Positions[i]);
 
-		if (Max.y < static_cast<float>(VertexPositions[i + 1]))
-			Max.y = static_cast<float>(VertexPositions[i + 1]);
+		if (Max.y < static_cast<float>(Positions[i + 1]))
+			Max.y = static_cast<float>(Positions[i + 1]);
 
-		if (Max.z < static_cast<float>(VertexPositions[i + 2]))
-			Max.z = static_cast<float>(VertexPositions[i + 2]);
+		if (Max.z < static_cast<float>(Positions[i + 2]))
+			Max.z = static_cast<float>(Positions[i + 2]);
 	}
 
 	Size = Max - Min;
