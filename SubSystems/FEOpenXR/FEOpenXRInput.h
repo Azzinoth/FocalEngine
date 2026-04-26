@@ -131,9 +131,9 @@ namespace FocalEngine
 
 		struct InputState
 		{
-			XrActionSet ActionSet{ XR_NULL_HANDLE };
+			XrActionSet ActionSet{ nullptr };
 
-			std::array<XrSpace, Side::COUNT> HandSpace;
+			std::array<XrSpace, Side::COUNT> HandSpace = { nullptr, nullptr };
 			std::array<XrBool32, Side::COUNT> HandActive;
 		};
 
@@ -151,7 +151,7 @@ namespace FocalEngine
 
 		void UpdateControllerSpaceLocation();
 
-		XrSpace EyeSpace;
+		XrSpace EyeSpace = nullptr;
 		//XrSpace ViewSpace;
 		XrAction EyeGazeAction{ XR_NULL_HANDLE };
 
