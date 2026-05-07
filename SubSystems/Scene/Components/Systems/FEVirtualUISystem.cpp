@@ -260,12 +260,11 @@ void FEVirtualUISystem::DummyRenderFunction(FEVirtualUI* VirtualUI)
 	if (ImGui::Begin(std::string("Dummy UI##" + ParentEntity->GetObjectID()).c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoNav))
 	{
 		ImVec2 Center = ImGui::GetWindowContentRegionMax() / 2.0f;
-		
+
 		ImGui::SetWindowFontScale(10.0f);
 		ImVec2 TextSize = ImGui::CalcTextSize("Dummy UI");
 		ImGui::SetCursorPos(Center - TextSize / 2.0f);
 		ImGui::Text("Dummy UI");
-
-		ImGui::End();
 	}
+	ImGui::End();
 }
