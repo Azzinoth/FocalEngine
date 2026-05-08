@@ -1617,6 +1617,9 @@ void FERenderer::Render(FEScene* CurrentScene)
 	if (!CurrentCameraComponent.IsRenderingEnabled())
 		return;
 
+	if (CurrentCameraComponent.GetRenderTargetWidth() <= 0 || CurrentCameraComponent.GetRenderTargetHeight() <= 0)
+		return;
+
 	if (CurrentCameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 	{
 		SimplifiedRender(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
