@@ -181,13 +181,13 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 
 	if (FileExtension == ".png" || FileExtension == ".jpg" || FileExtension == ".bmp")
 	{
-		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FileName.c_str());
+		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FileName);
 		if (LoadedTexture != nullptr)
 			Result.push_back(LoadedTexture);
 	}
 	else if (FileExtension == ".obj")
 	{
-		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName.c_str(), true);
+		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName, true);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
 	}
 	else if (FileExtension == ".ply")
@@ -247,7 +247,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 			continue;
 		}
 
-		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
+		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath);
 		//FETexture* LoadedTexture = RESOURCE_MANAGER.NoTexture;
 		if (LoadedTexture != nullptr)
 		{

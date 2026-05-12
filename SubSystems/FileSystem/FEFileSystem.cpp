@@ -100,10 +100,10 @@ uint64_t FEFileSystem::GetFileLastWriteTime(const std::string& Path)
 
 bool FEFileSystem::WaitForFileAccess(const std::string& FilePath, int TimeoutInMS)
 {
-	const auto start = std::chrono::steady_clock::now();
-	const auto end = start + std::chrono::milliseconds(TimeoutInMS);
+	const auto Start = std::chrono::steady_clock::now();
+	const auto End = Start + std::chrono::milliseconds(TimeoutInMS);
 
-	while (std::chrono::steady_clock::now() < end)
+	while (std::chrono::steady_clock::now() < End)
 	{
 		try
 		{
@@ -115,11 +115,11 @@ bool FEFileSystem::WaitForFileAccess(const std::string& FilePath, int TimeoutInM
 			}
 
 			// Try to open the file
-			std::ifstream file(FilePath);
-			if (file.is_open())
+			std::ifstream File(FilePath);
+			if (File.is_open())
 			{
 				// File is accessible, close it and return
-				file.close();
+				File.close();
 				return true;
 			}
 		}

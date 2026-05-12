@@ -28,12 +28,12 @@ FEPointCloudSystem::FEPointCloudSystem()
 	ComputePointCloudShader = RESOURCE_MANAGER.CreateShader("ComputePointCloudShader",
 															nullptr, nullptr,
 															nullptr, nullptr,
-															nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PointCloudShaders//ComputeShaders//FE_PointCloud_CS.glsl").c_str()).c_str());
+															nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PointCloudShaders//ComputeShaders//FE_PointCloud_CS.glsl")).c_str());
 
 	ComputePointCloudAfterRenderingShader = RESOURCE_MANAGER.CreateShader("FE_PointCloud_After_Rendering",
 																		  nullptr, nullptr,
 																		  nullptr, nullptr,
-																		  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PointCloudShaders//ComputeShaders//FE_PointCloud_After_Rendering_CS.glsl").c_str()).c_str());
+																		  nullptr, RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.GetEngineFolder() + "CoreExtensions//PointCloudShaders//ComputeShaders//FE_PointCloud_After_Rendering_CS.glsl")).c_str());
 }
 
 void FEPointCloudSystem::RegisterOnComponentCallbacks()

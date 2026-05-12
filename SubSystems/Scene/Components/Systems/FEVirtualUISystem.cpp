@@ -17,8 +17,8 @@ FEVirtualUISystem::FEVirtualUISystem()
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVirtualUIComponent>(VirtualUIComponentFromJson);
 	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVirtualUIComponent>(DuplicateVirtualUIComponent);
 
-	CanvasShader = RESOURCE_MANAGER.CreateShader("FEVirtualUISystem_CanvasShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_VS.glsl").c_str()).c_str(),
-		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_FS.glsl").c_str()).c_str(),
+	CanvasShader = RESOURCE_MANAGER.CreateShader("FEVirtualUISystem_CanvasShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_VS.glsl")).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_FS.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
 		"647C6C768E60130C68724124");
 

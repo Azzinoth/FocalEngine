@@ -156,7 +156,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 				TypeToUse = "FE_TEXTURE";
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempTexture.texture";
-			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath.c_str());
+			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath);
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 
@@ -171,7 +171,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 				TypeToUse = "FE_MESH";
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempMesh.mesh";
-			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath.c_str());
+			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath);
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
 			FILE_SYSTEM.DeleteFile(FilePath);
 

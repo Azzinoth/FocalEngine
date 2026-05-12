@@ -270,20 +270,20 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::vec3 RayOrigin, glm::vec3 RayDir
 	const float l = TriangleVertices[0][1] - RayOrigin[1];
 	const float m = TriangleVertices[0][2] - RayOrigin[2];
 
-	const glm::mat3 temp0 = glm::mat3 (a, b, c, d, e, f, g, h, j);
-	const float determinant0 = glm::determinant(temp0);
+	const glm::mat3 Temporary0 = glm::mat3 (a, b, c, d, e, f, g, h, j);
+	const float Determinant0 = glm::determinant(Temporary0);
 
-	const glm::mat3 temp1 = glm::mat3(k, b, c, l, e, f, m, h, j);
-	const float determinant1 = glm::determinant(temp1);
+	const glm::mat3 Temporary1 = glm::mat3(k, b, c, l, e, f, m, h, j);
+	const float Determinant1 = glm::determinant(Temporary1);
 
 	// Calculate t from the first determinant and check if intersection is in the correct direction
-	const float t = determinant1 / determinant0;
-	const glm::mat3 temp2 = glm::mat3(a, k, c, d, l, f, g, m, j);
-	const float determinant2 = glm::determinant(temp2);
-	const float u = determinant2 / determinant0;
+	const float t = Determinant1 / Determinant0;
+	const glm::mat3 Temporary2 = glm::mat3(a, k, c, d, l, f, g, m, j);
+	const float Determinant2 = glm::determinant(Temporary2);
+	const float u = Determinant2 / Determinant0;
 
-	const float determinant3 = glm::determinant(glm::mat3(a, b, k, d, e, l, g, h, m));
-	const float v = determinant3 / determinant0;
+	const float Determinant3 = glm::determinant(glm::mat3(a, b, k, d, e, l, g, h, m));
+	const float v = Determinant3 / Determinant0;
 
 	if (U != nullptr)
 		*U = u;
@@ -333,21 +333,21 @@ bool FEGeometry::IsRayIntersectingTriangle(glm::dvec3 RayOrigin, glm::dvec3 RayD
 	const double l = TriangleVertices[0][1] - RayOrigin[1];
 	const double m = TriangleVertices[0][2] - RayOrigin[2];
 
-	const glm::dmat3 temp0 = glm::dmat3(a, b, c, d, e, f, g, h, j);
-	const double determinant0 = glm::determinant(temp0);
+	const glm::dmat3 Temporary0 = glm::dmat3(a, b, c, d, e, f, g, h, j);
+	const double Determinant0 = glm::determinant(Temporary0);
 
-	const glm::dmat3 temp1 = glm::dmat3(k, b, c, l, e, f, m, h, j);
-	const double determinant1 = glm::determinant(temp1);
+	const glm::dmat3 Temporary1 = glm::dmat3(k, b, c, l, e, f, m, h, j);
+	const double Determinant1 = glm::determinant(Temporary1);
 
 	// Calculate t from the first determinant and check if intersection is in the correct direction
-	const double t = determinant1 / determinant0;
+	const double t = Determinant1 / Determinant0;
 
-	const glm::dmat3 temp2 = glm::dmat3(a, k, c, d, l, f, g, m, j);
-	const double determinant2 = glm::determinant(temp2);
-	const double u = determinant2 / determinant0;
+	const glm::dmat3 Temporary2 = glm::dmat3(a, k, c, d, l, f, g, m, j);
+	const double Determinant2 = glm::determinant(Temporary2);
+	const double u = Determinant2 / Determinant0;
 
-	const double determinant3 = glm::determinant(glm::dmat3(a, b, k, d, e, l, g, h, m));
-	const double v = determinant3 / determinant0;
+	const double Determinant3 = glm::determinant(glm::dmat3(a, b, k, d, e, l, g, h, m));
+	const double v = Determinant3 / Determinant0;
 
 	if (U != nullptr)
 		*U = u;
@@ -385,40 +385,40 @@ double FEGeometry::CalculateTriangleArea(std::vector<glm::dvec3>& TriangleVertic
 
 float FEGeometry::CalculateTriangleArea(glm::vec3 PointA, glm::vec3 PointB, glm::vec3 PointC)
 {
-	const float x1 = PointA.x;
-	const float x2 = PointB.x;
-	const float x3 = PointC.x;
+	const float X1 = PointA.x;
+	const float X2 = PointB.x;
+	const float X3 = PointC.x;
 
-	const float y1 = PointA.y;
-	const float y2 = PointB.y;
-	const float y3 = PointC.y;
+	const float Y1 = PointA.y;
+	const float Y2 = PointB.y;
+	const float Y3 = PointC.y;
 
-	const float z1 = PointA.z;
-	const float z2 = PointB.z;
-	const float z3 = PointC.z;
+	const float Z1 = PointA.z;
+	const float Z2 = PointB.z;
+	const float Z3 = PointC.z;
 
-	return 0.5f * static_cast<float>(sqrt(pow(x2 * y1 - x3 * y1 - x1 * y2 + x3 * y2 + x1 * y3 - x2 * y3, 2.0) +
-										  pow((x2 * z1) - (x3 * z1) - (x1 * z2) + (x3 * z2) + (x1 * z3) - (x2 * z3), 2.0) +
-										  pow((y2 * z1) - (y3 * z1) - (y1 * z2) + (y3 * z2) + (y1 * z3) - (y2 * z3), 2.0)));
+	return 0.5f * static_cast<float>(sqrt(pow(X2 * Y1 - X3 * Y1 - X1 * Y2 + X3 * Y2 + X1 * Y3 - X2 * Y3, 2.0) +
+										  pow((X2 * Z1) - (X3 * Z1) - (X1 * Z2) + (X3 * Z2) + (X1 * Z3) - (X2 * Z3), 2.0) +
+										  pow((Y2 * Z1) - (Y3 * Z1) - (Y1 * Z2) + (Y3 * Z2) + (Y1 * Z3) - (Y2 * Z3), 2.0)));
 }
 
 double FEGeometry::CalculateTriangleArea(glm::dvec3 PointA, glm::dvec3 PointB, glm::dvec3 PointC)
 {
-	const double x1 = PointA.x;
-	const double x2 = PointB.x;
-	const double x3 = PointC.x;
+	const double X1 = PointA.x;
+	const double X2 = PointB.x;
+	const double X3 = PointC.x;
 
-	const double y1 = PointA.y;
-	const double y2 = PointB.y;
-	const double y3 = PointC.y;
+	const double Y1 = PointA.y;
+	const double Y2 = PointB.y;
+	const double Y3 = PointC.y;
 
-	const double z1 = PointA.z;
-	const double z2 = PointB.z;
-	const double z3 = PointC.z;
+	const double Z1 = PointA.z;
+	const double Z2 = PointB.z;
+	const double Z3 = PointC.z;
 
-	return 0.5 * sqrt(pow(x2 * y1 - x3 * y1 - x1 * y2 + x3 * y2 + x1 * y3 - x2 * y3, 2.0) +
-					  pow((x2 * z1) - (x3 * z1) - (x1 * z2) + (x3 * z2) + (x1 * z3) - (x2 * z3), 2.0) +
-					  pow((y2 * z1) - (y3 * z1) - (y1 * z2) + (y3 * z2) + (y1 * z3) - (y2 * z3), 2.0));
+	return 0.5 * sqrt(pow(X2 * Y1 - X3 * Y1 - X1 * Y2 + X3 * Y2 + X1 * Y3 - X2 * Y3, 2.0) +
+					  pow((X2 * Z1) - (X3 * Z1) - (X1 * Z2) + (X3 * Z2) + (X1 * Z3) - (X2 * Z3), 2.0) +
+					  pow((Y2 * Z1) - (Y3 * Z1) - (Y1 * Z2) + (Y3 * Z2) + (Y1 * Z3) - (Y2 * Z3), 2.0));
 }
 
 bool FEGeometry::IsAABBIntersectTriangle(FEAABB& AABB, std::vector<glm::vec3>& TriangleVertices)

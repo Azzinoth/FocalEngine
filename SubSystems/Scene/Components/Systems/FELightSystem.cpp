@@ -292,13 +292,13 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			float Clip[16];
 			float T;
 
-			glm::mat4 cliping = LightComponent.CascadeData[i].ProjectionMat * CascadeView;
+			glm::mat4 Clipping = LightComponent.CascadeData[i].ProjectionMat * CascadeView;
 			for (int j = 0; j < 4; j++)
 			{
-				Clip[j * 4] = cliping[j][0];
-				Clip[j * 4 + 1] = cliping[j][1];
-				Clip[j * 4 + 2] = cliping[j][2];
-				Clip[j * 4 + 3] = cliping[j][3];
+				Clip[j * 4] = Clipping[j][0];
+				Clip[j * 4 + 1] = Clipping[j][1];
+				Clip[j * 4 + 2] = Clipping[j][2];
+				Clip[j * 4 + 3] = Clipping[j][3];
 			}
 
 			/* Extract the numbers for the RIGHT plane */

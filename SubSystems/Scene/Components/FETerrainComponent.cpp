@@ -260,34 +260,34 @@ void FETerrainComponent::LoadLayersDataToGPU()
 	bool bGPUDataIsStale = false;
 	for (size_t i = 0; i < Layers.size(); i++)
 	{
-		const size_t index = i * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER;
+		const size_t Index = i * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER;
 		if (Layers[i] != nullptr && Layers[i]->GetMaterial()->IsCompactPacking())
 		{
 			const FEMaterial* CurrentMaterial = Layers[i]->GetMaterial();
 			// normalMapIntensity
-			GPULayersData[index] = CurrentMaterial->GetNormalMapIntensity();
+			GPULayersData[Index] = CurrentMaterial->GetNormalMapIntensity();
 			// AOIntensity
-			GPULayersData[index + 1] = CurrentMaterial->GetAmbientOcclusionIntensity();
+			GPULayersData[Index + 1] = CurrentMaterial->GetAmbientOcclusionIntensity();
 			// AOMapIntensity
-			GPULayersData[index + 2] = CurrentMaterial->GetAmbientOcclusionMapIntensity();
+			GPULayersData[Index + 2] = CurrentMaterial->GetAmbientOcclusionMapIntensity();
 			// roughness
-			GPULayersData[index + 3] = CurrentMaterial->GetRoughness();
+			GPULayersData[Index + 3] = CurrentMaterial->GetRoughness();
 			// roughnessMapIntensity
-			GPULayersData[index + 4] = CurrentMaterial->GetRoughnessMapIntensity();
+			GPULayersData[Index + 4] = CurrentMaterial->GetRoughnessMapIntensity();
 			// metalness
-			GPULayersData[index + 5] = CurrentMaterial->GetMetalness();
+			GPULayersData[Index + 5] = CurrentMaterial->GetMetalness();
 			// metalnessMapIntensity
-			GPULayersData[index + 6] = CurrentMaterial->GetMetalnessMapIntensity();
+			GPULayersData[Index + 6] = CurrentMaterial->GetMetalnessMapIntensity();
 			// displacementMapIntensity
-			GPULayersData[index + 7] = CurrentMaterial->GetDisplacementMapIntensity();
+			GPULayersData[Index + 7] = CurrentMaterial->GetDisplacementMapIntensity();
 			// tiling
-			GPULayersData[index + 8] = CurrentMaterial->GetTiling();
+			GPULayersData[Index + 8] = CurrentMaterial->GetTiling();
 		}
 		else
 		{
 			for (size_t j = 0; j < FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER; j++)
 			{
-				GPULayersData[index + j] = -1.0f;
+				GPULayersData[Index + j] = -1.0f;
 			}
 		}
 	}

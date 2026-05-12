@@ -15,8 +15,8 @@ FEVolumeSystem::FEVolumeSystem()
 	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVolumeComponent>(VolumeComponentFromJson);
 	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVolumeComponent>(DuplicateVolumeComponent);
 
-	/*InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl").c_str()).c_str(),
-																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl").c_str()).c_str(),
+	/*InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl")).c_str(),
+																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl")).c_str(),
 																		 nullptr, nullptr, nullptr, nullptr,
 																		 "7E0826291010377D564F6115");
 	RESOURCE_MANAGER.SetTagInternal(InstancedLineShader, ENGINE_RESOURCE_TAG);*/

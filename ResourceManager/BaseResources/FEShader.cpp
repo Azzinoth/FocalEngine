@@ -879,10 +879,10 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 #ifdef FE_DEBUG_ENABLED
 			DebugVariables.push_back(VariableName);
 			// add replacement only in debug mode
-			std::string replacement = "debugData[printfIndex++] = ";
-			replacement += VariableName;
-			replacement += ";";
-			ParsedShaderText.insert(ParsedShaderText.begin() + Index, replacement.begin(), replacement.end());
+			std::string Replacement = "debugData[printfIndex++] = ";
+			Replacement += VariableName;
+			Replacement += ";";
+			ParsedShaderText.insert(ParsedShaderText.begin() + Index, Replacement.begin(), Replacement.end());
 #endif
 			
 			DebugRequestCount++;

@@ -102,8 +102,8 @@ void FEShaderUniform::LoadUniformToGPU()
 
 		case FE_SHADER_UNIFORM_TYPE::FE_FLOAT_VECTOR2:
 		{
-			const auto& value = GetValue<glm::vec2>();
-			FE_GL_ERROR(glUniform2f(Locations[0], value.x, value.y));
+			const auto& Value = GetValue<glm::vec2>();
+			FE_GL_ERROR(glUniform2f(Locations[0], Value.x, Value.y));
 			break;
 		}
 

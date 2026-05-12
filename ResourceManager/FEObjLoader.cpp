@@ -792,17 +792,17 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 	auto LookForFile = [&](std::string& FilePath) {
 		if (CurrentMaterialObject->MaterialRecords[0].Name.find('/') != std::string::npos)
 		{
-			std::string name = CurrentMaterialObject->MaterialRecords[0].Name;
-			for (size_t i = name.size() - 1; i > 0; i--)
+			std::string Name = CurrentMaterialObject->MaterialRecords[0].Name;
+			for (size_t i = Name.size() - 1; i > 0; i--)
 			{
-				if (name[i] == '/')
+				if (Name[i] == '/')
 				{
-					name.erase(name.begin() + i, name.end());
+					Name.erase(Name.begin() + i, Name.end());
 					break;
 				}
 			}
 
-			const std::string NewPath = std::string(FILE_SYSTEM.GetDirectoryPath(CurrentFilePath.c_str())) + name + "/" + FilePath;
+			const std::string NewPath = std::string(FILE_SYSTEM.GetDirectoryPath(CurrentFilePath.c_str())) + Name + "/" + FilePath;
 			FilePath = NewPath;
 		}
 		else
