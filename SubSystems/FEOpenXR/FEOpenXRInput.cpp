@@ -729,73 +729,157 @@ glm::quat FEOpenXRInput::GetRightControllerOrientation()
 void FEOpenXRInput::SetLeftTriggerPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerTouchActivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerTouchActivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 // FE_TO_DO: Need to implement a simpler function to determine controller type.
@@ -821,187 +905,352 @@ std::string FEOpenXRInput::CurrentlyActiveInteractionProfile(bool bLeftControlle
 void FEOpenXRInput::SetLeftBButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
+
 void FEOpenXRInput::SetLeftAButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("b_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("b_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    if (Action != nullptr)
-       reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickPressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickPressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftViveSqueezePressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftValveSqueezeValueCallBack(std::function<void(float)> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("valve_squeeze_force");
-	if (Action != nullptr)
-        reinterpret_cast<FEVRActionFloatData*>(Action)->LeftChangedValueUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionFloatData* FloatAction = dynamic_cast<FEVRActionFloatData*>(Action);
+    if (FloatAction == nullptr)
+        return;
+
+    FloatAction->LeftChangedValueUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveSqueezePressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftViveSqueezeReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveSqueezeReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("vive_menu_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveMenuClickCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("vive_menu_click");
-    if (Action != nullptr)
-        reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change)

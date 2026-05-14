@@ -161,6 +161,8 @@ namespace FocalEngine
 
 		struct FEVRActionData
 		{
+			virtual ~FEVRActionData() = default;
+
 			XrAction ActionHandle{ XR_NULL_HANDLE };
 			XrActionType ActionType;
 			std::vector<FE_VR_CONTROLLER_TYPE> WorksWith;
