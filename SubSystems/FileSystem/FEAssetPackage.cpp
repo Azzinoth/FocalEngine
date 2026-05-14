@@ -156,9 +156,9 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 				TypeToUse = "FE_TEXTURE";
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempTexture.texture";
-			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath);
+			RESOURCE_MANAGER.SaveFETexture(Texture, FilePath.c_str());
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -171,9 +171,9 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 				TypeToUse = "FE_MESH";
 
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempMesh.mesh";
-			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath);
+			RESOURCE_MANAGER.SaveFEMesh(Mesh, FilePath.c_str());
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -197,7 +197,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 			ResourcesFile.close();
 
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -221,7 +221,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 			ResourcesFile.close();
 
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -245,7 +245,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 			ResourcesFile.close();
 
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -260,7 +260,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 			std::string FilePath = FILE_SYSTEM.GetCurrentWorkingPath() + "TempNativeScriptModule.nativescriptmodule";
 			RESOURCE_MANAGER.SaveFENativeScriptModule(NativeScriptModule, FilePath);
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -283,7 +283,7 @@ std::string FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryIni
 			ResourcesFile.close();
 
 			std::string ResultingID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ IDToUse, NameToUse, TypeToUse, TagToUse, CommentToUse });
-			FILE_SYSTEM.DeleteFile(FilePath);
+			FILE_SYSTEM.RemoveFile(FilePath);
 
 			return ResultingID;
 		}
@@ -443,7 +443,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	{
 		LOG.Add("FEAssetPackage::WriteToFile: Could not export asset package as raw data.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
-		FILE_SYSTEM.DeleteFile(FilePath);
+		FILE_SYSTEM.RemoveFile(FilePath);
 		return false;
 	}
 
@@ -452,7 +452,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 		LOG.Add("FEAssetPackage::WriteToFile: Asset package size is 0.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
 		delete[] RawData;
-		FILE_SYSTEM.DeleteFile(FilePath);
+		FILE_SYSTEM.RemoveFile(FilePath);
 		return false;
 	}
 
@@ -465,7 +465,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	{
 		LOG.Add("FEAssetPackage::WriteToFile: package size is not equal to the written data size.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
-		FILE_SYSTEM.DeleteFile(FilePath);
+		FILE_SYSTEM.RemoveFile(FilePath);
 		return false;
 	}
 

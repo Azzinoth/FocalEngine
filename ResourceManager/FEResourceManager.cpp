@@ -4075,7 +4075,7 @@ bool FEResourceManager::UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPac
 			std::string FinalPath = DirectoryPath + FolderChain[i];
 			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
 			{
-				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				if (!FILE_SYSTEM.MakeDirectory(FinalPath))
 				{
 					LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 					return false;
@@ -4193,7 +4193,7 @@ bool FEResourceManager::UnPackEngineSourceFilesAssetPackage(FEAssetPackage* Asse
 			std::string FinalPath = DirectoryPath + FolderChain[j];
 			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
 			{
-				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				if (!FILE_SYSTEM.MakeDirectory(FinalPath))
 				{
 					LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 					return false;
@@ -4476,7 +4476,7 @@ bool FEResourceManager::UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPac
 			std::string FinalPath = DirectoryPath + FolderChain[j];
 			if (!FILE_SYSTEM.DoesDirectoryExist(FinalPath))
 			{
-				if (!FILE_SYSTEM.CreateDirectory(FinalPath))
+				if (!FILE_SYSTEM.MakeDirectory(FinalPath))
 				{
 					LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Error creating directory " + FinalPath, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 					return false;

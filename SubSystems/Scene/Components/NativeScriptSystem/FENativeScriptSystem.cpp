@@ -622,11 +622,11 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	// First we need to extract the DLL and PDB files to a temporary directory.
 	std::string ExtractedFolderPath = FILE_SYSTEM.GetCurrentWorkingPath() + "/ExtractedNativeScripts/";
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
-		FILE_SYSTEM.CreateDirectory(ExtractedFolderPath);
+		FILE_SYSTEM.MakeDirectory(ExtractedFolderPath);
 
 	ExtractedFolderPath += Module->GetObjectID() + "/";
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
-		FILE_SYSTEM.CreateDirectory(ExtractedFolderPath);
+		FILE_SYSTEM.MakeDirectory(ExtractedFolderPath);
 
 	FEAssetPackageAssetInfo AssetInfo;
 
@@ -840,13 +840,13 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 	Module->DLLHandle = nullptr;
 	if (!Module->ExtractedDLLPath.empty())
 	{
-		FILE_SYSTEM.DeleteFile(Module->ExtractedDLLPath);
+		FILE_SYSTEM.RemoveFile(Module->ExtractedDLLPath);
 		Module->ExtractedDLLPath = "";
 	}
 		
 	if (!Module->ExtractedPDBPath.empty())
 	{
-		FILE_SYSTEM.DeleteFile(Module->ExtractedPDBPath);
+		FILE_SYSTEM.RemoveFile(Module->ExtractedPDBPath);
 		Module->ExtractedPDBPath = "";
 	}
 

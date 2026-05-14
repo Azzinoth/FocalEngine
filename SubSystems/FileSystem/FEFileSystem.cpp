@@ -31,7 +31,7 @@ bool FEFileSystem::RenameFile(const std::string& Path, const std::string& NewPat
 	}
 }
 
-bool FEFileSystem::CopyFile(const std::string& Path, const std::string& NewPath)
+bool FEFileSystem::CopyFileTo(const std::string& Path, const std::string& NewPath)
 {
 	try
 	{
@@ -40,12 +40,12 @@ bool FEFileSystem::CopyFile(const std::string& Path, const std::string& NewPath)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::CopyFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::CopyFileTo: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
 
-bool FEFileSystem::DeleteFile(const std::string& Path)
+bool FEFileSystem::RemoveFile(const std::string& Path)
 {
 	try
 	{
@@ -53,7 +53,7 @@ bool FEFileSystem::DeleteFile(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::DeleteFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::RemoveFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -168,7 +168,7 @@ bool FEFileSystem::RenameDirectory(const std::string& Path, const std::string& N
 	}
 }
 
-bool FEFileSystem::CreateDirectory(const std::string& Path)
+bool FEFileSystem::MakeDirectory(const std::string& Path)
 {
 	try
 	{
@@ -176,7 +176,7 @@ bool FEFileSystem::CreateDirectory(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::CreateDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::MakeDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
