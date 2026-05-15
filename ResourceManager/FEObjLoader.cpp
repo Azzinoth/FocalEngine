@@ -227,45 +227,45 @@ void FEObjLoader::ReadFile(const char* FileName)
 		{
 			for (size_t j = 0; j < LoadedObjects[i]->MaterialRecords.size(); j++)
 			{
-				FERawOBJData* TempObject = new FERawOBJData();
-				TempObject->MaterialRecords.push_back(MaterialRecord(LoadedObjects[i]->MaterialRecords[j]));
+				FERawOBJData* TemporaryObject = new FERawOBJData();
+				TemporaryObject->MaterialRecords.push_back(MaterialRecord(LoadedObjects[i]->MaterialRecords[j]));
 
 				size_t StartIndex = LoadedObjects[i]->MaterialRecords[j].MinVertexIndex - 1;
 				size_t EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxVertexIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawVertexCoordinates.push_back(LoadedObjects[i]->RawVertexCoordinates[k]);
+					TemporaryObject->RawVertexCoordinates.push_back(LoadedObjects[i]->RawVertexCoordinates[k]);
 				}
 
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawVertexCoordinatesDoublePrecision.push_back(LoadedObjects[i]->RawVertexCoordinatesDoublePrecision[k]);
+					TemporaryObject->RawVertexCoordinatesDoublePrecision.push_back(LoadedObjects[i]->RawVertexCoordinatesDoublePrecision[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].MinTextureIndex - 1;
 				EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxTextureIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawTextureCoordinates.push_back(LoadedObjects[i]->RawTextureCoordinates[k]);
+					TemporaryObject->RawTextureCoordinates.push_back(LoadedObjects[i]->RawTextureCoordinates[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].MinNormalIndex - 1;
 				EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxNormalIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawNormalCoordinates.push_back(LoadedObjects[i]->RawNormalCoordinates[k]);
+					TemporaryObject->RawNormalCoordinates.push_back(LoadedObjects[i]->RawNormalCoordinates[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].FacesSeenBefore;
 				EndIndex = StartIndex + LoadedObjects[i]->MaterialRecords[j].FaceCount;
 				for (size_t k = StartIndex; k < EndIndex; k += 3)
 				{
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k] - LoadedObjects[i]->MaterialRecords[j].MinVertexIndex + 1);
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 1] - LoadedObjects[i]->MaterialRecords[j].MinTextureIndex + 1);
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 2] - LoadedObjects[i]->MaterialRecords[j].MinNormalIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k] - LoadedObjects[i]->MaterialRecords[j].MinVertexIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 1] - LoadedObjects[i]->MaterialRecords[j].MinTextureIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 2] - LoadedObjects[i]->MaterialRecords[j].MinNormalIndex + 1);
 				}
 
-				ObjectsPerMaterialList.push_back(TempObject);
+				ObjectsPerMaterialList.push_back(TemporaryObject);
 			}
 
 			if (LoadedObjects[i]->MaterialRecords.empty())

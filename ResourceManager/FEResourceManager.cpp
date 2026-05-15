@@ -192,7 +192,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 		FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
 
-		if (NewTexture->bMipEnabled)
+		if (NewTexture->bMipmapEnabled)
 		{
 			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 			// TO-DO: make it configurable.
@@ -257,10 +257,10 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 	}
 
 	const int MaxDimension = std::max(Texture->Width, Texture->Height);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
-	char** PixelData = new char* [MipCount];
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+	char** PixelData = new char* [MipmapCount];
 
-	for (size_t i = 0; i < MipCount; i++)
+	for (size_t i = 0; i < MipmapCount; i++)
 	{
 		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, static_cast<GLint>(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &ImgSize));
 
@@ -312,7 +312,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 
 	File.close();
 
-	for (size_t i = 0; i < MipCount; i++)
+	for (size_t i = 0; i < MipmapCount; i++)
 	{
 		delete[] PixelData[i];
 	}
@@ -346,7 +346,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_UNSIGNED_BYTE, TextureData);
 
-	if (NewTexture->bMipEnabled)
+	if (NewTexture->bMipmapEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -554,12 +554,12 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	else
 	{
 		const int MaxDimension = std::max(NewTexture->Width, NewTexture->Height);
-		const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height));
+		const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height));
 
-		int MipW = NewTexture->Width / 2;
-		int MipH = NewTexture->Height / 2;
-		for (size_t i = 0; i < MipCount; i++)
+		int MipmapWidth = NewTexture->Width / 2;
+		int MipmapHeight = NewTexture->Height / 2;
+		for (size_t i = 0; i < MipmapCount; i++)
 		{
 			const int Size = *(int*)(&FileData[CurrentShift]);
 			CurrentShift += 4;
@@ -570,12 +570,12 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 			}
 			else
 			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipW, MipH, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
+				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipmapWidth, MipmapHeight, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
 
-				MipW = MipW / 2;
-				MipH = MipH / 2;
+				MipmapWidth = MipmapWidth / 2;
+				MipmapHeight = MipmapHeight / 2;
 
-				if (MipW <= 0 || MipH <= 0)
+				if (MipmapWidth <= 0 || MipmapHeight <= 0)
 					break;
 			}
 
@@ -593,7 +593,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 	}
 
-	if (NewTexture->bMipEnabled)
+	if (NewTexture->bMipmapEnabled)
 	{
 		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -1861,14 +1861,14 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const std::string& FilePath)
 		File.write((char*)MatIndices, sizeof(float) * Count);
 	}
 
-	FEAABB TempAABB(Positions, Mesh->GetPositionsCount());
-	File.write((char*)&TempAABB.Min[0], sizeof(float));
-	File.write((char*)&TempAABB.Min[1], sizeof(float));
-	File.write((char*)&TempAABB.Min[2], sizeof(float));
+	FEAABB TemporaryAABB(Positions, Mesh->GetPositionsCount());
+	File.write((char*)&TemporaryAABB.Min[0], sizeof(float));
+	File.write((char*)&TemporaryAABB.Min[1], sizeof(float));
+	File.write((char*)&TemporaryAABB.Min[2], sizeof(float));
 
-	File.write((char*)&TempAABB.Max[0], sizeof(float));
-	File.write((char*)&TempAABB.Max[1], sizeof(float));
-	File.write((char*)&TempAABB.Max[2], sizeof(float));
+	File.write((char*)&TemporaryAABB.Max[0], sizeof(float));
+	File.write((char*)&TemporaryAABB.Max[1], sizeof(float));
+	File.write((char*)&TemporaryAABB.Max[2], sizeof(float));
 
 	File.close();
 
@@ -3016,11 +3016,11 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 	SourceTexture->Width = TargetWidth;
 	SourceTexture->Height = TargetHeight;
 	const int MaxDimension = std::max(SourceTexture->Width, SourceTexture->Height);
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	if (SourceTexture->InternalFormat == GL_RGBA)
 	{
-		SourceTexture->UpdateRawData(Result, MipCount);
+		SourceTexture->UpdateRawData(Result, MipmapCount);
 	}
 	else if (SourceTexture->InternalFormat == GL_RED)
 	{
@@ -3032,11 +3032,11 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 			RedChannel[i / 4] = Result[i];
 		}
 
-		SourceTexture->UpdateRawData(RedChannel.data(), MipCount);
+		SourceTexture->UpdateRawData(RedChannel.data(), MipmapCount);
 	}
 	else
 	{
-		SourceTexture->UpdateRawData(Result, MipCount);
+		SourceTexture->UpdateRawData(Result, MipmapCount);
 	}
 
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
@@ -3069,7 +3069,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const std::string& FilePath, const 
 	delete RawData;
 	NewTexture->InternalFormat = InternalFormat;
 
-	if (NewTexture->bMipEnabled)
+	if (NewTexture->bMipmapEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -3343,7 +3343,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, Result->Width, Result->Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
 	Result->InternalFormat = InternalFormat;
 
-	if (Result->bMipEnabled)
+	if (Result->bMipmapEnabled)
 	{
 		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 		// TO-DO: make it configurable.
@@ -5139,37 +5139,37 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 	auto* Input = reinterpret_cast<LoadPointCloudAsyncInfo*>(InputData);
 	auto* Output = reinterpret_cast<LoadPointCloudAsyncInfo*>(OutputData);
 
-	std::vector<FEPointCloudVertexDouble> TempRawData;
-	Output->bSuccess = RESOURCE_MANAGER.ReadLasOrLaz(Input->FilePath, TempRawData, Input->OutHeaderCopy);
+	std::vector<FEPointCloudVertexDouble> TemporaryRawData;
+	Output->bSuccess = RESOURCE_MANAGER.ReadLasOrLaz(Input->FilePath, TemporaryRawData, Input->OutHeaderCopy);
 
 	if (Output->bSuccess)
 	{
 		FEAABB PointCloudAABB;
 		// Before converting to float, we need to center the point cloud using 64 bit precision.
-		if (!TempRawData.empty())
+		if (!TemporaryRawData.empty())
 		{
 			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
 			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
-			for (size_t i = 0; i < TempRawData.size(); i++)
+			for (size_t i = 0; i < TemporaryRawData.size(); i++)
 			{
-				if (TempRawData[i].X < Min.x)
-					Min.x = TempRawData[i].X;
+				if (TemporaryRawData[i].X < Min.x)
+					Min.x = TemporaryRawData[i].X;
 
-				if (TempRawData[i].X > Max.x)
-					Max.x = TempRawData[i].X;
+				if (TemporaryRawData[i].X > Max.x)
+					Max.x = TemporaryRawData[i].X;
 
-				if (TempRawData[i].Y < Min.y)
-					Min.y = TempRawData[i].Y;
+				if (TemporaryRawData[i].Y < Min.y)
+					Min.y = TemporaryRawData[i].Y;
 
-				if (TempRawData[i].Y > Max.y)
-					Max.y = TempRawData[i].Y;
+				if (TemporaryRawData[i].Y > Max.y)
+					Max.y = TemporaryRawData[i].Y;
 
-				if (TempRawData[i].Z < Min.z)
-					Min.z = TempRawData[i].Z;
+				if (TemporaryRawData[i].Z < Min.z)
+					Min.z = TemporaryRawData[i].Z;
 
-				if (TempRawData[i].Z > Max.z)
-					Max.z = TempRawData[i].Z;
+				if (TemporaryRawData[i].Z > Max.z)
+					Max.z = TemporaryRawData[i].Z;
 			}
 
 			glm::dvec3 Extent = Max - Min;
@@ -5177,11 +5177,11 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 
 			if (Input->bCenterPositions)
 			{
-				for (size_t i = 0; i < TempRawData.size(); i++)
+				for (size_t i = 0; i < TemporaryRawData.size(); i++)
 				{
-					TempRawData[i].X = TempRawData[i].X - Center.x;
-					TempRawData[i].Y = TempRawData[i].Y - Center.y;
-					TempRawData[i].Z = TempRawData[i].Z - Center.z;
+					TemporaryRawData[i].X = TemporaryRawData[i].X - Center.x;
+					TemporaryRawData[i].Y = TemporaryRawData[i].Y - Center.y;
+					TemporaryRawData[i].Z = TemporaryRawData[i].Z - Center.z;
 				}
 
 				Input->AppliedShift = Center;
@@ -5195,48 +5195,48 @@ void LoadPointCloudFileAsync(void* InputData, void* OutputData)
 
 		if (Input->UserDataProcessor)
 		{
-			Input->UserDataProcessor(TempRawData);
+			Input->UserDataProcessor(TemporaryRawData);
 
 			// Points might have been removed or changed in the user data processor.
 			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
 			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
 
-			for (size_t i = 0; i < TempRawData.size(); i++)
+			for (size_t i = 0; i < TemporaryRawData.size(); i++)
 			{
-				if (TempRawData[i].X < Min.x)
-					Min.x = TempRawData[i].X;
+				if (TemporaryRawData[i].X < Min.x)
+					Min.x = TemporaryRawData[i].X;
 
-				if (TempRawData[i].X > Max.x)
-					Max.x = TempRawData[i].X;
+				if (TemporaryRawData[i].X > Max.x)
+					Max.x = TemporaryRawData[i].X;
 
-				if (TempRawData[i].Y < Min.y)
-					Min.y = TempRawData[i].Y;
+				if (TemporaryRawData[i].Y < Min.y)
+					Min.y = TemporaryRawData[i].Y;
 
-				if (TempRawData[i].Y > Max.y)
-					Max.y = TempRawData[i].Y;
+				if (TemporaryRawData[i].Y > Max.y)
+					Max.y = TemporaryRawData[i].Y;
 
-				if (TempRawData[i].Z < Min.z)
-					Min.z = TempRawData[i].Z;
+				if (TemporaryRawData[i].Z < Min.z)
+					Min.z = TemporaryRawData[i].Z;
 
-				if (TempRawData[i].Z > Max.z)
-					Max.z = TempRawData[i].Z;
+				if (TemporaryRawData[i].Z > Max.z)
+					Max.z = TemporaryRawData[i].Z;
 			}
 
 			PointCloudAABB = FEAABB(Min, Max);
 		}
 
-		Output->RawData.resize(TempRawData.size());
-		for (size_t i = 0; i < TempRawData.size(); i++)
+		Output->RawData.resize(TemporaryRawData.size());
+		for (size_t i = 0; i < TemporaryRawData.size(); i++)
 		{
-			Output->RawData[i].X = static_cast<float>(TempRawData[i].X);
-			Output->RawData[i].Y = static_cast<float>(TempRawData[i].Y);
-			Output->RawData[i].Z = static_cast<float>(TempRawData[i].Z);
-			Output->RawData[i].R = TempRawData[i].R;
-			Output->RawData[i].G = TempRawData[i].G;
-			Output->RawData[i].B = TempRawData[i].B;
-			Output->RawData[i].A = TempRawData[i].A;
+			Output->RawData[i].X = static_cast<float>(TemporaryRawData[i].X);
+			Output->RawData[i].Y = static_cast<float>(TemporaryRawData[i].Y);
+			Output->RawData[i].Z = static_cast<float>(TemporaryRawData[i].Z);
+			Output->RawData[i].R = TemporaryRawData[i].R;
+			Output->RawData[i].G = TemporaryRawData[i].G;
+			Output->RawData[i].B = TemporaryRawData[i].B;
+			Output->RawData[i].A = TemporaryRawData[i].A;
 		}
-		TempRawData.clear();
+		TemporaryRawData.clear();
 
 		Output->AABB = PointCloudAABB;
 	}

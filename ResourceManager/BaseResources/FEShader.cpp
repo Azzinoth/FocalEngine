@@ -525,8 +525,8 @@ GLuint FEShader::LoadShader(const char* ShaderText, const GLuint ShaderType)
 	GLuint ShaderID;
 	FE_GL_ERROR(ShaderID = glCreateShader(ShaderType));
 
-	const std::string TempString = ParseShaderForMacro(ShaderText);
-	const char *ParsedShaderText = TempString.c_str();
+	const std::string TemporaryString = ParseShaderForMacro(ShaderText);
+	const char *ParsedShaderText = TemporaryString.c_str();
 	FE_GL_ERROR(glShaderSource(ShaderID, 1, &ParsedShaderText, nullptr));
 	FE_GL_ERROR(glCompileShader(ShaderID));
 	GLint Status = 0;

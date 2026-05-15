@@ -753,8 +753,8 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
 
 	const int MaxDimension = std::max(CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
-	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R32F, CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight()));
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+	FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_R32F, CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight()));
 	Result->DepthPyramid->Width = CameraComponent.GetRenderTargetWidth();
 	Result->DepthPyramid->Height = CameraComponent.GetRenderTargetHeight();
 
@@ -1549,8 +1549,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	ComputeTextureCopy->Dispatch(static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetWidth()) / 32.0f)), static_cast<unsigned>(ceil(float(CurrentCameraRenderingData->DepthPyramid->GetHeight()) / 32.0f)), 1);
 	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-	const size_t MipCount = static_cast<size_t>(floor(log2(std::max(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()))) + 1);
-	for (size_t i = 0; i < MipCount; i++)
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(std::max(CurrentCameraRenderingData->DepthPyramid->GetWidth(), CurrentCameraRenderingData->DepthPyramid->GetHeight()))) + 1);
+	for (size_t i = 0; i < MipmapCount; i++)
 	{
 		const float DownScale = static_cast<float>(pow(2.0f, i));
 

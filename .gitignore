@@ -20,6 +20,7 @@ imgui.ini
 cmake_install.cmake
 Config.h
 FOCAL_ENGINE_Version.h
+report.xml
 
 #Folders
 Debug/

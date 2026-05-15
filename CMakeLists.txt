@@ -21,7 +21,7 @@ if(MSVC)
 endif()
 
 option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
-option(ENABLE_TESTS "Enable tests" OFF)
+option(FOCAL_ENGINE_ENABLE_TESTS "Enable tests" OFF)
 
 set(TEST_LIBS)
 set(TEST_SOURCE_FILES)
@@ -46,20 +46,20 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-if(ENABLE_TESTS)
+if(FOCAL_ENGINE_ENABLE_TESTS)
 	if(BUILD_SHARED_LIBS)
 		list(APPEND TEST_LIBS
-			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest
-			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
-			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest
-			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
+			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/Dynamic/gtest
+			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
+			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/Dynamic/gtest
+			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
 		)
 	else()
 		list(APPEND TEST_LIBS
-			debug       Tests/ThirdParty/googletest/lib/Debug/gtest
-			debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
-			optimized   Tests/ThirdParty/googletest/lib/Release/gtest
-			optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
+			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/gtest
+			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/gtest_main
+			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/gtest
+			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/gtest_main
 		)
 	endif()
 
@@ -71,7 +71,7 @@ if(ENABLE_TESTS)
     )
 
 	list(APPEND TEST_INCLUDE_FILES
-        "Tests/ThirdParty/googletest/include"
+        "SubSystems/FEBasicApplication/ThirdParty/googletest/include"
     )
 
 	# Adding flags for multi-processor compilation
@@ -488,7 +488,7 @@ if(USE_STATIC_RUNTIME)
 	)
 endif()
 
-if(ENABLE_TESTS)
+if(FOCAL_ENGINE_ENABLE_TESTS)
     add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
 else()
     if(BUILD_SHARED_LIBS)
@@ -605,7 +605,7 @@ if(NOT ENGINE_HEADERS_ONLY)
 	)
 endif()
 
-if(ENABLE_TESTS)
+if(FOCAL_ENGINE_ENABLE_TESTS)
 	source_group("Test Source Files" FILES ${TEST_SOURCE_FILES})
 endif()
 

@@ -250,7 +250,7 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 	return Result;
 }
 
-void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
+void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipmapCount)
 {
 	if (InternalFormat != GL_RGBA &&
 		InternalFormat != GL_RED &&
@@ -283,32 +283,32 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipCount)
 	if (InternalFormat == GL_RGBA16F)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_RGBA16F, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_RGBA16F, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_HALF_FLOAT, (void*)(NewRawData)));
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_RGBA)
 	{
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_RGBA8, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_RGBA8, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(NewRawData)));
 	}
 	else if (InternalFormat == GL_RED)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R8, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_R8, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RED, GL_UNSIGNED_BYTE, (void*)(NewRawData)));
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_R16)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), GL_R16, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_R16, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RED, GL_UNSIGNED_SHORT, (void*)(NewRawData)));
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
 	else
 	{
-		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipCount), InternalFormat, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), InternalFormat, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(NewRawData)));
 	}
 }

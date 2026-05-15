@@ -928,14 +928,14 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 	}
 
 	const int MaxDimension = std::max(static_cast<int>(TextureWidth), static_cast<int>(TextureHeight));
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
-	TerrainComponent.LayerMaps[0]->UpdateRawData(FinalTextureChannels[0], MipCount);
+	TerrainComponent.LayerMaps[0]->UpdateRawData(FinalTextureChannels[0], MipmapCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	TerrainComponent.LayerMaps[1]->UpdateRawData(FinalTextureChannels[1], MipCount);
+	TerrainComponent.LayerMaps[1]->UpdateRawData(FinalTextureChannels[1], MipmapCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
@@ -1166,14 +1166,14 @@ void FETerrainSystem::DeleteTerrainLayerMask(FEEntity* TerrainEntity, size_t Lay
 	}
 
 	const int MaxDimension = std::max(TerrainComponent.LayerMaps[0]->GetWidth(), TerrainComponent.LayerMaps[0]->GetHeight());
-	const size_t MipCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
+	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
-	TerrainComponent.LayerMaps[0]->UpdateRawData(FirstTextureData, MipCount);
+	TerrainComponent.LayerMaps[0]->UpdateRawData(FirstTextureData, MipmapCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
 
-	TerrainComponent.LayerMaps[1]->UpdateRawData(SecondTextureData, MipCount);
+	TerrainComponent.LayerMaps[1]->UpdateRawData(SecondTextureData, MipmapCount);
 	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
 	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));

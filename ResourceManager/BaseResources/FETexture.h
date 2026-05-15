@@ -42,7 +42,7 @@ namespace FocalEngine
 		int GetHeight();
 
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
-		void UpdateRawData(unsigned char* NewRawData, size_t MipCount = 1);
+		void UpdateRawData(unsigned char* NewRawData, size_t MipmapCount = 1);
 	private:
 		GLuint TextureID = -1;
 		void GetNewGlTextureID();
@@ -56,7 +56,7 @@ namespace FocalEngine
 		GLuint DefaultTextureUnit = -1;
 
 		FE_TEXTURE_MAG_FILTER MagFilter = FE_LINEAR;
-		bool bMipEnabled = true;
+		bool bMipmapEnabled = true;
 		void AddToOnDeleteCallBackList(std::string ObjectID);
 		void EraseFromOnDeleteCallBackList(std::string ObjectID);
 
