@@ -60,6 +60,10 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
 		return;
 
+	// If the node already has a different parent, detach it from it.
+	if (NodeToAdd->Parent != nullptr)
+		NodeToAdd->Parent->DetachChild(NodeToAdd, bPreserveWorldTransform);
+
 	// Check if the child is already in the children list
 	for (size_t i = 0; i < Children.size(); i++)
 	{

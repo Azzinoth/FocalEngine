@@ -2016,3 +2016,38 @@ TEST_F(SceneGraphTest, ImportNode_FilterAppliesToDescendants)
 	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
 	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
 }
+
+TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEEntity* EntityA = CurrentScene->CreateEntity("EntityA");
+	FEEntity* EntityB = CurrentScene->CreateEntity("EntityB");
+	FEEntity* EntityC = CurrentScene->CreateEntity("EntityC");
+
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
+
+	// Baseline: three entities under Root, all siblings.
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
+
+	// Move C under A via MoveNode.
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_EQ(NodeC->GetParent(), NodeA);
+	ASSERT_EQ(NodeA->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(NodeB->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
+
+	// Hand C to B via AddChild without first detaching C from A.
+	NodeB->AddChild(NodeC);
+
+	// The Parent pointer follows the new owner.
+	EXPECT_EQ(NodeC->GetParent(), NodeB);
+
+	// Old parent should have no children.
+	EXPECT_EQ(NodeA->GetImediateChildrenCount(), 0);
+	// Overall node count should not change.
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
