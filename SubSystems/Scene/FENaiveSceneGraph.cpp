@@ -102,7 +102,7 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bo
 	return true;
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName)
+FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
 {
 	FENaiveSceneGraphNode* NodeToDuplicate = GetNodeByID(NodeIDToDuplicate);
 	FENaiveSceneGraphNode* NewParent = GetNodeByID(NewParentID);
@@ -110,12 +110,16 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDupl
 	if (NodeToDuplicate == nullptr || NewParent == nullptr)
 		return nullptr;
 
-	return DuplicateNode(NodeToDuplicate, NewParent, bAddCopyInName);
+	return DuplicateNode(NodeToDuplicate, NewParent, bAddCopyInName, Filter);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName)
+FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
 {
 	if (NodeToDuplicate == nullptr || NewParent == nullptr)
+		return nullptr;
+
+	// If the top entity itself is rejected by the filter, skip the whole subtree.
+	if (Filter != nullptr && !Filter(NodeToDuplicate->Entity))
 		return nullptr;
 
 	FENaiveSceneGraphNode* OriginalParent = NodeToDuplicate->GetParent();
@@ -128,7 +132,11 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* N
 
 	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)
 	{
-		if (!DuplicateNodeInternal(TopMostDuplicate, NodeToDuplicate->GetChildren()[i], bAddCopyInName))
+		FENaiveSceneGraphNode* Child = NodeToDuplicate->GetChildren()[i];
+		// A child rejected by the filter is skipped together with its whole subtree.
+		if (Filter != nullptr && !Filter(Child->Entity))
+			continue;
+		if (!DuplicateNodeInternal(TopMostDuplicate, Child, bAddCopyInName, Filter))
 		{
 			bDuplicationSuccess = false;
 			break;
@@ -152,15 +160,19 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* N
 	return TopMostDuplicate;
 }
 
-bool FENaiveSceneGraph::DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName)
+bool FENaiveSceneGraph::DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
 {
 	FENaiveSceneGraphNode* Duplicate = new FENaiveSceneGraphNode(NodeToDuplicate->GetName() + (bAddCopyInName ? "_Copy" : ""));
-	Duplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity);
+	Duplicate->Entity = ParentScene->DuplicateEntity(NodeToDuplicate->Entity, bAddCopyInName ? "" : NodeToDuplicate->Entity->GetName());
 	Parent->AddChild(Duplicate);
 
 	for (size_t i = 0; i < NodeToDuplicate->Children.size(); i++)
 	{
-		if (!DuplicateNodeInternal(Duplicate, NodeToDuplicate->GetChildren()[i], bAddCopyInName))
+		FENaiveSceneGraphNode* Child = NodeToDuplicate->GetChildren()[i];
+		// A child rejected by the filter is skipped together with its whole subtree.
+		if (Filter != nullptr && !Filter(Child->Entity))
+			continue;
+		if (!DuplicateNodeInternal(Duplicate, Child, bAddCopyInName, Filter))
 			return false;
 	}
 
@@ -199,7 +211,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* Node
 	if (TargetParent == nullptr)
 		TargetParent = GetRoot();
 
-	Result = DuplicateNode(NodeFromDifferentSceneGraph, TargetParent, false);
+	Result = DuplicateNode(NodeFromDifferentSceneGraph, TargetParent, false, Filter);
 
 	return Result;
 }

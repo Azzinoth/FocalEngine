@@ -18,8 +18,8 @@ namespace FocalEngine
 		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
 		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
-		FENaiveSceneGraphNode* DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName = true);
-		FENaiveSceneGraphNode* DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName = true);
+		FENaiveSceneGraphNode* DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
+		FENaiveSceneGraphNode* DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
 
 		FENaiveSceneGraphNode* ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
 
@@ -63,7 +63,7 @@ namespace FocalEngine
 
 		void Initialize(FEScene* Scene);
 
-		bool DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName = true);
+		bool DuplicateNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToDuplicate, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
 
 		std::vector<FENaiveSceneGraphNode*> GetNodeByNameInternal(std::string Name, FENaiveSceneGraphNode* CurrentNode, std::vector<FENaiveSceneGraphNode*> CurrentResult);
 	};

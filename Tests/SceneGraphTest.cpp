@@ -709,7 +709,7 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize(F
     //           0   5
 	//           | 
 	//           1   
-	//          / \   
+	//          / \
 	//         4   2
 	//              \
 	//               3
@@ -1965,4 +1965,54 @@ TEST_F(SceneGraphTest, GetDepth)
 	CurrentNode = Nodes.empty() ? nullptr : Nodes[0];
 	ASSERT_NE(CurrentNode, nullptr);
 	ASSERT_EQ(CurrentNode->GetDepth(), 5);
+
+	SCENE_MANAGER.DeleteScene(MediumSizeScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, DuplicateNode_SubtreeEntityNamesMatchNodeNames)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize(CurrentScene);
+
+	// Duplicate the Node_1 subtree (has 3 immediate + grandchildren) under root, with bAddCopyInName = false to suppress the "_Copy" suffix.
+	FENaiveSceneGraphNode* Subtree = Nodes[1];
+	FENaiveSceneGraphNode* Duplicate = CurrentScene->SceneGraph.DuplicateNode(Subtree->GetObjectID(), CurrentScene->SceneGraph.GetRoot()->GetObjectID(), false);
+	ASSERT_NE(Duplicate, nullptr);
+
+	// Verify that top node does not have "_Copy".
+	ASSERT_EQ(Duplicate->GetName(), Subtree->GetName());
+	ASSERT_EQ(Duplicate->GetEntity()->GetName(), Subtree->GetEntity()->GetName());
+
+	// Now walk the duplicated subtree and verify that every descendant node's name matches its entity's name,
+	// which should be the case if bAddCopyInName is consistently applied to all duplicates in the subtree.
+	std::vector<FENaiveSceneGraphNode*> AllDescendants = Duplicate->GetRecursiveChildren();
+	for (FENaiveSceneGraphNode* Descendant : AllDescendants)
+		EXPECT_EQ(Descendant->GetName(), Descendant->GetEntity()->GetName());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, ImportNode_FilterAppliesToDescendants)
+{
+	FEScene* SourceScene = SCENE_MANAGER.CreateScene("ImportFilter_Src");
+	std::vector<FENaiveSceneGraphNode*> SourceNodes = PopulateSceneGraphSmallSize(SourceScene);
+
+	FEScene* TargetScene = SCENE_MANAGER.CreateScene("ImportFilter_Dst");
+	const size_t TargetCountBefore = TargetScene->SceneGraph.GetNodeCount();
+
+	// Filter accepts only the top entity (Node_1) and rejects all descendants.
+	FEEntity* TopEntity = SourceNodes[1]->GetEntity();
+	auto Filter = [TopEntity](FEEntity* CurrentEntity) -> bool {
+		return CurrentEntity == TopEntity;
+	};
+
+	FENaiveSceneGraphNode* Imported = TargetScene->SceneGraph.ImportNode(SourceNodes[1], TargetScene->SceneGraph.GetRoot(), Filter);
+	ASSERT_NE(Imported, nullptr);
+
+	// Only one node should have been imported if the filter is working on descendants.
+	const size_t TargetCountAfter = TargetScene->SceneGraph.GetNodeCount();
+	EXPECT_EQ(TargetCountAfter - TargetCountBefore, 1);
+
+	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
 }
