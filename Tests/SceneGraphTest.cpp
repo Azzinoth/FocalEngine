@@ -2051,3 +2051,109 @@ TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 
 	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 }
+
+TEST_F(SceneGraphTest, DuplicateNode_IntoDescendant_ReturnsNullptr)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEEntity* EntityA = CurrentScene->CreateEntity("A");
+	FEEntity* EntityB = CurrentScene->CreateEntity("B");
+
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
+	FENaiveSceneGraphNode* Result = CurrentScene->SceneGraph.DuplicateNode( NodeA->GetObjectID(), NodeB->GetObjectID());
+	EXPECT_EQ(Result, nullptr);
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, AddNode_Rejects_FromDifferentScene)
+{
+	FEScene* SceneA = SCENE_MANAGER.CreateScene("AddNode_Foreign_SceneA");
+	FEScene* SceneB = SCENE_MANAGER.CreateScene("AddNode_Foreign_SceneB");
+
+	FEEntity* AlienEntity = SceneA->CreateEntity("AlienEntity");
+
+	const size_t SceneBCountBefore = SceneB->SceneGraph.GetNodeCount();
+	const std::string ReturnedID = SceneB->SceneGraph.AddNode(AlienEntity);
+
+	EXPECT_TRUE(ReturnedID.empty());
+	EXPECT_EQ(SceneB->SceneGraph.GetNodeCount(), SceneBCountBefore);
+
+	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, DeleteNode_Rejects_FromDifferentScene)
+{
+	FEScene* SceneA = SCENE_MANAGER.CreateScene("DeleteNode_Foreign_SceneA");
+	FEScene* SceneB = SCENE_MANAGER.CreateScene("DeleteNode_Foreign_SceneB");
+
+	FEEntity* EntityInA = SceneA->CreateEntity("EntityInA");
+	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetObjectID());
+	ASSERT_NE(NodeInA, nullptr);
+	const std::string A_NodeID = NodeInA->GetObjectID();
+	const size_t A_CountBefore = SceneA->SceneGraph.GetNodeCount();
+
+	// SceneB tries to delete a node that lives in SceneA. Must be rejected.
+	SceneB->SceneGraph.DeleteNode(NodeInA);
+
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeCount(), A_CountBefore);
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeByID(A_NodeID), NodeInA);
+
+	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, DuplicateNode_RejectsNewParent_FromDifferentScene)
+{
+	FEScene* SceneA = SCENE_MANAGER.CreateScene("DupNode_Foreign_SceneA");
+	FEScene* SceneB = SCENE_MANAGER.CreateScene("DupNode_Foreign_SceneB");
+
+	FEEntity* EntityInA = SceneA->CreateEntity("EntityInA");
+	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetObjectID());
+
+	FEEntity* EntityInB = SceneB->CreateEntity("EntityInB");
+	FENaiveSceneGraphNode* ForeignParentInB = SceneB->SceneGraph.GetNodeByEntityID(EntityInB->GetObjectID());
+
+	const size_t SceneA_CountBefore = SceneA->SceneGraph.GetNodeCount();
+	const size_t SceneB_CountBefore = SceneB->SceneGraph.GetNodeCount();
+
+	FENaiveSceneGraphNode* Result = SceneA->SceneGraph.DuplicateNode(NodeInA, ForeignParentInB);
+
+	EXPECT_EQ(Result, nullptr);
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeCount(), SceneA_CountBefore);
+	EXPECT_EQ(SceneB->SceneGraph.GetNodeCount(), SceneB_CountBefore);
+
+	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, ImportNode_RejectsTargetParent_FromDifferentScene)
+{
+	FEScene* CallingScene = SCENE_MANAGER.CreateScene("ImportNode_TargetParent_Calling");
+	FEScene* SourceScene = SCENE_MANAGER.CreateScene("ImportNode_TargetParent_Source");
+	FEScene* OtherScene = SCENE_MANAGER.CreateScene("ImportNode_TargetParent_Other");
+
+	FEEntity* SourceEntity = SourceScene->CreateEntity("SourceEntity");
+	FENaiveSceneGraphNode* SourceNode = SourceScene->SceneGraph.GetNodeByEntityID(SourceEntity->GetObjectID());
+
+	FEEntity* OtherEntity = OtherScene->CreateEntity("OtherEntity");
+	FENaiveSceneGraphNode* ForeignTargetParent = OtherScene->SceneGraph.GetNodeByEntityID(OtherEntity->GetObjectID());
+
+	const size_t CallingCountBefore = CallingScene->SceneGraph.GetNodeCount();
+	const size_t SourceCountBefore = SourceScene->SceneGraph.GetNodeCount();
+	const size_t OtherCountBefore = OtherScene->SceneGraph.GetNodeCount();
+
+	FENaiveSceneGraphNode* Result = CallingScene->SceneGraph.ImportNode(SourceNode, ForeignTargetParent);
+
+	EXPECT_EQ(Result, nullptr);
+	EXPECT_EQ(CallingScene->SceneGraph.GetNodeCount(), CallingCountBefore);
+	EXPECT_EQ(SourceScene->SceneGraph.GetNodeCount(),  SourceCountBefore);
+	EXPECT_EQ(OtherScene->SceneGraph.GetNodeCount(),   OtherCountBefore);
+
+	SCENE_MANAGER.DeleteScene(CallingScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(OtherScene->GetObjectID());
+}

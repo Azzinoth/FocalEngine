@@ -53,6 +53,12 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID
 
 std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
 {
+	if (Entity == nullptr || Entity->GetParentScene() != ParentScene)
+	{
+		LOG.Add("AddNode called with null or foreign scene entity", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		return "";
+	}
+
 	FENaiveSceneGraphNode* NewNode = nullptr;
 	NewNode = GetNodeByEntityID(Entity->GetObjectID());
 	if (NewNode != nullptr)
@@ -116,6 +122,21 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDupl
 FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
 {
 	if (NodeToDuplicate == nullptr || NewParent == nullptr)
+		return nullptr;
+
+	// NewParent must belong to this scene.
+	if (NewParent != GetRoot())
+	{
+		FEEntity* NewParentEntity = NewParent->GetEntity();
+		if (NewParentEntity == nullptr || NewParentEntity->GetParentScene() != ParentScene)
+		{
+			LOG.Add("DuplicateNode called with foreign NewParent", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+			return nullptr;
+		}
+	}
+
+	// If the destination lives inside the source's subtree we should not proceed.
+	if (IsDescendant(NodeToDuplicate, NewParent))
 		return nullptr;
 
 	// If the top entity itself is rejected by the filter, skip the whole subtree.
@@ -223,6 +244,17 @@ void FENaiveSceneGraph::DeleteNode(FENaiveSceneGraphNode* NodeToDelete)
 
 	if (NodeToDelete == Root && !bClearing)
 		return;
+
+	// Skip the foreign scene check during the Clear() path because the engine owned Root has no Entity.
+	if (!bClearing)
+	{
+		FEEntity* Entity = NodeToDelete->GetEntity();
+		if (Entity == nullptr || Entity->GetParentScene() != ParentScene)
+		{
+			LOG.Add("DeleteNode called with foreign or entity-less node", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+			return;
+		}
+	}
 
 	DetachNode(NodeToDelete);
 	delete NodeToDelete;
