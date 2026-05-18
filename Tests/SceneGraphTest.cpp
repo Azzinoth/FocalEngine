@@ -107,63 +107,63 @@ TEST_F(SceneGraphTest, Check_GetNodeCount_AND_ChildCount_Functions)
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Check root node (0)
-	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[0]->GetImmediateChildrenCount(), 3);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), 29);
 
 	// Check level 1 nodes (1, 2, 3)
-	ASSERT_EQ(Nodes[1]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[1]->GetImmediateChildrenCount(), 3);
 	ASSERT_EQ(Nodes[1]->GetRecursiveChildCount(), 8);
-	ASSERT_EQ(Nodes[2]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[2]->GetImmediateChildrenCount(), 3);
 	ASSERT_EQ(Nodes[2]->GetRecursiveChildCount(), 8);
-	ASSERT_EQ(Nodes[3]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[3]->GetImmediateChildrenCount(), 3);
 	ASSERT_EQ(Nodes[3]->GetRecursiveChildCount(), 10);
 
 	// Check some level 2 nodes (4, 5, 6, 7, 8, 9, 10, 11)
-	ASSERT_EQ(Nodes[4]->GetImediateChildrenCount(), 2);
+	ASSERT_EQ(Nodes[4]->GetImmediateChildrenCount(), 2);
 	ASSERT_EQ(Nodes[4]->GetRecursiveChildCount(), 3);
-	ASSERT_EQ(Nodes[5]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[5]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[5]->GetRecursiveChildCount(), 2);
-	ASSERT_EQ(Nodes[6]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[6]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[6]->GetRecursiveChildCount(), 0);
-	ASSERT_EQ(Nodes[7]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[7]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[7]->GetRecursiveChildCount(), 2);
-	ASSERT_EQ(Nodes[8]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[8]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[8]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[9]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[9]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[9]->GetRecursiveChildCount(), 2);
-	ASSERT_EQ(Nodes[10]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[10]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[10]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[11]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[11]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[11]->GetRecursiveChildCount(), 2);
-	ASSERT_EQ(Nodes[12]->GetImediateChildrenCount(), 2);
+	ASSERT_EQ(Nodes[12]->GetImmediateChildrenCount(), 2);
 	ASSERT_EQ(Nodes[12]->GetRecursiveChildCount(), 4);
 
 	// Check some level 3 nodes (13, 14, 15, 16, 17, 18, 19, 20, 21 22)
-	ASSERT_EQ(Nodes[13]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[13]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[13]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[14]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[14]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[14]->GetRecursiveChildCount(), 0);
-	ASSERT_EQ(Nodes[15]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[15]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[15]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[16]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[16]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[16]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[17]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[17]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[17]->GetRecursiveChildCount(), 0);
-	ASSERT_EQ(Nodes[18]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[18]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[18]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[19]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[19]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[19]->GetRecursiveChildCount(), 0);
-	ASSERT_EQ(Nodes[20]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[20]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[20]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[21]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[21]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[21]->GetRecursiveChildCount(), 1);
-	ASSERT_EQ(Nodes[22]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[22]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(Nodes[22]->GetRecursiveChildCount(), 1);
 
 	// Check some level 4 nodes (23, 24, 25, 26, 27, 28, 29) (leaf nodes)
 	for (size_t i = 23; i <= 29; i++)
 	{
-		ASSERT_EQ(Nodes[i]->GetImediateChildrenCount(), 0);
+		ASSERT_EQ(Nodes[i]->GetImmediateChildrenCount(), 0);
 		ASSERT_EQ(Nodes[i]->GetRecursiveChildCount(), 0);
 	}
 
@@ -185,9 +185,9 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 
 	// First simple move
 	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[10]->GetObjectID()));
-	ASSERT_EQ(Nodes[5]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[5]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[5]->GetRecursiveChildCount(), 0);
-	ASSERT_EQ(Nodes[10]->GetImediateChildrenCount(), 2);
+	ASSERT_EQ(Nodes[10]->GetImmediateChildrenCount(), 2);
 	ASSERT_EQ(Nodes[10]->GetRecursiveChildCount(), 3);
 	ASSERT_EQ(Nodes[3]->GetRecursiveChildCount(), 12);
 	ASSERT_EQ(Nodes[1]->GetRecursiveChildCount(), 6);
@@ -198,20 +198,20 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 		size_t RandomIndexOfNodeToMove = rand() % CurrentScene->SceneGraph.GetNodeCount();
 		size_t RandomIndexOfNewParent = rand() % CurrentScene->SceneGraph.GetNodeCount();
 
-		size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
+		size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount();
 		size_t NodeToMoveRecursiveChildCount = Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
 
-		size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount();
+		size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount();
 		size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
 		bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
 		if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
 		{
 			// If node was moved, check if the counts are correct.
-			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 
-			ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount + 1);
+			ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount + 1);
 			if (bParentWasDescendant)
 			{
 				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
@@ -224,10 +224,10 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 		else
 		{
 			// If node was not moved, check if the counts are the same.
-			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 
-			ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount);
+			ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount);
 			ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
 		}
 
@@ -252,15 +252,15 @@ TEST_F(SceneGraphTest, Check_Node_AddChild_Function)
 
 	// Try to add a child that is nullptr
 	Nodes[0]->AddChild(nullptr);
-	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[0]->GetImmediateChildrenCount(), 3);
 
 	// Try to add a child to it self
 	Nodes[0]->AddChild(Nodes[0]);
-	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[0]->GetImmediateChildrenCount(), 3);
 
 	// Try to add a child that is already a child
 	Nodes[0]->AddChild(Nodes[1]);
-	ASSERT_EQ(Nodes[0]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(Nodes[0]->GetImmediateChildrenCount(), 3);
 
 	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
 
@@ -307,20 +307,20 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			size_t RandomIndexOfNodeToMove = rand() % CurrentScene->SceneGraph.GetNodeCount();
 			size_t RandomIndexOfNewParent = rand() % CurrentScene->SceneGraph.GetNodeCount();
 
-			size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
+			size_t NodeToMoveChildrenCount = Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount();
 			size_t NodeToMoveRecursiveChildCount = Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
 
-			size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount();
+			size_t NewParentChildrenCount = Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount();
 			size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
 			bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
 			if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
 			{
 				// If node was moved, check if the counts are correct.
-				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 
-				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount + 1);
+				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount + 1);
 				if (bParentWasDescendant)
 				{
 					ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
@@ -333,10 +333,10 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			else
 			{
 				// If node was not moved, check if the counts are the same.
-				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 
-				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount);
+				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount);
 				ASSERT_EQ(Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
 			}
 
@@ -348,11 +348,11 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 		{
 			size_t RandomIndexOfNodeToDelete = rand() % CurrentScene->SceneGraph.GetNodeCount();
 			FENaiveSceneGraphNode* Parent = Nodes[RandomIndexOfNodeToDelete]->GetParent();
-			size_t ParentChildrenCount = Parent->GetImediateChildrenCount();
+			size_t ParentChildrenCount = Parent->GetImmediateChildrenCount();
 			size_t ParentRecursiveChildCount = Parent->GetRecursiveChildCount();
 
 			FENaiveSceneGraphNode* NodeToDelete = Nodes[RandomIndexOfNodeToDelete];
-			size_t NodeToDeleteChildrenCount = NodeToDelete->GetImediateChildrenCount();
+			size_t NodeToDeleteChildrenCount = NodeToDelete->GetImmediateChildrenCount();
 			size_t NodeToDeleteRecursiveChildCount = NodeToDelete->GetRecursiveChildCount();
 
 			std::vector<FENaiveSceneGraphNode*> AllChildren = NodeToDelete->GetRecursiveChildren();
@@ -373,7 +373,7 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			CurrentScene->SceneGraph.DeleteNode(NodeToDelete);
 
 			// Check if the counts are correct.
-			ASSERT_EQ(Parent->GetImediateChildrenCount(), ParentChildrenCount - 1);
+			ASSERT_EQ(Parent->GetImmediateChildrenCount(), ParentChildrenCount - 1);
 			ASSERT_EQ(Parent->GetRecursiveChildCount(), ParentRecursiveChildCount - NodeToDeleteRecursiveChildCount - 1);
 
 			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount - NodeToDeleteRecursiveChildCount - 1);
@@ -1352,7 +1352,7 @@ void AddNodeAndChildsToVector(std::vector<FENaiveSceneGraphNode*>& VectorToAdd, 
 {
 	VectorToAdd.push_back(Node);
 	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
-	for (size_t i = 0; i < Node->GetImediateChildrenCount(); i++)
+	for (size_t i = 0; i < Node->GetImmediateChildrenCount(); i++)
 	{
 		AddNodeAndChildsToVector(VectorToAdd, Childrens[i]);
 	}
@@ -1373,7 +1373,7 @@ bool CheckEntityParentScene(FEScene* Scene, FENaiveSceneGraphNode* Node)
 	}
 
 	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
-	for (size_t i = 0; i < Node->GetImediateChildrenCount(); i++)
+	for (size_t i = 0; i < Node->GetImmediateChildrenCount(); i++)
 	{
 		if (!CheckEntityParentScene(Scene, Childrens[i]))
 			return false;
@@ -1417,10 +1417,10 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 		size_t RandomIndexOfNodeToMove = rand() % SourceScene->SceneGraph.GetNodeCount();
 		size_t RandomIndexOfNewParent = rand() % DestinationScene->SceneGraph.GetNodeCount();
 
-		size_t NodeToMoveChildrenCount = (*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount();
+		size_t NodeToMoveChildrenCount = (*SourceNodes)[RandomIndexOfNodeToMove]->GetImmediateChildrenCount();
 		size_t NodeToMoveRecursiveChildCount = (*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount();
 
-		size_t NewParentChildrenCount = (*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount();
+		size_t NewParentChildrenCount = (*DestinationNodes)[RandomIndexOfNewParent]->GetImmediateChildrenCount();
 		size_t NewParentRecursiveChildCount = (*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
 		size_t NodesAdded = NodeToMoveRecursiveChildCount + 1;
@@ -1434,7 +1434,7 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 		{
 			ImportedNode->SetName("Imported_" + ImportedNode->GetName());
 			// If node was imported, check if the counts are correct.
-			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 			ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), BeforeImportNodeCountInSource);
 
@@ -1450,16 +1450,16 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 			// Then adjust DestinationNodes
 			AddNodeAndChildsToVector((*DestinationNodes), ImportedNode);
 
-			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount + 1);
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount + 1);
 			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount + NodeToMoveRecursiveChildCount + 1);
 		}
 		else
 		{
 			// If node was not imported, check if the counts are the same.
-			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImediateChildrenCount(), NodeToMoveChildrenCount);
+			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
 			ASSERT_EQ((*SourceNodes)[RandomIndexOfNodeToMove]->GetRecursiveChildCount(), NodeToMoveRecursiveChildCount);
 
-			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImediateChildrenCount(), NewParentChildrenCount);
+			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount);
 			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount);
 		}
 
@@ -1502,7 +1502,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	std::string EntityToDeleteID = Nodes[27]->GetEntity()->GetObjectID();
 	std::string NodeToDeleteID = Nodes[27]->GetObjectID();
 
-	ASSERT_EQ(Nodes[20]->GetImediateChildrenCount(), 1);
+	ASSERT_EQ(Nodes[20]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
@@ -1514,7 +1514,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 
 	// Basic check if the hierarchy is correct.
 	NodeCount--;
-	ASSERT_EQ(Nodes[20]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[20]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
@@ -1535,7 +1535,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 
 	// Basic check if the hierarchy is correct.
 	NodeCount -= 2;
-	ASSERT_EQ(Nodes[7]->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(Nodes[7]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
@@ -1639,7 +1639,7 @@ TEST_F(SceneGraphTest, Simple_Check_Of_Scene_Duplication)
 	// Check if the hierarchy is correct.
 	for (size_t i = 0; i < Nodes.size(); i++)
 	{
-		ASSERT_EQ(Nodes[i]->GetImediateChildrenCount(), DuplicatedNodes[i]->GetImediateChildrenCount());
+		ASSERT_EQ(Nodes[i]->GetImmediateChildrenCount(), DuplicatedNodes[i]->GetImmediateChildrenCount());
 		ASSERT_EQ(Nodes[i]->GetRecursiveChildCount(), DuplicatedNodes[i]->GetRecursiveChildCount());
 
 		for (size_t j = 0; j < Nodes.size(); j++)
@@ -1685,7 +1685,7 @@ TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
 	
 	// Check if target scene is what we expected.
 	ASSERT_EQ(TargetScene->SceneGraph.GetNodeCount(), 36);
-	ASSERT_EQ(TargetNodes[11]->GetImediateChildrenCount(), 3);
+	ASSERT_EQ(TargetNodes[11]->GetImmediateChildrenCount(), 3);
 	ASSERT_EQ(TargetNodes[11]->GetRecursiveChildCount(), 8);
 
 	CheckEntityParentScene(SourceScene, SourceScene->SceneGraph.GetRoot());
@@ -2034,8 +2034,8 @@ TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 	// Move C under A via MoveNode.
 	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeA->GetObjectID()));
 	ASSERT_EQ(NodeC->GetParent(), NodeA);
-	ASSERT_EQ(NodeA->GetImediateChildrenCount(), 1);
-	ASSERT_EQ(NodeB->GetImediateChildrenCount(), 0);
+	ASSERT_EQ(NodeA->GetImmediateChildrenCount(), 1);
+	ASSERT_EQ(NodeB->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
 	// Hand C to B via AddChild without first detaching C from A.
@@ -2045,7 +2045,7 @@ TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 	EXPECT_EQ(NodeC->GetParent(), NodeB);
 
 	// Old parent should have no children.
-	EXPECT_EQ(NodeA->GetImediateChildrenCount(), 0);
+	EXPECT_EQ(NodeA->GetImmediateChildrenCount(), 0);
 	// Overall node count should not change.
 	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
@@ -2156,4 +2156,106 @@ TEST_F(SceneGraphTest, ImportNode_RejectsTargetParent_FromDifferentScene)
 	SCENE_MANAGER.DeleteScene(CallingScene->GetObjectID());
 	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
 	SCENE_MANAGER.DeleteScene(OtherScene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, FEScene_Clear_HandlesOrphanEntitiesCorrectly)
+{
+	FEScene* Scene = SCENE_MANAGER.CreateScene("Clear_Orphans");
+
+	const size_t OrphanCount = 5;
+	for (size_t i = 0; i < OrphanCount; ++i)
+		Scene->CreateEntityOrphan("Orphan_" + std::to_string(i));
+
+	ASSERT_EQ(Scene->GetEntityIDList().size(), OrphanCount);
+
+	// Should not crash and should remove all orphan entities.
+	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
+}
+
+// Coverage for GetFirstImmediateChildNodeWithComponent and
+// GetFirstRecursiveChildNodeWithComponent on a single tree:
+//
+//   Root
+//    |
+//    A
+//   / \
+//  B   X  (X has FELightComponent)
+//  |
+//  C
+//  |
+//  D      (D has FELightComponent)
+TEST_F(SceneGraphTest, GetFirstChildNodeWithComponent_ImmediateAndRecursive)
+{
+	FEScene* Scene = SCENE_MANAGER.CreateScene("ChildNodeWithComponent", "", FESceneFlag::Active);
+
+	FEEntity* EntityA = Scene->CreateEntity("A");
+	FEEntity* EntityB = Scene->CreateEntity("B");
+	FEEntity* EntityC = Scene->CreateEntity("C");
+	FEEntity* EntityD = Scene->CreateEntity("D");
+	FEEntity* EntityX = Scene->CreateEntity("X");
+
+	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
+	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
+	FENaiveSceneGraphNode* NodeD = Scene->SceneGraph.GetNodeByEntityID(EntityD->GetObjectID());
+	FENaiveSceneGraphNode* NodeX = Scene->SceneGraph.GetNodeByEntityID(EntityX->GetObjectID());
+
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeX->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeD->GetObjectID(), NodeC->GetObjectID()));
+
+	ASSERT_TRUE(EntityX->AddComponent<FELightComponent>());
+	ASSERT_TRUE(EntityD->AddComponent<FELightComponent>());
+
+	// Immediate variant, depth 1 only.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(NodeA), NodeX);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(NodeB), nullptr);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(NodeC), NodeD);
+
+	// Recursive variant, walks the subtree, depth-1 match preempts deeper match.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveChildNodeWithComponent<FELightComponent>(NodeA), NodeX);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveChildNodeWithComponent<FELightComponent>(NodeB), NodeD);
+
+	// No match and nullptr edges.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(NodeD), nullptr);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveChildNodeWithComponent<FELightComponent>(NodeD), nullptr);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(nullptr), nullptr);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveChildNodeWithComponent<FELightComponent>(nullptr), nullptr);
+
+	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
+}
+
+TEST_F(SceneGraphTest, GetFirstRecursiveParentNodeWithComponent_WalksAncestorChain)
+{
+	FEScene* Scene = SCENE_MANAGER.CreateScene("RecursiveParentWithComponent", "", FESceneFlag::Active);
+
+	FEEntity* EntityA = Scene->CreateEntity("A");
+	FEEntity* EntityB = Scene->CreateEntity("B");
+	FEEntity* EntityC = Scene->CreateEntity("C");
+
+	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
+	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
+
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID()));
+
+	ASSERT_TRUE(EntityA->AddComponent<FELightComponent>());
+
+	// Walking up from C should reach A, skipping over B which has no component.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(NodeC), NodeA);
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(NodeB), NodeA);
+
+	// A is the topmost entity in the chain, its only ancestor is Root which has no entity, so the walk returns nullptr.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(NodeA), nullptr);
+
+	// nullptr Node is safe.
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(nullptr), nullptr);
+
+	// Strip the component and the walk now finds nobody.
+	EntityA->RemoveComponent<FELightComponent>();
+	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(NodeC), nullptr);
+
+	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
 }

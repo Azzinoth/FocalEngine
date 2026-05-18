@@ -204,7 +204,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()
 	return Parent;
 }
 
-size_t FENaiveSceneGraphNode::GetImediateChildrenCount()
+size_t FENaiveSceneGraphNode::GetImmediateChildrenCount()
 {
 	return Children.size();
 }

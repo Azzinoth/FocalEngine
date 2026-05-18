@@ -112,8 +112,9 @@ void FEScene::Clear()
 	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
-		delete EntityIterator->second;
+		FEEntity* CurrentEntity = EntityIterator->second;
 		EntityIterator++;
+		delete CurrentEntity;
 	}
 	EntityMap.clear();
 	EnttToEntity.clear();

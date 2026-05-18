@@ -18,7 +18,7 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetChild(std::string ID);
 		FENaiveSceneGraphNode* GetChildByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
-		size_t GetImediateChildrenCount();
+		size_t GetImmediateChildrenCount();
 		size_t GetRecursiveChildCount();
 
 		std::vector<FENaiveSceneGraphNode*> GetChildren();

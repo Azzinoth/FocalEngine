@@ -98,7 +98,7 @@ FEEntity* FEPrefabInstanceSystem::GetParentPrefabInstanceIfAny(FEEntity* Entity)
 	FEScene* EntityScene = Entity->GetParentScene();
 	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
 
-	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
+	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
 	if (ResultNode != nullptr)
 		return ResultNode->GetEntity();
 

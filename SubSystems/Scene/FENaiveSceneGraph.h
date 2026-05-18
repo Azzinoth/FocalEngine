@@ -32,13 +32,17 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetNodeByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
-		// Will return first parent node that has the specified component
+		// Walks the ancestor chain upward and returns the first node whose entity has T.
 		template<typename T>
-		FENaiveSceneGraphNode* GetFirstParentNodeWithComponent(FENaiveSceneGraphNode* Node);
+		FENaiveSceneGraphNode* GetFirstRecursiveParentNodeWithComponent(FENaiveSceneGraphNode* Node);
 
-		// Will return first child node that has the specified component
+		// Returns the first immediate child whose entity has T (depth 1 only).
 		template<typename T>
-		FENaiveSceneGraphNode* GetFirstChildNodeWithComponent(FENaiveSceneGraphNode* Node);
+		FENaiveSceneGraphNode* GetFirstImmediateChildNodeWithComponent(FENaiveSceneGraphNode* Node);
+
+		// Walks the descendant subtree and returns the closest node whose entity has T.
+		template<typename T>
+		FENaiveSceneGraphNode* GetFirstRecursiveChildNodeWithComponent(FENaiveSceneGraphNode* Node);
 
 		void Clear();
 
