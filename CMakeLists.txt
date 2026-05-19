@@ -23,9 +23,7 @@ endif()
 option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
 option(FOCAL_ENGINE_ENABLE_TESTS "Enable tests" OFF)
 
-set(TEST_LIBS)
 set(TEST_SOURCE_FILES)
-set(TEST_INCLUDE_FILES)
 
 if(NOT TARGET FEBasicApplication)
   add_subdirectory(SubSystems/FEBasicApplication)
@@ -47,31 +45,11 @@ if(MSVC)
 endif()
 
 if(FOCAL_ENGINE_ENABLE_TESTS)
-	if(BUILD_SHARED_LIBS)
-		list(APPEND TEST_LIBS
-			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/Dynamic/gtest
-			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
-			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/Dynamic/gtest
-			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
-		)
-	else()
-		list(APPEND TEST_LIBS
-			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/gtest
-			debug       SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Debug/gtest_main
-			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/gtest
-			optimized   SubSystems/FEBasicApplication/ThirdParty/googletest/lib/Release/gtest_main
-		)
-	endif()
-
 	list(APPEND TEST_SOURCE_FILES
         "Tests/RunAllTests.cpp"
         "Tests/RunAllTests.h"
 		"Tests/SceneGraphTest.cpp"
         "Tests/SceneGraphTest.h"
-    )
-
-	list(APPEND TEST_INCLUDE_FILES
-        "SubSystems/FEBasicApplication/ThirdParty/googletest/include"
     )
 
 	# Adding flags for multi-processor compilation
@@ -581,17 +559,20 @@ list(APPEND FOCAL_ENGINE_INCLUDES
 set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
 
 if(NOT ENGINE_HEADERS_ONLY)
-	target_link_libraries(FocalEngine 
-		PRIVATE 
+	target_link_libraries(FocalEngine
+		PRIVATE
 			FEBasicApplication
 			${GLFW_LIBRARY}
 			${GLEW_LIBRARY}
 			opengl32.lib
-		PUBLIC 
+		PUBLIC
 			debug	  ${OpenXRLoader_Debug}
 			optimized ${OpenXRLoader_Release}
-			${TEST_LIBS}
 	)
+
+	if(FOCAL_ENGINE_ENABLE_TESTS)
+		target_link_libraries(FocalEngine PRIVATE FocalEngine::GTest)
+	endif()
 
 	target_include_directories(FocalEngine
 			PUBLIC
@@ -600,8 +581,6 @@ if(NOT ENGINE_HEADERS_ONLY)
 				${BASICAPP_THIRDPARTY_DIR}
 				${BASICAPP_DIR}
 				${FOCAL_ENGINE_INCLUDES}
-			PRIVATE
-				${TEST_INCLUDE_FILES}
 	)
 endif()
 
