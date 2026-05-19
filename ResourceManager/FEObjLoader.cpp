@@ -426,19 +426,9 @@ void FEObjLoader::NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data)
 	double RangeZ = abs(MaxZ - MinZ);
 
 	double MinRange = std::min(std::min(RangeX, RangeY), RangeZ);
-	double ScaleFactor = 1.0;
-
-	if (MinRange < 1.0)
-	{
-		ScaleFactor = 1.0 / MinRange;
-	}
-
-	glm::dvec3 ShiftToApply(-MinX, -MinY, -MinZ);
+	glm::dvec3 ShiftToApply((MinX + MaxX) / 2.0, (MinY + MaxY) / 2.0, (MinZ + MaxZ) / 2.0);
 	for (size_t i = 0; i < Data->RawVertexCoordinatesDoublePrecision.size(); i++)
-	{
 		Data->RawVertexCoordinatesDoublePrecision[i] -= ShiftToApply;
-		Data->RawVertexCoordinatesDoublePrecision[i] *= ScaleFactor;
-	}
 
 	LastAppliedShift = ShiftToApply;
 }
