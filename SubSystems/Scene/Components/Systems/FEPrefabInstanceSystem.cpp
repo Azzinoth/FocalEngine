@@ -75,7 +75,7 @@ bool FEPrefabInstanceSystem::IsPrefabInstanceUnmodified(FEEntity* Entity)
 
 	}
 
-	// TODO: Check each node for equivalent components
+	// FE_TO_DO: Check each node for equivalent components
 
 
 
@@ -98,7 +98,7 @@ FEEntity* FEPrefabInstanceSystem::GetParentPrefabInstanceIfAny(FEEntity* Entity)
 	FEScene* EntityScene = Entity->GetParentScene();
 	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
 
-	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
+	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
 	if (ResultNode != nullptr)
 		return ResultNode->GetEntity();
 

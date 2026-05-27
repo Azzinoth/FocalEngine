@@ -13,19 +13,19 @@ void TextureLoadJob::LoadTextureFunc()
 
 		for (size_t i = 0; i < TexturesToLoad.size(); i++)
 		{
-			std::fstream file;
-			file.open(TexturesToLoad[i].first.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
-			const std::streamsize FileSize = file.tellg();
+			std::fstream File;
+			File.open(TexturesToLoad[i].first.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+			const std::streamsize FileSize = File.tellg();
 			if (FileSize <= 0)
 			{
 				TexturesData.push_back(std::make_pair(nullptr, TexturesToLoad[i].second));
 				continue;
 			}
 
-			file.seekg(0, std::ios::beg);
+			File.seekg(0, std::ios::beg);
 			char* FileData = new char[static_cast<int>(FileSize)];
-			file.read(FileData, FileSize);
-			file.close();
+			File.read(FileData, FileSize);
+			File.close();
 
 			TexturesData.push_back(std::make_pair(FileData, TexturesToLoad[i].second));
 		}
@@ -143,13 +143,13 @@ void FEJobManager::LoadTextureAsync(std::string TexturePath, void* Texture)
 
 int FEJobManager::GetFreeTextureThreadCount()
 {
-	int result = 0;
+	int Result = 0;
 	for (size_t i = 0; i < TextureLoadJobs.size(); i++)
 	{
-		result += TextureLoadJobs[i]->IsThreadReadyForJob() ? 1 : 0;
+		Result += TextureLoadJobs[i]->IsThreadReadyForJob() ? 1 : 0;
 	}
 
-	return result;
+	return Result;
 }
 
 #endif // OLD_LOADING

@@ -8,6 +8,7 @@ namespace FocalEngine
 		friend class FEScene;
 		friend class FESceneManager;
 		friend class FERenderer;
+		friend class FEOpenXRRendering;
 		friend class FEngine;
 		
 		SINGLETON_PRIVATE_PART(FETransformSystem)
@@ -25,6 +26,9 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FETransformSystem)
 
+		// Use this function only if you know what you are doing
+		// Usually, it is used to forcefully update component before the scene update occurs.
+		bool ForceUpdateTransformComponent(FEEntity* Entity);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

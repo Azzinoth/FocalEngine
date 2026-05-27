@@ -54,9 +54,19 @@ bool FECameraComponent::IsActive() const
 	return bIsActive;
 }
 
-void FECameraComponent::SetActive(const bool Active)
+void FECameraComponent::SetActive(const bool bActive)
 {
-	bIsActive = Active;
+	bIsActive = bActive;
+}
+
+bool FECameraComponent::IsRenderingEnabled() const
+{
+	return bRenderingEnabled;
+}
+
+void FECameraComponent::SetRenderingEnabled(const bool bEnabled)
+{
+	bRenderingEnabled = bEnabled;
 }
 
 float FECameraComponent::GetFOV() const
@@ -183,49 +193,6 @@ void FECameraComponent::UpdateFrustum()
 FEFrustum FECameraComponent::GetFrustum()
 {
 	return Frustum;
-}
-
-std::vector<float> FEFrustum::GetAllPlanesCoefficients()
-{
-	std::vector<float> Coefficients;
-
-	glm::vec4 RightPlaneCoefficients = RightPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(RightPlaneCoefficients.x);
-	Coefficients.push_back(RightPlaneCoefficients.y);
-	Coefficients.push_back(RightPlaneCoefficients.z);
-	Coefficients.push_back(RightPlaneCoefficients.w);
-
-	glm::vec4 LeftPlaneCoefficients = LeftPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(LeftPlaneCoefficients.x);
-	Coefficients.push_back(LeftPlaneCoefficients.y);
-	Coefficients.push_back(LeftPlaneCoefficients.z);
-	Coefficients.push_back(LeftPlaneCoefficients.w);
-
-	glm::vec4 BottomPlaneCoefficients = BottomPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(BottomPlaneCoefficients.x);
-	Coefficients.push_back(BottomPlaneCoefficients.y);
-	Coefficients.push_back(BottomPlaneCoefficients.z);
-	Coefficients.push_back(BottomPlaneCoefficients.w);
-
-	glm::vec4 TopPlaneCoefficients = TopPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(TopPlaneCoefficients.x);
-	Coefficients.push_back(TopPlaneCoefficients.y);
-	Coefficients.push_back(TopPlaneCoefficients.z);
-	Coefficients.push_back(TopPlaneCoefficients.w);
-
-	glm::vec4 FarPlaneCoefficients = FarPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(FarPlaneCoefficients.x);
-	Coefficients.push_back(FarPlaneCoefficients.y);
-	Coefficients.push_back(FarPlaneCoefficients.z);
-	Coefficients.push_back(FarPlaneCoefficients.w);
-
-	glm::vec4 NearPlaneCoefficients = NearPlane.GetGeneralFormCoefficients();
-	Coefficients.push_back(NearPlaneCoefficients.x);
-	Coefficients.push_back(NearPlaneCoefficients.y);
-	Coefficients.push_back(NearPlaneCoefficients.z);
-	Coefficients.push_back(NearPlaneCoefficients.w);
-
-	return Coefficients;
 }
 
 float FECameraComponent::GetRenderScale()

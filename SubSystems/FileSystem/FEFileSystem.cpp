@@ -31,7 +31,7 @@ bool FEFileSystem::RenameFile(const std::string& Path, const std::string& NewPat
 	}
 }
 
-bool FEFileSystem::CopyFile(const std::string& Path, const std::string& NewPath)
+bool FEFileSystem::CopyFileTo(const std::string& Path, const std::string& NewPath)
 {
 	try
 	{
@@ -40,12 +40,12 @@ bool FEFileSystem::CopyFile(const std::string& Path, const std::string& NewPath)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::CopyFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::CopyFileTo: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
 
-bool FEFileSystem::DeleteFile(const std::string& Path)
+bool FEFileSystem::RemoveFile(const std::string& Path)
 {
 	try
 	{
@@ -53,7 +53,7 @@ bool FEFileSystem::DeleteFile(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::DeleteFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::RemoveFile: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -100,10 +100,10 @@ uint64_t FEFileSystem::GetFileLastWriteTime(const std::string& Path)
 
 bool FEFileSystem::WaitForFileAccess(const std::string& FilePath, int TimeoutInMS)
 {
-	const auto start = std::chrono::steady_clock::now();
-	const auto end = start + std::chrono::milliseconds(TimeoutInMS);
+	const auto Start = std::chrono::steady_clock::now();
+	const auto End = Start + std::chrono::milliseconds(TimeoutInMS);
 
-	while (std::chrono::steady_clock::now() < end)
+	while (std::chrono::steady_clock::now() < End)
 	{
 		try
 		{
@@ -115,11 +115,11 @@ bool FEFileSystem::WaitForFileAccess(const std::string& FilePath, int TimeoutInM
 			}
 
 			// Try to open the file
-			std::ifstream file(FilePath);
-			if (file.is_open())
+			std::ifstream File(FilePath);
+			if (File.is_open())
 			{
 				// File is accessible, close it and return
-				file.close();
+				File.close();
 				return true;
 			}
 		}
@@ -168,7 +168,7 @@ bool FEFileSystem::RenameDirectory(const std::string& Path, const std::string& N
 	}
 }
 
-bool FEFileSystem::CreateDirectory(const std::string& Path)
+bool FEFileSystem::MakeDirectory(const std::string& Path)
 {
 	try
 	{
@@ -176,7 +176,7 @@ bool FEFileSystem::CreateDirectory(const std::string& Path)
 	}
 	catch (const std::exception& Exception)
 	{
-		LOG.Add("Error in FEFileSystem::CreateDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("Error in FEFileSystem::MakeDirectory: " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }
@@ -540,10 +540,27 @@ std::string FEFileSystem::GetDirectoryPath(const std::string& FullPath)
 	return Path.parent_path().string();
 }
 
-std::string FEFileSystem::GetFileName(const std::string& FullPath)
+std::string FEFileSystem::GetFileName(const std::string& FullPath, bool bWithExtension)
 {
 	std::filesystem::path Path(FullPath);
-	return Path.filename().string();
+	if (bWithExtension)
+		return Path.filename().string();
+	else
+		return Path.stem().string();
+}
+
+std::string FEFileSystem::GetAbsolutePath(const std::string& Path)
+{
+	try
+	{
+		std::filesystem::path AbsolutePath = std::filesystem::absolute(Path);
+		return AbsolutePath.string();
+	}
+	catch (const std::filesystem::filesystem_error& Exception)
+	{
+		LOG.Add("Error in FEFileSystem::GetAbsolutePath: failed to get absolute path " + std::string(Exception.what()), "FE_FILE_SYSTEM", FE_LOG_ERROR);
+		return Path;
+	}
 }
 
 std::string FEFileSystem::ReadFEString(std::fstream& File)

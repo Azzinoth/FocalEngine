@@ -108,3 +108,201 @@ FEScene* FEEntity::GetParentScene()
 {
 	return ParentScene;
 }
+
+bool FEEntity::IsVisible()
+{
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	if (ThisNode != nullptr)
+	{
+		// Check all parent nodes for visibility, if any of them is invisible, the entity is invisible
+		FENaiveSceneGraphNode* ParentNode = ThisNode->GetParent();
+		if (ParentNode != nullptr)
+		{
+			while (ParentNode != nullptr)
+			{
+				FEEntity* NodeEntity = ParentNode->GetEntity();
+				if (NodeEntity == nullptr)
+					break;
+
+				if (!NodeEntity->IsVisible())
+					return false;
+
+				ParentNode = ParentNode->GetParent();
+			}
+		}
+	}
+
+	if (!HasComponent<FEVisibilityComponent>())
+		return true;
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	return VisibilityComponent.IsVisible();
+}
+
+void FEEntity::SetVisible(bool bNewValue)
+{
+	if (!HasComponent<FEVisibilityComponent>())
+		AddComponent<FEVisibilityComponent>();
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	VisibilityComponent.SetVisible(bNewValue);
+}
+
+bool FEEntity::IsComponentVisible(ComponentVisibilityType Type)
+{
+	if (Type == ComponentVisibilityType::ALL)
+		return IsVisible();
+
+	if (!HasComponent<FEVisibilityComponent>())
+		return true;
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	return VisibilityComponent.IsVisible(Type);
+}
+
+void FEEntity::SetComponentVisible(ComponentVisibilityType Type, bool bNewValue)
+{
+	if (Type == ComponentVisibilityType::ALL)
+	{
+		SetVisible(bNewValue);
+		return;
+	}
+
+	if (!HasComponent<FEVisibilityComponent>())
+		AddComponent<FEVisibilityComponent>();
+
+	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
+	VisibilityComponent.SetVisible(Type, bNewValue);
+}
+
+bool FEEntity::AttachTo(FEEntity* Parent, bool bPreserveWorldTransform)
+{
+	if (Parent == nullptr)
+	{
+		LOG.Add("Attempted to attach entity to null parent in FEEntity::AttachTo", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (Parent == this)
+	{
+		LOG.Add("Attempted to attach entity to itself in FEEntity::AttachTo", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (ParentScene != Parent->GetParentScene())
+	{
+		LOG.Add("Cannot attach entities from different scenes in FEEntity::AttachTo", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		return false;
+	}
+
+	FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(Parent->GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+
+	if (ParentNode == nullptr || ThisNode == nullptr)
+	{
+		LOG.Add("Could not find scene graph nodes for entities in FEEntity::AttachTo", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		return false;
+	}
+
+	return ParentScene->SceneGraph.MoveNode(ThisNode->GetObjectID(), ParentNode->GetObjectID(), bPreserveWorldTransform);
+}
+
+bool FEEntity::AttachChild(FEEntity* Child, bool bPreserveWorldTransform)
+{
+	if (Child == nullptr)
+	{
+		LOG.Add("Attempted to attach null child entity in FEEntity::AttachChild", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		return false;
+	}
+
+	return Child->AttachTo(this, bPreserveWorldTransform);
+}
+
+bool FEEntity::Detach(bool bPreserveWorldTransform)
+{
+	if (ParentScene == nullptr)
+	{
+		LOG.Add("Cannot detach entity with no parent scene in FEEntity::Detach", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		return false;
+	}
+
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	if (ThisNode == nullptr)
+	{
+		LOG.Add("Could not find scene graph node for entity in FEEntity::Detach", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Detaching means moving to the root node
+	FENaiveSceneGraphNode* RootNode = ParentScene->SceneGraph.GetRoot();
+	return ParentScene->SceneGraph.MoveNode(ThisNode->GetObjectID(), RootNode->GetObjectID(), bPreserveWorldTransform);
+}
+
+FEEntity* FEEntity::GetParentEntity() const
+{
+	if (ParentScene == nullptr)
+		return nullptr;
+
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	if (ThisNode == nullptr)
+		return nullptr;
+
+	FENaiveSceneGraphNode* ParentNode = ThisNode->GetParent();
+	if (ParentNode == nullptr || ParentNode == ParentScene->SceneGraph.GetRoot())
+		return nullptr;
+
+	return ParentNode->GetEntity();
+}
+
+std::vector<FEEntity*> FEEntity::GetChildEntities() const
+{
+	std::vector<FEEntity*> Result;
+
+	if (ParentScene == nullptr)
+		return Result;
+
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	if (ThisNode == nullptr)
+		return Result;
+
+	std::vector<FENaiveSceneGraphNode*> ChildNodes = ThisNode->GetChildren();
+	Result.reserve(ChildNodes.size());
+
+	for (FENaiveSceneGraphNode* ChildNode : ChildNodes)
+	{
+		if (ChildNode->GetEntity() != nullptr)
+			Result.push_back(ChildNode->GetEntity());
+	}
+
+	return Result;
+}
+
+bool FEEntity::IsChildOf(FEEntity* PotentialParent) const
+{
+	if (PotentialParent == nullptr)
+		return false;
+
+	return GetParentEntity() == PotentialParent;
+}
+
+bool FEEntity::IsDescendantOf(FEEntity* PotentialAncestor) const
+{
+	if (PotentialAncestor == nullptr || ParentScene == nullptr)
+		return false;
+
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* AncestorNode = ParentScene->SceneGraph.GetNodeByEntityID(PotentialAncestor->GetObjectID());
+
+	if (ThisNode == nullptr || AncestorNode == nullptr)
+		return false;
+
+	return ParentScene->SceneGraph.IsDescendant(AncestorNode, ThisNode);
+}
+
+bool FEEntity::IsAncestorOf(FEEntity* PotentialDescendant)
+{
+	if (PotentialDescendant == nullptr)
+		return false;
+
+	return PotentialDescendant->IsDescendantOf(this);
+}

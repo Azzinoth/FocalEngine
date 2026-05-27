@@ -1,12 +1,18 @@
 #pragma once
 #include "FETagComponent.h"
 #include "FETransformComponent.h"
+
+#include "FEVisibilityComponent.h"
 #include "FECameraComponent.h"
 #include "FELightComponent.h"
+
+#include "FELineComponent.h"
 #include "FEGameModelComponent.h"
 #include "FEPointCloudComponent.h"
 #include "FEInstancedComponent.h"
 #include "FETerrainComponent.h"
+
+#include "FEVolumeComponent.h"
 #include "FESkyDomeComponent.h"
 #include "FEPrefabInstanceComponent.h"
 #include "FEVirtualUIComponent.h"
@@ -75,8 +81,10 @@ namespace FocalEngine
         friend class FECameraSystem;
         friend class FELightSystem;
 		friend class FEPointCloudSystem;
+		friend class FELineSystem;
         friend class FEInstancedSystem;
         friend class FETerrainSystem;
+		friend class FEVolumeSystem;
         friend class FESkyDomeSystem;
         friend class FEPrefabInstanceSystem;
         friend class FEVirtualUISystem;

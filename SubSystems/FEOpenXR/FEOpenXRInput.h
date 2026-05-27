@@ -11,12 +11,19 @@ namespace FocalEngine
 		const int COUNT = 2;
 	}
 
-	enum FE_VR_CONTROLLER_TYPE
+	enum class FE_VR_CONTROLLER_STATE_CHANGE
 	{
-		FE_VR_CONTROLLER_TYPE_NONE = 0,
-		FE_VR_CONTROLLER_TYPE_ANY = 1,
-		FE_VR_CONTROLLER_TYPE_VALVE_INDEX = 2,
-		FE_VR_CONTROLLER_TYPE_VIVE = 3
+		CONNECTED = 0,
+		DISCONNECTED = 1,
+		RECONNECTED = 2
+	};
+
+	enum class FE_VR_CONTROLLER_TYPE
+	{
+		NONE = 0,
+		ANY = 1,
+		VALVE_INDEX = 2,
+		VIVE = 3
 	};
 
 #define FE_DEBUG_VR_CONTROLLER_LOGGING 0
@@ -29,7 +36,13 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEOpenXRInput)
 
 		void Init();
+		void Shutdown();
 		void Update();
+
+		std::pair<glm::vec3, glm::vec3> GetEyeGazeOriginAndDirection();
+
+		bool IsLeftControllerConnectedAndTracked() const;
+		bool IsRightControllerConnectedAndTracked() const;
 
 		glm::vec3 GetLeftControllerPosition();
 		glm::vec3 GetRightControllerPosition();
@@ -40,7 +53,7 @@ namespace FocalEngine
 		std::string CurrentlyActiveInteractionProfile(bool bLeftController);
 
 		// "Trigger" Button
-		void SetLeftTriggerPressCallBack(std::function<void ()> UserCallBack);
+		void SetLeftTriggerPressCallBack(std::function<void()> UserCallBack);
 		void SetRightTriggerPressCallBack(std::function<void()> UserCallBack);
 
 		void SetLeftTriggerReleaseCallBack(std::function<void()> UserCallBack);
@@ -94,8 +107,14 @@ namespace FocalEngine
 		void SetLeftViveSqueezeReleaseCallBack(std::function<void()> UserCallBack);
 		void SetRightViveSqueezeReleaseCallBack(std::function<void()> UserCallBack);
 
+		void SetLeftValveSqueezeValueCallBack(std::function<void(float)> UserCallBack);
+
 		void TriggerHapticFeedback(float Amplitude, float Duration, float Frequency, bool bLeftHand);
 
+		void SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack);
+		void SetRightViveMenuClickCallBack(std::function<void()> UserCallBack);
+
+		void AddControllerStateChangeCallback(std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)> UserCallBack);
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRInput)
 
@@ -112,9 +131,9 @@ namespace FocalEngine
 
 		struct InputState
 		{
-			XrActionSet ActionSet{ XR_NULL_HANDLE };
+			XrActionSet ActionSet{ nullptr };
 
-			std::array<XrSpace, Side::COUNT> HandSpace;
+			std::array<XrSpace, Side::COUNT> HandSpace = { nullptr, nullptr };
 			std::array<XrBool32, Side::COUNT> HandActive;
 		};
 
@@ -122,20 +141,32 @@ namespace FocalEngine
 
 		InputState CurrentInputState;
 
+		void CreateaActionSet();
 		void InitializeActionsAndControllers();
 		void RegisterActionsAndControllers();
+		void CreateEyeGazeAction();
 
 		XrSpaceLocation LeftControllerLocation{ XR_TYPE_SPACE_LOCATION };
 		XrSpaceLocation RightControllerLocation{ XR_TYPE_SPACE_LOCATION };
 
 		void UpdateControllerSpaceLocation();
 
+		XrSpace EyeSpace = nullptr;
+		//XrSpace ViewSpace;
+		XrAction EyeGazeAction{ XR_NULL_HANDLE };
+
+		glm::vec3 EyeGazePosition;
+		glm::quat EyeGazeOrientation;
+		void UpdateEyeGaze();
+
 		struct FEVRActionData
 		{
+			virtual ~FEVRActionData() = default;
+
 			XrAction ActionHandle{ XR_NULL_HANDLE };
 			XrActionType ActionType;
 			std::vector<FE_VR_CONTROLLER_TYPE> WorksWith;
-			std::string Name = "none";
+			std::string Name = "None";
 
 			std::string LeftComponentPath;
 			std::string RightComponentPath;
@@ -197,6 +228,12 @@ namespace FocalEngine
 		void HandleAction(FEVRActionData* Action);
 
 		void RegisterAllControllersInOpenXR();
+
+		unsigned long long LastFrameInsexLeftControllerWasActive = -1;
+		unsigned long long LastFrameInsexRightControllerWasActive = -1;
+		void CheckControllerConnectionStatusChanges();
+		void TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change);
+		std::vector<std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)>> ControllerConnectionStatusChangeUserCallBacks;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

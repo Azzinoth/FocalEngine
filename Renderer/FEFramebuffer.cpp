@@ -114,8 +114,8 @@ int FEFramebuffer::GetHeight()
 
 void FEFramebuffer::ProcessOnDeleteCallbacks(const std::string DeletingFEObject)
 {
-	const FEObject* object = OBJECT_MANAGER.GetFEObject(DeletingFEObject);
-	if (object != nullptr && object->GetType() == FE_TEXTURE)
+	const FEObject* Object = OBJECT_MANAGER.GetFEObject(DeletingFEObject);
+	if (Object != nullptr && Object->GetType() == FE_TEXTURE)
 	{
 		for (size_t i = 0; i < ColorAttachments.size(); i++)
 		{

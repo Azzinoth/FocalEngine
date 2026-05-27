@@ -270,7 +270,7 @@ bool FENativeScriptProject::EnsureVSProjectDirectoryIsIntact()
 
 	if (!FILE_SYSTEM.DoesDirectoryExist(WorkingDirectory + "NativeScriptProjects/"))
 	{
-		if (!FILE_SYSTEM.CreateDirectory(WorkingDirectory + "NativeScriptProjects/"))
+		if (!FILE_SYSTEM.MakeDirectory(WorkingDirectory + "NativeScriptProjects/"))
 		{
 			LOG.Add("FENativeScriptProject::EnsureVSProjectDirectoryIsIntact: Error creating \"NativeScriptProjects/\" directory", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
@@ -289,7 +289,7 @@ bool FENativeScriptProject::EnsureVSProjectDirectoryIsIntact()
 		}
 	}
 	
-	if (!FILE_SYSTEM.CreateDirectory(VSProjectDirectory))
+	if (!FILE_SYSTEM.MakeDirectory(VSProjectDirectory))
 	{
 		LOG.Add("FENativeScriptProject::EnsureVSProjectDirectoryIsIntact: Error creating directory", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -377,7 +377,7 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine", "BuildManagement/", "SubSystems/FocalEngine/Resources/", "SubSystems/FocalEngine/Resources/UserScriptsData/" };
 	for (size_t i = 0; i < FoldersToCreate.size(); i++)
 	{
-		if (!FILE_SYSTEM.CreateDirectory(VSProjectDirectory + FoldersToCreate[i]))
+		if (!FILE_SYSTEM.MakeDirectory(VSProjectDirectory + FoldersToCreate[i]))
 		{
 			LOG.Add("FENativeScriptProject::InitializeProject: Error creating " + FoldersToCreate[i] + " directory", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
@@ -403,7 +403,7 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 
 	for (size_t i = 0; i < FilesToCopy.size(); i++)
 	{
-		if (!FILE_SYSTEM.CopyFile(FilesToCopy[i].first, FilesToCopy[i].second))
+		if (!FILE_SYSTEM.CopyFileTo(FilesToCopy[i].first, FilesToCopy[i].second))
 		{
 			LOG.Add("FENativeScriptProject::InitializeProject: Error copying file " + FilesToCopy[i].first + " to " + FilesToCopy[i].second, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
@@ -598,13 +598,13 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 	std::string TemplateHeaderFilePath = EnginePath + "/Resources/UserScriptsData/NativeScriptTemplate.h";
 	std::string TemplateCPPFilePath = EnginePath + "/Resources/UserScriptsData/NativeScriptTemplate.cpp";
 
-	if (!FILE_SYSTEM.CopyFile(TemplateHeaderFilePath, VSProjectDirectory + ScriptName + ".h"))
+	if (!FILE_SYSTEM.CopyFileTo(TemplateHeaderFilePath, VSProjectDirectory + ScriptName + ".h"))
 	{
 		LOG.Add("FENativeScriptProject::GenerateScriptFilesFromTemplate: Error copying file " + TemplateHeaderFilePath + " to " + VSProjectDirectory + ScriptName + ".h", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (!FILE_SYSTEM.CopyFile(TemplateCPPFilePath, VSProjectDirectory + ScriptName + ".cpp"))
+	if (!FILE_SYSTEM.CopyFileTo(TemplateCPPFilePath, VSProjectDirectory + ScriptName + ".cpp"))
 	{
 		LOG.Add("FENativeScriptProject::GenerateScriptFilesFromTemplate: Error copying file " + TemplateCPPFilePath + " to " + VSProjectDirectory + ScriptName + ".cpp", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -739,11 +739,11 @@ bool FENativeScriptProject::Update()
 	if (!IsVSProjectFolderValidAndIntact())
 		return false;
 
-	bool CheckForReload = false;
+	bool bCheckForReload = false;
 	if (IsFileChanged(DebugDllFileData) && IsFileChanged(DebugPdbFileData) || IsFileChanged(ReleaseDllFileData))
-		CheckForReload = true;
+		bCheckForReload = true;
 
-	if (!CheckForReload)
+	if (!bCheckForReload)
 		return false;
 
 	// Waiting for external build system to finish.
@@ -751,7 +751,7 @@ bool FENativeScriptProject::Update()
 
 	if (FILE_SYSTEM.DoesFileExist(VSProjectDirectory + "BuildManagement/Force_Build_Finished.txt"))
 	{
-		FILE_SYSTEM.DeleteFile(VSProjectDirectory + "BuildManagement/Force_Build_Finished.txt");
+		FILE_SYSTEM.RemoveFile(VSProjectDirectory + "BuildManagement/Force_Build_Finished.txt");
 	}
 	else
 	{

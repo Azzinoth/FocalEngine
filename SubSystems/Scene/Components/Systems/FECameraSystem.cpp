@@ -43,6 +43,7 @@ void FECameraSystem::DuplicateCameraComponent(FEEntity* SourceEntity, FEEntity* 
 
 	FECameraComponent& NewCameraComponent = TargetEntity->GetComponent<FECameraComponent>();
 	NewCameraComponent = OriginalCameraComponent;
+	NewCameraComponent.Viewport = nullptr;
 	// By default, duplicated camera component should not be a main camera.
 	NewCameraComponent.bIsMainCamera = false;
 	// But if component is duplicated as part of scene duplication, it could be a main camera.
@@ -61,6 +62,12 @@ void FECameraSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearin
 	auto DataIterator = RENDERER.CameraRenderingDataMap.begin();
 	while (DataIterator != RENDERER.CameraRenderingDataMap.end())
 	{
+		if (DataIterator->second == nullptr)
+		{
+			DataIterator++;
+			continue;
+		}
+
 		if (DataIterator->second->CameraEntity == Entity)
 		{
 			delete DataIterator->second;
@@ -297,7 +304,6 @@ FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
 	return nullptr;
 }
 
-
 Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 {
 	Json::Value Root;
@@ -462,4 +468,39 @@ void FECameraSystem::PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm
 	TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
 
 	CameraComponent.SetViewMatrix(NewViewMatrix);
+}
+
+glm::dvec3 FECameraSystem::GetMouseRayToWorld(FEEntity* CameraEntity) const
+{
+	glm::dvec3 Result = glm::dvec3(0.0);
+
+	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FEScene* CameraScene = CameraEntity->GetParentScene();
+	if (CameraScene == nullptr)
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CameraEntity does not have a parent scene.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
+	FEViewport* CameraViewport = CAMERA_SYSTEM.GetMainCameraViewport(CameraScene);
+	if (CameraViewport == nullptr)
+	{
+		LOG.Add("FECameraSystem::GetMouseRayToWorld CurrentViewport is nullptr.", "FE_LOG_ECS", FE_LOG_ERROR);
+		return Result;
+	}
+
+	glm::ivec2 ViewportPosition = glm::ivec2(CameraViewport->GetX(), CameraViewport->GetY());
+	glm::ivec2 ViewportSize = glm::ivec2(CameraViewport->GetWidth(), CameraViewport->GetHeight());
+
+	Result = GEOMETRY.CreateMouseRayToWorld(INPUT.GetMouseX(), INPUT.GetMouseY(),
+											CameraComponent.GetViewMatrix(), CameraComponent.GetProjectionMatrix(),
+											ViewportPosition, ViewportSize);
+
+	return Result;
 }

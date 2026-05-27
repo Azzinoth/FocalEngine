@@ -16,10 +16,37 @@ FEngine::~FEngine()
 {
 }
 
-#include "ResourceManager/Timestamp.h"
-std::string FEngine::GetEngineBuildVersion()
+// Included in .cpp rather than .h to prevent engine version macros from being
+// exposed to script DLLs built in header-only mode (ENGINE_HEADERS_ONLY).
+// Script DLLs capture their own build version at compile time, allowing the
+// engine to detect version mismatches when loading them at runtime.
+#include "Core/VersionInfo/FOCAL_ENGINE_Version.h"
+#include "Core/VersionInfo/FEVersionInfo.h"
+FE_DEFINE_VERSION_INFO(FOCAL_ENGINE_)
+
+std::string FEngine::GetEngineVersion()
 {
-	return ENGINE_BUILD_TIMESTAMP;
+	return GetFOCAL_ENGINE_VersionInfo().GetVersion();
+}
+
+int FEngine::GetEngineBuildNumber()
+{
+	return GetFOCAL_ENGINE_VersionInfo().BuildNumber;
+}
+
+std::string FEngine::GetEngineBuildTimestamp()
+{
+	return GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
+}
+
+std::string FEngine::GetEngineBuildInfo()
+{
+	return GetFOCAL_ENGINE_VersionInfo().GetBuildInfo();
+}
+
+std::string FEngine::GetFullVersion()
+{
+	return "Focal Engine " + GetFOCAL_ENGINE_VersionInfo().GetFullVersionString();/* GetEngineVersion() + " " + GetEngineBuildInfo();*/
 }
 
 bool FEngine::IsNotTerminated()
@@ -55,15 +82,17 @@ void FEngine::InternalUpdate()
 	INPUT.Update();
 }
 
-void FEngine::BeginFrame(const bool InternalCall)
+void FEngine::BeginFrame(const bool bInternalCall)
 {
 	if (!APPLICATION.IsNotTerminated())
 		return;
 
-	if (!InternalCall)
+	if (!bInternalCall)
 		TIME.BeginTimeStamp();
 
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+	RENDERER.BeginFrameDebugLines();
 
 	APPLICATION.BeginFrame();
 	if (APPLICATION.GetMainWindow() == nullptr)
@@ -91,7 +120,7 @@ void FEngine::BeginFrame(const bool InternalCall)
 	InternalUpdate();
 }
 
-void FEngine::Render(const bool InternalCall)
+void FEngine::Render(const bool bInternalCall)
 {
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
@@ -100,26 +129,28 @@ void FEngine::Render(const bool InternalCall)
 	}
 
 	if (bVRActive)
-	{
 		OpenXR_MANAGER.Update();
-		RENDERER.SetGLViewport(0, 0, ENGINE.GetDefaultViewport()->GetWidth(), ENGINE.GetDefaultViewport()->GetHeight());
-	}
 
 	APPLICATION.GetMainWindow()->Render();
 
-	if (!InternalCall) CPUTime = TIME.EndTimeStamp();
+	if (!bInternalCall)
+		CPUTime = TIME.EndTimeStamp();
 }
 
-void FEngine::EndFrame(const bool InternalCall)
+void FEngine::EndFrame(const bool bInternalCall)
 {
+	RENDERER.EndFrameDebugLines();
+
 	INPUT.EndFrame();
 
-	if (!InternalCall) TIME.BeginTimeStamp();
+	if (!bInternalCall)
+		TIME.BeginTimeStamp();
 	APPLICATION.GetMainWindow()->EndFrame();
 	APPLICATION.EndFrame();
-	if (!InternalCall) GPUTime = TIME.EndTimeStamp();
+	if (!bInternalCall)
+		GPUTime = TIME.EndTimeStamp();
 
-	// FIXME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
+	// FE_FIX_ME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
 	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)
 	{
 		FILE_SYSTEM.DeleteDirectory(FILE_SYSTEM.GetCurrentWorkingPath() + "/SubSystems");
@@ -137,6 +168,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
+	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { OpenXR_MANAGER.Shutdown(); });
 	CreateViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
@@ -218,6 +250,7 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 
 void FEngine::Terminate()
 {
+	OpenXR_MANAGER.Shutdown();
 	APPLICATION.Close();
 }
 
@@ -264,29 +297,41 @@ void FEngine::SetVsyncEnabled(bool NewValue)
 void FEngine::DisableVR()
 {
 	bVRActive = false;
-	RENDERER.bVRActive = false;
+	bVRInitializedCorrectly = false;
+	OpenXR_MANAGER.Shutdown();
 }
 
-bool FEngine::EnableVR()
+bool FEngine::EnableVR(FERenderingPipeline VRRenderingPipeline)
 {
-	if (!bVRInitializedCorrectly)
-	{
-		bVRInitializedCorrectly = OpenXR_MANAGER.Init(APPLICATION.GetMainWindow()->GetTitle());
-	}
+	this->VRRenderingPipeline = VRRenderingPipeline;
 
-	if (bVRInitializedCorrectly)
-	{
-		bVRActive = true;
-		RENDERER.bVRActive = true;
-		RENDERER.UpdateVRRenderTargetSize(static_cast<int>(OpenXR_MANAGER.EyeResolution().x), static_cast<int>(OpenXR_MANAGER.EyeResolution().y));
-	}
-	else
-	{
-		bVRActive = false;
-		RENDERER.bVRActive = false;
-	}
+	if (!bVRInitializedCorrectly)
+		bVRInitializedCorrectly = OpenXR_MANAGER.Init();
+	
+	bVRActive = bVRInitializedCorrectly;
 
 	return bVRActive;
+}
+
+FERenderingPipeline FEngine::GetVRRenderingPipeline() const
+{
+	return VRRenderingPipeline;
+}
+
+std::string FEngine::GetVRApplicationVisibleName() const
+{ 
+	return VRApplicationVisibleName;
+}
+
+void FEngine::SetVRApplicationVisibleName(const std::string& NewName)
+{ 
+	if (NewName.empty())
+	{
+		LOG.Add("VR Application Visible Name cannot be empty.", "FE_LOG_OPENXR");
+		return;
+	}
+
+	VRApplicationVisibleName = NewName; 
 }
 
 bool FEngine::IsVRInitializedCorrectly()

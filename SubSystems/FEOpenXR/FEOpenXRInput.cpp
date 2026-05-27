@@ -1,6 +1,8 @@
 #include "FEOpenXRInput.h"
-
+#include "FEOpenXRCore.h"
 using namespace FocalEngine;
+
+#include "../FEngine.h"
 
 #ifdef FOCAL_ENGINE_SHARED
 extern "C" __declspec(dllexport) void* GetOpenXRInput()
@@ -9,187 +11,14 @@ extern "C" __declspec(dllexport) void* GetOpenXRInput()
 }
 #endif
 
-FEOpenXRInput::FEOpenXRInput()
-{
-    FEVRControllerActionBindings ValveIndex;
-    ValveIndex.ControllerType = FE_VR_CONTROLLER_TYPE::FE_VR_CONTROLLER_TYPE_VALVE_INDEX;
-    ValveIndex.OpenXRPath = "/interaction_profiles/valve/index_controller";
-    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE_VALVE_INDEX] = ValveIndex;
-
-    FEVRControllerActionBindings Vive;
-    Vive.ControllerType = FE_VR_CONTROLLER_TYPE::FE_VR_CONTROLLER_TYPE_VIVE;
-    Vive.OpenXRPath = "/interaction_profiles/htc/vive_controller";
-    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE_VIVE] = Vive;
-
-    FEVRActionPoseData* ControllerPose = new FEVRActionPoseData();
-    ControllerPose->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_ANY);
-    ControllerPose->Name = "controller_pose";
-    ControllerPose->LeftComponentPath = "/user/hand/left/input/grip/pose";
-    ControllerPose->RightComponentPath = "/user/hand/right/input/grip/pose";
-    AllActions.push_back(ControllerPose);
-
-    FEVRActionBooleanData* TriggerClick = new FEVRActionBooleanData();
-    TriggerClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_ANY);
-    TriggerClick->Name = "trigger_click";
-    TriggerClick->LeftComponentPath = "/user/hand/left/input/trigger/click";
-    TriggerClick->RightComponentPath = "/user/hand/right/input/trigger/click";
-    AllActions.push_back(TriggerClick);
-
-    FEVRActionBooleanData* AButtonClick = new FEVRActionBooleanData();
-    AButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    AButtonClick->Name = "a_button_click";
-    AButtonClick->LeftComponentPath = "/user/hand/left/input/a/click";
-    AButtonClick->RightComponentPath = "/user/hand/right/input/a/click";
-    AllActions.push_back(AButtonClick);
-
-    FEVRActionBooleanData* BButtonClick = new FEVRActionBooleanData();
-    BButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    BButtonClick->Name = "b_button_click";
-    BButtonClick->LeftComponentPath = "/user/hand/left/input/b/click";
-    BButtonClick->RightComponentPath = "/user/hand/right/input/b/click";
-    AllActions.push_back(BButtonClick);
-
-    FEVRActionBooleanData* AButtonTouch = new FEVRActionBooleanData();
-    AButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    AButtonTouch->Name = "a_button_touch";
-    AButtonTouch->LeftComponentPath = "/user/hand/left/input/a/touch";
-    AButtonTouch->RightComponentPath = "/user/hand/right/input/a/touch";
-    AllActions.push_back(AButtonTouch);
-
-    FEVRActionBooleanData* BButtonTouch = new FEVRActionBooleanData();
-    BButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    BButtonTouch->Name = "b_button_touch";
-    BButtonTouch->LeftComponentPath = "/user/hand/left/input/b/touch";
-    BButtonTouch->RightComponentPath = "/user/hand/right/input/b/touch";
-    AllActions.push_back(BButtonTouch);
-
-    FEVRActionBooleanData* TriggerTouch = new FEVRActionBooleanData();
-    TriggerTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TriggerTouch->Name = "trigger_touch";
-    TriggerTouch->LeftComponentPath = "/user/hand/left/input/trigger/touch";
-    TriggerTouch->RightComponentPath = "/user/hand/right/input/trigger/touch";
-    AllActions.push_back(TriggerTouch);
-
-    FEVRActionFloatData* TriggerValue = new FEVRActionFloatData();
-    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    TriggerValue->Name = "trigger_value";
-    TriggerValue->LeftComponentPath = "/user/hand/left/input/trigger/value";
-    TriggerValue->RightComponentPath = "/user/hand/right/input/trigger/value";
-    AllActions.push_back(TriggerValue);
-
-    FEVRActionBooleanData* ThumbstickTouch = new FEVRActionBooleanData();
-    ThumbstickTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ThumbstickTouch->Name = "thumbstick_touch";
-    ThumbstickTouch->LeftComponentPath = "/user/hand/left/input/thumbstick/touch";
-    ThumbstickTouch->RightComponentPath = "/user/hand/right/input/thumbstick/touch";
-    AllActions.push_back(ThumbstickTouch);
-
-    FEVRActionBooleanData* ThumbstickClick = new FEVRActionBooleanData();
-    ThumbstickClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ThumbstickClick->Name = "thumbstick_click";
-    ThumbstickClick->LeftComponentPath = "/user/hand/left/input/thumbstick/click";
-    ThumbstickClick->RightComponentPath = "/user/hand/right/input/thumbstick/click";
-    AllActions.push_back(ThumbstickClick);
-
-    FEVRActionFloatData* ValveThumbstickX = new FEVRActionFloatData();
-    ValveThumbstickX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ValveThumbstickX->Name = "valve_thumbstick_x";
-    ValveThumbstickX->LeftComponentPath = "/user/hand/left/input/thumbstick/x";
-    ValveThumbstickX->RightComponentPath = "/user/hand/right/input/thumbstick/x";
-    AllActions.push_back(ValveThumbstickX);
-
-    FEVRActionFloatData* ValveThumbstickY = new FEVRActionFloatData();
-    ValveThumbstickY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ValveThumbstickY->Name = "valve_thumbstick_y";
-    ValveThumbstickY->LeftComponentPath = "/user/hand/left/input/thumbstick/y";
-    ValveThumbstickY->RightComponentPath = "/user/hand/right/input/thumbstick/y";
-    AllActions.push_back(ValveThumbstickY);
-
-    FEVRActionBooleanData* TrackpadTouch = new FEVRActionBooleanData();
-    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    TrackpadTouch->Name = "trackpad_touch";
-    TrackpadTouch->LeftComponentPath = "/user/hand/left/input/trackpad/touch";
-    TrackpadTouch->RightComponentPath = "/user/hand/right/input/trackpad/touch";
-    AllActions.push_back(TrackpadTouch);
-
-    FEVRActionFloatData* ValveTrackpadForce = new FEVRActionFloatData();
-    ValveTrackpadForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ValveTrackpadForce->Name = "valve_trackpad_force";
-    ValveTrackpadForce->LeftComponentPath = "/user/hand/left/input/trackpad/force";
-    ValveTrackpadForce->RightComponentPath = "/user/hand/right/input/trackpad/force";
-    AllActions.push_back(ValveTrackpadForce);
-
-    FEVRActionFloatData* TrackpadX = new FEVRActionFloatData();
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    TrackpadX->Name = "trackpad_x";
-    TrackpadX->LeftComponentPath = "/user/hand/left/input/trackpad/x";
-    TrackpadX->RightComponentPath = "/user/hand/right/input/trackpad/x";
-    AllActions.push_back(TrackpadX);
-
-    FEVRActionFloatData* TrackpadY = new FEVRActionFloatData();
-    TrackpadY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    TrackpadY->Name = "trackpad_y";
-    TrackpadY->LeftComponentPath = "/user/hand/left/input/trackpad/y";
-    TrackpadY->RightComponentPath = "/user/hand/right/input/trackpad/y";
-    AllActions.push_back(TrackpadY);
-
-    FEVRActionFloatData* ValveSqueezeValue = new FEVRActionFloatData();
-    ValveSqueezeValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ValveSqueezeValue->Name = "valve_squeeze_value";
-    ValveSqueezeValue->LeftComponentPath = "/user/hand/left/input/squeeze/value";
-    ValveSqueezeValue->RightComponentPath = "/user/hand/right/input/squeeze/value";
-    AllActions.push_back(ValveSqueezeValue);
-
-    FEVRActionFloatData* ValveSqueezeForce = new FEVRActionFloatData();
-    ValveSqueezeForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    ValveSqueezeForce->Name = "valve_squeeze_force";
-    ValveSqueezeForce->LeftComponentPath = "/user/hand/left/input/squeeze/force";
-    ValveSqueezeForce->RightComponentPath = "/user/hand/right/input/squeeze/force";
-    AllActions.push_back(ValveSqueezeForce);
-
-    FEVRActionVibrationOutputData* Vibrate = new FEVRActionVibrationOutputData();
-    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VALVE_INDEX);
-    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    Vibrate->Name = "vibrate_hand";
-    Vibrate->LeftComponentPath = "/user/hand/left/output/haptic";
-    Vibrate->RightComponentPath = "/user/hand/right/output/haptic";
-    AllActions.push_back(Vibrate);
-
-    FEVRActionBooleanData* ViveSqueezeClick = new FEVRActionBooleanData();
-    ViveSqueezeClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    ViveSqueezeClick->Name = "vive_squeeze_click";
-    ViveSqueezeClick->LeftComponentPath = "/user/hand/left/input/squeeze/click";
-    ViveSqueezeClick->RightComponentPath = "/user/hand/right/input/squeeze/click";
-    AllActions.push_back(ViveSqueezeClick);
-
-    FEVRActionBooleanData* ViveMenuClick = new FEVRActionBooleanData();
-    ViveMenuClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    ViveMenuClick->Name = "vive_menu_click";
-    ViveMenuClick->LeftComponentPath = "/user/hand/left/input/menu/click";
-    ViveMenuClick->RightComponentPath = "/user/hand/right/input/menu/click";
-    AllActions.push_back(ViveMenuClick);
-
-    FEVRActionBooleanData* TrackpadClick = new FEVRActionBooleanData();
-    TrackpadClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE_VIVE);
-    TrackpadClick->Name = "trackpad_click";
-    TrackpadClick->LeftComponentPath = "/user/hand/left/input/trackpad/click";
-    TrackpadClick->RightComponentPath = "/user/hand/right/input/trackpad/click";
-    AllActions.push_back(TrackpadClick);
-}
-
+FEOpenXRInput::FEOpenXRInput() {}
 FEOpenXRInput::~FEOpenXRInput() {}
 
 void FEOpenXRInput::RegisterActionsAndControllers()
 {
     for (size_t i = 0; i < AllActions.size(); i++)
-    {
         RegisterActionInOpenXR(*AllActions[i]);
-    }
-
+    
     RegisterAllControllersInOpenXR();
 }
 
@@ -203,7 +32,7 @@ void FEOpenXRInput::RegisterAllControllersInOpenXR()
             bool bWorksWith = false;
             for (size_t j = 0; j < AllActions[i]->WorksWith.size(); j++)
             {
-                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE_ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
+                if (AllActions[i]->WorksWith[j] == FE_VR_CONTROLLER_TYPE::ANY || AllActions[i]->WorksWith[j] == ControllerIterator->first)
 				{
 					bWorksWith = true;
 					break;
@@ -273,14 +102,208 @@ void FEOpenXRInput::TriggerHapticFeedback(float Amplitude, float Frequency, floa
 	FE_OPENXR_ERROR(xrApplyHapticFeedback(FEOpenXR_CORE.Session, &HapticActionInfo, (XrHapticBaseHeader*)&Vibration));
 }
 
-void FEOpenXRInput::InitializeActionsAndControllers()
+void FEOpenXRInput::CreateaActionSet()
 {
-    // Create an action set.
     XrActionSetCreateInfo ActionSetInfo{ XR_TYPE_ACTION_SET_CREATE_INFO };
-    strcpy_s(ActionSetInfo.actionSetName, "gameplay");
-    strcpy_s(ActionSetInfo.localizedActionSetName, "Gameplay");
+    strcpy_s(ActionSetInfo.actionSetName, "focal_engine_actions");
+    strcpy_s(ActionSetInfo.localizedActionSetName, "Focal Engine Actions");
     ActionSetInfo.priority = 0;
     FE_OPENXR_ERROR(xrCreateActionSet(FEOpenXR_CORE.OpenXRInstance, &ActionSetInfo, &CurrentInputState.ActionSet));
+}
+
+void FEOpenXRInput::CreateEyeGazeAction()
+{
+    XrActionCreateInfo ActionInfo{ XR_TYPE_ACTION_CREATE_INFO };
+    ActionInfo.actionType = XR_ACTION_TYPE_POSE_INPUT;
+    strcpy_s(ActionInfo.actionName, "eye_gaze");
+    strcpy_s(ActionInfo.localizedActionName, "Eye Gaze");
+    FE_OPENXR_ERROR(xrCreateAction(CurrentInputState.ActionSet, &ActionInfo, &EyeGazeAction));
+
+    // Bind to the standard eye gaze pose path
+    XrPath EyeGazePath;
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/user/eyes_ext/input/gaze_ext/pose", &EyeGazePath));
+
+    XrPath InteractionProfilePath;
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/interaction_profiles/ext/eye_gaze_interaction", &InteractionProfilePath));
+
+    XrActionSuggestedBinding Binding{ EyeGazeAction, EyeGazePath };
+    XrInteractionProfileSuggestedBinding SuggestedBindings{ XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING };
+    SuggestedBindings.interactionProfile = InteractionProfilePath;
+    SuggestedBindings.suggestedBindings = &Binding;
+    SuggestedBindings.countSuggestedBindings = 1;
+    FE_OPENXR_ERROR(xrSuggestInteractionProfileBindings(FEOpenXR_CORE.OpenXRInstance, &SuggestedBindings));
+}
+
+void FEOpenXRInput::InitializeActionsAndControllers()
+{
+    FEVRControllerActionBindings ValveIndex;
+    ValveIndex.ControllerType = FE_VR_CONTROLLER_TYPE::VALVE_INDEX;
+    ValveIndex.OpenXRPath = "/interaction_profiles/valve/index_controller";
+    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE::VALVE_INDEX] = ValveIndex;
+
+    FEVRControllerActionBindings Vive;
+    Vive.ControllerType = FE_VR_CONTROLLER_TYPE::VIVE;
+    Vive.OpenXRPath = "/interaction_profiles/htc/vive_controller";
+    SupportedControllersBindings[FE_VR_CONTROLLER_TYPE::VIVE] = Vive;
+
+    FEVRActionPoseData* ControllerPose = new FEVRActionPoseData();
+    ControllerPose->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::ANY);
+    ControllerPose->Name = "controller_pose";
+    ControllerPose->LeftComponentPath = "/user/hand/left/input/grip/pose";
+    ControllerPose->RightComponentPath = "/user/hand/right/input/grip/pose";
+    AllActions.push_back(ControllerPose);
+
+    FEVRActionBooleanData* TriggerClick = new FEVRActionBooleanData();
+    TriggerClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::ANY);
+    TriggerClick->Name = "trigger_click";
+    TriggerClick->LeftComponentPath = "/user/hand/left/input/trigger/click";
+    TriggerClick->RightComponentPath = "/user/hand/right/input/trigger/click";
+    AllActions.push_back(TriggerClick);
+
+    FEVRActionBooleanData* AButtonClick = new FEVRActionBooleanData();
+    AButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    AButtonClick->Name = "a_button_click";
+    AButtonClick->LeftComponentPath = "/user/hand/left/input/a/click";
+    AButtonClick->RightComponentPath = "/user/hand/right/input/a/click";
+    AllActions.push_back(AButtonClick);
+
+    FEVRActionBooleanData* BButtonClick = new FEVRActionBooleanData();
+    BButtonClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    BButtonClick->Name = "b_button_click";
+    BButtonClick->LeftComponentPath = "/user/hand/left/input/b/click";
+    BButtonClick->RightComponentPath = "/user/hand/right/input/b/click";
+    AllActions.push_back(BButtonClick);
+
+    FEVRActionBooleanData* AButtonTouch = new FEVRActionBooleanData();
+    AButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    AButtonTouch->Name = "a_button_touch";
+    AButtonTouch->LeftComponentPath = "/user/hand/left/input/a/touch";
+    AButtonTouch->RightComponentPath = "/user/hand/right/input/a/touch";
+    AllActions.push_back(AButtonTouch);
+
+    FEVRActionBooleanData* BButtonTouch = new FEVRActionBooleanData();
+    BButtonTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    BButtonTouch->Name = "b_button_touch";
+    BButtonTouch->LeftComponentPath = "/user/hand/left/input/b/touch";
+    BButtonTouch->RightComponentPath = "/user/hand/right/input/b/touch";
+    AllActions.push_back(BButtonTouch);
+
+    FEVRActionBooleanData* TriggerTouch = new FEVRActionBooleanData();
+    TriggerTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TriggerTouch->Name = "trigger_touch";
+    TriggerTouch->LeftComponentPath = "/user/hand/left/input/trigger/touch";
+    TriggerTouch->RightComponentPath = "/user/hand/right/input/trigger/touch";
+    AllActions.push_back(TriggerTouch);
+
+    FEVRActionFloatData* TriggerValue = new FEVRActionFloatData();
+    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TriggerValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    TriggerValue->Name = "trigger_value";
+    TriggerValue->LeftComponentPath = "/user/hand/left/input/trigger/value";
+    TriggerValue->RightComponentPath = "/user/hand/right/input/trigger/value";
+    AllActions.push_back(TriggerValue);
+
+    FEVRActionBooleanData* ThumbstickTouch = new FEVRActionBooleanData();
+    ThumbstickTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ThumbstickTouch->Name = "thumbstick_touch";
+    ThumbstickTouch->LeftComponentPath = "/user/hand/left/input/thumbstick/touch";
+    ThumbstickTouch->RightComponentPath = "/user/hand/right/input/thumbstick/touch";
+    AllActions.push_back(ThumbstickTouch);
+
+    FEVRActionBooleanData* ThumbstickClick = new FEVRActionBooleanData();
+    ThumbstickClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ThumbstickClick->Name = "thumbstick_click";
+    ThumbstickClick->LeftComponentPath = "/user/hand/left/input/thumbstick/click";
+    ThumbstickClick->RightComponentPath = "/user/hand/right/input/thumbstick/click";
+    AllActions.push_back(ThumbstickClick);
+
+    FEVRActionFloatData* ValveThumbstickX = new FEVRActionFloatData();
+    ValveThumbstickX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ValveThumbstickX->Name = "valve_thumbstick_x";
+    ValveThumbstickX->LeftComponentPath = "/user/hand/left/input/thumbstick/x";
+    ValveThumbstickX->RightComponentPath = "/user/hand/right/input/thumbstick/x";
+    AllActions.push_back(ValveThumbstickX);
+
+    FEVRActionFloatData* ValveThumbstickY = new FEVRActionFloatData();
+    ValveThumbstickY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ValveThumbstickY->Name = "valve_thumbstick_y";
+    ValveThumbstickY->LeftComponentPath = "/user/hand/left/input/thumbstick/y";
+    ValveThumbstickY->RightComponentPath = "/user/hand/right/input/thumbstick/y";
+    AllActions.push_back(ValveThumbstickY);
+
+    FEVRActionBooleanData* TrackpadTouch = new FEVRActionBooleanData();
+    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadTouch->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    TrackpadTouch->Name = "trackpad_touch";
+    TrackpadTouch->LeftComponentPath = "/user/hand/left/input/trackpad/touch";
+    TrackpadTouch->RightComponentPath = "/user/hand/right/input/trackpad/touch";
+    AllActions.push_back(TrackpadTouch);
+
+    FEVRActionFloatData* ValveTrackpadForce = new FEVRActionFloatData();
+    ValveTrackpadForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ValveTrackpadForce->Name = "valve_trackpad_force";
+    ValveTrackpadForce->LeftComponentPath = "/user/hand/left/input/trackpad/force";
+    ValveTrackpadForce->RightComponentPath = "/user/hand/right/input/trackpad/force";
+    AllActions.push_back(ValveTrackpadForce);
+
+    FEVRActionFloatData* TrackpadX = new FEVRActionFloatData();
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    TrackpadX->Name = "trackpad_x";
+    TrackpadX->LeftComponentPath = "/user/hand/left/input/trackpad/x";
+    TrackpadX->RightComponentPath = "/user/hand/right/input/trackpad/x";
+    AllActions.push_back(TrackpadX);
+
+    FEVRActionFloatData* TrackpadY = new FEVRActionFloatData();
+    TrackpadY->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    TrackpadX->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    TrackpadY->Name = "trackpad_y";
+    TrackpadY->LeftComponentPath = "/user/hand/left/input/trackpad/y";
+    TrackpadY->RightComponentPath = "/user/hand/right/input/trackpad/y";
+    AllActions.push_back(TrackpadY);
+
+    FEVRActionFloatData* ValveSqueezeValue = new FEVRActionFloatData();
+    ValveSqueezeValue->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ValveSqueezeValue->Name = "valve_squeeze_value";
+    ValveSqueezeValue->LeftComponentPath = "/user/hand/left/input/squeeze/value";
+    ValveSqueezeValue->RightComponentPath = "/user/hand/right/input/squeeze/value";
+    AllActions.push_back(ValveSqueezeValue);
+
+    FEVRActionFloatData* ValveSqueezeForce = new FEVRActionFloatData();
+    ValveSqueezeForce->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    ValveSqueezeForce->Name = "valve_squeeze_force";
+    ValveSqueezeForce->LeftComponentPath = "/user/hand/left/input/squeeze/force";
+    ValveSqueezeForce->RightComponentPath = "/user/hand/right/input/squeeze/force";
+    AllActions.push_back(ValveSqueezeForce);
+
+    FEVRActionVibrationOutputData* Vibrate = new FEVRActionVibrationOutputData();
+    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VALVE_INDEX);
+    Vibrate->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    Vibrate->Name = "vibrate_hand";
+    Vibrate->LeftComponentPath = "/user/hand/left/output/haptic";
+    Vibrate->RightComponentPath = "/user/hand/right/output/haptic";
+    AllActions.push_back(Vibrate);
+
+    FEVRActionBooleanData* ViveSqueezeClick = new FEVRActionBooleanData();
+    ViveSqueezeClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    ViveSqueezeClick->Name = "vive_squeeze_click";
+    ViveSqueezeClick->LeftComponentPath = "/user/hand/left/input/squeeze/click";
+    ViveSqueezeClick->RightComponentPath = "/user/hand/right/input/squeeze/click";
+    AllActions.push_back(ViveSqueezeClick);
+
+    FEVRActionBooleanData* ViveMenuClick = new FEVRActionBooleanData();
+    ViveMenuClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    ViveMenuClick->Name = "vive_menu_click";
+    ViveMenuClick->LeftComponentPath = "/user/hand/left/input/menu/click";
+    ViveMenuClick->RightComponentPath = "/user/hand/right/input/menu/click";
+    AllActions.push_back(ViveMenuClick);
+
+    FEVRActionBooleanData* TrackpadClick = new FEVRActionBooleanData();
+    TrackpadClick->WorksWith.push_back(FE_VR_CONTROLLER_TYPE::VIVE);
+    TrackpadClick->Name = "trackpad_click";
+    TrackpadClick->LeftComponentPath = "/user/hand/left/input/trackpad/click";
+    TrackpadClick->RightComponentPath = "/user/hand/right/input/trackpad/click";
+    AllActions.push_back(TrackpadClick);
 
     // Get the XrPath for the left and right hands - we will use them as subaction paths.
     FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, "/user/hand/left", &HandSubactionPath[Side::LEFT]));
@@ -300,6 +323,14 @@ void FEOpenXRInput::InitializeActionsAndControllers()
     AttachInfo.countActionSets = 1;
     AttachInfo.actionSets = &CurrentInputState.ActionSet;
     FE_OPENXR_ERROR(xrAttachSessionActionSets(FEOpenXR_CORE.Session, &AttachInfo));
+
+    if (FEOpenXR_CORE.bGazeSupported)
+    {
+        XrActionSpaceCreateInfo SpaceInfo{ XR_TYPE_ACTION_SPACE_CREATE_INFO };
+        SpaceInfo.action = EyeGazeAction;
+        SpaceInfo.poseInActionSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        FE_OPENXR_ERROR(xrCreateActionSpace(FEOpenXR_CORE.Session, &SpaceInfo, &EyeSpace));
+    }
 }
 
 void FEOpenXRInput::Init()
@@ -307,7 +338,75 @@ void FEOpenXRInput::Init()
     if (!FEOpenXR_CORE.bInitializedCorrectly)
         return;
 
+    if (FEOpenXR_CORE.bGazeSupported)
+    {
+        // Create an eye tracking space.
+        XrReferenceSpaceCreateInfo eyeSpaceCreateInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+        eyeSpaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
+        eyeSpaceCreateInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        xrCreateReferenceSpace(FEOpenXR_CORE.Session, &eyeSpaceCreateInfo, &EyeSpace);
+
+        /*XrReferenceSpaceCreateInfo ViewSpaceInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+        ViewSpaceInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
+        ViewSpaceInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        xrCreateReferenceSpace(Session, &ViewSpaceInfo, &ViewSpace);*/
+    }
+
+    CreateaActionSet();
+    CreateEyeGazeAction();
     InitializeActionsAndControllers();
+}
+
+void FEOpenXRInput::Shutdown()
+{
+    if (EyeSpace != nullptr)
+    {
+        xrDestroySpace(EyeSpace);
+        EyeSpace = nullptr;
+    }
+
+    for (int i = 0; i < Side::COUNT; i++)
+    {
+        if (CurrentInputState.HandSpace[i] != nullptr)
+        {
+            xrDestroySpace(CurrentInputState.HandSpace[i]);
+            CurrentInputState.HandSpace[i] = nullptr;
+        }
+    }
+
+    for (size_t i = 0; i < AllActions.size(); i++)
+    {
+        if (AllActions[i]->ActionHandle != nullptr)
+        {
+            xrDestroyAction(AllActions[i]->ActionHandle);
+            AllActions[i]->ActionHandle = nullptr;
+        }
+        delete AllActions[i];
+    }
+    AllActions.clear();
+
+    if (EyeGazeAction != nullptr)
+    {
+        xrDestroyAction(EyeGazeAction);
+        EyeGazeAction = nullptr;
+    }
+
+    if (CurrentInputState.ActionSet != nullptr)
+    {
+        xrDestroyActionSet(CurrentInputState.ActionSet);
+        CurrentInputState.ActionSet = nullptr;
+    }
+
+    // Clear controller bindings.
+    for (auto& [Type, Bindings] : SupportedControllersBindings)
+        Bindings.Bindings.clear();
+
+    // Reset state.
+    CurrentInputState.HandActive = { XR_FALSE, XR_FALSE };
+    ControllerConnectionStatusChangeUserCallBacks.clear();
+    FrameState = nullptr;
+    LastFrameInsexLeftControllerWasActive = -1;
+    LastFrameInsexRightControllerWasActive = -1;
 }
 
 void FEOpenXRInput::HandleBooleanAction(FEVRActionBooleanData& CurrentActionBoolean)
@@ -379,13 +478,67 @@ void FEOpenXRInput::HandleBooleanAction(FEVRActionBooleanData& CurrentActionBool
     }
 }
 
+void FEOpenXRInput::CheckControllerConnectionStatusChanges()
+{
+    if (IsLeftControllerConnectedAndTracked() && LastFrameInsexLeftControllerWasActive == unsigned long long(-1))
+    {
+        TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::CONNECTED);
+        LastFrameInsexLeftControllerWasActive = ENGINE.GetCurrentFrameIndex();
+    }
+
+    if (LastFrameInsexLeftControllerWasActive != unsigned long long(-1))
+    {
+		unsigned long long FramesSinceLastActive = ENGINE.GetCurrentFrameIndex() - LastFrameInsexLeftControllerWasActive;
+        if (FramesSinceLastActive > 1)
+        {
+            if (IsLeftControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::RECONNECTED);
+            }
+            else if (!IsLeftControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(true, FE_VR_CONTROLLER_STATE_CHANGE::DISCONNECTED);
+            }
+        }
+    }
+
+    if (IsLeftControllerConnectedAndTracked())
+        LastFrameInsexLeftControllerWasActive = ENGINE.GetCurrentFrameIndex();
+
+	// Right controller
+    if (IsRightControllerConnectedAndTracked() && LastFrameInsexRightControllerWasActive == unsigned long long(-1))
+    {
+        TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::CONNECTED);
+        LastFrameInsexRightControllerWasActive = ENGINE.GetCurrentFrameIndex();
+    }
+    
+    if (LastFrameInsexRightControllerWasActive != unsigned long long(-1))
+    {
+        unsigned long long FramesSinceLastActive = ENGINE.GetCurrentFrameIndex() - LastFrameInsexRightControllerWasActive;
+        if (FramesSinceLastActive > 1)
+        {
+            if (IsRightControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::RECONNECTED);
+            }
+            else if (!IsRightControllerConnectedAndTracked())
+            {
+                TriggerControllerConnectionStatusChange(false, FE_VR_CONTROLLER_STATE_CHANGE::DISCONNECTED);
+            }
+        }
+    }
+
+    if (IsRightControllerConnectedAndTracked())
+        LastFrameInsexRightControllerWasActive = ENGINE.GetCurrentFrameIndex();
+}
+
 void FEOpenXRInput::Update()
 {
     CurrentInputState.HandActive = { XR_FALSE, XR_FALSE };
 
     // Sync actions
-    const XrActiveActionSet ActiveActionSet{ CurrentInputState.ActionSet, XR_NULL_PATH };
     XrActionsSyncInfo SyncInfo{ XR_TYPE_ACTIONS_SYNC_INFO };
+    const XrActiveActionSet ActiveActionSet{ CurrentInputState.ActionSet, XR_NULL_PATH };
     SyncInfo.countActiveActionSets = 1;
     SyncInfo.activeActionSets = &ActiveActionSet;
     FE_OPENXR_ERROR(xrSyncActions(FEOpenXR_CORE.Session, &SyncInfo));
@@ -396,6 +549,8 @@ void FEOpenXRInput::Update()
     }
 
     UpdateControllerSpaceLocation();
+    CheckControllerConnectionStatusChanges();
+    UpdateEyeGaze();
 }
 
 void FEOpenXRInput::HandleAction(FEVRActionData* Action)
@@ -499,6 +654,26 @@ void FEOpenXRInput::UpdateControllerSpaceLocation()
     }
 }
 
+bool FEOpenXRInput::IsLeftControllerConnectedAndTracked() const
+{
+    if (CurrentInputState.HandActive[Side::LEFT] != XR_TRUE)
+        return false;
+
+    // Check if position and orientation are valid
+    return (LeftControllerLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
+           (LeftControllerLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+}
+
+bool FEOpenXRInput::IsRightControllerConnectedAndTracked() const
+{
+    if (CurrentInputState.HandActive[Side::RIGHT] != XR_TRUE)
+        return false;
+
+    // Check if position and orientation are valid
+    return (RightControllerLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) != 0 &&
+           (RightControllerLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+}
+
 glm::vec3 FEOpenXRInput::GetLeftControllerPosition()
 {
     glm::vec3 Result = glm::vec3(0.0f);
@@ -554,234 +729,566 @@ glm::quat FEOpenXRInput::GetRightControllerOrientation()
 void FEOpenXRInput::SetLeftTriggerPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("trigger_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerTouchActivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftTriggerTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerTouchActivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightTriggerTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
 	FEVRActionData* Action = GetActionDataByName("trigger_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+	if (Action == nullptr)
+		return;
+
+	FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+	if (BooleanAction == nullptr)
+		return;
+
+	BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
-// TODO: Need to implement a simpler function to determine controller type.
+// FE_TO_DO: Need to implement a simpler function to determine controller type.
 std::string FEOpenXRInput::CurrentlyActiveInteractionProfile(bool bLeftController)
 {
     XrPath TopLevelUserPath;
     std::string Hand = bLeftController ? "left" : "right";
-    xrStringToPath(FEOpenXR_CORE.OpenXRInstance, ("/user/hand/" + Hand).c_str(), &TopLevelUserPath);
+    FE_OPENXR_ERROR(xrStringToPath(FEOpenXR_CORE.OpenXRInstance, ("/user/hand/" + Hand).c_str(), &TopLevelUserPath));
 
     XrInteractionProfileState InteractionProfileState{ XR_TYPE_INTERACTION_PROFILE_STATE };
-    xrGetCurrentInteractionProfile(FEOpenXR_CORE.Session, TopLevelUserPath, &InteractionProfileState);
+    FE_OPENXR_ERROR(xrGetCurrentInteractionProfile(FEOpenXR_CORE.Session, TopLevelUserPath, &InteractionProfileState));
 
-    char InteractionProfileStr[XR_MAX_PATH_LENGTH];
-    uint32_t StrLength = 0;
-    xrPathToString(FEOpenXR_CORE.OpenXRInstance, InteractionProfileState.interactionProfile, XR_MAX_PATH_LENGTH, &StrLength, InteractionProfileStr);
+    char InteractionProfileString[XR_MAX_PATH_LENGTH];
+    uint32_t StringLength = 0;
+    FE_OPENXR_ERROR(xrPathToString(FEOpenXR_CORE.OpenXRInstance, InteractionProfileState.interactionProfile, XR_MAX_PATH_LENGTH, &StringLength, InteractionProfileString));
 
-    if (!StrLength)
+    if (!StringLength)
         return "";
 
-    return std::string(InteractionProfileStr);
+    return std::string(InteractionProfileString);
 }
 
 void FEOpenXRInput::SetLeftBButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonPressCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonReleaseCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_click");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftAButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("a_button_touch");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
+
 void FEOpenXRInput::SetLeftAButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightAButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("a_button_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("a_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftBButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("b_button_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("b_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("b_button_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("b_button_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightBButtonTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
     FEVRActionData* Action = GetActionDataByName("b_button_touch");
-    reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickPressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickPressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftThumbstickTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickTouchDeactivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightThumbstickTouchActivateCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("thumbstick_touch");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftViveSqueezePressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::SetLeftValveSqueezeValueCallBack(std::function<void(float)> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("valve_squeeze_force");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionFloatData* FloatAction = dynamic_cast<FEVRActionFloatData*>(Action);
+    if (FloatAction == nullptr)
+        return;
+
+    FloatAction->LeftChangedValueUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveSqueezePressCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightActivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetLeftViveSqueezeReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->LeftDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftDeactivateUserCallBacks.push_back(UserCallBack);
 }
 
 void FEOpenXRInput::SetRightViveSqueezeReleaseCallBack(std::function<void()> UserCallBack)
 {
-	FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
-	reinterpret_cast<FEVRActionBooleanData*>(Action)->RightDeactivateUserCallBacks.push_back(UserCallBack);
+    FEVRActionData* Action = GetActionDataByName("vive_squeeze_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightDeactivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::SetLeftViveMenuClickCallBack(std::function<void()> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("vive_menu_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->LeftActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::SetRightViveMenuClickCallBack(std::function<void()> UserCallBack)
+{
+    FEVRActionData* Action = GetActionDataByName("vive_menu_click");
+    if (Action == nullptr)
+        return;
+
+    FEVRActionBooleanData* BooleanAction = dynamic_cast<FEVRActionBooleanData*>(Action);
+    if (BooleanAction == nullptr)
+        return;
+
+    BooleanAction->RightActivateUserCallBacks.push_back(UserCallBack);
+}
+
+void FEOpenXRInput::TriggerControllerConnectionStatusChange(bool bLeftController, FE_VR_CONTROLLER_STATE_CHANGE Change)
+{
+    OpenXR_MANAGER.OnControllerConnectionChanges(bLeftController, Change);
+
+    for (size_t i = 0; i < ControllerConnectionStatusChangeUserCallBacks.size(); i++)
+    {
+        if (ControllerConnectionStatusChangeUserCallBacks[i] != nullptr)
+			ControllerConnectionStatusChangeUserCallBacks[i](bLeftController, Change);
+    }
+}
+
+void FEOpenXRInput::AddControllerStateChangeCallback(std::function<void(bool, FE_VR_CONTROLLER_STATE_CHANGE)> UserCallBack)
+{
+    if (UserCallBack != nullptr)
+        ControllerConnectionStatusChangeUserCallBacks.push_back(UserCallBack);
+}
+
+std::pair<glm::vec3, glm::vec3> FEOpenXRInput::GetEyeGazeOriginAndDirection()
+{
+    glm::vec3 RayDirection = glm::normalize(EyeGazeOrientation * glm::vec3(0.0f, 0.0f, -1.0f));
+	return { EyeGazePosition, RayDirection };
+}
+
+void FEOpenXRInput::UpdateEyeGaze()
+{
+    XrEyeGazeSampleTimeEXT GazeSampleTime{ XR_TYPE_EYE_GAZE_SAMPLE_TIME_EXT };
+    XrSpaceLocation GazeLocation{ XR_TYPE_SPACE_LOCATION };
+    GazeLocation.next = &GazeSampleTime;
+
+    XrResult Result = xrLocateSpace(EyeSpace, /*ViewSpace*/FEOpenXR_CORE.ApplicationSpace, FEOpenXR_RENDERING.FrameState.predictedDisplayTime, &GazeLocation);
+
+    if (Result == XR_SUCCESS &&
+        (GazeLocation.locationFlags & XR_SPACE_LOCATION_POSITION_VALID_BIT) &&
+        (GazeLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT))
+    {
+        EyeGazePosition = glm::vec3(GazeLocation.pose.position.x, GazeLocation.pose.position.y, GazeLocation.pose.position.z);
+        EyeGazeOrientation = glm::quat(GazeLocation.pose.orientation.w, GazeLocation.pose.orientation.x, GazeLocation.pose.orientation.y, GazeLocation.pose.orientation.z);
+    }
 }

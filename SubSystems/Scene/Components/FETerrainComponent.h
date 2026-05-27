@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/FEGeometricTools.h"
-#include "../Renderer/FEMaterial.h"
+#include "../Core/Geometry/FEGeometry.h"
+#include "../ResourceManager/BaseResources/FEMaterial.h"
 
 namespace FocalEngine
 {
@@ -50,9 +50,6 @@ namespace FocalEngine
 		FETerrainComponent(const FETerrainComponent& Other) = default;
 		~FETerrainComponent();
 
-		bool IsVisible();
-		void SetVisibility(bool NewValue);
-
 		bool IsCastingShadows();
 		void SetCastingShadows(bool NewValue);
 
@@ -95,7 +92,6 @@ namespace FocalEngine
 		FETexture* HeightMap = nullptr;
 
 		bool bWireframeMode = false;
-		bool bVisible = true;
 		bool bCastShadows = true;
 		bool bReceiveShadows = true;
 		bool bDirtyFlag = false;

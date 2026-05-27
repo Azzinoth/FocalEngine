@@ -1,5 +1,5 @@
 #pragma once
-#include "../Renderer/FEPointCloud.h"
+#include "../ResourceManager/BaseResources/FEPointCloud.h"
 
 namespace FocalEngine
 {
@@ -9,10 +9,7 @@ namespace FocalEngine
 		FEPointCloudComponent(FEPointCloud* PointCloudToSet);
 		FEPointCloudComponent(const FEPointCloudComponent& Other);
 		void operator=(const FEPointCloudComponent& Other);
-
-		// Maybe that part should be abstracted.
-		bool IsVisible() const;
-		void SetVisibility(bool NewValue);
+		~FEPointCloudComponent();
 
 		FEPointCloud* GetPointCloud() const;
 		void SetPointCloud(FEPointCloud* NewPointCloud);
@@ -24,7 +21,6 @@ namespace FocalEngine
 		void SetUseGlobalColorOverride(bool NewValue);
 	private:
 		FEPointCloud* PointCloud = nullptr;
-		bool bVisible = true;
 
 		glm::vec3 GlobalColorOverride;
 		bool bUseGlobalColorOverride = false;

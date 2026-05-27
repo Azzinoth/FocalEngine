@@ -21,11 +21,9 @@ if(MSVC)
 endif()
 
 option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
-option(ENABLE_TESTS "Enable tests" OFF)
+option(FOCAL_ENGINE_ENABLE_TESTS "Enable tests" OFF)
 
-set(TEST_LIBS)
 set(TEST_SOURCE_FILES)
-set(TEST_INCLUDE_FILES)
 
 if(NOT TARGET FEBasicApplication)
   add_subdirectory(SubSystems/FEBasicApplication)
@@ -46,32 +44,12 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-if(ENABLE_TESTS)
-	if(BUILD_SHARED_LIBS)
-		list(APPEND TEST_LIBS
-			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest
-			debug       Tests/ThirdParty/googletest/lib/Debug/Dynamic/gtest_main
-			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest
-			optimized   Tests/ThirdParty/googletest/lib/Release/Dynamic/gtest_main
-		)
-	else()
-		list(APPEND TEST_LIBS
-			debug       Tests/ThirdParty/googletest/lib/Debug/gtest
-			debug       Tests/ThirdParty/googletest/lib/Debug/gtest_main
-			optimized   Tests/ThirdParty/googletest/lib/Release/gtest
-			optimized   Tests/ThirdParty/googletest/lib/Release/gtest_main
-		)
-	endif()
-
+if(FOCAL_ENGINE_ENABLE_TESTS)
 	list(APPEND TEST_SOURCE_FILES
         "Tests/RunAllTests.cpp"
         "Tests/RunAllTests.h"
 		"Tests/SceneGraphTest.cpp"
         "Tests/SceneGraphTest.h"
-    )
-
-	list(APPEND TEST_INCLUDE_FILES
-        "Tests/ThirdParty/googletest/include"
     )
 
 	# Adding flags for multi-processor compilation
@@ -210,29 +188,32 @@ file(GLOB Renderer_SRC
 	"Renderer/FEFramebuffer.h"
 	"Renderer/FEGameModel.cpp"
 	"Renderer/FEGameModel.h"
-	"Renderer/FELine.cpp"
-	"Renderer/FELine.h"
-	"Renderer/FEMaterial.cpp"
-	"Renderer/FEMaterial.h"
-	"Renderer/FEMesh.cpp"
-	"Renderer/FEMesh.h"
-	"Renderer/FEPointCloud.cpp"
-	"Renderer/FEPointCloud.h"
 	"Renderer/FEPostProcess.cpp"
 	"Renderer/FEPostProcess.h"
 	"Renderer/FERenderer.cpp"
 	"Renderer/FERenderer.h"
-	"Renderer/FEShader.cpp"
-	"Renderer/FEShader.h"
-	"Renderer/FEShader.inl"
-	"Renderer/FEShaderUniform.cpp"
-	"Renderer/FEShaderUniform.h"
-	"Renderer/FEShaderUniform.inl"
-	"Renderer/FETexture.cpp"
-	"Renderer/FETexture.h"
 )
 
 # *************** RESOURCE MANAGER ***************
+
+file(GLOB BaseResources_SRC
+	"ResourceManager/BaseResources/FEMesh.h"
+	"ResourceManager/BaseResources/FEMesh.cpp"
+	"ResourceManager/BaseResources/FELineCollection.h"
+	"ResourceManager/BaseResources/FELineCollection.cpp"
+	"ResourceManager/BaseResources/FEPointCloud.cpp"
+	"ResourceManager/BaseResources/FEPointCloud.h"
+	"ResourceManager/BaseResources/FETexture.cpp"
+	"ResourceManager/BaseResources/FETexture.h"
+	"ResourceManager/BaseResources/FEShader.cpp"
+	"ResourceManager/BaseResources/FEShader.h"
+	"ResourceManager/BaseResources/FEShader.inl"
+	"ResourceManager/BaseResources/FEShaderUniform.cpp"
+	"ResourceManager/BaseResources/FEShaderUniform.h"
+	"ResourceManager/BaseResources/FEShaderUniform.inl"
+	"ResourceManager/BaseResources/FEMaterial.cpp"
+	"ResourceManager/BaseResources/FEMaterial.h"
+)
 
 file(GLOB ResourceManager_SRC
 	"ResourceManager/FEObjLoader.cpp"
@@ -247,15 +228,26 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/Config.h"
 )
 
+# *************** GEOMETRY ***************
+
+file(GLOB Geometry_SRC
+	"Core/Geometry/FELine.cpp"
+	"Core/Geometry/FELine.h"
+	"Core/Geometry/FEPlane.cpp"
+	"Core/Geometry/FEPlane.h"
+	"Core/Geometry/FEAABB.cpp"
+	"Core/Geometry/FEAABB.h"
+	"Core/Geometry/FEFrustum.cpp"
+	"Core/Geometry/FEFrustum.h"
+	"Core/Geometry/FEGeometry.cpp"
+	"Core/Geometry/FEGeometry.h"
+)
+
 # *************** CORE ***************
 
 file(GLOB Core_SRC
 	"Core/FocalEngineAPI.h"
 	"Core/FECoreIncludes.h"
-	"Core/FEPlane.cpp"
-	"Core/FEPlane.h"
-	"Core/FEGeometricTools.cpp"
-	"Core/FEGeometricTools.h"
 	"Core/FEObject.cpp"
 	"Core/FEObject.h"
 )
@@ -269,6 +261,8 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FETagComponent.h"
 	"SubSystems/Scene/Components/FETransformComponent.cpp"
 	"SubSystems/Scene/Components/FETransformComponent.h"
+	"SubSystems/Scene/Components/FEVisibilityComponent.cpp"
+	"SubSystems/Scene/Components/FEVisibilityComponent.h"
 	"SubSystems/Scene/Components/FECameraComponent.cpp"
 	"SubSystems/Scene/Components/FECameraComponent.h"
 	"SubSystems/Scene/Components/FELightComponent.cpp"
@@ -277,6 +271,10 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEGameModelComponent.h"
 	"SubSystems/Scene/Components/FEPointCloudComponent.cpp"
 	"SubSystems/Scene/Components/FEPointCloudComponent.h"
+	"SubSystems/Scene/Components/FEVolumeComponent.cpp"
+	"SubSystems/Scene/Components/FEVolumeComponent.h"
+	"SubSystems/Scene/Components/FELineComponent.cpp"
+	"SubSystems/Scene/Components/FELineComponent.h"
 	"SubSystems/Scene/Components/FEInstancedComponent.cpp"
 	"SubSystems/Scene/Components/FEInstancedComponent.h"
 	"SubSystems/Scene/Components/FETerrainComponent.cpp"
@@ -299,10 +297,14 @@ file(GLOB Scene_Component_Systems_SRC
 	"SubSystems/Scene/Components/Systems/FECameraSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEPointCloudSystem.h"
 	"SubSystems/Scene/Components/Systems/FEPointCloudSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FELineSystem.h"
+	"SubSystems/Scene/Components/Systems/FELineSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
 	"SubSystems/Scene/Components/Systems/FEInstancedSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 	"SubSystems/Scene/Components/Systems/FETerrainSystem.cpp"
+	"SubSystems/Scene/Components/Systems/FEVolumeSystem.h"
+	"SubSystems/Scene/Components/Systems/FEVolumeSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.h"
 	"SubSystems/Scene/Components/Systems/FESkyDomeSystem.cpp"
 	"SubSystems/Scene/Components/Systems/FEPrefabInstanceSystem.h"
@@ -395,6 +397,8 @@ file(GLOB lodepng_SRC
 	"ThirdParty/lodepng/lodepng.h"
 )
 
+set_source_files_properties(${lodepng_SRC} PROPERTIES COMPILE_OPTIONS "/W0")
+
 file(GLOB stb_image_SRC
 	"ThirdParty/stb_image/stb_image.h"
 )
@@ -434,11 +438,13 @@ list(APPEND ALL_SOURCE_FILES
 			${FE_SSAO_SRC}
 			${ComputeShaders_SRC}
 			${PointCloudShaders_SRC}
+			${Geometry_SRC}
 			${Core_SRC}
 			# *************** RENDERER ***************
 			${Renderer_SRC}
 			# *************** RESOURCE MANAGER ***************
 			${ResourceManager_SRC}
+			${BaseResources_SRC}
 			# *************** SUB_SYSTEM ***************
 			${SubSystems_SRC}
 			${FileSystem_SubSystems_SRC}
@@ -460,7 +466,7 @@ if(USE_STATIC_RUNTIME)
 	)
 endif()
 
-if(ENABLE_TESTS)
+if(FOCAL_ENGINE_ENABLE_TESTS)
     add_executable(FocalEngine WIN32 ${ALL_SOURCE_FILES})
 else()
     if(BUILD_SHARED_LIBS)
@@ -553,35 +559,38 @@ list(APPEND FOCAL_ENGINE_INCLUDES
 set(FOCAL_ENGINE_INCLUDES ${FOCAL_ENGINE_INCLUDES} PARENT_SCOPE)
 
 if(NOT ENGINE_HEADERS_ONLY)
-	target_link_libraries(FocalEngine 
-		PRIVATE 
+	target_link_libraries(FocalEngine
+		PRIVATE
 			FEBasicApplication
 			${GLFW_LIBRARY}
 			${GLEW_LIBRARY}
 			opengl32.lib
-		PUBLIC 
+		PUBLIC
 			debug	  ${OpenXRLoader_Debug}
 			optimized ${OpenXRLoader_Release}
-			${TEST_LIBS}
 	)
+
+	if(FOCAL_ENGINE_ENABLE_TESTS)
+		target_link_libraries(FocalEngine PRIVATE FocalEngine::GTest)
+	endif()
 
 	target_include_directories(FocalEngine
 			PUBLIC
+				${CMAKE_CURRENT_SOURCE_DIR}
 				${GLEW_INCLUDE_DIR}
 				${BASICAPP_THIRDPARTY_DIR}
 				${BASICAPP_DIR}
 				${FOCAL_ENGINE_INCLUDES}
-			PRIVATE
-				${TEST_INCLUDE_FILES}
 	)
 endif()
 
-if(ENABLE_TESTS)
+if(FOCAL_ENGINE_ENABLE_TESTS)
 	source_group("Test Source Files" FILES ${TEST_SOURCE_FILES})
 endif()
 
 source_group("Source Files" FILES ${source_SRC})
 source_group("Source Files/Core" FILES ${Core_SRC})
+source_group("Source Files/Core/Geometry" FILES ${Geometry_SRC})
 source_group("Source Files/CoreExtensions/Materials/InstancedLineMaterial" FILES ${InstancedLineMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PBRMaterial" FILES ${PBRMaterial_SRC})
 source_group("Source Files/CoreExtensions/Materials/PhongMaterial" FILES ${PhongMaterial_SRC})
@@ -604,6 +613,7 @@ source_group("Source Files/CoreExtensions/PointCloudShaders/" FILES ${PointCloud
 source_group("Source Files/Renderer" FILES ${Renderer_SRC})
 # *************** RESOURCE MANAGER ***************
 source_group("Source Files/ResourceManager" FILES ${ResourceManager_SRC})
+source_group("Source Files/ResourceManager/BaseResources" FILES ${BaseResources_SRC})
 # *************** SUB_SYSTEM ***************
 source_group("Source Files/SubSystems" FILES ${SubSystems_SRC})
 source_group("Source Files/SubSystems/FileSystem" FILES ${FileSystem_SubSystems_SRC})
@@ -690,7 +700,12 @@ if(NOT ENGINE_HEADERS_ONLY)
 	endif()
 
 	add_custom_command(TARGET FocalEngine PRE_BUILD
-		COMMAND ${CMAKE_COMMAND} -D ENGINE_FOLDER=${ENGINE_FOLDER}
-			-P ${CMAKE_CURRENT_SOURCE_DIR}/UpdateTimestamp.cmake
-    )
+    COMMAND ${CMAKE_COMMAND}
+        -D PROJECT_VERSION_PREFIX=FOCAL_ENGINE_
+        -D PROJECT_VERSION_MAJOR=0
+        -D PROJECT_VERSION_MINOR=2
+        -D PROJECT_VERSION_PATCH=4
+        -D PROJECT_VERSION_DIR=${CMAKE_CURRENT_SOURCE_DIR}/Core/VersionInfo
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/Core/VersionInfo/UpdateProjectVersion.cmake
+	)
 endif()

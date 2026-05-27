@@ -14,9 +14,9 @@ FEScene::~FEScene()
 }
 
 #include "FESceneManager.h"
-void FEScene::SetFlag(FESceneFlag Flag, bool Value)
+void FEScene::SetFlag(FESceneFlag Flag, bool bNewValue)
 {
-	if (Value)
+	if (bNewValue)
 		Flags |= Flag;
 	else
 		Flags = static_cast<FESceneFlag>(
@@ -112,8 +112,9 @@ void FEScene::Clear()
 	auto EntityIterator = EntityMap.begin();
 	while (EntityIterator != EntityMap.end())
 	{
-		delete EntityIterator->second;
+		FEEntity* CurrentEntity = EntityIterator->second;
 		EntityIterator++;
+		delete CurrentEntity;
 	}
 	EntityMap.clear();
 	EnttToEntity.clear();
@@ -125,7 +126,7 @@ void FEScene::Clear()
 }
 
 // If a game model is used in some entities, we need to replace it with the default game model.
-// TODO: Implement more efficient solution without iterating through all entities.
+// FE_TO_DO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 {
 	auto GameModelComponentsView = this->Registry.view<FEGameModelComponent>();
@@ -143,7 +144,7 @@ void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 }
 
 // In case that prefab is used in some entities, we need to delete it's reference.
-// TODO: Implement more efficient solution without iterating through all entities.
+// FE_TO_DO: Implement more efficient solution without iterating through all entities.
 void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 {
 	auto PrefabInstanceComponentsView = this->Registry.view<FEPrefabInstanceComponent>();
@@ -181,13 +182,13 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 
 	if (FileExtension == ".png" || FileExtension == ".jpg" || FileExtension == ".bmp")
 	{
-		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FileName.c_str());
+		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FileName);
 		if (LoadedTexture != nullptr)
 			Result.push_back(LoadedTexture);
 	}
 	else if (FileExtension == ".obj")
 	{
-		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName.c_str(), true);
+		std::vector<FEObject*> LoadedObjects = RESOURCE_MANAGER.ImportOBJ(FileName, true);
 		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
 	}
 	else if (FileExtension == ".ply")
@@ -247,7 +248,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 			continue;
 		}
 
-		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath.c_str());
+		FETexture* LoadedTexture = RESOURCE_MANAGER.ImportTexture(FullPath);
 		//FETexture* LoadedTexture = RESOURCE_MANAGER.NoTexture;
 		if (LoadedTexture != nullptr)
 		{
@@ -612,7 +613,7 @@ FEAABB FEScene::GetEntityAABB(std::string ID)
 	return GetEntityAABB(EntityMap[ID]);
 }
 
-FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
+FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
 {
 	FEAABB Result;
 
@@ -625,7 +626,11 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 	if (Entity->HasComponent<FEGameModelComponent>())
 	{
 		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GetGameModel();
-		Result = GameModel->GetMesh()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		Result = GameModel->GetMesh()->GetAABB();
+		if (Result.GetLongestAxisLength() == 0.0f)
+			Result = Result.Transform(glm::mat4(1.0f));
+		if (!bLocalAABB)
+			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 
 	if (Entity->HasComponent<FEInstancedComponent>())
@@ -645,7 +650,9 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity)
 
 	if (Entity->HasComponent<FEPointCloudComponent>() && Entity->GetComponent<FEPointCloudComponent>().GetPointCloud() != nullptr)
 	{
-		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB().Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		Result = Entity->GetComponent<FEPointCloudComponent>().GetPointCloud()->GetAABB();
+		if (!bLocalAABB)
+			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 
 	// If entity has no renderable components, we can have FEAABB with zero volume.

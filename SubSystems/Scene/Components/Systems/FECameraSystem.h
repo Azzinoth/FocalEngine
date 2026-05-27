@@ -40,6 +40,8 @@ namespace FocalEngine
 		bool SetCameraRenderScale(FEEntity* CameraEntity, float NewValue);
 
 		void PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f));
+
+		glm::dvec3 GetMouseRayToWorld(FEEntity* CameraEntity) const;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

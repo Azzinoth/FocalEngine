@@ -21,9 +21,6 @@ namespace FocalEngine
 		int GetWidth() const;
 		int GetHeight() const;
 
-		bool IsVisible() const;
-		void SetVisibility(bool NewValue);
-
 		bool IsInputActive() const;
 		void SetInputActive(bool NewValue);
 
@@ -92,6 +89,12 @@ namespace FocalEngine
 		// Use that instead of directly adding fonts to ImGui
 		// to ensure that font addition is done in the correct way.
 		void ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady);
+
+		bool IsLastProvidedRayIntersectingCanvas() const;
+		double GetLastRayIntersectionDistance() const;
+
+		bool IsKeyboardInputRequiresRayCollision() const;
+		void SetKeyboardInputRequiresRayCollision(bool NewValue);
 	private:
 		FEEntity* ParentEntity = nullptr;
 
@@ -110,7 +113,9 @@ namespace FocalEngine
 
 		// Input
 		bool bActiveInput = false;
+		bool bKeyboardInputRequiresRayCollision = true;
 		bool bRayColidingWithCanvas = false;
+		double LastRayIntersectionDistance = -1.0;
 		FEWindow* WindowToListen = nullptr;
 		void RegisterCallbacksForWindow();
 		void UnregisterCallbacksForWindow();

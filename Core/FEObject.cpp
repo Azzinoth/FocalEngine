@@ -10,7 +10,7 @@ extern "C" __declspec(dllexport) void* GetObjectManager()
 
 FEObjectManager::FEObjectManager()
 {
-	ObjectsByType.resize(16);
+	ObjectsByType.resize(17);
 }
 
 FEObjectManager::~FEObjectManager()
@@ -74,9 +74,9 @@ bool FEObject::IsDirty() const
 	return bDirtyFlag;
 }
 
-void FEObject::SetDirtyFlag(const bool NewValue)
+void FEObject::SetDirtyFlag(const bool bNewValue)
 {
-	bDirtyFlag = NewValue;
+	bDirtyFlag = bNewValue;
 }
 
 std::string FEObject::GetName() const

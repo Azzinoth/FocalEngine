@@ -1,6 +1,6 @@
 #pragma once
 #include "../Renderer/FEViewport.h"
-#include "../Core/FEPlane.h"
+#include "../Core/Geometry/FEGeometry.h"
 
 namespace FocalEngine
 {
@@ -8,18 +8,6 @@ namespace FocalEngine
 	{
 		Deferred,
 		Forward_Simplified,
-	};
-
-	struct FEFrustum
-	{
-		FEPlane<float> LeftPlane;
-		FEPlane<float> RightPlane;
-		FEPlane<float> BottomPlane;
-		FEPlane<float> TopPlane;
-		FEPlane<float> NearPlane;
-		FEPlane<float> FarPlane;
-
-		std::vector<float> GetAllPlanesCoefficients();
 	};
 
 	struct FOCAL_ENGINE_API FECameraComponent
@@ -44,7 +32,10 @@ namespace FocalEngine
 		glm::vec3 GetRight() const;
 
 		bool IsActive() const;
-		void SetActive(const bool Active);
+		void SetActive(const bool bActive);
+
+		bool IsRenderingEnabled() const;
+		void SetRenderingEnabled(const bool bEnabled);
 
 		bool IsClearColorEnabled() const;
 		void SetIsClearColorEnabled(const bool bEnabled);
@@ -163,6 +154,7 @@ namespace FocalEngine
 		glm::vec2 GetTemporalJitterOffset();
 	private:
 		bool bIsActive = false;
+		bool bRenderingEnabled = true;
 		bool bIsMainCamera = false;
 
 		FERenderingPipeline RenderingPipeline = FERenderingPipeline::Deferred;

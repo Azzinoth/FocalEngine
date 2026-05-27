@@ -16,8 +16,8 @@ namespace FocalEngine
 
 		bool DoesFileExist(const std::string& Path);
 		bool RenameFile(const std::string& Path, const std::string& NewPath);
-		bool CopyFile(const std::string& Path, const std::string& NewPath);
-		bool DeleteFile(const std::string& Path);
+		bool CopyFileTo(const std::string& Path, const std::string& NewPath);
+		bool RemoveFile(const std::string& Path);
 		std::vector<std::string> GetFileList(const std::string& Path);
 		size_t GetFileSize(const std::string& Path);
 		// Returns last write time in nanoseconds since epoch.
@@ -26,11 +26,12 @@ namespace FocalEngine
 
 		std::string GetFileExtension(const std::string& Path);
 		std::string GetDirectoryPath(const std::string& FullPath);
-		std::string GetFileName(const std::string& FullPath);
+		std::string GetFileName(const std::string& FullPath, bool bWithExtension = true);
+		std::string GetAbsolutePath(const std::string& Path);
 
 		bool DoesDirectoryExist(const std::string& Path);
 		bool RenameDirectory(const std::string& Path, const std::string& NewPath);
-		bool CreateDirectory(const std::string& Path);
+		bool MakeDirectory(const std::string& Path);
 		bool CopyDirectory(const std::string& Path, const std::string& NewPath);
 		bool DeleteDirectory(const std::string& Path);
 

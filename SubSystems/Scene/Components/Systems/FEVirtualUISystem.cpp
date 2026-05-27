@@ -12,21 +12,28 @@ extern "C" __declspec(dllexport) void* GetVirtualUISystem()
 
 FEVirtualUISystem::FEVirtualUISystem()
 {
+	RegisterOnComponentCallbacks();
+	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEVirtualUIComponent>(VirtualUIComponentToJson);
+	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVirtualUIComponent>(VirtualUIComponentFromJson);
+	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVirtualUIComponent>(DuplicateVirtualUIComponent);
+
+	CanvasShader = RESOURCE_MANAGER.CreateShader("FEVirtualUISystem_CanvasShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_VS.glsl")).c_str(),
+		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_FS.glsl")).c_str(),
+		nullptr, nullptr, nullptr, nullptr,
+		"647C6C768E60130C68724124");
+
+	CanvasShader->SetTag(ENGINE_RESOURCE_TAG);
+
 	CanvasMaterial = RESOURCE_MANAGER.CreateMaterial();
 	CanvasMaterial->SetName("VirtualUISystem_CanvasMaterial");
 	RESOURCE_MANAGER.SetTagInternal(CanvasMaterial, ENGINE_RESOURCE_TAG);
-	CanvasMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	CanvasMaterial->Shader = CanvasShader;
 
 	DummyGameModel = RESOURCE_MANAGER.CreateGameModel();
 	DummyGameModel->SetName("VirtualUISystem_DummyGameModel");
 	DummyGameModel->SetMaterial(CanvasMaterial);
 	RESOURCE_MANAGER.SetTagInternal(DummyGameModel, ENGINE_RESOURCE_TAG);
 	DummyGameModelComponent.SetGameModel(DummyGameModel);
-
-	RegisterOnComponentCallbacks();
-	COMPONENTS_TOOL.RegisterComponentToJsonFunction<FEVirtualUIComponent>(VirtualUIComponentToJson);
-	COMPONENTS_TOOL.RegisterComponentFromJsonFunction<FEVirtualUIComponent>(VirtualUIComponentFromJson);
-	COMPONENTS_TOOL.RegisterComponentDuplicateFunction<FEVirtualUIComponent>(DuplicateVirtualUIComponent);
 }
 
 void FEVirtualUISystem::RegisterOnComponentCallbacks()
@@ -64,7 +71,13 @@ void FEVirtualUISystem::DuplicateVirtualUIComponent(FEEntity* SourceEntity, FEEn
 	NewVirtualUIComponent.SetDropPassThrough(VirtualUIComponent.bDropPassThrough);
 	NewVirtualUIComponent.SetScrollPassThrough(VirtualUIComponent.bScrollPassThrough);
 	
-	NewVirtualUIComponent.SetVisibility(VirtualUIComponent.IsVisible());
+	// Additional checks needed not to add visibility component if not needed.
+	if (!SourceEntity->IsComponentVisible(ComponentVisibilityType::ALL) || !TargetEntity->IsComponentVisible(ComponentVisibilityType::ALL))
+	{
+		bool bIsVisible = SourceEntity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI);
+		TargetEntity->SetComponentVisible(ComponentVisibilityType::VIRTUAL_UI, bIsVisible);
+	}
+
 	NewVirtualUIComponent.SetInputActive(VirtualUIComponent.IsInputActive());
 
 	NewVirtualUIComponent.InvokeResize(VirtualUIComponent.GetWidth(), VirtualUIComponent.GetHeight());
@@ -97,7 +110,6 @@ Json::Value FEVirtualUISystem::VirtualUIComponentToJson(FEEntity* Entity)
 	Root["Internal resolution"]["Width"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().x);
 	Root["Internal resolution"]["Height"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().y);
 
-	Root["Visibility"] = VirtualUIComponent.IsVisible();
 	Root["Input Active"] = VirtualUIComponent.IsInputActive();
 
 	// TO-DO: How to save function pointers?
@@ -138,7 +150,7 @@ void FEVirtualUISystem::VirtualUIComponentFromJson(FEEntity* Entity, Json::Value
 	VirtualUIComponent.SetDropPassThrough(Root["Drop PassThrough"].asBool());
 }
 
-void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity)
+void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FECameraComponent& CameraComponent)
 {
 	if (Entity == nullptr || !Entity->HasComponent<FEVirtualUIComponent>())
 	{
@@ -166,13 +178,21 @@ void FEVirtualUISystem::RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* F
 	}
 	FEVirtualUIComponent& VirtualUIComponent = Entity->GetComponent<FEVirtualUIComponent>();
 
-	ForceMaterial->SetAlbedoMap(VirtualUIComponent.Framebuffer->GetColorAttachment());
+	FEVirtualUI* VirtualUI = VirtualUIComponent.GetVirtualUI();
+	if (VirtualUI == nullptr)
+		return;
+
+	if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
+		return;
+
 	DummyGameModel->SetMaterial(ForceMaterial);
 	DummyGameModel->SetMesh(VirtualUIComponent.CanvasMesh);
+	VirtualUIComponent.Framebuffer->GetColorAttachment()->Bind(0);
 
-	RENDERER.RenderGameModelComponent(DummyGameModelComponent, Entity->GetComponent<FETransformComponent>(), Entity->GetParentScene(), nullptr, true);
+	FEEntity* CameraEntity = CAMERA_SYSTEM.GetMainCamera(Entity->GetParentScene());
+	RENDERER.RenderGameModelComponent(DummyGameModelComponent, Entity->GetComponent<FETransformComponent>(), Entity->GetParentScene(), CameraEntity, true);
 
-	ForceMaterial->SetAlbedoMap(nullptr);
+	VirtualUIComponent.Framebuffer->GetColorAttachment()->UnBind();
 	DummyGameModel->SetMaterial(nullptr);
 	DummyGameModel->SetMesh(nullptr);
 	CanvasMaterial->SetAlbedoMap(nullptr);
@@ -208,7 +228,6 @@ void FEVirtualUISystem::Update()
 			if (VirtualUIComponent.bMouseMovePassThrough)
 				VirtualUIComponent.UpdateInteractionRay(CameraEntity->GetComponent<FETransformComponent>().GetPosition(FE_WORLD_SPACE), MouseRay);
 		}
-		
 	}
 }
 
@@ -241,12 +260,11 @@ void FEVirtualUISystem::DummyRenderFunction(FEVirtualUI* VirtualUI)
 	if (ImGui::Begin(std::string("Dummy UI##" + ParentEntity->GetObjectID()).c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoNav))
 	{
 		ImVec2 Center = ImGui::GetWindowContentRegionMax() / 2.0f;
-		
+
 		ImGui::SetWindowFontScale(10.0f);
 		ImVec2 TextSize = ImGui::CalcTextSize("Dummy UI");
 		ImGui::SetCursorPos(Center - TextSize / 2.0f);
 		ImGui::Text("Dummy UI");
-
-		ImGui::End();
 	}
+	ImGui::End();
 }

@@ -24,7 +24,7 @@ namespace FocalEngine
 		bool IsUsingMaterial(std::string MaterialID) const;
 		bool IsUsingGameModel(std::string GameModelID) const;
 
-		void SetScene(FEScene* Scene, bool DeleteOldScene = true);
+		void SetScene(FEScene* Scene, bool bDeleteOldScene = true);
 		FEScene* GetScene() const;
 	};
 }

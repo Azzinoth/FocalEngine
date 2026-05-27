@@ -14,8 +14,8 @@ FESkyDomeSystem::FESkyDomeSystem()
 {
 	FEMaterial* SkyDomeMaterial = RESOURCE_MANAGER.CreateMaterial("skyDomeMaterial", "5A649B9E0F36073D4939313H");
 	RESOURCE_MANAGER.SetTagInternal(SkyDomeMaterial, ENGINE_RESOURCE_TAG);
-	SkyDomeMaterial->Shader = RESOURCE_MANAGER.CreateShader("FESkyDome", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl").c_str()).c_str(),
-																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl").c_str()).c_str(),
+	SkyDomeMaterial->Shader = RESOURCE_MANAGER.CreateShader("FESkyDome", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_VS.glsl")).c_str(),
+																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//SkyDome//FE_SkyDome_FS.glsl")).c_str(),
 																		 nullptr, nullptr, nullptr, nullptr,
 																		 "3A69744E831A574E4857361B");
 	RESOURCE_MANAGER.SetTagInternal(SkyDomeMaterial->Shader, ENGINE_RESOURCE_TAG);
@@ -47,7 +47,7 @@ void FESkyDomeSystem::OnMyComponentAdded(FEEntity* Entity)
 		return;
 
 	Entity->AddComponent<FEGameModelComponent>(SkyDomeGameModel);
-	Entity->GetComponent<FEGameModelComponent>().SetVisibility(false);
+	Entity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, false);
 }
 
 void FESkyDomeSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
@@ -67,7 +67,7 @@ void FESkyDomeSystem::DuplicateSkyDomeComponent(FEEntity* SourceEntity, FEEntity
 	if (!SourceEntity->HasComponent<FESkyDomeComponent>())
 		return;
 
-	// TODO: Make sky dome component not depend on game model component
+	// FE_TO_DO: Make sky dome component not depend on game model component.
 	// Currently, we will support duplication of sky dome component only if targer entity is in a different scene.
 	if (SourceEntity->GetParentScene() != TargetEntity->GetParentScene())
 		TargetEntity->AddComponent<FESkyDomeComponent>();
@@ -108,7 +108,7 @@ void FESkyDomeSystem::SkyDomeComponentFromJson(FEEntity* Entity, Json::Value Roo
 		return;
 	}
 
-	// TODO: Make sky dome component not depend on game model component
+	// FE_TO_DO: Make sky dome component not depend on game model component.
 	// GameModelComponent could load faster, so we need to remove it
 	if (Entity->HasComponent<FEGameModelComponent>())
 		Entity->RemoveComponent<FEGameModelComponent>();

@@ -160,7 +160,29 @@ namespace FocalEngine
 		return Result;
 	}
 
-#define FE_OPENXR_ERROR(cmd) CheckXrResult(cmd, #cmd, FILE_AND_LINE);
+#define FE_OPENXR_ERROR(Command) CheckXrResult(Command, #Command, FILE_AND_LINE);
+
+	struct FEOpenXRExtensionInfo
+	{
+		std::string Name;
+		uint32_t Version = 0;
+	};
+
+	enum class FE_VR_OPENXR_RUNTIME
+	{
+		UNKNOWN = 0,
+		STEAM_VR = 1,
+		SOMNIUM = 2,
+		META = 3,
+		VARJO = 4
+	};
+
+	struct FEOpenXRRuntimeInfo
+	{
+		FE_VR_OPENXR_RUNTIME Type = FE_VR_OPENXR_RUNTIME::UNKNOWN;
+		std::string Name;
+		std::string Version;
+	};
 
 	class FEOpenXRCore
 	{
@@ -172,19 +194,26 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXRCore)
 
-		void Init(std::string VRAppName = "");
+		void Init();
+		void Shutdown();
+
+		FEOpenXRRuntimeInfo GetRuntimeInfo();
+		std::vector<FEOpenXRExtensionInfo> GetAvailableExtensionsInfo();
 	private:
 		SINGLETON_PRIVATE_PART(FEOpenXRCore)
 
 		bool bInitializedCorrectly = false;
+		bool bSessionIsRunning = false;
+		bool bGazeSupported = false;
 
-		XrInstance OpenXRInstance;
-		XrSystemId SystemID;
-		XrSession Session;
-		XrSessionState SessionState;
+		FEOpenXRRuntimeInfo ActiveRuntimeInfo;
+		bool ReadRuntimeInfo();
+
+		XrInstance OpenXRInstance = nullptr;
+		XrSystemId SystemID = 0;
+		XrSession Session = nullptr;
+		XrSessionState SessionState = XrSessionState::XR_SESSION_STATE_UNKNOWN;
 		XrSpace ApplicationSpace{ XR_NULL_HANDLE };
-
-		std::string VRAppName = "Test_XR";
 
 		void CreateInstance();
 		void InitializeSystem();

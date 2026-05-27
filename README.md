@@ -39,6 +39,8 @@ The Focal Engine project consists of four modular components that work together 
 
 Focal Engine (this repository) - The engine with all core functionality.
 
+[Focal Engine Scene Graph UI](https://github.com/Azzinoth/FESceneGraphUI) - A reusable scene graph UI component, that provides a hierarchical tree view for visualizing and interacting with scene graph nodes.
+
 [Focal Engine Editor](https://github.com/Azzinoth/FocalEngineEditor) - A comprehensive editor for the engine.
 
 This modularity makes it easier to include just the engine in applications that don't need the editor's complexity. It also simplifies the implementation of export functionality in the editor, allowing users to compile their projects into standalone executable applications with all necessary resources.
@@ -210,8 +212,6 @@ This project uses the following third-party libraries:
 
 5) **OpenXR**: This library is licensed under Apache 2.0 License. The full license text can be found at [OpenXR's GitHub repository](https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/main/LICENSE).
 
-6) **googletest**: This library is under the BSD-3-Clause license. The full license text can be found at [googletest's GitHub repository](https://github.com/google/googletest?tab=BSD-3-Clause-1-ov-file).
+6) **EnTT**: This library is under the MIT License. The full license text can be found at [EnTT's GitHub repository](https://github.com/skypjack/entt?tab=MIT-1-ov-file).
 
-7) **EnTT**: This library is under the MIT License. The full license text can be found at [EnTT's GitHub repository](https://github.com/skypjack/entt?tab=MIT-1-ov-file).
-
-8) **LASzip**: This library is licensed under the Apache License 2.0. The full license text can be found at [LASzip's GitHub repository](https://github.com/LASzip/LASzip).
+7) **LASzip**: This library is licensed under the Apache License 2.0. The full license text can be found at [LASzip's GitHub repository](https://github.com/LASzip/LASzip).

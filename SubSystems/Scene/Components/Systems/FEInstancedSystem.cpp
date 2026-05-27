@@ -509,7 +509,7 @@ void FEInstancedSystem::AddInstances(FEEntity* Entity, FEGameModelComponent& Gam
 	}
 }
 
-FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity)
+FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity, bool bLocalAABB)
 {
 	if (Entity == nullptr)
 		return FEAABB();
@@ -523,7 +523,8 @@ FEAABB FEInstancedSystem::GetAABB(FEEntity* Entity)
 	FEAABB Result = FEAABB();
 	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
 	{
-		Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB.Transform(TransformComponent.GetWorldMatrix()));
+		Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB);
+		//Result = Result.Merge(InstancedComponent.InstancedElementsData[i]->AllInstancesAABB.Transform(TransformComponent.GetWorldMatrix()));
 	}
 
 	if (TransformComponent.IsDirty())
@@ -603,6 +604,16 @@ void FEInstancedSystem::Render(FEEntity* Entity, FEGameModelComponent& GameModel
 		return;
 
 	CheckDirtyFlag(Entity);
+
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	{
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		for (const auto& ExistingCallback : Callbacks)
+		{
+			if (ExistingCallback != nullptr)
+				ExistingCallback(Entity);
+		}
+	}
 
 	RenderGameModelComponent(GameModelComponent, InstancedComponent, BufferIndex);
 }
@@ -798,7 +809,7 @@ bool FEInstancedSystem::TryToSnapIndividualInstance(FEEntity* Entity, size_t Ins
 		return false;
 
 	const float Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(InstancedComponent.InstancedElementsData[0]->TransformedInstancedMatrices[InstanceIndex][3][0], InstancedComponent.InstancedElementsData[0]->TransformedInstancedMatrices[InstanceIndex][3][2]));
-	if (Y == -FLT_MAX)
+	if (Y == -std::numeric_limits<float>::max())
 		return false;
 
 	if (InstancedComponent.TerrainLayer != -1)
@@ -923,7 +934,7 @@ void FEInstancedSystem::Update()
 		std::string SceneID = EnitityIDListToInitialize[i].first;
 		std::string EntityID = EnitityIDListToInitialize[i].second;
 
-		FEScene* Scene = SCENE_MANAGER.GetScene(SceneID);
+		FEScene* Scene = SCENE_MANAGER.GetSceneByID(SceneID);
 		if (Scene == nullptr)
 		{
 			EnitityIDListToInitialize.erase(EnitityIDListToInitialize.begin() + i);
@@ -1098,27 +1109,27 @@ bool FEInstancedSystem::PopulateInstanceInternal(FEEntity* Entity, FEGameModelCo
 		{
 			Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
-			if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
+			if (InstancedComponent.TerrainLayer != -1 && Y != -std::numeric_limits<float>::max())
 			{
 				FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
 				const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 				if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
-					Y = -FLT_MAX;
+					Y = -std::numeric_limits<float>::max();
 			}
 
 			int CountOfTries = 0;
-			while (Y == -FLT_MAX)
+			while (Y == -std::numeric_limits<float>::max())
 			{
 				X = SpawnInfo.GetPositionDeviation();
 				Z = SpawnInfo.GetPositionDeviation();
 				Y = TERRAIN_SYSTEM.GetHeightAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z));
 
-				if (InstancedComponent.TerrainLayer != -1 && Y != -FLT_MAX)
+				if (InstancedComponent.TerrainLayer != -1 && Y != -std::numeric_limits<float>::max())
 				{
 					FETerrainComponent& TerrainComponent = InstancedComponent.TerrainToSnap->GetComponent<FETerrainComponent>();
 					const float LayerIntensity = TERRAIN_SYSTEM.GetLayerIntensityAt(InstancedComponent.TerrainToSnap, glm::vec2(Position.x + X, Position.z + Z), InstancedComponent.TerrainLayer);
 					if (LayerIntensity < InstancedComponent.MinLayerIntensityToSpawn)
-						Y = -FLT_MAX;
+						Y = -std::numeric_limits<float>::max();
 				}
 
 				CountOfTries++;
@@ -1410,4 +1421,107 @@ void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value 
 	{
 		InstancedComponent.PostponedModificationsData = Data["Modifications"];
 	}
+}
+
+FEEntity* FEInstancedSystem::GetEntityWithGameModelComponent(std::string EntityID)
+{
+	FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
+	if (Object == nullptr || Object->GetType() != FE_ENTITY)
+		return nullptr;
+
+	FEEntity* Entity = reinterpret_cast<FEEntity*>(Object);
+	if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
+		return nullptr;
+
+	return Entity;
+}
+
+void FEInstancedSystem::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback)
+{
+	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
+		return;
+
+	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	{
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		/*for (const auto& ExistingCallback : Callbacks)
+		{
+			if (ExistingCallback.target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+			{
+				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_ECS", FE_LOG_WARNING);
+				return;
+			}
+		}*/
+	}
+
+	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
+}
+
+void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
+{
+	if (!Entity->HasComponent<FEGameModelComponent>() && !Entity->HasComponent<FEPrefabInstanceComponent>())
+	{
+		LOG.Add("FEInstancedSystem::ForceUpdateAABB: Entity does not have FEGameModelComponent or FEPrefabInstanceComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	if (!Entity->HasComponent<FEInstancedComponent>())
+	{
+		LOG.Add("FEInstancedSystem::ForceUpdateAABB: Entity does not have FEInstancedComponent", "FE_LOG_ECS", FE_LOG_WARNING);
+		return;
+	}
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
+	FEGameModelComponent& GameModelComponent = Entity->GetComponent<FEGameModelComponent>();
+
+	size_t CurrentBufferIndex = 0;
+	if (Entity->HasComponent<FEPrefabInstanceComponent>())
+	{
+		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = FEAABB();
+
+		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
+		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
+
+		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
+		{
+			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
+			if (CurrentPrefabEntity != nullptr)
+			{
+				FEGameModelComponent& GameModelComponent = CurrentPrefabEntity->GetComponent<FEGameModelComponent>();
+				glm::vec3 Position = TransformComponent.GetPosition();
+				for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
+				{
+					glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+					MatWithoutTranslate[3][0] -= Position.x;
+					MatWithoutTranslate[3][1] -= Position.y;
+					MatWithoutTranslate[3][2] -= Position.z;
+
+					InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatWithoutTranslate));
+				}
+				CurrentBufferIndex++;
+			}
+		}
+	}
+	else
+	{
+		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = FEAABB();
+
+		auto& InstancedElementData = InstancedComponent.InstancedElementsData[CurrentBufferIndex];
+		FEAABB& MeshAABB = GameModelComponent.GetGameModel()->GetMesh()->GetAABB();
+		glm::vec3 Position = TransformComponent.GetPosition();
+		for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
+		{
+			glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+			MatWithoutTranslate[3][0] -= Position.x;
+			MatWithoutTranslate[3][1] -= Position.y;
+			MatWithoutTranslate[3][2] -= Position.z;
+
+			InstancedElementData->AllInstancesAABB = InstancedElementData->AllInstancesAABB.Merge(MeshAABB.Transform(MatWithoutTranslate));
+		}
+	}
+
+	TransformComponent.SetDirtyFlag(true);
+	GetAABB(Entity);
 }

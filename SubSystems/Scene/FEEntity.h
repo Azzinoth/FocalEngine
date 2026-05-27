@@ -55,7 +55,7 @@ namespace FocalEngine
 			if (!HasComponent<T>())
 			{
 				LOG.Add("Component does not exist in entity!", "FE_LOG_ECS", FE_LOG_ERROR);
-				// FIXME: Should return nullptr or similar instead of throwing an exception.
+				// FE_FIX_ME: Should return nullptr or similar instead of throwing an exception.
 				throw std::runtime_error("Component does not exist in entity");
 			}
 
@@ -84,5 +84,20 @@ namespace FocalEngine
 		FEScene* GetParentScene();
 		
 		Json::Value ToJson();
+
+		bool IsVisible();
+		void SetVisible(bool bNewValue);
+
+		bool IsComponentVisible(ComponentVisibilityType Type);
+		void SetComponentVisible(ComponentVisibilityType Type, bool bNewValue);
+
+		bool AttachTo(FEEntity* Parent, bool bPreserveWorldTransform = true);
+		bool AttachChild(FEEntity* Child, bool bPreserveWorldTransform = true);
+		bool Detach(bool bPreserveWorldTransform = true);
+		FEEntity* GetParentEntity() const;
+		std::vector<FEEntity*> GetChildEntities() const;
+		bool IsChildOf(FEEntity* PotentialParent) const;
+		bool IsDescendantOf(FEEntity* PotentialAncestor) const;
+		bool IsAncestorOf(FEEntity* PotentialDescendant);
 	};
 }

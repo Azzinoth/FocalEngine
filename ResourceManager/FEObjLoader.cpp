@@ -13,27 +13,27 @@ FEObjLoader::~FEObjLoader()
 
 void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 {
-	std::string STemp;
+	std::string CurrentLine;
 
-	LineStream >> STemp;
+	LineStream >> CurrentLine;
 	// To lower case
-	std::transform(STemp.begin(), STemp.end(), STemp.begin(), [](const unsigned char C) { return std::tolower(C); });
+	std::transform(CurrentLine.begin(), CurrentLine.end(), CurrentLine.begin(), [](const unsigned char C) { return std::tolower(C); });
 
 	// if it is comment or object declaration or other not relevant info
-	if (STemp[0] == '#' || STemp[0] == 'o')
+	if (CurrentLine[0] == '#' || CurrentLine[0] == 'o')
 	{
 		// get to the next line
 		return;
 	}
 
 	// if this line contains vertex coordinates
-	if (STemp[0] == 'v' && STemp.size() == 1)
+	if (CurrentLine[0] == 'v' && CurrentLine.size() == 1)
 	{
 		glm::dvec3 NewVec;
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stod(STemp);
+			LineStream >> CurrentLine;
+			NewVec[i] = std::stod(CurrentLine);
 		}
 
 		if (bUseDoublePrecisionForReadingCoordinates)
@@ -50,10 +50,10 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		{
 			for (int i = 0; i <= 2; i++)
 			{
-				if (!(LineStream >> STemp) || STemp.empty())
+				if (!(LineStream >> CurrentLine) || CurrentLine.empty())
 					break;
 
-				NewVec[i] = std::stof(STemp);
+				NewVec[i] = std::stof(CurrentLine);
 				bHaveColors = true;
 			}
 
@@ -61,32 +61,32 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		}
 	}
 	// if this line contains vertex texture coordinates
-	else if (STemp[0] == 'v' && STemp.size() == 2 && STemp[1] == 't')
+	else if (CurrentLine[0] == 'v' && CurrentLine.size() == 2 && CurrentLine[1] == 't')
 	{
 		bHaveTextureCoord = true;
 
 		glm::vec2 NewVec;
 		for (int i = 0; i <= 1; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stof(STemp);
+			LineStream >> CurrentLine;
+			NewVec[i] = std::stof(CurrentLine);
 		}
 
 		Data->RawTextureCoordinates.push_back(NewVec);
 	}
 	// if this line contains vertex texture coordinates
-	else if (STemp[0] == 'v' && STemp.size() == 2 && STemp[1] == 'n')
+	else if (CurrentLine[0] == 'v' && CurrentLine.size() == 2 && CurrentLine[1] == 'n')
 	{
 		bHaveNormalCoord = true;
 
-		glm::vec3 NewVec;
+		glm::vec3 NewVector;
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
-			NewVec[i] = std::stof(STemp);
+			LineStream >> CurrentLine;
+			NewVector[i] = std::stof(CurrentLine);
 		}
 		
-		glm::vec3 NormalizedVector = glm::normalize(NewVec);
+		glm::vec3 NormalizedVector = glm::normalize(NewVector);
 
 		if (isnan(NormalizedVector.x) || isnan(NormalizedVector.y) || isnan(NormalizedVector.z))
 			NormalizedVector = glm::vec3(0.0f);
@@ -94,26 +94,26 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		Data->RawNormalCoordinates.push_back(NormalizedVector);
 	}
 	// if this line contains indices
-	else if (STemp[0] == 'f' && STemp.size() == 1)
+	else if (CurrentLine[0] == 'f' && CurrentLine.size() == 1)
 	{
 		for (int i = 0; i <= 2; i++)
 		{
-			LineStream >> STemp;
+			LineStream >> CurrentLine;
 
-			std::stringstream TempLineStrem;
-			TempLineStrem << STemp;
+			std::stringstream TemporaryLineStream;
+			TemporaryLineStream << CurrentLine;
 
-			int iterations = 0;
-			while (std::getline(TempLineStrem, STemp, '/'))
+			int Iterations = 0;
+			while (std::getline(TemporaryLineStream, CurrentLine, '/'))
 			{
-				if (!STemp.empty())
+				if (!CurrentLine.empty())
 				{
-					Data->RawIndices.push_back(std::stoi(STemp));
+					Data->RawIndices.push_back(std::stoi(CurrentLine));
 				}
 				else
 				{
 					// Texture coordinates are optional.
-					if (bHaveTextureCoord && iterations == 1)
+					if (bHaveTextureCoord && Iterations == 1)
 					{
 						// It is not proper fix!
 						Data->RawIndices.push_back(1);
@@ -126,7 +126,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 
 				if (!Data->MaterialRecords.empty())
 				{
-					if (iterations == 0)
+					if (Iterations == 0)
 					{
 						if (Data->MaterialRecords.back().MinVertexIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -134,7 +134,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 						if (Data->MaterialRecords.back().MaxVertexIndex < static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MaxVertexIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
-					else if (iterations == 1)
+					else if (Iterations == 1)
 					{
 						if (Data->MaterialRecords.back().MinTextureIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -142,7 +142,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 						if (Data->MaterialRecords.back().MaxTextureIndex < static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MaxTextureIndex = static_cast<unsigned int>(Data->RawIndices.back());
 					}
-					else if (iterations == 2)
+					else if (Iterations == 2)
 					{
 						if (Data->MaterialRecords.back().MinNormalIndex > static_cast<unsigned int>(Data->RawIndices.back()))
 							Data->MaterialRecords.back().MinNormalIndex = static_cast<unsigned int>(Data->RawIndices.back());
@@ -154,12 +154,12 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 					Data->MaterialRecords.back().FaceCount++;
 				}
 				
-				iterations++;
+				Iterations++;
 			}
 		}
 	}
 	// if this line contains new material declaration
-	else if (STemp.find("usemtl") != std::string::npos)
+	else if (CurrentLine.find("usemtl") != std::string::npos)
 	{
 		Data->MaterialRecords.push_back(MaterialRecord());
 		if (Data->MaterialRecords.size() > 1)
@@ -168,7 +168,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 		LineStream >> Data->MaterialRecords.back().Name;
 	}
 	// file with materials data
-	else if (STemp.find("mtllib") != std::string::npos)
+	else if (CurrentLine.find("mtllib") != std::string::npos)
 	{
 		LineStream >> MaterialFileName;
 	}
@@ -196,15 +196,15 @@ void FEObjLoader::ReadFile(const char* FileName)
 	}
 
 	std::ifstream File(FileName, std::ios::binary);
-	const auto begin = File.tellg();
+	const auto Begin = File.tellg();
 	File.seekg(0, std::ios::end);
-	const auto end = File.tellg();
-	const auto fsize = static_cast<size_t>(end - begin);
+	const auto End = File.tellg();
+	const auto FileSize = static_cast<size_t>(End - Begin);
 
 	File.seekg(0, 0);
 
 	std::string CurrentLine;
-	for (size_t i = 0; i < fsize; i++)
+	for (size_t i = 0; i < FileSize; i++)
 	{
 		char NewChar;
 		File.read(&NewChar, 1);
@@ -227,45 +227,45 @@ void FEObjLoader::ReadFile(const char* FileName)
 		{
 			for (size_t j = 0; j < LoadedObjects[i]->MaterialRecords.size(); j++)
 			{
-				FERawOBJData* TempObject = new FERawOBJData();
-				TempObject->MaterialRecords.push_back(MaterialRecord(LoadedObjects[i]->MaterialRecords[j]));
+				FERawOBJData* TemporaryObject = new FERawOBJData();
+				TemporaryObject->MaterialRecords.push_back(MaterialRecord(LoadedObjects[i]->MaterialRecords[j]));
 
 				size_t StartIndex = LoadedObjects[i]->MaterialRecords[j].MinVertexIndex - 1;
 				size_t EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxVertexIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawVertexCoordinates.push_back(LoadedObjects[i]->RawVertexCoordinates[k]);
+					TemporaryObject->RawVertexCoordinates.push_back(LoadedObjects[i]->RawVertexCoordinates[k]);
 				}
 
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawVertexCoordinatesDoublePrecision.push_back(LoadedObjects[i]->RawVertexCoordinatesDoublePrecision[k]);
+					TemporaryObject->RawVertexCoordinatesDoublePrecision.push_back(LoadedObjects[i]->RawVertexCoordinatesDoublePrecision[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].MinTextureIndex - 1;
 				EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxTextureIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawTextureCoordinates.push_back(LoadedObjects[i]->RawTextureCoordinates[k]);
+					TemporaryObject->RawTextureCoordinates.push_back(LoadedObjects[i]->RawTextureCoordinates[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].MinNormalIndex - 1;
 				EndIndex = LoadedObjects[i]->MaterialRecords[j].MaxNormalIndex;
 				for (size_t k = StartIndex; k < EndIndex; k++)
 				{
-					TempObject->RawNormalCoordinates.push_back(LoadedObjects[i]->RawNormalCoordinates[k]);
+					TemporaryObject->RawNormalCoordinates.push_back(LoadedObjects[i]->RawNormalCoordinates[k]);
 				}
 
 				StartIndex = LoadedObjects[i]->MaterialRecords[j].FacesSeenBefore;
 				EndIndex = StartIndex + LoadedObjects[i]->MaterialRecords[j].FaceCount;
 				for (size_t k = StartIndex; k < EndIndex; k += 3)
 				{
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k] - LoadedObjects[i]->MaterialRecords[j].MinVertexIndex + 1);
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 1] - LoadedObjects[i]->MaterialRecords[j].MinTextureIndex + 1);
-					TempObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 2] - LoadedObjects[i]->MaterialRecords[j].MinNormalIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k] - LoadedObjects[i]->MaterialRecords[j].MinVertexIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 1] - LoadedObjects[i]->MaterialRecords[j].MinTextureIndex + 1);
+					TemporaryObject->RawIndices.push_back(LoadedObjects[i]->RawIndices[k + 2] - LoadedObjects[i]->MaterialRecords[j].MinNormalIndex + 1);
 				}
 
-				ObjectsPerMaterialList.push_back(TempObject);
+				ObjectsPerMaterialList.push_back(TemporaryObject);
 			}
 
 			if (LoadedObjects[i]->MaterialRecords.empty())
@@ -341,12 +341,12 @@ void FEObjLoader::CalculateTangents(FERawOBJData* Data)
 
 void FEObjLoader::NormalizeVertexPositions(FERawOBJData* Data)
 {
-	float MinX = FLT_MAX;
-	float MaxX = -FLT_MAX;
-	float MinY = FLT_MAX;
-	float MaxY = -FLT_MAX;
-	float MinZ = FLT_MAX;
-	float MaxZ = -FLT_MAX;
+	float MinX = std::numeric_limits<float>::max();
+	float MaxX = -std::numeric_limits<float>::max();
+	float MinY = std::numeric_limits<float>::max();
+	float MaxY = -std::numeric_limits<float>::max();
+	float MinZ = std::numeric_limits<float>::max();
+	float MaxZ = -std::numeric_limits<float>::max();
 
 	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
 	{
@@ -381,24 +381,24 @@ void FEObjLoader::NormalizeVertexPositions(FERawOBJData* Data)
 		ScaleFactor = 1.0f / MinRange;
 	}
 
+	glm::vec3 ShiftToApply(-MinX, -MinY, -MinZ);
 	for (size_t i = 0; i < Data->RawVertexCoordinates.size(); i++)
 	{
-		Data->RawVertexCoordinates[i].x -= MinX;
-		Data->RawVertexCoordinates[i].y -= MinY;
-		Data->RawVertexCoordinates[i].z -= MinZ;
-
+		Data->RawVertexCoordinates[i] -= ShiftToApply;
 		Data->RawVertexCoordinates[i] *= ScaleFactor;
 	}
+
+	LastAppliedShift = ShiftToApply;
 }
 
 void FEObjLoader::NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data)
 {
-	double MinX = DBL_MAX;
-	double MaxX = -DBL_MAX;
-	double MinY = DBL_MAX;
-	double MaxY = -DBL_MAX;
-	double MinZ = DBL_MAX;
-	double MaxZ = -DBL_MAX;
+	double MinX = std::numeric_limits<double>::max();
+	double MaxX = -std::numeric_limits<double>::max();
+	double MinY = std::numeric_limits<double>::max();
+	double MaxY = -std::numeric_limits<double>::max();
+	double MinZ = std::numeric_limits<double>::max();
+	double MaxZ = -std::numeric_limits<double>::max();
 
 	for (size_t i = 0; i < Data->RawVertexCoordinatesDoublePrecision.size(); i++)
 	{
@@ -426,21 +426,11 @@ void FEObjLoader::NormalizeVertexPositionsDoublePrecision(FERawOBJData* Data)
 	double RangeZ = abs(MaxZ - MinZ);
 
 	double MinRange = std::min(std::min(RangeX, RangeY), RangeZ);
-	double ScaleFactor = 1.0;
-
-	if (MinRange < 1.0)
-	{
-		ScaleFactor = 1.0 / MinRange;
-	}
-
+	glm::dvec3 ShiftToApply((MinX + MaxX) / 2.0, (MinY + MaxY) / 2.0, (MinZ + MaxZ) / 2.0);
 	for (size_t i = 0; i < Data->RawVertexCoordinatesDoublePrecision.size(); i++)
-	{
-		Data->RawVertexCoordinatesDoublePrecision[i].x -= MinX;
-		Data->RawVertexCoordinatesDoublePrecision[i].y -= MinY;
-		Data->RawVertexCoordinatesDoublePrecision[i].z -= MinZ;
+		Data->RawVertexCoordinatesDoublePrecision[i] -= ShiftToApply;
 
-		Data->RawVertexCoordinatesDoublePrecision[i] *= ScaleFactor;
-	}
+	LastAppliedShift = ShiftToApply;
 }
 
 void FEObjLoader::ProcessRawData(FERawOBJData* Data)
@@ -487,9 +477,9 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 					size_t j = IndexesMap.find(Data->RawIndices[i])->second;
 					std::swap(i, j);
 
-					const bool TexD = Data->RawIndices[i + 1] != Data->RawIndices[j + 1];
-					const bool NormD = Data->RawIndices[i + 2] != Data->RawIndices[j + 2];
-					if (Data->RawIndices[i] == Data->RawIndices[j] && (TexD || NormD))
+					const bool bTextureCoordRequiresSplit = Data->RawIndices[i + 1] != Data->RawIndices[j + 1];
+					const bool bNormalRequiresSplit = Data->RawIndices[i + 2] != Data->RawIndices[j + 2];
+					if (Data->RawIndices[i] == Data->RawIndices[j] && (bTextureCoordRequiresSplit || bNormalRequiresSplit))
 					{
 						// We do not need to add first appearance of vertex that we need to double.
 						FEObjLoader::VertexThatNeedDoubling NewVertex = FEObjLoader::VertexThatNeedDoubling(static_cast<int>(j), Data->RawIndices[j], Data->RawIndices[j + 1], Data->RawIndices[j + 2]);
@@ -792,17 +782,17 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 	auto LookForFile = [&](std::string& FilePath) {
 		if (CurrentMaterialObject->MaterialRecords[0].Name.find('/') != std::string::npos)
 		{
-			std::string name = CurrentMaterialObject->MaterialRecords[0].Name;
-			for (size_t i = name.size() - 1; i > 0; i--)
+			std::string Name = CurrentMaterialObject->MaterialRecords[0].Name;
+			for (size_t i = Name.size() - 1; i > 0; i--)
 			{
-				if (name[i] == '/')
+				if (Name[i] == '/')
 				{
-					name.erase(name.begin() + i, name.end());
+					Name.erase(Name.begin() + i, Name.end());
 					break;
 				}
 			}
 
-			const std::string NewPath = std::string(FILE_SYSTEM.GetDirectoryPath(CurrentFilePath.c_str())) + name + "/" + FilePath;
+			const std::string NewPath = std::string(FILE_SYSTEM.GetDirectoryPath(CurrentFilePath.c_str())) + Name + "/" + FilePath;
 			FilePath = NewPath;
 		}
 		else
@@ -1149,4 +1139,9 @@ bool FEObjLoader::SaveToOBJ(const char* FileName, FERawOBJData* Data)
 	File.close();
 	LOG.Add(std::string("Successfully saved OBJ file: ") + FileName, "FE_LOG_SAVING", FE_LOG_INFO);
 	return true;
+}
+
+glm::dvec3 FEObjLoader::GetLastAppliedShift() const
+{
+	return LastAppliedShift;
 }

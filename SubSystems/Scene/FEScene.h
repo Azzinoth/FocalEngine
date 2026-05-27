@@ -2,7 +2,7 @@
 
 #include"FEEntity.h"
 #include "../ResourceManager/FEResourceManager.h"
-#include "../Renderer/FELine.h"
+#include "../ResourceManager/BaseResources/FELineCollection.h"
 #include "FENaiveSceneGraph.h"
 #include <typeindex>
 #include "entt.hpp"
@@ -61,7 +61,7 @@ namespace FocalEngine
 	public:
 		FEScene();
 
-		void SetFlag(FESceneFlag Flag, bool Value);
+		void SetFlag(FESceneFlag Flag, bool bNewValue);
 		bool HasFlag(FESceneFlag Flag) const;
 
 		// Entity Management
@@ -83,7 +83,7 @@ namespace FocalEngine
 		void DeleteEntity(FEEntity* Entity);
 
 		FEAABB GetEntityAABB(std::string ID);
-		FEAABB GetEntityAABB(FEEntity* Entity);
+		FEAABB GetEntityAABB(FEEntity* Entity, bool bLocalAABB = false);
 		FEAABB GetSceneAABB(std::function<bool(FEEntity*)> Filter = nullptr);
 
 		// Asset Management

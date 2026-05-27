@@ -5,12 +5,14 @@ namespace FocalEngine
 {
 	class FOCAL_ENGINE_API FEVirtualUISystem
 	{
+		friend struct FEVirtualUIComponent;
 		friend class FEScene;
 		friend class FERenderer;
 		friend class FEngine;
 		
 		SINGLETON_PRIVATE_PART(FEVirtualUISystem)
 
+		FEShader* CanvasShader = nullptr;
 		FEMaterial* CanvasMaterial = nullptr;
 		FEGameModel* DummyGameModel = nullptr;
 		FEGameModelComponent DummyGameModelComponent;
@@ -30,7 +32,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEVirtualUISystem)
 
-		void RenderVirtualUIComponent(FEEntity* Entity);
+		void RenderVirtualUIComponent(FEEntity* Entity, FECameraComponent& CameraComponent);
 		void RenderVirtualUIComponent(FEEntity* Entity, FEMaterial* ForceMaterial);
 		FEEntity* GetParentEntity(FEVirtualUI* VirtualUI);
 	};

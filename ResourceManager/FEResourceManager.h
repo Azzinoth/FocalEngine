@@ -6,7 +6,8 @@
 #include "../ThirdParty/stb_image/stb_image.h"
 #include "FEGLTFLoader.h"
 #include "../FileSystem/FEAssetPackage.h"
-#include "../Renderer/FEPointCloud.h"
+#include "BaseResources/FELineCollection.h"
+#include "BaseResources/FEPointCloud.h"
 #include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 
@@ -17,6 +18,14 @@
 
 namespace FocalEngine
 {
+	enum FE_DEPTH_EXPORT_MODE
+	{
+		FE_DEPTH_EXPORT_NONE = -1,
+		FE_DEPTH_EXPORT_GRAYSCALE_PNG = 0,  // Normalized to [0,1], 8-bit grayscale PNG
+		FE_DEPTH_EXPORT_16BIT_PNG = 1,      // Normalized to [0,1], 16-bit grayscale PNG  
+		FE_DEPTH_EXPORT_32BIT_TIFF = 2      // FE_TO_DO: Implement raw float values, 32-bit float TIFF
+	};
+
 	class FOCAL_ENGINE_API FEResourceManager
 	{
 		friend class FETexture;
@@ -29,6 +38,7 @@ namespace FocalEngine
 		friend class FEVirtualUISystem;
 		friend class FENativeScriptSystem;
 		friend class FEPointCloudSystem;
+		friend class FELineSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 
@@ -42,15 +52,15 @@ namespace FocalEngine
 		std::vector<std::string> GetEnginePrivateShaderIDList();
 		void DeleteShader(const FEShader* Shader);
 		bool ReplaceShader(std::string OldShaderID, FEShader* NewShader);
-		std::string LoadGLSL(const char* FileName);
+		std::string LoadGLSL(const std::string& FilePath);
 
-		FETexture* LoadPNGTexture(const char* FileName, std::string Name = "");
-		FETexture* LoadJPGTexture(const char* FileName, std::string Name = "");
-		FETexture* LoadBMPTexture(const char* FileName, std::string Name = "");
-		FETexture* LoadFETexture(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr);
-		FETexture* LoadFETextureUnmanaged(const char* FileName, std::string Name = "");
+		FETexture* LoadPNGTexture(const std::string& FilePath, std::string Name = "");
+		FETexture* LoadJPGTexture(const std::string& FilePath, std::string Name = "");
+		FETexture* LoadBMPTexture(const std::string& FilePath, std::string Name = "");
+		FETexture* LoadFETexture(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr);
+		FETexture* LoadFETextureUnmanaged(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
-		FETexture* LoadFETextureAsync(const char* FileName, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
+		FETexture* LoadFETextureAsync(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		FETexture* RawDataTo3DFETexture(unsigned char* TextureData, int Width, int Height, int Depth, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
@@ -59,9 +69,9 @@ namespace FocalEngine
 		void ResizeTexture(FETexture* SourceTexture, int TargetWidth, int TargetHeight, int FiltrationLevel = 0);
 		FETexture* CreateTextureWithTransparency(FETexture* OriginalTexture, FETexture* MaskTexture);
 
-		void SaveFETexture(FETexture* Texture, const char* FileName);
-		bool ExportFETextureToPNG(FETexture* TextureToExport, const char* FileName);
-		bool ExportRawDataToPNG(const char* FileName, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
+		void SaveFETexture(FETexture* Texture, const std::string& FilePath);
+		bool ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode = FE_DEPTH_EXPORT_GRAYSCALE_PNG);
+		bool ExportRawDataToPNG(const std::string& FilePath, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
 		void DeleteFETexture(const FETexture* Texture);
 		std::vector<std::string> GetTextureIDList();
 		FETexture* GetTexture(std::string ID);
@@ -74,49 +84,70 @@ namespace FocalEngine
 		void AddTextureToManaged(FETexture* Texture);
 		FETexture* Create3DTexture(GLint InternalFormat, GLenum Format, int Width, int Height, int Depth, bool bUnManaged = true, std::string Name = "");
 
-		FETexture* ImportTexture(const char* FileName);
+		FETexture* ImportTexture(const std::string& FilePath);
 
 		FEMesh* RawDataToMesh(std::vector<float>& Positions, std::vector<float>& Normals, std::vector<float>& Tangents, std::vector<float>& UV, std::vector<int>& Index, std::string Name = "");
-		FEMesh* RawDataToMesh(float* Positions, int PosSize,
-							  float* UV, int UVSize,
-							  float* Normals, int NormSize,
-							  float* Tangents, int TanSize,
-							  int* Indices, int IndexSize,
-							  float* Colors = nullptr, int ColorSize = 0,
-							  float* MatIndexs = nullptr, int MatIndexsSize = 0, int MatCount = 0,
+		FEMesh* RawDataToMesh(float* Positions, int PositionsCount,
+							  float* UV, int UVCount,
+							  float* Normals, int NormalsCount,
+							  float* Tangents, int TangentsCount,
+							  int* Indices, int IndicesCount,
+							  float* Colors = nullptr, int ColorsCount = 0,
+							  float* MaterialIndices = nullptr, int MaterialIndicesCount = 0, int MaterialCount = 0,
 							  std::string Name = "");
 		FEMesh* RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "");
 
 		void DeleteFEMesh(const FEMesh* Mesh);
-		bool ExportFEMeshToOBJ(FEMesh* MeshToExport, const char* FileName);
-		bool ExportFEMeshToPLY(FEMesh* MeshToExport, std::string FileName);
+		bool ExportFEMeshToOBJ(FEMesh* MeshToExport, const std::string& FilePath);
+		bool ExportFEMeshToPLY(FEMesh* MeshToExport, const std::string& FilePath);
 
 		std::vector<std::string> GetMeshIDList();
 		std::vector<std::string> GetEnginePrivateMeshIDList();
 		FEMesh* GetMesh(std::string ID);
 		std::vector<FEMesh*> GetMeshByName(std::string Name);
-		std::vector<FEObject*> ImportOBJ(const char* FileName, bool bForceOneMesh = false);
+		std::vector<FEObject*> ImportOBJ(const std::string& FilePath, bool bForceOneMesh = false);
 		
-		FEMesh* LoadFEMesh(const char* FileName, std::string Name = "");
-		void SaveFEMesh(FEMesh* Mesh, const char* FileName);
+		FEMesh* LoadFEMesh(const std::string& FilePath, std::string Name = "");
+		void SaveFEMesh(FEMesh* Mesh, const std::string& FilePath);
 		void AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, int ColorSize);
+		// FE_FIX_ME: Remove this function. And redo vertex attributes management.
+		// Data of such user defined vertex attributes will not be stored along FEMesh.
+		void SetUserDataVertexAttributeActive(FEMesh* Mesh);
+
+		FELineCollection* RawDataToFELineCollection(std::vector<FELine> Lines, std::string Name = "");
+		void DeleteFELineCollection(const FELineCollection* LineCollection);
+
+		//bool ExportLineCollectionToShapeFile(FELineCollection* LineCollectionToExport, const std::string& FilePath);
+
+		std::vector<std::string> GetFELineCollectionIDList();
+		std::vector<std::string> GetEnginePrivateFELineCollectionIDList();
+		FELineCollection* GetLineCollection(std::string ID);
+		std::vector<FELineCollection*> GetLineCollectionByName(std::string Name);
+
+		FELineCollection* LoadFELineCollection(const std::string& FilePath, std::string Name = "");
+		void SaveFELineCollection(FELineCollection* LineCollection, const std::string& FilePath);
 
 		std::vector<std::string> GetPointCloudIDList();
 		std::vector<std::string> GetEnginePrivatePointCloudIDList();
 		FEPointCloud* GetPointCloud(std::string ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false);
-		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
-		FEPointCloud* LasOrLazToFEPointCloud(std::string FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true);
-		FEPointCloud* ImportPointCloud(std::string FilePath);
-		FEPointCloud* LoadFEPointCloud(std::string FilePath, std::string Name = "");
-		void SaveFEPointCloud(FEPointCloud* PointCloud, std::string FilePath);
-		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, std::string FilePath);
-		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, std::string FilePath);
-		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, std::string FilePath);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		bool ReadLasOrLaz(const std::string& FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy = nullptr);
+		FEPointCloud* LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
+		FEPointCloud* ImportPointCloud(const std::string& FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		void ImportLasOrLazPointCloudAsync(const std::string& FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
+		FEPointCloud* LoadFEPointCloud(const std::string& FilePath, std::string Name = "");
+		void SaveFEPointCloud(FEPointCloud* PointCloud, const std::string& FilePath);
+		bool SaveRawDataToPLY(std::vector<FEPointCloudVertex>& RawData, const std::string& FilePath);
+		bool ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport, const std::string& FilePath);
+		bool SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, const std::string& FilePath, bool bIsCompressed = true, double ScaleFactor = 0.001);
+		bool ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, const std::string& FilePath);
+		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, const std::string& FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);
 
+		FEFramebuffer* CreateFramebuffer();
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
 		std::vector<std::string> GetMaterialIDList();
@@ -153,19 +184,19 @@ namespace FocalEngine
 		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
 		FENativeScriptModule* CreateNativeScriptModule(std::string Name = "", std::string ForceObjectID = "");
 		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
-		FENativeScriptModule* LoadFENativeScriptModule(std::string FileName);
-		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, std::string FileName);
+		FENativeScriptModule* LoadFENativeScriptModule(const std::string& FilePath);
+		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, const std::string& FilePath);
 
 		FEAssetPackage* CreateEngineHeadersAssetPackage();
-		bool UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		bool UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPackage, const std::string& DirectoryPath);
 		FEAssetPackage* CreateEngineSourceFilesAssetPackage();
-		bool UnPackEngineSourceFilesAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		bool UnPackEngineSourceFilesAssetPackage(FEAssetPackage* AssetPackage, const std::string& DirectoryPath);
 		FEAssetPackage* CreateEngineLIBAssetPackage();
-		bool UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
-		bool CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngineSourceFiles, bool bCopyEngineLIBs, std::string DestinationDirectory);
+		bool UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage, const std::string& DirectoryPath);
+		bool CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngineSourceFiles, bool bCopyEngineLIBs, const std::string& DestinationDirectoryPath);
 
 		FEAssetPackage* CreatePrivateEngineAssetPackage();
-		bool UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPackage, std::string Path);
+		bool UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPackage, const std::string& DirectoryPath);
 
 		void Clear();
 		void LoadStandardMeshes();
@@ -181,17 +212,20 @@ namespace FocalEngine
 		bool SetTag(FEObject* Object, std::string NewTag);
 
 		Json::Value SaveFEObjectPart(FEObject* Object);
-		FEObjectLoadedData LoadFEObjectPart(Json::Value Root);
+		FEObjectLoadedData LoadFEObjectPart(const Json::Value& Root);
 
 		std::vector<std::string> GetTagsThatWillPreventDeletion();
 		void AddTagThatWillPreventDeletion(std::string Tag);
 		void RemoveTagThatWillPreventDeletion(std::string Tag);
 
-		FEObject* ImportPLYFile(std::string FileName);
+		FEObject* ImportPLYFile(const std::string& FilePath);
 		bool DoesPLYContainMesh(FERawPLYData* PLYData);
 		bool DoesPLYContainPointCloud(FERawPLYData* PLYData);
 
 		std::string GetEngineFolder();
+
+		glm::dvec3 GetLastLoadedMeshAppliedShift();
+		glm::dvec3 GetLastLoadedPointCloudAppliedShift();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
@@ -199,6 +233,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FETexture*> Textures;
 		std::unordered_map<std::string, FEMaterial*> Materials;
 		std::unordered_map<std::string, FEMesh*> Meshes;
+		std::unordered_map<std::string, FELineCollection*> LineCollections;
 		std::unordered_map<std::string, FEPointCloud*> PointClouds;
 		std::unordered_map<std::string, FEGameModel*> GameModels;
 		std::unordered_map<std::string, FEPrefab*> Prefabs;
@@ -210,8 +245,6 @@ namespace FocalEngine
 		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
 
 		FEPostProcess* CreatePostProcess(int ScreenWidth, int ScreenHeight, std::string Name);
-
-		std::string GetFileNameFromFilePath(std::string FilePath);
 
 		std::string FreeObjectName(FE_OBJECT_TYPE ObjectType);
 
@@ -236,7 +269,7 @@ namespace FocalEngine
 
 		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
 
-		// TODO: Find a better way to handle resource extraction.
+		// FE_TO_DO: Find a better way to handle resource extraction.
 		// These variables are used to extract engine resources after application build.
 		bool bUsePackageForPrivateResources = false;
 		FEAssetPackage* PrivateEngineAssetPackage = nullptr;
@@ -248,8 +281,10 @@ namespace FocalEngine
 		std::vector<glm::vec3> ExtractNormalsFromPLYData(FERawPLYData* PLYData);
 
 		bool bIsLasLazFilesEnabled = false;
-		bool InternalExportFEPointCloudToLASOrLAZ(FEPointCloud* PointCloudToExport, std::string FilePath, bool bIsCompressed = true);
 		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
+
+		static void LoadPointCloudFileAsyncCallBack(void* OutputData);
+		glm::dvec3 LastPointCloudAppliedShift;
 	};
 #include "FEResourceManager.inl"
 

@@ -6,6 +6,7 @@ layout (location = 4) in float width;
 
 uniform vec2 resolution;
 
+@WorldMatrix@
 @ViewMatrix@
 @ProjectionMatrix@
 
@@ -15,8 +16,8 @@ void main()
 {
 	lineColor = color;
 
-	vec4 clip0 = FEProjectionMatrix * FEViewMatrix * vec4(pointA, 1.0);
-	vec4 clip1 = FEProjectionMatrix * FEViewMatrix * vec4(pointB, 1.0);
+	vec4 clip0 = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(pointA, 1.0);
+	vec4 clip1 = FEProjectionMatrix * FEViewMatrix * FEWorldMatrix * vec4(pointB, 1.0);
 
 	vec2 screen0 = resolution * (0.5 * clip0.xy/clip0.w + 0.5);
 	vec2 screen1 = resolution * (0.5 * clip1.xy/clip1.w + 0.5);

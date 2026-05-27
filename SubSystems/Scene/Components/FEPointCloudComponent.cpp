@@ -8,22 +8,21 @@ FEPointCloudComponent::FEPointCloudComponent(FEPointCloud* PointCloudToSet)
 
 FEPointCloudComponent::FEPointCloudComponent(const FEPointCloudComponent& Other)
 {
-	bVisible = Other.bVisible;
+	PointCloud = Other.PointCloud;
+	GlobalColorOverride = Other.GlobalColorOverride;
+	bUseGlobalColorOverride = Other.bUseGlobalColorOverride;
 }
 
 void FEPointCloudComponent::operator=(const FEPointCloudComponent& Other)
 {
-	bVisible = Other.bVisible;
+	PointCloud = Other.PointCloud;
+	GlobalColorOverride = Other.GlobalColorOverride;
+	bUseGlobalColorOverride = Other.bUseGlobalColorOverride;
 }
 
-bool FEPointCloudComponent::IsVisible() const
+FEPointCloudComponent::~FEPointCloudComponent()
 {
-	return bVisible;
-}
 
-void FEPointCloudComponent::SetVisibility(bool NewValue)
-{
-	bVisible = NewValue;
 }
 
 FEPointCloud* FEPointCloudComponent::GetPointCloud() const

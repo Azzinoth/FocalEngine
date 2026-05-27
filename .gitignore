@@ -11,6 +11,7 @@
 *.suo
 *.dylib
 *.sln
+*.slnx
 *.vcxproj
 *.vcxproj.filters
 *.vcxproj.user
@@ -18,7 +19,8 @@ imgui.ini
 *.txt
 cmake_install.cmake
 Config.h
-Timestamp.h
+FOCAL_ENGINE_Version.h
+report.xml
 
 #Folders
 Debug/

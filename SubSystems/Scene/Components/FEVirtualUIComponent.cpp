@@ -1,6 +1,7 @@
 #include "FEVirtualUIComponent.h"
 #include "../ResourceManager/FEResourceManager.h"
 #include "../FEEntity.h"
+
 using namespace FocalEngine;
 
 FEVirtualUIComponent::FEVirtualUIComponent(int Width, int Height, FEMesh* CanvasMesh)
@@ -310,22 +311,24 @@ bool FEVirtualUIComponent::InteractionRayToCanvasSpace(glm::dvec3 RayOrigin, glm
 				*IntersectionPointIn3DSpace = HitPoint;
 
 			// Load texture coordinates of the triangle vertices.
-			glm::dvec2 uv0 = MeshTriangleUVs[i][0];
-			glm::dvec2 uv1 = MeshTriangleUVs[i][1];
-			glm::dvec2 uv2 = MeshTriangleUVs[i][2];
+			glm::dvec2 UV0 = MeshTriangleUVs[i][0];
+			glm::dvec2 UV1 = MeshTriangleUVs[i][1];
+			glm::dvec2 UV2 = MeshTriangleUVs[i][2];
 
 			// Calculate texture coordinates of the hit point using interpolation.
-			glm::dvec2 HitUV = (1.0 - U - V) * uv0 + U * uv1 + V * uv2;
+			glm::dvec2 HitUV = (1.0 - U - V) * UV0 + U * UV1 + V * UV2;
 			*IntersectionPointInUVCanvasSpace = HitUV;
 
 			InvokeMouseEnterCallback(1);
 			bRayColidingWithCanvas = true;
+			LastRayIntersectionDistance = Distance;
 			return true;
 		}
 	}
 
 	InvokeMouseEnterCallback(0);
 	bRayColidingWithCanvas = false;
+	LastRayIntersectionDistance = 0.0;
 	return false;
 }
 
@@ -348,7 +351,7 @@ FEAABB FEVirtualUIComponent::GetAABB() const
 
 void FEVirtualUIComponent::MouseMoveListener(double Xpos, double Ypos)
 {
-	// Not useing bRayColidingWithCanvas here because we want to call UpdateRayIntersection() to determine bRayColidingWithCanvas value.
+	// Not using bRayColidingWithCanvas here because we want to call UpdateRayIntersection() to determine the bRayColidingWithCanvas value.
 	if (!bActiveInput || !bMouseMovePassThrough)
 		return;
 
@@ -381,7 +384,10 @@ bool FEVirtualUIComponent::SetMouseMovePassThrough(bool NewValue)
 
 void FEVirtualUIComponent::CharListener(unsigned int Codepoint)
 {
-	if (!bActiveInput || !bRayColidingWithCanvas || !bCharPassThrough)
+	if (!bActiveInput || !bCharPassThrough)
+		return;
+
+	if (!bRayColidingWithCanvas && bKeyboardInputRequiresRayCollision)
 		return;
 
 	InvokeCharInput(Codepoint);
@@ -406,7 +412,10 @@ bool FEVirtualUIComponent::SetCharPassThrough(bool NewValue)
 
 void FEVirtualUIComponent::KeyListener(int Key, int Scancode, int Action, int Mods)
 {
-	if (!bActiveInput || !bRayColidingWithCanvas || !bKeyPassThrough)
+	if (!bActiveInput || !bKeyPassThrough)
+		return;
+
+	if (!bRayColidingWithCanvas && bKeyboardInputRequiresRayCollision)
 		return;
 
 	InvokeKeyInput(Key, Scancode, Action, Mods);
@@ -529,18 +538,27 @@ FEWindow* FEVirtualUIComponent::GetWindowToListen() const
 	return WindowToListen;
 }
 
-bool FEVirtualUIComponent::IsVisible() const
-{
-	//return CanvasEntity->GetComponent<FEGameModelComponent>().IsVisible();
-	return true;
-}
-
-void FEVirtualUIComponent::SetVisibility(bool NewValue)
-{
-	//CanvasEntity->GetComponent<FEGameModelComponent>().SetVisibility(NewValue);
-}
-
 void FEVirtualUIComponent::ExecuteFunctionToAddFont(std::function<void()> Func, std::function<void()> CallbackOnFontReady)
 {
 	VirtualUI->ExecuteFunctionToAddFont(Func, CallbackOnFontReady);
+}
+
+bool FEVirtualUIComponent::IsLastProvidedRayIntersectingCanvas() const
+{
+	return bRayColidingWithCanvas;
+}
+
+bool FEVirtualUIComponent::IsKeyboardInputRequiresRayCollision() const
+{
+	return bKeyboardInputRequiresRayCollision;
+}
+
+void FEVirtualUIComponent::SetKeyboardInputRequiresRayCollision(bool NewValue)
+{
+	bKeyboardInputRequiresRayCollision = NewValue;
+}
+
+double FEVirtualUIComponent::GetLastRayIntersectionDistance() const
+{
+	return LastRayIntersectionDistance;
 }

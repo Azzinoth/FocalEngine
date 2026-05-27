@@ -18,6 +18,7 @@ namespace FocalEngine
 		friend class FEngine;
 		friend class FECameraSystem;
 		friend struct FECameraComponent;
+		friend class FEOpenXRRendering;
 
 		FEViewport();
 

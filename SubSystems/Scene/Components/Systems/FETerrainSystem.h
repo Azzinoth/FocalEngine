@@ -60,8 +60,7 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FETerrainSystem)
 
-		FEAABB GetAABB(FEEntity* TerrainEntity);
-		FEAABB GetPureAABB(FEEntity* TerrainEntity);
+		FEAABB GetAABB(FEEntity* TerrainEntity, bool bLocalAABB = false);
 
 		float GetHeightAt(FEEntity* TerrainEntity, glm::vec2 XZWorldPosition);
 		float GetLayerIntensityAt(FEEntity* TerrainEntity, glm::vec2 XZWorldPosition, int LayerIndex);

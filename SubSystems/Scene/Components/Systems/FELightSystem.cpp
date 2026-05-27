@@ -102,7 +102,7 @@ glm::vec3 FELightSystem::GetDirection(FEEntity* LightEntity)
 	return LightComponent.Direction;
 }
 
-// TODO: This should use the main camera internally instead of requiring all parameters.
+// FE_FIX_ME: This should use the main camera internally instead of requiring all parameters.
 void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float AspectRatio, float NearPlane, float FarPlane, glm::mat4 ViewMatrix, glm::vec3 CameraForward, glm::vec3 CameraRight, glm::vec3 CameraUp)
 {
 	if (LightEntity == nullptr || !LightEntity->HasComponent<FELightComponent>())
@@ -188,12 +188,12 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float MinX = FLT_MAX;
-			float MaxX = FLT_MIN;
-			float MinY = FLT_MAX;
-			float MaxY = FLT_MIN;
-			float MinZ = FLT_MAX;
-			float MaxZ = FLT_MIN;
+			float MinX = std::numeric_limits<float>::max();
+			float MaxX = -std::numeric_limits<float>::max();
+			float MinY = std::numeric_limits<float>::max();
+			float MaxY = -std::numeric_limits<float>::max();
+			float MinZ = std::numeric_limits<float>::max();
+			float MaxZ = -std::numeric_limits<float>::max();
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{
@@ -258,12 +258,12 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float MinX = FLT_MAX;
-			float MaxX = -FLT_MAX;
-			float MinY = FLT_MAX;
-			float MaxY = -FLT_MAX;
-			float MinZ = FLT_MAX;
-			float MaxZ = -FLT_MAX;
+			float MinX = std::numeric_limits<float>::max();
+			float MaxX = -std::numeric_limits<float>::max();
+			float MinY = std::numeric_limits<float>::max();
+			float MaxY = -std::numeric_limits<float>::max();
+			float MinZ = std::numeric_limits<float>::max();
+			float MaxZ = -std::numeric_limits<float>::max();
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{
@@ -292,13 +292,13 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			float Clip[16];
 			float T;
 
-			glm::mat4 cliping = LightComponent.CascadeData[i].ProjectionMat * CascadeView;
+			glm::mat4 Clipping = LightComponent.CascadeData[i].ProjectionMat * CascadeView;
 			for (int j = 0; j < 4; j++)
 			{
-				Clip[j * 4] = cliping[j][0];
-				Clip[j * 4 + 1] = cliping[j][1];
-				Clip[j * 4 + 2] = cliping[j][2];
-				Clip[j * 4 + 3] = cliping[j][3];
+				Clip[j * 4] = Clipping[j][0];
+				Clip[j * 4 + 1] = Clipping[j][1];
+				Clip[j * 4 + 2] = Clipping[j][2];
+				Clip[j * 4 + 3] = Clipping[j][3];
 			}
 
 			/* Extract the numbers for the RIGHT plane */
@@ -454,12 +454,12 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
 
-			float MinX = FLT_MAX;
-			float MaxX = -FLT_MAX;
-			float MinY = FLT_MAX;
-			float MaxY = -FLT_MAX;
-			float MinZ = FLT_MAX;
-			float MaxZ = -FLT_MAX;
+			float MinX = std::numeric_limits<float>::max();
+			float MaxX = -std::numeric_limits<float>::max();
+			float MinY = std::numeric_limits<float>::max();
+			float MaxY = -std::numeric_limits<float>::max();
+			float MinZ = std::numeric_limits<float>::max();
+			float MaxZ = -std::numeric_limits<float>::max();
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 			{

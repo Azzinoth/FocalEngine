@@ -15,6 +15,20 @@ FENaiveSceneGraphNode::~FENaiveSceneGraphNode()
 	Children.clear();
 }
 
+// FE_FIX_ME: This function should be optimized by caching the depth value and updating it whenever the hierarchy changes.
+size_t FENaiveSceneGraphNode::GetDepth()
+{
+	size_t Result = 0;
+	FENaiveSceneGraphNode* CurrentNode = this;
+	while (CurrentNode->Parent != nullptr)
+	{
+		Result++;
+		CurrentNode = CurrentNode->Parent;
+	}
+
+	return Result;
+}
+
 void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
 {
 	if (NodeToWorkOn == nullptr)
@@ -45,6 +59,10 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 {
 	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
 		return;
+
+	// If the node already has a different parent, detach it from it.
+	if (NodeToAdd->Parent != nullptr)
+		NodeToAdd->Parent->DetachChild(NodeToAdd, bPreserveWorldTransform);
 
 	// Check if the child is already in the children list
 	for (size_t i = 0; i < Children.size(); i++)
@@ -93,6 +111,7 @@ void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* Nod
 	}
 }
 
+// FE_FIX_ME: This function should return a bool indicating success or failure, and if it is true, it should break the loop. for (size_t i = 0; i < Children.size(); i++)
 void FENaiveSceneGraphNode::DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform)
 {
 	for (size_t i = 0; i < Children.size(); i++)
@@ -185,7 +204,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()
 	return Parent;
 }
 
-size_t FENaiveSceneGraphNode::GetImediateChildrenCount()
+size_t FENaiveSceneGraphNode::GetImmediateChildrenCount()
 {
 	return Children.size();
 }
@@ -241,7 +260,7 @@ void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 {
 	if (Entity == nullptr)
 	{
-		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FENaiveSceneGraphNode::FromJson called but Entity is nullptr", "FE_SCENE_GRAPH", FE_LOG_ERROR);
 		return;
 	}
 

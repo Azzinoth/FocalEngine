@@ -10,14 +10,18 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEngine)
 
-		std::string GetEngineBuildVersion();
+		std::string GetEngineVersion();        // "1.0.0"
+		std::string GetEngineBuildInfo();      // "build 231+52 (dev, ed4c7ce-dirty)"
+		std::string GetFullVersion();          // "Focal Engine 1.0.0 build 231+52 (dev, ed4c7ce-dirty)"
+		std::string GetEngineBuildTimestamp(); // "20260207232613"
+		int GetEngineBuildNumber();            // 231
 
 		void InitWindow(int Width = 1920 * 2, int Height = 1080 * 2, std::string WindowTitle = "FEWindow");
 
-		void BeginFrame(bool InternalCall = false);
-		void EndFrame(bool InternalCall = false);
+		void BeginFrame(bool bInternalCall = false);
+		void EndFrame(bool bInternalCall = false);
 
-		void Render(bool InternalCall = false);
+		void Render(bool bInternalCall = false);
 
 		bool IsNotTerminated();
 		void Terminate();
@@ -42,7 +46,8 @@ namespace FocalEngine
 		void SetVsyncEnabled(bool NewValue);
 
 		void DisableVR();
-		bool EnableVR();
+		bool EnableVR(FERenderingPipeline VRRenderingPipeline = FERenderingPipeline::Deferred);
+		FERenderingPipeline GetVRRenderingPipeline() const;
 		bool IsVRInitializedCorrectly();
 		bool IsVREnabled();
 
@@ -57,16 +62,20 @@ namespace FocalEngine
 		void AddOnViewportResizeCallback(std::function<void(std::string)> Callback);
 
 		unsigned long long GetCurrentFrameIndex();
+
+		std::string GetVRApplicationVisibleName() const;
+		void SetVRApplicationVisibleName(const std::string& NewName);
 	private:
 		SINGLETON_PRIVATE_PART(FEngine)
 
 		double CPUTime = 0.0, GPUTime = 0.0;
 		double CurrentDeltaTime = 0.0;
 
-		bool bSimplifiedRendering = false;
 		bool bVsyncEnabled = true;
+
 		bool bVRInitializedCorrectly = false;
 		bool bVRActive = false;
+		std::string VRApplicationVisibleName = "VR Focal Engine Application";
 
 		static void WindowResizeCallback(int Width, int Height);
 		std::vector<void(*)(int, int)> ClientWindowResizeCallbacks;
@@ -85,6 +94,7 @@ namespace FocalEngine
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);
 
 		unsigned long long CurentFrameIndex = 0;
+		FERenderingPipeline VRRenderingPipeline = FERenderingPipeline::Deferred;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

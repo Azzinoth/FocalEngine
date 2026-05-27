@@ -51,6 +51,9 @@ namespace FocalEngine
 
 		static Json::Value InstanceComponentToJson(FEEntity* Entity);
 		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
+
+		// FIX ME: That system is redundant, Renderer have similar one.
+		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 	public:
 		SINGLETON_PUBLIC_PART(FEInstancedSystem)
 
@@ -62,7 +65,7 @@ namespace FocalEngine
 
 		void ClearInstance(FEEntity* Entity);
 
-		FEAABB GetAABB(FEEntity* Entity);
+		FEAABB GetAABB(FEEntity* Entity, bool bLocalAABB = false);
 
 		bool PopulateInstance(FEEntity* Entity, FESpawnInfo SpawnInfo);
 		
@@ -75,18 +78,11 @@ namespace FocalEngine
 		void SetIndividualSelectMode(FEEntity* EntityWithInstancedComponent, const bool NewValue);
 		void SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const bool NewValue);
 
-		FEEntity* GetEntityWithGameModelComponent(std::string EntityID)
-		{
-			FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
-			if (Object == nullptr || Object->GetType() != FE_ENTITY)
-				return nullptr;
+		FEEntity* GetEntityWithGameModelComponent(std::string EntityID);
 
-			FEEntity* Entity = reinterpret_cast<FEEntity*>(Object);
-			if (Entity == nullptr || !Entity->HasComponent<FEGameModelComponent>())
-				return nullptr;
+		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 
-			return Entity;
-		}
+		void ForceUpdateAABB(FEEntity* Entity);
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

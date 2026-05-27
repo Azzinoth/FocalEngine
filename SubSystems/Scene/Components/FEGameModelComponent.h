@@ -10,9 +10,6 @@ namespace FocalEngine
 		FEGameModelComponent(const FEGameModelComponent& Other);
 		void operator=(const FEGameModelComponent& Other);
 
-		bool IsVisible() const;
-		void SetVisibility(bool NewValue);
-
 		bool IsCastShadows() const;
 		void SetCastShadows(bool NewValue);
 
@@ -33,7 +30,6 @@ namespace FocalEngine
 	private:
 		FEGameModel* GameModel = nullptr;
 
-		bool bVisible = true;
 		bool bCastShadows = true;
 		bool bReceiveShadows = true;
 		bool bUniformLighting = false;

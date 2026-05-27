@@ -10,6 +10,7 @@ namespace FocalEngine
 		friend class FENaiveSceneGraph;
 		friend class FEScene;
 	public:
+		size_t GetDepth();
 		FENaiveSceneGraphNode* GetParent();
 
 		void AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
@@ -17,7 +18,7 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetChild(std::string ID);
 		FENaiveSceneGraphNode* GetChildByEntityID(std::string EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
-		size_t GetImediateChildrenCount();
+		size_t GetImmediateChildrenCount();
 		size_t GetRecursiveChildCount();
 
 		std::vector<FENaiveSceneGraphNode*> GetChildren();
@@ -33,6 +34,8 @@ namespace FocalEngine
 
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
+		// FE_FIX_ME: Do not store Entity as a pointer, store it as an ID to prevent dangling pointer issues.
+		//std::string EntityID;
 		FEEntity* Entity = nullptr;
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);

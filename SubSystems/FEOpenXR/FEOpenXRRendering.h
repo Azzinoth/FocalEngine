@@ -6,14 +6,16 @@ namespace FocalEngine
 {
 	class FEOpenXRRendering
 	{
+		friend class FEOpenXRCore;
 		friend class FEOpenXR;
+		friend class FEOpenXRInput;
 	public:
 		SINGLETON_PUBLIC_PART(FEOpenXRRendering)
 
 		void Init();
+		void Shutdown();
 		void Update();
 
-		//bool bShowCube = true;
 		glm::vec2 EyeResolution();
 
 		// Returns the current swap chain for rendering.
@@ -55,7 +57,7 @@ namespace FocalEngine
 		void CreateSwapChain();
 
 		bool RenderLayer(XrTime PredictedDisplayTime, std::vector<XrCompositionLayerProjectionView>& ProjectionLayerViews, XrCompositionLayerProjection& Layer);
-		void OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage, int64_t SwapchainFormat);
+		void OpenGLRenderLoop(const XrCompositionLayerProjectionView& LayerView, const XrSwapchainImageBaseHeader* SwapChainImage);
 		void RenderLoop();
 	};
 

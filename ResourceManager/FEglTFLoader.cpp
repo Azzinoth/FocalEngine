@@ -121,11 +121,11 @@ void FEGLTFLoader::LoadPrimitive(Json::Value JsonPrimitive, GLTFPrimitive& NewPr
 
 GLTFTextureInfo FEGLTFLoader::LoadTextureInfo(Json::Value JsonTextureNode)
 {
-	GLTFTextureInfo TempTextureInfo;
+	GLTFTextureInfo TemporaryTextureInfo;
 
 	if (JsonTextureNode.isMember("index"))
 	{
-		TempTextureInfo.Index = JsonTextureNode["index"].asInt();
+		TemporaryTextureInfo.Index = JsonTextureNode["index"].asInt();
 	}
 	else
 	{
@@ -134,10 +134,10 @@ GLTFTextureInfo FEGLTFLoader::LoadTextureInfo(Json::Value JsonTextureNode)
 
 	if (JsonTextureNode.isMember("texCoord"))
 	{
-		TempTextureInfo.TexCoord = JsonTextureNode["texCoord"].asInt();
+		TemporaryTextureInfo.TexCoord = JsonTextureNode["texCoord"].asInt();
 	}
 
-	return TempTextureInfo;
+	return TemporaryTextureInfo;
 }
 
 void FEGLTFLoader::Load(const char* FileName)
@@ -772,21 +772,21 @@ bool FEGLTFLoader::LoadTangents(GLTFPrimitive& Primitive)
 	}
 	else if (CurrentAccessor.Type == "VEC4")
 	{
-		std::vector<float> TempBuffer;
-		TempBuffer.resize(CurrentAccessor.Count * 4);
+		std::vector<float> TemporaryBuffer;
+		TemporaryBuffer.resize(CurrentAccessor.Count * 4);
 		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
-		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
+		memcpy_s(TemporaryBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
-		int iteration = 0;
-		for (size_t i = 0; i < TempBuffer.size(); i++)
+		int Iteration = 0;
+		for (size_t i = 0; i < TemporaryBuffer.size(); i++)
 		{
-			iteration++;
-			if (iteration == 4)
+			Iteration++;
+			if (Iteration == 4)
 			{
-				iteration = 0;
+				Iteration = 0;
 				continue;
 			}
-			Primitive.RawData.Tangents.push_back(TempBuffer[i]);
+			Primitive.RawData.Tangents.push_back(TemporaryBuffer[i]);
 		}
 	}
 	else
@@ -863,38 +863,38 @@ bool FEGLTFLoader::LoadIndices(GLTFPrimitive& Primitive)
 
 	if (CurrentAccessor.ComponentType == 5121)
 	{
-		std::vector<unsigned char> TempBuffer;
-		TempBuffer.resize(CurrentAccessor.Count);
+		std::vector<unsigned char> TemporaryBuffer;
+		TemporaryBuffer.resize(CurrentAccessor.Count);
 		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
-		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
+		memcpy_s(TemporaryBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
-		for (size_t i = 0; i < TempBuffer.size(); i++)
+		for (size_t i = 0; i < TemporaryBuffer.size(); i++)
 		{
-			Primitive.RawData.Indices.push_back((int)TempBuffer[i]);
+			Primitive.RawData.Indices.push_back((int)TemporaryBuffer[i]);
 		}
 	}
 	else if (CurrentAccessor.ComponentType == 5123)
 	{
-		std::vector<unsigned short> TempBuffer;
-		TempBuffer.resize(CurrentAccessor.Count);
+		std::vector<unsigned short> TemporaryBuffer;
+		TemporaryBuffer.resize(CurrentAccessor.Count);
 		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
-		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
+		memcpy_s(TemporaryBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
-		for (size_t i = 0; i < TempBuffer.size(); i++)
+		for (size_t i = 0; i < TemporaryBuffer.size(); i++)
 		{
-			Primitive.RawData.Indices.push_back((int)TempBuffer[i]);
+			Primitive.RawData.Indices.push_back((int)TemporaryBuffer[i]);
 		}
 	}
 	else if (CurrentAccessor.ComponentType == 5125)
 	{
-		std::vector<unsigned int> TempBuffer;
-		TempBuffer.resize(CurrentAccessor.Count);
+		std::vector<unsigned int> TemporaryBuffer;
+		TemporaryBuffer.resize(CurrentAccessor.Count);
 		size_t TotalSize = GetTotalMemorySize(CurrentAccessor.Count, CurrentAccessor.ComponentType, CurrentAccessor.Type);
-		memcpy_s(TempBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
+		memcpy_s(TemporaryBuffer.data(), TotalSize, reinterpret_cast<void*>(CurrentBuffer.RawData + ByteOffset), TotalSize);
 
-		for (size_t i = 0; i < TempBuffer.size(); i++)
+		for (size_t i = 0; i < TemporaryBuffer.size(); i++)
 		{
-			Primitive.RawData.Indices.push_back((int)TempBuffer[i]);
+			Primitive.RawData.Indices.push_back((int)TemporaryBuffer[i]);
 		}
 	}
 

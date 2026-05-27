@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FEFramebuffer.h"
-#include "FEMesh.h"
+#include "../ResourceManager/BaseResources/FEMesh.h"
 
 namespace FocalEngine
 {

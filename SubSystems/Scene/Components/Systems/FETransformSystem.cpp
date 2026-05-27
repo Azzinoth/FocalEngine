@@ -83,7 +83,7 @@ void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 		CurrentTransform.WorldSpaceMatrix = CurrentTransform.LocalSpaceMatrix;
 	}
 
-	// FIXME: Instanced position should update when parent (or terrain) is updated, currently no update occurs.
+	// FE_FIX_ME: Instanced position should update when parent (or terrain) is updated, currently no update occurs.
 	//bool bWasDirty = CurrentTransform.IsDirty();
 	//CurrentTransform.SetDirtyFlag(false);
 	auto Children = SubTreeRoot->GetChildren();
@@ -149,4 +149,17 @@ void FETransformSystem::TransfromComponentFromJson(FEEntity* Entity, Json::Value
 	Scale.y = Root["Scale"]["Y"].asFloat();
 	Scale.z = Root["Scale"]["Z"].asFloat();
 	TransformComponent.SetScale(Scale);
+}
+
+bool FETransformSystem::ForceUpdateTransformComponent(FEEntity* Entity)
+{
+	if (Entity == nullptr || !Entity->HasComponent<FETransformComponent>())
+		return false;
+
+	FENaiveSceneGraphNode* Node = Entity->GetParentScene()->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+	if (Node == nullptr)
+		return false;
+
+	UpdateInternal(Node);
+	return true;
 }

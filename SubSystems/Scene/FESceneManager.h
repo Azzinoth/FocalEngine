@@ -13,7 +13,8 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FESceneManager)
 
-		FEScene* GetScene(std::string ID);
+		FEScene* GetSceneByID(std::string ID);
+		FEScene* GetSceneByNodeID(std::string NodeID);
 		FEScene* CreateScene(std::string Name = "", std::string ForceObjectID = "", FESceneFlag Flags = FESceneFlag::None);
 		Json::Value SaveSceneToJSON(FEScene* Scene, std::function<bool(FEEntity*)> Filter = nullptr);
 		FEScene* LoadSceneFromJSON(Json::Value& Root, FESceneFlag Flags = FESceneFlag::None);

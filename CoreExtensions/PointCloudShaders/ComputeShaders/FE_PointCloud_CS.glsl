@@ -38,24 +38,16 @@ uniform int ScreenHeight;
 void main()
 {
 	vec3 WorldPosition = particles[gl_GlobalInvocationID.x].position;
-    WorldPosition = (FEWorldMatrix * vec4(WorldPosition, 1.0)).xyz;
+	WorldPosition = (FEWorldMatrix * vec4(WorldPosition, 1.0)).xyz;
 
-    vec4 ProjectedPosition = FEProjectionMatrix * FEViewMatrix * vec4(WorldPosition, 1.0);
-    vec3 NormalizedDeviceCoordinates = ProjectedPosition.xyz / ProjectedPosition.w;
-    
-    if (any(greaterThan(NormalizedDeviceCoordinates, vec3(1.0))) || any(lessThan(NormalizedDeviceCoordinates, vec3(-1.0))))
-    {
-        return;
-    }
-    
-    NormalizedDeviceCoordinates.x += 1.0;
-    NormalizedDeviceCoordinates.y += 1.0;
-    
-    uint PixelX = uint(floor(NormalizedDeviceCoordinates.x * ScreenWidth / 2.0));
-    uint PixelY = uint(floor(NormalizedDeviceCoordinates.y * ScreenHeight / 2.0));
-    
-    uint64_t NewPixelDepthAndColor = floatBitsToUint(ProjectedPosition.w);
-	
+	vec4 ProjectedPosition = FEProjectionMatrix * FEViewMatrix * vec4(WorldPosition, 1.0);
+	vec3 NormalizedDeviceCoordinates = ProjectedPosition.xyz / ProjectedPosition.w;
+
+	if (any(greaterThan(NormalizedDeviceCoordinates, vec3(1.0))) || any(lessThan(NormalizedDeviceCoordinates, vec3(-1.0))))
+	{
+		return;
+	}
+
 	uint PointColor = 0;
 	if (bUseGlobalColorOverride)
 	{
@@ -68,8 +60,20 @@ void main()
 	{
 		PointColor = particles[gl_GlobalInvocationID.x].color;
 	}
-	
-    NewPixelDepthAndColor = (NewPixelDepthAndColor << 32) | PointColor;
+
+	// Skip fully transparent points
+	uint Alpha = (PointColor >> 24) & 0xFF;
+	if (Alpha == 0)
+		return;
+
+	NormalizedDeviceCoordinates.x += 1.0;
+	NormalizedDeviceCoordinates.y += 1.0;
+
+	uint PixelX = uint(floor(NormalizedDeviceCoordinates.x * ScreenWidth / 2.0));
+	uint PixelY = uint(floor(NormalizedDeviceCoordinates.y * ScreenHeight / 2.0));
+
+	uint64_t NewPixelDepthAndColor = floatBitsToUint(ProjectedPosition.w);
+	NewPixelDepthAndColor = (NewPixelDepthAndColor << 32) | PointColor;
 
 	uint PixelIndex = PixelX + PixelY * ScreenWidth;
 
