@@ -14,7 +14,9 @@
 #define FE_VIEW_MATRIX_MACRO "@ViewMatrix@"
 #define FE_PROJECTION_MATRIX_MACRO "@ProjectionMatrix@"
 #define FE_PVM_MATRIX_MACRO "@PVMMatrix@"
+
 #define FE_CAMERA_POSITION_MACRO "@CameraPosition@"
+#define FE_CAMERA_DIRECTION_MACRO "@CameraDirection@"
 
 #define FE_LIGHT_POSITION_MACRO "@LightPosition@"
 #define FE_LIGHT_COLOR_MACRO "@LightColor@"

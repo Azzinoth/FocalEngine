@@ -64,6 +64,8 @@ namespace FocalEngine
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		FETexture* RawDataTo3DFETexture(unsigned char* TextureData, int Width, int Height, int Depth, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
+		FETexture* Convert3DTextureToFlipbook2D(FETexture* Source3DTexture, int& ColumnsOut, int& RowsOut, std::string Name = "");
+		FETexture* ConvertFlipbook2DTo3DTexture(FETexture* Source2DTexture, int Columns, int Rows, std::string Name = "");
 		unsigned char* ResizeTextureRawData(FETexture* SourceTexture, size_t TargetWidth, size_t TargetHeight, int FiltrationLevel = 0);
 		unsigned char* ResizeTextureRawData(const unsigned char* TextureData, size_t Width, size_t Height, size_t TargetWidth, size_t TargetHeight, GLint InternalFormat, int FiltrationLevel = 0);
 		void ResizeTexture(FETexture* SourceTexture, int TargetWidth, int TargetHeight, int FiltrationLevel = 0);

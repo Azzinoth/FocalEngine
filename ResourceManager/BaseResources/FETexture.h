@@ -49,6 +49,7 @@ namespace FocalEngine
 		GLint GetInternalFormat();
 		int GetWidth();
 		int GetHeight();
+		int GetDepth();
 
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
 		void UpdateRawData(unsigned char* NewRawData, size_t MipmapCount = 1);

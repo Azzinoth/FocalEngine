@@ -781,6 +781,12 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 		ParsedShaderText.replace(Index, strlen(FE_CAMERA_POSITION_MACRO), "uniform vec3 FECameraPosition;");
 	}
 
+	Index = ParsedShaderText.find(FE_CAMERA_DIRECTION_MACRO);
+	if (Index != std::string::npos)
+	{
+		ParsedShaderText.replace(Index, strlen(FE_CAMERA_DIRECTION_MACRO), "uniform vec3 FECameraDirection;");
+	}
+
 	Index = ParsedShaderText.find(FE_LIGHT_POSITION_MACRO);
 	if (Index != std::string::npos)
 	{

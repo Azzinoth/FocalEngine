@@ -233,6 +233,9 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 		if (Shader->GetUniform("FECameraPosition") != nullptr)
 			Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
+		if (Shader->GetUniform("FECameraDirection") != nullptr)
+			Shader->UpdateUniformData("FECameraDirection", CurrentCameraComponent.GetForward());
+
 		if (Shader->GetUniform("FEGamma") != nullptr)
 			Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());
 
@@ -304,6 +307,9 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool bReceivingSha
 
 		if (Shader->GetUniform("FECameraPosition") != nullptr)
 			Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
+
+		if (Shader->GetUniform("FECameraDirection") != nullptr)
+			Shader->UpdateUniformData("FECameraDirection", CurrentCameraComponent.GetForward());
 
 		if (Shader->GetUniform("FEGamma") != nullptr)
 			Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());

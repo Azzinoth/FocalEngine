@@ -115,6 +115,11 @@ int FETexture::GetHeight()
 	return Height;
 }
 
+int FETexture::GetDepth()
+{
+	return Depth;
+}
+
 void FETexture::AddToOnDeleteCallBackList(const std::string ObjectID)
 {
 	CallListOnDeleteFEObject.push_back(ObjectID);
@@ -181,80 +186,93 @@ unsigned char* FETexture::GetRawData(size_t* RawDataSize)
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
 		InternalFormat != GL_RGBA16F &&
 		InternalFormat != GL_DEPTH24_STENCIL8 &&
-		InternalFormat != GL_DEPTH_COMPONENT32)
+		InternalFormat != GL_DEPTH_COMPONENT32 &&
+		InternalFormat != GL_R32F)
 	{
-		LOG.Add("FETexture::GetRawData internalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("FETexture::GetRawData InternalFormat is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return Result;
 	}
 
-	FE_GL_ERROR(glActiveTexture(GL_TEXTURE0));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TextureID));
+	bool b3DTexture = Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D;
 
-	if (InternalFormat == GL_RG16F)
+	Bind();
+
+	const size_t PixelsCount = Width * Height * (b3DTexture ? Depth : 1);
+	GLenum AppropriateTarget = b3DTexture ? GL_TEXTURE_3D : GL_TEXTURE_2D;
+
+	if (InternalFormat == GL_R32F)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 2 * sizeof(unsigned short);
-		Result = new unsigned char[GetWidth() * GetHeight() * 2 * sizeof(unsigned short)];
+			*RawDataSize = PixelsCount * sizeof(float);
+		Result = new unsigned char[PixelsCount * sizeof(float)];
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RED, GL_FLOAT, Result));
+	}
+	else if (InternalFormat == GL_RG16F)
+	{
+		if (RawDataSize != nullptr)
+			*RawDataSize = PixelsCount * 2 * sizeof(unsigned short);
+		Result = new unsigned char[PixelsCount * 2 * sizeof(unsigned short)];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RG, GL_HALF_FLOAT, Result));
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RG, GL_HALF_FLOAT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_DEPTH_COMPONENT32)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * sizeof(float);
-		Result = new unsigned char[GetWidth() * GetHeight() * sizeof(float)];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, Result));
+			*RawDataSize = PixelsCount * sizeof(float);
+		Result = new unsigned char[PixelsCount * sizeof(float)];
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_DEPTH_COMPONENT, GL_FLOAT, Result));
 	}
 	else if (InternalFormat == GL_DEPTH24_STENCIL8)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 4;
-		Result = new unsigned char[GetWidth() * GetHeight() * 4];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, Result));
+			*RawDataSize = PixelsCount * 4;
+		Result = new unsigned char[PixelsCount * 4];
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, Result));
 	}
 	else if (InternalFormat == GL_RGBA16F)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 4 * sizeof(unsigned short);
+			*RawDataSize = PixelsCount * 4 * sizeof(unsigned short);
 
-		Result = new unsigned char[GetWidth() * GetHeight() * 4 * sizeof(unsigned short)];
+		Result = new unsigned char[PixelsCount * 4 * sizeof(unsigned short)];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_HALF_FLOAT, Result));
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RGBA, GL_HALF_FLOAT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_R16)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 2;
-		Result = new unsigned char[GetWidth() * GetHeight() * 2];
+			*RawDataSize = PixelsCount * 2;
+		Result = new unsigned char[PixelsCount * 2];
 		glPixelStorei(GL_PACK_ALIGNMENT, 2);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_SHORT, Result));
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RED, GL_UNSIGNED_SHORT, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	else if (InternalFormat == GL_RED)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight();
-		Result = new unsigned char[GetWidth() * GetHeight()];
+			*RawDataSize = PixelsCount;
+		Result = new unsigned char[PixelsCount];
 		glPixelStorei(GL_PACK_ALIGNMENT, 1);
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, Result));
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RED, GL_UNSIGNED_BYTE, Result));
 		glPixelStorei(GL_PACK_ALIGNMENT, 4);
 	}
 	// Check GL_COMPRESSED_RGBA_S3TC_DXT5_EXT and GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
 	else if (InternalFormat == GL_RGBA || InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT || InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 4;
-		Result = new unsigned char[GetWidth() * GetHeight() * 4];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, Result));
+			*RawDataSize = PixelsCount * 4;
+		Result = new unsigned char[PixelsCount * 4];
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RGBA, GL_UNSIGNED_BYTE, Result));
 	}
 	else if (InternalFormat == GL_RGB)
 	{
 		if (RawDataSize != nullptr)
-			*RawDataSize = GetWidth() * GetHeight() * 3;
-		Result = new unsigned char[GetWidth() * GetHeight() * 3];
-		FE_GL_ERROR(glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, Result));
+			*RawDataSize = PixelsCount * 3;
+		Result = new unsigned char[PixelsCount * 3];
+		FE_GL_ERROR(glGetTexImage(AppropriateTarget, 0, GL_RGB, GL_UNSIGNED_BYTE, Result));
 	}
 
 	return Result;

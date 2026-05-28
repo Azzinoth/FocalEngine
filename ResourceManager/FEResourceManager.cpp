@@ -362,25 +362,56 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	NewTexture->Height = Height;
 
 	if (Format == GL_RED)
-	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		NewTexture->InternalFormat = GL_RED;
-	}
-	else
+
+	if (Internalformat == -1)
 	{
-		NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-		for (size_t i = 3; i < static_cast<size_t>(Width * Height * 4); i += 4)
+		if (Format == GL_RED)
 		{
-			if (TextureData[i] != 255)
+			NewTexture->InternalFormat = GL_RED;
+		}
+		else
+		{
+			NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+			for (size_t i = 3; i < static_cast<size_t>(Width * Height * 4); i += 4)
 			{
-				NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-				break;
+				if (TextureData[i] != 255)
+				{
+					NewTexture->InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+					break;
+				}
 			}
 		}
 	}
+	else
+	{
+		NewTexture->InternalFormat = Internalformat;
+	}
+
+	GLenum DataType = Type;
+	if (Format == GL_RED && NewTexture->InternalFormat == GL_R16)
+	{
+		DataType = GL_UNSIGNED_SHORT;
+	}
+	else if (Format == GL_RGBA && NewTexture->InternalFormat == GL_RGBA16)
+	{
+		DataType = GL_UNSIGNED_SHORT;
+	}
+	else if (Format == GL_RGBA && NewTexture->InternalFormat == GL_RGBA32F)
+	{
+		DataType = GL_FLOAT;
+	}
+	else if (Format == GL_RED && NewTexture->InternalFormat == GL_R16F)
+	{
+		DataType = GL_HALF_FLOAT;
+	}
+	else if (Format == GL_RED && NewTexture->InternalFormat == GL_R32F)
+	{
+		DataType = GL_FLOAT;
+	}
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, Format, GL_UNSIGNED_BYTE, TextureData);
+	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, Format, DataType, TextureData);
 
 	if (NewTexture->bMipmapEnabled)
 	{
@@ -2699,6 +2730,181 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	delete[] AlphaChannel;
 
 	return Result;
+}
+
+FETexture* FEResourceManager::Convert3DTextureToFlipbook2D(FETexture* Source3DTexture, int& ColumnsOut, int& RowsOut, std::string Name)
+{
+	if (Source3DTexture == nullptr)
+	{
+		LOG.Add("FEResourceManager::Convert3DTextureToFlipbook2D Source3DTexture is null", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (Source3DTexture->GetType() != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
+	{
+		LOG.Add("FEResourceManager::Convert3DTextureToFlipbook2D source texture is not 3D", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	int BytesPerPixel = 0;
+	if (Source3DTexture->InternalFormat == GL_R32F)
+	{
+		BytesPerPixel = 4;
+	}
+	else if (Source3DTexture->InternalFormat == GL_R16)
+	{
+		BytesPerPixel = 2;
+	}
+	else
+	{
+		LOG.Add("FEResourceManager::Convert3DTextureToFlipbook2D InternalFormat is not supported", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	const int SliceWidth = Source3DTexture->GetWidth();
+	const int SliceHeight = Source3DTexture->GetHeight();
+	const int Depth = Source3DTexture->Depth;
+	if (SliceWidth < 1 || SliceHeight < 1 || Depth < 1)
+	{
+		LOG.Add("FEResourceManager::Convert3DTextureToFlipbook2D source texture has invalid dimensions", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	ColumnsOut = static_cast<int>(std::ceil(std::sqrt(Depth)));
+	RowsOut = static_cast<int>(std::ceil(static_cast<double>(Depth) / static_cast<double>(ColumnsOut)));
+
+	size_t DataSize = 0;
+	unsigned char* SourceTextureRawData = Source3DTexture->GetRawData(&DataSize);
+	if (SourceTextureRawData == nullptr || DataSize != static_cast<size_t>(SliceWidth * SliceHeight * Depth * BytesPerPixel))
+	{
+		LOG.Add("FEResourceManager::Convert3DTextureToFlipbook2D failed to get raw data from source texture", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		if (SourceTextureRawData != nullptr)
+			delete[] SourceTextureRawData;
+
+		return nullptr;
+	}
+
+	size_t PerDepthSliceSize = SliceWidth * SliceHeight * BytesPerPixel;
+	unsigned char* ResultTextureRawData = new unsigned char[ColumnsOut * RowsOut * PerDepthSliceSize];
+	std::memset(ResultTextureRawData, 0, ColumnsOut * RowsOut * PerDepthSliceSize);
+
+	const size_t SliceRowStride = static_cast<size_t>(SliceWidth) * BytesPerPixel;
+	const size_t FlipbookRowStride = static_cast<size_t>(ColumnsOut) * SliceRowStride;
+
+	for (int SliceIndex = 0; SliceIndex < Depth; SliceIndex++)
+	{
+		const int Column = SliceIndex % ColumnsOut;
+		const int Row = SliceIndex / ColumnsOut;
+		const unsigned char* SourceSlice = SourceTextureRawData + static_cast<size_t>(SliceIndex) * PerDepthSliceSize;
+
+		for (int Y = 0; Y < SliceHeight; Y++)
+		{
+			const unsigned char* SourceRow = SourceSlice + static_cast<size_t>(Y) * SliceRowStride;
+			unsigned char* DestinationRow = ResultTextureRawData + (static_cast<size_t>(Row) * SliceHeight + Y) * FlipbookRowStride + static_cast<size_t>(Column) * SliceRowStride;
+			std::memcpy(DestinationRow, SourceRow, SliceRowStride);
+		}
+	}
+
+	FETexture* ResultTexture = RESOURCE_MANAGER.RawDataToFETexture(ResultTextureRawData, SliceWidth * ColumnsOut, SliceHeight * RowsOut, Source3DTexture->InternalFormat, GL_RED);
+	if (ResultTexture != nullptr)
+	{
+		const std::string ResultName = Name.empty() ? (Source3DTexture->GetName() + "_Flipbook2D") : Name;
+		ResultTexture->SetName(ResultName);
+	}
+
+	delete[] ResultTextureRawData;
+	delete[] SourceTextureRawData;
+
+	return ResultTexture;
+}
+
+FETexture* FEResourceManager::ConvertFlipbook2DTo3DTexture(FETexture* Source2DTexture, int Columns, int Rows, std::string Name)
+{
+	if (Source2DTexture == nullptr)
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture Source2DTexture is null", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (Source2DTexture->GetType() != FE_TEXTURE_TYPE::FE_TEXTURE_2D)
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture source texture is not 2D", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	if (Columns < 1 || Rows < 1)
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture Columns and Rows must be positive", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	const int FlipbookWidth = Source2DTexture->GetWidth();
+	const int FlipbookHeight = Source2DTexture->GetHeight();
+	if (FlipbookWidth % Columns != 0 || FlipbookHeight % Rows != 0)
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture source dimensions are not evenly divisible by Columns/Rows", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	int BytesPerPixel = 0;
+	if (Source2DTexture->InternalFormat == GL_R32F)
+	{
+		BytesPerPixel = 4;
+	}
+	else if (Source2DTexture->InternalFormat == GL_R16)
+	{
+		BytesPerPixel = 2;
+	}
+	else
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture InternalFormat is not supported", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	const int SliceWidth = FlipbookWidth / Columns;
+	const int SliceHeight = FlipbookHeight / Rows;
+	const int Depth = Columns * Rows;
+
+	size_t DataSize = 0;
+	unsigned char* SourceTextureRawData = Source2DTexture->GetRawData(&DataSize);
+	if (SourceTextureRawData == nullptr || DataSize != static_cast<size_t>(FlipbookWidth * FlipbookHeight * BytesPerPixel))
+	{
+		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture failed to get raw data from source texture", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
+		if (SourceTextureRawData != nullptr)
+			delete[] SourceTextureRawData;
+
+		return nullptr;
+	}
+
+	const size_t SliceRowStride = static_cast<size_t>(SliceWidth) * BytesPerPixel;
+	const size_t SourceRowStride = static_cast<size_t>(FlipbookWidth) * BytesPerPixel;
+	const size_t PerDepthSliceSize = SliceRowStride * static_cast<size_t>(SliceHeight);
+	unsigned char* ResultTextureRawData = new unsigned char[static_cast<size_t>(Depth) * PerDepthSliceSize];
+
+	for (int SliceIndex = 0; SliceIndex < Depth; SliceIndex++)
+	{
+		const int Column = SliceIndex % Columns;
+		const int Row = SliceIndex / Columns;
+
+		for (int Y = 0; Y < SliceHeight; Y++)
+		{
+			const unsigned char* SourceRow = SourceTextureRawData + (static_cast<size_t>(Row) * SliceHeight + Y) * SourceRowStride + static_cast<size_t>(Column) * SliceRowStride;
+			unsigned char* DestinationRow = ResultTextureRawData + static_cast<size_t>(SliceIndex) * PerDepthSliceSize + static_cast<size_t>(Y) * SliceRowStride;
+			std::memcpy(DestinationRow, SourceRow, SliceRowStride);
+		}
+	}
+
+	FETexture* ResultTexture = RawDataTo3DFETexture(ResultTextureRawData, SliceWidth, SliceHeight, Depth, Source2DTexture->InternalFormat, GL_RED);
+	if (ResultTexture != nullptr)
+	{
+		const std::string ResultName = Name.empty() ? (Source2DTexture->GetName() + "_3D") : Name;
+		ResultTexture->SetName(ResultName);
+	}
+
+	delete[] ResultTextureRawData;
+	delete[] SourceTextureRawData;
+
+	return ResultTexture;
 }
 
 bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode)
