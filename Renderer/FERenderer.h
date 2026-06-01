@@ -65,12 +65,16 @@ namespace FocalEngine
 		FETexture* FinalScene = nullptr;
 		bool bTemporaryForceHDROutput = false;
 
+		// Colour buffer that volumetric pass alternates with, so each volume composites over the previous result instead of sampling the framebuffer it is writing into.
+		FETexture* VolumetricIntermediateColorTexture = nullptr;
+
 		~FECameraRenderingData()
 		{
 			delete SceneToTextureFB;
 			delete GBuffer;
 			delete SSAO;
 			delete DepthPyramid;
+			delete VolumetricIntermediateColorTexture;
 			delete PointCloudIntermediateFrameBuffer;
 
 			if (PointCloud64bitFrameBuffer != GLuint (-1))

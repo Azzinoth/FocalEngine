@@ -743,6 +743,8 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	Result->CameraEntity = CameraEntity;
 	Result->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
 
+	Result->VolumetricIntermediateColorTexture = RESOURCE_MANAGER.CreateSameFormatTexture(Result->SceneToTextureFB->GetColorAttachment());
+
 	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 		return Result;
 
@@ -1404,7 +1406,12 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// ********* VOLUMETRIC PASS *************
+	// Each volume reads the previous result (quadTexture) and writes the composite.
+	// Reading and writing the same texture is a feedback loop, so we alternate two colour textures and swap them per volume.
 	bool bFirstVolumetricComponent = true;
+	FETexture* VolumeOriginalColorAttachment = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	FETexture* VolumeSourceColorTexture = VolumeOriginalColorAttachment;
+	FETexture* VolumeTargetColorTexture = CurrentCameraRenderingData->VolumetricIntermediateColorTexture;
 	for (auto [EnTTEntity, VolumeComponent, TransformComponent] : VolumeView.each())
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
@@ -1423,20 +1430,31 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 			bFirstVolumetricComponent = false;
 			glDepthMask(GL_FALSE);
 
-			CurrentCameraRenderingData->SceneToTextureFB->Bind();
 			CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
 		}
+
+		// Read the previous result through quadTexture (unit 0), write into the other colour texture.
+		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(VolumeTargetColorTexture);
+		CurrentCameraRenderingData->SceneToTextureFB->Bind();
+		VolumeSourceColorTexture->Bind(0);
 
 		VolumeComponent.VolumetricShader->Start();
 		LoadStandardUniforms(VolumeComponent.VolumetricShader, nullptr, &TransformComponent, MainCameraEntity);
 
 		VOLUME_SYSTEM.RenderVolumeComponent(TransformComponent, VolumeComponent, MainCameraEntity);
+
+		std::swap(VolumeSourceColorTexture, VolumeTargetColorTexture);
 	}
 
 	if (!bFirstVolumetricComponent)
 	{
 		CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 		glDepthMask(GL_TRUE);
+
+		// Restore the original attachment, if the result landed in the intermediate texture (odd number of volumes), copy it back.
+		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(VolumeOriginalColorAttachment);
+		if (VolumeSourceColorTexture != VolumeOriginalColorAttachment)
+			RenderToFrameBuffer(VolumeSourceColorTexture, CurrentCameraRenderingData->SceneToTextureFB);
 	}
 
 	// ********* VOLUMETRIC PASS END *********

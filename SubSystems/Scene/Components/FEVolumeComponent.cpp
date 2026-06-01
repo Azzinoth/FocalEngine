@@ -18,5 +18,11 @@ FETexture* FEVolumeComponent::GetVolumetricTexture() const
 
 void FEVolumeComponent::SetVolumetricTexture(FETexture* NewVolumetricTexture)
 {
+	if (NewVolumetricTexture == nullptr)
+		return;
+
+	if (NewVolumetricTexture->GetType() != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
+		return;
+
 	VolumetricTexture = NewVolumetricTexture;
 }

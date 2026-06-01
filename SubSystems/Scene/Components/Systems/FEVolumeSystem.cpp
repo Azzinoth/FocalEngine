@@ -21,13 +21,9 @@ FEVolumeSystem::FEVolumeSystem()
 																						  RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Basic.glsl").c_str()).c_str(),
 																						  nullptr, nullptr, nullptr, nullptr, "43590632272B4B5E403C096C"));
 
-	RESOURCE_MANAGER.SetTagInternal(VolumetricShaders.back(), ENGINE_RESOURCE_TAG);
-
 	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Cleaned", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
 																							RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Cleaned.glsl").c_str()).c_str(),
 																							nullptr, nullptr, nullptr, nullptr, "391E240A020F67670C16001E"));
-
-	RESOURCE_MANAGER.SetTagInternal(VolumetricShaders.back(), ENGINE_RESOURCE_TAG);
 }
 
 void FEVolumeSystem::RegisterOnComponentCallbacks()
@@ -120,7 +116,7 @@ void FEVolumeSystem::VolumeComponentFromJson(FEEntity* Entity, Json::Value Root)
 	{
 		std::string TextureID = Root["3DTexture"].asString();
 		if (TextureID != "none")
-			VolumeComponent.VolumetricTexture = RESOURCE_MANAGER.GetTexture(TextureID);
+			VolumeComponent.SetVolumetricTexture(RESOURCE_MANAGER.GetTexture(TextureID));
 	}
 }
 

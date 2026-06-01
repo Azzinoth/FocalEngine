@@ -278,6 +278,10 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 	float Version = FE_TEXTURE_VERSION;
 	File.write((char*)&Version, sizeof(float));
 
+	// FE_FIX_ME: That is a temporary hack.
+	if (Texture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D)
+		Texture->Tag = "3D_TEXTURE";
+
 	OBJECT_MANAGER.SaveFEObjectPart(File, Texture);
 
 	File.write((char*)&Texture->Width, sizeof(int));
@@ -812,7 +816,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		}
 	}
 
-	// Overwrite objectID with objectID from File.
+	// Overwrite ObjectID with ObjectID from File.
 	if (!ID.empty())
 	{
 		const std::string OldID = NewTexture->GetObjectID();
@@ -3021,6 +3025,7 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const s
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
 		TextureToExport->InternalFormat != GL_RGBA16F &&
 		TextureToExport->InternalFormat != GL_RG16F &&
+		TextureToExport->InternalFormat != GL_R32F &&
 		TextureToExport->InternalFormat != GL_DEPTH24_STENCIL8 &&
 		TextureToExport->InternalFormat != GL_DEPTH_COMPONENT32)
 	{
@@ -3212,6 +3217,57 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const s
 
 			Format = GL_R16;
 		}
+	}
+	else if (TextureToExport->InternalFormat == GL_R32F)
+	{
+		const float* FloatData = reinterpret_cast<const float*>(TextureData);
+		const size_t PixelCount = static_cast<size_t>(TextureWidth) * TextureHeight;
+
+		// R32F can hold any range, so normalize against the actual min/max to get a viewable image.
+		float MinValue = std::numeric_limits<float>::max();
+		float MaxValue = std::numeric_limits<float>::lowest();
+		for (size_t i = 0; i < PixelCount; i++)
+		{
+			if (FloatData[i] < MinValue)
+				MinValue = FloatData[i];
+
+			if (FloatData[i] > MaxValue)
+				MaxValue = FloatData[i];
+		}
+
+		if (MinValue > MaxValue)
+		{
+			MinValue = 0.0f;
+			MaxValue = 1.0f;
+		}
+
+		const float Range = MaxValue - MinValue;
+		const float InverseRange = (Range > 1e-6f) ? 1.0f / Range : 1.0f;
+
+		RawData.resize(PixelCount * 2);
+
+		for (size_t i = 0; i < PixelCount; i++)
+		{
+			const float Normalized = std::max(0.0f, std::min(1.0f, (FloatData[i] - MinValue) * InverseRange));
+			const unsigned short FinalValue = static_cast<unsigned short>(Normalized * 65535.0f);
+
+			RawData[i * 2 + 0] = (FinalValue >> 8) & 0xFF;
+			RawData[i * 2 + 1] = FinalValue & 0xFF;
+		}
+
+		// Flip vertically.
+		const size_t RowBytes = TextureWidth * 2;
+		std::vector<unsigned char> RowBuffer(RowBytes);
+		for (int y = 0; y < TextureHeight / 2; y++)
+		{
+			unsigned char* TopRow = RawData.data() + y * RowBytes;
+			unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
+			std::memcpy(RowBuffer.data(), TopRow, RowBytes);
+			std::memcpy(TopRow, BotRow, RowBytes);
+			std::memcpy(BotRow, RowBuffer.data(), RowBytes);
+		}
+
+		Format = GL_R16;
 	}
 	else
 	{

@@ -626,11 +626,15 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
 	if (Entity->HasComponent<FEGameModelComponent>())
 	{
 		FEGameModel* GameModel = Entity->GetComponent<FEGameModelComponent>().GetGameModel();
-		Result = GameModel->GetMesh()->GetAABB();
-		if (Result.GetLongestAxisLength() == 0.0f)
-			Result = Result.Transform(glm::mat4(1.0f));
-		if (!bLocalAABB)
-			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		if (GameModel != nullptr && GameModel->GetMesh() != nullptr)
+		{
+			Result = GameModel->GetMesh()->GetAABB();
+			if (Result.GetLongestAxisLength() == 0.0f)
+				Result = Result.Transform(glm::mat4(1.0f));
+
+			if (!bLocalAABB)
+				Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+		}
 	}
 
 	if (Entity->HasComponent<FEInstancedComponent>())
