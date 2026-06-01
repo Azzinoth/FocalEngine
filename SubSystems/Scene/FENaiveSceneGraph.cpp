@@ -25,7 +25,8 @@ void FENaiveSceneGraph::Initialize(FEScene* Scene)
 
 FENaiveSceneGraph::~FENaiveSceneGraph()
 {
-	delete Root;
+	if (Root)
+		delete Root;
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetRoot() const
@@ -220,6 +221,12 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* Node
 	}
 	
 	FEEntity* EntityFromDifferentScene = NodeFromDifferentSceneGraph->Entity;
+	if (EntityFromDifferentScene == nullptr)
+	{
+		LOG.Add("NodeFromDifferentSceneGraph has null entity in FENaiveSceneGraph::ImportEntity, it is root node that cannot be imported or it is malformed.", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		return Result;
+	}
+
 	if (EntityFromDifferentScene->GetParentScene() == ParentScene)
 	{
 		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_SCENE_GRAPH", FE_LOG_WARNING);
@@ -397,15 +404,20 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 		FENaiveSceneGraphNode* CurrentNode = LoadedNodes[NodeID];
 		std::string ParentID = NodeData["ParentID"].asString();
 
-		FENaiveSceneGraphNode* ParentNode = LoadedNodes[ParentID];
-		// If we cannot find the parent, it is the root.
-		if (ParentNode == nullptr)
+		// Using find() to not insert unknown ParentID.
+		std::unordered_map<std::string, FENaiveSceneGraphNode*>::iterator ParentIterator = LoadedNodes.find(ParentID);
+		FENaiveSceneGraphNode* ParentNode = (ParentIterator != LoadedNodes.end()) ? ParentIterator->second : nullptr;
+
+		bool bAdded = false;
+		if (ParentNode != nullptr && ParentNode != CurrentNode)
+			bAdded = ParentNode->AddChild(CurrentNode, false);
+
+		if (!bAdded)
 		{
+			if (ParentNode != nullptr)
+				LOG.Add("FromJson: node '" + NodeID + "' has an unresolvable or cyclic ParentID '" + ParentID + "'; attaching to root", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+
 			this->Root->AddChild(CurrentNode, false);
-		}
-		else
-		{
-			ParentNode->AddChild(CurrentNode, false); 
 		}
 	}
 }
