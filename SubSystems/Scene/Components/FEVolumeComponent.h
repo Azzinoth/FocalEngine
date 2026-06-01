@@ -1,17 +1,25 @@
 #pragma once
 #include "../Core/FEObject.h"
+#include "../ResourceManager/BaseResources/FETexture.h"
 
 namespace FocalEngine
 {
 	struct FEVolumeComponent 
 	{
+		friend class FERenderer;
+		friend class FEVolumeSystem;
+
 		FEVolumeComponent() {};
-		//FEVolumeComponent(FELineCollection* LineCollectionToSet);
 
-		//FELineCollection* GetLineCollection() const;
-		//void SetLineCollection(FELineCollection* NewLineCollection);
+		FEShader* GetVolumetricShader() const;
+		void SetVolumetricShader(FEShader* NewVolumetricShader);
+
+		FETexture* GetVolumetricTexture() const;
+		void SetVolumetricTexture(FETexture* NewVolumetricTexture);
+
 	private:
-		void* DummyData = nullptr;
-
+		// FE_TO_DO: Implement volume material ?
+		FEShader* VolumetricShader = nullptr;
+		FETexture* VolumetricTexture = nullptr;
 	};
 }

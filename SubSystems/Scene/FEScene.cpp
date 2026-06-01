@@ -655,6 +655,15 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
 			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
 	}
 
+	if (Entity->HasComponent<FEVolumeComponent>())
+	{
+		// The volumetric shaders generally samples the data as the unit cube in the entity local space.
+		// Transforming it by the world matrix scales and positions it by the entity transform.
+		Result = FEAABB(glm::vec3(0.0f), glm::vec3(1.0f));
+		if (!bLocalAABB)
+			Result = Result.Transform(Entity->GetComponent<FETransformComponent>().GetWorldMatrix());
+	}
+
 	// If entity has no renderable components, we can have FEAABB with zero volume.
 	// But with position.
 	if (Result.GetVolume() == 0 && GEOMETRY.IsEpsilonEqual(Result.GetSize(), glm::vec3(0.0f)))

@@ -1,31 +1,22 @@
 #include "FEVolumeComponent.h"
 using namespace FocalEngine;
 
-//FEPointCloudComponent::FEPointCloudComponent(FEPointCloud* PointCloudToSet)
-//{
-//	PointCloud = PointCloudToSet;
-//}
+FEShader* FEVolumeComponent::GetVolumetricShader() const
+{
+	return VolumetricShader;
+}
 
-//FEVolumeComponent::FEVolumeComponent(const FEVolumeComponent& Other)
-//{
-//	
-//}
-//
-//FEVolumeComponent& FEVolumeComponent::operator=(const FEVolumeComponent& Other)
-//{
-//	
-//}
+void FEVolumeComponent::SetVolumetricShader(FEShader* NewVolumetricShader)
+{
+	VolumetricShader = NewVolumetricShader;
+}
 
-//FEVolumeComponent::FEVolumeComponent(FELineCollection* LineCollectionToSet)
-//{
-//	//LineCollection = LineCollectionToSet;
-//}
+FETexture* FEVolumeComponent::GetVolumetricTexture() const
+{
+	return VolumetricTexture;
+}
 
-//FELineCollection* FEVolumeComponent::GetLineCollection() const
-//{
-//	return LineCollection;
-//}
-//void FEVolumeComponent::SetLineCollection(FELineCollection* NewLineCollection)
-//{
-//	LineCollection = NewLineCollection;
-//}
+void FEVolumeComponent::SetVolumetricTexture(FETexture* NewVolumetricTexture)
+{
+	VolumetricTexture = NewVolumetricTexture;
+}

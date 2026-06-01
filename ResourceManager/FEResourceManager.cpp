@@ -209,6 +209,15 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 		Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RED, GL_UNSIGNED_SHORT, RawExtractedData.data());
 		FE_GL_ERROR(glPixelStorei(GL_UNPACK_SWAP_BYTES, FALSE));
 
+		// lodepng returns big-endian 16-bit data; swap to native byte order before computing min/max.
+		for (size_t i = 0; i + 1 < RawExtractedData.size(); i += 2)
+		{
+			const unsigned char Temporary = RawExtractedData[i];
+			RawExtractedData[i] = RawExtractedData[i + 1];
+			RawExtractedData[i + 1] = Temporary;
+		}
+		NewTexture->UpdateMinMaxValues(RawExtractedData.data());
+
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 
@@ -221,6 +230,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 		Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
+		NewTexture->UpdateMinMaxValues(RawExtractedData.data());
 
 		if (NewTexture->bMipmapEnabled)
 		{
@@ -257,7 +267,8 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 
 void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& FilePath)
 {
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Texture->TextureID));
+	const GLenum TextureTarget = (Texture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D) ? GL_TEXTURE_3D : GL_TEXTURE_2D;
+	FE_GL_ERROR(glBindTexture(TextureTarget, Texture->TextureID));
 
 	GLint ImgSize = 0;
 	std::fstream File;
@@ -272,8 +283,11 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 	File.write((char*)&Texture->Width, sizeof(int));
 	File.write((char*)&Texture->Height, sizeof(int));
 	File.write((char*)&Texture->InternalFormat, sizeof(int));
+	File.write((char*)&Texture->Depth, sizeof(int));
+	int TextureType = static_cast<int>(Texture->Type);
+	File.write((char*)&TextureType, sizeof(int));
 
-	if (Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
+	if (Texture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D || Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
 	{
 		size_t DataSize = 0;
 		unsigned char* Pixels = Texture->GetRawData(&DataSize);
@@ -412,6 +426,7 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
 	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, Format, DataType, TextureData);
+	NewTexture->UpdateMinMaxValues(TextureData);
 
 	if (NewTexture->bMipmapEnabled)
 	{
@@ -508,6 +523,8 @@ FETexture* FEResourceManager::RawDataTo3DFETexture(unsigned char* TextureData, i
 
 	if (Format == GL_RED)
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+	NewTexture->UpdateMinMaxValues(TextureData);
 
 	return NewTexture;
 }
@@ -649,7 +666,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	char* ObjectID = nullptr;
 	std::string ID;
 
-	if (Version != FE_TEXTURE_VERSION)
+	if (Version != FE_TEXTURE_VERSION && Version != 0.02f)
 	{
 		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
@@ -666,6 +683,17 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	InternalFormat = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
 
+	// Depth and Type were added in FE_TEXTURE_VERSION 0.03f.
+	int Depth = 1;
+	int TextureType = static_cast<int>(FE_TEXTURE_TYPE::FE_TEXTURE_2D);
+	if (Version == FE_TEXTURE_VERSION)
+	{
+		Depth = *(int*)(&FileData[CurrentShift]);
+		CurrentShift += 4;
+		TextureType = *(int*)(&FileData[CurrentShift]);
+		CurrentShift += 4;
+	}
+
 	FETexture* NewTexture = nullptr;
 	if (ExistingTexture != nullptr)
 	{
@@ -681,10 +709,49 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	NewTexture->Width = Width;
 	NewTexture->Height = Height;
 	NewTexture->InternalFormat = InternalFormat;
+	NewTexture->Depth = Depth;
+	NewTexture->Type = static_cast<FE_TEXTURE_TYPE>(TextureType);
 
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+	const GLenum TextureTarget = (NewTexture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D) ? GL_TEXTURE_3D : GL_TEXTURE_2D;
+	FE_GL_ERROR(glBindTexture(TextureTarget, NewTexture->TextureID));
 
-	if (NewTexture->InternalFormat == GL_RED || NewTexture->InternalFormat == GL_RGBA || NewTexture->InternalFormat == GL_R16)
+	if (NewTexture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D)
+	{
+		const int Size = *(int*)(&FileData[CurrentShift]);
+		CurrentShift += 4;
+
+		GLenum UploadFormat = (NewTexture->InternalFormat == GL_RGBA || NewTexture->InternalFormat == GL_RGBA16 || NewTexture->InternalFormat == GL_RGBA32F) ? GL_RGBA : GL_RED;
+		GLenum UploadDataType = GL_UNSIGNED_BYTE;
+		if (NewTexture->InternalFormat == GL_R16 || NewTexture->InternalFormat == GL_RGBA16)
+		{
+			UploadDataType = GL_UNSIGNED_SHORT;
+		}
+		else if (NewTexture->InternalFormat == GL_R16F)
+		{
+			UploadDataType = GL_HALF_FLOAT;
+		}
+		else if (NewTexture->InternalFormat == GL_R32F || NewTexture->InternalFormat == GL_RGBA32F)
+		{
+			UploadDataType = GL_FLOAT;
+		}
+
+		if (UploadFormat == GL_RED)
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		Upload3DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, NewTexture->Depth, UploadFormat, UploadDataType, static_cast<void*>(&FileData[CurrentShift]));
+
+		if (UploadFormat == GL_RED)
+			glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+
+		CurrentShift += Size;
+	}
+	else if (NewTexture->InternalFormat == GL_RED || NewTexture->InternalFormat == GL_RGBA || NewTexture->InternalFormat == GL_R16)
 	{
 		int Size = *(int*)(&FileData[CurrentShift]);
 		CurrentShift += 4;
@@ -723,22 +790,26 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		}
 	}
 
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (NewTexture->MagFilter == FE_LINEAR)
+	// These filter/mipmap parameters apply to 2D textures only, a 3D texture already set its own above.
+	if (NewTexture->Type != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
 	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
+		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+		if (NewTexture->MagFilter == FE_LINEAR)
+		{
+			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+		}
+		else
+		{
+			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+		}
 
-	if (NewTexture->bMipmapEnabled)
-	{
-		//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		// TO-DO: make it configurable.
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+		if (NewTexture->bMipmapEnabled)
+		{
+			//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
+			// TO-DO: make it configurable.
+			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
+			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+		}
 	}
 
 	// Overwrite objectID with objectID from File.
@@ -1918,14 +1989,6 @@ void FEResourceManager::LoadStandardMaterial()
 																				  nullptr, nullptr, nullptr, nullptr);
 
 	// ****************************** POINT CLOUD SHADERS END **************************
-
-	// ********************************* VOLUMETRIC ************************************
-
-	FEShader* VolumetricShader = CreateShader("FEVolumetricShader", LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
-											  LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS.glsl").c_str()).c_str(),
-											  nullptr, nullptr, nullptr, nullptr);
-
-	// ********************************* VOLUMETRIC END ********************************
 }
 
 void FEResourceManager::LoadStandardGameModels()
@@ -2369,6 +2432,7 @@ FETexture* FEResourceManager::CreateBlankHeightMapTexture(int Width, int Height,
 	}
 
 	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RED, GL_UNSIGNED_SHORT, (unsigned char*)RawPixels);
+	NewTexture->UpdateMinMaxValues((unsigned char*)RawPixels);
 	delete[] RawPixels;
 
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
@@ -2846,14 +2910,37 @@ FETexture* FEResourceManager::ConvertFlipbook2DTo3DTexture(FETexture* Source2DTe
 		return nullptr;
 	}
 
-	int BytesPerPixel = 0;
+	// Volume shaders only sample .r right now.
+	int SourceBytesPerPixel = 0; // bytes per pixel as GetRawData returns.
+	int BytesPerPixel = 0; // bytes per pixel of the resulting single channel volume.
+	GLint TargetInternalFormat = GL_RED;
+	bool bExtractRedChannel = false;
 	if (Source2DTexture->InternalFormat == GL_R32F)
 	{
+		SourceBytesPerPixel = 4;
 		BytesPerPixel = 4;
+		TargetInternalFormat = GL_R32F;
 	}
 	else if (Source2DTexture->InternalFormat == GL_R16)
 	{
+		SourceBytesPerPixel = 2;
 		BytesPerPixel = 2;
+		TargetInternalFormat = GL_R16;
+	}
+	else if (Source2DTexture->InternalFormat == GL_RED)
+	{
+		SourceBytesPerPixel = 1;
+		BytesPerPixel = 1;
+		TargetInternalFormat = GL_RED;
+	}
+	else if (Source2DTexture->InternalFormat == GL_RGBA ||
+			 Source2DTexture->InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT ||
+			 Source2DTexture->InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT)
+	{
+		SourceBytesPerPixel = 4;   // GetRawData decompresses these to RGBA8
+		BytesPerPixel = 1;         // keep only the red channel
+		TargetInternalFormat = GL_RED;
+		bExtractRedChannel = true;
 	}
 	else
 	{
@@ -2867,13 +2954,25 @@ FETexture* FEResourceManager::ConvertFlipbook2DTo3DTexture(FETexture* Source2DTe
 
 	size_t DataSize = 0;
 	unsigned char* SourceTextureRawData = Source2DTexture->GetRawData(&DataSize);
-	if (SourceTextureRawData == nullptr || DataSize != static_cast<size_t>(FlipbookWidth * FlipbookHeight * BytesPerPixel))
+	if (SourceTextureRawData == nullptr || DataSize != static_cast<size_t>(FlipbookWidth * FlipbookHeight * SourceBytesPerPixel))
 	{
 		LOG.Add("FEResourceManager::ConvertFlipbook2DTo3DTexture failed to get raw data from source texture", "FE_LOG_RESOURCE_MANAGER", FE_LOG_ERROR);
 		if (SourceTextureRawData != nullptr)
 			delete[] SourceTextureRawData;
 
 		return nullptr;
+	}
+
+	// Reduce RGBA8 source data to its red channel.
+	if (bExtractRedChannel)
+	{
+		const size_t PixelCount = static_cast<size_t>(FlipbookWidth) * static_cast<size_t>(FlipbookHeight);
+		unsigned char* RedChannelData = new unsigned char[PixelCount];
+		for (size_t i = 0; i < PixelCount; i++)
+			RedChannelData[i] = SourceTextureRawData[i * 4];
+
+		delete[] SourceTextureRawData;
+		SourceTextureRawData = RedChannelData;
 	}
 
 	const size_t SliceRowStride = static_cast<size_t>(SliceWidth) * BytesPerPixel;
@@ -2894,7 +2993,7 @@ FETexture* FEResourceManager::ConvertFlipbook2DTo3DTexture(FETexture* Source2DTe
 		}
 	}
 
-	FETexture* ResultTexture = RawDataTo3DFETexture(ResultTextureRawData, SliceWidth, SliceHeight, Depth, Source2DTexture->InternalFormat, GL_RED);
+	FETexture* ResultTexture = RawDataTo3DFETexture(ResultTextureRawData, SliceWidth, SliceHeight, Depth, TargetInternalFormat, GL_RED);
 	if (ResultTexture != nullptr)
 	{
 		const std::string ResultName = Name.empty() ? (Source2DTexture->GetName() + "_3D") : Name;
@@ -3665,6 +3764,7 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
 	Upload2DTextureDataToGPU(Result, 0, InternalFormat, Result->Width, Result->Height, GL_RGBA, GL_UNSIGNED_BYTE, RawData);
 	Result->InternalFormat = InternalFormat;
+	Result->UpdateMinMaxValues(RawData);
 
 	if (Result->bMipmapEnabled)
 	{

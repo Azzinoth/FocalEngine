@@ -1,5 +1,6 @@
 in vec2 TextureCoordinates;
-//in vec3 WorldPosition;
+
+@WorldMatrix@
 
 uniform mat4 invProjectionMatrix;
 uniform mat4 invViewMatrix;
@@ -87,16 +88,17 @@ void main(void)
 	float LinearDepth = LinearizeDepth(NonLinearDepth, NearPlane, FarPlane);
 	
 	
-	vec3 Size = vec3(-0.5, 2.0, 2.0);
-	vec3 BoxMin = vec3(0.0);
-	vec3 BoxMax = BoxMin + Size;
-	vec2 RayBoxIntersection = rayBoxDst(BoxMin, BoxMax, FECameraPosition, rayDir);
-	float DistanceToBox = RayBoxIntersection.x;
-	float DistanceInsideBox = RayBoxIntersection.y;
-	
-	
+	// Transform the world-space ray into the volume's local space.
+	// localDir is intentionally NOT normalized, that way the parameter 't' we march along
+	// stays in world-space units, so dstLimit can be compared against LinearDepth directly regardless of the volum scale.
+	mat4 InvWorldMatrix = inverse(FEWorldMatrix);
+	vec3 localOrigin = (InvWorldMatrix * vec4(FECameraPosition, 1.0)).xyz;
+	vec3 localDir = (InvWorldMatrix * vec4(rayDir, 0.0)).xyz;
 
-	
+	// Volume occupies the unit cube in its local space.
+	vec2 RayBoxIntersection = rayBoxDst(vec3(0.0), vec3(1.0), localOrigin, localDir);
+	float DistanceToBox     = RayBoxIntersection.x;
+	float DistanceInsideBox = RayBoxIntersection.y;
 	
 	float NumSteps = 1000.0;
 	float dstTravelled = 0;
@@ -201,9 +203,10 @@ void main(void)
 	vec4 volumeColor = vec4(0.0); // Accumulated color from the volume
 
 	while (dstTravelled < dstLimit) {
-		vec3 rayPos = FECameraPosition + rayDir * (DistanceToBox + dstTravelled);
+		float t = DistanceToBox + dstTravelled;
+		vec3 texCoords = localOrigin + localDir * t;
 
-		vec3 texCoords = worldToTexCoords(rayPos, BoxMin, BoxMax);
+
 		//vec4 sampleData = texture(volumeTexture, texCoords);
 		float VolumeValue = texture(volumeTexture, texCoords).r;
 		float VolumeValueMin = 31.8555374f;

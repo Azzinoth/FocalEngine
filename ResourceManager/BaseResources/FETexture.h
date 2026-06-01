@@ -51,6 +51,9 @@ namespace FocalEngine
 		int GetHeight();
 		int GetDepth();
 
+		glm::vec4 GetMinValue();
+		glm::vec4 GetMaxValue();
+
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
 		void UpdateRawData(unsigned char* NewRawData, size_t MipmapCount = 1);
 	private:
@@ -66,6 +69,10 @@ namespace FocalEngine
 		GLint InternalFormat;
 		GLenum Format;
 		GLuint DefaultTextureUnit = -1;
+
+		glm::vec4 MinValue = glm::vec4(std::numeric_limits<float>::max());
+		glm::vec4 MaxValue = glm::vec4(-std::numeric_limits<float>::max());
+		void UpdateMinMaxValues(const unsigned char* RawData);
 
 		FE_TEXTURE_MAG_FILTER MagFilter = FE_LINEAR;
 		bool bMipmapEnabled = true;

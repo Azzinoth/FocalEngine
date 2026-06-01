@@ -12,7 +12,8 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEVolumeSystem)
 
 		bool bInternalAdd = false;
-		//FEShader* VolumeShader = nullptr;
+		// FE_TO_DO: Implement volume material ?
+		std::vector<FEShader*> VolumetricShaders;
 
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
@@ -27,6 +28,8 @@ namespace FocalEngine
 
 		void Render(FEEntity* Entity, FEEntity* Camera);
 		bool RenderVolumeComponent(FETransformComponent& TransformComponent, FEVolumeComponent& VolumeComponent, FEEntity* Camera);
+
+		std::vector<FEShader*> GetVolumetricShaders();
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

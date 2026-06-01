@@ -1,5 +1,6 @@
 #include "FETexture.h"
 #include "../ResourceManager/FEResourceManager.h"
+#include "glm/gtc/packing.hpp"
 using namespace FocalEngine;
 
 FETexture::FETexture(const std::string Name, FE_TEXTURE_TYPE TextureType) : FEObject(FE_TEXTURE, Name)
@@ -118,6 +119,16 @@ int FETexture::GetHeight()
 int FETexture::GetDepth()
 {
 	return Depth;
+}
+
+glm::vec4 FETexture::GetMinValue()
+{
+	return MinValue;
+}
+
+glm::vec4 FETexture::GetMaxValue()
+{
+	return MaxValue;
 }
 
 void FETexture::AddToOnDeleteCallBackList(const std::string ObjectID)
@@ -283,6 +294,7 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipmapCoun
 	if (InternalFormat != GL_RGBA &&
 		InternalFormat != GL_RED &&
 		InternalFormat != GL_R16 &&
+		InternalFormat != GL_R32F &&
 		InternalFormat != GL_RGBA16F &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
@@ -334,9 +346,97 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipmapCoun
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RED, GL_UNSIGNED_SHORT, (void*)(NewRawData)));
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 	}
+	else if (InternalFormat == GL_R32F)
+	{
+		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), GL_R32F, GetWidth(), GetHeight()));
+		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RED, GL_FLOAT, (void*)(NewRawData)));
+	}
 	else
 	{
 		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), InternalFormat, GetWidth(), GetHeight()));
 		FE_GL_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, GetWidth(), GetHeight(), GL_RGBA, GL_UNSIGNED_BYTE, (void*)(NewRawData)));
+	}
+
+	UpdateMinMaxValues(NewRawData);
+}
+
+template <typename ComponentType>
+static void AccumulateMinMax(const ComponentType* Data, const size_t PixelCount, const int ChannelCount, glm::vec4& OutMin, glm::vec4& OutMax)
+{
+	for (size_t Pixel = 0; Pixel < PixelCount; Pixel++)
+	{
+		for (int Channel = 0; Channel < ChannelCount; Channel++)
+		{
+			const float Value = static_cast<float>(Data[Pixel * ChannelCount + Channel]);
+			if (Value < OutMin[Channel])
+				OutMin[Channel] = Value;
+			if (Value > OutMax[Channel])
+				OutMax[Channel] = Value;
+		}
+	}
+}
+
+static void AccumulateMinMaxHalf(const unsigned short* Data, const size_t PixelCount, const int ChannelCount, glm::vec4& OutMin, glm::vec4& OutMax)
+{
+	for (size_t Pixel = 0; Pixel < PixelCount; Pixel++)
+	{
+		for (int Channel = 0; Channel < ChannelCount; Channel++)
+		{
+			const float Value = glm::unpackHalf1x16(Data[Pixel * ChannelCount + Channel]);
+			if (Value < OutMin[Channel])
+				OutMin[Channel] = Value;
+			if (Value > OutMax[Channel])
+				OutMax[Channel] = Value;
+		}
+	}
+}
+
+void FETexture::UpdateMinMaxValues(const unsigned char* RawData)
+{
+	// Re-seed the empty interval on every call so re-computation stays correct.
+	MinValue = glm::vec4(std::numeric_limits<float>::max());
+	MaxValue = glm::vec4(-std::numeric_limits<float>::max());
+
+	if (RawData == nullptr)
+		return;
+
+	const size_t PixelCount = static_cast<size_t>(Width) * static_cast<size_t>(Height) * (Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D ? static_cast<size_t>(Depth) : 1);
+	if (PixelCount == 0)
+		return;
+
+	// Interpret RawData with the same channel count and component type that UpdateRawData uploads it with.
+	if (InternalFormat == GL_RED)
+	{
+		AccumulateMinMax(RawData, PixelCount, 1, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_RGBA ||
+			 InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ||
+			 InternalFormat == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+	{
+		AccumulateMinMax(RawData, PixelCount, 4, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_R16)
+	{
+		AccumulateMinMax(reinterpret_cast<const unsigned short*>(RawData), PixelCount, 1, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_RGBA16)
+	{
+		AccumulateMinMax(reinterpret_cast<const unsigned short*>(RawData), PixelCount, 4, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_R32F)
+	{
+		AccumulateMinMax(reinterpret_cast<const float*>(RawData), PixelCount, 1, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_RGBA32F)
+	{
+		AccumulateMinMax(reinterpret_cast<const float*>(RawData), PixelCount, 4, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_R16F)
+	{
+		AccumulateMinMaxHalf(reinterpret_cast<const unsigned short*>(RawData), PixelCount, 1, MinValue, MaxValue);
+	}
+	else if (InternalFormat == GL_RGBA16F)
+	{
+		AccumulateMinMaxHalf(reinterpret_cast<const unsigned short*>(RawData), PixelCount, 4, MinValue, MaxValue);
 	}
 }

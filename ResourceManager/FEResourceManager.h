@@ -39,6 +39,7 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 		friend class FEPointCloudSystem;
 		friend class FELineSystem;
+		friend class FEVolumeSystem;
 	public:
 		SINGLETON_PUBLIC_PART(FEResourceManager)
 

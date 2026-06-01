@@ -958,6 +958,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	entt::basic_view TerrainView = CurrentScene->Registry.view<FETerrainComponent, FETransformComponent>();
 	entt::basic_view VirtualUIView = CurrentScene->Registry.view<FEVirtualUIComponent, FETransformComponent>();
 	entt::basic_view PointCloudView = CurrentScene->Registry.view<FEPointCloudComponent, FETransformComponent>();
+	entt::basic_view VolumeView = CurrentScene->Registry.view<FEVolumeComponent, FETransformComponent>();
 
 	for (std::string EntityID : LightsIDList)
 	{
@@ -1402,43 +1403,42 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment()->Bind();
 	glGenerateMipmap(GL_TEXTURE_2D);
 
-
 	// ********* VOLUMETRIC PASS *************
-	std::vector<FEShader*> VolumetricShaders = RESOURCE_MANAGER.GetShaderByName("FEVolumetricShader");
-	if (!VolumetricShaders.empty() && VolumetricShaders[0] != nullptr && !RESOURCE_MANAGER.GetTextureByName("My_First_3D_Texture").empty())
+	bool bFirstVolumetricComponent = true;
+	for (auto [EnTTEntity, VolumeComponent, TransformComponent] : VolumeView.each())
 	{
-		FEShader* VolumetricShader = RESOURCE_MANAGER.GetShaderByName("FEVolumetricShader")[0];
-		VolumetricShader->Start();
-		LoadStandardUniforms(VolumetricShader, nullptr, nullptr, MainCameraEntity);
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
 
-		VolumetricShader->UpdateUniformData("NearPlane", CurrentCameraComponent.GetNearPlane());
-		VolumetricShader->UpdateUniformData("FarPlane", CurrentCameraComponent.GetFarPlane());
+		if (!Entity->IsVisible())
+			continue;
 
-		VolumetricShader->UpdateUniformData("invViewMatrix", glm::inverse(CurrentCameraComponent.GetViewMatrix()));
-		VolumetricShader->UpdateUniformData("invProjectionMatrix", glm::inverse(CurrentCameraComponent.GetProjectionMatrix()));
+		if (VolumeComponent.VolumetricShader == nullptr || VolumeComponent.VolumetricTexture == nullptr)
+			continue;
 
-		VolumetricShader->LoadUniformsDataToGPU();
+		// If we have any volumetric component visible.
+		if (bFirstVolumetricComponent)
+		{
+			bFirstVolumetricComponent = false;
+			glDepthMask(GL_FALSE);
 
-		glDepthMask(GL_FALSE);
-		CurrentCameraRenderingData->SceneToTextureFB->Bind();
-		CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
-		FETexture* Texture3D = RESOURCE_MANAGER.GetTextureByName("My_First_3D_Texture")[0];
-		Texture3D->Bind(2);
+			CurrentCameraRenderingData->SceneToTextureFB->Bind();
+			CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
+		}
 
-		FEMesh* ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
-		FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));
-		FE_GL_ERROR(glEnableVertexAttribArray(0));
-		FE_GL_ERROR(glDrawElements(GL_TRIANGLES, ScreenQuad->GetVertexCount(), GL_UNSIGNED_INT, nullptr));
-		FE_GL_ERROR(glDisableVertexAttribArray(0));
-		FE_GL_ERROR(glBindVertexArray(0));
+		VolumeComponent.VolumetricShader->Start();
+		LoadStandardUniforms(VolumeComponent.VolumetricShader, nullptr, &TransformComponent, MainCameraEntity);
 
+		VOLUME_SYSTEM.RenderVolumeComponent(TransformComponent, VolumeComponent, MainCameraEntity);
+	}
+
+	if (!bFirstVolumetricComponent)
+	{
 		CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 		glDepthMask(GL_TRUE);
 	}
-	else
-	{
-		LOG.Add("Function FERenderer::Render, VolumetricShader is not found!", "FE_LOG_RENDERING", FE_LOG_ERROR);
-	}
+
 	// ********* VOLUMETRIC PASS END *********
 	
 	// ********* Upscale rendering result if needed *************
