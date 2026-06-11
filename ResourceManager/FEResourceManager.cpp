@@ -12,42 +12,46 @@ extern "C" __declspec(dllexport) void* GetResourceManager()
 
 FEResourceManager::FEResourceManager()
 {
-	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
-
-	if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
+	// Temporary check for the headless variant, proper headless support is to be implemented later.
+	if (glfwGetCurrentContext() != nullptr)
 	{
-		PrivateEngineAssetPackage = new FEAssetPackage();
-		if (!PrivateEngineAssetPackage->LoadFromFile((FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage").c_str()))
+		glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
+
+		if (FILE_SYSTEM.DoesFileExist(FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage"))
 		{
-			LOG.Add("FEResourceManager::FEResourceManager: Can't load EngineResources.fepackage file!", "FE_LOG_LOADING", FE_LOG_ERROR);
-			delete PrivateEngineAssetPackage;
-			PrivateEngineAssetPackage = nullptr;
+			PrivateEngineAssetPackage = new FEAssetPackage();
+			if (!PrivateEngineAssetPackage->LoadFromFile((FILE_SYSTEM.GetCurrentWorkingPath() + "/EngineResources.fepackage").c_str()))
+			{
+				LOG.Add("FEResourceManager::FEResourceManager: Can't load EngineResources.fepackage file!", "FE_LOG_LOADING", FE_LOG_ERROR);
+				delete PrivateEngineAssetPackage;
+				PrivateEngineAssetPackage = nullptr;
+			}
+
+			UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
 		}
 
-		UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
-	}
+		NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture"), "noTexture");
+		NoTexture->SetTag(ENGINE_RESOURCE_TAG);
+		FETexture::MarkAsPersistent(NoTexture->GetTextureID());
 
-	NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture"), "noTexture");
-	NoTexture->SetTag(ENGINE_RESOURCE_TAG);
-	FETexture::MarkAsPersistent(NoTexture->GetTextureID());
+		FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl")).c_str(),
+																	LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl")).c_str(),
+																	nullptr, nullptr, nullptr, nullptr,
+																	"5C267A01466A545E7D1A2E66");
+		NewShader->SetTag(ENGINE_RESOURCE_TAG);
 
-	FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl")).c_str(),
-																LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl")).c_str(),
-																nullptr, nullptr, nullptr, nullptr,
-																"5C267A01466A545E7D1A2E66");
-	NewShader->SetTag(ENGINE_RESOURCE_TAG);
+		LoadStandardMaterial();
+		LoadStandardMeshes();
+		LoadStandardGameModels();
 
-	LoadStandardMaterial();
-	LoadStandardMeshes();
-	LoadStandardGameModels();
-
-	// Load all standard script modules.
-	std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
-	for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
-	{
-		if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 19, 19) == ".nativescriptmodule")
+		// Load all standard script modules.
+		std::vector<std::string> PotentialScriptModuleFiles = FILE_SYSTEM.GetFileNamesInDirectory(ResourcesFolder);
+		for (size_t i = 0; i < PotentialScriptModuleFiles.size(); i++)
 		{
-			LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]));
+			if (PotentialScriptModuleFiles[i].substr(PotentialScriptModuleFiles[i].size() - 19, 19) == ".nativescriptmodule")
+			{
+				LoadFENativeScriptModule((ResourcesFolder + PotentialScriptModuleFiles[i]));
+			}
 		}
 	}
 
