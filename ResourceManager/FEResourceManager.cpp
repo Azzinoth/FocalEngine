@@ -132,7 +132,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File)
 	{
-		LOG.Add(std::string("Can't load file: ") + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
@@ -146,7 +146,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 	unsigned int Error = lodepng::decode(RawExtractedData, Width, Height, State, RawFileData);
 	if (Error != 0)
 	{
-		LOG.Add(std::string("Can't load file: ") + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
@@ -482,7 +482,7 @@ FETexture* FEResourceManager::LoadFETexture(const std::string& FilePath, const s
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("Can't load file: ") + FilePath + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadFETexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return this->NoTexture;
 	}
 
@@ -515,7 +515,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 
 	if (Version != FE_TEXTURE_VERSION)
 	{
-		LOG.Add(std::string("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!"), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
@@ -1035,11 +1035,11 @@ bool FEResourceManager::ExportFEMeshToOBJ(FEMesh* MeshToExport, const std::strin
 
 	if (bResult)
 	{
-		LOG.Add(std::string("Successfully exported mesh to: ") + FilePath, "FE_LOG_SAVING", FE_LOG_INFO);
+		LOG.Add("Successfully exported mesh to: " + FilePath, "FE_LOG_SAVING", FE_LOG_INFO);
 	}
 	else
 	{
-		LOG.Add(std::string("Failed to export mesh to: ") + FilePath, "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("Failed to export mesh to: " + FilePath, "FE_LOG_SAVING", FE_LOG_ERROR);
 	}
 
 	return bResult;
@@ -1406,7 +1406,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 	}
 
@@ -1420,7 +1420,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	std::string LoadedName;
 	if (Version != FE_MESH_VERSION)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
 	}
 
@@ -2250,7 +2250,7 @@ std::string FEResourceManager::LoadGLSL(const std::string& FilePath)
 	}
 	else
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadGLSL.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadGLSL.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 
 	return ShaderData;
@@ -2502,7 +2502,7 @@ void FEResourceManager::ReSaveStandardMeshes()
 	while (MeshIterator != Meshes.end())
 	{
 		if (MeshIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
-			SaveFEMesh(MeshIterator->second, (ResourcesFolder + MeshIterator->second->GetObjectID() + std::string(".model")));
+			SaveFEMesh(MeshIterator->second, (ResourcesFolder + MeshIterator->second->GetObjectID() + ".model"));
 		MeshIterator++;
 	}
 }
@@ -2513,7 +2513,7 @@ void FEResourceManager::ReSaveEnginePrivateTextures()
 	while (TextureIterator != Textures.end())
 	{
 		if (TextureIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
-			SaveFETexture(TextureIterator->second, (ResourcesFolder + TextureIterator->second->GetObjectID() + std::string(".texture")));
+			SaveFETexture(TextureIterator->second, (ResourcesFolder + TextureIterator->second->GetObjectID() + ".texture"));
 		TextureIterator++;
 	}
 }
@@ -2588,7 +2588,116 @@ std::vector<FETexture*> FEResourceManager::ChannelsToFETextures(FETexture* Sourc
 	return Result;
 }
 
-bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode)
+bool FEResourceManager::ExportDepthMap(FETexture* DepthTexture, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode)
+{
+	if (DepthTexture == nullptr)
+	{
+		LOG.Add("FEResourceManager::ExportDepthMap with nullptr DepthTexture", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (DepthTexture->InternalFormat != GL_DEPTH24_STENCIL8 && DepthTexture->InternalFormat != GL_DEPTH_COMPONENT32)
+	{
+		LOG.Add("FEResourceManager::ExportDepthMap InternalFormat of DepthTexture is not a depth format", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	const int TextureWidth = DepthTexture->GetWidth();
+	const int TextureHeight = DepthTexture->GetHeight();
+
+	const unsigned char* TextureData = DepthTexture->GetRawData();
+	const float* DepthFloats = reinterpret_cast<const float*>(TextureData);
+	const size_t PixelCount = static_cast<size_t>(TextureWidth) * TextureHeight;
+
+	// PFM stores 32-bit floats, so the depth buffer value is written directly with no remap.
+	if (DepthExportMode == FE_DEPTH_EXPORT_32BIT_PFM_RAW)
+	{
+		const bool bSuccess = ExportRawDataToPFM(FilePath, DepthFloats, TextureWidth, TextureHeight);
+		delete[] TextureData;
+		return bSuccess;
+	}
+
+	const bool bRawValues = (DepthExportMode == FE_DEPTH_EXPORT_GRAYSCALE_PNG_RAW || DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG_RAW);
+	const bool b16Bit = (DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG || DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG_RAW);
+	const bool bSupportedDepthMode = (DepthExportMode == FE_DEPTH_EXPORT_GRAYSCALE_PNG || DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG || bRawValues);
+	if (!bSupportedDepthMode)
+	{
+		LOG.Add("FEResourceManager::ExportDepthMap unsupported depth export mode", "FE_LOG_SAVING", FE_LOG_ERROR);
+		delete[] TextureData;
+		return false;
+	}
+
+	float MinDepth = 0.0f;
+	float MaxDepth = 1.0f;
+	if (!bRawValues)
+	{
+		MinDepth = std::numeric_limits<float>::max();
+		MaxDepth = std::numeric_limits<float>::lowest();
+		for (size_t i = 0; i < PixelCount; i++)
+		{
+			if (DepthFloats[i] >= 1.0f)
+				continue;
+
+			if (DepthFloats[i] < MinDepth)
+				MinDepth = DepthFloats[i];
+			if (DepthFloats[i] > MaxDepth)
+				MaxDepth = DepthFloats[i];
+		}
+
+		if (MinDepth > MaxDepth)
+		{
+			MinDepth = 0.0f;
+			MaxDepth = 1.0f;
+		}
+	}
+
+	const float Range = MaxDepth - MinDepth;
+	const float InverseRange = (Range > 1e-6f) ? 1.0f / Range : 1.0f;
+
+	const size_t BytesPerPixel = b16Bit ? 2 : 4;
+	std::vector<unsigned char> RawData(PixelCount * BytesPerPixel);
+
+	for (size_t i = 0; i < PixelCount; i++)
+	{
+		// Raw modes store the depth buffer value as is, normalized modes remap it to [0, 1].
+		float Value = bRawValues ? DepthFloats[i] : (DepthFloats[i] - MinDepth) * InverseRange;
+		Value = std::max(0.0f, std::min(1.0f, Value));
+
+		if (b16Bit)
+		{
+			unsigned short FinalValue = static_cast<unsigned short>(Value * 65535.0f);
+			RawData[i * 2 + 0] = (FinalValue >> 8) & 0xFF;
+			RawData[i * 2 + 1] = FinalValue & 0xFF;
+		}
+		else
+		{
+			unsigned char Gray = static_cast<unsigned char>(Value * 255.0f);
+			RawData[i * 4 + 0] = Gray;
+			RawData[i * 4 + 1] = Gray;
+			RawData[i * 4 + 2] = Gray;
+			RawData[i * 4 + 3] = 255;
+		}
+	}
+
+	// Flip vertically
+	const size_t RowBytes = TextureWidth * BytesPerPixel;
+	std::vector<unsigned char> RowBuffer(RowBytes);
+	for (int y = 0; y < TextureHeight / 2; y++)
+	{
+		unsigned char* TopRow = RawData.data() + y * RowBytes;
+		unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
+		std::memcpy(RowBuffer.data(), TopRow, RowBytes);
+		std::memcpy(TopRow, BotRow, RowBytes);
+		std::memcpy(BotRow, RowBuffer.data(), RowBytes);
+	}
+
+	const GLint Format = b16Bit ? GL_R16 : GL_RGBA;
+
+	delete[] TextureData;
+	return ExportRawDataToPNG(FilePath, RawData.data(), TextureWidth, TextureHeight, Format);
+}
+
+bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath)
 {
 	if (TextureToExport == nullptr)
 	{
@@ -2602,9 +2711,7 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const s
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		TextureToExport->InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT &&
 		TextureToExport->InternalFormat != GL_RGBA16F &&
-		TextureToExport->InternalFormat != GL_RG16F &&
-		TextureToExport->InternalFormat != GL_DEPTH24_STENCIL8 &&
-		TextureToExport->InternalFormat != GL_DEPTH_COMPONENT32)
+		TextureToExport->InternalFormat != GL_RG16F)
 	{
 		LOG.Add("FEResourceManager::ExportFETextureToPNG InternalFormat of TextureToExport is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return false;
@@ -2709,92 +2816,6 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const s
 		for (size_t i = 0; i < RawData.size(); i += 2)
 			std::swap(RawData[i], RawData[i + 1]);
 	}
-	else if (TextureToExport->InternalFormat == GL_DEPTH24_STENCIL8 || TextureToExport->InternalFormat == GL_DEPTH_COMPONENT32)
-	{
-		const float* DepthFloats = reinterpret_cast<const float*>(TextureData);
-		const size_t PixelCount = TextureWidth * TextureHeight;
-
-		// Same min/max scan as grayscale mode
-		float MinDepth = std::numeric_limits<float>::max();
-		float MaxDepth = std::numeric_limits<float>::lowest();
-		for (size_t i = 0; i < PixelCount; i++)
-		{
-			if (DepthFloats[i] >= 1.0f)
-				continue;
-			if (DepthFloats[i] < MinDepth)
-				MinDepth = DepthFloats[i];
-			if (DepthFloats[i] > MaxDepth)
-				MaxDepth = DepthFloats[i];
-		}
-
-		if (MinDepth > MaxDepth)
-		{
-			MinDepth = 0.0f;
-			MaxDepth = 1.0f;
-		}
-
-		const float Range = MaxDepth - MinDepth;
-		const float InverseRange = (Range > 1e-6f) ? 1.0f / Range : 1.0f;
-		
-		if (DepthExportMode == FE_DEPTH_EXPORT_GRAYSCALE_PNG)
-		{
-			RawData.resize(PixelCount * 4);
-
-			for (size_t i = 0; i < PixelCount; i++)
-			{
-				float Normalized = (DepthFloats[i] - MinDepth) * InverseRange;
-				Normalized = std::max(0.0f, std::min(1.0f, Normalized));
-				unsigned char Gray = static_cast<unsigned char>(Normalized * 255.0f);
-
-				RawData[i * 4 + 0] = Gray;
-				RawData[i * 4 + 1] = Gray;
-				RawData[i * 4 + 2] = Gray;
-				RawData[i * 4 + 3] = 255;
-			}
-
-			// Flip vertically
-			const size_t RowBytes = TextureWidth * 4;
-			std::vector<unsigned char> RowBuffer(RowBytes);
-			for (int y = 0; y < TextureHeight / 2; y++)
-			{
-				unsigned char* TopRow = RawData.data() + y * RowBytes;
-				unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
-				std::memcpy(RowBuffer.data(), TopRow, RowBytes);
-				std::memcpy(TopRow, BotRow, RowBytes);
-				std::memcpy(BotRow, RowBuffer.data(), RowBytes);
-			}
-
-			Format = GL_RGBA;
-		}
-		else if (DepthExportMode == FE_DEPTH_EXPORT_16BIT_PNG)
-		{
-			RawData.resize(PixelCount * 2);
-
-			for (size_t i = 0; i < PixelCount; i++)
-			{
-				float Normalized = (DepthFloats[i] - MinDepth) * InverseRange;
-				Normalized = std::max(0.0f, std::min(1.0f, Normalized));
-				unsigned short FinalValue = static_cast<unsigned short>(Normalized * 65535.0f);
-
-				RawData[i * 2 + 0] = (FinalValue >> 8) & 0xFF;
-				RawData[i * 2 + 1] = FinalValue & 0xFF;
-			}
-
-			// Flip vertically
-			const size_t RowBytes = TextureWidth * 2;
-			std::vector<unsigned char> RowBuffer(RowBytes);
-			for (int y = 0; y < TextureHeight / 2; y++)
-			{
-				unsigned char* TopRow = RawData.data() + y * RowBytes;
-				unsigned char* BotRow = RawData.data() + (TextureHeight - 1 - y) * RowBytes;
-				std::memcpy(RowBuffer.data(), TopRow, RowBytes);
-				std::memcpy(TopRow, BotRow, RowBytes);
-				std::memcpy(BotRow, RowBuffer.data(), RowBytes);
-			}
-
-			Format = GL_R16;
-		}
-	}
 	else
 	{
 		RawData.resize(TextureWidth * TextureHeight * 4);
@@ -2816,6 +2837,183 @@ bool FEResourceManager::ExportFETextureToPNG(FETexture* TextureToExport, const s
 
 	delete[] TextureData;
 	return ExportRawDataToPNG(FilePath, RawData.data(), TextureWidth, TextureHeight, Format);
+}
+
+bool FEResourceManager::ExportRawDataToPFM(const std::string& FilePath, const float* RawData, const int Width, const int Height)
+{
+	if (RawData == nullptr || Width <= 0 || Height <= 0)
+	{
+		LOG.Add("FEResourceManager::ExportRawDataToPFM with invalid arguments", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::ofstream File(FilePath, std::ios::binary);
+	if (!File)
+	{
+		LOG.Add("FEResourceManager::ExportRawDataToPFM can't open file: " + FilePath, "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	// PFM header.
+	// "Pf" is a single channel float map.
+	File << "Pf\n";
+	File << Width << " " << Height << "\n";
+	// negative one indicate little-endian byte order.
+	File << "-1.0\n";
+
+	File.write(reinterpret_cast<const char*>(RawData), static_cast<std::streamsize>(Width) * Height * sizeof(float));
+
+	return File.good();
+}
+
+bool FEResourceManager::ExportRawDataToPFM(const std::string& FilePath, const std::vector<glm::vec3>& RawData, int Width, int Height)
+{
+	if (RawData.empty() || Width <= 0 || Height <= 0 || static_cast<size_t>(Width) * Height != RawData.size())
+	{
+		LOG.Add("FEResourceManager::ExportRawDataToPFM with invalid arguments", "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::ofstream File(FilePath, std::ios::binary);
+	if (!File)
+	{
+		LOG.Add("FEResourceManager::ExportRawDataToPFM can't open file: " + FilePath, "FE_LOG_SAVING", FE_LOG_ERROR);
+		return false;
+	}
+
+	// PFM header.
+	// "PF" is a 3-channel color float map, three floats per pixel stored interleaved.
+	File << "PF\n";
+	File << Width << " " << Height << "\n";
+	// negative one indicate little-endian byte order.
+	File << "-1.0\n";
+
+	// The bulk write needs glm::vec3 to be three tightly packed floatsg, so guard it against an aligned GLM configuration.
+	static_assert(sizeof(glm::vec3) == 3 * sizeof(float), "PFM write assumes tightly packed glm::vec3 (no padding)");
+	File.write(reinterpret_cast<const char*>(RawData.data()), static_cast<std::streamsize>(RawData.size() * sizeof(glm::vec3)));
+
+	return File.good();
+}
+
+bool FEResourceManager::ImportPFMToRawData(const std::string& FilePath, std::vector<float>& RawData, int& Width, int& Height)
+{
+	std::ifstream File(FilePath, std::ios::binary);
+	if (!File)
+	{
+		LOG.Add("FEResourceManager::ImportPFMToRawData can't open file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return false;
+	}
+
+	// PFM header.
+	// Type ("PF" = 3-channel color, "Pf" = single channel).
+	// if ByteOrder have negative sign than file is little-endian, positive means big-endian.
+	std::string Header;
+	float ByteOrder = 0.0f;
+	File >> Header >> Width >> Height >> ByteOrder;
+	if (!File || (Header != "PF" && Header != "Pf") || Width <= 0 || Height <= 0)
+	{
+		LOG.Add("FEResourceManager::ImportPFMToRawData malformed PFM header in file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return false;
+	}
+
+	File.get();
+
+	const int Channels = (Header == "PF") ? 3 : 1;
+	const size_t FloatCount = static_cast<size_t>(Width) * Height * Channels;
+	RawData.resize(FloatCount);
+
+	const std::streamsize ExpectedBytes = static_cast<std::streamsize>(FloatCount * sizeof(float));
+	File.read(reinterpret_cast<char*>(RawData.data()), ExpectedBytes);
+	if (File.gcount() != ExpectedBytes)
+	{
+		LOG.Add("FEResourceManager::ImportPFMToRawData unexpected end of file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		RawData.clear();
+		return false;
+	}
+
+	// This platform is little-endian, so swap each float's bytes only when the file is big-endian.
+	if (ByteOrder > 0.0f)
+	{
+		for (size_t i = 0; i < FloatCount; i++)
+		{
+			char* Bytes = reinterpret_cast<char*>(&RawData[i]);
+			std::swap(Bytes[0], Bytes[3]);
+			std::swap(Bytes[1], Bytes[2]);
+		}
+	}
+
+	return true;
+}
+
+FETexture* FEResourceManager::LoadPFMTexture(const std::string& FilePath, std::string Name)
+{
+	int TextureWidth, TextureHeight;
+	std::vector<float> RawData;
+	if (!ImportPFMToRawData(FilePath, RawData, TextureWidth, TextureHeight))
+	{
+		LOG.Add("FEResourceManager::LoadPFMTexture can't import PFM file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+	}
+
+	if (RawData.empty())
+	{
+		LOG.Add("FEResourceManager::LoadPFMTexture imported PFM file with no data: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+	}
+
+	// ImportPFMToRawData returns Width * Height * channels floats,
+	// so the channel count tells us whether this is a single channel or a three channel color map.
+	const size_t Channels = RawData.size() / (static_cast<size_t>(TextureWidth) * TextureHeight);
+	if (Channels != 1 && Channels != 3)
+	{
+		LOG.Add("FEResourceManager::LoadPFMTexture unsupported channel count in PFM file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+	}
+
+	const GLint InternalFormat = (Channels == 3) ? GL_RGB32F : GL_R32F;
+	const GLenum Format = (Channels == 3) ? GL_RGB : GL_RED;
+
+	// PFM rows are stored bottom-to-top, but textures are uploaded top row first, so flip vertically to
+	// match the orientation of every other engine texture (lodepng decodes top first) and of a PNG of
+	// the same content. Reconstruction code reads the in-memory depth buffer, not this path, so it is
+	// unaffected by the flip.
+	const size_t RowFloats = static_cast<size_t>(TextureWidth) * Channels;
+	std::vector<float> RowBuffer(RowFloats);
+	for (int Row = 0; Row < TextureHeight / 2; Row++)
+	{
+		float* TopRow = RawData.data() + static_cast<size_t>(Row) * RowFloats;
+		float* BottomRow = RawData.data() + static_cast<size_t>(TextureHeight - 1 - Row) * RowFloats;
+		std::memcpy(RowBuffer.data(), TopRow, RowFloats * sizeof(float));
+		std::memcpy(TopRow, BottomRow, RowFloats * sizeof(float));
+		std::memcpy(BottomRow, RowBuffer.data(), RowFloats * sizeof(float));
+	}
+
+	FETexture* NewTexture = CreateTexture(Name);
+	NewTexture->Width = TextureWidth;
+	NewTexture->Height = TextureHeight;
+	NewTexture->InternalFormat = InternalFormat;
+	NewTexture->bHDR = (Channels == 3);
+	NewTexture->FileName = FilePath;
+
+	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
+	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_FLOAT, RawData.data());
+
+	// Exact float depth/position values, so sample the raw texels without filtering or wrapping.
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+
+	if (Name.empty())
+	{
+		std::size_t Index = FilePath.find_last_of("/\\");
+		const std::string NewFileName = FilePath.substr(Index + 1);
+		Index = NewFileName.find_last_of(".");
+		const std::string FileNameWithOutExtention = NewFileName.substr(0, Index);
+		NewTexture->SetName(FileNameWithOutExtention);
+	}
+
+	return NewTexture;
 }
 
 bool FEResourceManager::ExportRawDataToPNG(const std::string& FilePath, const unsigned char* TextureData, const int Width, const int Height, const GLint Internalformat)
@@ -3053,18 +3251,18 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 
 FETexture* FEResourceManager::LoadJPGTexture(const std::string& FilePath, const std::string Name)
 {
-	int UWidth, UHeight, Channels;
-	const unsigned char* RawData = stbi_load(FilePath.c_str(), &UWidth, &UHeight, &Channels, 0);
+	int TextureWidth, TextureHeight, Channels;
+	const unsigned char* RawData = stbi_load(FilePath.c_str(), &TextureWidth, &TextureHeight, &Channels, 0);
 
 	if (RawData == nullptr)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadJPGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadJPGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
 	FETexture* NewTexture = CreateTexture(Name);
-	NewTexture->Width = UWidth;
-	NewTexture->Height = UHeight;
+	NewTexture->Width = TextureWidth;
+	NewTexture->Height = TextureHeight;
 
 	const int InternalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 
@@ -3138,7 +3336,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlbedoMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3160,7 +3358,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].NormalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3181,7 +3379,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3202,7 +3400,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].SpecularHighlightMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3223,7 +3421,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].AlphaMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3244,7 +3442,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].DisplacementMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3265,7 +3463,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 			}
 			else
 			{
-				LOG.Add(std::string("can't load texture: ") + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("can't load texture: " + OBJLoader.LoadedObjects[i]->MaterialRecords[0].StencilDecalMapFile + " in function FEResourceManager::CreateMaterialsFromOBJData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 			}
 		}
 
@@ -3311,6 +3509,10 @@ FETexture* FEResourceManager::ImportTexture(const std::string& FilePath)
 	else if (FileExtention == ".bmp")
 	{
 		Result = LoadBMPTexture(FilePath);
+	}
+	else if (FileExtention == ".pfm")
+	{
+		Result = LoadPFMTexture(FilePath);
 	}
 
 	return Result;
@@ -5332,7 +5534,7 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(const std::string& FilePath, s
 	const std::streamsize FileSize = File.tellg();
 	if (FileSize < 0)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEPointCloud.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEPointCloud.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -5346,7 +5548,7 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(const std::string& FilePath, s
 	std::string LoadedName;
 	if (Version != FE_POINT_CLOUD_VERSION)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFEPointCloud. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEPointCloud. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -6436,7 +6638,7 @@ FELineCollection* FEResourceManager::LoadFELineCollection(const std::string& Fil
 {
 	if (FILE_SYSTEM.DoesFileExist(FilePath) == false)
 	{
-		LOG.Add(std::string("can't load file: ") + FilePath + " in function FEResourceManager::LoadFELineCollection.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFELineCollection.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
