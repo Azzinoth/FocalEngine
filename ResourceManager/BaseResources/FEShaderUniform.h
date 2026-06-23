@@ -38,7 +38,28 @@ namespace FocalEngine
 		FE_IMAGE_2D = 27,
 		FE_IMAGE_2D_ARRAY = 28,
 		FE_IMAGE_3D = 29,
-		FE_IMAGE_3D_ARRAY = 30
+		FE_IMAGE_3D_ARRAY = 30,
+		FE_IMAGE_CUBE = 31,
+		FE_IMAGE_CUBE_ARRAY = 32,
+	};
+
+	const std::vector<FE_SHADER_UNIFORM_TYPE> ShaderUniformTextureTypes = {
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_1D,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_1D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_1D,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_1D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_2D,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_2D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_2D,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_2D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_3D,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_3D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_CUBE,
+		FE_SHADER_UNIFORM_TYPE::FE_SAMPLER_CUBE_ARRAY,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_CUBE,
+		FE_SHADER_UNIFORM_TYPE::FE_IMAGE_CUBE_ARRAY
 	};
 
 	struct FEShaderUniformValue
@@ -48,6 +69,9 @@ namespace FocalEngine
 		friend class FERenderer;
 
 		FEShaderUniformValue();
+
+		Json::Value ToJson() const;
+		void FromJson(const Json::Value& Root);
 
 		template<typename T>
 		FEShaderUniformValue(const std::string& Name, const T& Data);
@@ -151,6 +175,7 @@ namespace FocalEngine
 	{
 		friend class FEShader;
 		friend class FEMaterial;
+		friend class FENewMaterial;
 		friend class FERenderer;
 
 		FEShaderUniform();
@@ -169,8 +194,12 @@ namespace FocalEngine
 		template<typename T>
 		bool IsType() const;
 
-		std::string GetName();
+		std::string GetName() const;
 		void SetName(std::string NewName);
+
+		static bool IsTextureType(FE_SHADER_UNIFORM_TYPE Type);
+
+		bool IsProvidedByEngine() const;
 	private:
 		FEShaderUniformValue CurrentValue;
 
@@ -180,6 +209,8 @@ namespace FocalEngine
 
 		size_t ElementCount = 0;
 		std::vector<GLuint> Locations;
+
+		bool bProvidedByEngine = false;
 	public:
 		void LoadUniformToGPU();
 	};

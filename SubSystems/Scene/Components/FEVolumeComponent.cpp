@@ -1,28 +1,26 @@
 #include "FEVolumeComponent.h"
 using namespace FocalEngine;
 
-FEShader* FEVolumeComponent::GetVolumetricShader() const
+FENewMaterial* FEVolumeComponent::GetMaterial() const
 {
-	return VolumetricShader;
+	return VolumeMaterial;
 }
 
-void FEVolumeComponent::SetVolumetricShader(FEShader* NewVolumetricShader)
+#include "Systems/FEVolumeSystem.h"
+bool FEVolumeComponent::SetMaterial(FENewMaterial* Material)
 {
-	VolumetricShader = NewVolumetricShader;
-}
+	if (Material == nullptr)
+		return false;
 
-FETexture* FEVolumeComponent::GetVolumetricTexture() const
-{
-	return VolumetricTexture;
-}
+	if (Material->GetMaterialType() != FEMaterialType::Volumetric || Material->GetBlendMode() != FEMaterialBlendMode::Additive)
+		return false;
 
-void FEVolumeComponent::SetVolumetricTexture(FETexture* NewVolumetricTexture)
-{
-	if (NewVolumetricTexture == nullptr)
-		return;
+	VolumeMaterial = Material;
+	if (Material->GetShader() != nullptr && Material->GetShader()->HasUniform("TransferFunctionTexture"))
+	{
+		VOLUME_SYSTEM.InitializeTransferFunctionTexture(ParentEntity);
+		VOLUME_SYSTEM.BakeTransferFunction(ParentEntity);
+	}
 
-	if (NewVolumetricTexture->GetType() != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
-		return;
-
-	VolumetricTexture = NewVolumetricTexture;
+	return true;
 }

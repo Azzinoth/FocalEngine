@@ -56,6 +56,8 @@ namespace FocalEngine
 
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
 		void UpdateRawData(unsigned char* NewRawData, size_t MipmapCount = 1);
+
+		void ForceUpdateMinMaxValues();
 	private:
 		FE_TEXTURE_TYPE Type = FE_TEXTURE_TYPE::FE_TEXTURE_NONE;
 		GLuint TextureID = -1;

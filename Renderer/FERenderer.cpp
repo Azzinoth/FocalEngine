@@ -9,6 +9,9 @@ extern "C" __declspec(dllexport) void* GetRenderer()
 }
 #endif
 
+EntityBasedEngineProvidedData FERenderer::CurrentEntityBasedEngineProvidedData = EntityBasedEngineProvidedData();
+CameraBasedEngineProvidedData FERenderer::CurrentCameraBasedEngineProvidedData = CameraBasedEngineProvidedData();
+
 FERenderer::FERenderer()
 {
 }
@@ -548,6 +551,7 @@ void FERenderer::RenderGameModelComponentWithInstanced(FEEntity* Entity, FEEntit
 
 void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
+	this->CurrentCameraRenderingData = CurrentCameraRenderingData;
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 	FETransformComponent& CurrentCameraTransformComponent = MainCameraEntity->GetComponent<FETransformComponent>();
 	CurrentCameraComponent.UpdateFrustum();
@@ -589,6 +593,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) /*|| !GameModelComponent.IsPostprocessApplied()*/)
 			continue;
 
+		SetEntityForRendering(Entity);
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			FEMaterial* Material = GameModelComponent.GetGameModel()->GetMaterial();
@@ -625,6 +630,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 			}
 		}
 
+		SetEntityForRendering(Entity);
 		LINE_SYSTEM.Render(Entity, MainCameraEntity);
 	}
 
@@ -653,6 +659,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 			continue;
 
+		SetEntityForRendering(Entity);
 		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
 
@@ -685,6 +692,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		if (PointCloudComponent.GetPointCloud() == nullptr)
 			continue;
 
+		SetEntityForRendering(Entity);
 		if (!PointCloudComponent.GetPointCloud()->IsAdvancedRenderingEnabled())
 		{
 			POINT_CLOUD_SYSTEM.RenderStandard(Entity, MainCameraEntity);
@@ -723,6 +731,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 	}
 
 	CurrentCameraRenderingData->FinalScene = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	this->CurrentCameraRenderingData = nullptr;
 }
 
 FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEntity)
@@ -743,7 +752,7 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	Result->CameraEntity = CameraEntity;
 	Result->SceneToTextureFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
 
-	Result->VolumetricIntermediateColorTexture = RESOURCE_MANAGER.CreateSameFormatTexture(Result->SceneToTextureFB->GetColorAttachment());
+	Result->SceneColorScratchTexture = RESOURCE_MANAGER.CreateSameFormatTexture(Result->SceneToTextureFB->GetColorAttachment());
 
 	if (CameraComponent.GetRenderingPipeline() == FERenderingPipeline::Forward_Simplified)
 		return Result;
@@ -902,6 +911,7 @@ FETexture* FERenderer::GetCameraResult(FEEntity* CameraEntity)
 
 void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
+	this->CurrentCameraRenderingData = CurrentCameraRenderingData;
 	UpdateShadersForCamera(CurrentCameraRenderingData);
 
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
@@ -1013,6 +1023,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 						continue;
 
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("50064D3C4D0B537F0846274F"/*"FESMTerrainShader"*/);
+					SetEntityForRendering(Entity);
 					RenderTerrainComponent(Entity, MainCameraEntity);
 					TerrainComponent.Shader = RESOURCE_MANAGER.GetShader("5A3E4F5C13115856401F1D1C"/*"FETerrainShader"*/);
 				}
@@ -1044,6 +1055,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 						ShadowMapMaterialToUse->GetAlbedoMap(1)->Bind(1);
 					}
 
+					SetEntityForRendering(Entity);
 					if (!Entity->HasComponent<FEInstancedComponent>())
 					{
 						RenderGameModelComponent(Entity, MainCameraEntity, false);
@@ -1085,6 +1097,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 							ShadowMapMaterialToUse->GetAlbedoMap(1)->Bind(1);
 						}
 
+						SetEntityForRendering(Entity);
 						RenderGameModelComponentWithInstanced(Entity, MainCameraEntity, true, false, i);
 
 						GameModelComponent.GetGameModel()->Material = OriginalMaterial;
@@ -1174,6 +1187,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::GAME_MODEL) || !GameModelComponent.IsPostprocessApplied())
 			continue;
 
+		SetEntityForRendering(Entity);
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
 			ForceShader(RESOURCE_MANAGER.GetShader("670B01496E202658377A4576"/*"FEPBRGBufferShader"*/));
@@ -1192,10 +1206,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		ForceShader(RESOURCE_MANAGER.GetShader("613830232E12602D6A1D2C17"/*"FEPBRInstancedGBufferShader"*/));
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 
+		SetEntityForRendering(Entity);
 		for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
-		{
 			RenderGameModelComponentWithInstanced(Entity, MainCameraEntity, false, false, i);
-		}
 	}
 
 	for (auto [EnTTEntity, VirtualUIComponent, TransformComponent] : VirtualUIView.each())
@@ -1203,7 +1216,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
 		if (Entity == nullptr)
 			continue;
-
+		
 		if (!Entity->IsVisible())
 			continue;
 
@@ -1220,6 +1233,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (!Entity->IsComponentVisible(ComponentVisibilityType::VIRTUAL_UI))
 			continue;
 
+		SetEntityForRendering(Entity);
 		VIRTUAL_UI_SYSTEM.RenderVirtualUIComponent(Entity, CurrentCameraComponent);
 	}
 
@@ -1393,6 +1407,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		}
 
 		CurrentEntity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, true);
+		SetEntityForRendering(CurrentEntity);
 		RenderGameModelComponent(CurrentEntity, MainCameraEntity);
 		CurrentEntity->SetComponentVisible(ComponentVisibilityType::GAME_MODEL, false);
 		// Only one sky dome is supported.
@@ -1406,12 +1421,12 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	// ********* VOLUMETRIC PASS *************
-	// Each volume reads the previous result (quadTexture) and writes the composite.
-	// Reading and writing the same texture is a feedback loop, so we alternate two colour textures and swap them per volume.
+	// Each volume reads the previous scene color and writes the composite.
+	// Reading and writing the same texture is a feedback loop, so we alternate two color textures and swap them per volume.
 	bool bFirstVolumetricComponent = true;
-	FETexture* VolumeOriginalColorAttachment = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
-	FETexture* VolumeSourceColorTexture = VolumeOriginalColorAttachment;
-	FETexture* VolumeTargetColorTexture = CurrentCameraRenderingData->VolumetricIntermediateColorTexture;
+	FETexture* OriginalSceneColor = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	FETexture* CurrentSourceSceneColorTexture = OriginalSceneColor;
+	FETexture* CurrentTargetSceneColorTexture = CurrentCameraRenderingData->SceneColorScratchTexture;
 	for (auto [EnTTEntity, VolumeComponent, TransformComponent] : VolumeView.each())
 	{
 		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
@@ -1421,29 +1436,28 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (!Entity->IsVisible())
 			continue;
 
-		if (VolumeComponent.VolumetricShader == nullptr || VolumeComponent.VolumetricTexture == nullptr)
+		if (VolumeComponent.VolumeMaterial == nullptr)
+			continue;
+
+		if (!VolumeComponent.VolumeMaterial->IsAllUsedTexturesNonNullptrs())
 			continue;
 
 		// If we have any volumetric component visible.
 		if (bFirstVolumetricComponent)
 		{
 			bFirstVolumetricComponent = false;
+			// FE_TO_DO: That should be set depending on material rendering mode ?
 			glDepthMask(GL_FALSE);
-
-			CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment()->Bind(1);
 		}
 
-		// Read the previous result through quadTexture (unit 0), write into the other colour texture.
-		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(VolumeTargetColorTexture);
+		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(CurrentTargetSceneColorTexture);
 		CurrentCameraRenderingData->SceneToTextureFB->Bind();
-		VolumeSourceColorTexture->Bind(0);
+		CurrentCameraRenderingData->CurrentSceneColorSourceTexture = CurrentSourceSceneColorTexture;
 
-		VolumeComponent.VolumetricShader->Start();
-		LoadStandardUniforms(VolumeComponent.VolumetricShader, nullptr, &TransformComponent, MainCameraEntity);
-
+		SetEntityForRendering(Entity);
 		VOLUME_SYSTEM.RenderVolumeComponent(TransformComponent, VolumeComponent, MainCameraEntity);
 
-		std::swap(VolumeSourceColorTexture, VolumeTargetColorTexture);
+		std::swap(CurrentSourceSceneColorTexture, CurrentTargetSceneColorTexture);
 	}
 
 	if (!bFirstVolumetricComponent)
@@ -1452,9 +1466,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		glDepthMask(GL_TRUE);
 
 		// Restore the original attachment, if the result landed in the intermediate texture (odd number of volumes), copy it back.
-		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(VolumeOriginalColorAttachment);
-		if (VolumeSourceColorTexture != VolumeOriginalColorAttachment)
-			RenderToFrameBuffer(VolumeSourceColorTexture, CurrentCameraRenderingData->SceneToTextureFB);
+		CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(OriginalSceneColor);
+		if (CurrentSourceSceneColorTexture != OriginalSceneColor)
+			RenderToFrameBuffer(CurrentSourceSceneColorTexture, CurrentCameraRenderingData->SceneToTextureFB);
 	}
 
 	// ********* VOLUMETRIC PASS END *********
@@ -1582,10 +1596,12 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 		if (!Entity->HasComponent<FEInstancedComponent>())
 		{
+			SetEntityForRendering(Entity);
 			RenderGameModelComponent(Entity, MainCameraEntity);
 		}
 		else if (Entity->HasComponent<FEInstancedComponent>())
 		{
+			SetEntityForRendering(Entity);
 			RenderGameModelComponentWithInstanced(Entity, MainCameraEntity);
 		}
 	}
@@ -1722,6 +1738,8 @@ void FERenderer::Render(FEScene* CurrentScene)
 		FinalSceneTexture->UnBind();
 		ScreenQuadShader->Stop();
 	}
+
+	this->CurrentCameraRenderingData = nullptr;
 }
 
 void FERenderer::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
@@ -2201,6 +2219,17 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 		RESOURCE_MANAGER.GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", -1.0f);
 	}
 	// **************************** Distance Fog END ****************************
+
+	CurrentCameraBasedEngineProvidedData.ViewMatrix = CameraComponent.GetViewMatrix();
+	CurrentCameraBasedEngineProvidedData.InverseViewMatrix = glm::inverse(CurrentCameraBasedEngineProvidedData.ViewMatrix);
+	CurrentCameraBasedEngineProvidedData.ProjectionMatrix = CameraComponent.GetProjectionMatrix();
+	CurrentCameraBasedEngineProvidedData.InverseProjectionMatrix = glm::inverse(CurrentCameraBasedEngineProvidedData.ProjectionMatrix);
+	CurrentCameraBasedEngineProvidedData.CameraPosition = CameraData->CameraEntity->GetComponent<FETransformComponent>().GetPosition(FE_WORLD_SPACE);
+	CurrentCameraBasedEngineProvidedData.CameraDirection = CameraComponent.GetForward();
+	CurrentCameraBasedEngineProvidedData.NearPlane = CameraComponent.GetNearPlane();
+	CurrentCameraBasedEngineProvidedData.FarPlane = CameraComponent.GetFarPlane();
+	CurrentCameraBasedEngineProvidedData.Gamma = CameraComponent.GetGamma();
+	CurrentCameraBasedEngineProvidedData.Exposure = CameraComponent.GetExposure();
 }
 
 void FERenderer::DebugDrawAABB(FEAABB AABB, const glm::vec3 Color, const float LineWidth)
@@ -3087,6 +3116,120 @@ void FERenderer::RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void
 			return;
 		}
 	}
+}
+
+const std::unordered_set<std::string>& FERenderer::GetEngineProvidedUniformNames()
+{
+	static const std::unordered_set<std::string> Names = {
+		"FEWorldMatrix",
+		"FEViewMatrix",
+		"FEInverseViewMatrix",
+		"FEProjectionMatrix",
+		"FEInverseProjectionMatrix",
+		"FEPVMMatrix",
+		"FEPreviousFrameViewMatrix",
+		"FECameraPosition",
+		"FECameraDirection",
+		"FENearPlane",
+		"FEFarPlane",
+		"FEScreenSize",
+		"FEGamma",
+		"FEExposure",
+		"FEReceiveShadows",
+		"FEUniformLighting",
+
+		// Textures
+		"FESceneColor",
+		"FESceneDepthMap",
+	};
+
+	return Names;
+}
+
+bool FERenderer::IsEngineProvidedUniform(const std::string& UniformName)
+{
+	const auto& Names = GetEngineProvidedUniformNames();
+	return Names.find(UniformName) != Names.end();
+}
+
+const EntityBasedEngineProvidedData& FERenderer::GetCurrentEntityBasedEngineProvidedData() const
+{
+	return CurrentEntityBasedEngineProvidedData;
+}
+
+const CameraBasedEngineProvidedData& FERenderer::GetCurrentCameraBasedEngineProvidedData() const
+{
+	return CurrentCameraBasedEngineProvidedData;
+}
+
+void FERenderer::SetEntityForRendering(FEEntity* Entity)
+{
+	if (Entity == nullptr)
+		return;
+
+	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
+	CurrentEntityBasedEngineProvidedData.WorldMatrix = TransformComponent.GetWorldMatrix();
+}
+
+bool FERenderer::BindEngineProvidedTexture(FEShader* Shader, const std::string& UniformName)
+{
+	if (Shader == nullptr)
+	{
+		LOG.Add("In FERenderer::BindEngineProvidedTexture, Shader is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (this->CurrentCameraRenderingData == nullptr)
+	{
+		LOG.Add("In FERenderer::BindEngineProvidedTexture, CurrentCameraRenderingData is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (UniformName == "FESceneColor")
+	{
+		FEShaderUniform* Uniform = Shader->GetUniform(UniformName);
+		if (Uniform == nullptr)
+		{
+			LOG.Add("In FERenderer::BindEngineProvidedTexture, Uniform " + UniformName + " not found in shader " + Shader->GetName(), "FE_LOG_RENDERING", FE_LOG_ERROR);
+			return false;
+		}
+
+		FETexture* SceneColorTexture = (CurrentCameraRenderingData->CurrentSceneColorSourceTexture != nullptr)
+										? CurrentCameraRenderingData->CurrentSceneColorSourceTexture
+										: CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment(0);
+
+		if (SceneColorTexture == nullptr)
+		{
+			LOG.Add("In FERenderer::BindEngineProvidedTexture, SceneColorTexture is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			return false;
+		}
+
+		int TextureUnit = Uniform->GetValue<int>();
+		SceneColorTexture->Bind(TextureUnit);
+		return true;
+	}
+	else if (UniformName == "FESceneDepthMap")
+	{
+		FEShaderUniform* Uniform = Shader->GetUniform(UniformName);
+		if (Uniform == nullptr)
+		{
+			LOG.Add("In FERenderer::BindEngineProvidedTexture, Uniform " + UniformName + " not found in shader " + Shader->GetName(), "FE_LOG_RENDERING", FE_LOG_ERROR);
+			return false;
+		}
+
+		FETexture* SceneDepthTexture = CurrentCameraRenderingData->SceneToTextureFB->GetDepthAttachment();
+		if (SceneDepthTexture == nullptr)
+		{
+			LOG.Add("In FERenderer::BindEngineProvidedTexture, SceneDepthTexture is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+			return false;
+		}
+
+		int TextureUnit = Uniform->GetValue<int>();
+		SceneDepthTexture->Bind(TextureUnit);
+		return true;
+	}
+
+	return false;
 }
 
 void FEGBuffer::InitializeResources(FEFramebuffer* MainFrameBuffer)

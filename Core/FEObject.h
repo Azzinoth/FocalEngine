@@ -25,7 +25,11 @@ namespace FocalEngine
 		FE_ASSET_PACKAGE = 13,
 		FE_NATIVE_SCRIPT_MODULE = 14,
 		FE_POINT_CLOUD = 15,
-		FE_LINE_COLLECTION = 16
+		FE_LINE_COLLECTION = 16,
+		FE_NEW_MATERIAL = 17,
+
+		// Must remain the last element.
+		FE_OBJECT_TYPE_COUNT
 	};
 
 	struct FEObjectLoadedData
@@ -154,6 +158,7 @@ namespace FocalEngine
 		friend class FEMesh;
 		friend class FETexture;
 		friend class FEMaterial;
+		friend class FENewMaterial;
 		friend class FEGameModel;
 		friend class FEEntity;
 		friend class FEResourceManager;

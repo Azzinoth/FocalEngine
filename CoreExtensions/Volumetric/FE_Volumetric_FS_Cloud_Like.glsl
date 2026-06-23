@@ -2,17 +2,17 @@ in vec2 TextureCoordinates;
 
 @WorldMatrix@
 
-uniform mat4 invProjectionMatrix;
-uniform mat4 invViewMatrix;
+uniform mat4 FEInverseViewMatrix;
+uniform mat4 FEInverseProjectionMatrix;
 
-@Texture@ quadTexture;
-@Texture@ DepthTexture;
+@Texture@ FESceneColor;
+@Texture@ FESceneDepthMap;
 uniform sampler3D volumeTexture;
 
 @CameraPosition@
 
-uniform float NearPlane;
-uniform float FarPlane;
+uniform float FENearPlane;
+uniform float FEFarPlane;
 
 out vec4 out_Color;
 
@@ -60,25 +60,25 @@ vec2 RayBoxDistance(vec3 BoundsMin, vec3 BoundsMax, vec3 RayOrigin, vec3 RayDire
 	return vec2(DistanceToBox, DistanceInsideBox);
 }
 
-float LinearizeDepth(float NonLinearDepth, float NearPlane, float FarPlane)
+float LinearizeDepth(float NonLinearDepth, float FENearPlane, float FEFarPlane)
 {
 	float NDCNormalizedDepth = 2.0 * NonLinearDepth - 1.0;
-	return 2.0 * NearPlane * FarPlane / (FarPlane + NearPlane - NDCNormalizedDepth * (FarPlane - NearPlane));
+	return 2.0 * FENearPlane * FEFarPlane / (FEFarPlane + FENearPlane - NDCNormalizedDepth * (FEFarPlane - FENearPlane));
 }
 
 void main(void)
 {
-	out_Color = texture(quadTexture, TextureCoordinates);
+	out_Color = texture(FESceneColor, TextureCoordinates);
 
 	vec2 NDC = TextureCoordinates * 2.0 - 1.0;
 	vec4 ClipSpacePosition = vec4(NDC.x, NDC.y, -1.0, 1.0);
-	vec4 ViewSpacePosition = invProjectionMatrix * ClipSpacePosition;
+	vec4 ViewSpacePosition = FEInverseProjectionMatrix * ClipSpacePosition;
 	ViewSpacePosition /= ViewSpacePosition.w;
-	vec4 WorldSpacePosition = invViewMatrix * ViewSpacePosition;
+	vec4 WorldSpacePosition = FEInverseViewMatrix * ViewSpacePosition;
 	vec3 RayDirection = normalize(WorldSpacePosition.xyz - FECameraPosition);
 
-	float NonLinearDepth = texture(DepthTexture, TextureCoordinates).r;
-	float LinearDepth = LinearizeDepth(NonLinearDepth, NearPlane, FarPlane);
+	float NonLinearDepth = texture(FESceneDepthMap, TextureCoordinates).r;
+	float LinearDepth = LinearizeDepth(NonLinearDepth, FENearPlane, FEFarPlane);
 
 	// Transform the world-space ray into the volume's local space.
 	// LocalDirection is intentionally NOT normalized, that way the distance we march along

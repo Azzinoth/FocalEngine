@@ -65,8 +65,9 @@ namespace FocalEngine
 		FETexture* FinalScene = nullptr;
 		bool bTemporaryForceHDROutput = false;
 
-		// Colour buffer that volumetric pass alternates with, so each volume composites over the previous result instead of sampling the framebuffer it is writing into.
-		FETexture* VolumetricIntermediateColorTexture = nullptr;
+		// Scratch scene color copy for read-while-write passes (Translucent/Additive, Volumetric) to avoid sampling their own render target.
+		FETexture* SceneColorScratchTexture = nullptr;
+		FETexture* CurrentSceneColorSourceTexture = nullptr;
 
 		~FECameraRenderingData()
 		{
@@ -74,7 +75,7 @@ namespace FocalEngine
 			delete GBuffer;
 			delete SSAO;
 			delete DepthPyramid;
-			delete VolumetricIntermediateColorTexture;
+			delete SceneColorScratchTexture;
 			delete PointCloudIntermediateFrameBuffer;
 
 			if (PointCloud64bitFrameBuffer != GLuint (-1))
@@ -88,11 +89,34 @@ namespace FocalEngine
 		bool bSeenStartFrame = false;
 		bool bSeenEndFrame = false;
 	};
+
+	struct EntityBasedEngineProvidedData
+	{
+		glm::mat4 WorldMatrix = glm::mat4(1.0f);
+	};
+
+	struct CameraBasedEngineProvidedData
+	{
+		glm::mat4 ViewMatrix = glm::mat4(1.0f);
+		glm::mat4 InverseViewMatrix = glm::mat4(1.0f);
+		glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
+		glm::mat4 InverseProjectionMatrix = glm::mat4(1.0f);
+
+		float NearPlane = 0.1f;
+		float FarPlane = 1000.0f;
+		glm::vec3 CameraPosition = glm::vec3(0.0f);
+		glm::vec3 CameraDirection = glm::vec3(0.0f, 0.0f, -1.0f);
+
+		float Gamma = 2.2f;
+		float Exposure = 1.0f;
+	};
 	
 	class FOCAL_ENGINE_API FERenderer
 	{
 		friend FEngine;
 		friend FECameraSystem;
+		friend FEShader;
+		friend FENewMaterial;
 	public:
 		SINGLETON_PUBLIC_PART(FERenderer)
 
@@ -231,6 +255,22 @@ namespace FocalEngine
 		bool InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity);
 
 		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
+
+		// *********** New Material System Getters ***********
+		FECameraRenderingData* CurrentCameraRenderingData = nullptr;
+
+		void SetEntityForRendering(FEEntity* Entity);
+		static const std::unordered_set<std::string>& GetEngineProvidedUniformNames();
+		static bool IsEngineProvidedUniform(const std::string& UniformName);
+
+		bool BindEngineProvidedTexture(FEShader* Shader, const std::string& UniformName);
+
+		static EntityBasedEngineProvidedData CurrentEntityBasedEngineProvidedData;
+		const EntityBasedEngineProvidedData& GetCurrentEntityBasedEngineProvidedData() const;
+
+		static CameraBasedEngineProvidedData CurrentCameraBasedEngineProvidedData;
+		const CameraBasedEngineProvidedData& GetCurrentCameraBasedEngineProvidedData() const;
+		// *********** New Material System Getters END ***********
 	};
 
 #ifdef FOCAL_ENGINE_SHARED

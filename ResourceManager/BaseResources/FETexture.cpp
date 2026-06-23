@@ -123,11 +123,19 @@ int FETexture::GetDepth()
 
 glm::vec4 FETexture::GetMinValue()
 {
+	// FE_TO_DO: Implement better staleness check.
+	if (MinValue == glm::vec4(std::numeric_limits<float>::max()))
+		ForceUpdateMinMaxValues();
+
 	return MinValue;
 }
 
 glm::vec4 FETexture::GetMaxValue()
 {
+	// FE_TO_DO: Implement better staleness check.
+	if (MaxValue == glm::vec4(-std::numeric_limits<float>::max()))
+		ForceUpdateMinMaxValues();
+
 	return MaxValue;
 }
 
@@ -439,4 +447,9 @@ void FETexture::UpdateMinMaxValues(const unsigned char* RawData)
 	{
 		AccumulateMinMaxHalf(reinterpret_cast<const unsigned short*>(RawData), PixelCount, 4, MinValue, MaxValue);
 	}
+}
+
+void FETexture::ForceUpdateMinMaxValues()
+{
+	UpdateMinMaxValues(GetRawData());
 }

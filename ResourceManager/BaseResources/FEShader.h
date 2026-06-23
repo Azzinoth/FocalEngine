@@ -52,6 +52,7 @@ namespace FocalEngine
 	class FEShader : public FEObject
 	{
 		friend class FEMaterial;
+		friend class FENewMaterial;
 		friend class FERenderer;
 		friend class FEPostProcess;
 		friend class FEngine;
@@ -73,7 +74,9 @@ namespace FocalEngine
 		
 		std::vector<std::string> GetUniformNameList();
 		std::vector<std::string> GetTextureList();
+		std::vector<std::string> GetTextureNameList();
 
+		bool HasUniform(std::string UniformName);
 		bool GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue);
 		template<typename T>
 		bool UpdateUniformData(std::string UniformName, const T& Data);

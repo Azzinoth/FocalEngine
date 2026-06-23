@@ -5,6 +5,125 @@ FEShaderUniformValue::FEShaderUniformValue()
 {
 }
 
+Json::Value FEShaderUniformValue::ToJson() const
+{
+	Json::Value Result;
+	if (IsType<bool>())
+	{
+		Result = GetValue<bool>();
+	}
+	else if (IsType<int>())
+	{
+		Result = GetValue<int>();
+	}
+	else if (IsType<unsigned int>())
+	{
+		Result = GetValue<unsigned int>();
+	}
+	else if (IsType<float>())
+	{
+		Result = GetValue<float>();
+	}
+	else if (IsType<glm::vec2>())
+	{
+		const glm::vec2 Vector = GetValue<glm::vec2>();
+		Result["X"] = Vector.x;
+		Result["Y"] = Vector.y;
+	}
+	else if (IsType<glm::vec3>())
+	{
+		const glm::vec3 Vector = GetValue<glm::vec3>();
+		Result["X"] = Vector.x;
+		Result["Y"] = Vector.y;
+		Result["Z"] = Vector.z;
+	}
+	else if (IsType<glm::vec4>())
+	{
+		const glm::vec4 Vector = GetValue<glm::vec4>();
+		Result["X"] = Vector.x;
+		Result["Y"] = Vector.y;
+		Result["Z"] = Vector.z;
+		Result["W"] = Vector.w;
+	}
+	else if (IsType<glm::mat4>())
+	{
+		const glm::mat4 Matrix = GetValue<glm::mat4>();
+		for (int Column = 0; Column < 4; Column++)
+		{
+			for (int Row = 0; Row < 4; Row++)
+				Result.append(Matrix[Column][Row]);
+		}
+	}
+	else
+	{
+		LOG.Add("FEShaderUniformValue::ToJson() unsupported uniform type for value: " + Name, "FE_LOG_RENDERING", FE_LOG_WARNING);
+	}
+
+	return Result;
+}
+
+void FEShaderUniformValue::FromJson(const Json::Value& Root)
+{
+	if (IsType<bool>())
+	{
+		SetValue<bool>(Root.asBool());
+	}
+	else if (IsType<int>())
+	{
+		SetValue<int>(Root.asInt());
+	}
+	else if (IsType<unsigned int>())
+	{
+		SetValue<unsigned int>(Root.asUInt());
+	}
+	else if (IsType<float>())
+	{
+		SetValue<float>(Root.asFloat());
+	}
+	else if (IsType<glm::vec2>())
+	{
+		glm::vec2 Vector;
+		Vector.x = Root["X"].asFloat();
+		Vector.y = Root["Y"].asFloat();
+		SetValue<glm::vec2>(Vector);
+	}
+	else if (IsType<glm::vec3>())
+	{
+		glm::vec3 Vector;
+		Vector.x = Root["X"].asFloat();
+		Vector.y = Root["Y"].asFloat();
+		Vector.z = Root["Z"].asFloat();
+		SetValue<glm::vec3>(Vector);
+	}
+	else if (IsType<glm::vec4>())
+	{
+		glm::vec4 Vector;
+		Vector.x = Root["X"].asFloat();
+		Vector.y = Root["Y"].asFloat();
+		Vector.z = Root["Z"].asFloat();
+		Vector.w = Root["W"].asFloat();
+		SetValue<glm::vec4>(Vector);
+	}
+	else if (IsType<glm::mat4>())
+	{
+		glm::mat4 Matrix;
+		int Index = 0;
+		for (int Column = 0; Column < 4; Column++)
+		{
+			for (int Row = 0; Row < 4; Row++)
+			{
+				Matrix[Column][Row] = Root[Index].asFloat();
+				Index++;
+			}
+		}
+		SetValue<glm::mat4>(Matrix);
+	}
+	else
+	{
+		LOG.Add("FEShaderUniformValue::FromJson() unsupported uniform type for value: " + Name, "FE_LOG_RENDERING", FE_LOG_WARNING);
+	}
+}
+
 std::string FEShaderUniformValue::GetName() const
 {
 	return Name;
@@ -24,7 +143,7 @@ FEShaderUniform::FEShaderUniform()
 {
 }
 
-std::string FEShaderUniform::GetName()
+std::string FEShaderUniform::GetName() const
 {
 	return Name;
 }
@@ -167,4 +286,14 @@ void FEShaderUniform::LoadUniformToGPU()
 FE_SHADER_UNIFORM_TYPE FEShaderUniform::GetType() const
 {
 	return Type;
+}
+
+bool FEShaderUniform::IsTextureType(FE_SHADER_UNIFORM_TYPE Type)
+{
+	return std::find(ShaderUniformTextureTypes.begin(), ShaderUniformTextureTypes.end(), Type) != ShaderUniformTextureTypes.end();
+}
+
+bool FEShaderUniform::IsProvidedByEngine() const
+{
+	return bProvidedByEngine;
 }

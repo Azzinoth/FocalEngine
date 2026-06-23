@@ -213,6 +213,9 @@ file(GLOB BaseResources_SRC
 	"ResourceManager/BaseResources/FEShaderUniform.inl"
 	"ResourceManager/BaseResources/FEMaterial.cpp"
 	"ResourceManager/BaseResources/FEMaterial.h"
+	"ResourceManager/BaseResources/FENewMaterial.cpp"
+	"ResourceManager/BaseResources/FENewMaterial.h"
+	"ResourceManager/BaseResources/FENewMaterial.inl"
 )
 
 file(GLOB ResourceManager_SRC

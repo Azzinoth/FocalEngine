@@ -243,7 +243,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_UNSIGNED_INT:
 			{
 				if (bIsArray)
@@ -257,7 +256,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_INT:
 			{
 				if (bIsArray)
@@ -271,7 +269,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_FLOAT:
 			{
 				if (bIsArray)
@@ -285,7 +282,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_FLOAT_VEC2:
 			{
 				if (bIsArray)
@@ -299,7 +295,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_FLOAT_VEC3:
 			{
 				if (bIsArray)
@@ -313,7 +308,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_FLOAT_VEC4:
 			{
 				if (bIsArray)
@@ -327,7 +321,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_FLOAT_MAT4:
 			{
 				if (bIsArray)
@@ -341,7 +334,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_SAMPLER_1D:
 			{
 				if (bIsArray)
@@ -355,7 +347,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_SAMPLER_2D:
 			{
 				if (bIsArray)
@@ -373,7 +364,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_SAMPLER_3D:
 			{
 				if (bIsArray)
@@ -390,7 +380,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_SAMPLER_CUBE:
 			{
 				if (bIsArray)
@@ -404,7 +393,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_IMAGE_1D:
 			{
 				if (bIsArray)
@@ -421,7 +409,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_IMAGE_2D:
 			{
 				if (bIsArray)
@@ -438,7 +425,6 @@ void FEShader::RegisterUniforms()
 
 				break;
 			}
-
 			case GL_IMAGE_3D:
 			{
 				if (bIsArray)
@@ -453,6 +439,21 @@ void FEShader::RegisterUniforms()
 					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_3D, BindingPoint, UniformName, Locations));
 				}
 
+				break;
+			}
+			case GL_IMAGE_CUBE:
+			{
+				if (bIsArray)
+				{
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_CUBE_ARRAY, std::vector<unsigned int>(UniformSize), UniformArrayName, Locations));
+				}
+				else
+				{
+					// FE_TO_DO: Check if this make sense.
+					GLint BindingPoint;
+					FE_GL_ERROR(glGetUniformiv(ProgramID, Locations[0], &BindingPoint));
+					AddUniformInternal(FEShaderUniform(FE_SHADER_UNIFORM_TYPE::FE_IMAGE_CUBE, BindingPoint, UniformName, Locations));
+				}
 				break;
 			}
 
@@ -522,6 +523,42 @@ void FEShader::RegisterUniforms()
 		FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, "CSM1"), FE_CSM_UNIT + 1));
 		FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, "CSM2"), FE_CSM_UNIT + 2));
 		FE_GL_ERROR(glUniform1i(glGetUniformLocation(ProgramID, "CSM3"), FE_CSM_UNIT + 3));
+	}
+
+	// FE_FIX_ME: Here I am deciding if shader is part of new material system or not.
+	bool bIsNewMaterialSystem = false;
+	auto UniformIterator = Uniforms.begin();
+	while (UniformIterator != Uniforms.end())
+	{
+		FEShaderUniform* CurrentUniform = &UniformIterator->second;
+		if (CurrentUniform->IsProvidedByEngine() && FEShaderUniform::IsTextureType(CurrentUniform->GetType()))
+		{
+			bIsNewMaterialSystem = true;
+			break;
+		}
+
+		UniformIterator++;
+	}
+
+	if (bIsNewMaterialSystem)
+	{
+		int CurrentTextureUnit = 0;
+		auto UniformIterator = Uniforms.begin();
+		while (UniformIterator != Uniforms.end())
+		{
+			FEShaderUniform* CurrentUniform = &UniformIterator->second;
+			if (FEShaderUniform::IsTextureType(CurrentUniform->GetType()))
+			{
+				for (size_t i = 0; i < CurrentUniform->Locations.size(); i++)
+				{
+					CurrentUniform->SetValue(CurrentTextureUnit);
+					FE_GL_ERROR(glUniform1i(CurrentUniform->Locations[i], CurrentTextureUnit));
+					CurrentTextureUnit++;
+				}
+			}
+
+			UniformIterator++;
+		}
 	}
 
 	Stop();
@@ -974,8 +1011,10 @@ bool FEShader::LoadUniformDataToGPU(std::string UniformName)
 	return true;
 }
 
+#include "../../Renderer/FERenderer.h"
 void FEShader::AddUniformInternal(FEShaderUniform NewUniform)
 {
+	NewUniform.bProvidedByEngine = RENDERER.IsEngineProvidedUniform(NewUniform.GetName());
 	Uniforms[NewUniform.GetName()] = NewUniform;
 }
 
@@ -995,6 +1034,11 @@ FEShaderUniform* FEShader::GetUniform(const std::string Name)
 	return &Uniforms[Name];
 }
 
+bool FEShader::HasUniform(std::string UniformName)
+{
+	return Uniforms.find(UniformName) != Uniforms.end();
+}
+
 bool FEShader::GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue)
 {
 	FEShaderUniform* Uniform = GetUniform(UniformName);
@@ -1008,6 +1052,21 @@ bool FEShader::GetUniformData(std::string UniformName, FEShaderUniformValue& Ret
 std::vector<std::string> FEShader::GetTextureList()
 {
 	return TextureUniforms;
+}
+
+std::vector<std::string> FEShader::GetTextureNameList()
+{
+	std::vector<std::string> Result;
+
+	auto UniformIterator = Uniforms.begin();
+	while (UniformIterator != Uniforms.end())
+	{
+		if (FEShaderUniform::IsTextureType(UniformIterator->second.GetType()))
+			Result.push_back(UniformIterator->first);
+		UniformIterator++;
+	}
+
+	return Result;
 }
 
 char* FEShader::GetVertexShaderText()

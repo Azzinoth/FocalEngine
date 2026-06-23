@@ -2,43 +2,30 @@ in vec2 TextureCoordinates;
 
 @WorldMatrix@
 
-uniform mat4 invProjectionMatrix;
-uniform mat4 invViewMatrix;
+uniform mat4 FEInverseViewMatrix;
+uniform mat4 FEInverseProjectionMatrix;
 
-@Texture@ quadTexture;
-@Texture@ DepthTexture;
+@Texture@ FESceneColor;
+uniform sampler2D FESceneDepthMap;
+@Texture@ TransferFunctionTexture; // 256x1 RGBA lookup table, rgb = color, a = opacity
 uniform sampler3D volumeTexture;
 
 @CameraPosition@
 
-uniform float NearPlane;
-uniform float FarPlane;
+uniform float FENearPlane;
+uniform float FEFarPlane;
 
 out vec4 out_Color;
 
-const float DataRangeMin = 0.0;  // scalar value mapped to the LOW end of the colour map
-const float DataRangeMax = 1.0;  // scalar value mapped to the HIGH end of the colour map
-const int StepCount = 256;  	 // number of samples taken across the volume
-const float OpacityScale = 1.0;  // overall density multiplier
+uniform float DataRangeMin;
+uniform float DataRangeMax;
+uniform int StepCount;
+uniform float OpacityScale;
 
-// That function should be replaced with programable one.
-// blue => cyan => green => yellow => red rainbow.
-vec3 ColorTransferFunction(float Value)
-{
-	float Hue = (1.0 - clamp(Value, 0.0, 1.0)) * 0.6667; // 0.6667 (blue) .. 0.0 (red)
-	return clamp(abs(mod(Hue * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
-}
-
-// Simplest generic mapping, opacity grows linearly with the scalar value.
-float OpacityTransferFunction(float Value)
-{
-	return clamp(Value, 0.0, 1.0);
-}
-
-float LinearizeDepth(float NonLinearDepth, float NearPlane, float FarPlane)
+float LinearizeDepth(float NonLinearDepth, float FENearPlane, float FEFarPlane)
 {
 	float NDCNormalizedDepth = 2.0 * NonLinearDepth - 1.0;
-	return 2.0 * NearPlane * FarPlane / (FarPlane + NearPlane - NDCNormalizedDepth * (FarPlane - NearPlane));
+	return 2.0 * FENearPlane * FEFarPlane / (FEFarPlane + FENearPlane - NDCNormalizedDepth * (FEFarPlane - FENearPlane));
 }
 
 // Returns (DistanceToBox, DistanceInsideBox). If the ray misses the box, DistanceInsideBox is zero.
@@ -72,20 +59,20 @@ vec2 RayBoxDistance(vec3 BoundsMin, vec3 BoundsMax, vec3 RayOrigin, vec3 RayDire
 
 void main(void)
 {
-	// Scene colour the volume will be composited over.
-	vec4 SceneColor = texture(quadTexture, TextureCoordinates);
+	// Scene color the volume will be composited over.
+	vec4 SceneColor = texture(FESceneColor, TextureCoordinates);
 	out_Color = SceneColor;
 
 	// Reconstruct the world-space view ray for this pixel.
 	vec2 NDC = TextureCoordinates * 2.0 - 1.0;
 	vec4 ClipSpacePosition = vec4(NDC.x, NDC.y, -1.0, 1.0);
-	vec4 ViewSpacePosition = invProjectionMatrix * ClipSpacePosition;
+	vec4 ViewSpacePosition = FEInverseProjectionMatrix * ClipSpacePosition;
 	ViewSpacePosition /= ViewSpacePosition.w;
-	vec3 WorldSpacePosition = (invViewMatrix * ViewSpacePosition).xyz;
+	vec3 WorldSpacePosition = (FEInverseViewMatrix * ViewSpacePosition).xyz;
 	vec3 RayDirection = normalize(WorldSpacePosition - FECameraPosition);
 
 	// World-space distance to the nearest solid scene geometry, so the volume is occluded by it.
-	float SceneDepth = LinearizeDepth(texture(DepthTexture, TextureCoordinates).r, NearPlane, FarPlane);
+	float SceneDepth = LinearizeDepth(texture(FESceneDepthMap, TextureCoordinates).r, FENearPlane, FEFarPlane);
 
 	// Move the ray into the volume's local space, where the volume is the unit cube [0, 1]^3.
 	// The direction is deliberately NOT normalized, the march parameter then stays in world-space
@@ -108,7 +95,7 @@ void main(void)
 	float LocalStepLength = length(LocalStep);                  	// local sample spacing (constant per ray)
 	float ReferenceStepLength = 1.0 / float(StepCount);           	// spacing a unit-length traversal would use
 
-	// Accumulated colour in premultiplied-alpha form, composited front-to-back.
+	// Accumulated color in premultiplied-alpha form, composited front-to-back.
 	vec4 Accumulated = vec4(0.0);
 
 	for (int Step = 0; Step < StepCount; Step++)
@@ -124,8 +111,10 @@ void main(void)
 
 		// Normalize against the data range, then run it through the transfer function.
 		float NormalizedValue = clamp((RawValue - DataRangeMin) / (DataRangeMax - DataRangeMin), 0.0, 1.0);
-		vec3 SampleColor = ColorTransferFunction(NormalizedValue);
-		float SampleOpacity = OpacityTransferFunction(NormalizedValue) * OpacityScale;
+		// Look the color and opacity up in the transfer function LUT (level 0, no mip filtering).
+		vec4 TransferFunctionSample = textureLod(TransferFunctionTexture, vec2(NormalizedValue, 0.5), 0.0);
+		vec3 SampleColor = TransferFunctionSample.rgb;
+		float SampleOpacity = TransferFunctionSample.a * OpacityScale;
 
 		// Opacity correction, rescale the opacity for this sample's actual spacing so the image is independent of StepCount.
 		float CorrectedOpacity = 1.0 - pow(1.0 - clamp(SampleOpacity, 0.0, 1.0), LocalStepLength / ReferenceStepLength);
@@ -134,7 +123,7 @@ void main(void)
 		Accumulated.rgb += (1.0 - Accumulated.a) * CorrectedOpacity * SampleColor;
 		Accumulated.a += (1.0 - Accumulated.a) * CorrectedOpacity;
 
-		// Early ray termination once the accumulated colour is effectively opaque.
+		// Early ray termination once the accumulated color is effectively opaque.
 		if (Accumulated.a >= 0.99)
 			break;
 	}
