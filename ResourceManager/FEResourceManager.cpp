@@ -3474,7 +3474,7 @@ FETexture* FEResourceManager::LoadPFMTexture(const std::string& FilePath, std::s
 	NewTexture->FileName = FilePath;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
-	FETexture::GPUAllocateTexture(GL_TEXTURE_2D, 0, InternalFormat, NewTexture->Width, NewTexture->Height, 0, Format, GL_FLOAT, RawData.data());
+	Upload2DTextureDataToGPU(NewTexture, 0, InternalFormat, NewTexture->Width, NewTexture->Height, Format, GL_FLOAT, RawData.data());
 
 	// Exact float depth/position values, so sample the raw texels without filtering or wrapping.
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
