@@ -55,10 +55,17 @@ void FENaiveSceneGraphNode::ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeT
 	}
 }
 
-void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
+bool FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform)
 {
 	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
-		return;
+		return false;
+
+	// Reject if NodeToAdd is an ancestor of this node.
+	for (FENaiveSceneGraphNode* Ancestor = Parent; Ancestor != nullptr; Ancestor = Ancestor->Parent)
+	{
+		if (Ancestor == NodeToAdd)
+			return false;
+	}
 
 	// If the node already has a different parent, detach it from it.
 	if (NodeToAdd->Parent != nullptr)
@@ -68,7 +75,7 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		if (Children[i] == NodeToAdd)
-			return;
+			return false;
 	}
 
 	if (bPreserveWorldTransform && GetEntity() != nullptr)
@@ -76,6 +83,7 @@ void FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 
 	Children.push_back(NodeToAdd);
 	NodeToAdd->Parent = this;
+	return true;
 }
 
 void FENaiveSceneGraphNode::ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn)
@@ -239,9 +247,9 @@ Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFi
 	Json::Value Node;
 	Node["Name"] = GetName();
 	Node["ID"] = GetObjectID();
-	// Only root node does not have ParentID
-	Node["ParentID"] = Parent->GetObjectID();
-	Node["Entity"] = Entity->ToJson();
+	Node["ParentID"] = (Parent != nullptr) ? Parent->GetObjectID() : "";
+	if (Entity != nullptr)
+		Node["Entity"] = Entity->ToJson();
 
 	Json::Value ChildrenArray;
 	for (size_t i = 0; i < Children.size(); i++)

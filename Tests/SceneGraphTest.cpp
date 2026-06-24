@@ -2259,3 +2259,116 @@ TEST_F(SceneGraphTest, GetFirstRecursiveParentNodeWithComponent_WalksAncestorCha
 
 	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
 }
+
+TEST_F(SceneGraphTest, AddChild_RejectsAncestor_NoCycle)
+{
+	SCENE_MANAGER.Clear();
+	FEScene* NewScene = SCENE_MANAGER.CreateScene("NewScene", "", FESceneFlag::Active);
+
+	FEEntity* EntityA = NewScene->CreateEntity("EntityA");
+	FEEntity* EntityB = NewScene->CreateEntity("EntityB");
+	FENaiveSceneGraphNode* NodeA = NewScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
+	FENaiveSceneGraphNode* NodeB = NewScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+
+	ASSERT_TRUE(NewScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
+
+	// AddChild should reject that operation. This makes A a child of B while B is still a child of A => cycle A <=> B.
+	ASSERT_FALSE(NodeB->AddChild(NodeA));
+	EXPECT_EQ(NodeA->GetRecursiveChildCount(), 1);
+
+	SCENE_MANAGER.Clear();
+}
+
+TEST_F(SceneGraphTest, ImportNode_RejectsRootNode)
+{
+	SCENE_MANAGER.Clear();
+
+	FEScene* Source = SCENE_MANAGER.CreateScene("SourceScene", "", FESceneFlag::Active);
+	FEScene* Destination = SCENE_MANAGER.CreateScene("DestinationScene", "", FESceneFlag::Active);
+
+	FENaiveSceneGraphNode* SourceRoot = Source->SceneGraph.GetRoot();
+	ASSERT_EQ(Destination->SceneGraph.ImportNode(SourceRoot), nullptr);
+
+	SCENE_MANAGER.Clear();
+}
+
+TEST_F(SceneGraphTest, FromJson_MutualParent_RecoversUnderRoot)
+{
+	SCENE_MANAGER.Clear();
+
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+
+	// Craft a save where two nodes name each other as ParentID (a cyclic save).
+	Json::Value SceneHierarchy;
+
+	// Type must be FE_ENTITY: a real ToJson always writes it, and FEEntity::FromJson
+	// assigns the entity's Type from it. Omitting it leaves Type as FE_NULL, which
+	// corrupts FEObjectManager's per-type bookkeeping and asserts on entity teardown.
+	Json::Value Node_A_Data;
+	Node_A_Data["Name"] = "Node_A";
+	Node_A_Data["ID"] = "Node_A";
+	Node_A_Data["ParentID"] = "Node_B";
+	Node_A_Data["Entity"]["FEObjectData"]["ID"] = "Entity_A";
+	Node_A_Data["Entity"]["FEObjectData"]["Name"] = "Node_A";
+	Node_A_Data["Entity"]["FEObjectData"]["Type"] = FE_ENTITY;
+
+	Json::Value Node_B_Data;
+	Node_B_Data["Name"] = "Node_B";
+	Node_B_Data["ID"] = "Node_B";
+	Node_B_Data["ParentID"] = "Node_A";
+	Node_B_Data["Entity"]["FEObjectData"]["ID"] = "Entity_B";
+	Node_B_Data["Entity"]["FEObjectData"]["Name"] = "Node_B";
+	Node_B_Data["Entity"]["FEObjectData"]["Type"] = FE_ENTITY;
+
+	SceneHierarchy["Nodes"]["Node_A"] = Node_A_Data;
+	SceneHierarchy["Nodes"]["Node_B"] = Node_B_Data;
+
+	CurrentScene->SceneGraph.FromJson(SceneHierarchy);
+
+	// Both entities were created during loading and registered in the scene.
+	ASSERT_NE(CurrentScene->GetEntity("Entity_A"), nullptr);
+	ASSERT_NE(CurrentScene->GetEntity("Entity_B"), nullptr);
+
+	// Both nodes survive and are reachable from the root (no silent drop, no leak),
+	// and the fact that these calls return at all proves there is no cycle.
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 2);
+
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID("Entity_A");
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID("Entity_B");
+	ASSERT_NE(NodeA, nullptr);
+	ASSERT_NE(NodeB, nullptr);
+
+	// The cyclic link is broken into a chain. Exactly one node sits directly under the root and the other below it.
+	FENaiveSceneGraphNode* RootNode = CurrentScene->SceneGraph.GetRoot();
+	bool bNodeAUnderRoot = (NodeA->GetParent() == RootNode);
+	bool bNodeBUnderRoot = (NodeB->GetParent() == RootNode);
+	ASSERT_TRUE(bNodeAUnderRoot != bNodeBUnderRoot);
+	if (bNodeAUnderRoot)
+	{
+		ASSERT_EQ(NodeB->GetParent(), NodeA);
+	}
+	else
+	{
+		ASSERT_EQ(NodeA->GetParent(), NodeB);
+	}
+
+	SCENE_MANAGER.Clear();
+}
+
+TEST_F(SceneGraphTest, NodeToJson_OnRoot_DoesNotDereferenceNull)
+{
+	SCENE_MANAGER.Clear();
+
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FENaiveSceneGraphNode* RootNode = CurrentScene->SceneGraph.GetRoot();
+
+	// That line should not cause a crash due to null dereference.
+	Json::Value RootNodeJson = RootNode->ToJson();
+	ASSERT_TRUE(RootNodeJson.isObject());
+
+	ASSERT_EQ(RootNodeJson["ID"].asString(), RootNode->GetObjectID());
+	ASSERT_EQ(RootNodeJson["ParentID"].asString(), "");
+	ASSERT_FALSE(RootNodeJson.isMember("Entity"));
+
+	SCENE_MANAGER.Clear();
+}

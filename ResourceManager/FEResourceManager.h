@@ -21,9 +21,12 @@ namespace FocalEngine
 	enum FE_DEPTH_EXPORT_MODE
 	{
 		FE_DEPTH_EXPORT_NONE = -1,
-		FE_DEPTH_EXPORT_GRAYSCALE_PNG = 0,  // Normalized to [0,1], 8-bit grayscale PNG
-		FE_DEPTH_EXPORT_16BIT_PNG = 1,      // Normalized to [0,1], 16-bit grayscale PNG  
-		FE_DEPTH_EXPORT_32BIT_TIFF = 2      // FE_TO_DO: Implement raw float values, 32-bit float TIFF
+		FE_DEPTH_EXPORT_GRAYSCALE_PNG = 0,		// Normalized to [0,1], 8-bit grayscale PNG
+		FE_DEPTH_EXPORT_16BIT_PNG = 1,			// Normalized to [0,1], 16-bit grayscale PNG
+		FE_DEPTH_EXPORT_GRAYSCALE_PNG_RAW = 3,  // Not normalized, raw depth buffer value [0,1], 8-bit grayscale PNG
+		FE_DEPTH_EXPORT_16BIT_PNG_RAW = 4,      // Not normalized, raw depth buffer value [0,1], 16-bit grayscale PNG
+		FE_DEPTH_EXPORT_32BIT_PFM_RAW = 5,      // Not normalized, raw depth buffer value [0,1], 32-bit float PFM file
+		FE_DEPTH_EXPORT_32BIT_TIFF = 2			// FE_TO_DO: Implement raw float values, 32-bit float TIFF
 	};
 
 	class FOCAL_ENGINE_API FEResourceManager
@@ -58,6 +61,7 @@ namespace FocalEngine
 		FETexture* LoadPNGTexture(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadJPGTexture(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadBMPTexture(const std::string& FilePath, std::string Name = "");
+		FETexture* LoadPFMTexture(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadFETexture(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
@@ -73,8 +77,12 @@ namespace FocalEngine
 		FETexture* CreateTextureWithTransparency(FETexture* OriginalTexture, FETexture* MaskTexture);
 
 		void SaveFETexture(FETexture* Texture, const std::string& FilePath);
-		bool ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode = FE_DEPTH_EXPORT_GRAYSCALE_PNG);
+		bool ExportFETextureToPNG(FETexture* TextureToExport, const std::string& FilePath);
+		bool ExportDepthMap(FETexture* DepthTexture, const std::string& FilePath, FE_DEPTH_EXPORT_MODE DepthExportMode = FE_DEPTH_EXPORT_GRAYSCALE_PNG);
 		bool ExportRawDataToPNG(const std::string& FilePath, const unsigned char* TextureData, int Width, int Height, GLint Internalformat);
+		bool ExportRawDataToPFM(const std::string& FilePath, const float* RawData, int Width, int Height);
+		bool ExportRawDataToPFM(const std::string& FilePath, const std::vector<glm::vec3>& RawData, int Width, int Height);
+		bool ImportPFMToRawData(const std::string& FilePath, std::vector<float>& RawData, int& Width, int& Height);
 		void DeleteFETexture(const FETexture* Texture);
 		std::vector<std::string> GetTextureIDList();
 		FETexture* GetTexture(std::string ID);

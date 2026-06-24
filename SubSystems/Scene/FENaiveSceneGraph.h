@@ -54,7 +54,7 @@ namespace FocalEngine
 		FEScene* ParentScene = nullptr;
 
 		bool bClearing = false;
-		FENaiveSceneGraphNode* Root;
+		FENaiveSceneGraphNode* Root = nullptr;
 
 		void AddNodeInternal(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
 		void AddNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
