@@ -1472,3 +1472,17 @@ void FEShader::RegisterActiveAttributes()
 		
 	}
 }
+
+bool FEShader::IsUniformProvidedByEngine(const std::string& UniformName) const
+{
+	auto UniformIterator = Uniforms.begin();
+	while (UniformIterator != Uniforms.end())
+	{
+		if (UniformIterator->first == UniformName)
+			return UniformIterator->second.IsProvidedByEngine();
+
+		UniformIterator++;
+	}
+
+	return false;
+}

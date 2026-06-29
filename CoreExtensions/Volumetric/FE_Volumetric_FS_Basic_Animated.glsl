@@ -8,7 +8,11 @@ uniform mat4 FEInverseProjectionMatrix;
 @Texture@ FESceneColor;
 uniform sampler2D FESceneDepthMap;
 @Texture@ TransferFunctionTexture; // 256x1 RGBA lookup table, rgb = color, a = opacity
+
+// Two animation frames.
 uniform sampler3D VolumeTexture;
+uniform sampler3D VolumeTexture_2;
+uniform float InterpolationFactor;
 
 @CameraPosition@
 
@@ -19,6 +23,8 @@ out vec4 out_Color;
 
 uniform float DataRangeMin;
 uniform float DataRangeMax;
+uniform float DataRangeMin_2;
+uniform float DataRangeMax_2;
 uniform int StepCount;
 uniform float OpacityScale;
 
@@ -33,14 +39,14 @@ vec2 RayBoxDistance(vec3 BoundsMin, vec3 BoundsMax, vec3 RayOrigin, vec3 RayDire
 {
 	// Guard against direction components that are (near) zero.
 	const float Epsilon = 1e-5;
-	
+
 	vec3 SafeDirection = RayDirection;
 	if (abs(SafeDirection.x) < Epsilon)
 		SafeDirection.x = Epsilon;
-		
+
 	if (abs(SafeDirection.y) < Epsilon)
 		SafeDirection.y = Epsilon;
-		
+
 	if (abs(SafeDirection.z) < Epsilon)
 		SafeDirection.z = Epsilon;
 
@@ -95,8 +101,14 @@ void main(void)
 	float LocalStepLength = length(LocalStep);                  	// local sample spacing (constant per ray)
 	float ReferenceStepLength = 1.0 / float(StepCount);           	// spacing a unit-length traversal would use
 
+	// Clamp the blend factor so out-of-range values can't extrapolate past either frame.
+	float BlendFactor = clamp(InterpolationFactor, 0.0, 1.0);
+
 	// Accumulated color in premultiplied-alpha form, composited front-to-back.
 	vec4 Accumulated = vec4(0.0);
+	
+	float FinalDataRangeMin = mix(DataRangeMin, DataRangeMin_2, BlendFactor);
+	float FinalDataRangeMax = mix(DataRangeMax, DataRangeMax_2, BlendFactor);
 
 	for (int Step = 0; Step < StepCount; Step++)
 	{
@@ -107,10 +119,14 @@ void main(void)
 
 		// Sample the scalar field. Local position inside the unit cube == 3D texture coordinate.
 		vec3 SamplePosition = LocalEntry + LocalStep * (float(Step) + 0.5);
-		float RawValue = texture(VolumeTexture, SamplePosition).r;
+		// Sample both animation frames and blend the raw scalar values, so the field itself is
+		// interpolated in time before the transfer function maps it to color/opacity.
+		float RawValueFirst = texture(VolumeTexture, SamplePosition).r;
+		float RawValueSecond = texture(VolumeTexture_2, SamplePosition).r;
+		float RawValue = mix(RawValueFirst, RawValueSecond, BlendFactor);
 
 		// Normalize against the data range, then run it through the transfer function.
-		float NormalizedValue = clamp((RawValue - DataRangeMin) / (DataRangeMax - DataRangeMin), 0.0, 1.0);
+		float NormalizedValue = clamp((RawValue - FinalDataRangeMin) / (FinalDataRangeMax - FinalDataRangeMin), 0.0, 1.0);
 		// Look the color and opacity up in the transfer function LUT (level 0, no mip filtering).
 		vec4 TransferFunctionSample = textureLod(TransferFunctionTexture, vec2(NormalizedValue, 0.5), 0.0);
 		vec3 SampleColor = TransferFunctionSample.rgb;

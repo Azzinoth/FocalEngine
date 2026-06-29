@@ -34,9 +34,6 @@ namespace FocalEngine
 		FENewMaterial(std::string Name);
 		~FENewMaterial();
 
-		Json::Value ToJSON();
-		void FromJSON(const Json::Value& MaterialData);
-
 		FEMaterialType GetMaterialType() const;
 		void SetMaterialType(FEMaterialType NewMaterialType);
 
@@ -61,6 +58,7 @@ namespace FocalEngine
 
 		bool SetTextureOverride(const std::string& UniformName, const std::string& TextureID);
 		FETexture* GetTextureOverride(const std::string& UniformName) const;
+		std::vector<std::pair<std::string, FETexture*>> GetAllTextureOverridePair() const;
 
 		bool IsUserTextureBound(const std::string& TextureID) const;
 		int GetUsedTexturesCount() const;

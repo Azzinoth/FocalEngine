@@ -170,6 +170,15 @@ namespace FocalEngine
 		FEMaterial* LoadMaterialFromJSON(Json::Value& Root);
 		void DeleteMaterial(const FEMaterial* Material);
 
+		std::vector<std::string> GetNewMaterialIDList();
+		std::vector<std::string> GetEnginePrivateNewMaterialIDList();
+		FENewMaterial* GetNewMaterial(const std::string& ID);
+		std::vector<FENewMaterial*> GetNewMaterialByName(const std::string& Name);
+		FENewMaterial* CreateNewMaterial(std::string Name = "", std::string ForceObjectID = "");
+		Json::Value SaveNewMaterialToJSON(FENewMaterial* Material);
+		FENewMaterial* LoadNewMaterialFromJSON(Json::Value& Root);
+		void DeleteNewMaterial(const FENewMaterial* Material);
+
 		std::vector<std::string> GetGameModelIDList();
 		std::vector<std::string> GetEnginePrivateGameModelIDList();
 		FEGameModel* GetGameModel(std::string ID);
@@ -243,6 +252,7 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEShader*> Shaders;
 		std::unordered_map<std::string, FETexture*> Textures;
 		std::unordered_map<std::string, FEMaterial*> Materials;
+		std::unordered_map<std::string, FENewMaterial*> NewMaterials;
 		std::unordered_map<std::string, FEMesh*> Meshes;
 		std::unordered_map<std::string, FELineCollection*> LineCollections;
 		std::unordered_map<std::string, FEPointCloud*> PointClouds;

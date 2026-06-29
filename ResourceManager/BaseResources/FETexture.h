@@ -52,7 +52,9 @@ namespace FocalEngine
 		int GetDepth();
 
 		glm::vec4 GetMinValue();
+		glm::vec4 GetNormalizedMinValue();
 		glm::vec4 GetMaxValue();
+		glm::vec4 GetNormalizedMaxValue();
 
 		unsigned char* GetRawData(size_t* RawDataSize = nullptr);
 		void UpdateRawData(unsigned char* NewRawData, size_t MipmapCount = 1);

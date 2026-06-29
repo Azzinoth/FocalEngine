@@ -21,7 +21,6 @@ FEVolumeSystem::FEVolumeSystem()
 																						  RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Basic.glsl").c_str()).c_str(),
 																						  nullptr, nullptr, nullptr, nullptr, "43590632272B4B5E403C096C"));
 
-	// Default values for the Basic shader's tweakable uniforms, so it renders correctly before the inspector edits them.
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMin", 0.0f);
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMax", 1.0f);
 	VolumetricShaders.back()->UpdateUniformData("StepCount", 256);
@@ -30,6 +29,16 @@ FEVolumeSystem::FEVolumeSystem()
 	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Cleaned", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
 																							RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Cloud_Like.glsl").c_str()).c_str(),
 																							nullptr, nullptr, nullptr, nullptr, "391E240A020F67670C16001E"));
+
+	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Basic_Animated", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
+																								   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Basic_Animated.glsl").c_str()).c_str(),
+																								   nullptr, nullptr, nullptr, nullptr, "5C2A1B0D3E4F60718293A4B5"));
+
+	VolumetricShaders.back()->UpdateUniformData("DataRangeMin", 0.0f);
+	VolumetricShaders.back()->UpdateUniformData("DataRangeMax", 1.0f);
+	VolumetricShaders.back()->UpdateUniformData("StepCount", 256);
+	VolumetricShaders.back()->UpdateUniformData("OpacityScale", 1.0f);
+	VolumetricShaders.back()->UpdateUniformData("InterpolationFactor", 0.0f);
 
 	// Default transfer function: blue -> cyan -> green -> yellow -> red, with opacity ramping up with the value.
 	DefaultTransferFunctionColorPoints = { { 0.00f, glm::vec3(0.0f, 0.0f, 1.0f) },
@@ -234,14 +243,6 @@ void FEVolumeSystem::OnMyComponentAdded(FEEntity* Entity)
 
 	FEVolumeComponent& VolumeComponent = Entity->GetComponent<FEVolumeComponent>();
 	VolumeComponent.ParentEntity = Entity;
-	if (VolumeComponent.VolumeMaterial == nullptr && !VOLUME_SYSTEM.VolumetricShaders.empty())
-	{
-		FENewMaterial* DefaultStartingMaterial = new FENewMaterial("DefaultStartingMaterial");
-		DefaultStartingMaterial->SetMaterialType(FEMaterialType::Volumetric);
-		DefaultStartingMaterial->SetBlendMode(FEMaterialBlendMode::Additive);
-		DefaultStartingMaterial->SetShader(VOLUME_SYSTEM.GetVolumetricShaders()[0]);
-		VolumeComponent.SetMaterial(DefaultStartingMaterial);
-	}
 }
 
 std::vector<FEShader*> FEVolumeSystem::GetVolumetricShaders()
@@ -304,8 +305,8 @@ void FEVolumeSystem::VolumeComponentFromJson(FEEntity* Entity, Json::Value Root)
 	if (Root.isMember("MaterialID") && Root["MaterialID"].isString())
 	{
 		std::string MaterialID = Root["MaterialID"].asString();
-		/*if (MaterialID != "none")
-			VolumeComponent.VolumeMaterial = RESOURCE_MANAGER.GetMaterial(MaterialID);*/
+		if (MaterialID != "none")
+			VolumeComponent.VolumeMaterial = RESOURCE_MANAGER.GetNewMaterial(MaterialID);
 	}
 }
 
@@ -340,43 +341,35 @@ bool FEVolumeSystem::RenderVolumeComponent(FETransformComponent& TransformCompon
 		return false;
 	}
 
-	FEVolumeComponent& CurrentVolumeComponent = VolumeComponent;
-	if (CurrentVolumeComponent.VolumeMaterial == nullptr)
+	if (VolumeComponent.VolumeMaterial == nullptr)
 	{
 		LOG.Add("FEVolumeSystem::RenderVolumeComponent: CurrentVolumeComponent.VolumeMaterial is nullptr", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (CurrentVolumeComponent.VolumeMaterial != nullptr && VolumeComponent.VolumeMaterial->GetTextureOverride("volumeTexture") == nullptr)
-		return false;
-
-	if (CurrentVolumeComponent.VolumeMaterial != nullptr)
+	if (VolumeComponent.VolumeMaterial != nullptr)
 	{
-		if (CurrentVolumeComponent.VolumeMaterial->HasUniform("DataRangeMin") && CurrentVolumeComponent.VolumeMaterial->HasUniform("DataRangeMax"))
+		if (VolumeComponent.VolumeMaterial->HasUniform("DataRangeMin") && VolumeComponent.VolumeMaterial->HasUniform("DataRangeMax"))
 		{
-			FETexture* BoundVolumeTexture = VolumeComponent.VolumeMaterial->GetTextureOverride("volumeTexture");
+			FETexture* BoundVolumeTexture = VolumeComponent.VolumeMaterial->GetTextureOverride("VolumeTexture");
 			if (BoundVolumeTexture != nullptr)
 			{
-				// FE_FIX_ME: Should not be here. Maybe it should be available as standardized uniform in the shader. For now, we will just set it here.
-				const float RawMin = BoundVolumeTexture->GetMinValue().x;
-				const float RawMax = BoundVolumeTexture->GetMaxValue().x;
+				VolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMin", BoundVolumeTexture->GetNormalizedMinValue().x);
+				VolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMax", BoundVolumeTexture->GetNormalizedMaxValue().x);
+			}
+		}
 
-				float Scale = 1.0f;
-				if (BoundVolumeTexture->GetInternalFormat() == GL_R16)
-				{
-					Scale = 65535.0f;
-				}
-				else if (BoundVolumeTexture->GetInternalFormat() == GL_RED)
-				{
-					Scale = 255.0f;
-				}
-
-				CurrentVolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMin", RawMin / Scale);
-				CurrentVolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMax", RawMax / Scale);
+		if (VolumeComponent.VolumeMaterial->HasUniform("DataRangeMin_2") && VolumeComponent.VolumeMaterial->HasUniform("DataRangeMax_2"))
+		{
+			FETexture* BoundVolumeTexture = VolumeComponent.VolumeMaterial->GetTextureOverride("VolumeTexture_2");
+			if (BoundVolumeTexture != nullptr)
+			{
+				VolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMin_2", BoundVolumeTexture->GetNormalizedMinValue().x);
+				VolumeComponent.VolumeMaterial->UpdateUniformOverrideData("DataRangeMax_2", BoundVolumeTexture->GetNormalizedMaxValue().x);
 			}
 		}
 		
-		CurrentVolumeComponent.VolumeMaterial->Bind();
+		VolumeComponent.VolumeMaterial->Bind();
 	}
 
 	FEMesh* ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
@@ -386,8 +379,8 @@ bool FEVolumeSystem::RenderVolumeComponent(FETransformComponent& TransformCompon
 	FE_GL_ERROR(glDisableVertexAttribArray(0));
 	FE_GL_ERROR(glBindVertexArray(0));
 
-	if (CurrentVolumeComponent.VolumeMaterial != nullptr)
-		CurrentVolumeComponent.VolumeMaterial->UnBind();
+	if (VolumeComponent.VolumeMaterial != nullptr)
+		VolumeComponent.VolumeMaterial->UnBind();
 	
 	return true;
 }

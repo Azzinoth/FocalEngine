@@ -7215,3 +7215,202 @@ glm::dvec3 FEResourceManager::GetLastLoadedPointCloudAppliedShift()
 {
 	return LastPointCloudAppliedShift;
 }
+
+FENewMaterial* FEResourceManager::GetNewMaterial(const std::string& ID)
+{
+	if (NewMaterials.find(ID) == NewMaterials.end())
+		return nullptr;
+
+	return NewMaterials[ID];
+}
+
+std::vector<FENewMaterial*> FEResourceManager::GetNewMaterialByName(const std::string& Name)
+{
+	std::vector<FENewMaterial*> Result;
+
+	auto MaterialIterator = NewMaterials.begin();
+	while (MaterialIterator != NewMaterials.end())
+	{
+		if (MaterialIterator->second->GetName() == Name)
+			Result.push_back(MaterialIterator->second);
+
+		MaterialIterator++;
+	}
+
+	return Result;
+}
+
+FENewMaterial* FEResourceManager::CreateNewMaterial(std::string Name, const std::string ForceObjectID)
+{
+	if (Name.empty())
+		Name = "Unnamed Material";
+
+	FENewMaterial* NewMaterial = new FENewMaterial(Name);
+	if (!ForceObjectID.empty())
+		NewMaterial->SetID(ForceObjectID);
+	NewMaterials[NewMaterial->GetObjectID()] = NewMaterial;
+
+	return NewMaterials[NewMaterial->GetObjectID()];
+}
+
+std::vector<std::string> FEResourceManager::GetNewMaterialIDList()
+{
+	FE_MAP_TO_STR_VECTOR(NewMaterials)
+}
+
+std::vector<std::string> FEResourceManager::GetEnginePrivateNewMaterialIDList()
+{
+	return GetResourceIDListByTag(NewMaterials, ENGINE_RESOURCE_TAG);
+}
+
+void FEResourceManager::DeleteNewMaterial(const FENewMaterial* Material)
+{
+	//auto GameModelIterator = GameModels.begin();
+	//while (GameModelIterator != GameModels.end())
+	//{
+	//	if (GameModelIterator->second->Material == Material)
+	//		GameModelIterator->second->Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+
+	//	GameModelIterator++;
+	//}
+
+	NewMaterials.erase(Material->GetObjectID());
+	delete Material;
+}
+
+Json::Value FEResourceManager::SaveNewMaterialToJSON(FENewMaterial* Material)
+{
+	Json::Value Root;
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(Material);
+
+	if (Material->Shader == nullptr)
+	{
+		Root["Shader"] = "None";
+		return Root;
+	}
+
+	Root["ShaderID"] = Material->Shader->GetObjectID();
+
+	Json::Value UniformsRoot;
+	for (const auto& UniformPair : Material->Shader->Uniforms)
+	{
+		const std::string& UniformName = UniformPair.first;
+		const FEShaderUniform& Uniform = UniformPair.second;
+
+		if (Uniform.IsProvidedByEngine())
+		{
+			UniformsRoot[UniformName] = "None";
+			continue;
+		}
+
+		const auto UniformOverrideIterator = Material->UniformOverrides.find(UniformName);
+		if (UniformOverrideIterator != Material->UniformOverrides.end())
+		{
+			UniformsRoot[UniformName] = UniformOverrideIterator->second.ToJson();
+			continue;
+		}
+
+		const auto TextureOverrideIterator = Material->TextureOverrides.find(UniformName);
+		if (TextureOverrideIterator != Material->TextureOverrides.end())
+		{
+			const FETexture* Texture = TextureOverrideIterator->second;
+			if (Texture != nullptr)
+			{
+				UniformsRoot[UniformName] = Texture->GetObjectID();
+			}
+			else
+			{
+				UniformsRoot[UniformName] = "None";
+			}
+
+			continue;
+		}
+
+		UniformsRoot[UniformName] = "None";
+	}
+	Root["UniformsOverrides"] = UniformsRoot;
+
+	return Root;
+
+	/*Json::Value Root;
+
+	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
+	{
+		if (Material->Textures[i] != nullptr)
+			Root["Textures"][std::to_string(i).c_str()] = Material->Textures[i]->GetObjectID();
+
+		if (Material->TextureBindings[i] != -1)
+			Root["Texture bindings"][std::to_string(i).c_str()] = Material->TextureBindings[i];
+
+		if (Material->TextureChannels[i] != -1)
+			Root["Texture channels"][std::to_string(i).c_str()] = Material->TextureChannels[i];
+	}
+
+	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(Material);
+	Root["Metalness"] = Material->GetMetalness();
+	Root["Roughness"] = Material->GetRoughness();
+	Root["NormalMap intensity"] = Material->GetNormalMapIntensity();
+	Root["AmbientOcclusion intensity"] = Material->GetAmbientOcclusionIntensity();
+	Root["AmbientOcclusionMap intensity"] = Material->GetAmbientOcclusionMapIntensity();
+	Root["RoughnessMap intensity"] = Material->GetRoughnessMapIntensity();
+	Root["MetalnessMap intensity"] = Material->GetMetalnessMapIntensity();
+	Root["Tiling"] = Material->GetTiling();
+	Root["Compack packing"] = Material->IsCompactPacking();
+
+	return Root;*/
+}
+
+FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
+{
+	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
+
+	FENewMaterial* NewMaterial = RESOURCE_MANAGER.CreateNewMaterial(LoadedObjectData.Name, LoadedObjectData.ID);
+	RESOURCE_MANAGER.SetTag(NewMaterial, LoadedObjectData.Tag);
+	
+	// SetShader() sets UniformOverrides and TextureOverrides, so it has to run before the values below are read.
+	const std::string ShaderID = Root["ShaderID"].asString();
+	if (ShaderID == "None")
+	{
+		NewMaterial->SetShader(nullptr);
+		return NewMaterial;
+	}
+
+	FEShader* RequestedShader = RESOURCE_MANAGER.GetShader(ShaderID);
+	if (RequestedShader == nullptr)
+	{
+		LOG.Add("FENewMaterial::FromJSON() failed to find shader with ID " + ShaderID, "FE_LOG_LOADING", FE_LOG_WARNING);
+		NewMaterial->SetShader(nullptr);
+		return NewMaterial;
+	}
+	NewMaterial->SetShader(RequestedShader);
+
+	const Json::Value& UniformsData = Root["UniformsOverrides"];
+	for (const std::string& UniformName : UniformsData.getMemberNames())
+	{
+		const Json::Value& UniformValue = UniformsData[UniformName];
+		// Engine provided and unbound uniforms were written as "None" and carry no value, so they are left at the defaults.
+		if (UniformValue.isString() && UniformValue.asString() == "None")
+			continue;
+
+		const auto TextureOverrideIterator = NewMaterial->TextureOverrides.find(UniformName);
+		if (UniformName == "TransferFunctionTexture")
+			continue;
+
+		if (TextureOverrideIterator != NewMaterial->TextureOverrides.end())
+		{
+			NewMaterial->SetTextureOverride(UniformName, UniformValue.asString());
+			continue;
+		}
+
+		const auto UniformOverrideIterator = NewMaterial->UniformOverrides.find(UniformName);
+		if (UniformOverrideIterator != NewMaterial->UniformOverrides.end())
+		{
+			UniformOverrideIterator->second.FromJson(UniformValue);
+			continue;
+		}
+
+		LOG.Add("FENewMaterial::FromJSON() no override slot for uniform: " + UniformName, "FE_LOG_LOADING", FE_LOG_WARNING);
+	}
+
+	return NewMaterial;
+}

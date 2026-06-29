@@ -80,6 +80,8 @@ namespace FocalEngine
 		bool GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue);
 		template<typename T>
 		bool UpdateUniformData(std::string UniformName, const T& Data);
+
+		bool IsUniformProvidedByEngine(const std::string& UniformName) const;
 		
 		char* GetVertexShaderText();
 		char* GetTessControlShaderText();
@@ -98,7 +100,7 @@ namespace FocalEngine
 
 		void Dispatch(GLuint GroupXCount, GLuint GroupYCount, GLuint GroupZCount);
 
-		// TODO: It should not be public.
+		// FE_TO_DO: It should not be public.
 		void AddUniformsFromShader(FEShader* Shader);
 	private:
 		void CopyCode(const FEShader& Shader);

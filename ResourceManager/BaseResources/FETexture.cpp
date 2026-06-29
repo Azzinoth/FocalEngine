@@ -130,6 +130,26 @@ glm::vec4 FETexture::GetMinValue()
 	return MinValue;
 }
 
+glm::vec4 FETexture::GetNormalizedMinValue()
+{
+	// FE_TO_DO: Implement better staleness check.
+	if (MinValue == glm::vec4(std::numeric_limits<float>::max()))
+		ForceUpdateMinMaxValues();
+
+	glm::vec4 RawValue = MinValue;
+	float Scale = 1.0f;
+	if (GetInternalFormat() == GL_R16)
+	{
+		Scale = 65535.0f;
+	}
+	else if (GetInternalFormat() == GL_RED)
+	{
+		Scale = 255.0f;
+	}
+
+	return RawValue / Scale;
+}
+
 glm::vec4 FETexture::GetMaxValue()
 {
 	// FE_TO_DO: Implement better staleness check.
@@ -137,6 +157,26 @@ glm::vec4 FETexture::GetMaxValue()
 		ForceUpdateMinMaxValues();
 
 	return MaxValue;
+}
+
+glm::vec4 FETexture::GetNormalizedMaxValue()
+{
+	// FE_TO_DO: Implement better staleness check.
+	if (MaxValue == glm::vec4(-std::numeric_limits<float>::max()))
+		ForceUpdateMinMaxValues();
+
+	glm::vec4 RawValue = MaxValue;
+	float Scale = 1.0f;
+	if (GetInternalFormat() == GL_R16)
+	{
+		Scale = 65535.0f;
+	}
+	else if (GetInternalFormat() == GL_RED)
+	{
+		Scale = 255.0f;
+	}
+
+	return RawValue / Scale;
 }
 
 void FETexture::AddToOnDeleteCallBackList(const std::string ObjectID)

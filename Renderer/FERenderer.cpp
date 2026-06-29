@@ -1439,6 +1439,16 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (VolumeComponent.VolumeMaterial == nullptr)
 			continue;
 
+		// FE_TO_DO: This is a temporary solution, that code is too specific to a shader.
+		FEShader* CurrentShader = VolumeComponent.VolumeMaterial->GetShader();
+		if (CurrentShader != nullptr && CurrentShader->HasUniform("TransferFunctionTexture")
+									 && VolumeComponent.VolumeMaterial->GetTextureOverride("TransferFunctionTexture") == nullptr)
+		{
+			VOLUME_SYSTEM.InitializeTransferFunctionTexture(VolumeComponent.ParentEntity);
+			VOLUME_SYSTEM.BakeTransferFunction(VolumeComponent.ParentEntity);
+		}
+		// FE_TO_DO END.
+
 		if (!VolumeComponent.VolumeMaterial->IsAllUsedTexturesNonNullptrs())
 			continue;
 

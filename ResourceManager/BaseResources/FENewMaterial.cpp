@@ -39,6 +39,7 @@ void FENewMaterial::SetBlendMode(FEMaterialBlendMode NewBlendMode)
 bool FENewMaterial::SetShader(FEShader* NewShader)
 {
 	UniformOverrides.clear();
+	TextureOverrides.clear();
 	Shader = NewShader;
 
 	if (NewShader != nullptr)
@@ -305,108 +306,11 @@ bool FENewMaterial::IsAllUsedTexturesNonNullptrs() const
 	return true;
 }
 
-Json::Value FENewMaterial::ToJSON()
+std::vector<std::pair<std::string, FETexture*>> FENewMaterial::GetAllTextureOverridePair() const
 {
-	Json::Value Root;
-	// General object data.
-	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(this);
-
-	if (Shader == nullptr)
-	{
-		Root["Shader"] = "None";
-		return Root;
-	}
-
-	Root["Shader"] = Shader->GetObjectID();
-
-	Json::Value UniformsRoot;
-	for (const auto& UniformPair : Shader->Uniforms)
-	{
-		const std::string& UniformName = UniformPair.first;
-		const FEShaderUniform& Uniform = UniformPair.second;
-
-		if (Uniform.IsProvidedByEngine())
-		{
-			UniformsRoot[UniformName] = "None";
-			continue;
-		}
-
-		const auto UniformOverrideIterator = UniformOverrides.find(UniformName);
-		if (UniformOverrideIterator != UniformOverrides.end())
-		{
-			UniformsRoot[UniformName] = UniformOverrideIterator->second.ToJson();
-			continue;
-		}
-
-		const auto TextureOverrideIterator = TextureOverrides.find(UniformName);
-		if (TextureOverrideIterator != TextureOverrides.end())
-		{
-			const FETexture* Texture = TextureOverrideIterator->second;
-			if (Texture != nullptr)
-			{
-				UniformsRoot[UniformName] = Texture->GetObjectID();
-			}
-			else
-			{
-				UniformsRoot[UniformName] = "None";
-			}
-
-			continue;
-		}
-
-		UniformsRoot[UniformName] = "None";
-	}
-	Root["Uniforms"] = UniformsRoot;
-
-	return Root;
-}
-
-void FENewMaterial::FromJSON(const Json::Value& MaterialData)
-{
-	// General object data.
-	const FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(MaterialData["FEObjectData"]);
-	SetID(LoadedObjectData.ID);
-	SetName(LoadedObjectData.Name);
-	SetTag(LoadedObjectData.Tag);
-
-	// SetShader() sets UniformOverrides and TextureOverrides, so it has to run before the values below are read.
-	const std::string ShaderID = MaterialData["Shader"].asString();
-	if (ShaderID == "None")
-	{
-		SetShader(nullptr);
-		return;
-	}
-
-	FEShader* LoadedShader = RESOURCE_MANAGER.GetShader(ShaderID);
-	if (LoadedShader == nullptr)
-	{
-		LOG.Add("FENewMaterial::FromJSON() failed to find shader with ID " + ShaderID, "FE_LOG_LOADING", FE_LOG_WARNING);
-		return;
-	}
-	SetShader(LoadedShader);
-
-	const Json::Value& UniformsData = MaterialData["Uniforms"];
-	for (const std::string& UniformName : UniformsData.getMemberNames())
-	{
-		const Json::Value& UniformValue = UniformsData[UniformName];
-		// Engine provided and unbound uniforms were written as "None" and carry no value, so they are left at the defaults.
-		if (UniformValue.isString() && UniformValue.asString() == "None")
-			continue;
-
-		const auto TextureOverrideIterator = TextureOverrides.find(UniformName);
-		if (TextureOverrideIterator != TextureOverrides.end())
-		{
-			SetTextureOverride(UniformName, UniformValue.asString());
-			continue;
-		}
-
-		const auto UniformOverrideIterator = UniformOverrides.find(UniformName);
-		if (UniformOverrideIterator != UniformOverrides.end())
-		{
-			UniformOverrideIterator->second.FromJson(UniformValue);
-			continue;
-		}
-
-		LOG.Add("FENewMaterial::FromJSON() no override slot for uniform: " + UniformName, "FE_LOG_LOADING", FE_LOG_WARNING);
-	}
+	std::vector<std::pair<std::string, FETexture*>> Result;
+	for (const auto& TextureBinding : TextureOverrides)
+		Result.push_back(TextureBinding);
+	
+	return Result;
 }
