@@ -13,10 +13,24 @@ namespace FocalEngine
 		FE_TEXTURE_CUBE = 4
 	};
 
-	enum FE_TEXTURE_MAG_FILTER
+	enum class FE_TEXTURE_MINMAG_FILTER_TYPE
 	{
-		FE_NEAREST = 0,
-		FE_LINEAR = 1,
+		NEAREST = 0,
+		LINEAR = 1
+	};
+
+	enum class FE_TEXTURE_MIPMAP_FILTER_TYPE
+	{
+		NEAREST = 1,
+		LINEAR = 2
+	};
+
+	enum class FE_TEXTURE_WRAP_TYPE
+	{
+		REPEAT = 0,
+		MIRRORED_REPEAT = 1,
+		CLAMP_TO_EDGE = 2,
+		CLAMP_TO_BORDER = 3
 	};
 
 	class FEResourceManager;
@@ -40,6 +54,22 @@ namespace FocalEngine
 
 		FE_TEXTURE_TYPE GetType() const;
 		GLuint GetTextureID();
+		FE_TEXTURE_MINMAG_FILTER_TYPE GetFilterType() const;
+		void SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE NewFilter);
+
+		bool IsMipmappingEnabled() const;
+		void SetMipmappingEnabled(bool Enabled);
+		FE_TEXTURE_MIPMAP_FILTER_TYPE GetMipmapFilterType() const;
+		void SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE NewFilter);
+
+		FE_TEXTURE_WRAP_TYPE GetUWrapType() const;
+		void SetUWrapType(FE_TEXTURE_WRAP_TYPE NewWrap);
+
+		FE_TEXTURE_WRAP_TYPE GetVWrapType() const;
+		void SetVWrapType(FE_TEXTURE_WRAP_TYPE NewWrap);
+
+		FE_TEXTURE_WRAP_TYPE GetWWrapType() const;
+		void SetWWrapType(FE_TEXTURE_WRAP_TYPE NewWrap);
 
 		std::string GetFileName();
 
@@ -78,8 +108,13 @@ namespace FocalEngine
 		glm::vec4 MaxValue = glm::vec4(-std::numeric_limits<float>::max());
 		void UpdateMinMaxValues(const unsigned char* RawData);
 
-		FE_TEXTURE_MAG_FILTER MagFilter = FE_LINEAR;
-		bool bMipmapEnabled = true;
+		FE_TEXTURE_MINMAG_FILTER_TYPE Filter = FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR;
+		bool bMipmappingEnabled = true;
+		FE_TEXTURE_MIPMAP_FILTER_TYPE MipmapFilter = FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR;
+		FE_TEXTURE_WRAP_TYPE WrapU = FE_TEXTURE_WRAP_TYPE::REPEAT;
+		FE_TEXTURE_WRAP_TYPE WrapV = FE_TEXTURE_WRAP_TYPE::REPEAT;
+		FE_TEXTURE_WRAP_TYPE WrapW = FE_TEXTURE_WRAP_TYPE::REPEAT;
+		void ApplyWrapType(GLenum CoordinateAxis, FE_TEXTURE_WRAP_TYPE Wrap);
 		void AddToOnDeleteCallBackList(std::string ObjectID);
 		void EraseFromOnDeleteCallBackList(std::string ObjectID);
 

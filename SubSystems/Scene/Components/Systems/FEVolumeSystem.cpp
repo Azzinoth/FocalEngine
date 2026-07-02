@@ -83,8 +83,7 @@ void FEVolumeSystem::InitializeTransferFunctionTexture(FEEntity* Entity)
 
 	// Linear filtering interpolates between LUT entries, clamp so the ends of the range do not wrap.
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, TransferFunctionTexture->GetTextureID()));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	TransferFunctionTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
 	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
 }
@@ -102,6 +101,9 @@ glm::vec3 FEVolumeSystem::EvaluateTransferFunctionColor(FEEntity* Entity, float 
 		return glm::vec3(0.0f);
 
 	std::vector<FETransferFunctionColorPoint>& ColorPoints = EntityTransferFunctionData[Entity->GetObjectID()].ColorPoints;
+
+	if (Position < ColorPoints.front().Position || Position > ColorPoints.back().Position)
+		return glm::vec3(0.0f);
 
 	if (Position <= ColorPoints.front().Position)
 		return ColorPoints.front().Color;

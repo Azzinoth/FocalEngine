@@ -764,10 +764,9 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	RESOURCE_MANAGER.Textures.erase(Result->DepthPyramid->GetObjectID());
 
 	Result->DepthPyramid->Bind();
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+	Result->DepthPyramid->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	Result->DepthPyramid->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	Result->DepthPyramid->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST);
 
 	const int MaxDimension = std::max(CameraComponent.GetRenderTargetWidth(), CameraComponent.GetRenderTargetHeight());
 	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
@@ -3077,10 +3076,9 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 		return false;
 	}
 	IntermediateDepthBuffer->Bind();
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+	IntermediateDepthBuffer->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	IntermediateDepthBuffer->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	IntermediateDepthBuffer->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST);
 	IntermediateDepthBuffer->UnBind();
 
 	CameraRenderingData->PointCloudIntermediateFrameBuffer->SetDepthAttachment(IntermediateDepthBuffer);

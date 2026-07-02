@@ -703,8 +703,8 @@ void FETerrainSystem::SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity
 		return;
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, HeightMap->GetTextureID()));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	HeightMap->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	HeightMap->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
 
 	size_t TextureDataSize = 0;
 	unsigned short* TextureData = reinterpret_cast<unsigned short*>(HeightMap->GetRawData(&TextureDataSize));
@@ -931,14 +931,10 @@ void FETerrainSystem::FillTerrainLayerMaskWithRawData(FEEntity* TerrainEntity, c
 	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	TerrainComponent.LayerMaps[0]->UpdateRawData(FinalTextureChannels[0], MipmapCount);
-	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	TerrainComponent.LayerMaps[0]->SetMipmappingEnabled(true);
 
 	TerrainComponent.LayerMaps[1]->UpdateRawData(FinalTextureChannels[1], MipmapCount);
-	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	TerrainComponent.LayerMaps[1]->SetMipmappingEnabled(true);
 
 	delete[] LayersPerTextureData[0];
 	delete[] LayersPerTextureData[1];
@@ -1169,14 +1165,10 @@ void FETerrainSystem::DeleteTerrainLayerMask(FEEntity* TerrainEntity, size_t Lay
 	const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 
 	TerrainComponent.LayerMaps[0]->UpdateRawData(FirstTextureData, MipmapCount);
-	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	TerrainComponent.LayerMaps[0]->SetMipmappingEnabled(true);
 
 	TerrainComponent.LayerMaps[1]->UpdateRawData(SecondTextureData, MipmapCount);
-	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	TerrainComponent.LayerMaps[1]->SetMipmappingEnabled(true);
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{

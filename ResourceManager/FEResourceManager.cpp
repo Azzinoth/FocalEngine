@@ -204,7 +204,6 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 		lodepng::decode(RawExtractedData, Width, Height, NewState, (unsigned char*)RawFileData.data(), RawFileData.size());
 
 		NewTexture->InternalFormat = GL_R16;
-		NewTexture->MagFilter = FE_LINEAR;
 		NewTexture->FileName = FilePath;
 
 		FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
@@ -222,11 +221,9 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 		}
 		NewTexture->UpdateMinMaxValues(RawExtractedData.data());
 
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+		NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
+		NewTexture->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+		NewTexture->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
 	}
 	else
 	{
@@ -236,23 +233,9 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 		Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, GL_RGBA, GL_UNSIGNED_BYTE, RawExtractedData.data());
 		NewTexture->UpdateMinMaxValues(RawExtractedData.data());
 
-		if (NewTexture->bMipmapEnabled)
-		{
-			FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-			// TO-DO: make it configurable.
-			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-		}
-
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-		if (NewTexture->MagFilter == FE_LINEAR)
-		{
-			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-		}
-		else
-		{
-			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-		}
+		NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
+		NewTexture->SetMipmappingEnabled(true);
+		NewTexture->SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR);
 	}
 
 	NewTexture->FileName = FilePath;
@@ -294,6 +277,21 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 	File.write((char*)&Texture->Depth, sizeof(int));
 	int TextureType = static_cast<int>(Texture->Type);
 	File.write((char*)&TextureType, sizeof(int));
+
+	FE_TEXTURE_MINMAG_FILTER_TYPE Filter = Texture->GetFilterType();
+	File.write((char*)&Filter, sizeof(FE_TEXTURE_MINMAG_FILTER_TYPE));
+
+	FE_TEXTURE_MIPMAP_FILTER_TYPE MipmapFilter = Texture->GetMipmapFilterType();
+	File.write((char*)&MipmapFilter, sizeof(FE_TEXTURE_MIPMAP_FILTER_TYPE));
+
+	FE_TEXTURE_WRAP_TYPE WrapU = Texture->GetUWrapType();
+	File.write((char*)&WrapU, sizeof(FE_TEXTURE_WRAP_TYPE));
+
+	FE_TEXTURE_WRAP_TYPE WrapV = Texture->GetVWrapType();
+	File.write((char*)&WrapV, sizeof(FE_TEXTURE_WRAP_TYPE));
+
+	FE_TEXTURE_WRAP_TYPE WrapW = Texture->GetWWrapType();
+	File.write((char*)&WrapW, sizeof(FE_TEXTURE_WRAP_TYPE));
 
 	if (Texture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D || Texture->InternalFormat == GL_R16 || Texture->InternalFormat == GL_RED || Texture->InternalFormat == GL_RGBA)
 	{
@@ -436,23 +434,9 @@ FETexture* FEResourceManager::RawDataToFETexture(unsigned char* TextureData, con
 	Upload2DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, Format, DataType, TextureData);
 	NewTexture->UpdateMinMaxValues(TextureData);
 
-	if (NewTexture->bMipmapEnabled)
-	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		// TO-DO: make it configurable.
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (NewTexture->MagFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
+	NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
+	NewTexture->SetMipmappingEnabled(true);
+	NewTexture->SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR);
 
 	if (Format == GL_RED)
 	{
@@ -481,11 +465,9 @@ FETexture* FEResourceManager::RawDataTo3DFETexture(unsigned char* TextureData, i
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_3D, NewTexture->TextureID));
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	NewTexture->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	NewTexture->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	NewTexture->SetWWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
 
 	GLenum DataType = GL_UNSIGNED_BYTE;
 	if (Format == GL_RED && InternalFormat == GL_R16)
@@ -510,24 +492,8 @@ FETexture* FEResourceManager::RawDataTo3DFETexture(unsigned char* TextureData, i
 	}
 
 	Upload3DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, NewTexture->Depth, Format, DataType, TextureData);
-
-	//if (NewTexture->MipEnabled)
-	//{
-	//	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	//	// TO-DO: make it configurable.
-	//	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	//	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	//}
-
-	/*FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (NewTexture->MagFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}*/
+	NewTexture->SetMipmappingEnabled(true);
+	NewTexture->SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR);
 
 	if (Format == GL_RED)
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
@@ -674,9 +640,9 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	char* ObjectID = nullptr;
 	std::string ID;
 
-	if (Version != FE_TEXTURE_VERSION && Version != 0.02f)
+	if (Version > FE_TEXTURE_VERSION)
 	{
-		LOG.Add("can't load fileData: in function FEResourceManager::LoadFETexture. FileData was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("Can not load FileData: in function FEResourceManager::LoadFETexture. FileData version is not compatible with current version of FETexture. FileData version: " + std::to_string(Version) + " Current version: " + std::to_string(FE_TEXTURE_VERSION), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
 	}
 
@@ -694,12 +660,35 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	// Depth and Type were added in FE_TEXTURE_VERSION 0.03f.
 	int Depth = 1;
 	int TextureType = static_cast<int>(FE_TEXTURE_TYPE::FE_TEXTURE_2D);
-	if (Version == FE_TEXTURE_VERSION)
+	if (Version >= 0.03f)
 	{
 		Depth = *(int*)(&FileData[CurrentShift]);
 		CurrentShift += 4;
 		TextureType = *(int*)(&FileData[CurrentShift]);
 		CurrentShift += 4;
+	}
+
+	FE_TEXTURE_MINMAG_FILTER_TYPE LoadedFilter = FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR;
+	FE_TEXTURE_MIPMAP_FILTER_TYPE LoadedMipmapFilter = FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR;
+	FE_TEXTURE_WRAP_TYPE LoadedUWrap = FE_TEXTURE_WRAP_TYPE::REPEAT;
+	FE_TEXTURE_WRAP_TYPE LoadedVWrap = FE_TEXTURE_WRAP_TYPE::REPEAT;
+	FE_TEXTURE_WRAP_TYPE LoadedRWrap = FE_TEXTURE_WRAP_TYPE::REPEAT;
+	if (Version >= 0.04f)
+	{
+		LoadedFilter = *(FE_TEXTURE_MINMAG_FILTER_TYPE*)(&FileData[CurrentShift]);
+		CurrentShift += sizeof(FE_TEXTURE_MINMAG_FILTER_TYPE);
+
+		LoadedMipmapFilter = *(FE_TEXTURE_MIPMAP_FILTER_TYPE*)(&FileData[CurrentShift]);
+		CurrentShift += sizeof(FE_TEXTURE_MIPMAP_FILTER_TYPE);
+
+		LoadedUWrap = *(FE_TEXTURE_WRAP_TYPE*)(&FileData[CurrentShift]);
+		CurrentShift += sizeof(FE_TEXTURE_WRAP_TYPE);
+
+		LoadedVWrap = *(FE_TEXTURE_WRAP_TYPE*)(&FileData[CurrentShift]);
+		CurrentShift += sizeof(FE_TEXTURE_WRAP_TYPE);
+
+		LoadedRWrap = *(FE_TEXTURE_WRAP_TYPE*)(&FileData[CurrentShift]);
+		CurrentShift += sizeof(FE_TEXTURE_WRAP_TYPE);
 	}
 
 	FETexture* NewTexture = nullptr;
@@ -746,11 +735,10 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		if (UploadFormat == GL_RED)
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		NewTexture->SetFilterType(LoadedFilter);
+		NewTexture->SetUWrapType(LoadedUWrap);
+		NewTexture->SetVWrapType(LoadedVWrap);
+		NewTexture->SetWWrapType(LoadedRWrap);
 
 		Upload3DTextureDataToGPU(NewTexture, 0, NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height, NewTexture->Depth, UploadFormat, UploadDataType, static_cast<void*>(&FileData[CurrentShift]));
 
@@ -801,23 +789,9 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	// These filter/mipmap parameters apply to 2D textures only, a 3D texture already set its own above.
 	if (NewTexture->Type != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
 	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-		if (NewTexture->MagFilter == FE_LINEAR)
-		{
-			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-		}
-		else
-		{
-			FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-		}
-
-		if (NewTexture->bMipmapEnabled)
-		{
-			//FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-			// TO-DO: make it configurable.
-			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-		}
+		NewTexture->SetFilterType(LoadedFilter);
+		NewTexture->SetMipmappingEnabled(true);
+		NewTexture->SetMipmapFilterType(LoadedMipmapFilter);
 	}
 
 	// Overwrite ObjectID with ObjectID from File.
@@ -840,6 +814,9 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 FETexture* FEResourceManager::LoadFETextureUnmanaged(const std::string& FilePath, const std::string Name)
 {
 	FETexture* NewTexture = LoadFETexture(FilePath, Name);
+	if (NewTexture == nullptr)
+		return nullptr;
+
 	Textures.erase(NewTexture->GetObjectID());
 	return NewTexture;
 }
@@ -2428,7 +2405,6 @@ FETexture* FEResourceManager::CreateBlankHeightMapTexture(int Width, int Height,
 	NewTexture->Width = Width;
 	NewTexture->Height = Height;
 	NewTexture->InternalFormat = GL_R16;
-	NewTexture->MagFilter = FE_LINEAR;
 	NewTexture->FileName = "NULL";
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, NewTexture->TextureID));
@@ -2443,8 +2419,7 @@ FETexture* FEResourceManager::CreateBlankHeightMapTexture(int Width, int Height,
 	NewTexture->UpdateMinMaxValues((unsigned char*)RawPixels);
 	delete[] RawPixels;
 
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
 
 	return NewTexture;
 }
@@ -2528,8 +2503,9 @@ FEFramebuffer* FEResourceManager::CreateFramebuffer(const int Attachments, const
 		}
 
 		NewFramebuffer->GetDepthAttachment()->Bind();
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+		NewFramebuffer->GetDepthAttachment()->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST);
+		//FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+		//FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 		NewFramebuffer->GetDepthAttachment()->UnBind();
@@ -3477,10 +3453,9 @@ FETexture* FEResourceManager::LoadPFMTexture(const std::string& FilePath, std::s
 	Upload2DTextureDataToGPU(NewTexture, 0, InternalFormat, NewTexture->Width, NewTexture->Height, Format, GL_FLOAT, RawData.data());
 
 	// Exact float depth/position values, so sample the raw texels without filtering or wrapping.
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST);
+	NewTexture->SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	NewTexture->SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
 
 	if (Name.empty())
 	{
@@ -3719,9 +3694,7 @@ void FEResourceManager::ResizeTexture(FETexture* SourceTexture, const int Target
 		SourceTexture->UpdateRawData(Result, MipmapCount);
 	}
 
-	FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-	FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+	SourceTexture->SetMipmappingEnabled(true);
 
 	delete[] CurrentData;
 	delete[] Result;
@@ -3749,23 +3722,9 @@ FETexture* FEResourceManager::LoadJPGTexture(const std::string& FilePath, const 
 	delete RawData;
 	NewTexture->InternalFormat = InternalFormat;
 
-	if (NewTexture->bMipmapEnabled)
-	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		// TO-DO: make it configurable.
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (NewTexture->MagFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
+	NewTexture->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
+	NewTexture->SetMipmappingEnabled(true);
+	NewTexture->SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR);
 	NewTexture->FileName = FilePath;
 
 	if (Name.empty())
@@ -4028,23 +3987,9 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	Result->InternalFormat = InternalFormat;
 	Result->UpdateMinMaxValues(RawData);
 
-	if (Result->bMipmapEnabled)
-	{
-		FE_GL_ERROR(glGenerateMipmap(GL_TEXTURE_2D));
-		// TO-DO: make it configurable.
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
-		FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
-	}
-
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-	if (Result->MagFilter == FE_LINEAR)
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	}
-	else
-	{
-		FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-	}
+	Result->SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
+	Result->SetMipmappingEnabled(true);
+	Result->SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE::LINEAR);
 	Result->FileName = OriginalTexture->FileName;
 
 	const std::string FilePath = Result->FileName;

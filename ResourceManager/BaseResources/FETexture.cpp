@@ -21,8 +21,7 @@ FETexture::FETexture(const int Width, const int Height, const std::string Name, 
 	GetNewGlTextureID();
 	Bind(0);
 	RESOURCE_MANAGER.Upload2DTextureDataToGPU(this, 0, GL_RGB, Width, Height, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
 	UnBind();
 }
 
@@ -37,11 +36,10 @@ FETexture::FETexture(const GLint InternalFormat, const GLenum Format, const int 
 	GetNewGlTextureID();
 	Bind(0);
 	RESOURCE_MANAGER.Upload2DTextureDataToGPU(this, 0, InternalFormat, Width, Height, Format, GL_UNSIGNED_BYTE, nullptr);
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+	SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR);
 	// to-do: it is needed for screen space effects but could interfere with other purposes
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	SetUWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
+	SetVWrapType(FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE);
 
 	if (InternalFormat == GL_RGBA16F || InternalFormat == GL_RGB16F || InternalFormat == GL_RGB32F || InternalFormat == GL_RGBA32F)
 		bHDR = true;
@@ -119,6 +117,151 @@ int FETexture::GetHeight()
 int FETexture::GetDepth()
 {
 	return Depth;
+}
+
+FE_TEXTURE_MINMAG_FILTER_TYPE FETexture::GetFilterType() const
+{
+	return Filter;
+}
+
+void FETexture::SetFilterType(FE_TEXTURE_MINMAG_FILTER_TYPE NewFilter)
+{
+	Filter = NewFilter;
+
+	int TextureType = GetType() == FE_TEXTURE_TYPE::FE_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_3D;
+	switch (Filter)
+	{
+		case FocalEngine::FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST:
+		{
+			FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+			break;
+		}
+		case FocalEngine::FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR:
+		{
+			FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+bool FETexture::IsMipmappingEnabled() const
+{
+	return bMipmappingEnabled;
+}
+
+void FETexture::SetMipmappingEnabled(bool Enabled)
+{
+	bMipmappingEnabled = Enabled;
+
+	int TextureType = GetType() == FE_TEXTURE_TYPE::FE_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_3D;
+	FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+
+	if (Enabled)
+	{
+		FE_GL_ERROR(glGenerateMipmap(TextureType));
+		// FE_TO_DO: Make it configurable.
+		FE_GL_ERROR(glTexParameterf(TextureType, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
+		FE_GL_ERROR(glTexParameterf(TextureType, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+	else
+	{
+		FE_GL_ERROR(glTexParameterf(TextureType, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1.0f));
+		FE_GL_ERROR(glTexParameterf(TextureType, GL_TEXTURE_LOD_BIAS, 0.0f));
+	}
+}
+
+FE_TEXTURE_MIPMAP_FILTER_TYPE FETexture::GetMipmapFilterType() const
+{
+	return MipmapFilter;
+}
+
+void FETexture::SetMipmapFilterType(FE_TEXTURE_MIPMAP_FILTER_TYPE NewFilter)
+{
+	MipmapFilter = NewFilter;
+
+	int TextureType = GetType() == FE_TEXTURE_TYPE::FE_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_3D;
+	switch (Filter)
+	{
+		case FocalEngine::FE_TEXTURE_MINMAG_FILTER_TYPE::NEAREST:
+		{
+			FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST));
+			break;
+		}
+		case FocalEngine::FE_TEXTURE_MINMAG_FILTER_TYPE::LINEAR:
+		{
+			FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+			FE_GL_ERROR(glTexParameteri(TextureType, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
+			break;
+		}
+		default:
+			break;
+	}
+}
+
+void FETexture::ApplyWrapType(GLenum CoordinateAxis, FE_TEXTURE_WRAP_TYPE Wrap)
+{
+	GLint GLWrap = GL_REPEAT;
+	switch (Wrap)
+	{
+		case FE_TEXTURE_WRAP_TYPE::REPEAT:
+			GLWrap = GL_REPEAT;
+			break;
+		case FE_TEXTURE_WRAP_TYPE::MIRRORED_REPEAT:
+			GLWrap = GL_MIRRORED_REPEAT;
+			break;
+		case FE_TEXTURE_WRAP_TYPE::CLAMP_TO_EDGE:
+			GLWrap = GL_CLAMP_TO_EDGE;
+			break;
+		case FE_TEXTURE_WRAP_TYPE::CLAMP_TO_BORDER:
+			GLWrap = GL_CLAMP_TO_BORDER;
+			break;
+		default:
+			break;
+	}
+
+	int TextureType = GetType() == FE_TEXTURE_TYPE::FE_TEXTURE_2D ? GL_TEXTURE_2D : GL_TEXTURE_3D;
+	FE_GL_ERROR(glBindTexture(TextureType, TextureID));
+	FE_GL_ERROR(glTexParameteri(TextureType, CoordinateAxis, GLWrap));
+}
+
+FE_TEXTURE_WRAP_TYPE FETexture::GetUWrapType() const
+{
+	return WrapU;
+}
+
+void FETexture::SetUWrapType(FE_TEXTURE_WRAP_TYPE NewWrap)
+{
+	WrapU = NewWrap;
+	ApplyWrapType(GL_TEXTURE_WRAP_S, NewWrap);
+}
+
+FE_TEXTURE_WRAP_TYPE FETexture::GetVWrapType() const
+{
+	return WrapV;
+}
+
+void FETexture::SetVWrapType(FE_TEXTURE_WRAP_TYPE NewWrap)
+{
+	WrapV = NewWrap;
+	ApplyWrapType(GL_TEXTURE_WRAP_T, NewWrap);
+}
+
+FE_TEXTURE_WRAP_TYPE FETexture::GetWWrapType() const
+{
+	return WrapW;
+}
+
+void FETexture::SetWWrapType(FE_TEXTURE_WRAP_TYPE NewWrap)
+{
+	WrapW = NewWrap;
+	ApplyWrapType(GL_TEXTURE_WRAP_R, NewWrap);
 }
 
 glm::vec4 FETexture::GetMinValue()
