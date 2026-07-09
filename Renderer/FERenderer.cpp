@@ -1386,6 +1386,27 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	// Could impact depth pyramid construction( min vs max ).
 	glDepthFunc(GL_LESS);
 
+	entt::basic_view LinesView = CurrentScene->Registry.view<FELineComponent, FETransformComponent>();
+	for (auto [EnTTEntity, LineComponent, TransformComponent] : LinesView.each())
+	{
+		FEEntity* Entity = CurrentScene->GetEntityByEnTT(EnTTEntity);
+		if (Entity == nullptr)
+			continue;
+
+		if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+		{
+			std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+			for (const auto& ExistingCallback : Callbacks)
+			{
+				if (ExistingCallback != nullptr)
+					ExistingCallback(Entity);
+			}
+		}
+
+		SetEntityForRendering(Entity);
+		LINE_SYSTEM.Render(Entity, MainCameraEntity);
+	}
+
 	RenderDebugLines(CurrentScene, MainCameraEntity, CurrentCameraRenderingData);
 
 	// ********* RENDER SKY *********

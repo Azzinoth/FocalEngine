@@ -238,6 +238,11 @@ double FEngine::GetGpuTime()
 	return GPUTime;
 }
 
+double FEngine::GetDeltaTime()
+{
+	return CurrentDeltaTime;
+}
+
 FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidth, int ScreenHeight)
 {
 	if (ScreenWidth < 2 || ScreenHeight < 2)

@@ -35,6 +35,7 @@ namespace FocalEngine
 
 		double GetCpuTime();
 		double GetGpuTime();
+		double GetDeltaTime();
 
 		FEPostProcess* CreatePostProcess(std::string Name, int ScreenWidth = -1, int ScreenHeight = -1);
 		void SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith);
