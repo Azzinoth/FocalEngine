@@ -42,8 +42,9 @@ void FECameraSystem::DuplicateCameraComponent(FEEntity* SourceEntity, FEEntity* 
 	TargetEntity->AddComponent<FECameraComponent>();
 
 	FECameraComponent& NewCameraComponent = TargetEntity->GetComponent<FECameraComponent>();
+	FEViewport* FreshViewport = NewCameraComponent.Viewport;
 	NewCameraComponent = OriginalCameraComponent;
-	NewCameraComponent.Viewport = nullptr;
+	NewCameraComponent.Viewport = FreshViewport;
 	// By default, duplicated camera component should not be a main camera.
 	NewCameraComponent.bIsMainCamera = false;
 	// But if component is duplicated as part of scene duplication, it could be a main camera.
