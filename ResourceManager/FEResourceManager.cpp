@@ -54,17 +54,6 @@ FEResourceManager::FEResourceManager()
 			}
 		}
 	}
-
-	if (laszip_load_dll() != 0)
-	{
-		LOG.Add("DLL ERROR: loading LASzip DLL failed.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		bIsLasLazFilesEnabled = false;
-		LOG.Add("Loading LAS/LAZ files is disabled.", "FE_LOG_LOADING", FE_LOG_WARNING);
-	}
-	else
-	{
-		bIsLasLazFilesEnabled = true;
-	}
 }
 
 FEResourceManager::~FEResourceManager()
@@ -5517,202 +5506,36 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 
 FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name, std::string ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
 {
-	FEPointCloud* LoadedPointCloud = nullptr;
-	if (FilePath.empty())
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return LoadedPointCloud;
-	}
-
-	if (!FILE_SYSTEM.DoesFileExist(FilePath))
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return LoadedPointCloud;
-	}
-
-	if (!bIsLasLazFilesEnabled)
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return LoadedPointCloud;
-	}
-
-	laszip_POINTER LaszipReader;
-	laszip_I32 Error = laszip_create(&LaszipReader);
-	if (Error)
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: Creating laszip reader failed with error: " + std::to_string(Error), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return LoadedPointCloud;
-	}
-
-	laszip_BOOL bIsCompressed = 0;
-	bool bIsLASOrLAZFile = !laszip_open_reader(LaszipReader, FilePath.c_str(), &bIsCompressed);
-	if (!bIsLASOrLAZFile)
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: File is not a valid LAS/LAZ file", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		if (laszip_destroy(LaszipReader))
-		{
-			LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		}
-		return LoadedPointCloud;
-	}
-
-	laszip_header* FileHeader;
-	if (laszip_get_header_pointer(LaszipReader, &FileHeader))
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: getting header pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return LoadedPointCloud;
-	}
-
-	if (OutHeaderCopy != nullptr)
-		std::memcpy(OutHeaderCopy, FileHeader, sizeof(laszip_header));
-
-	laszip_point* CurrentPointPointer;
-	if (laszip_get_point_pointer(LaszipReader, &CurrentPointPointer))
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: getting point pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return LoadedPointCloud;
-	}
-
-	laszip_U64 PointCount = (FileHeader->number_of_point_records ? FileHeader->number_of_point_records : FileHeader->extended_number_of_point_records);
-	if (PointCount == 0)
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: Point count is zero", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return LoadedPointCloud;
-	}
-
 	std::vector<FEPointCloudVertexDouble> RawDataDouble;
-	RawDataDouble.resize(PointCount);
-
-	laszip_U64 PointIndex = 0;
-	while (PointIndex < PointCount)
-	{
-		if (laszip_read_point(LaszipReader))
-		{
-			LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: reading point from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-			return LoadedPointCloud;
-		}
-
-		RawDataDouble[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor;
-		RawDataDouble[PointIndex].Y = CurrentPointPointer->Y * FileHeader->y_scale_factor;
-		RawDataDouble[PointIndex].Z = CurrentPointPointer->Z * FileHeader->z_scale_factor;
-
-		RawDataDouble[PointIndex].R = unsigned char(CurrentPointPointer->rgb[0] / float(1 << 16) * 255);
-		RawDataDouble[PointIndex].G = unsigned char(CurrentPointPointer->rgb[1] / float(1 << 16) * 255);
-		RawDataDouble[PointIndex].B = unsigned char(CurrentPointPointer->rgb[2] / float(1 << 16) * 255);
-
-		PointIndex++;
-	}
-
-	if (laszip_close_reader(LaszipReader))
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: closing laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-	}
-
-	if (laszip_destroy(LaszipReader))
-	{
-		LOG.Add("FEResourceManager::LasOrLazToFEPointCloud: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-	}
+	if (!ReadLasOrLaz(FilePath, RawDataDouble, OutHeaderCopy))
+		return nullptr;
 
 	return RawDataToFEPointCloud(RawDataDouble, Name, ForceObjectID, bCenterPositions, false, UserDataProcessor);
 }
 
 bool FEResourceManager::ReadLasOrLaz(const std::string& FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy)
 {
-	if (FilePath.empty())
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+	if (!LAS_LOADER.ReadFile(FilePath, OutHeaderCopy != nullptr, false))
 		return false;
-	}
 
-	if (!FILE_SYSTEM.DoesFileExist(FilePath))
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+	FELASData* LoadedData = nullptr;
+	LAS_LOADER.TakeOwnershipOfLastLoadedData(LoadedData);
+	if (LoadedData == nullptr)
 		return false;
-	}
 
-	if (!bIsLasLazFilesEnabled)
+	RawData = std::move(LoadedData->PointCloudVertices);
+
+	if (OutHeaderCopy != nullptr && LoadedData->Header != nullptr)
 	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
+		*OutHeaderCopy = *LoadedData->Header;
+		// LoadedData still owns the VLR and user data buffers and frees them below,
+		// so the copy must not point at them.
+		OutHeaderCopy->user_data_in_header = nullptr;
+		OutHeaderCopy->vlrs = nullptr;
+		OutHeaderCopy->user_data_after_header = nullptr;
 	}
 
-	laszip_POINTER LaszipReader;
-	laszip_I32 Error = laszip_create(&LaszipReader);
-	if (Error)
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: Creating laszip reader failed with error: " + std::to_string(Error), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	laszip_BOOL bIsCompressed = 0;
-	bool bIsLASOrLAZFile = !laszip_open_reader(LaszipReader, FilePath.c_str(), &bIsCompressed);
-	if (!bIsLASOrLAZFile)
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: File is not a valid LAS/LAZ file", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		if (laszip_destroy(LaszipReader))
-		{
-			LOG.Add("FEResourceManager::ReadLasOrLaz: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		}
-		return false;
-	}
-
-	laszip_header* FileHeader;
-	if (laszip_get_header_pointer(LaszipReader, &FileHeader))
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: getting header pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	if (OutHeaderCopy != nullptr)
-		std::memcpy(OutHeaderCopy, FileHeader, sizeof(laszip_header));
-
-	laszip_point* CurrentPointPointer;
-	if (laszip_get_point_pointer(LaszipReader, &CurrentPointPointer))
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: getting point pointer from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	laszip_U64 PointCount = (FileHeader->number_of_point_records ? FileHeader->number_of_point_records : FileHeader->extended_number_of_point_records);
-	if (PointCount == 0)
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: Point count is zero", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	//std::vector<FEPointCloudVertexDouble> RawDataDouble;
-	RawData.resize(PointCount);
-
-	laszip_U64 PointIndex = 0;
-	while (PointIndex < PointCount)
-	{
-		if (laszip_read_point(LaszipReader))
-		{
-			LOG.Add("FEResourceManager::ReadLasOrLaz: reading point from laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-			return false;
-		}
-
-		RawData[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor;
-		RawData[PointIndex].Y = CurrentPointPointer->Y * FileHeader->y_scale_factor;
-		RawData[PointIndex].Z = CurrentPointPointer->Z * FileHeader->z_scale_factor;
-
-		RawData[PointIndex].R = unsigned char(CurrentPointPointer->rgb[0] / float(1 << 16) * 255);
-		RawData[PointIndex].G = unsigned char(CurrentPointPointer->rgb[1] / float(1 << 16) * 255);
-		RawData[PointIndex].B = unsigned char(CurrentPointPointer->rgb[2] / float(1 << 16) * 255);
-
-		PointIndex++;
-	}
-
-	if (laszip_close_reader(LaszipReader))
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: closing laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-	}
-
-	if (laszip_destroy(LaszipReader))
-	{
-		LOG.Add("FEResourceManager::ReadLasOrLaz: destroying laszip reader failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-	}
-
+	delete LoadedData;
 	return true;
 }
 
@@ -6341,105 +6164,7 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 
 bool FEResourceManager::SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, const std::string& FilePath, bool bIsCompressed, double ScaleFactor)
 {
-	if (RawData.empty())
-	{
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: RawData is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	laszip_POINTER LaszipWriter;
-	if (laszip_create(&LaszipWriter))
-	{
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Creating laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	laszip_header* FileHeader;
-	if (laszip_get_header_pointer(LaszipWriter, &FileHeader))
-	{
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Getting header for a file failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	// Indicate that we have RGB color data in our point format
-	FileHeader->point_data_format = 2;  // Format 2 includes RGB values
-
-	// Update the point data record length to account for RGB data
-	// Standard record length is 20 bytes, plus 6 bytes for RGB (2 bytes per color channel)
-	FileHeader->point_data_record_length = 26;
-
-	// Set appropriate scale factors for data
-	// The LAS format stores coordinates as integers internally,
-	// but these integers represent real-world coordinates (typically in meters)
-	// Scale factors convert between floating-point and integer representations:
-	//   integer_value = real_world_value / scale_factor
-	//   real_world_value = integer_value * scale_factor
-	// 
-	// For example, with scale_factor = 0.001:
-	// - A real-world coordinate of 10.523 meters becomes integer 10523
-	// - An integer value of 8421 represents 8.421 meters in real-world space
-	//
-	FileHeader->x_scale_factor = ScaleFactor;
-	FileHeader->y_scale_factor = ScaleFactor;
-	FileHeader->z_scale_factor = ScaleFactor;
-
-	FileHeader->number_of_point_records = static_cast<laszip_U32>(RawData.size());
-
-	if (laszip_open_writer(LaszipWriter, FilePath.c_str(), bIsCompressed))
-	{
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Opening laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-		laszip_CHAR* Error;
-		if (laszip_get_error(LaszipWriter, &Error))
-			LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Getting laszip error failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: " + std::string(Error), "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return false;
-	}
-
-	laszip_point_struct* CurrentPoint = nullptr;
-	CurrentPoint = new laszip_point_struct();
-	for (size_t i = 0; i < RawData.size(); i++)
-	{
-		CurrentPoint->X = static_cast<laszip_I32>(static_cast<double>(RawData[i].X) / FileHeader->x_scale_factor);
-		CurrentPoint->Y = static_cast<laszip_I32>(static_cast<double>(RawData[i].Y) / FileHeader->y_scale_factor);
-		CurrentPoint->Z = static_cast<laszip_I32>(static_cast<double>(RawData[i].Z) / FileHeader->z_scale_factor);
-
-		// Convert 8-bit colors (0-255) to 16-bit colors (0-65535)
-		int CoefficientToConvertTo16Bit = UINT16_MAX / UINT8_MAX;
-		CurrentPoint->rgb[0] = static_cast<laszip_U16>(RawData[i].R * CoefficientToConvertTo16Bit);
-		CurrentPoint->rgb[1] = static_cast<laszip_U16>(RawData[i].G * CoefficientToConvertTo16Bit);
-		CurrentPoint->rgb[2] = static_cast<laszip_U16>(RawData[i].B * CoefficientToConvertTo16Bit);
-
-		if (laszip_set_point(LaszipWriter, CurrentPoint))
-		{
-			LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Setting point with index " + std::to_string(i) + " failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-			delete CurrentPoint;
-
-			if (laszip_close_writer(LaszipWriter))
-				LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Closing laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-			if (laszip_destroy(LaszipWriter))
-				LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Destroying laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-			return false;
-		}
-
-		if (laszip_write_point(LaszipWriter))
-		{
-			LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Writing point with index " + std::to_string(i) + " failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-			return false;
-		}
-	}
-
-	if (laszip_close_writer(LaszipWriter))
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Closing laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-	if (laszip_destroy(LaszipWriter))
-		LOG.Add("FEResourceManager::SaveRawDataToLASOrLAZ: Destroying laszip writer failed", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-
-	delete CurrentPoint;
-	return true;
+	return LAS_LOADER.SaveRawDataToLASOrLAZ(RawData, FilePath, bIsCompressed, ScaleFactor);
 }
 
 bool FEResourceManager::ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, const std::string& FilePath)
@@ -6456,7 +6181,7 @@ bool FEResourceManager::ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport
 		return false;
 	}
 
-	if (!bIsLasLazFilesEnabled)
+	if (!LAS_LOADER.IsDLLPresent())
 	{
 		LOG.Add("FEResourceManager::ExportFEPointCloudToLAS: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;
@@ -6480,7 +6205,7 @@ bool FEResourceManager::ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport
 		return false;
 	}
 
-	if (!bIsLasLazFilesEnabled)
+	if (!LAS_LOADER.IsDLLPresent())
 	{
 		LOG.Add("FEResourceManager::ExportFEPointCloudToLAZ: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return false;

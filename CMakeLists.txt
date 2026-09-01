@@ -225,6 +225,8 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEPLYManager.h"
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
+	"ResourceManager/FELASLoader.cpp"
+	"ResourceManager/FELASLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
 	"ResourceManager/FEResourceManager.inl"
 	"ResourceManager/FEResourceManager.h"

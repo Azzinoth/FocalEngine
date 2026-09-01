@@ -120,7 +120,7 @@ void FEObjLoader::ReadLine(std::stringstream& LineStream, FERawOBJData* Data)
 					}
 					else
 					{
-						LOG.Add(std::string("Texture coordinates were absent in face description in function FEObjLoader::readFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+						MissingTextureCoordinateCount++;
 					}
 				}
 
@@ -179,6 +179,7 @@ void FEObjLoader::ReadFile(const char* FileName)
 	bHaveColors = false;
 	bHaveTextureCoord = false;
 	bHaveNormalCoord = false;
+	MissingTextureCoordinateCount = 0;
 	CurrentFilePath = FileName;
 	MaterialFileName = "";
 	CurrentMaterialObject = nullptr;
@@ -191,7 +192,7 @@ void FEObjLoader::ReadFile(const char* FileName)
 
 	if (FileName == nullptr)
 	{
-		LOG.Add(std::string("No file name in function FEObjLoader::readFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add(std::string("No file name in function FEObjLoader::ReadFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -203,21 +204,21 @@ void FEObjLoader::ReadFile(const char* FileName)
 
 	File.seekg(0, 0);
 
-	std::string CurrentLine;
+	std::string FileContent(FileSize, '\0');
+	File.read(FileContent.data(), static_cast<std::streamsize>(FileSize));
+
+	size_t LineStart = 0;
 	for (size_t i = 0; i < FileSize; i++)
 	{
-		char NewChar;
-		File.read(&NewChar, 1);
-		CurrentLine += NewChar;
-			
-		if (NewChar == '\n')
+		if (FileContent[i] == '\n')
 		{
-			CurrentLine.erase(CurrentLine.end() - 1, CurrentLine.end());
-			ReadLine(std::stringstream(CurrentLine), LoadedObjects.back());
-
-			CurrentLine = "";
+			ReadLine(std::stringstream(FileContent.substr(LineStart, i - LineStart)), LoadedObjects.back());
+			LineStart = i + 1;
 		}
 	}
+
+	if (MissingTextureCoordinateCount > 0)
+		LOG.Add("Texture coordinates were absent in " + std::to_string(MissingTextureCoordinateCount) + " face vertex descriptions in file " + CurrentFilePath + " in function FEObjLoader::ReadFile.", "FE_LOG_LOADING", FE_LOG_WARNING);
 
 	if (!bForceOneMesh)
 	{

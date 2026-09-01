@@ -102,6 +102,7 @@ namespace FocalEngine
 		bool bHaveColors = false;
 		bool bHaveTextureCoord = false;
 		bool bHaveNormalCoord = false;
+		int MissingTextureCoordinateCount = 0;
 
 		std::string CurrentFilePath = "";
 		std::string MaterialFileName = "";

@@ -11,7 +11,7 @@
 #include "../SubSystems/Scene/FEPrefab.h"
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 
-#include "../ThirdParty/laszip/laszip_api.h"
+#include "FELASLoader.h"
 #include "Config.h"
 
 #define ENGINE_RESOURCE_TAG "ENGINE_PRIVATE_RESOURCE"
@@ -301,7 +301,6 @@ namespace FocalEngine
 		std::vector<glm::vec2> ExtractUVsFromPLYData(FERawPLYData* PLYData, bool& bTextureCoordinatesArePartOfVertex);
 		std::vector<glm::vec3> ExtractNormalsFromPLYData(FERawPLYData* PLYData);
 
-		bool bIsLasLazFilesEnabled = false;
 		bool SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std::vector<FEPointCloudVertex>& RawPointCloudData);
 
 		static void LoadPointCloudFileAsyncCallBack(void* OutputData);
