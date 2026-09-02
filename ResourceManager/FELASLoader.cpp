@@ -207,9 +207,9 @@ bool FELASLoader::ReadFile(const std::string& FilePath, bool bSaveHeaderCopy, bo
 			return false;
 		}
 
-		NewData->PointCloudVertices[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor;
-		NewData->PointCloudVertices[PointIndex].Y = CurrentPointPointer->Y * FileHeader->y_scale_factor;
-		NewData->PointCloudVertices[PointIndex].Z = CurrentPointPointer->Z * FileHeader->z_scale_factor;
+		NewData->PointCloudVertices[PointIndex].X = CurrentPointPointer->X * FileHeader->x_scale_factor + FileHeader->x_offset;
+		NewData->PointCloudVertices[PointIndex].Y = CurrentPointPointer->Y * FileHeader->y_scale_factor + FileHeader->y_offset;
+		NewData->PointCloudVertices[PointIndex].Z = CurrentPointPointer->Z * FileHeader->z_scale_factor + FileHeader->z_offset;
 
 		NewData->PointCloudVertices[PointIndex].R = unsigned char(CurrentPointPointer->rgb[0] / float(1 << 16) * 255);
 		NewData->PointCloudVertices[PointIndex].G = unsigned char(CurrentPointPointer->rgb[1] / float(1 << 16) * 255);
