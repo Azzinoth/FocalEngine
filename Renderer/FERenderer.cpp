@@ -3107,6 +3107,19 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 	return true;
 }
 
+// std::function has no operator==, and target<T>() only returns a value when T is the exact stored type.
+// Callbacks are registered as plain function pointers, so those are compared, any other callable is never considered equal.
+static bool AreBeforeRenderCallbacksEqual(const std::function<void(FEEntity*)>& First, const std::function<void(FEEntity*)>& Second)
+{
+	using CallbackFunctionPointer = void(*)(FEEntity*);
+	const CallbackFunctionPointer* FirstFunctionPointer = First.target<CallbackFunctionPointer>();
+	const CallbackFunctionPointer* SecondFunctionPointer = Second.target<CallbackFunctionPointer>();
+	if (FirstFunctionPointer == nullptr || SecondFunctionPointer == nullptr)
+		return false;
+
+	return *FirstFunctionPointer == *SecondFunctionPointer;
+}
+
 void FERenderer::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback)
 {
 	if (Entity == nullptr)
@@ -3115,14 +3128,14 @@ void FERenderer::AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FE
 	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
 	{
 		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
-		/*for (const auto& ExistingCallback : Callbacks)
+		for (const auto& ExistingCallback : Callbacks)
 		{
-			if (ExistingCallback.target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+			if (AreBeforeRenderCallbacksEqual(ExistingCallback, Callback))
 			{
-				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_ECS", FE_LOG_WARNING);
+				LOG.Add("FERenderer::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_RENDERING", FE_LOG_WARNING);
 				return;
 			}
-		}*/
+		}
 	}
 
 	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
@@ -3139,7 +3152,7 @@ void FERenderer::RemoveBeforeRenderCallback(FEEntity* Entity, std::function<void
 	std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
 	for (auto CallbackIterator = Callbacks.begin(); CallbackIterator != Callbacks.end(); ++CallbackIterator)
 	{
-		if (CallbackIterator->target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
+		if (AreBeforeRenderCallbacksEqual(*CallbackIterator, Callback))
 		{
 			Callbacks.erase(CallbackIterator);
 			return;
