@@ -36,14 +36,21 @@ void main()
     UnpackedColor.z = float((PackedColorBits & 0x00ff0000u) >> 16) / 255.0f;
     UnpackedColor.w = float(PackedColorBits >> 24) / 255.0f;
 
-	imageStore(OutputColorImage, PixelCoordinates, UnpackedColor);
-
 	// Write the depth information to the 32 bit depth buffer.
 	uint PackedDepthBits = uint(PixelDepthAndColor >> 32);
 	float LinearDepthValue = uintBitsToFloat(PackedDepthBits);
 
 	// Convert linear depth from custom depth buffer to non-linear depth.
 	float NormalizedDeviceDepth = ((FarPlane + NearPlane - (2.0 * NearPlane * FarPlane / LinearDepthValue)) / (FarPlane - NearPlane) + 1.0) / 2.0;
+
+	// Pixel without points: force exact 1.0 depth and transparent color, otherwise rounding in the formula above can make it override the scene background.
+	if (PackedDepthBits == floatBitsToUint(FarPlane))
+	{
+		NormalizedDeviceDepth = 1.0;
+		UnpackedColor = vec4(0.0);
+	}
+
+	imageStore(OutputColorImage, PixelCoordinates, UnpackedColor);
 	imageStore(OutputDepthImage, PixelCoordinates, vec4(NormalizedDeviceDepth));
 
 	// Using FarPlane bits as the max depth marker for this custom buffer.

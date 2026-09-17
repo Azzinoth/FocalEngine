@@ -50,7 +50,8 @@ void main()
 	vec4 ResultColor;
     float ResultDepth;
 	
-	if (GBufferLinearDepth < SecondLinearDepth)
+	// Second depth of 1.0 means no data there, keep the scene (a linear depth tie would otherwise pick the second source).
+	if (SecondNonLinearDepth >= 1.0 || GBufferLinearDepth < SecondLinearDepth)
 	{
         ResultColor = texture(GBufferAlbedoTexture, textureCoords);
         ResultDepth = GBufferNonLinearDepth;
