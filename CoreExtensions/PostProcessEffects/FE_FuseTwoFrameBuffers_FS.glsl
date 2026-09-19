@@ -34,8 +34,8 @@ void main()
 	vec4 ResultColor;
     float ResultDepth;
 	
-	// Second depth of 1.0 means no data there, keep the first (a linear depth tie would otherwise pick the second source).
-	if (bSecondDepthMapIsInvaild || SecondNonLinearDepth >= 1.0 || FirstLinearDepth < SecondLinearDepth)
+	// A depth of 1.0 means no data in that source, an empty first source keeps the second, an empty second source keeps the first.
+	if (bSecondDepthMapIsInvaild || (FirstNonLinearDepth < 1.0 && (SecondNonLinearDepth >= 1.0 || FirstLinearDepth < SecondLinearDepth)))
 	{
         ResultColor = FirstColor;
         ResultDepth = FirstNonLinearDepth;
