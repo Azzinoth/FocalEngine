@@ -22,6 +22,15 @@ endif()
 
 option(ENGINE_HEADERS_ONLY "Include only engine headers" OFF)
 option(FOCAL_ENGINE_ENABLE_TESTS "Enable tests" OFF)
+option(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR "Enable Leia 3D monitor support" OFF)
+
+if(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR)
+	set(LEIASR_SDKROOT "$ENV{LEIASR_SDKROOT}" CACHE PATH "Path to LeiaSR SDK root")
+	list(APPEND CMAKE_PREFIX_PATH "${LEIASR_SDKROOT}/lib/cmake")
+
+	find_package(simulatedreality REQUIRED)
+	find_package(srOpenGL REQUIRED)
+endif()
 
 set(TEST_SOURCE_FILES)
 
@@ -589,6 +598,11 @@ if(NOT ENGINE_HEADERS_ONLY)
 			PRIVATE
 				${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/jsoncpp
 	)
+
+	if(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR)
+		target_link_libraries(FocalEngine PRIVATE simulatedreality srOpenGL::srOpenGL)
+		target_compile_definitions(FocalEngine PUBLIC FOCAL_ENGINE_LEIA_3D_MONITOR)
+	endif()
 endif()
 
 if(FOCAL_ENGINE_ENABLE_TESTS)
