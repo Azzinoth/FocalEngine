@@ -2,6 +2,9 @@
 
 #include "Renderer\FERenderer.h"
 #include "..\SubSystems\FEOpenXR\FEOpenXR.h"
+#ifdef FOCAL_ENGINE_LEIA_3D_MONITOR
+	#include "SubSystems/Leia_3D/Leia_3D_Manager.h"
+#endif
 
 namespace FocalEngine
 {

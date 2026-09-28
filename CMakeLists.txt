@@ -396,6 +396,13 @@ file(GLOB OpenXR_SRC
 	"SubSystems/FEOpenXR/FEOpenXR.cpp"
 )
 
+if(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR)
+	file(GLOB LEIA_3D_SRC
+		"SubSystems/Leia_3D/Leia_3D_Manager.h"
+		"SubSystems/Leia_3D/Leia_3D_Manager.cpp"
+	)
+endif()
+
 # *************** THIRD_PARTY ***************
 
 file(GLOB jsoncpp_SRC
@@ -473,6 +480,12 @@ list(APPEND ALL_SOURCE_FILES
 			${stb_image_SRC}
 			${LAS_LAZ_SRC}
 )
+
+if(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR)
+	list(APPEND ALL_SOURCE_FILES
+		${LEIA_3D_SRC}
+	)
+endif()
 
 if(USE_STATIC_RUNTIME)
 	list(APPEND ALL_SOURCE_FILES
@@ -646,6 +659,9 @@ if(USE_STATIC_RUNTIME)
 	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
 endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
+if(FOCAL_ENGINE_ENABLE_LEIA_3D_MONITOR)
+	source_group("Source Files/SubSystems/Leia_3D" FILES ${LEIA_3D_SRC})
+endif()
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})

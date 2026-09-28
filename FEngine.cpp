@@ -190,6 +190,10 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	PREFAB_INSTANCE_SYSTEM;
 	VIRTUAL_UI_SYSTEM;
 	NATIVE_SCRIPT_SYSTEM;
+
+#ifdef FOCAL_ENGINE_LEIA_3D_MONITOR
+	LEIA_3D_MANAGER.InitializeContext(false);
+#endif
 }
 
 void FEngine::SetWindowCaption(const std::string NewCaption)
