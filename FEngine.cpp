@@ -169,6 +169,9 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
 	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { OpenXR_MANAGER.Shutdown(); });
+#ifdef FOCAL_ENGINE_LEIA_3D_MONITOR
+	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { LEIA_3D_MANAGER.Shutdown(); });
+#endif
 	CreateViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));
@@ -261,6 +264,9 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 void FEngine::Terminate()
 {
 	OpenXR_MANAGER.Shutdown();
+#ifdef FOCAL_ENGINE_LEIA_3D_MONITOR
+	LEIA_3D_MANAGER.Shutdown();
+#endif
 	APPLICATION.Close();
 }
 
