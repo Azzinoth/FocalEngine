@@ -30,6 +30,14 @@ namespace FocalEngine
 		float GetWorldUnitsPerMillimeter() const;
 		void SetWorldUnitsPerMillimeter(float NewValue);
 
+		// Eye frustums are drawn with debug lines, which are rendered for every camera, so they are also visible in 3D view itself.
+		bool AreEyeFrustumsVisible() const;
+		void SetEyeFrustumsVisible(bool bNewValue);
+
+		// Outlines of the physical display and of the 3D area on it, drawn with debug lines like eye frustums.
+		bool IsMonitorVisible() const;
+		void SetMonitorVisible(bool bNewValue);
+
 		FETexture* GetFinalResult() const;
 	private:
 		SINGLETON_PRIVATE_PART(Leia3DManager)
@@ -48,20 +56,23 @@ namespace FocalEngine
 		FEEntity* RightEye = nullptr;
 
 		float WorldUnitsPerMillimeter = 0.01f;
+		bool bEyeFrustumsVisible = false;
+		bool bMonitorVisible = false;
 		// Places eye cameras according to eye tracker and sets their off-axis projections.
 		void UpdateEyeCameras();
 		// EyePosition is in millimeters, relative to the center of the 3D area.
 		void UpdateEyeCamera(FEEntity* Eye, glm::vec3 EyePosition, float AreaWidth, float AreaHeight);
+		// Rectangle in the plane of the 3D monitor area.
+		void DebugDrawRectangleOnMonitor(glm::vec2 Center, glm::vec2 Size, glm::vec3 Color);
 
-		GLuint StereoViewsTexture = 0;
-		GLuint StereoViewsFramebuffer = 0;
-		// Used only as a read source, to copy each eye camera result into its half of StereoViewsTexture.
+		// Left eye view in the left half, right eye view in the right half.
+		FEFramebuffer* StereoViewsFramebuffer = nullptr;
 		GLuint EyeResultFramebuffer = 0;
 		int StereoViewsViewWidth = 0;
 		int StereoViewsViewHeight = 0;
 		void UpdateStereoViewsTexture(int ViewWidth, int ViewHeight);
 
-		// Same size as window framebuffer, so woven pixels have the same coordinates as they would have in window framebuffer.
+		// Same size as window framebuffer, so "3D" pixels have the same coordinates as they would have in window framebuffer.
 		// Its color attachment is the final result, framebuffer owns it and deletes it together with itself.
 		FEFramebuffer* FinalResultFramebuffer = nullptr;
 		void UpdateFinalResult(int Width, int Height);

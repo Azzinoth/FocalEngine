@@ -188,22 +188,16 @@ void Leia3DManager::Shutdown()
 		Weaver = nullptr;
 	}
 
-	if (StereoViewsFramebuffer != 0)
+	if (StereoViewsFramebuffer != nullptr)
 	{
-		FE_GL_ERROR(glDeleteFramebuffers(1, &StereoViewsFramebuffer));
-		StereoViewsFramebuffer = 0;
+		delete StereoViewsFramebuffer;
+		StereoViewsFramebuffer = nullptr;
 	}
 
 	if (EyeResultFramebuffer != 0)
 	{
 		FE_GL_ERROR(glDeleteFramebuffers(1, &EyeResultFramebuffer));
 		EyeResultFramebuffer = 0;
-	}
-
-	if (StereoViewsTexture != 0)
-	{
-		FE_GL_ERROR(glDeleteTextures(1, &StereoViewsTexture));
-		StereoViewsTexture = 0;
 	}
 
 	if (FinalResultFramebuffer != nullptr)
@@ -338,19 +332,23 @@ void Leia3DManager::Render()
 	if (LeftEyeResult->GetWidth() <= 0 || LeftEyeResult->GetHeight() <= 0)
 		return;
 
-	UpdateStereoViewsTexture(LeftEyeResult->GetWidth(), LeftEyeResult->GetHeight());
+	OpenGLStateBackup StateBackup;
+	StateBackup.Save();
 
-	// Copy each eye result into its half of StereoViewsTexture.
-	// glBlitFramebuffer also converts formats, camera result could be for example GL_RGBA16F.
-	GLint PreviousReadFramebuffer = 0;
-	GLint PreviousDrawFramebuffer = 0;
-	FE_GL_ERROR(glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &PreviousReadFramebuffer));
-	FE_GL_ERROR(glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &PreviousDrawFramebuffer));
+	// Creating textures and framebuffers also changes OpenGL state, so it is done after state is saved.
+	UpdateStereoViewsTexture(LeftEyeResult->GetWidth(), LeftEyeResult->GetHeight());
+	if (StereoViewsFramebuffer == nullptr)
+	{
+		StateBackup.Restore();
+		return;
+	}
+
+	// Copy each eye result into its half of the stereo views texture.
 	// Blit is affected by scissor test.
-	const GLboolean bScissorTestWasEnabled = glIsEnabled(GL_SCISSOR_TEST);
 	FE_GL_ERROR(glDisable(GL_SCISSOR_TEST));
 
-	FE_GL_ERROR(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, StereoViewsFramebuffer));
+	// Bind sets both draw and read framebuffers, so read framebuffer is replaced right after.
+	StereoViewsFramebuffer->Bind();
 	FE_GL_ERROR(glBindFramebuffer(GL_READ_FRAMEBUFFER, EyeResultFramebuffer));
 
 	FETexture* EyeResults[2] = { LeftEyeResult, RightEyeResult };
@@ -366,10 +364,8 @@ void Leia3DManager::Render()
 	// Eye result textures are owned by renderer, so they should not stay attached here.
 	FE_GL_ERROR(glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, 0, 0));
 
-	FE_GL_ERROR(glBindFramebuffer(GL_READ_FRAMEBUFFER, PreviousReadFramebuffer));
-	FE_GL_ERROR(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, PreviousDrawFramebuffer));
-	if (bScissorTestWasEnabled)
-		FE_GL_ERROR(glEnable(GL_SCISSOR_TEST));
+	StereoViewsFramebuffer->UnBind();
+	StateBackup.Restore();
 
 	RenderFinalResult();
 }
@@ -416,7 +412,7 @@ void Leia3DManager::RenderFinalResult()
 	FE_GL_ERROR(glDisable(GL_SCISSOR_TEST));
 	FE_GL_ERROR(glScissor(0, 0, FinalResultFramebuffer->GetWidth(), FinalResultFramebuffer->GetHeight()));
 
-	// Weaver draws nothing while window is occluded, and window could move since the previous frame, so old woven pixels should not stay.
+	// Weaver draws nothing while window is occluded, and window could move since the previous frame, so old "3D" pixels should not stay.
 	const GLfloat Black[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	FE_GL_ERROR(glClearBufferfv(GL_COLOR, 0, Black));
 
@@ -444,6 +440,26 @@ void Leia3DManager::SetWorldUnitsPerMillimeter(const float NewValue)
 	}
 
 	WorldUnitsPerMillimeter = NewValue;
+}
+
+bool Leia3DManager::AreEyeFrustumsVisible() const
+{
+	return bEyeFrustumsVisible;
+}
+
+void Leia3DManager::SetEyeFrustumsVisible(const bool bNewValue)
+{
+	bEyeFrustumsVisible = bNewValue;
+}
+
+bool Leia3DManager::IsMonitorVisible() const
+{
+	return bMonitorVisible;
+}
+
+void Leia3DManager::SetMonitorVisible(const bool bNewValue)
+{
+	bMonitorVisible = bNewValue;
 }
 
 void Leia3DManager::UpdateEyeCameras()
@@ -511,6 +527,22 @@ void Leia3DManager::UpdateEyeCameras()
 
 	UpdateEyeCamera(LeftEye, LeftEyePosition - AreaCenter, AreaWidth, AreaHeight);
 	UpdateEyeCamera(RightEye, RightEyePosition - AreaCenter, AreaWidth, AreaHeight);
+
+	// Camera system resets eye projections at the beginning of each frame, so frustums are drawn right after off-axis projections are set.
+	// Edges of both frustums go through the corners of the 3D monitor area, so that is where they cross.
+	if (bEyeFrustumsVisible)
+	{
+		RENDERER.DebugDrawFrustum(LeftEye, glm::vec3(1.0f, 0.2f, 0.2f));
+		RENDERER.DebugDrawFrustum(RightEye, glm::vec3(0.2f, 0.8f, 1.0f));
+	}
+
+	if (bMonitorVisible)
+	{
+		// AreaCenter is the center of the 3D monitor area relative to the center of the display, so the display center relative to the 3D area is the opposite.
+		const glm::vec2 DisplaySize = glm::vec2(Display->getPhysicalSizeWidth(), Display->getPhysicalSizeHeight()) * 10.0f;
+		DebugDrawRectangleOnMonitor(-glm::vec2(AreaCenter), DisplaySize, glm::vec3(0.8f));
+		DebugDrawRectangleOnMonitor(glm::vec2(0.0f), glm::vec2(AreaWidth, AreaHeight), glm::vec3(1.0f, 0.8f, 0.2f));
+	}
 }
 
 void Leia3DManager::UpdateEyeCamera(FEEntity* Eye, const glm::vec3 EyePosition, const float AreaWidth, const float AreaHeight)
@@ -541,38 +573,46 @@ void Leia3DManager::UpdateEyeCamera(FEEntity* Eye, const glm::vec3 EyePosition, 
 	EyeCamera.SetProjectionMatrix(glm::frustum(Left, Right, Bottom, Top, NearPlane, EyeCamera.GetFarPlane()));
 }
 
-void Leia3DManager::UpdateStereoViewsTexture(const int ViewWidth, const int ViewHeight)
+void Leia3DManager::DebugDrawRectangleOnMonitor(const glm::vec2 Center, const glm::vec2 Size, const glm::vec3 Color)
 {
-	if (StereoViewsTexture != 0 && ViewWidth == StereoViewsViewWidth && ViewHeight == StereoViewsViewHeight)
+	if (MonitorEntity == nullptr)
 		return;
 
-	if (StereoViewsTexture == 0)
-		FE_GL_ERROR(glGenTextures(1, &StereoViewsTexture));
+	// Plane of the 3D area is the local XY plane of MonitorEntity, like in UpdateEyeCamera.
+	const glm::mat4 MonitorWorldMatrix = MonitorEntity->GetComponent<FETransformComponent>().GetWorldMatrix();
+	const glm::vec2 HalfSize = Size / 2.0f;
+	const glm::vec2 LocalCorners[4] = { Center + glm::vec2(-HalfSize.x, -HalfSize.y),
+										Center + glm::vec2(HalfSize.x, -HalfSize.y),
+										Center + glm::vec2(HalfSize.x, HalfSize.y),
+										Center + glm::vec2(-HalfSize.x, HalfSize.y) };
 
-	if (StereoViewsFramebuffer == 0)
-		FE_GL_ERROR(glGenFramebuffers(1, &StereoViewsFramebuffer));
+	glm::vec3 WorldCorners[4];
+	for (int i = 0; i < 4; i++)
+		WorldCorners[i] = glm::vec3(MonitorWorldMatrix * glm::vec4(glm::vec3(LocalCorners[i], 0.0f) * WorldUnitsPerMillimeter, 1.0f));
+
+	for (int i = 0; i < 4; i++)
+		RENDERER.DebugDrawLine(FELine(WorldCorners[i], WorldCorners[(i + 1) % 4], Color, 0.2f));
+}
+
+void Leia3DManager::UpdateStereoViewsTexture(const int ViewWidth, const int ViewHeight)
+{
+	if (StereoViewsFramebuffer != nullptr && ViewWidth == StereoViewsViewWidth && ViewHeight == StereoViewsViewHeight)
+		return;
 
 	if (EyeResultFramebuffer == 0)
 		FE_GL_ERROR(glGenFramebuffers(1, &EyeResultFramebuffer));
 
-	// Left eye view in the left half, right eye view in the right half.
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, StereoViewsTexture));
-	FE_GL_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, ViewWidth * 2, ViewHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, 0));
+	delete StereoViewsFramebuffer;
+	StereoViewsFramebuffer = RESOURCE_MANAGER.CreateFramebuffer(0, ViewWidth * 2, ViewHeight);
+	if (StereoViewsFramebuffer == nullptr)
+		return;
 
-	GLint PreviousDrawFramebuffer = 0;
-	FE_GL_ERROR(glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &PreviousDrawFramebuffer));
-	FE_GL_ERROR(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, StereoViewsFramebuffer));
-	FE_GL_ERROR(glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, StereoViewsTexture, 0));
-	FE_GL_ERROR(glBindFramebuffer(GL_DRAW_FRAMEBUFFER, PreviousDrawFramebuffer));
+	FETexture* StereoViewsTexture = RESOURCE_MANAGER.CreateTexture(GL_RGBA8, GL_RGBA, ViewWidth * 2, ViewHeight, true, "Leia3DStereoViews");
+	StereoViewsFramebuffer->SetColorAttachment(StereoViewsTexture);
 
 	StereoViewsViewWidth = ViewWidth;
 	StereoViewsViewHeight = ViewHeight;
-	Weaver->setInputViewTexture(StereoViewsTexture, StereoViewsViewWidth, StereoViewsViewHeight, GL_RGBA8);
+	Weaver->setInputViewTexture(StereoViewsTexture->GetTextureID(), StereoViewsViewWidth, StereoViewsViewHeight, GL_RGBA8);
 }
 
 void Leia3DManager::UpdateFinalResult(const int Width, const int Height)
