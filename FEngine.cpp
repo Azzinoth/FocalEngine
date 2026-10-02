@@ -190,6 +190,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	PREFAB_INSTANCE_SYSTEM;
 	VIRTUAL_UI_SYSTEM;
 	NATIVE_SCRIPT_SYSTEM;
+	PLUGIN_MANAGER;
 }
 
 void FEngine::SetWindowCaption(const std::string NewCaption)

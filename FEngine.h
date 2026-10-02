@@ -2,6 +2,7 @@
 
 #include "Renderer\FERenderer.h"
 #include "..\SubSystems\FEOpenXR\FEOpenXR.h"
+#include "SubSystems\PluginSystem\FEPluginManager.h"
 
 namespace FocalEngine
 {

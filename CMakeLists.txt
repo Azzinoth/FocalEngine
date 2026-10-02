@@ -387,6 +387,11 @@ file(GLOB OpenXR_SRC
 	"SubSystems/FEOpenXR/FEOpenXR.cpp"
 )
 
+file(GLOB PluginSystem_SRC
+	"SubSystems/PluginSystem/FEPluginManager.h"
+	"SubSystems/PluginSystem/FEPluginManager.cpp"
+)
+
 # *************** THIRD_PARTY ***************
 
 file(GLOB jsoncpp_SRC
@@ -458,6 +463,7 @@ list(APPEND ALL_SOURCE_FILES
 			${Scene_Component_Systems_SRC}
 			${Scene_NativeScript_System_SRC}
 			${OpenXR_SRC}
+			${PluginSystem_SRC}
 			# *************** THIRD_PARTY ***************
 			${jsoncpp_SRC}
 			${lodepng_SRC}
@@ -632,6 +638,7 @@ if(USE_STATIC_RUNTIME)
 	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
 endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
+source_group("Source Files/SubSystems/PluginSystem" FILES ${PluginSystem_SRC})
 # *************** THIRD_PARTY ***************
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
