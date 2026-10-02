@@ -205,12 +205,12 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FEInput)
 
-		std::string AddKeyCallback(std::function<void(int, int, int, int)> UserOnKeyButtonCallback);
-		std::string AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback);
-		std::string AddMouseMoveCallback(std::function<void(double, double)> UserOnMouseMoveCallback);
+		FEUUID AddKeyCallback(std::function<void(int, int, int, int)> UserOnKeyButtonCallback);
+		FEUUID AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback);
+		FEUUID AddMouseMoveCallback(std::function<void(double, double)> UserOnMouseMoveCallback);
 
 		// TO-DO: Forcing users to manually remove callbacks to avoid crashes is poor design. Implement automatic removal.
-		void RemoveCallback(std::string CallbackID);
+		void RemoveCallback(FEUUID CallbackID);
 
 		void Update();
 
@@ -232,13 +232,13 @@ namespace FocalEngine
 		FEInputMouseState MouseState;
 
 		static void MouseButtonCallback(int Button, int Action, int Mods);
-		std::vector<std::pair<std::string, std::function<void(int, int, int)>>> UserOnMouseButtonCallbackFuncs;
+		std::vector<std::pair<FEUUID, std::function<void(int, int, int)>>> UserOnMouseButtonCallbackFuncs;
 
 		static void MouseMoveCallback(double Xpos, double Ypos);
-		std::vector<std::pair<std::string, std::function<void(double, double)>>> UserOnMouseMoveCallbackFuncs;
+		std::vector<std::pair<FEUUID, std::function<void(double, double)>>> UserOnMouseMoveCallbackFuncs;
 
 		static void KeyButtonCallback(int Key, int Scancode, int Action, int Mods);
-		std::vector<std::pair<std::string, std::function<void(int, int, int, int)>>> UserOnKeyButtonCallbackFuncs;
+		std::vector<std::pair<FEUUID, std::function<void(int, int, int, int)>>> UserOnKeyButtonCallbackFuncs;
 
 		static void MouseScrollCallback(double Xoffset, double Yoffset);
 		std::vector<void(*)(double, double)> ClientMouseScrollCallbacks;

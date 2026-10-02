@@ -160,43 +160,43 @@ void FEInput::Update()
 	KeyModifier = FEInputKeyModifier::FE_MOD_NONE;
 }
 
-std::string FEInput::AddKeyCallback(std::function<void(int, int, int, int)> UserOnKeyButtonCallback)
+FEUUID FEInput::AddKeyCallback(std::function<void(int, int, int, int)> UserOnKeyButtonCallback)
 {
 	if (UserOnKeyButtonCallback == nullptr)
 	{
 		LOG.Add("UserOnKeyButtonCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return "";
+		return UNIQUE_ID.GetNullUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUniqueHexID(), UserOnKeyButtonCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnKeyButtonCallback);
 	UserOnKeyButtonCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;
 }
 
-std::string FEInput::AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback)
+FEUUID FEInput::AddMouseButtonCallback(std::function<void(int, int, int)> UserOnMouseButtonCallback)
 {
 	if (UserOnMouseButtonCallback == nullptr)
 	{
 		LOG.Add("UserOnMouseButtonCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return "";
+		return UNIQUE_ID.GetNullUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUniqueHexID(), UserOnMouseButtonCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnMouseButtonCallback);
 	UserOnMouseButtonCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;
 }
 
-std::string FEInput::AddMouseMoveCallback(std::function<void(double, double)> UserOnMouseMoveCallback)
+FEUUID FEInput::AddMouseMoveCallback(std::function<void(double, double)> UserOnMouseMoveCallback)
 {
 	if (UserOnMouseMoveCallback == nullptr)
 	{
 		LOG.Add("UserOnMouseMoveCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return "";
+		return UNIQUE_ID.GetNullUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUniqueHexID(), UserOnMouseMoveCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnMouseMoveCallback);
 	UserOnMouseMoveCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;
@@ -321,7 +321,7 @@ FEInputMouseState FEInput::GetMouseState()
 	return MouseState;
 }
 
-void FEInput::RemoveCallback(std::string CallbackID)
+void FEInput::RemoveCallback(FEUUID CallbackID)
 {
 	for (int i = 0; i < UserOnMouseButtonCallbackFuncs.size(); i++)
 	{
