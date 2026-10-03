@@ -736,7 +736,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	}
 
 	std::string DLLModuleID = GetModuleID();
-	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
+	if (DLLModuleID.empty())
 	{
 		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to get proper DLLModuleID from DLL: " + DLLPath, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		FreeLibrary(DLLHandle);

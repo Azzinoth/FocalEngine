@@ -4255,13 +4255,15 @@ std::string FEResourceManager::ReadDLLModuleID(std::string DLLFilePath)
 	if (!GetModuleID)
 	{
 		LOG.Add("FEResourceManager::ReadDLLModuleID failed to get GetModuleID function from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return "";
 	}
 
 	std::string DLLModuleID = GetModuleID();
-	if (DLLModuleID.empty() || DLLModuleID.size() != 24)
+	if (DLLModuleID.empty())
 	{
 		LOG.Add("FEResourceManager::ReadDLLModuleID failed to get proper DLLModuleID from DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
 		return "";
 	}
 

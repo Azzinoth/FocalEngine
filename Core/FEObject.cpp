@@ -27,7 +27,7 @@ FEObject* FEObjectManager::GetFEObject(std::string ID)
 
 FEObject::FEObject(const FE_OBJECT_TYPE ObjectType, const std::string ObjectName)
 {
-	ID = APPLICATION.GetUniqueHexID();
+	ID = UNIQUE_ID.ToString(UNIQUE_ID.GetUUID());
 
 	Type = ObjectType;
 	Name = ObjectName;
