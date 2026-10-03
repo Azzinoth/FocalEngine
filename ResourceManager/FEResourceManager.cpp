@@ -4410,7 +4410,7 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 	File.read((char*)&DebugDllAssetIDSize, sizeof(size_t));
 	char* DebugDllAssetID = new char[DebugDllAssetIDSize];
 	File.read(DebugDllAssetID, DebugDllAssetIDSize);
-	NewNativeScriptModule->DebugDLLAssetID = std::string(DebugDllAssetID, DebugDllAssetIDSize);
+	NewNativeScriptModule->DebugDLLAssetID = UNIQUE_ID.FromString(std::string(DebugDllAssetID, DebugDllAssetIDSize));
 	delete[] DebugDllAssetID;
 
 	// Load DebugPDBAssetID.
@@ -4418,7 +4418,7 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 	File.read((char*)&DebugPdbAssetIDSize, sizeof(size_t));
 	char* DebugPdbAssetID = new char[DebugPdbAssetIDSize];
 	File.read(DebugPdbAssetID, DebugPdbAssetIDSize);
-	NewNativeScriptModule->DebugPDBAssetID = std::string(DebugPdbAssetID, DebugPdbAssetIDSize);
+	NewNativeScriptModule->DebugPDBAssetID = UNIQUE_ID.FromString(std::string(DebugPdbAssetID, DebugPdbAssetIDSize));
 	delete[] DebugPdbAssetID;
 
 	// Load ReleaseDLLAssetID.
@@ -4426,7 +4426,7 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 	File.read((char*)&ReleaseDllAssetIDSize, sizeof(size_t));
 	char* ReleaseDllAssetID = new char[ReleaseDllAssetIDSize];
 	File.read(ReleaseDllAssetID, ReleaseDllAssetIDSize);
-	NewNativeScriptModule->ReleaseDLLAssetID = std::string(ReleaseDllAssetID, ReleaseDllAssetIDSize);
+	NewNativeScriptModule->ReleaseDLLAssetID = UNIQUE_ID.FromString(std::string(ReleaseDllAssetID, ReleaseDllAssetIDSize));
 	delete[] ReleaseDllAssetID;
 
 	// Load CMakeFileAssetID.
@@ -4434,7 +4434,7 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 	File.read((char*)&CMakeFileAssetIDSize, sizeof(size_t));
 	char* CMakeFileAssetID = new char[CMakeFileAssetIDSize];
 	File.read(CMakeFileAssetID, CMakeFileAssetIDSize);
-	NewNativeScriptModule->CMakeFileAssetID = std::string(CMakeFileAssetID, CMakeFileAssetIDSize);
+	NewNativeScriptModule->CMakeFileAssetID = UNIQUE_ID.FromString(std::string(CMakeFileAssetID, CMakeFileAssetIDSize));
 	delete[] CMakeFileAssetID;
 
 	// Load ScriptAssetIDs.
@@ -4446,7 +4446,7 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 		File.read((char*)&ScriptAssetIDSize, sizeof(size_t));
 		char* ScriptAssetID = new char[ScriptAssetIDSize];
 		File.read(ScriptAssetID, ScriptAssetIDSize);
-		NewNativeScriptModule->ScriptAssetIDs.push_back(std::string(ScriptAssetID, ScriptAssetIDSize));
+		NewNativeScriptModule->ScriptAssetIDs.push_back(UNIQUE_ID.FromString(std::string(ScriptAssetID, ScriptAssetIDSize)));
 		delete[] ScriptAssetID;
 	}
 
@@ -4508,33 +4508,38 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	OBJECT_MANAGER.SaveFEObjectPart(File, NativeScriptModule);
 
 	// Save DebugDLLAssetID.
-	size_t DebugDllAssetIDSize = NativeScriptModule->DebugDLLAssetID.size();
+	const std::string DebugDllAssetID = UNIQUE_ID.IsNull(NativeScriptModule->DebugDLLAssetID) ? "" : UNIQUE_ID.ToString(NativeScriptModule->DebugDLLAssetID);
+	size_t DebugDllAssetIDSize = DebugDllAssetID.size();
 	File.write((char*)&DebugDllAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->DebugDLLAssetID.c_str(), DebugDllAssetIDSize);
+	File.write(DebugDllAssetID.c_str(), DebugDllAssetIDSize);
 
 	// Save DebugPDBAssetID.
-	size_t DebugPdbAssetIDSize = NativeScriptModule->DebugPDBAssetID.size();
+	const std::string DebugPdbAssetID = UNIQUE_ID.IsNull(NativeScriptModule->DebugPDBAssetID) ? "" : UNIQUE_ID.ToString(NativeScriptModule->DebugPDBAssetID);
+	size_t DebugPdbAssetIDSize = DebugPdbAssetID.size();
 	File.write((char*)&DebugPdbAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->DebugPDBAssetID.c_str(), DebugPdbAssetIDSize);
+	File.write(DebugPdbAssetID.c_str(), DebugPdbAssetIDSize);
 
 	// Save ReleaseDLLAssetID.
-	size_t ReleaseDllAssetIDSize = NativeScriptModule->ReleaseDLLAssetID.size();
+	const std::string ReleaseDllAssetID = UNIQUE_ID.IsNull(NativeScriptModule->ReleaseDLLAssetID) ? "" : UNIQUE_ID.ToString(NativeScriptModule->ReleaseDLLAssetID);
+	size_t ReleaseDllAssetIDSize = ReleaseDllAssetID.size();
 	File.write((char*)&ReleaseDllAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->ReleaseDLLAssetID.c_str(), ReleaseDllAssetIDSize);
+	File.write(ReleaseDllAssetID.c_str(), ReleaseDllAssetIDSize);
 
 	// Save CMakeFileAssetID.
-	size_t CMakeFileAssetIDSize = NativeScriptModule->CMakeFileAssetID.size();
+	const std::string CMakeFileAssetID = UNIQUE_ID.IsNull(NativeScriptModule->CMakeFileAssetID) ? "" : UNIQUE_ID.ToString(NativeScriptModule->CMakeFileAssetID);
+	size_t CMakeFileAssetIDSize = CMakeFileAssetID.size();
 	File.write((char*)&CMakeFileAssetIDSize, sizeof(size_t));
-	File.write(NativeScriptModule->CMakeFileAssetID.c_str(), CMakeFileAssetIDSize);
+	File.write(CMakeFileAssetID.c_str(), CMakeFileAssetIDSize);
 
 	// Save ScriptAssetIDs.
 	size_t ScriptAssetIDsSize = NativeScriptModule->ScriptAssetIDs.size();
 	File.write((char*)&ScriptAssetIDsSize, sizeof(size_t));
 	for (size_t i = 0; i < NativeScriptModule->ScriptAssetIDs.size(); i++)
 	{
-		size_t ScriptAssetIDSize = NativeScriptModule->ScriptAssetIDs[i].size();
+		const std::string ScriptAssetID = UNIQUE_ID.IsNull(NativeScriptModule->ScriptAssetIDs[i]) ? "" : UNIQUE_ID.ToString(NativeScriptModule->ScriptAssetIDs[i]);
+		size_t ScriptAssetIDSize = ScriptAssetID.size();
 		File.write((char*)&ScriptAssetIDSize, sizeof(size_t));
-		File.write(NativeScriptModule->ScriptAssetIDs[i].c_str(), ScriptAssetIDSize);
+		File.write(ScriptAssetID.c_str(), ScriptAssetIDSize);
 	}
 
 	// Save ScriptAssetPackage.
@@ -4705,7 +4710,7 @@ bool FEResourceManager::UnPackEngineHeadersAssetPackage(FEAssetPackage* AssetPac
 		// Now we are ready to write the file.
 		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, DirectoryPath + AssetPackageContent[i].Name))
 		{
-			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -4823,7 +4828,7 @@ bool FEResourceManager::UnPackEngineSourceFilesAssetPackage(FEAssetPackage* Asse
 		// Now we are ready to write the file.
 		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, DirectoryPath + AssetPackageContent[i].Name))
 		{
-			LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			LOG.Add("FEResourceManager::UnPackEngineSourceFilesAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -4908,7 +4913,7 @@ bool FEResourceManager::UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage
 		// Now we are ready to write the file.
 		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, DirectoryPath + AssetPackageContent[i].Name))
 		{
-			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -5106,7 +5111,7 @@ bool FEResourceManager::UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPac
 		// Now we are ready to write the file.
 		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, DirectoryPath + AssetPackageContent[i].Name))
 		{
-			LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Error exporting asset " + AssetPackageContent[i].ID + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			LOG.Add("FEResourceManager::UnPackPrivateEngineAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
 		}
 	}

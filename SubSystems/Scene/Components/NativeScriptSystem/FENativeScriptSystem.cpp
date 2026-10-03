@@ -640,7 +640,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	}
 
 	std::string PDBPath = "";
-	if (!Module->DebugPDBAssetID.empty())
+	if (!UNIQUE_ID.IsNull(Module->DebugPDBAssetID))
 	{
 		AssetInfo = Module->ScriptAssetPackage->GetAssetInfo(Module->DebugPDBAssetID);
 		if (!Module->ScriptAssetPackage->ExportAssetToFile(Module->DebugPDBAssetID, ExtractedFolderPath + AssetInfo.Name))

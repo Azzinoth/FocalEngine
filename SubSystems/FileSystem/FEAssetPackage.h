@@ -7,7 +7,7 @@ namespace FocalEngine
 {
 	struct FEAssetPackageAssetInfo
 	{
-		std::string ID;
+		FEUUID ID;
 		std::string Name;
 		std::string Type;
 		std::string Tag;
@@ -21,7 +21,7 @@ namespace FocalEngine
 
 	struct FEAssetPackageEntryInitializeData
 	{
-		std::string ID;
+		FEUUID ID;
 		std::string Name;
 		std::string Type;
 		std::string Tag;
@@ -29,7 +29,7 @@ namespace FocalEngine
 
 		bool IsEmpty()
 		{
-			return ID.empty() && Name.empty() && Type.empty() && Tag.empty() && Comment.empty();
+			return UNIQUE_ID.IsNull(ID) && Name.empty() && Type.empty() && Tag.empty() && Comment.empty();
 		}
 	};
 
@@ -41,7 +41,7 @@ namespace FocalEngine
 		size_t FormatVersion = 1;
 		size_t BuildTimeStamp = 0;
 
-		std::unordered_map<std::string, FEAssetPackageAssetInfo> Entries;
+		std::unordered_map<FEUUID, FEAssetPackageAssetInfo> Entries;
 	};
 
 	class FOCAL_ENGINE_API FEAssetPackage : public FEObject
@@ -58,29 +58,29 @@ namespace FocalEngine
 		bool SaveToFile(const std::string& FilePath);
 		unsigned char* ExportAsRawData(size_t& Size);
 
-		std::string ImportAssetFromFile(const std::string& FilePath, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
-		bool UpdateAssetFromFile(const std::string& ID, const std::string& FilePath);
-		bool ExportAssetToFile(const std::string& ID, const std::string& FilePath);
+		FEUUID ImportAssetFromFile(const std::string& FilePath, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
+		bool UpdateAssetFromFile(const FEUUID& ID, const std::string& FilePath);
+		bool ExportAssetToFile(const FEUUID& ID, const std::string& FilePath);
 
-		std::string ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
-		bool UpdateAssetFromMemory(const std::string& ID, unsigned char* RawData, size_t Size);
-		bool ExportAssetToMemory(const std::string& ID, unsigned char*& RawData, size_t& Size);
+		FEUUID ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
+		bool UpdateAssetFromMemory(const FEUUID& ID, unsigned char* RawData, size_t Size);
+		bool ExportAssetToMemory(const FEUUID& ID, unsigned char*& RawData, size_t& Size);
 
 		// Returns the ID of the asset.
 		// Accepts a FEObject* to get the asset data from.
-		std::string ImportAsset(FEObject* Object, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
+		FEUUID ImportAsset(FEObject* Object, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
 
-		bool IsAssetIDPresent(const std::string& ID);
-		bool RemoveAsset(const std::string& ID);
+		bool IsAssetIDPresent(const FEUUID& ID);
+		bool RemoveAsset(const FEUUID& ID);
 
-		FEAssetPackageAssetInfo GetAssetInfo(const std::string& ID);
+		FEAssetPackageAssetInfo GetAssetInfo(const FEUUID& ID);
 		std::vector<FEAssetPackageAssetInfo> GetEntryList();
-		char* GetAssetDataCopy(const std::string& ID);
-		
+		char* GetAssetDataCopy(const FEUUID& ID);
+
 		size_t GetBuildTimeStamp();
 		std::string GetBuildTimeStampAsString();
 
-		std::vector<std::string> GetAssetIDsByName(const std::string& Name);
+		std::vector<FEUUID> GetAssetIDsByName(const std::string& Name);
 	private:
 		// String that each asset package has to start with.
 		static std::string HeaderStartPhrase;
@@ -88,6 +88,7 @@ namespace FocalEngine
 		FEAssetPackageHeader Header;
 
 		void UpdateHeaderSize();
+		size_t CalculateHeaderSize();
 		// In memory representation of the asset package.
 		std::vector<char> Data;
 	};

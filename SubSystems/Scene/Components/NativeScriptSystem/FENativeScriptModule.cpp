@@ -68,7 +68,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	else
 	{
 		DebugDLLAssetID = ScriptAssetPackage->ImportAssetFromFile(DebugDLLFilePath);
-		if (DebugDLLAssetID.empty())
+		if (UNIQUE_ID.IsNull(DebugDLLAssetID))
 		{
 			LOG.Add("FENativeScriptModule::Update: Failed to import DebugDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
@@ -86,7 +86,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	else
 	{
 		DebugPDBAssetID = ScriptAssetPackage->ImportAssetFromFile(DebugPDBFilePath);
-		if (DebugPDBAssetID.empty())
+		if (UNIQUE_ID.IsNull(DebugPDBAssetID))
 		{
 			LOG.Add("FENativeScriptModule::Update: Failed to import DebugPDBAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
@@ -104,7 +104,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	else
 	{
 		ReleaseDLLAssetID = ScriptAssetPackage->ImportAssetFromFile(ReleaseDLLFilePath);
-		if (ReleaseDLLAssetID.empty())
+		if (UNIQUE_ID.IsNull(ReleaseDLLAssetID))
 		{
 			LOG.Add("FENativeScriptModule::Update: Failed to import ReleaseDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;

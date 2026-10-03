@@ -24,14 +24,14 @@ namespace FocalEngine
 	private:
 		FEAssetPackage* ScriptAssetPackage;
 
-		std::string DebugDLLAssetID;
-		std::string DebugPDBAssetID;
+		FEUUID DebugDLLAssetID;
+		FEUUID DebugPDBAssetID;
 
-		std::string ReleaseDLLAssetID;
-		std::string ReleasePDBAssetID;
+		FEUUID ReleaseDLLAssetID;
+		FEUUID ReleasePDBAssetID;
 
-		std::string CMakeFileAssetID;
-		std::vector<std::string> ScriptAssetIDs;
+		FEUUID CMakeFileAssetID;
+		std::vector<FEUUID> ScriptAssetIDs;
 
 		bool bIsLoadedToMemory = false;
 		HMODULE DLLHandle = nullptr;
