@@ -42,7 +42,7 @@ namespace FocalEngine
 		void SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith);
 
 		FEViewport* GetDefaultViewport();
-		FEViewport* GetViewport(std::string ViewportID);
+		FEViewport* GetViewport(FEUUID ViewportID);
 
 		bool IsVsyncEnabled();
 		void SetVsyncEnabled(bool NewValue);
@@ -56,12 +56,12 @@ namespace FocalEngine
 		void AddOnAfterUpdateCallback(std::function<void()> Callback);
 
 		// Returns Viewport ID
-		std::string CreateViewport(ImGuiWindow* ImGuiWindowPointer);
+		FEUUID CreateViewport(ImGuiWindow* ImGuiWindowPointer);
 		// Returns Viewport ID
-		std::string CreateViewport(FEWindow* FEWindowPointer);
+		FEUUID CreateViewport(FEWindow* FEWindowPointer);
 
-		void AddOnViewportMovedCallback(std::function<void(std::string)> Callback);
-		void AddOnViewportResizeCallback(std::function<void(std::string)> Callback);
+		void AddOnViewportMovedCallback(std::function<void(FEUUID)> Callback);
+		void AddOnViewportResizeCallback(std::function<void(FEUUID)> Callback);
 
 		unsigned long long GetCurrentFrameIndex();
 
@@ -89,8 +89,8 @@ namespace FocalEngine
 		std::vector<std::function<void()>> OnAfterUpdateCallbacks;
 
 		std::vector<FEViewport*> Viewports;
-		std::vector<std::function<void(std::string)>> OnViewportMovedCallbacks;
-		std::vector<std::function<void(std::string)>> OnViewportResizeCallbacks;
+		std::vector<std::function<void(FEUUID)>> OnViewportMovedCallbacks;
+		std::vector<std::function<void(FEUUID)>> OnViewportResizeCallbacks;
 
 		void ViewportCheckForModification();
 		void ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool& bMoved, bool& bResize);

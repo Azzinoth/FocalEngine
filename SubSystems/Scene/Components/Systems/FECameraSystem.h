@@ -19,8 +19,8 @@ namespace FocalEngine
 
 		void Update(const double DeltaTime);
 
-		std::unordered_map<std::string, std::vector<FEEntity*>> ViewPortToCameraEntities;
-		static void OnViewportResize(std::string ViewportID);
+		std::unordered_map<FEUUID, std::vector<FEEntity*>> ViewPortToCameraEntities;
+		static void OnViewportResize(FEUUID ViewportID);
 
 		static Json::Value CameraComponentToJson(FEEntity* Entity);
 		static void CameraComponentFromJson(FEEntity* Entity, Json::Value Root);
@@ -31,7 +31,7 @@ namespace FocalEngine
 		FEEntity* GetMainCamera(FEScene* Scene) const;
 		FEViewport* GetMainCameraViewport(FEScene* Scene) const;
 
-		bool SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID);
+		bool SetCameraViewport(FEEntity* CameraEntity, FEUUID ViewportID);
 
 		void IndividualUpdate(FEEntity* CameraEntity, const double DeltaTime);
 

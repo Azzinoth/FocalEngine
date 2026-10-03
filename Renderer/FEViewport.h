@@ -22,7 +22,7 @@ namespace FocalEngine
 
 		FEViewport();
 
-		std::string ID = "";
+		FEUUID ID;
 
 		int X = 0;
 		int Y = 0;
@@ -35,7 +35,7 @@ namespace FocalEngine
 		FEViewportType Type = FE_VIEWPORT_VIRTUAL;
 		void* WindowHandle = nullptr;
 	public:
-		std::string GetID() const;
+		FEUUID GetID() const;
 
 		FEViewportType GetType() const;
 

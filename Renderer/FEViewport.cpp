@@ -3,10 +3,10 @@ using namespace FocalEngine;
 
 FEViewport::FEViewport()
 {
-	ID = APPLICATION.GetUniqueHexID();
+	ID = UNIQUE_ID.GetUUID();
 }
 
-std::string FEViewport::GetID() const
+FEUUID FEViewport::GetID() const
 {
 	return ID;
 }

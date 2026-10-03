@@ -151,11 +151,11 @@ FEEntity* FECameraSystem::GetMainCamera(FEScene* Scene) const
 	return nullptr;
 }
 
-void FECameraSystem::OnViewportResize(std::string ViewportID)
+void FECameraSystem::OnViewportResize(FEUUID ViewportID)
 {
-	if (ViewportID.empty())
+	if (UNIQUE_ID.IsNull(ViewportID))
 	{
-		LOG.Add("FECameraSystem::OnViewportResize ViewportID is empty.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("FECameraSystem::OnViewportResize ViewportID is null.", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -250,7 +250,7 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	CameraComponent.PreviousFrameViewMatrix = CameraComponent.ViewMatrix;
 }
 
-bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string ViewportID)
+bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, FEUUID ViewportID)
 {
 	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
 	{
@@ -258,9 +258,9 @@ bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, std::string Viewp
 		return false;
 	}
 
-	if (ViewportID.empty())
+	if (UNIQUE_ID.IsNull(ViewportID))
 	{
-		LOG.Add("FECameraSystem::SetCameraViewport ViewportID is empty.", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("FECameraSystem::SetCameraViewport ViewportID is null.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return false;
 	}
 

@@ -356,7 +356,7 @@ void FEngine::AddOnAfterUpdateCallback(std::function<void()> Callback)
 	OnAfterUpdateCallbacks.push_back(Callback);
 }
 
-std::string FEngine::CreateViewport(ImGuiWindow* ImGuiWindowPointer)
+FEUUID FEngine::CreateViewport(ImGuiWindow* ImGuiWindowPointer)
 {
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
@@ -373,7 +373,7 @@ std::string FEngine::CreateViewport(ImGuiWindow* ImGuiWindowPointer)
 	return NewViewport->ID;
 }
 
-std::string FEngine::CreateViewport(FEWindow* FEWindowPointer)
+FEUUID FEngine::CreateViewport(FEWindow* FEWindowPointer)
 {
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
@@ -390,7 +390,7 @@ std::string FEngine::CreateViewport(FEWindow* FEWindowPointer)
 	return NewViewport->ID;
 }
 
-FEViewport* FEngine::GetViewport(std::string ViewportID)
+FEViewport* FEngine::GetViewport(FEUUID ViewportID)
 {
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
@@ -457,7 +457,7 @@ void FEngine::ViewportCheckForModificationIndividual(FEViewport* ViewPort, bool&
 	}
 }
 
-void FEngine::AddOnViewportMovedCallback(std::function<void(std::string)> Callback)
+void FEngine::AddOnViewportMovedCallback(std::function<void(FEUUID)> Callback)
 {
 	OnViewportMovedCallbacks.push_back(Callback);
 }
@@ -489,7 +489,7 @@ void FEngine::ViewportCheckForModification()
 	}
 }
 
-void FEngine::AddOnViewportResizeCallback(std::function<void(std::string)> Callback)
+void FEngine::AddOnViewportResizeCallback(std::function<void(FEUUID)> Callback)
 {
 	OnViewportResizeCallbacks.push_back(Callback);
 }
