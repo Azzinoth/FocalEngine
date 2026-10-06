@@ -156,7 +156,7 @@ bool FETransformSystem::ForceUpdateTransformComponent(FEEntity* Entity)
 	if (Entity == nullptr || !Entity->HasComponent<FETransformComponent>())
 		return false;
 
-	FENaiveSceneGraphNode* Node = Entity->GetParentScene()->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+	FENaiveSceneGraphNode* Node = Entity->GetParentScene()->SceneGraph.GetNodeByEntityID(Entity->GetID());
 	if (Node == nullptr)
 		return false;
 

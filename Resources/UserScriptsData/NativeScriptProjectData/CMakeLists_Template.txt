@@ -29,7 +29,7 @@ if(MSVC)
     # Always add /MP for multi-processor compilation
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 	# Define that engine should be used as shared library
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D FEBASICAPPLICATION_SHARED /D FOCAL_ENGINE_SHARED")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D FEBASICAPPLICATION_SHARED /D FOCAL_ENGINE_SHARED /D FE_GRAPHICS_API_OPENGL")
 endif()
 
 # Turn on the ability to create folders to organize projects (.vcproj)
@@ -73,6 +73,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/SubSystems/FEBasicApplication
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/SubSystems/FEBasicApplication/SubSystems
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/SubSystems/FEBasicApplication/ThirdParty
+    ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/SubSystems/FEBasicApplication/ThirdParty/stduuid
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/SubSystems/FEBasicApplication/ThirdParty/glew2/include
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine
     ${CMAKE_CURRENT_SOURCE_DIR}/SubSystems/FocalEngine/ThirdParty

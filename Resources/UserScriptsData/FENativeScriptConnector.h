@@ -110,22 +110,22 @@ using namespace FocalEngine;
 
 		std::unordered_map<std::string, FEScriptData>& GetRegistryForCurrentModule()
 		{
-			if (CurrentModuleID.empty())
+			if (UNIQUE_ID.IsNull(CurrentModuleID))
 				throw std::runtime_error("FEStaticCoreScriptManager::GetRegistryForCurrentModule Module ID is not set. Use SET_MODULE_ID macro before registering scripts.");
-			
+
 			return Registry[CurrentModuleID];
 		}
 
-		bool HaveModuleWithID(std::string& ModuleID)
+		bool HaveModuleWithID(const FEUUID& ModuleID)
 		{
 			return Registry.find(ModuleID) != Registry.end();
 		}
 
-		std::unordered_map<std::string, FEScriptData> GetRegistryForModuleWithID(std::string& ModuleID)
+		std::unordered_map<std::string, FEScriptData> GetRegistryForModuleWithID(const FEUUID& ModuleID)
 		{
 			if (!HaveModuleWithID(ModuleID))
 			{
-				LOG.Add("FEStaticCoreScriptManager::GetRegistryForModuleWithID: Module with ID " + ModuleID + " does not exist.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+				LOG.Add("FEStaticCoreScriptManager::GetRegistryForModuleWithID: Module with ID " + UNIQUE_ID.ToString(ModuleID) + " does not exist.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 				return std::unordered_map<std::string, FEScriptData>();
 			}
 
@@ -134,14 +134,14 @@ using namespace FocalEngine;
 
 		void SetCurrentModuleID(const std::string& ModuleID)
 		{
-			CurrentModuleID = ModuleID;
+			CurrentModuleID = UNIQUE_ID.FromString(ModuleID);
 		}
 
 	private:
 		SINGLETON_PRIVATE_PART(FEStaticCoreScriptManager)
 
-		std::string CurrentModuleID = "";
-		std::unordered_map<std::string, std::unordered_map<std::string, FEScriptData>> Registry;
+		FEUUID CurrentModuleID;
+		std::unordered_map<FEUUID, std::unordered_map<std::string, FEScriptData>> Registry;
 	};
 
 	#define STATIC_CORE_SCRIPT_MANAGER FEStaticCoreScriptManager::GetInstance()

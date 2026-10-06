@@ -516,7 +516,7 @@ bool FEMaterial::IsTextureInList(const FETexture* Texture) const
 		if (Textures[i] == nullptr)
 			continue;
 
-		if (Textures[i]->GetObjectID() == Texture->GetObjectID())
+		if (Textures[i]->GetID() == Texture->GetID())
 		{
 			bResult = true;
 			return bResult;

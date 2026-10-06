@@ -369,7 +369,7 @@ glm::mat4 FETransformComponent::GetWorldMatrix()
 	if (ParentEntity != nullptr)
 	{
 		FEScene* ParentScene = ParentEntity->GetParentScene();
-		FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(ParentEntity->GetObjectID());
+		FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(ParentEntity->GetID());
 		if (ParentNode != nullptr)
 		{
 			// If this is root node or parent is root node, then world space matrix is equal to local space matrix.

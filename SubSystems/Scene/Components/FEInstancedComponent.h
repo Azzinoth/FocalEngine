@@ -78,7 +78,7 @@ namespace FocalEngine
 		std::vector<glm::mat4> TransformedInstancedMatrices;
 		std::vector<float> InstancedAABBSizes;
 
-		std::string EntityIDWithGameModelComponent = "";
+		FEUUID EntityIDWithGameModelComponent;
 	};
 
 	struct FEInstancedComponent
@@ -125,7 +125,7 @@ namespace FocalEngine
 		bool bSelectionMode = false;
 
 		// Data for postponed spawning
-		std::string PostponedTerrainToSnapID = "";
+		FEUUID PostponedTerrainToSnapID;
 		int PostponedTerrainLayer = -1;
 		Json::Value PostponedModificationsData;
 

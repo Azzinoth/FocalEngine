@@ -230,6 +230,7 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEResourceManager.cpp"
 	"ResourceManager/FEResourceManager.inl"
 	"ResourceManager/FEResourceManager.h"
+	"ResourceManager/FEEngineResourceIDs.h"
 	"ResourceManager/Config.h"
 )
 

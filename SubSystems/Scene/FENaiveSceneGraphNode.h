@@ -15,8 +15,8 @@ namespace FocalEngine
 
 		bool AddChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
 		void DetachChild(FENaiveSceneGraphNode* Child, bool bPreserveWorldTransform = true);
-		FENaiveSceneGraphNode* GetChild(std::string ID);
-		FENaiveSceneGraphNode* GetChildByEntityID(std::string EntityID);
+		FENaiveSceneGraphNode* GetChild(const FEUUID& ID);
+		FENaiveSceneGraphNode* GetChildByEntityID(const FEUUID& EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetChildByName(std::string Name);
 		size_t GetImmediateChildrenCount();
 		size_t GetRecursiveChildCount();

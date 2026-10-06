@@ -159,8 +159,8 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	FEScene* CurrentScene = ActiveScenes[0];
 
 	if (OpenXR_MANAGER.VRRigEntity == nullptr ||
-		CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetObjectID()) == nullptr ||
-		CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID()) == nullptr)
+		CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetID()) == nullptr ||
+		CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetID()) == nullptr)
 		return;
 
 	FECameraComponent& CurrentCameraComponent = OpenXR_MANAGER.VRHeadsetEntity->GetComponent<FECameraComponent>();
@@ -177,7 +177,7 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	TransformComponent.SetQuaternion(EyeOrientation);
 	TransformComponent.ForceSetWorldMatrix(TransformComponent.GetLocalMatrix());
 	
-	TRANSFORM_SYSTEM.UpdateInternal(CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID()));
+	TRANSFORM_SYSTEM.UpdateInternal(CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetID()));
 	glm::mat4 WorldMatrix = TransformComponent.GetWorldMatrix();
 	CurrentCameraComponent.SetViewMatrix(glm::inverse(WorldMatrix));
 
@@ -186,7 +186,7 @@ void FEOpenXRRendering::OpenGLRenderLoop(const XrCompositionLayerProjectionView&
 	{
 		CAMERA_SYSTEM.SetMainCamera(OpenXR_MANAGER.VRHeadsetEntity);
 	}
-	else if (PreviousMainCamera->GetObjectID() != OpenXR_MANAGER.VRHeadsetEntity->GetObjectID())
+	else if (PreviousMainCamera->GetID() != OpenXR_MANAGER.VRHeadsetEntity->GetID())
 	{
 		CAMERA_SYSTEM.SetMainCamera(OpenXR_MANAGER.VRHeadsetEntity);
 	}

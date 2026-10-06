@@ -96,7 +96,7 @@ FEComponentsTools::FEComponentsTools()
 	GameModelComponentInfo.ToJson = [](FEEntity* ParentEntity) -> Json::Value {
 		Json::Value Root;
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
-		Root["ModelID"] = CurrentComponent.GetGameModel()->GetObjectID();
+		Root["ModelID"] = UNIQUE_ID.ToString(CurrentComponent.GetGameModel()->GetID());
 
 		Root["bCastShadows"] = CurrentComponent.IsCastShadows();
 		Root["bReceiveShadows"] = CurrentComponent.IsReceivingShadows();
@@ -108,7 +108,7 @@ FEComponentsTools::FEComponentsTools()
 	};
 
 	GameModelComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
-		ParentEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(Root["ModelID"].asString()));
+		ParentEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(UNIQUE_ID.FromString(Root["ModelID"].asString())));
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
 
 		CurrentComponent.SetCastShadows(Root["bCastShadows"].asBool());
@@ -218,7 +218,7 @@ std::vector<FEComponentTypeInfo> FEComponentsTools::GetComponentInfoList()
 	return Result;
 }
 
-std::vector<std::string> FEComponentsTools::GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo)
+std::vector<FEUUID> FEComponentsTools::GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo)
 {
 	if (FunctionsToGetEntityIDListWith.find(ComponentInfo.Type) == FunctionsToGetEntityIDListWith.end())
 	{

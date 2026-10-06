@@ -34,20 +34,20 @@ namespace FocalEngine
 		static Json::Value NativeScriptComponentToJson(FEEntity* Entity);
 		static void NativeScriptComponentFromJson(FEEntity* Entity, Json::Value Root);
 		static void DuplicateNativeScriptComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
-		void AddFailedToLoadData(FEEntity* Entity, std::string ModuleID, Json::Value RawData);
+		void AddFailedToLoadData(FEEntity* Entity, const FEUUID& ModuleID, Json::Value RawData);
 
-		bool InitializeComponentInternal(FEEntity* Entity, FENativeScriptComponent& NativeScriptComponent, std::string ActiveModuleID, FEScriptData& ScriptData);
-		FENativeScriptModule* GetActiveModule(std::string ModuleID);
+		bool InitializeComponentInternal(FEEntity* Entity, FENativeScriptComponent& NativeScriptComponent, const FEUUID& ActiveModuleID, FEScriptData& ScriptData);
+		FENativeScriptModule* GetActiveModule(const FEUUID& ModuleID);
 
 		void CopyVariableValuesInternal(FENativeScriptComponent* SourceComponent, FENativeScriptComponent* TargetComponent);
 
 		// Returns array of information about components associated with module.
 		std::vector<FEModuleScriptInstance> GetModuleScriptInstances(FENativeScriptModule* Module);
-		void GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID);
+		void GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, const FEUUID& ModuleID);
 
 		// Returns array of information about components associated with module that was not loaded properly.
 		std::vector<FEModuleScriptInstance> GetFailedToLoadModuleScriptInstances(FENativeScriptModule* Module);
-		void GetFailedToLoadModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID);
+		void GetFailedToLoadModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, const FEUUID& ModuleID);
 
 		// Function will check component for user altered variables, if any found, it will update list of components accordingly.
 		void CheckForAlteredVariables(std::vector<FEModuleScriptInstance>& ModuleScriptInstancesToUpdate);
@@ -58,7 +58,7 @@ namespace FocalEngine
 		// We should delete all script components associated with module.
 		void ComponentsClearOnModuleDeactivate(FENativeScriptModule* Module);
 
-		void RemoveComponentsFromScene(FEScene* Scene, std::string ModuleID);
+		void RemoveComponentsFromScene(FEScene* Scene, const FEUUID& ModuleID);
 
 		template<typename T>
 		T* CastScript(FENativeScriptCore* Core);
@@ -85,26 +85,26 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FENativeScriptSystem)
 
-		std::unordered_map<std::string, FENativeScriptModule*> ActiveModules;
+		std::unordered_map<FEUUID, FENativeScriptModule*> ActiveModules;
 
-		bool ActivateNativeScriptModule(std::string ModuleID);
+		bool ActivateNativeScriptModule(const FEUUID& ModuleID);
 		bool ActivateNativeScriptModule(FENativeScriptModule* Module);
 
-		bool DeactivateNativeScriptModule(std::string ModuleID);
+		bool DeactivateNativeScriptModule(const FEUUID& ModuleID);
 		bool DeactivateNativeScriptModule(FENativeScriptModule* Module);
 
-		void DeleteNativeScriptModule(std::string ModuleID);
+		void DeleteNativeScriptModule(const FEUUID& ModuleID);
 		void DeleteNativeScriptModule(FENativeScriptModule* Module);
 
 		bool ReloadDLL(FENativeScriptModule* ModuleToUpdate);
 
-		std::vector<std::string> GetActiveModuleIDList();
-		std::vector<std::string> GetActiveModuleScriptNameList(std::string ModuleID);
+		std::vector<FEUUID> GetActiveModuleIDList();
+		std::vector<std::string> GetActiveModuleScriptNameList(const FEUUID& ModuleID);
 
-		bool InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName);
+		bool InitializeScriptComponent(FEEntity* Entity, const FEUUID& ActiveModuleID, std::string ScriptName);
 
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(FEEntity* Entity);
-		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(std::string ModuleID, std::string ScriptName);
+		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(const FEUUID& ModuleID, std::string ScriptName);
 		
 		template<typename T>
 		T* CastToScriptClass(FENativeScriptComponent& Component);

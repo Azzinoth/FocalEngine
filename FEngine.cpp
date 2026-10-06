@@ -101,8 +101,8 @@ void FEngine::BeginFrame(const bool bInternalCall)
 	APPLICATION.GetMainWindow()->BeginFrame();
 
 #ifdef FE_DEBUG_ENABLED
-	std::vector<std::string> ShaderList = RESOURCE_MANAGER.GetShaderIDList();
-	const std::vector<std::string> TempList = RESOURCE_MANAGER.GetEnginePrivateShaderIDList();
+	std::vector<FEUUID> ShaderList = RESOURCE_MANAGER.GetShaderIDList();
+	const std::vector<FEUUID> TempList = RESOURCE_MANAGER.GetEnginePrivateShaderIDList();
 	for (size_t i = 0; i < TempList.size(); i++)
 	{
 		ShaderList.push_back(TempList[i]);

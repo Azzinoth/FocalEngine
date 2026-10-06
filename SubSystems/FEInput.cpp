@@ -165,10 +165,10 @@ FEUUID FEInput::AddKeyCallback(std::function<void(int, int, int, int)> UserOnKey
 	if (UserOnKeyButtonCallback == nullptr)
 	{
 		LOG.Add("UserOnKeyButtonCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnKeyButtonCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GenerateID(), UserOnKeyButtonCallback);
 	UserOnKeyButtonCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;
@@ -179,10 +179,10 @@ FEUUID FEInput::AddMouseButtonCallback(std::function<void(int, int, int)> UserOn
 	if (UserOnMouseButtonCallback == nullptr)
 	{
 		LOG.Add("UserOnMouseButtonCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnMouseButtonCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GenerateID(), UserOnMouseButtonCallback);
 	UserOnMouseButtonCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;
@@ -193,10 +193,10 @@ FEUUID FEInput::AddMouseMoveCallback(std::function<void(double, double)> UserOnM
 	if (UserOnMouseMoveCallback == nullptr)
 	{
 		LOG.Add("UserOnMouseMoveCallback is nullptr", "FE_INPUT", FE_LOG_WARNING);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
-	std::pair NewCallback = std::make_pair(UNIQUE_ID.GetUUID(), UserOnMouseMoveCallback);
+	std::pair NewCallback = std::make_pair(UNIQUE_ID.GenerateID(), UserOnMouseMoveCallback);
 	UserOnMouseMoveCallbackFuncs.push_back(NewCallback);
 
 	return NewCallback.first;

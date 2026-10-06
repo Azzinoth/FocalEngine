@@ -59,7 +59,7 @@ bool FEPrefabInstanceSystem::IsPrefabInstanceUnmodified(FEEntity* Entity)
 		return false;
 
 	FEScene* EntityScene = Entity->GetParentScene();
-	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetID());
 
 	// Because root node in prefab scene is always empty, and in working scene it's not, we need to skip it
 	std::vector<FENaiveSceneGraphNode*> ChildNodesToCheck = EntitySceneGraphNode->GetChildren();
@@ -96,7 +96,7 @@ FEEntity* FEPrefabInstanceSystem::GetParentPrefabInstanceIfAny(FEEntity* Entity)
 		return Entity;
 
 	FEScene* EntityScene = Entity->GetParentScene();
-	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
+	FENaiveSceneGraphNode* EntitySceneGraphNode = EntityScene->SceneGraph.GetNodeByEntityID(Entity->GetID());
 
 	FENaiveSceneGraphNode* ResultNode = EntityScene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FEPrefabInstanceComponent>(EntitySceneGraphNode);
 	if (ResultNode != nullptr)
@@ -115,7 +115,7 @@ Json::Value FEPrefabInstanceSystem::PrefabInstanceComponentToJson(FEEntity* Enti
 	}
 	FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 
-	Root["PrefabID"] = PrefabInstanceComponent.Prefab->GetObjectID();
+	Root["PrefabID"] = UNIQUE_ID.ToString(PrefabInstanceComponent.Prefab->GetID());
 
 	return Root;
 }
@@ -128,10 +128,10 @@ void FEPrefabInstanceSystem::PrefabInstanceComponentFromJson(FEEntity* Entity, J
 		return;
 	}
 
-	std::string PrefabID = Root["PrefabID"].asString();
-	if (PrefabID.empty())
+	const FEUUID PrefabID = UNIQUE_ID.FromString(Root["PrefabID"].asString());
+	if (UNIQUE_ID.IsNull(PrefabID))
 	{
-		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentFromJson PrefabID is empty", "FE_LOG_ECS", FE_LOG_WARNING);
+		LOG.Add("FEPrefabInstanceSystem::PrefabInstanceComponentFromJson PrefabID is null", "FE_LOG_ECS", FE_LOG_WARNING);
 		return;
 	}
 

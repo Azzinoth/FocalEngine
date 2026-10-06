@@ -13,7 +13,7 @@ namespace FocalEngine
 
 		bool bInternalAdd = false;
 
-		std::vector<std::pair<std::string, std::string>> EnitityIDListToInitialize;
+		std::vector<std::pair<FEUUID, FEUUID>> EnitityIDListToInitialize;
 
 		static void OnMyComponentAdded(FEEntity* Entity);
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
@@ -53,7 +53,7 @@ namespace FocalEngine
 		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
 
 		// FIX ME: That system is redundant, Renderer have similar one.
-		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
+		std::unordered_map<FEUUID, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 	public:
 		SINGLETON_PUBLIC_PART(FEInstancedSystem)
 
@@ -78,7 +78,7 @@ namespace FocalEngine
 		void SetIndividualSelectMode(FEEntity* EntityWithInstancedComponent, const bool NewValue);
 		void SetIndividualSelectMode(FEGameModelComponent& GameModelComponent, FEInstancedComponent& InstancedComponent, const bool NewValue);
 
-		FEEntity* GetEntityWithGameModelComponent(std::string EntityID);
+		FEEntity* GetEntityWithGameModelComponent(const FEUUID& EntityID);
 
 		void AddBeforeRenderCallback(FEEntity* Entity, std::function<void(FEEntity*)> Callback);
 

@@ -65,24 +65,24 @@ namespace FocalEngine
 		bool HasFlag(FESceneFlag Flag) const;
 
 		// Entity Management
-		FEEntity* GetEntity(std::string ID);
-		std::vector<std::string> GetEntityIDList();
+		FEEntity* GetEntity(const FEUUID& ID);
+		std::vector<FEUUID> GetEntityIDList();
 		std::vector<FEEntity*> GetEntityByName(std::string Name);
 		std::vector<FEEntity*> GetEntityByTagComponent(std::string Tag);
-		template<typename T> std::vector<std::string> GetEntityIDListWithComponent();
+		template<typename T> std::vector<FEUUID> GetEntityIDListWithComponent();
 		template<typename T> std::vector<FEEntity*> GetEntityListWithComponent();
 
-		FEEntity* CreateEntity(std::string Name = "", std::string ForceObjectID = "");
-		FEEntity* CreateEntityOrphan(std::string Name = "", std::string ForceObjectID = "");
+		FEEntity* CreateEntity(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
+		FEEntity* CreateEntityOrphan(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		FEEntity* CreateEntityFromJson(Json::Value Root);
 		
-		FEEntity* DuplicateEntity(std::string ID, std::string NewEntityName = "");
+		FEEntity* DuplicateEntity(const FEUUID& ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");
 		FEEntity* ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
-		void DeleteEntity(std::string ID);
+		void DeleteEntity(const FEUUID& ID);
 		void DeleteEntity(FEEntity* Entity);
 
-		FEAABB GetEntityAABB(std::string ID);
+		FEAABB GetEntityAABB(const FEUUID& ID);
 		FEAABB GetEntityAABB(FEEntity* Entity, bool bLocalAABB = false);
 		FEAABB GetSceneAABB(std::function<bool(FEEntity*)> Filter = nullptr);
 
@@ -103,19 +103,19 @@ namespace FocalEngine
 
 		// Internal Entity Management
 		FEEntity* GetEntityByEnTT(entt::entity ID);
-		void ClearEntityRecords(std::string EntityID, entt::entity EnttEntity);
-		FEEntity* CreateEntityInternal(std::string Name = "", std::string ForceObjectID = "");
+		void ClearEntityRecords(const FEUUID& EntityID, entt::entity EnttEntity);
+		FEEntity* CreateEntityInternal(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		FEEntity* DuplicateEntityInternal(FEEntity* SourceEntity, std::string NewEntityName = "");
 
 		// Asset Loading
 		std::vector<FEObject*> LoadGLTF(std::string FileName);
-		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNode& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID);
+		std::vector<FEObject*> AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNode& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const FEUUID& ParentID);
 
 		// Data Members
 		entt::registry Registry;
 		bool bIsSceneClearing = false;
 		std::unordered_map<entt::entity, FEEntity*> EnttToEntity;
-		std::unordered_map<std::string, FEEntity*> EntityMap;
+		std::unordered_map<FEUUID, FEEntity*> EntityMap;
 	};
 #include "FEScene.inl"
 }

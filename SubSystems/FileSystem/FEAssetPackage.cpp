@@ -29,21 +29,21 @@ FEUUID FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetP
 	if (FILE_SYSTEM.DoesDirectoryExist(FilePath))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Directories are not supported in asset packages: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
 	// First check if file exists.
 	if (!FILE_SYSTEM.DoesFileExist(FilePath))
 	{
 		LOG.Add("FEAssetPackage::AddFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
-	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GetUUID() : InitializeData.ID;
+	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GenerateID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
 	std::string NameToUse = InitializeData.IsEmpty() ? FILE_SYSTEM.GetFileName(FilePath) : InitializeData.Name.empty() ? FILE_SYSTEM.GetFileName(FilePath) : InitializeData.Name;
@@ -56,7 +56,7 @@ FEUUID FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetP
 	if (!File.is_open())
 	{
 		LOG.Add("FEAssetPackage::AddFile: Could not open file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
 	File.seekg(0, std::ios::end);
@@ -91,11 +91,11 @@ FEUUID FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetP
 
 FEUUID FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryInitializeData InitializeData)
 {
-	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GetUUID() : InitializeData.ID;
+	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GenerateID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
 	std::string NameToUse = InitializeData.IsEmpty() ? "" : InitializeData.Name;
@@ -130,14 +130,14 @@ FEUUID FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInitiali
 	if (Object == nullptr)
 	{
 		LOG.Add("FEAssetPackage::ImportAsset: Object is nullptr.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
-	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GetUUID() : InitializeData.ID;
+	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GenerateID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
 		LOG.Add("FEAssetPackage::ImportAsset: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return UNIQUE_ID.GetNullUUID();
+		return FEUUID();
 	}
 
 	std::string NameToUse = InitializeData.IsEmpty() ? Object->GetName() : InitializeData.Name.empty() ? Object->GetName() : InitializeData.Name;
@@ -291,11 +291,11 @@ FEUUID FEAssetPackage::ImportAsset(FEObject* Object, FEAssetPackageEntryInitiali
 		default:
 		{
 			LOG.Add("FEAssetPackage::ImportAsset: Object type not supported: " + Object->GetName(), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-			return UNIQUE_ID.GetNullUUID();
+			return FEUUID();
 		}
 	}
 
-	return UNIQUE_ID.GetNullUUID();
+	return FEUUID();
 }
 
 bool FEAssetPackage::RemoveAsset(const FEUUID& ID)

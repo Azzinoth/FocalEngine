@@ -155,7 +155,7 @@ namespace FocalEngine
 
 		bool CombineFrameBuffers(FEFramebuffer* FirstSource, FEFramebuffer* SecondSource, FEFramebuffer* Target);
 
-		void AddCameraPostRenderCallback(std::string CameraEntityID, std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)> Callback);
+		void AddCameraPostRenderCallback(const FEUUID& CameraEntityID, std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)> Callback);
 
 		void SetGLViewport(int X, int Y, int Width, int Height);
 		void SetGLViewport(glm::ivec4 ViewPortData);
@@ -244,9 +244,9 @@ namespace FocalEngine
 
 		void Init();
 
-		std::unordered_map<std::string, std::vector<std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)>>> CameraPostRenderCallbacks;
+		std::unordered_map<FEUUID, std::vector<std::function<void(FEEntity* CameraEntity, FETexture* RenderResult)>>> CameraPostRenderCallbacks;
 
-		std::unordered_map<std::string, FECameraRenderingData*> CameraRenderingDataMap;
+		std::unordered_map<FEUUID, FECameraRenderingData*> CameraRenderingDataMap;
 		FECameraRenderingData* CreateCameraRenderingData(FEEntity* CameraEntity);
 		void ForceCameraRenderingDataUpdate(FEEntity* CameraEntity);
 		
@@ -254,7 +254,7 @@ namespace FocalEngine
 
 		bool InitializeComputeShaderPointCloudRendering(FEEntity* CameraEntity);
 
-		std::unordered_map<std::string, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
+		std::unordered_map<FEUUID, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;
 
 		// *********** New Material System Getters ***********
 		FECameraRenderingData* CurrentCameraRenderingData = nullptr;

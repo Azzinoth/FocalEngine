@@ -39,44 +39,44 @@ FEScene* FENaiveSceneGraph::GetParentScene() const
 	return ParentScene;
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByID(std::string ID)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByID(const FEUUID& ID)
 {
-	if (ID == Root->GetObjectID())
+	if (ID == Root->GetID())
 		return Root;
 
 	return Root->GetChild(ID);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(std::string EntityID)
+FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(const FEUUID& EntityID)
 {
 	return Root->GetChildByEntityID(EntityID);
 }
 
-std::string FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
+FEUUID FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
 {
 	if (Entity == nullptr || Entity->GetParentScene() != ParentScene)
 	{
 		LOG.Add("AddNode called with null or foreign scene entity", "FE_SCENE_GRAPH", FE_LOG_ERROR);
-		return "";
+		return FEUUID();
 	}
 
 	FENaiveSceneGraphNode* NewNode = nullptr;
-	NewNode = GetNodeByEntityID(Entity->GetObjectID());
+	NewNode = GetNodeByEntityID(Entity->GetID());
 	if (NewNode != nullptr)
 	{
 		LOG.Add("Entity already exists in the scene graph", "FE_SCENE_GRAPH", FE_LOG_WARNING);
 		// Entity already exists in the scene graph
-		return NewNode->GetObjectID();
+		return NewNode->GetID();
 	}
 
 	NewNode = new FENaiveSceneGraphNode(Entity->GetName());
 	NewNode->Entity = Entity;
 	Root->AddChild(NewNode, bPreserveWorldTransform);
 
-	return NewNode->GetObjectID();
+	return NewNode->GetID();
 }
 
-bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform)
+bool FENaiveSceneGraph::MoveNode(const FEUUID& NodeID, const FEUUID& NewParentID, bool bPreserveWorldTransform)
 {
 	FENaiveSceneGraphNode* NodeToMove = GetNodeByID(NodeID);
 	FENaiveSceneGraphNode* NewParent = GetNodeByID(NewParentID);
@@ -109,7 +109,7 @@ bool FENaiveSceneGraph::MoveNode(std::string NodeID, std::string NewParentID, bo
 	return true;
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
+FENaiveSceneGraphNode* FENaiveSceneGraph::DuplicateNode(const FEUUID& NodeIDToDuplicate, const FEUUID& NewParentID, bool bAddCopyInName, std::function<bool(FEEntity*)> Filter)
 {
 	FENaiveSceneGraphNode* NodeToDuplicate = GetNodeByID(NodeIDToDuplicate);
 	FENaiveSceneGraphNode* NewParent = GetNodeByID(NewParentID);
@@ -364,7 +364,7 @@ Json::Value FENaiveSceneGraph::ToJson(std::function<bool(FEEntity*)> Filter)
 		if (Filter != nullptr && !Filter(AllNodes[i]->GetEntity()))
 			continue;
 
-		Root["Nodes"][AllNodes[i]->GetObjectID()] = AllNodes[i]->ToJson(Filter);
+		Root["Nodes"][UNIQUE_ID.ToString(AllNodes[i]->GetID())] = AllNodes[i]->ToJson(Filter);
 	}
 
 	return Root;

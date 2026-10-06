@@ -12,7 +12,7 @@ FESceneManager::FESceneManager()
 {
 }
 
-FEScene* FESceneManager::GetSceneByID(std::string ID)
+FEScene* FESceneManager::GetSceneByID(const FEUUID& ID)
 {
 	if (Scenes.find(ID) == Scenes.end())
 		return nullptr;
@@ -20,7 +20,7 @@ FEScene* FESceneManager::GetSceneByID(std::string ID)
 	return Scenes[ID];
 }
 
-FEScene* FESceneManager::GetSceneByNodeID(std::string NodeID)
+FEScene* FESceneManager::GetSceneByNodeID(const FEUUID& NodeID)
 {
 	for (auto& SceneIDAndPointer : Scenes)
 	{
@@ -32,7 +32,7 @@ FEScene* FESceneManager::GetSceneByNodeID(std::string NodeID)
 	return nullptr;
 }
 
-FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID, FESceneFlag Flags)
+FEScene* FESceneManager::CreateScene(std::string Name, const FEUUID& ForceObjectID, FESceneFlag Flags)
 {
 	FEScene* Scene = new FEScene();
 	Scene->Flags = Flags;
@@ -40,10 +40,10 @@ FEScene* FESceneManager::CreateScene(std::string Name, std::string ForceObjectID
 	if (!Name.empty())
 		Scene->SetName(Name);
 
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		Scene->SetID(ForceObjectID);
 
-	Scenes[Scene->GetObjectID()] = Scene;
+	Scenes[Scene->GetID()] = Scene;
 	if (Scene->HasFlag(FESceneFlag::Active))
 		RegisterAllComponentCallbacks(Scene);
 	
@@ -180,9 +180,18 @@ void FESceneManager::UnRegisterAllComponentCallbacks(FEScene* Scene)
 	Scene->Registry.on_update<FENativeScriptComponent>().disconnect<&FESceneManager::OnComponentUpdateWrapper<FENativeScriptComponent>>();
 }
 
-std::vector<std::string> FESceneManager::GetSceneIDList()
+std::vector<FEUUID> FESceneManager::GetSceneIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Scenes)
+	std::vector<FEUUID> Result;
+
+	auto SceneIterator = Scenes.begin();
+	while (SceneIterator != Scenes.end())
+	{
+		Result.push_back(SceneIterator->second->GetID());
+		SceneIterator++;
+	}
+
+	return Result;
 }
 
 std::vector<FEScene*> FESceneManager::GetSceneByName(const std::string Name)
@@ -201,12 +210,9 @@ std::vector<FEScene*> FESceneManager::GetSceneByName(const std::string Name)
 	return Result;
 }
 
-void FESceneManager::DeleteScene(std::string ID)
+void FESceneManager::DeleteScene(const FEUUID& ID)
 {
-	if (Scenes.find(ID) == Scenes.end())
-		return;
-
-	DeleteScene(Scenes[ID]);
+	DeleteScene(GetSceneByID(ID));
 }
 
 void FESceneManager::DeleteScene(FEScene* Scene)
@@ -214,7 +220,7 @@ void FESceneManager::DeleteScene(FEScene* Scene)
 	if (Scene == nullptr)
 		return;
 
-	std::string SceneID = Scene->GetObjectID();
+	const FEUUID SceneID = Scene->GetID();
 	delete Scene;
 
 	Scenes.erase(SceneID);
@@ -259,7 +265,7 @@ std::vector<FEScene*> FESceneManager::GetScenesByFlagMask(FESceneFlag FlagMask)
 	return Result;
 }
 
-FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
+FEScene* FESceneManager::DuplicateScene(const FEUUID& ID, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
 {
 	FEScene* SceneToDuplicate = GetSceneByID(ID);
 	if (SceneToDuplicate == nullptr)
@@ -270,7 +276,7 @@ FEScene* FESceneManager::DuplicateScene(std::string ID, std::string NewSceneName
 
 FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSceneName, std::function<bool(FEEntity*)> Filter, FESceneFlag Flags)
 {
-	FEScene* Result = CreateScene(NewSceneName, "", Flags);
+	FEScene* Result = CreateScene(NewSceneName, FEUUID(), Flags);
 
 	// Get children of the root entity and import them.
 	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
@@ -306,7 +312,7 @@ std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* S
 		FEEntity* NewChildEntity = TargetScene->ImportEntity(EntityToDuplicate, TargetParent, Filter);
 		if (NewChildEntity != nullptr)
 		{
-			FENaiveSceneGraphNode* NewChildNode = TargetScene->SceneGraph.GetNodeByEntityID(NewChildEntity->GetObjectID());
+			FENaiveSceneGraphNode* NewChildNode = TargetScene->SceneGraph.GetNodeByEntityID(NewChildEntity->GetID());
 			if (NewChildNode != nullptr)
 			{
 				Result.push_back(NewChildNode);
@@ -387,7 +393,7 @@ std::vector<FEEntity*> FESceneManager::InstantiatePrefab(FEPrefab* Prefab, FESce
 	{
 		// Create a new entity to hold the prefab instance and its scene graph nodes
 		FEEntity* NewEntity = Scene->CreateEntity(Prefab->GetName());
-		FENaiveSceneGraphNode* NewNode = Scene->SceneGraph.GetNodeByEntityID(NewEntity->GetObjectID());
+		FENaiveSceneGraphNode* NewNode = Scene->SceneGraph.GetNodeByEntityID(NewEntity->GetID());
 
 		std::vector<FENaiveSceneGraphNode*> PrefabNodes = ImportSceneAsNode(PrefabScene, Scene, NewNode);
 		if (!PrefabNodes.empty())
@@ -431,7 +437,7 @@ void FESceneManager::Clear()
 
 		if (SceneIterator->second->GetTag() == PREFAB_SCENE_DESCRIPTION_TAG)
 		{
-			std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+			std::vector<FEUUID> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
 			for (size_t i = 0; i < PrefabIDList.size(); i++)
 			{
 				FEPrefab* Prefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
@@ -469,7 +475,7 @@ void FESceneManager::Clear()
 
 FEScene* FESceneManager::GetStartingScene()
 {
-	if (StartingSceneID.empty() || GetSceneByID(StartingSceneID) == nullptr)
+	if (UNIQUE_ID.IsNull(StartingSceneID) || GetSceneByID(StartingSceneID) == nullptr)
 	{
 		std::vector<std::string> TagsToAvoid = RESOURCE_MANAGER.GetTagsThatWillPreventDeletion();
 		TagsToAvoid.push_back(PREFAB_SCENE_DESCRIPTION_TAG);
@@ -497,11 +503,11 @@ FEScene* FESceneManager::GetStartingScene()
 	return GetSceneByID(StartingSceneID);
 }
 
-bool FESceneManager::SetStartingScene(std::string SceneID)
+bool FESceneManager::SetStartingScene(const FEUUID& SceneID)
 {
-	if (GetSceneByID(StartingSceneID) == nullptr)
+	if (GetSceneByID(SceneID) == nullptr)
 	{
-		LOG.Add("FESceneManager::SetStartingScene: Scene with ID " + SceneID + " does not exist.", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("FESceneManager::SetStartingScene: Scene with ID " + UNIQUE_ID.ToString(SceneID) + " does not exist.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return false;
 	}
 

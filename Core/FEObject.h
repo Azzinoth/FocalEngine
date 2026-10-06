@@ -34,7 +34,7 @@ namespace FocalEngine
 
 	struct FEObjectLoadedData
 	{
-		std::string ID;
+		FEUUID ID;
 		FE_OBJECT_TYPE Type = FE_NULL;
 		std::string Tag;
 		std::string Name;
@@ -50,7 +50,7 @@ namespace FocalEngine
 		friend class FESceneManager;
 	public:
 		SINGLETON_PUBLIC_PART(FEObjectManager)
-		FEObject* GetFEObject(std::string ID);
+		FEObject* GetFEObject(const FEUUID& ID);
 		// Takes open file stream and saves the object part of the file.
 		void SaveFEObjectPart(std::fstream& OpenedFile, FEObject* Object);
 		// Takes open file stream and loads the object part of the file, also returns bytes read.
@@ -59,8 +59,8 @@ namespace FocalEngine
 		FEObjectLoadedData LoadFEObjectPart(char* FileData, int& CurrentShift);
 	private:
 		SINGLETON_PRIVATE_PART(FEObjectManager)
-		std::unordered_map<std::string, FEObject*> AllObjects;
-		std::vector<std::unordered_map<std::string, FEObject*>> ObjectsByType;
+		std::unordered_map<FEUUID, FEObject*> AllObjects;
+		std::vector<std::unordered_map<FEUUID, FEObject*>> ObjectsByType;
 	};
 
 #ifdef FOCAL_ENGINE_SHARED
@@ -173,7 +173,7 @@ namespace FocalEngine
 		FEObject(FE_OBJECT_TYPE ObjectType, std::string ObjectName);
 		~FEObject();
 
-		std::string GetObjectID() const;
+		FEUUID GetID() const;
 		FE_OBJECT_TYPE GetType() const;
 
 		std::string GetTag() const;
@@ -185,22 +185,22 @@ namespace FocalEngine
 		void SetName(std::string NewValue);
 		int GetNameHash() const;
 
-		void SetIDOfUnTyped(std::string NewValue);
+		void SetIDOfUnTyped(const FEUUID& NewValue);
 	private:
-		std::string ID;
+		FEUUID ID;
 		FE_OBJECT_TYPE Type = FE_NULL;
 		std::string Tag = "";
 		bool bDirtyFlag = false;
 
 		std::string Name;
 		int NameHash = 0;
-		void SetID(std::string NewValue);
+		void SetID(const FEUUID& NewValue);
 		void SetTag(std::string NewValue);
 		void SetType(FE_OBJECT_TYPE NewValue);
 
 	protected:
-		std::vector<std::string> CallListOnDeleteFEObject;
-		virtual void ProcessOnDeleteCallbacks(std::string DeletingFEObject);
+		std::vector<FEUUID> CallListOnDeleteFEObject;
+		virtual void ProcessOnDeleteCallbacks(const FEUUID& DeletingFEObject);
 	};
 }
 

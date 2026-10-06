@@ -17,17 +17,18 @@ FEObjectManager::~FEObjectManager()
 {
 }
 
-FEObject* FEObjectManager::GetFEObject(std::string ID)
+FEObject* FEObjectManager::GetFEObject(const FEUUID& ID)
 {
-	if (AllObjects.find(ID) != AllObjects.end())
-		return AllObjects[ID];
+	auto Iterator = AllObjects.find(ID);
+	if (Iterator != AllObjects.end())
+		return Iterator->second;
 
 	return nullptr;
 }
 
 FEObject::FEObject(const FE_OBJECT_TYPE ObjectType, const std::string ObjectName)
 {
-	ID = UNIQUE_ID.ToString(UNIQUE_ID.GetUUID());
+	ID = UNIQUE_ID.GenerateID();
 
 	Type = ObjectType;
 	Name = ObjectName;
@@ -50,7 +51,7 @@ FEObject::~FEObject()
 
 	for (size_t i = 0; i < CallListOnDeleteFEObject.size(); i++)
 	{
-		FEObject* ObjectToCall = OBJECT_MANAGER.AllObjects[CallListOnDeleteFEObject[i]];
+		FEObject* ObjectToCall = OBJECT_MANAGER.GetFEObject(CallListOnDeleteFEObject[i]);
 		if (ObjectToCall != nullptr)
 			ObjectToCall->ProcessOnDeleteCallbacks(ID);
 	}
@@ -59,7 +60,7 @@ FEObject::~FEObject()
 	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
 }
 
-std::string FEObject::GetObjectID() const
+FEUUID FEObject::GetID() const
 {
 	return ID;
 }
@@ -97,11 +98,17 @@ int FEObject::GetNameHash() const
 	return NameHash;
 }
 
-void FEObject::SetID(std::string NewValue)
+void FEObject::SetID(const FEUUID& NewValue)
 {
 	if (ID == NewValue)
 	{
 		LOG.Add("FEObject::SetID NewValue is the same as current ID, redundant call", "FE_LOG_GENERAL", FE_LOG_INFO);
+		return;
+	}
+
+	if (UNIQUE_ID.IsNull(NewValue))
+	{
+		LOG.Add("FEObject::SetID NewValue is null", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -126,8 +133,8 @@ void FEObject::SetID(std::string NewValue)
 	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
 	OBJECT_MANAGER.AllObjects.erase(ID);
 	ID = NewValue;
-	OBJECT_MANAGER.AllObjects[NewValue] = this;
-	OBJECT_MANAGER.ObjectsByType[Type][NewValue] = this;
+	OBJECT_MANAGER.AllObjects[ID] = this;
+	OBJECT_MANAGER.ObjectsByType[Type][ID] = this;
 }
 
 void FEObject::SetType(const FE_OBJECT_TYPE NewValue)
@@ -137,17 +144,23 @@ void FEObject::SetType(const FE_OBJECT_TYPE NewValue)
 	OBJECT_MANAGER.ObjectsByType[Type][ID] = this;
 }
 
-void FEObject::SetIDOfUnTyped(const std::string NewValue)
+void FEObject::SetIDOfUnTyped(const FEUUID& NewValue)
 {
 	if (Type != FE_NULL)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped type is FE_NULL", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FEObject::SetIDOfUnTyped Type is FE_NULL", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
 	if (ID == NewValue)
 	{
-		LOG.Add("FEObject::setIDOfUnTyped newID is the same as current ID, redundant call", "FE_LOG_GENERAL", FE_LOG_INFO);
+		LOG.Add("FEObject::SetIDOfUnTyped NewID is the same as current ID, redundant call", "FE_LOG_GENERAL", FE_LOG_INFO);
+		return;
+	}
+
+	if (UNIQUE_ID.IsNull(NewValue))
+	{
+		LOG.Add("FEObject::SetIDOfUnTyped NewValue is null", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return;
 	}
 
@@ -174,11 +187,11 @@ void FEObject::SetIDOfUnTyped(const std::string NewValue)
 	OBJECT_MANAGER.ObjectsByType[Type].erase(ID);
 	OBJECT_MANAGER.AllObjects.erase(ID);
 	ID = NewValue;
-	OBJECT_MANAGER.AllObjects[NewValue] = this;
-	OBJECT_MANAGER.ObjectsByType[Type][NewValue] = this;
+	OBJECT_MANAGER.AllObjects[ID] = this;
+	OBJECT_MANAGER.ObjectsByType[Type][ID] = this;
 }
 
-void FEObject::ProcessOnDeleteCallbacks(std::string DeletingFEObject)
+void FEObject::ProcessOnDeleteCallbacks(const FEUUID& DeletingFEObject)
 {
 
 }
@@ -207,9 +220,10 @@ void FEObjectManager::SaveFEObjectPart(std::fstream& OpenedFile, FEObject* Objec
 		return;
 	}
 
-	int ObjectIDSize = static_cast<int>(Object->GetObjectID().size() + 1);
+	const std::string ObjectID = UNIQUE_ID.ToString(Object->GetID());
+	int ObjectIDSize = static_cast<int>(ObjectID.size() + 1);
 	OpenedFile.write((char*)&ObjectIDSize, sizeof(int));
-	OpenedFile.write((char*)Object->GetObjectID().c_str(), sizeof(char) * ObjectIDSize);
+	OpenedFile.write((char*)ObjectID.c_str(), sizeof(char) * ObjectIDSize);
 
 	FE_OBJECT_TYPE ObjectType = Object->GetType();
 	OpenedFile.write((char*)&ObjectType, sizeof(FE_OBJECT_TYPE));
@@ -237,7 +251,7 @@ FEObjectLoadedData FEObjectManager::LoadFEObjectPart(std::fstream& OpenedFile)
 	OpenedFile.read((char*)&ObjectIDSize, sizeof(int));
 	char* ObjectID = new char[ObjectIDSize];
 	OpenedFile.read(ObjectID, sizeof(char) * ObjectIDSize);
-	Result.ID = ObjectID;
+	Result.ID = UNIQUE_ID.FromString(ObjectID);
 	delete[] ObjectID;
 
 	FE_OBJECT_TYPE ObjectType;
@@ -274,11 +288,10 @@ FEObjectLoadedData FEObjectManager::LoadFEObjectPart(char* FileData, int& Curren
 	int IDSize = *(int*)(&FileData[CurrentShift]);
 	CurrentShift += 4;
 
-	Result.ID.clear();
-	Result.ID.reserve(IDSize);
-	Result.ID.assign((char*)(&FileData[CurrentShift]), IDSize);
-	if (Result.ID[Result.ID.size() - 1] == '\0')
-		Result.ID.erase(Result.ID.size() - 1);
+	std::string ObjectID((char*)(&FileData[CurrentShift]), IDSize);
+	if (!ObjectID.empty() && ObjectID[ObjectID.size() - 1] == '\0')
+		ObjectID.erase(ObjectID.size() - 1);
+	Result.ID = UNIQUE_ID.FromString(ObjectID);
 	CurrentShift += IDSize;
 
 	Result.Type = FE_OBJECT_TYPE (*(int*)(&FileData[CurrentShift]));

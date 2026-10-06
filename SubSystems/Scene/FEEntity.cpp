@@ -16,7 +16,7 @@ entt::registry& FEEntity::GetRegistry()
 FEEntity::~FEEntity()
 {
 	ParentScene->Registry.destroy(EnTTEntity);
-	ParentScene->ClearEntityRecords(GetObjectID(), EnTTEntity);
+	ParentScene->ClearEntityRecords(GetID(), EnTTEntity);
 }
 
 Json::Value FEEntity::ToJson()
@@ -43,7 +43,7 @@ void FEEntity::FromJson(Json::Value Root)
 	FEObjectLoadedData Data = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
 
 	// ID and Name should be set before calling this function
-	if (Data.ID != GetObjectID())
+	if (Data.ID != GetID())
 	{
 		LOG.Add("FEEntity::FromJson: ID mismatch!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
@@ -111,7 +111,7 @@ FEScene* FEEntity::GetParentScene()
 
 bool FEEntity::IsVisible()
 {
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 	if (ThisNode != nullptr)
 	{
 		// Check all parent nodes for visibility, if any of them is invisible, the entity is invisible
@@ -195,8 +195,8 @@ bool FEEntity::AttachTo(FEEntity* Parent, bool bPreserveWorldTransform)
 		return false;
 	}
 
-	FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(Parent->GetObjectID());
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* ParentNode = ParentScene->SceneGraph.GetNodeByEntityID(Parent->GetID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 
 	if (ParentNode == nullptr || ThisNode == nullptr)
 	{
@@ -204,7 +204,7 @@ bool FEEntity::AttachTo(FEEntity* Parent, bool bPreserveWorldTransform)
 		return false;
 	}
 
-	return ParentScene->SceneGraph.MoveNode(ThisNode->GetObjectID(), ParentNode->GetObjectID(), bPreserveWorldTransform);
+	return ParentScene->SceneGraph.MoveNode(ThisNode->GetID(), ParentNode->GetID(), bPreserveWorldTransform);
 }
 
 bool FEEntity::AttachChild(FEEntity* Child, bool bPreserveWorldTransform)
@@ -226,7 +226,7 @@ bool FEEntity::Detach(bool bPreserveWorldTransform)
 		return false;
 	}
 
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 	if (ThisNode == nullptr)
 	{
 		LOG.Add("Could not find scene graph node for entity in FEEntity::Detach", "FE_SCENE_GRAPH", FE_LOG_ERROR);
@@ -235,7 +235,7 @@ bool FEEntity::Detach(bool bPreserveWorldTransform)
 
 	// Detaching means moving to the root node
 	FENaiveSceneGraphNode* RootNode = ParentScene->SceneGraph.GetRoot();
-	return ParentScene->SceneGraph.MoveNode(ThisNode->GetObjectID(), RootNode->GetObjectID(), bPreserveWorldTransform);
+	return ParentScene->SceneGraph.MoveNode(ThisNode->GetID(), RootNode->GetID(), bPreserveWorldTransform);
 }
 
 FEEntity* FEEntity::GetParentEntity() const
@@ -243,7 +243,7 @@ FEEntity* FEEntity::GetParentEntity() const
 	if (ParentScene == nullptr)
 		return nullptr;
 
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 	if (ThisNode == nullptr)
 		return nullptr;
 
@@ -261,7 +261,7 @@ std::vector<FEEntity*> FEEntity::GetChildEntities() const
 	if (ParentScene == nullptr)
 		return Result;
 
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 	if (ThisNode == nullptr)
 		return Result;
 
@@ -290,8 +290,8 @@ bool FEEntity::IsDescendantOf(FEEntity* PotentialAncestor) const
 	if (PotentialAncestor == nullptr || ParentScene == nullptr)
 		return false;
 
-	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetObjectID());
-	FENaiveSceneGraphNode* AncestorNode = ParentScene->SceneGraph.GetNodeByEntityID(PotentialAncestor->GetObjectID());
+	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
+	FENaiveSceneGraphNode* AncestorNode = ParentScene->SceneGraph.GetNodeByEntityID(PotentialAncestor->GetID());
 
 	if (ThisNode == nullptr || AncestorNode == nullptr)
 		return false;

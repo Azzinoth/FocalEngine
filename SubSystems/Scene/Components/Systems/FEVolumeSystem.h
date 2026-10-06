@@ -37,7 +37,7 @@ namespace FocalEngine
 		std::vector<FEShader*> VolumetricShaders;
 	private:
 
-		std::unordered_map<std::string, FEPerEntityTransferFunctionData> EntityTransferFunctionData;
+		std::unordered_map<FEUUID, FEPerEntityTransferFunctionData> EntityTransferFunctionData;
 
 		std::vector<FETransferFunctionColorPoint> DefaultTransferFunctionColorPoints;
 		std::vector<FETransferFunctionOpacityPoint> DefaultTransferFunctionOpacityPoints;

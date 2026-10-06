@@ -21,8 +21,8 @@ namespace FocalEngine
 
 		FEAABB GetAABB();
 
-		bool IsUsingMaterial(std::string MaterialID) const;
-		bool IsUsingGameModel(std::string GameModelID) const;
+		bool IsUsingMaterial(const FEUUID& MaterialID) const;
+		bool IsUsingGameModel(const FEUUID& GameModelID) const;
 
 		void SetScene(FEScene* Scene, bool bDeleteOldScene = true);
 		FEScene* GetScene() const;

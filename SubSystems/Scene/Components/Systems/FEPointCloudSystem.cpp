@@ -104,7 +104,7 @@ Json::Value FEPointCloudSystem::PointCloudComponentToJson(FEEntity* Entity)
 		return Root;
 	}
 
-	Root["Point cloud ID"] = PointCloudComponent.GetPointCloud()->GetObjectID();
+	Root["Point cloud ID"] = UNIQUE_ID.ToString(PointCloudComponent.GetPointCloud()->GetID());
 	
 	return Root;
 }
@@ -128,8 +128,7 @@ void FEPointCloudSystem::PointCloudComponentFromJson(FEEntity* Entity, Json::Val
 		return;
 	}
 
-	std::string PointCloudID = Root["Point cloud ID"].asCString();
-	FEPointCloud* PointCloud = RESOURCE_MANAGER.GetPointCloud(PointCloudID);
+	FEPointCloud* PointCloud = RESOURCE_MANAGER.GetPointCloud(UNIQUE_ID.FromString(Root["Point cloud ID"].asString()));
 
 	if (PointCloud != nullptr)
 		PointCloudComponent.SetPointCloud(PointCloud);

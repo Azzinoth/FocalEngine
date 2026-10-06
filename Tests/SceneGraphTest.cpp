@@ -9,25 +9,25 @@ TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Basic_Add_Find_Delete_Nodes", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	// Get root node from the scene returns valid node.
 	FENaiveSceneGraphNode* RootNode = CurrentScene->SceneGraph.GetRoot();
 	ASSERT_NE(RootNode, nullptr);
 
 	// Root node can be found by its ID.
-	FENaiveSceneGraphNode* RootNodeByID = CurrentScene->SceneGraph.GetNodeByID(RootNode->GetObjectID());
+	FENaiveSceneGraphNode* RootNodeByID = CurrentScene->SceneGraph.GetNodeByID(RootNode->GetID());
 	ASSERT_EQ(RootNode, RootNodeByID);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Root node can not be deleted.
 	CurrentScene->SceneGraph.DeleteNode(RootNode);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
-	ASSERT_NE(CurrentScene->SceneGraph.GetNodeByID(RootNode->GetObjectID()), nullptr);
+	ASSERT_NE(CurrentScene->SceneGraph.GetNodeByID(RootNode->GetID()), nullptr);
 
 	// Add a new node to the CurrentScene->
 	FEEntity* Node_A = CurrentScene->CreateEntity("Node_A");
 	// Temporary using old style entities.
-	std::string Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetID())->GetID();
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 1);
 
 	// New node could be found by its ID.
@@ -41,7 +41,7 @@ TEST(SceneGraph, Check_Basic_Add_Find_Delete_Nodes)
 	// Check that deleted node can not be found.
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(Node_A_ID), nullptr);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Basic_Add_Find_Delete_Nodes", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -50,7 +50,7 @@ TEST(SceneGraph, Check_For_Cycles)
 {
 	LOG.Add("Starting SceneGraphTest::Check_For_Cycles", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 
 	// Create a few nodes.
@@ -61,17 +61,17 @@ TEST(SceneGraph, Check_For_Cycles)
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_B->GetObjectID())->GetObjectID();
-	std::string Node_C_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_C->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_A->GetID())->GetID();
+	FEUUID Node_B_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_B->GetID())->GetID();
+	FEUUID Node_C_ID = CurrentScene->SceneGraph.GetNodeByEntityID(Node_C->GetID())->GetID();
 
 	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByID(Node_A_ID);
 	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByID(Node_B_ID);
 	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNodeByID(Node_C_ID);
 
 	// Create a valid hierarchy.
-	CurrentScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID());
-	CurrentScene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID());
+	CurrentScene->SceneGraph.MoveNode(NodeB->GetID(), NodeA->GetID());
+	CurrentScene->SceneGraph.MoveNode(NodeC->GetID(), NodeB->GetID());
 
 	// Check that there are no cycles in this valid hierarchy.
 	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
@@ -79,7 +79,7 @@ TEST(SceneGraph, Check_For_Cycles)
 	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeC));
 
 	// Try to create a cycle.
-	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetObjectID(), NodeC->GetObjectID()));
+	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetID(), NodeC->GetID()));
 
 	// Verify that the cycle was not created.
 	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
@@ -87,12 +87,12 @@ TEST(SceneGraph, Check_For_Cycles)
 	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeC));
 
 	// Try to create a self-cycle.
-	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeA->GetID(), NodeA->GetID()));
 
 	// Verify that the self-cycle was not created.
 	ASSERT_FALSE(CurrentScene->SceneGraph.HasCycle(NodeA));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_For_Cycles", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -101,7 +101,7 @@ TEST_F(SceneGraphTest, Check_GetNodeCount_AND_ChildCount_Functions)
 {
 	LOG.Add("Starting SceneGraphTest::Check_GetNodeCount_AND_ChildCount_Functions", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
@@ -169,7 +169,7 @@ TEST_F(SceneGraphTest, Check_GetNodeCount_AND_ChildCount_Functions)
 
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_GetNodeCount_AND_ChildCount_Functions", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -178,13 +178,13 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 {
 	LOG.Add("Starting SceneGraphTest::Check_MoveNode_Function", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// First simple move
-	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[10]->GetObjectID()));
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(Nodes[15]->GetID(), Nodes[10]->GetID()));
 	ASSERT_EQ(Nodes[5]->GetImmediateChildrenCount(), 0);
 	ASSERT_EQ(Nodes[5]->GetRecursiveChildCount(), 0);
 	ASSERT_EQ(Nodes[10]->GetImmediateChildrenCount(), 2);
@@ -205,7 +205,7 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 		size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
 		bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
-		if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
+		if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetID(), Nodes[RandomIndexOfNewParent]->GetID()))
 		{
 			// If node was moved, check if the counts are correct.
 			ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
@@ -236,7 +236,7 @@ TEST_F(SceneGraphTest, Check_MoveNode_Function)
 	}
 
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_MoveNode_Function", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -245,7 +245,7 @@ TEST_F(SceneGraphTest, Check_Node_AddChild_Function)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Node_AddChild_Function", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
@@ -262,7 +262,7 @@ TEST_F(SceneGraphTest, Check_Node_AddChild_Function)
 	Nodes[0]->AddChild(Nodes[1]);
 	ASSERT_EQ(Nodes[0]->GetImmediateChildrenCount(), 3);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Node_AddChild_Function", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -271,7 +271,7 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Extensive_Node_Manipulation", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
@@ -296,7 +296,7 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			for (size_t i = 0; i < AmountOfNodesToAdd; i++)
 			{
 				FEEntity* Entity = CurrentScene->CreateEntity("Node_" + std::to_string(CurrentScene->SceneGraph.GetNodeCount()));
-				Nodes.push_back(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+				Nodes.push_back(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetID()));
 			}
 
 			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount + AmountOfNodesToAdd);
@@ -314,7 +314,7 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 			size_t NewParentRecursiveChildCount = Nodes[RandomIndexOfNewParent]->GetRecursiveChildCount();
 
 			bool bParentWasDescendant = CurrentScene->SceneGraph.IsDescendant(Nodes[RandomIndexOfNewParent], Nodes[RandomIndexOfNodeToMove]);
-			if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetObjectID(), Nodes[RandomIndexOfNewParent]->GetObjectID()))
+			if (CurrentScene->SceneGraph.MoveNode(Nodes[RandomIndexOfNodeToMove]->GetID(), Nodes[RandomIndexOfNewParent]->GetID()))
 			{
 				// If node was moved, check if the counts are correct.
 				ASSERT_EQ(Nodes[RandomIndexOfNodeToMove]->GetImmediateChildrenCount(), NodeToMoveChildrenCount);
@@ -382,7 +382,7 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 
 	//test = CurrentScene->SceneGraph.ToJson().toStyledString();
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Extensive_Node_Manipulation", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -391,7 +391,7 @@ TEST_F(SceneGraphTest, Check_IsDescendant_Function)
 {
 	LOG.Add("Starting SceneGraphTest::Check_IsDescendant_Function", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
@@ -448,7 +448,7 @@ TEST_F(SceneGraphTest, Check_IsDescendant_Function)
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(Nodes[0], nullptr));
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(nullptr, nullptr));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_IsDescendant_Function", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -457,7 +457,7 @@ TEST_F(SceneGraphTest, Check_Position_Inheritance_Propagation)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Position_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -483,7 +483,7 @@ TEST_F(SceneGraphTest, Check_Position_Inheritance_Propagation)
 	//Output += "glm::dvec3 ExpectedScale = glm::dvec3(" + std::to_string(ActualScale.x) + ", " + std::to_string(ActualScale.y) + ", " + std::to_string(ActualScale.z) + ");\n";
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualPosition, ExpectedPosition));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Position_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -492,7 +492,7 @@ TEST_F(SceneGraphTest, Check_Rotation_Inheritance_Propagation)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Rotation_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -515,7 +515,7 @@ TEST_F(SceneGraphTest, Check_Rotation_Inheritance_Propagation)
 	GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildTransformMatrix, ActualPosition, ActualRotation, ActualScale);
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualRotation, ExpectedRotation));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Rotation_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -524,7 +524,7 @@ TEST_F(SceneGraphTest, Check_Scale_Inheritance_Propagation)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Scale_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
 	FEEntity* Entity_1 = reinterpret_cast<FEEntity*>(Nodes[1]->GetEntity());
@@ -546,7 +546,7 @@ TEST_F(SceneGraphTest, Check_Scale_Inheritance_Propagation)
 	GEOMETRY.DecomposeMatrixToTranslationRotationScale(ChildTransformMatrix, ActualPosition, ActualRotation, ActualScale);
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ActualScale, ExpectedScale));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Scale_Inheritance_Propagation", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -555,7 +555,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Tiny)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Tiny", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphTinySize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
@@ -598,7 +598,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Tiny)
 	
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Tiny", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -607,7 +607,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Small)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Small", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
@@ -636,7 +636,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Small)
 	glm::mat4 ActualMatrix = Entity_13->GetComponent<FETransformComponent>().GetWorldMatrix();
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Small", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -645,7 +645,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Medium)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Medium", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 
 	FEEntity* Entity_0 = reinterpret_cast<FEEntity*>(Nodes[0]->GetEntity());
@@ -676,7 +676,7 @@ TEST_F(SceneGraphTest, Check_Multi_Level_Inheritance_Propagation_Medium)
 	glm::mat4 ActualMatrix = Entity_25->GetComponent<FETransformComponent>().GetWorldMatrix();
 	ASSERT_TRUE(GEOMETRY.IsEpsilonEqual(ExpectedMatrix, ActualMatrix));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Multi_Level_Inheritance_Propagation_Medium", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -685,7 +685,7 @@ void SceneGraphTest::SetUp() {}
 
 void SceneGraphTest::TearDown()
 {
-	//SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	//SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 }
 
 std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraph(FEScene* SceneToWorkWith, size_t NodeCount)
@@ -694,7 +694,7 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraph(FEScene* 
 	for (size_t i = 0; i < NodeCount; i++)
 	{
 		FEEntity* Entity = SceneToWorkWith->CreateEntity("Node_" + std::to_string(i));
-		Nodes.push_back(SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity->GetObjectID()));
+		Nodes.push_back(SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity->GetID()));
 	}
 
 	return Nodes;
@@ -714,10 +714,10 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphTinySize(F
 	//              \
 	//               3
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[1]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[2]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetID(), Nodes[0]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetID(), Nodes[1]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetID(), Nodes[2]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetID(), Nodes[1]->GetID());
 
 	return Nodes;
 }
@@ -738,26 +738,26 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphSmallSize(
 	//      / \       / \
     //     11 12     13 14
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetID(), Nodes[0]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetID(), Nodes[0]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[1]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetObjectID(), Nodes[1]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[5]->GetObjectID(), Nodes[1]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetID(), Nodes[1]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[4]->GetID(), Nodes[1]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[5]->GetID(), Nodes[1]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[6]->GetObjectID(), Nodes[2]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[6]->GetID(), Nodes[2]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[7]->GetObjectID(), Nodes[3]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[8]->GetObjectID(), Nodes[4]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[7]->GetID(), Nodes[3]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[8]->GetID(), Nodes[4]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[9]->GetObjectID(), Nodes[6]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[10]->GetObjectID(), Nodes[6]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[9]->GetID(), Nodes[6]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[10]->GetID(), Nodes[6]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[11]->GetObjectID(), Nodes[7]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[12]->GetObjectID(), Nodes[7]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[11]->GetID(), Nodes[7]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[12]->GetID(), Nodes[7]->GetID());
 
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[9]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[9]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetID(), Nodes[9]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetID(), Nodes[9]->GetID());
 
 	return Nodes;
 }
@@ -779,39 +779,39 @@ std::vector<FENaiveSceneGraphNode*> SceneGraphTest::PopulateSceneGraphMediumSize
     //  23    24    25    26      27 28  29
 
 	// Level 1
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetObjectID(), Nodes[0]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetObjectID(), Nodes[0]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetObjectID(), Nodes[0]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[1]->GetID(), Nodes[0]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[2]->GetID(), Nodes[0]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[3]->GetID(), Nodes[0]->GetID());
 
 	// Level 2
 	for (int i = 1; i <= 3; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
-			SceneToWorkWith->SceneGraph.MoveNode(Nodes[3 * i + j + 1]->GetObjectID(), Nodes[i]->GetObjectID());
+			SceneToWorkWith->SceneGraph.MoveNode(Nodes[3 * i + j + 1]->GetID(), Nodes[i]->GetID());
 		}
 	}
 
 	// Level 3
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetObjectID(), Nodes[4]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetObjectID(), Nodes[4]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[15]->GetObjectID(), Nodes[5]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[16]->GetObjectID(), Nodes[7]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[17]->GetObjectID(), Nodes[8]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[18]->GetObjectID(), Nodes[9]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[19]->GetObjectID(), Nodes[10]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[20]->GetObjectID(), Nodes[11]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[21]->GetObjectID(), Nodes[12]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[22]->GetObjectID(), Nodes[12]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[13]->GetID(), Nodes[4]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[14]->GetID(), Nodes[4]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[15]->GetID(), Nodes[5]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[16]->GetID(), Nodes[7]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[17]->GetID(), Nodes[8]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[18]->GetID(), Nodes[9]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[19]->GetID(), Nodes[10]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[20]->GetID(), Nodes[11]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[21]->GetID(), Nodes[12]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[22]->GetID(), Nodes[12]->GetID());
 
 	// Level 4
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[23]->GetObjectID(), Nodes[13]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[24]->GetObjectID(), Nodes[15]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[25]->GetObjectID(), Nodes[16]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[26]->GetObjectID(), Nodes[18]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[27]->GetObjectID(), Nodes[20]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[28]->GetObjectID(), Nodes[21]->GetObjectID());
-	SceneToWorkWith->SceneGraph.MoveNode(Nodes[29]->GetObjectID(), Nodes[22]->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[23]->GetID(), Nodes[13]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[24]->GetID(), Nodes[15]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[25]->GetID(), Nodes[16]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[26]->GetID(), Nodes[18]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[27]->GetID(), Nodes[20]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[28]->GetID(), Nodes[21]->GetID());
+	SceneToWorkWith->SceneGraph.MoveNode(Nodes[29]->GetID(), Nodes[22]->GetID());
 
 	return Nodes;
 }
@@ -839,8 +839,8 @@ void SceneGraphTest::TestTransformationComponentAfterChildAdded(FEScene* SceneTo
 	}
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetID())->GetID();
+	FEUUID Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetID())->GetID();
 
 	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
 
@@ -930,8 +930,8 @@ void SceneGraphTest::TestTransformationAfterChildAdded(FEScene* SceneToWorkWith,
 	Entity_B->GetComponent<FETransformComponent>().SetScale(InitialChildTransform.GetScale());
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetID())->GetID();
+	FEUUID Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetID())->GetID();
 
 	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
 
@@ -988,11 +988,11 @@ void SceneGraphTest::TestTransformationComponentAfterChildChangedParent(FEScene*
 	}
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetID())->GetID();
+	FEUUID Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetID())->GetID();
 
 	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
-	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetID());
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -1034,11 +1034,11 @@ void SceneGraphTest::TestTransformationAfterChildChangedParent(FEScene* SceneToW
 	Entity_B->GetComponent<FETransformComponent>().SetScale(InitialChildTransform.GetScale());
 
 	// Temporary using old style entities.
-	std::string Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetObjectID())->GetObjectID();
-	std::string Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetObjectID())->GetObjectID();
+	FEUUID Node_A_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_A->GetID())->GetID();
+	FEUUID Node_B_ID = SceneToWorkWith->SceneGraph.GetNodeByEntityID(Entity_B->GetID())->GetID();
 
 	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, Node_A_ID);
-	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetObjectID());
+	SceneToWorkWith->SceneGraph.MoveNode(Node_B_ID, SceneToWorkWith->SceneGraph.GetRoot()->GetID());
 
 	ASSERT_TRUE(ValidateTransformConsistency(Entity_B->GetComponent<FETransformComponent>()));
 
@@ -1061,7 +1061,7 @@ TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Basic_Transformations_After_Child_Added", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 
 	TestTransformationComponentAfterChildAdded(CurrentScene, "POSITION", glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.0f, -1.0f, -1.0f));
 	TestTransformationComponentAfterChildAdded(CurrentScene, "POSITION", glm::vec3(-34.6f, 20.4f, -23.5f), glm::vec3(4.5f, -2.7f, -13.3f));
@@ -1105,7 +1105,7 @@ TEST_F(SceneGraphTest, Check_Basic_Transformations_After_Child_Added)
 
 	TestTransformationAfterChildChangedParent(CurrentScene, ParentTransform, ChildTransform);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Basic_Transformations_After_Child_Added", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1114,22 +1114,22 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Save_Load_Simple", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Save IDs of the entities
-	std::vector<std::string> EntityIDs;
+	std::vector<FEUUID> EntityIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetID());
 	}
 
 	// Save IDs of the nodes
-	std::vector<std::string> NodeIDs;
+	std::vector<FEUUID> NodeIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		NodeIDs.push_back(Node->GetObjectID());
+		NodeIDs.push_back(Node->GetID());
 	}
 
 	// Save the scene
@@ -1167,7 +1167,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 
 	// Retrieve the nodes with IDs of original nodes.
 	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
-	for (const std::string& NodeID : NodeIDs)
+	for (const FEUUID& NodeID : NodeIDs)
 	{
 		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNodeByID(NodeID));
 		ASSERT_NE(LoadedNodes.back(), nullptr);
@@ -1176,7 +1176,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	// Check that scene nodes bound to correct entities.
 	for (size_t i = 0; i < 30; i++)
 	{
-		ASSERT_EQ(LoadedNodes[i]->GetEntity()->GetObjectID(), EntityIDs[i]);
+		ASSERT_EQ(LoadedNodes[i]->GetEntity()->GetID(), EntityIDs[i]);
 	}
 
 	// Check if the hierarchy is correct.
@@ -1224,7 +1224,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Save_Load_Simple", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1233,22 +1233,22 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Save_Load_Simple_2", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Save IDs of the entities
-	std::vector<std::string> EntityIDs;
+	std::vector<FEUUID> EntityIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetID());
 	}
 
 	// Save IDs of the nodes
-	std::vector<std::string> NodeIDs;
+	std::vector<FEUUID> NodeIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		NodeIDs.push_back(Node->GetObjectID());
+		NodeIDs.push_back(Node->GetID());
 	}
 
 	// Save the scene
@@ -1263,7 +1263,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	SceneFile << JsonFile;
 	SceneFile.close();
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 	Nodes.clear();
 	CurrentScene = SCENE_MANAGER.CreateScene("TestScene_2");
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
@@ -1286,7 +1286,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 
 	// Retrieve the nodes with IDs of original nodes.
 	std::vector<FENaiveSceneGraphNode*> LoadedNodes;
-	for (const std::string& NodeID : NodeIDs)
+	for (const FEUUID& NodeID : NodeIDs)
 	{
 		LoadedNodes.push_back(CurrentScene->SceneGraph.GetNodeByID(NodeID));
 		ASSERT_NE(LoadedNodes.back(), nullptr);
@@ -1295,7 +1295,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	// Check that scene nodes bound to correct entities.
 	for (size_t i = 0; i < 30; i++)
 	{
-		ASSERT_EQ(LoadedNodes[i]->GetEntity()->GetObjectID(), EntityIDs[i]);
+		ASSERT_EQ(LoadedNodes[i]->GetEntity()->GetID(), EntityIDs[i]);
 	}
 
 	// Check if the hierarchy is correct.
@@ -1343,7 +1343,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[23], LoadedNodes[24]));
 	ASSERT_FALSE(CurrentScene->SceneGraph.IsDescendant(LoadedNodes[24], LoadedNodes[23]));
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Save_Load_Simple_2", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1428,7 +1428,7 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 		FEEntity* ImportedEntity = DestinationScene->ImportEntity((*SourceNodes)[RandomIndexOfNodeToMove]->GetEntity(), (*DestinationNodes)[RandomIndexOfNewParent]);
 		FENaiveSceneGraphNode* ImportedNode = nullptr;
 		if (ImportedEntity)
-			ImportedNode = DestinationScene->SceneGraph.GetNodeByEntityID(ImportedEntity->GetObjectID());
+			ImportedNode = DestinationScene->SceneGraph.GetNodeByEntityID(ImportedEntity->GetID());
 
 		if (ImportedNode)
 		{
@@ -1469,8 +1469,8 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 
 	ASSERT_EQ(FirstScene->SceneGraph.GetNodeCount(), FirstNodeCount);
 	ASSERT_EQ(SecondScene->SceneGraph.GetNodeCount(), SecondNodeCount);
-	SCENE_MANAGER.DeleteScene(FirstScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SecondScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(FirstScene->GetID());
+	SCENE_MANAGER.DeleteScene(SecondScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_SceneNodes_Import", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1479,28 +1479,28 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 {
 	LOG.Add("Starting SceneGraphTest::Check_Delete_Nodes_and_Entities", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Save IDs of the entities
-	std::vector<std::string> EntityIDs;
+	std::vector<FEUUID> EntityIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetID());
 	}
 
 	// Save IDs of the nodes
-	std::vector<std::string> NodeIDs;
+	std::vector<FEUUID> NodeIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		NodeIDs.push_back(Node->GetObjectID());
+		NodeIDs.push_back(Node->GetID());
 	}
 
 	int NodeCount = 30;
 	// ************ Delete entity without children ************
-	std::string EntityToDeleteID = Nodes[27]->GetEntity()->GetObjectID();
-	std::string NodeToDeleteID = Nodes[27]->GetObjectID();
+	FEUUID EntityToDeleteID = Nodes[27]->GetEntity()->GetID();
+	FEUUID NodeToDeleteID = Nodes[27]->GetID();
 
 	ASSERT_EQ(Nodes[20]->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
@@ -1519,11 +1519,11 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
 	// ************ Delete entity with one children ************
-	EntityToDeleteID = Nodes[16]->GetEntity()->GetObjectID();
-	NodeToDeleteID = Nodes[16]->GetObjectID();
+	EntityToDeleteID = Nodes[16]->GetEntity()->GetID();
+	NodeToDeleteID = Nodes[16]->GetID();
 
-	std::string ChildEntityToDeleteID = Nodes[25]->GetEntity()->GetObjectID();
-	std::string ChildNodeToDeleteID = Nodes[25]->GetObjectID();
+	FEUUID ChildEntityToDeleteID = Nodes[25]->GetEntity()->GetID();
+	FEUUID ChildNodeToDeleteID = Nodes[25]->GetID();
 
 	CurrentScene->DeleteEntity(Nodes[16]->GetEntity());
 	
@@ -1540,17 +1540,17 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
 	// ************ Delete entity that have subtree as children ************
-	EntityToDeleteID = Nodes[1]->GetEntity()->GetObjectID();
-	NodeToDeleteID = Nodes[1]->GetObjectID();
+	EntityToDeleteID = Nodes[1]->GetEntity()->GetID();
+	NodeToDeleteID = Nodes[1]->GetID();
 
-	std::vector<std::string> ChildEntitiesToDelete;
-	std::vector<std::string> ChildNodesToDelete;
+	std::vector<FEUUID> ChildEntitiesToDelete;
+	std::vector<FEUUID> ChildNodesToDelete;
 
 	std::vector<FENaiveSceneGraphNode*> AllChildrens = Nodes[1]->GetRecursiveChildren();
 	for (FENaiveSceneGraphNode* Child : AllChildrens)
 	{
-		ChildEntitiesToDelete.push_back(Child->GetEntity()->GetObjectID());
-		ChildNodesToDelete.push_back(Child->GetObjectID());
+		ChildEntitiesToDelete.push_back(Child->GetEntity()->GetID());
+		ChildNodesToDelete.push_back(Child->GetID());
 	}
 
 	CurrentScene->DeleteEntity(Nodes[1]->GetEntity());
@@ -1569,7 +1569,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Check_Delete_Nodes_and_Entities", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1578,41 +1578,41 @@ TEST_F(SceneGraphTest, Simple_Check_Of_Scene_Duplication)
 {
 	LOG.Add("Starting SceneGraphTest::Simple_Check_Of_Scene_Duplication", "FE_LOG_TEST", FE_LOG_INFO);
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	PopulateSceneGraphMediumSize(CurrentScene);
 	// In this function we will populate Nodes vector in a little bit different way.
 	// It should be same way as we will use for duplicated scene.
 	std::vector<FENaiveSceneGraphNode*> Nodes = CurrentScene->SceneGraph.GetRoot()->GetRecursiveChildren();
 
 	// Save IDs of the entities
-	std::vector<std::string> EntityIDs;
+	std::vector<FEUUID> EntityIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+		EntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetID());
 	}
 
 	// Save IDs of the nodes
-	std::vector<std::string> NodeIDs;
+	std::vector<FEUUID> NodeIDs;
 	for (FENaiveSceneGraphNode* Node : Nodes)
 	{
-		NodeIDs.push_back(Node->GetObjectID());
+		NodeIDs.push_back(Node->GetID());
 	}
 
-	FEScene* DuplicatedScene = SCENE_MANAGER.DuplicateScene(CurrentScene->GetObjectID(), "TestScene_Duplicated");
+	FEScene* DuplicatedScene = SCENE_MANAGER.DuplicateScene(CurrentScene->GetID(), "TestScene_Duplicated");
 	std::vector<FENaiveSceneGraphNode*> DuplicatedNodes = DuplicatedScene->SceneGraph.GetRoot()->GetRecursiveChildren();
 
 	// Save IDs of the entities
-	std::vector<std::string> DuplicatedEntityIDs;
+	std::vector<FEUUID> DuplicatedEntityIDs;
 	for (FENaiveSceneGraphNode* Node : DuplicatedNodes)
 	{
-		DuplicatedEntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetObjectID());
+		DuplicatedEntityIDs.push_back(reinterpret_cast<FEEntity*>(Node->GetEntity())->GetID());
 	}
 
 	// Save IDs of the nodes
-	std::vector<std::string> DuplicatedNodeIDs;
+	std::vector<FEUUID> DuplicatedNodeIDs;
 	for (FENaiveSceneGraphNode* Node : DuplicatedNodes)
 	{
-		DuplicatedNodeIDs.push_back(Node->GetObjectID());
+		DuplicatedNodeIDs.push_back(Node->GetID());
 	}
 
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
@@ -1650,8 +1650,8 @@ TEST_F(SceneGraphTest, Simple_Check_Of_Scene_Duplication)
 		}
 	}
 	
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(DuplicatedScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+	SCENE_MANAGER.DeleteScene(DuplicatedScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Simple_Check_Of_Scene_Duplication", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1715,8 +1715,8 @@ TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
 	}
 	ASSERT_EQ(FoundChildrenCount, 8);
 
-	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(TargetScene->GetID());
+	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Simple_Check_Of_ImportSceneAsNode", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1747,11 +1747,11 @@ TEST_F(SceneGraphTest, Simple_Check_Of_AreSceneGraphHierarchiesEquivalent)
 	SecondMediumSizeSceneNodes[10]->SetName("Node_10");
 	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
 
-	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetObjectID(), FirstMediumSizeSceneNodes[29]->GetObjectID());
+	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetID(), FirstMediumSizeSceneNodes[29]->GetID());
 	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
 	ASSERT_FALSE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
 
-	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetObjectID(), FirstMediumSizeSceneNodes[11]->GetObjectID());
+	FirstMediumSizeScene->SceneGraph.MoveNode(FirstMediumSizeSceneNodes[20]->GetID(), FirstMediumSizeSceneNodes[11]->GetID());
 	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot()));
 	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeScene->SceneGraph.GetRoot(), SecondMediumSizeScene->SceneGraph.GetRoot(), true));
 
@@ -1763,8 +1763,8 @@ TEST_F(SceneGraphTest, Simple_Check_Of_AreSceneGraphHierarchiesEquivalent)
 	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[15], SecondMediumSizeSceneNodes[15]));
 	ASSERT_TRUE(SCENE_MANAGER.AreSceneGraphHierarchiesEquivalent(FirstMediumSizeSceneNodes[15], SecondMediumSizeSceneNodes[15], true));
 
-	SCENE_MANAGER.DeleteScene(FirstMediumSizeScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SecondMediumSizeScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(FirstMediumSizeScene->GetID());
+	SCENE_MANAGER.DeleteScene(SecondMediumSizeScene->GetID());
 
 	LOG.Add("Ending SceneGraphTest::Simple_Check_Of_AreSceneGraphHierarchiesEquivalent", "FE_LOG_TEST", FE_LOG_INFO);
 }
@@ -1966,17 +1966,17 @@ TEST_F(SceneGraphTest, GetDepth)
 	ASSERT_NE(CurrentNode, nullptr);
 	ASSERT_EQ(CurrentNode->GetDepth(), 5);
 
-	SCENE_MANAGER.DeleteScene(MediumSizeScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(MediumSizeScene->GetID());
 }
 
 TEST_F(SceneGraphTest, DuplicateNode_SubtreeEntityNamesMatchNodeNames)
 {
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize(CurrentScene);
 
 	// Duplicate the Node_1 subtree (has 3 immediate + grandchildren) under root, with bAddCopyInName = false to suppress the "_Copy" suffix.
 	FENaiveSceneGraphNode* Subtree = Nodes[1];
-	FENaiveSceneGraphNode* Duplicate = CurrentScene->SceneGraph.DuplicateNode(Subtree->GetObjectID(), CurrentScene->SceneGraph.GetRoot()->GetObjectID(), false);
+	FENaiveSceneGraphNode* Duplicate = CurrentScene->SceneGraph.DuplicateNode(Subtree->GetID(), CurrentScene->SceneGraph.GetRoot()->GetID(), false);
 	ASSERT_NE(Duplicate, nullptr);
 
 	// Verify that top node does not have "_Copy".
@@ -1989,7 +1989,7 @@ TEST_F(SceneGraphTest, DuplicateNode_SubtreeEntityNamesMatchNodeNames)
 	for (FENaiveSceneGraphNode* Descendant : AllDescendants)
 		EXPECT_EQ(Descendant->GetName(), Descendant->GetEntity()->GetName());
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 }
 
 TEST_F(SceneGraphTest, ImportNode_FilterAppliesToDescendants)
@@ -2013,26 +2013,26 @@ TEST_F(SceneGraphTest, ImportNode_FilterAppliesToDescendants)
 	const size_t TargetCountAfter = TargetScene->SceneGraph.GetNodeCount();
 	EXPECT_EQ(TargetCountAfter - TargetCountBefore, 1);
 
-	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(TargetScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
+	SCENE_MANAGER.DeleteScene(TargetScene->GetID());
 }
 
 TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 {
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	FEEntity* EntityA = CurrentScene->CreateEntity("EntityA");
 	FEEntity* EntityB = CurrentScene->CreateEntity("EntityB");
 	FEEntity* EntityC = CurrentScene->CreateEntity("EntityC");
 
-	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
-	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
-	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetID());
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetID());
+	FENaiveSceneGraphNode* NodeC = CurrentScene->SceneGraph.GetNodeByEntityID(EntityC->GetID());
 
 	// Baseline: three entities under Root, all siblings.
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
 	// Move C under A via MoveNode.
-	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeC->GetID(), NodeA->GetID()));
 	ASSERT_EQ(NodeC->GetParent(), NodeA);
 	ASSERT_EQ(NodeA->GetImmediateChildrenCount(), 1);
 	ASSERT_EQ(NodeB->GetImmediateChildrenCount(), 0);
@@ -2049,23 +2049,23 @@ TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 	// Overall node count should not change.
 	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 }
 
 TEST_F(SceneGraphTest, DuplicateNode_IntoDescendant_ReturnsNullptr)
 {
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	FEEntity* EntityA = CurrentScene->CreateEntity("A");
 	FEEntity* EntityB = CurrentScene->CreateEntity("B");
 
-	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
-	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityA->GetID());
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityB->GetID());
 
-	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
-	FENaiveSceneGraphNode* Result = CurrentScene->SceneGraph.DuplicateNode( NodeA->GetObjectID(), NodeB->GetObjectID());
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeB->GetID(), NodeA->GetID()));
+	FENaiveSceneGraphNode* Result = CurrentScene->SceneGraph.DuplicateNode( NodeA->GetID(), NodeB->GetID());
 	EXPECT_EQ(Result, nullptr);
 
-	SCENE_MANAGER.DeleteScene(CurrentScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 }
 
 TEST_F(SceneGraphTest, AddNode_Rejects_FromDifferentScene)
@@ -2076,13 +2076,13 @@ TEST_F(SceneGraphTest, AddNode_Rejects_FromDifferentScene)
 	FEEntity* AlienEntity = SceneA->CreateEntity("AlienEntity");
 
 	const size_t SceneBCountBefore = SceneB->SceneGraph.GetNodeCount();
-	const std::string ReturnedID = SceneB->SceneGraph.AddNode(AlienEntity);
+	const FEUUID ReturnedID = SceneB->SceneGraph.AddNode(AlienEntity);
 
-	EXPECT_TRUE(ReturnedID.empty());
+	EXPECT_TRUE(UNIQUE_ID.IsNull(ReturnedID));
 	EXPECT_EQ(SceneB->SceneGraph.GetNodeCount(), SceneBCountBefore);
 
-	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneB->GetID());
+	SCENE_MANAGER.DeleteScene(SceneA->GetID());
 }
 
 TEST_F(SceneGraphTest, DeleteNode_Rejects_FromDifferentScene)
@@ -2091,9 +2091,9 @@ TEST_F(SceneGraphTest, DeleteNode_Rejects_FromDifferentScene)
 	FEScene* SceneB = SCENE_MANAGER.CreateScene("DeleteNode_Foreign_SceneB");
 
 	FEEntity* EntityInA = SceneA->CreateEntity("EntityInA");
-	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetObjectID());
+	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetID());
 	ASSERT_NE(NodeInA, nullptr);
-	const std::string A_NodeID = NodeInA->GetObjectID();
+	const FEUUID A_NodeID = NodeInA->GetID();
 	const size_t A_CountBefore = SceneA->SceneGraph.GetNodeCount();
 
 	// SceneB tries to delete a node that lives in SceneA. Must be rejected.
@@ -2102,8 +2102,8 @@ TEST_F(SceneGraphTest, DeleteNode_Rejects_FromDifferentScene)
 	EXPECT_EQ(SceneA->SceneGraph.GetNodeCount(), A_CountBefore);
 	EXPECT_EQ(SceneA->SceneGraph.GetNodeByID(A_NodeID), NodeInA);
 
-	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneB->GetID());
+	SCENE_MANAGER.DeleteScene(SceneA->GetID());
 }
 
 TEST_F(SceneGraphTest, DuplicateNode_RejectsNewParent_FromDifferentScene)
@@ -2112,10 +2112,10 @@ TEST_F(SceneGraphTest, DuplicateNode_RejectsNewParent_FromDifferentScene)
 	FEScene* SceneB = SCENE_MANAGER.CreateScene("DupNode_Foreign_SceneB");
 
 	FEEntity* EntityInA = SceneA->CreateEntity("EntityInA");
-	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetObjectID());
+	FENaiveSceneGraphNode* NodeInA = SceneA->SceneGraph.GetNodeByEntityID(EntityInA->GetID());
 
 	FEEntity* EntityInB = SceneB->CreateEntity("EntityInB");
-	FENaiveSceneGraphNode* ForeignParentInB = SceneB->SceneGraph.GetNodeByEntityID(EntityInB->GetObjectID());
+	FENaiveSceneGraphNode* ForeignParentInB = SceneB->SceneGraph.GetNodeByEntityID(EntityInB->GetID());
 
 	const size_t SceneA_CountBefore = SceneA->SceneGraph.GetNodeCount();
 	const size_t SceneB_CountBefore = SceneB->SceneGraph.GetNodeCount();
@@ -2126,8 +2126,8 @@ TEST_F(SceneGraphTest, DuplicateNode_RejectsNewParent_FromDifferentScene)
 	EXPECT_EQ(SceneA->SceneGraph.GetNodeCount(), SceneA_CountBefore);
 	EXPECT_EQ(SceneB->SceneGraph.GetNodeCount(), SceneB_CountBefore);
 
-	SCENE_MANAGER.DeleteScene(SceneA->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SceneB->GetObjectID());
+	SCENE_MANAGER.DeleteScene(SceneA->GetID());
+	SCENE_MANAGER.DeleteScene(SceneB->GetID());
 }
 
 TEST_F(SceneGraphTest, ImportNode_RejectsTargetParent_FromDifferentScene)
@@ -2137,10 +2137,10 @@ TEST_F(SceneGraphTest, ImportNode_RejectsTargetParent_FromDifferentScene)
 	FEScene* OtherScene = SCENE_MANAGER.CreateScene("ImportNode_TargetParent_Other");
 
 	FEEntity* SourceEntity = SourceScene->CreateEntity("SourceEntity");
-	FENaiveSceneGraphNode* SourceNode = SourceScene->SceneGraph.GetNodeByEntityID(SourceEntity->GetObjectID());
+	FENaiveSceneGraphNode* SourceNode = SourceScene->SceneGraph.GetNodeByEntityID(SourceEntity->GetID());
 
 	FEEntity* OtherEntity = OtherScene->CreateEntity("OtherEntity");
-	FENaiveSceneGraphNode* ForeignTargetParent = OtherScene->SceneGraph.GetNodeByEntityID(OtherEntity->GetObjectID());
+	FENaiveSceneGraphNode* ForeignTargetParent = OtherScene->SceneGraph.GetNodeByEntityID(OtherEntity->GetID());
 
 	const size_t CallingCountBefore = CallingScene->SceneGraph.GetNodeCount();
 	const size_t SourceCountBefore = SourceScene->SceneGraph.GetNodeCount();
@@ -2153,9 +2153,9 @@ TEST_F(SceneGraphTest, ImportNode_RejectsTargetParent_FromDifferentScene)
 	EXPECT_EQ(SourceScene->SceneGraph.GetNodeCount(),  SourceCountBefore);
 	EXPECT_EQ(OtherScene->SceneGraph.GetNodeCount(),   OtherCountBefore);
 
-	SCENE_MANAGER.DeleteScene(CallingScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(SourceScene->GetObjectID());
-	SCENE_MANAGER.DeleteScene(OtherScene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(CallingScene->GetID());
+	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
+	SCENE_MANAGER.DeleteScene(OtherScene->GetID());
 }
 
 TEST_F(SceneGraphTest, FEScene_Clear_HandlesOrphanEntitiesCorrectly)
@@ -2169,7 +2169,7 @@ TEST_F(SceneGraphTest, FEScene_Clear_HandlesOrphanEntitiesCorrectly)
 	ASSERT_EQ(Scene->GetEntityIDList().size(), OrphanCount);
 
 	// Should not crash and should remove all orphan entities.
-	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(Scene->GetID());
 }
 
 // Coverage for GetFirstImmediateChildNodeWithComponent and
@@ -2186,7 +2186,7 @@ TEST_F(SceneGraphTest, FEScene_Clear_HandlesOrphanEntitiesCorrectly)
 //  D      (D has FELightComponent)
 TEST_F(SceneGraphTest, GetFirstChildNodeWithComponent_ImmediateAndRecursive)
 {
-	FEScene* Scene = SCENE_MANAGER.CreateScene("ChildNodeWithComponent", "", FESceneFlag::Active);
+	FEScene* Scene = SCENE_MANAGER.CreateScene("ChildNodeWithComponent", FEUUID(), FESceneFlag::Active);
 
 	FEEntity* EntityA = Scene->CreateEntity("A");
 	FEEntity* EntityB = Scene->CreateEntity("B");
@@ -2194,16 +2194,16 @@ TEST_F(SceneGraphTest, GetFirstChildNodeWithComponent_ImmediateAndRecursive)
 	FEEntity* EntityD = Scene->CreateEntity("D");
 	FEEntity* EntityX = Scene->CreateEntity("X");
 
-	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
-	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
-	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
-	FENaiveSceneGraphNode* NodeD = Scene->SceneGraph.GetNodeByEntityID(EntityD->GetObjectID());
-	FENaiveSceneGraphNode* NodeX = Scene->SceneGraph.GetNodeByEntityID(EntityX->GetObjectID());
+	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetID());
+	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetID());
+	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetID());
+	FENaiveSceneGraphNode* NodeD = Scene->SceneGraph.GetNodeByEntityID(EntityD->GetID());
+	FENaiveSceneGraphNode* NodeX = Scene->SceneGraph.GetNodeByEntityID(EntityX->GetID());
 
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeX->GetObjectID(), NodeA->GetObjectID()));
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID()));
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeD->GetObjectID(), NodeC->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetID(), NodeA->GetID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeX->GetID(), NodeA->GetID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetID(), NodeB->GetID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeD->GetID(), NodeC->GetID()));
 
 	ASSERT_TRUE(EntityX->AddComponent<FELightComponent>());
 	ASSERT_TRUE(EntityD->AddComponent<FELightComponent>());
@@ -2223,23 +2223,23 @@ TEST_F(SceneGraphTest, GetFirstChildNodeWithComponent_ImmediateAndRecursive)
 	EXPECT_EQ(Scene->SceneGraph.GetFirstImmediateChildNodeWithComponent<FELightComponent>(nullptr), nullptr);
 	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveChildNodeWithComponent<FELightComponent>(nullptr), nullptr);
 
-	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(Scene->GetID());
 }
 
 TEST_F(SceneGraphTest, GetFirstRecursiveParentNodeWithComponent_WalksAncestorChain)
 {
-	FEScene* Scene = SCENE_MANAGER.CreateScene("RecursiveParentWithComponent", "", FESceneFlag::Active);
+	FEScene* Scene = SCENE_MANAGER.CreateScene("RecursiveParentWithComponent", FEUUID(), FESceneFlag::Active);
 
 	FEEntity* EntityA = Scene->CreateEntity("A");
 	FEEntity* EntityB = Scene->CreateEntity("B");
 	FEEntity* EntityC = Scene->CreateEntity("C");
 
-	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
-	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
-	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetObjectID());
+	FENaiveSceneGraphNode* NodeA = Scene->SceneGraph.GetNodeByEntityID(EntityA->GetID());
+	FENaiveSceneGraphNode* NodeB = Scene->SceneGraph.GetNodeByEntityID(EntityB->GetID());
+	FENaiveSceneGraphNode* NodeC = Scene->SceneGraph.GetNodeByEntityID(EntityC->GetID());
 
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
-	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetObjectID(), NodeB->GetObjectID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeB->GetID(), NodeA->GetID()));
+	ASSERT_TRUE(Scene->SceneGraph.MoveNode(NodeC->GetID(), NodeB->GetID()));
 
 	ASSERT_TRUE(EntityA->AddComponent<FELightComponent>());
 
@@ -2257,20 +2257,20 @@ TEST_F(SceneGraphTest, GetFirstRecursiveParentNodeWithComponent_WalksAncestorCha
 	EntityA->RemoveComponent<FELightComponent>();
 	EXPECT_EQ(Scene->SceneGraph.GetFirstRecursiveParentNodeWithComponent<FELightComponent>(NodeC), nullptr);
 
-	SCENE_MANAGER.DeleteScene(Scene->GetObjectID());
+	SCENE_MANAGER.DeleteScene(Scene->GetID());
 }
 
 TEST_F(SceneGraphTest, AddChild_RejectsAncestor_NoCycle)
 {
 	SCENE_MANAGER.Clear();
-	FEScene* NewScene = SCENE_MANAGER.CreateScene("NewScene", "", FESceneFlag::Active);
+	FEScene* NewScene = SCENE_MANAGER.CreateScene("NewScene", FEUUID(), FESceneFlag::Active);
 
 	FEEntity* EntityA = NewScene->CreateEntity("EntityA");
 	FEEntity* EntityB = NewScene->CreateEntity("EntityB");
-	FENaiveSceneGraphNode* NodeA = NewScene->SceneGraph.GetNodeByEntityID(EntityA->GetObjectID());
-	FENaiveSceneGraphNode* NodeB = NewScene->SceneGraph.GetNodeByEntityID(EntityB->GetObjectID());
+	FENaiveSceneGraphNode* NodeA = NewScene->SceneGraph.GetNodeByEntityID(EntityA->GetID());
+	FENaiveSceneGraphNode* NodeB = NewScene->SceneGraph.GetNodeByEntityID(EntityB->GetID());
 
-	ASSERT_TRUE(NewScene->SceneGraph.MoveNode(NodeB->GetObjectID(), NodeA->GetObjectID()));
+	ASSERT_TRUE(NewScene->SceneGraph.MoveNode(NodeB->GetID(), NodeA->GetID()));
 
 	// AddChild should reject that operation. This makes A a child of B while B is still a child of A => cycle A <=> B.
 	ASSERT_FALSE(NodeB->AddChild(NodeA));
@@ -2283,8 +2283,8 @@ TEST_F(SceneGraphTest, ImportNode_RejectsRootNode)
 {
 	SCENE_MANAGER.Clear();
 
-	FEScene* Source = SCENE_MANAGER.CreateScene("SourceScene", "", FESceneFlag::Active);
-	FEScene* Destination = SCENE_MANAGER.CreateScene("DestinationScene", "", FESceneFlag::Active);
+	FEScene* Source = SCENE_MANAGER.CreateScene("SourceScene", FEUUID(), FESceneFlag::Active);
+	FEScene* Destination = SCENE_MANAGER.CreateScene("DestinationScene", FEUUID(), FESceneFlag::Active);
 
 	FENaiveSceneGraphNode* SourceRoot = Source->SceneGraph.GetRoot();
 	ASSERT_EQ(Destination->SceneGraph.ImportNode(SourceRoot), nullptr);
@@ -2296,7 +2296,7 @@ TEST_F(SceneGraphTest, FromJson_MutualParent_RecoversUnderRoot)
 {
 	SCENE_MANAGER.Clear();
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 
 	// Craft a save where two nodes name each other as ParentID (a cyclic save).
 	Json::Value SceneHierarchy;
@@ -2304,37 +2304,42 @@ TEST_F(SceneGraphTest, FromJson_MutualParent_RecoversUnderRoot)
 	// Type must be FE_ENTITY: a real ToJson always writes it, and FEEntity::FromJson
 	// assigns the entity's Type from it. Omitting it leaves Type as FE_NULL, which
 	// corrupts FEObjectManager's per-type bookkeeping and asserts on entity teardown.
+	const std::string NodeAID = UNIQUE_ID.ToString(UNIQUE_ID.GenerateID());
+	const std::string NodeBID = UNIQUE_ID.ToString(UNIQUE_ID.GenerateID());
+	const FEUUID EntityAID = UNIQUE_ID.GenerateID();
+	const FEUUID EntityBID = UNIQUE_ID.GenerateID();
+
 	Json::Value Node_A_Data;
 	Node_A_Data["Name"] = "Node_A";
-	Node_A_Data["ID"] = "Node_A";
-	Node_A_Data["ParentID"] = "Node_B";
-	Node_A_Data["Entity"]["FEObjectData"]["ID"] = "Entity_A";
+	Node_A_Data["ID"] = NodeAID;
+	Node_A_Data["ParentID"] = NodeBID;
+	Node_A_Data["Entity"]["FEObjectData"]["ID"] = UNIQUE_ID.ToString(EntityAID);
 	Node_A_Data["Entity"]["FEObjectData"]["Name"] = "Node_A";
 	Node_A_Data["Entity"]["FEObjectData"]["Type"] = FE_ENTITY;
 
 	Json::Value Node_B_Data;
 	Node_B_Data["Name"] = "Node_B";
-	Node_B_Data["ID"] = "Node_B";
-	Node_B_Data["ParentID"] = "Node_A";
-	Node_B_Data["Entity"]["FEObjectData"]["ID"] = "Entity_B";
+	Node_B_Data["ID"] = NodeBID;
+	Node_B_Data["ParentID"] = NodeAID;
+	Node_B_Data["Entity"]["FEObjectData"]["ID"] = UNIQUE_ID.ToString(EntityBID);
 	Node_B_Data["Entity"]["FEObjectData"]["Name"] = "Node_B";
 	Node_B_Data["Entity"]["FEObjectData"]["Type"] = FE_ENTITY;
 
-	SceneHierarchy["Nodes"]["Node_A"] = Node_A_Data;
-	SceneHierarchy["Nodes"]["Node_B"] = Node_B_Data;
+	SceneHierarchy["Nodes"][NodeAID] = Node_A_Data;
+	SceneHierarchy["Nodes"][NodeBID] = Node_B_Data;
 
 	CurrentScene->SceneGraph.FromJson(SceneHierarchy);
 
 	// Both entities were created during loading and registered in the scene.
-	ASSERT_NE(CurrentScene->GetEntity("Entity_A"), nullptr);
-	ASSERT_NE(CurrentScene->GetEntity("Entity_B"), nullptr);
+	ASSERT_NE(CurrentScene->GetEntity(EntityAID), nullptr);
+	ASSERT_NE(CurrentScene->GetEntity(EntityBID), nullptr);
 
 	// Both nodes survive and are reachable from the root (no silent drop, no leak),
 	// and the fact that these calls return at all proves there is no cycle.
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 2);
 
-	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID("Entity_A");
-	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID("Entity_B");
+	FENaiveSceneGraphNode* NodeA = CurrentScene->SceneGraph.GetNodeByEntityID(EntityAID);
+	FENaiveSceneGraphNode* NodeB = CurrentScene->SceneGraph.GetNodeByEntityID(EntityBID);
 	ASSERT_NE(NodeA, nullptr);
 	ASSERT_NE(NodeB, nullptr);
 
@@ -2359,14 +2364,14 @@ TEST_F(SceneGraphTest, NodeToJson_OnRoot_DoesNotDereferenceNull)
 {
 	SCENE_MANAGER.Clear();
 
-	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", "", FESceneFlag::Active);
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
 	FENaiveSceneGraphNode* RootNode = CurrentScene->SceneGraph.GetRoot();
 
 	// That line should not cause a crash due to null dereference.
 	Json::Value RootNodeJson = RootNode->ToJson();
 	ASSERT_TRUE(RootNodeJson.isObject());
 
-	ASSERT_EQ(RootNodeJson["ID"].asString(), RootNode->GetObjectID());
+	ASSERT_EQ(RootNodeJson["ID"].asString(), UNIQUE_ID.ToString(RootNode->GetID()));
 	ASSERT_EQ(RootNodeJson["ParentID"].asString(), "");
 	ASSERT_FALSE(RootNodeJson.isMember("Entity"));
 

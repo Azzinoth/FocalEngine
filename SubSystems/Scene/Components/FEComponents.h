@@ -91,7 +91,7 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 
         std::map<entt::id_type, FEComponentTypeInfo> ComponentIDToInfo;
-        std::map<const std::type_info*, std::function<std::vector<std::string>(FEScene*)>> FunctionsToGetEntityIDListWith;
+        std::map<const std::type_info*, std::function<std::vector<FEUUID>(FEScene*)>> FunctionsToGetEntityIDListWith;
 
         template<typename T>
         void RegisterComponentToJsonFunction(std::function<Json::Value(FEEntity*)> Function)
@@ -114,7 +114,7 @@ namespace FocalEngine
         SINGLETON_PUBLIC_PART(FEComponentsTools)
 
         std::vector<FEComponentTypeInfo> GetComponentInfoList();
-        std::vector<std::string> GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo);
+        std::vector<FEUUID> GetEntityIDListWithComponent(FEScene* CurrentScene, const FEComponentTypeInfo& ComponentInfo);
         FEComponentTypeInfo* GetComponentInfoByName(std::string Name);
 		template<typename T>
         FEComponentTypeInfo* GetComponentInfo()

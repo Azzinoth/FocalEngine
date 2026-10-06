@@ -322,12 +322,12 @@ glm::vec4 FETexture::GetNormalizedMaxValue()
 	return RawValue / Scale;
 }
 
-void FETexture::AddToOnDeleteCallBackList(const std::string ObjectID)
+void FETexture::AddToOnDeleteCallBackList(const FEUUID& ObjectID)
 {
 	CallListOnDeleteFEObject.push_back(ObjectID);
 }
 
-void FETexture::EraseFromOnDeleteCallBackList(const std::string ObjectID)
+void FETexture::EraseFromOnDeleteCallBackList(const FEUUID& ObjectID)
 {
 	for (size_t i = 0; i < CallListOnDeleteFEObject.size(); i++)
 	{

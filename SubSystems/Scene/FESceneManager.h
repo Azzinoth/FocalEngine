@@ -13,18 +13,18 @@ namespace FocalEngine
 	public:
 		SINGLETON_PUBLIC_PART(FESceneManager)
 
-		FEScene* GetSceneByID(std::string ID);
-		FEScene* GetSceneByNodeID(std::string NodeID);
-		FEScene* CreateScene(std::string Name = "", std::string ForceObjectID = "", FESceneFlag Flags = FESceneFlag::None);
+		FEScene* GetSceneByID(const FEUUID& ID);
+		FEScene* GetSceneByNodeID(const FEUUID& NodeID);
+		FEScene* CreateScene(std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), FESceneFlag Flags = FESceneFlag::None);
 		Json::Value SaveSceneToJSON(FEScene* Scene, std::function<bool(FEEntity*)> Filter = nullptr);
 		FEScene* LoadSceneFromJSON(Json::Value& Root, FESceneFlag Flags = FESceneFlag::None);
-		std::vector<std::string> GetSceneIDList();
+		std::vector<FEUUID> GetSceneIDList();
 		std::vector<FEScene*> GetSceneByName(std::string Name);
 
-		void DeleteScene(std::string ID);
+		void DeleteScene(const FEUUID& ID);
 		void DeleteScene(FEScene* Scene);
 
-		FEScene* DuplicateScene(std::string ID, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr, FESceneFlag Flags = FESceneFlag::None);
+		FEScene* DuplicateScene(const FEUUID& ID, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr, FESceneFlag Flags = FESceneFlag::None);
 		FEScene* DuplicateScene(FEScene* SourceScene, std::string NewSceneName = "", std::function<bool(FEEntity*)> Filter = nullptr, FESceneFlag Flags = FESceneFlag::None);
 
 		std::vector<FENaiveSceneGraphNode*> ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
@@ -52,13 +52,13 @@ namespace FocalEngine
 
 		std::vector<FEEntity*> InstantiatePrefab(FEPrefab* Prefab, FEScene* Scene, bool bAddToSceneRoot = false);
 
-		bool SetStartingScene(std::string SceneID);
+		bool SetStartingScene(const FEUUID& SceneID);
 		FEScene* GetStartingScene();
 	private:
 		SINGLETON_PRIVATE_PART(FESceneManager)
 
-		std::unordered_map<std::string, FEScene*> Scenes;
-		std::string StartingSceneID;
+		std::unordered_map<FEUUID, FEScene*> Scenes;
+		FEUUID StartingSceneID;
 
 		template<typename T>
 		static void OnComponentConstructWrapper(entt::registry& Registry, entt::entity EnTTEntity);

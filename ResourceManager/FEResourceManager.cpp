@@ -30,14 +30,14 @@ FEResourceManager::FEResourceManager()
 			UnPackPrivateEngineAssetPackage(PrivateEngineAssetPackage, FILE_SYSTEM.GetCurrentWorkingPath());
 		}
 
-		NoTexture = LoadFETexture((ResourcesFolder + "48271F005A73241F5D7E7134.texture"), "noTexture");
+		NoTexture = LoadFETexture((ResourcesFolder + "972234c3-34d5-59d2-a15e-856cf6c3fba9.texture"), "noTexture");
 		NoTexture->SetTag(ENGINE_RESOURCE_TAG);
 		FETexture::MarkAsPersistent(NoTexture->GetTextureID());
 
 		FEShader* NewShader = CreateShader("FECombineFrameBuffers", LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_ScreenQuad_VS.glsl")).c_str(),
 																	LoadGLSL((EngineFolder + "CoreExtensions//PostProcessEffects//FE_CombineFrameBuffers_FS.glsl")).c_str(),
 																	nullptr, nullptr, nullptr, nullptr,
-																	"5C267A01466A545E7D1A2E66");
+																	FEEngineResourceIDs::CombineFrameBuffersShader);
 		NewShader->SetTag(ENGINE_RESOURCE_TAG);
 
 		LoadStandardMaterial();
@@ -61,15 +61,15 @@ FEResourceManager::~FEResourceManager()
 	Clear();
 }
 
-FETexture* FEResourceManager::CreateTexture(std::string Name, const std::string ForceObjectID)
+FETexture* FEResourceManager::CreateTexture(std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "UnnamedTexture";
 
 	FETexture* NewTexture = new FETexture(Name);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		NewTexture->SetID(ForceObjectID);
-	Textures[NewTexture->GetObjectID()] = NewTexture;
+	Textures[NewTexture->GetID()] = NewTexture;
 
 	return NewTexture;
 }
@@ -110,7 +110,7 @@ FEMesh* FEResourceManager::CreateMesh(const GLuint VaoID, const unsigned int Ver
 
 	FEMesh* NewMesh = new FEMesh(VaoID, VertexCount, VertexBuffersTypes, AABB, Name);
 	NewMesh->SetName(Name);
-	Meshes[NewMesh->GetObjectID()] = NewMesh;
+	Meshes[NewMesh->GetID()] = NewMesh;
 
 	return NewMesh;
 }
@@ -152,7 +152,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 	if (!File)
 	{
 		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	File.unsetf(std::ios::skipws);
@@ -166,7 +166,7 @@ FETexture* FEResourceManager::LoadPNGTexture(const std::string& FilePath, const 
 	if (Error != 0)
 	{
 		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadPNGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	bool bUsingAlpha = false;
@@ -537,7 +537,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		// Get info about problematic texture.
 		const FETexture* NotLoadedTexture = Input->NewTexture;
 		// We will spill out error into a log.
-		LOG.Add("FEResourceManager::LoadTextureFileAsyncCallBack texture with ID: " + NotLoadedTexture->GetObjectID() + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::LoadTextureFileAsyncCallBack texture with ID: " + UNIQUE_ID.ToString(NotLoadedTexture->GetID()) + " was not loaded!", "FE_LOG_LOADING", FE_LOG_ERROR);
 		// And delete entry for that texture in a general list of textures.
 		// That will prevent TextureIterator from saving in a scene File.
 		RESOURCE_MANAGER.DeleteFETexture(NotLoadedTexture);
@@ -548,7 +548,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 
 		// If any material uses this texture, set the dirty flag.
 		// Game model will be updated as a consequence.
-		const std::vector<std::string> MaterialList = RESOURCE_MANAGER.GetMaterialIDList();
+		const std::vector<FEUUID> MaterialList = RESOURCE_MANAGER.GetMaterialIDList();
 
 		for (size_t i = 0; i < MaterialList.size(); i++)
 		{
@@ -565,7 +565,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 	delete Input;
 }
 
-FETexture* FEResourceManager::LoadFETextureAsync(const std::string& FilePath, const std::string Name, FETexture* ExistingTexture, const std::string ForceObjectID)
+FETexture* FEResourceManager::LoadFETextureAsync(const std::string& FilePath, const std::string Name, FETexture* ExistingTexture, const FEUUID& ForceObjectID)
 {
 	FETexture* NewTexture = CreateTexture(Name, ForceObjectID);
 	FE_GL_ERROR(glDeleteTextures(1, &NewTexture->TextureID));
@@ -627,12 +627,12 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	std::string NameFromFile;
 
 	char* ObjectID = nullptr;
-	std::string ID;
+	FEUUID ID;
 
 	if (Version > FE_TEXTURE_VERSION)
 	{
 		LOG.Add("Can not load FileData: in function FEResourceManager::LoadFETexture. FileData version is not compatible with current version of FETexture. FileData version: " + std::to_string(Version) + " Current version: " + std::to_string(FE_TEXTURE_VERSION), "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(FileData, CurrentShift);
@@ -784,15 +784,15 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	}
 
 	// Overwrite ObjectID with ObjectID from File.
-	if (!ID.empty())
+	if (!UNIQUE_ID.IsNull(ID))
 	{
-		const std::string OldID = NewTexture->GetObjectID();
+		const FEUUID OldID = NewTexture->GetID();
 		NewTexture->SetID(ID);
 
 		if (Textures.find(OldID) != Textures.end())
 		{
 			Textures.erase(OldID);
-			Textures[NewTexture->GetObjectID()] = NewTexture;
+			Textures[NewTexture->GetID()] = NewTexture;
 		}
 	}
 
@@ -806,7 +806,7 @@ FETexture* FEResourceManager::LoadFETextureUnmanaged(const std::string& FilePath
 	if (NewTexture == nullptr)
 		return nullptr;
 
-	Textures.erase(NewTexture->GetObjectID());
+	Textures.erase(NewTexture->GetID());
 	return NewTexture;
 }
 
@@ -948,7 +948,7 @@ FEMesh* FEResourceManager::RawDataToMesh(float* Positions, const int PositionsCo
 	return NewMesh;
 }
 
-FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name, std::string ForceObjectID)
+FEMesh* FEResourceManager::RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name, const FEUUID& ForceObjectID)
 {
 	FEMesh* NewMesh = nullptr;
 	if (PLYData == nullptr)
@@ -1428,7 +1428,7 @@ bool FEResourceManager::ExportFEMeshToPLY(FEMesh* MeshToExport, const std::strin
 
 void FEResourceManager::LoadStandardMeshes()
 {
-	if (Meshes.find("84251E6E0D0801363579317R"/*"cube"*/) != Meshes.end())
+	if (GetMesh(FEEngineResourceIDs::CubeMesh) != nullptr)
 		return;
 
 	std::vector<int> CubeIndices = {
@@ -1497,11 +1497,11 @@ void FEResourceManager::LoadStandardMeshes()
 	};
 
 	FEMesh* NewMesh = RawDataToMesh(CubePositions, CubeNormals, CubeTangents, CubeUV, CubeIndices, "cube");
-	Meshes.erase(NewMesh->GetObjectID());
-	NewMesh->SetID("84251E6E0D0801363579317R"/*"cube"*/);
+	Meshes.erase(NewMesh->GetID());
+	NewMesh->SetID(FEEngineResourceIDs::CubeMesh);
 	NewMesh->SetName("FECube");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
-	Meshes[NewMesh->GetObjectID()] = NewMesh;
+	Meshes[NewMesh->GetID()] = NewMesh;
 
 	std::vector<int> PlaneIndices = {
 		0, 1, 2, 3, 0, 2
@@ -1526,18 +1526,15 @@ void FEResourceManager::LoadStandardMeshes()
 	};
 
 	NewMesh = RawDataToMesh(PlanePositions, PlaneNormals, PlaneTangents, PlaneUV, PlaneIndices, "plane");
-	Meshes.erase(NewMesh->GetObjectID());
-	NewMesh->SetID("1Y251E6E6T78013635793156"/*"plane"*/);
+	Meshes.erase(NewMesh->GetID());
+	NewMesh->SetID(FEEngineResourceIDs::PlaneMesh);
 	NewMesh->SetName("FEPlane");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
-	Meshes[NewMesh->GetObjectID()] = NewMesh;
+	Meshes[NewMesh->GetID()] = NewMesh;
 
-	NewMesh = LoadFEMesh((ResourcesFolder + "7F251E3E0D08013E3579315F.model"), "sphere");
-	Meshes.erase(NewMesh->GetObjectID());
-	NewMesh->SetID("7F251E3E0D08013E3579315F"/*"sphere"*/);
+	NewMesh = LoadFEMesh((ResourcesFolder + "0419567a-0ebc-5153-a08e-65321bc57109.model"), "sphere");
 	NewMesh->SetName("FESphere");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
-	Meshes[NewMesh->GetObjectID()] = NewMesh;
 
 	NewMesh = LoadFEMesh((ResourcesFolder + "Generic_VR_Controller.model"), "Generic_VR_Controller");
 	NewMesh->SetTag(ENGINE_RESOURCE_TAG);
@@ -1566,7 +1563,7 @@ std::vector<FEObject*> FEResourceManager::ImportOBJ(const std::string& FilePath,
 
 		// in rawDataToMesh() hidden FEMesh allocation and TextureIterator will go to hash table so we need to use setMeshName() not setName.
 		Result.back()->SetName(FileName);
-		Meshes[Result.back()->GetObjectID()] = reinterpret_cast<FEMesh*>(Result.back());
+		Meshes[Result.back()->GetID()] = reinterpret_cast<FEMesh*>(Result.back());
 	}
 
 	CreateMaterialsFromOBJData(Result);
@@ -1579,7 +1576,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	if (FILE_SYSTEM.DoesFileExist(FilePath) == false)
 	{
 		LOG.Add("File does not exist: " + FilePath + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
+		return GetMesh(FEEngineResourceIDs::CubeMesh);
 	}
 
 	std::fstream File;
@@ -1588,7 +1585,7 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	if (FileSize < 0)
 	{
 		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
+		return GetMesh(FEEngineResourceIDs::CubeMesh);
 	}
 
 	char* Buffer = new char[4];
@@ -1597,12 +1594,12 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	File.read(Buffer, 4);
 	const float Version = *(float*)Buffer;
 
-	std::string LoadedObjectID;
+	FEUUID LoadedObjectID;
 	std::string LoadedName;
 	if (Version != FE_MESH_VERSION)
 	{
 		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadFEMesh. File was created in different version of engine!", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetMesh("84251E6E0D0801363579317R"/*"cube"*/);
+		return GetMesh(FEEngineResourceIDs::CubeMesh);
 	}
 
 	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
@@ -1672,13 +1669,13 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 		(float*)MatIndexBuffer, MatIndexCout, MatCount,
 		Name.empty() ? LoadedName : Name);
 
-	const std::string OldID = NewMesh->ID;
+	const FEUUID OldID = NewMesh->GetID();
 	// Overwrite ID with Loaded ID.
-	if (!LoadedObjectID.empty())
+	if (!UNIQUE_ID.IsNull(LoadedObjectID))
 	{
 		NewMesh->SetID(LoadedObjectID);
 		Meshes.erase(OldID);
-		Meshes[NewMesh->GetObjectID()] = NewMesh;
+		Meshes[NewMesh->GetID()] = NewMesh;
 	}
 
 	delete[] Buffer;
@@ -1695,17 +1692,17 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	return NewMesh;
 }
 
-FEMaterial* FEResourceManager::CreateMaterial(std::string Name, const std::string ForceObjectID)
+FEMaterial* FEResourceManager::CreateMaterial(std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "unnamedMaterial";
 
 	FEMaterial* NewMaterial = new FEMaterial(Name);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		NewMaterial->SetID(ForceObjectID);
-	Materials[NewMaterial->GetObjectID()] = NewMaterial;
+	Materials[NewMaterial->GetID()] = NewMaterial;
 
-	return Materials[NewMaterial->GetObjectID()];
+	return Materials[NewMaterial->GetID()];
 }
 
 Json::Value FEResourceManager::SaveMaterialToJSON(FEMaterial* Material)
@@ -1715,7 +1712,7 @@ Json::Value FEResourceManager::SaveMaterialToJSON(FEMaterial* Material)
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (Material->Textures[i] != nullptr)
-			Root["Textures"][std::to_string(i).c_str()] = Material->Textures[i]->GetObjectID();
+			Root["Textures"][std::to_string(i).c_str()] = UNIQUE_ID.ToString(Material->Textures[i]->GetID());
 
 		if (Material->TextureBindings[i] != -1)
 			Root["Texture bindings"][std::to_string(i).c_str()] = Material->TextureBindings[i];
@@ -1744,7 +1741,7 @@ FEMaterial* FEResourceManager::LoadMaterialFromJSON(Json::Value& Root)
 
 	FEMaterial* NewMaterial = RESOURCE_MANAGER.CreateMaterial(LoadedObjectData.Name, LoadedObjectData.ID);
 	RESOURCE_MANAGER.SetTag(NewMaterial, LoadedObjectData.Tag);
-	NewMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	NewMaterial->Shader = RESOURCE_MANAGER.GetShader(FEEngineResourceIDs::PBRShader);
 
 	std::vector<Json::String> MembersList = Root.getMemberNames();
 	for (size_t i = 0; i < MembersList.size(); i++)
@@ -1755,7 +1752,7 @@ FEMaterial* FEResourceManager::LoadMaterialFromJSON(Json::Value& Root)
 			{
 				if (Root["Textures"].isMember(std::to_string(j).c_str()))
 				{
-					std::string TextureID = Root["Textures"][std::to_string(j).c_str()].asCString();
+					const FEUUID TextureID = UNIQUE_ID.FromString(Root["Textures"][std::to_string(j).c_str()].asCString());
 					NewMaterial->Textures[j] = RESOURCE_MANAGER.GetTexture(TextureID);
 					if (NewMaterial->Textures[j] == nullptr)
 						NewMaterial->Textures[j] = RESOURCE_MANAGER.NoTexture;
@@ -1803,17 +1800,17 @@ FEMaterial* FEResourceManager::LoadMaterialFromJSON(Json::Value& Root)
 	return NewMaterial;
 }
 
-std::vector<std::string> FEResourceManager::GetMaterialIDList()
+std::vector<FEUUID> FEResourceManager::GetMaterialIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Materials)
+	return GetResourceIDList(Materials);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateMaterialIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateMaterialIDList()
 {
 	return GetResourceIDListByTag(Materials, ENGINE_RESOURCE_TAG);
 }
 
-FEMaterial* FEResourceManager::GetMaterial(const std::string ID)
+FEMaterial* FEResourceManager::GetMaterial(const FEUUID& ID)
 {
 	if (Materials.find(ID) == Materials.end())
 		return nullptr;
@@ -1839,17 +1836,17 @@ std::vector<FEMaterial*> FEResourceManager::GetMaterialByName(const std::string 
 	return Result;
 }
 
-std::vector<std::string> FEResourceManager::GetMeshIDList()
+std::vector<FEUUID> FEResourceManager::GetMeshIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Meshes)
+	return GetResourceIDList(Meshes);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateMeshIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateMeshIDList()
 {
 	return GetResourceIDListByTag(Meshes, ENGINE_RESOURCE_TAG);
 }
 
-FEMesh* FEResourceManager::GetMesh(const std::string ID)
+FEMesh* FEResourceManager::GetMesh(const FEUUID& ID)
 {
 	if (Meshes.find(ID) == Meshes.end())
 		return nullptr;
@@ -1874,12 +1871,12 @@ std::vector<FEMesh*> FEResourceManager::GetMeshByName(const std::string Name)
 
 void FEResourceManager::LoadStandardMaterial()
 {
-	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial", "18251A5E0F08013Z3939317U");
+	FEMaterial* NewMaterial = CreateMaterial("SolidColorMaterial", FEEngineResourceIDs::SolidColorMaterial);
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	NewMaterial->Shader = CreateShader("FESolidColorShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//SolidColorMaterial//FE_SolidColor_FS.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"6917497A5E0C05454876186F");
+		FEEngineResourceIDs::SolidColorShader);
 	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShaderUniformValue Color("BaseColor", glm::vec3(1.0f, 0.4f, 0.6f));
@@ -1889,9 +1886,9 @@ void FEResourceManager::LoadStandardMaterial()
 	NewMaterial->SetUniformVariation(BrightnessFactor);
 
 	// Generic VR controller material
-	NewMaterial = CreateMaterial("FEGenericVRControllerMaterial", "6F381A367E2D683A753C2A79");
+	NewMaterial = CreateMaterial("FEGenericVRControllerMaterial", FEEngineResourceIDs::GenericVRControllerMaterial);
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
-	NewMaterial->Shader = GetShader("6917497A5E0C05454876186F");
+	NewMaterial->Shader = GetShader(FEEngineResourceIDs::SolidColorShader);
 
 	Color.SetValue(glm::vec3(0.1f, 0.1f, 0.1f));
 	NewMaterial->SetUniformVariation(Color);
@@ -1900,28 +1897,28 @@ void FEResourceManager::LoadStandardMaterial()
 	FEShader* FEPhongShader = CreateShader("FEPhongShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PhongMaterial//FE_Phong_FS.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"4C41665B5E125C2A07456E44");
+		FEEngineResourceIDs::PhongShader);
 	FEPhongShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	// ****************************** PBR SHADER ******************************
 	FEShader* PBRShader = CreateShader("FEPBRShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS_GBUFFER.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"0800253C242B05321A332D09");
+		FEEngineResourceIDs::PBRShader);
 
 	PBRShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRShaderForward = CreateShader("FEPBRShaderForward", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"5E45017E664A62273E191500");
+		FEEngineResourceIDs::PBRShaderForward);
 
 	PBRShaderForward->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRGBufferShader = CreateShader("FEPBRGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"670B01496E202658377A4576");
+		FEEngineResourceIDs::PBRGBufferShader);
 
 	PBRGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
@@ -1929,32 +1926,32 @@ void FEResourceManager::LoadStandardMaterial()
 	FEShader* PBRInstancedShader = CreateShader("FEPBRInstancedShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_DEFERRED.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"7C80085C184442155D0F3C7B");
+		FEEngineResourceIDs::PBRInstancedShader);
 
 	PBRInstancedShader->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEShader* PBRInstancedGBufferShader = CreateShader("FEPBRInstancedGBufferShader", LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_INSTANCED_VS.glsl")).c_str(),
 		LoadGLSL((EngineFolder + "CoreExtensions//StandardMaterial//PBRMaterial//FE_PBR_FS_GBUFFER.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"613830232E12602D6A1D2C17");
+		FEEngineResourceIDs::PBRInstancedGBufferShader);
 
 	PBRInstancedGBufferShader->SetTag(ENGINE_RESOURCE_TAG);
 
-	NewMaterial = CreateMaterial("FEPBRBaseMaterial", "61649B9E0F08013Q3939316C" /*"FEPBRBaseMaterial"*/);
+	NewMaterial = CreateMaterial("FEPBRBaseMaterial", FEEngineResourceIDs::PBRBaseMaterial);
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
-	NewMaterial->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+	NewMaterial->Shader = GetShader(FEEngineResourceIDs::PBRShader);
 	NewMaterial->SetAlbedoMap(NoTexture);
 	NewMaterial->SetTag(ENGINE_RESOURCE_TAG);
 	// ****************************** PBR SHADER END ******************************
 
 	// same as FERenderer::updateFogInShaders()
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogDensity", 0.007f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("fogGradient", 2.5f);
-	GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/)->UpdateUniformData("shadowBlurFactor", 1.0f);
+	GetShader(FEEngineResourceIDs::PBRShader)->UpdateUniformData("fogDensity", 0.007f);
+	GetShader(FEEngineResourceIDs::PBRShader)->UpdateUniformData("fogGradient", 2.5f);
+	GetShader(FEEngineResourceIDs::PBRShader)->UpdateUniformData("shadowBlurFactor", 1.0f);
 
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogDensity", 0.007f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("fogGradient", 2.5f);
-	GetShader("7C80085C184442155D0F3C7B"/*"FEPBRInstancedShader"*/)->UpdateUniformData("shadowBlurFactor", 1.0f);
+	GetShader(FEEngineResourceIDs::PBRInstancedShader)->UpdateUniformData("fogDensity", 0.007f);
+	GetShader(FEEngineResourceIDs::PBRInstancedShader)->UpdateUniformData("fogGradient", 2.5f);
+	GetShader(FEEngineResourceIDs::PBRInstancedShader)->UpdateUniformData("shadowBlurFactor", 1.0f);
 
 	// ****************************** POINT CLOUD SHADERS ******************************
 
@@ -1967,19 +1964,19 @@ void FEResourceManager::LoadStandardMaterial()
 
 void FEResourceManager::LoadStandardGameModels()
 {
-	FEGameModel* NewGameModel = new FEGameModel(GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/), GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/), "standardGameModel");
-	GameModels.erase(NewGameModel->GetObjectID());
-	NewGameModel->SetID("67251E393508013ZV579315F");
+	FEGameModel* NewGameModel = new FEGameModel(GetMesh(FEEngineResourceIDs::SphereMesh), GetMaterial(FEEngineResourceIDs::SolidColorMaterial), "standardGameModel");
+	GameModels.erase(NewGameModel->GetID());
+	NewGameModel->SetID(FEEngineResourceIDs::StandardGameModel);
 	NewGameModel->SetTag(ENGINE_RESOURCE_TAG);
-	GameModels[NewGameModel->GetObjectID()] = NewGameModel;
+	GameModels[NewGameModel->GetID()] = NewGameModel;
 
 	// Generic VR controller game model
-	NewGameModel = new FEGameModel(GetMesh("7F784407607A39545A65033A"), GetMaterial("6F381A367E2D683A753C2A79"), "FEGenericVRControllerGameModel");
-	GameModels.erase(NewGameModel->GetObjectID());
-	NewGameModel->SetID("504029555848336725615C49");
+	NewGameModel = new FEGameModel(GetMesh(FEEngineResourceIDs::GenericVRControllerMesh), GetMaterial(FEEngineResourceIDs::GenericVRControllerMaterial), "FEGenericVRControllerGameModel");
+	GameModels.erase(NewGameModel->GetID());
+	NewGameModel->SetID(FEEngineResourceIDs::GenericVRControllerGameModel);
 	NewGameModel->SetTag(ENGINE_RESOURCE_TAG);
 	NewGameModel->SetScaleFactor(20.0f);
-	GameModels[NewGameModel->GetObjectID()] = NewGameModel;
+	GameModels[NewGameModel->GetID()] = NewGameModel;
 }
 
 void FEResourceManager::Clear()
@@ -2064,12 +2061,12 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const std::string& FilePath)
 	delete[] Indices;
 }
 
-std::vector<std::string> FEResourceManager::GetTextureIDList()
+std::vector<FEUUID> FEResourceManager::GetTextureIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Textures)
+	return GetResourceIDList(Textures);
 }
 
-FETexture* FEResourceManager::GetTexture(const std::string ID)
+FETexture* FEResourceManager::GetTexture(const FEUUID& ID)
 {
 	if (Textures.find(ID) == Textures.end())
 		return nullptr;
@@ -2121,7 +2118,7 @@ void FEResourceManager::DeleteFETexture(const FETexture* Texture)
 	}
 
 	// After we make sure that texture is no more referenced by any material, we can delete TextureIterator.
-	Textures.erase(Texture->GetObjectID());
+	Textures.erase(Texture->GetID());
 
 	delete Texture;
 }
@@ -2135,27 +2132,27 @@ void FEResourceManager::DeleteFEMesh(const FEMesh* Mesh)
 	{
 		if (GameModelIterator->second->Mesh == Mesh)
 		{
-			GameModelIterator->second->Mesh = GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
+			GameModelIterator->second->Mesh = GetMesh(FEEngineResourceIDs::SphereMesh);
 		}
 
 		GameModelIterator++;
 	}
 
-	Meshes.erase(Mesh->GetObjectID());
+	Meshes.erase(Mesh->GetID());
 	delete Mesh;
 }
 
-std::vector<std::string> FEResourceManager::GetGameModelIDList()
+std::vector<FEUUID> FEResourceManager::GetGameModelIDList()
 {
-	FE_MAP_TO_STR_VECTOR(GameModels)
+	return GetResourceIDList(GameModels);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateGameModelIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateGameModelIDList()
 {
 	return GetResourceIDListByTag(GameModels, ENGINE_RESOURCE_TAG);
 }
 
-FEGameModel* FEResourceManager::GetGameModel(const std::string ID)
+FEGameModel* FEResourceManager::GetGameModel(const FEUUID& ID)
 {
 	if (GameModels.find(ID) == GameModels.end())
 		return nullptr;
@@ -2181,30 +2178,30 @@ std::vector<FEGameModel*> FEResourceManager::GetGameModelByName(const std::strin
 	return Result;
 }
 
-FEGameModel* FEResourceManager::CreateGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name, const std::string ForceObjectID)
+FEGameModel* FEResourceManager::CreateGameModel(FEMesh* Mesh, FEMaterial* Material, std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "unnamedGameModel";
 
 	if (Mesh == nullptr)
-		Mesh = GetMesh("7F251E3E0D08013E3579315F"/*"sphere"*/);
+		Mesh = GetMesh(FEEngineResourceIDs::SphereMesh);
 
 	if (Material == nullptr)
-		Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+		Material = GetMaterial(FEEngineResourceIDs::SolidColorMaterial);
 
 	FEGameModel* NewGameModel = new FEGameModel(Mesh, Material, Name);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 	{
-		GameModels[ForceObjectID] = NewGameModel;
-		GameModels[ForceObjectID]->SetID(ForceObjectID);
+		NewGameModel->SetID(ForceObjectID);
+		GameModels[NewGameModel->GetID()] = NewGameModel;
 	}
 	else
 	{
-		GameModels[NewGameModel->ID] = NewGameModel;
+		GameModels[NewGameModel->GetID()] = NewGameModel;
 	}
 
-	GameModels[NewGameModel->ID]->SetName(Name);
-	return GameModels[NewGameModel->ID];
+	GameModels[NewGameModel->GetID()]->SetName(Name);
+	return GameModels[NewGameModel->GetID()];
 }
 
 Json::Value FEResourceManager::SaveGameModelToJSON(FEGameModel* GameModel)
@@ -2212,8 +2209,8 @@ Json::Value FEResourceManager::SaveGameModelToJSON(FEGameModel* GameModel)
 	Json::Value Root;
 
 	Root["FEObjectData"] = RESOURCE_MANAGER.SaveFEObjectPart(GameModel);
-	Root["Mesh"] = GameModel->Mesh->GetObjectID();
-	Root["Material"] = GameModel->Material->GetObjectID();
+	Root["Mesh"] = UNIQUE_ID.ToString(GameModel->Mesh->GetID());
+	Root["Material"] = UNIQUE_ID.ToString(GameModel->Material->GetID());
 	Root["ScaleFactor"] = GameModel->GetScaleFactor();
 
 	Root["LODs"]["HaveLODlevels"] = GameModel->IsUsingLOD();
@@ -2224,11 +2221,11 @@ Json::Value FEResourceManager::SaveGameModelToJSON(FEGameModel* GameModel)
 		Root["LODs"]["LODCount"] = GameModel->GetLODCount();
 		for (size_t i = 0; i < GameModel->GetLODCount(); i++)
 		{
-			Root["LODs"][std::to_string(i)]["Mesh"] = GameModel->GetLODMesh(i)->GetObjectID();
+			Root["LODs"][std::to_string(i)]["Mesh"] = UNIQUE_ID.ToString(GameModel->GetLODMesh(i)->GetID());
 			Root["LODs"][std::to_string(i)]["Max draw distance"] = GameModel->GetLODMaxDrawDistance(i);
 			Root["LODs"][std::to_string(i)]["IsBillboard"] = GameModel->IsLODBillboard(i);
 			if (GameModel->IsLODBillboard(i))
-				Root["LODs"][std::to_string(i)]["Billboard material"] = GameModel->GetBillboardMaterial()->GetObjectID();
+				Root["LODs"][std::to_string(i)]["Billboard material"] = UNIQUE_ID.ToString(GameModel->GetBillboardMaterial()->GetID());
 		}
 	}
 
@@ -2239,8 +2236,8 @@ FEGameModel* FEResourceManager::LoadGameModelFromJSON(Json::Value& Root)
 {
 	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
 
-	FEGameModel* NewGameModel = RESOURCE_MANAGER.CreateGameModel(RESOURCE_MANAGER.GetMesh(Root["Mesh"].asCString()),
-		RESOURCE_MANAGER.GetMaterial(Root["Material"].asCString()),
+	FEGameModel* NewGameModel = RESOURCE_MANAGER.CreateGameModel(RESOURCE_MANAGER.GetMesh(UNIQUE_ID.FromString(Root["Mesh"].asCString())),
+		RESOURCE_MANAGER.GetMaterial(UNIQUE_ID.FromString(Root["Material"].asCString())),
 		LoadedObjectData.Name, LoadedObjectData.ID);
 
 	if (NewGameModel == nullptr)
@@ -2263,13 +2260,13 @@ FEGameModel* FEResourceManager::LoadGameModelFromJSON(Json::Value& Root)
 		size_t LODCount = Root["LODs"]["LODCount"].asInt();
 		for (size_t i = 0; i < LODCount; i++)
 		{
-			NewGameModel->SetLODMesh(i, RESOURCE_MANAGER.GetMesh(Root["LODs"][std::to_string(i)]["Mesh"].asString()));
+			NewGameModel->SetLODMesh(i, RESOURCE_MANAGER.GetMesh(UNIQUE_ID.FromString(Root["LODs"][std::to_string(i)]["Mesh"].asString())));
 			NewGameModel->SetLODMaxDrawDistance(i, Root["LODs"][std::to_string(i)]["Max draw distance"].asFloat());
 
 			bool bLODBillboard = Root["LODs"][std::to_string(i)]["IsBillboard"].asBool();
 			NewGameModel->SetIsLODBillboard(i, bLODBillboard);
 			if (bLODBillboard)
-				NewGameModel->SetBillboardMaterial(RESOURCE_MANAGER.GetMaterial(Root["LODs"][std::to_string(i)]["Billboard material"].asString()));
+				NewGameModel->SetBillboardMaterial(RESOURCE_MANAGER.GetMaterial(UNIQUE_ID.FromString(Root["LODs"][std::to_string(i)]["Billboard material"].asString())));
 		}
 	}
 
@@ -2278,13 +2275,13 @@ FEGameModel* FEResourceManager::LoadGameModelFromJSON(Json::Value& Root)
 
 void FEResourceManager::DeleteGameModel(const FEGameModel* GameModel)
 {
-	GameModels.erase(GameModel->GetObjectID());
+	GameModels.erase(GameModel->GetID());
 	delete GameModel;
 }
 
 FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
 	const char* TessControlText, const char* TessEvalText,
-	const char* GeometryText, const char* ComputeText, const std::string ForceObjectID)
+	const char* GeometryText, const char* ComputeText, const FEUUID& ForceObjectID)
 {
 	if (ShaderName.empty())
 		ShaderName = "unnamedShader";
@@ -2298,14 +2295,14 @@ FEShader* FEResourceManager::CreateShader(std::string ShaderName, const char* Ve
 	}
 
 	FEShader* NewShader = new FEShader(ShaderName, VertexText, FragmentText, TessControlText, TessEvalText, GeometryText, ComputeText);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		NewShader->SetID(ForceObjectID);
-	Shaders[NewShader->GetObjectID()] = NewShader;
+	Shaders[NewShader->GetID()] = NewShader;
 
 	return NewShader;
 }
 
-FEShader* FEResourceManager::GetShader(const std::string ShaderID)
+FEShader* FEResourceManager::GetShader(const FEUUID& ShaderID)
 {
 	if (Shaders.find(ShaderID) == Shaders.end())
 		return nullptr;
@@ -2331,12 +2328,12 @@ std::vector<FEShader*> FEResourceManager::GetShaderByName(const std::string Name
 	return Result;
 }
 
-std::vector<std::string> FEResourceManager::GetShaderIDList()
+std::vector<FEUUID> FEResourceManager::GetShaderIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Shaders)
+	return GetResourceIDList(Shaders);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateShaderIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateShaderIDList()
 {
 	return GetResourceIDListByTag(Shaders, ENGINE_RESOURCE_TAG);
 }
@@ -2356,30 +2353,27 @@ void FEResourceManager::DeleteShader(const FEShader* Shader)
 	while (MaterialsIterator != Materials.end())
 	{
 		if (MaterialsIterator->second->Shader->GetNameHash() == Shader->GetNameHash())
-			MaterialsIterator->second->Shader = GetShader("6917497A5E0C05454876186F"/*"FESolidColorShader"*/);
+			MaterialsIterator->second->Shader = GetShader(FEEngineResourceIDs::SolidColorShader);
 
 		MaterialsIterator++;
 	}
 
-	Shaders.erase(Shader->GetObjectID());
+	Shaders.erase(Shader->GetID());
 	delete Shader;
 }
 
-bool FEResourceManager::ReplaceShader(const std::string OldShaderID, FEShader* NewShader)
+bool FEResourceManager::ReplaceShader(const FEUUID& OldShaderID, FEShader* NewShader)
 {
-	const FEShader* ShaderToReplace = GetShader(OldShaderID);
+	FEShader* ShaderToReplace = GetShader(OldShaderID);
 	if (ShaderToReplace == nullptr)
 		return false;
 
 	if (NewShader->GetName().empty())
 		return false;
 
-	if (Shaders.find(OldShaderID) != Shaders.end())
-	{
-		Shaders[OldShaderID]->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
-			NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
-			NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
-	}
+	ShaderToReplace->ReCompile(NewShader->GetName(), NewShader->GetVertexShaderText(), NewShader->GetFragmentShaderText(),
+		NewShader->GetTessControlShaderText(), NewShader->GetTessEvalShaderText(),
+		NewShader->GetGeometryShaderText(), NewShader->GetComputeShaderText());
 
 	return true;
 }
@@ -2449,7 +2443,7 @@ FETexture* FEResourceManager::CreateTexture(const GLint InternalFormat, const GL
 
 	FETexture* NewTexture = new FETexture(InternalFormat, Format, Width, Height, Name);
 	if (!bUnManaged)
-		Textures[NewTexture->GetObjectID()] = NewTexture;
+		Textures[NewTexture->GetID()] = NewTexture;
 
 	return NewTexture;
 }
@@ -2549,7 +2543,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		const size_t NextID = Shaders.size();
 		size_t Index = 0;
 		Result = "Shader_" + std::to_string(NextID + Index);
-		while (Shaders.find(Result) != Shaders.end())
+		while (!GetShaderByName(Result).empty())
 		{
 			Index++;
 			Result = "Shader_" + std::to_string(NextID + Index);
@@ -2562,7 +2556,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		const size_t NextID = Textures.size();
 		size_t Index = 0;
 		Result = "Texture_" + std::to_string(NextID + Index);
-		while (Textures.find(Result) != Textures.end())
+		while (!GetTextureByName(Result).empty())
 		{
 			Index++;
 			Result = "Texture_" + std::to_string(NextID + Index);
@@ -2575,7 +2569,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		const size_t NextID = Meshes.size();
 		size_t Index = 0;
 		Result = "Mesh_" + std::to_string(NextID + Index);
-		while (Meshes.find(Result) != Meshes.end())
+		while (!GetMeshByName(Result).empty())
 		{
 			Index++;
 			Result = "Mesh_" + std::to_string(NextID + Index);
@@ -2588,7 +2582,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		const size_t NextID = Materials.size();
 		size_t Index = 0;
 		Result = "Material_" + std::to_string(NextID + Index);
-		while (Materials.find(Result) != Materials.end())
+		while (!GetMaterialByName(Result).empty())
 		{
 			Index++;
 			Result = "Material_" + std::to_string(NextID + Index);
@@ -2601,7 +2595,7 @@ std::string FEResourceManager::FreeObjectName(const FE_OBJECT_TYPE ObjectType)
 		const size_t NextID = GameModels.size();
 		size_t Index = 0;
 		Result = "GameModel_" + std::to_string(NextID + Index);
-		while (GameModels.find(Result) != GameModels.end())
+		while (!GetGameModelByName(Result).empty())
 		{
 			Index++;
 			Result = "GameModel_" + std::to_string(NextID + Index);
@@ -2668,13 +2662,13 @@ void FEResourceManager::AddTextureToManaged(FETexture* Texture)
 		return;
 	}
 
-	if (Textures.find(Texture->GetObjectID()) != Textures.end())
+	if (Textures.find(Texture->GetID()) != Textures.end())
 	{
 		LOG.Add("FEResourceManager::AddTextureToManaged called with already managed texture", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
-	Textures[Texture->GetObjectID()] = Texture;
+	Textures[Texture->GetID()] = Texture;
 }
 
 void FEResourceManager::ReSaveStandardMeshes()
@@ -2683,7 +2677,7 @@ void FEResourceManager::ReSaveStandardMeshes()
 	while (MeshIterator != Meshes.end())
 	{
 		if (MeshIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
-			SaveFEMesh(MeshIterator->second, (ResourcesFolder + MeshIterator->second->GetObjectID() + ".model"));
+			SaveFEMesh(MeshIterator->second, (ResourcesFolder + UNIQUE_ID.ToString(MeshIterator->second->GetID()) + ".model"));
 		MeshIterator++;
 	}
 }
@@ -2694,7 +2688,7 @@ void FEResourceManager::ReSaveEnginePrivateTextures()
 	while (TextureIterator != Textures.end())
 	{
 		if (TextureIterator->second->GetTag() == ENGINE_RESOURCE_TAG)
-			SaveFETexture(TextureIterator->second, (ResourcesFolder + TextureIterator->second->GetObjectID() + ".texture"));
+			SaveFETexture(TextureIterator->second, (ResourcesFolder + UNIQUE_ID.ToString(TextureIterator->second->GetID()) + ".texture"));
 		TextureIterator++;
 	}
 }
@@ -2707,12 +2701,12 @@ void FEResourceManager::DeleteMaterial(const FEMaterial* Material)
 	while (GameModelIterator != GameModels.end())
 	{
 		if (GameModelIterator->second->Material == Material)
-			GameModelIterator->second->Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+			GameModelIterator->second->Material = GetMaterial(FEEngineResourceIDs::SolidColorMaterial);
 
 		GameModelIterator++;
 	}
 
-	Materials.erase(Material->GetObjectID());
+	Materials.erase(Material->GetID());
 	delete Material;
 }
 
@@ -3395,13 +3389,13 @@ FETexture* FEResourceManager::LoadPFMTexture(const std::string& FilePath, std::s
 	if (!ImportPFMToRawData(FilePath, RawData, TextureWidth, TextureHeight))
 	{
 		LOG.Add("FEResourceManager::LoadPFMTexture can't import PFM file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	if (RawData.empty())
 	{
 		LOG.Add("FEResourceManager::LoadPFMTexture imported PFM file with no data: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	// ImportPFMToRawData returns Width * Height * channels floats,
@@ -3410,7 +3404,7 @@ FETexture* FEResourceManager::LoadPFMTexture(const std::string& FilePath, std::s
 	if (Channels != 1 && Channels != 3)
 	{
 		LOG.Add("FEResourceManager::LoadPFMTexture unsupported channel count in PFM file: " + FilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	const GLint InternalFormat = (Channels == 3) ? GL_RGB32F : GL_R32F;
@@ -3697,7 +3691,7 @@ FETexture* FEResourceManager::LoadJPGTexture(const std::string& FilePath, const 
 	if (RawData == nullptr)
 	{
 		LOG.Add("can't load file: " + FilePath + " in function FEResourceManager::LoadJPGTexture.", "FE_LOG_LOADING", FE_LOG_ERROR);
-		return GetTexture("48271F005A73241F5D7E7134"); // "noTexture"
+		return GetTexture(FEEngineResourceIDs::NoTexture);
 	}
 
 	FETexture* NewTexture = CreateTexture(Name);
@@ -3895,7 +3889,7 @@ void FEResourceManager::CreateMaterialsFromOBJData(std::vector<FEObject*>& Resul
 
 		if (Material != nullptr)
 		{
-			Material->Shader = GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+			Material->Shader = GetShader(FEEngineResourceIDs::PBRShader);
 			ResultArray.push_back(Material);
 
 			FEGameModel* GameModel = CreateGameModel(reinterpret_cast<FEMesh*>(ResultArray[i]), Material);
@@ -3994,17 +3988,17 @@ FETexture* FEResourceManager::CreateTextureWithTransparency(FETexture* OriginalT
 	return Result;
 }
 
-std::vector<std::string> FEResourceManager::GetPrefabIDList()
+std::vector<FEUUID> FEResourceManager::GetPrefabIDList()
 {
-	FE_MAP_TO_STR_VECTOR(Prefabs)
+	return GetResourceIDList(Prefabs);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivatePrefabIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivatePrefabIDList()
 {
 	return GetResourceIDListByTag(Prefabs, ENGINE_RESOURCE_TAG);
 }
 
-FEPrefab* FEResourceManager::GetPrefab(const std::string ID)
+FEPrefab* FEResourceManager::GetPrefab(const FEUUID& ID)
 {
 	if (Prefabs.find(ID) == Prefabs.end())
 		return nullptr;
@@ -4030,30 +4024,30 @@ std::vector<FEPrefab*> FEResourceManager::GetPrefabByName(const std::string Name
 	return Result;
 }
 
-FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const std::string ForceObjectID, FEScene* SceneDescription)
+FEPrefab* FEResourceManager::CreatePrefab(std::string Name, const FEUUID& ForceObjectID, FEScene* SceneDescription)
 {
 	if (Name.empty())
 		Name = "Unnamed prefab";
 
 	FEPrefab* NewPrefab = new FEPrefab(Name, SceneDescription == nullptr);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 	{
-		Prefabs[ForceObjectID] = NewPrefab;
-		Prefabs[ForceObjectID]->SetID(ForceObjectID);
+		NewPrefab->SetID(ForceObjectID);
+		Prefabs[NewPrefab->GetID()] = NewPrefab;
 	}
 	else
 	{
-		Prefabs[NewPrefab->ID] = NewPrefab;
+		Prefabs[NewPrefab->GetID()] = NewPrefab;
 	}
 
-	Prefabs[NewPrefab->ID]->SetName(Name);
+	Prefabs[NewPrefab->GetID()]->SetName(Name);
 	if (SceneDescription != nullptr)
 	{
 		SceneDescription->SetFlag(FESceneFlag::PrefabDescription, true);
-		Prefabs[NewPrefab->ID]->Scene = SceneDescription;
+		Prefabs[NewPrefab->GetID()]->Scene = SceneDescription;
 	}
 
-	return Prefabs[NewPrefab->ID];
+	return Prefabs[NewPrefab->GetID()];
 }
 
 Json::Value FEResourceManager::SavePrefabToJSON(FEPrefab* Prefab)
@@ -4068,7 +4062,7 @@ Json::Value FEResourceManager::SavePrefabToJSON(FEPrefab* Prefab)
 		return Root;
 	}
 
-	Root["SceneID"] = Prefab->GetScene()->GetObjectID();
+	Root["SceneID"] = UNIQUE_ID.ToString(Prefab->GetScene()->GetID());
 	return Root;
 }
 
@@ -4076,14 +4070,14 @@ FEPrefab* FEResourceManager::LoadPrefabFromJSON(Json::Value& Root)
 {
 	FEObjectLoadedData LoadedObjectData = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
 
-	std::string SceneID;
+	FEUUID SceneID;
 	if (Root.isMember("Scene"))
 	{
-		SceneID = Root["Scene"]["ID"].asCString();
+		SceneID = UNIQUE_ID.FromString(Root["Scene"]["ID"].asCString());
 	}
 	else
 	{
-		SceneID = Root["SceneID"].asCString();
+		SceneID = UNIQUE_ID.FromString(Root["SceneID"].asCString());
 	}
 
 	FEScene* Scene = SCENE_MANAGER.GetSceneByID(SceneID);
@@ -4101,7 +4095,7 @@ FEPrefab* FEResourceManager::LoadPrefabFromJSON(Json::Value& Root)
 
 void FEResourceManager::DeletePrefab(const FEPrefab* Prefab)
 {
-	Prefabs.erase(Prefab->GetObjectID());
+	Prefabs.erase(Prefab->GetID());
 	delete Prefab;
 }
 
@@ -4136,7 +4130,7 @@ void FEResourceManager::SetUserDataVertexAttributeActive(FEMesh* Mesh)
 Json::Value FEResourceManager::SaveFEObjectPart(FEObject* Object)
 {
 	Json::Value Root;
-	Root["ID"] = Object->GetObjectID();
+	Root["ID"] = UNIQUE_ID.ToString(Object->GetID());
 	Root["Tag"] = Object->GetTag();
 	Root["Name"] = Object->GetName();
 	Root["Type"] = Object->GetType();
@@ -4149,7 +4143,7 @@ FEObjectLoadedData FEResourceManager::LoadFEObjectPart(const Json::Value& Root)
 	FEObjectLoadedData Result;
 
 	if (Root.isMember("ID") && Root["ID"].isString())
-		Result.ID = Root["ID"].asString();
+		Result.ID = UNIQUE_ID.FromString(Root["ID"].asString());
 
 	if (Root.isMember("Tag") && Root["Tag"].isString())
 		Result.Tag = Root["Tag"].asString();
@@ -4193,17 +4187,17 @@ void FEResourceManager::RemoveTagThatWillPreventDeletion(std::string Tag)
 	}
 }
 
-std::vector<std::string> FEResourceManager::GetNativeScriptModuleIDList()
+std::vector<FEUUID> FEResourceManager::GetNativeScriptModuleIDList()
 {
-	FE_MAP_TO_STR_VECTOR(NativeScriptModules);
+	return GetResourceIDList(NativeScriptModules);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateNativeScriptModuleIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateNativeScriptModuleIDList()
 {
 	return GetResourceIDListByTag(NativeScriptModules, ENGINE_RESOURCE_TAG);
 }
 
-FENativeScriptModule* FEResourceManager::GetNativeScriptModule(std::string ID)
+FENativeScriptModule* FEResourceManager::GetNativeScriptModule(const FEUUID& ID)
 {
 	if (NativeScriptModules.find(ID) == NativeScriptModules.end())
 		return nullptr;
@@ -4271,27 +4265,27 @@ std::string FEResourceManager::ReadDLLModuleID(std::string DLLFilePath)
 	return DLLModuleID;
 }
 
-FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string Name, std::string ForceObjectID)
+FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "Unnamed NativeScriptModule";
 
 	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule();
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 	{
-		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
-		NativeScriptModules[ForceObjectID]->SetID(ForceObjectID);
+		NewNativeScriptModule->SetID(ForceObjectID);
+		NativeScriptModules[NewNativeScriptModule->GetID()] = NewNativeScriptModule;
 	}
 	else
 	{
-		NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
+		NativeScriptModules[NewNativeScriptModule->GetID()] = NewNativeScriptModule;
 	}
 
-	NativeScriptModules[NewNativeScriptModule->ID]->SetName(Name);
-	return NativeScriptModules[NewNativeScriptModule->ID];
+	NativeScriptModules[NewNativeScriptModule->GetID()]->SetName(Name);
+	return NativeScriptModules[NewNativeScriptModule->GetID()];
 }
 
-FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles, std::string Name, std::string ForceObjectID)
+FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles, std::string Name, const FEUUID& ForceObjectID)
 {
 	if (DebugDLLFilePath.empty())
 	{
@@ -4341,10 +4335,10 @@ FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string De
 		return nullptr;
 	}
 
-	std::string ReleaseDLLModuleID = ReadDLLModuleID(DebugDLLFilePath);
+	std::string ReleaseDLLModuleID = ReadDLLModuleID(ReleaseDLLFilePath);
 	if (ReleaseDLLModuleID.empty())
 	{
-		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get DLLModuleID from DLL: " + DebugDLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("FEResourceManager::CreateNativeScriptModule failed to get DLLModuleID from DLL: " + ReleaseDLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);
 		return nullptr;
 	}
 
@@ -4355,18 +4349,18 @@ FENativeScriptModule* FEResourceManager::CreateNativeScriptModule(std::string De
 	}
 
 	FENativeScriptModule* NewNativeScriptModule = new FENativeScriptModule(DebugDLLFilePath, DebugPDBFilePath, ReleaseDLLFilePath, ScriptFiles);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 	{
-		NativeScriptModules[ForceObjectID] = NewNativeScriptModule;
-		NativeScriptModules[ForceObjectID]->SetID(ForceObjectID);
+		NewNativeScriptModule->SetID(ForceObjectID);
+		NativeScriptModules[NewNativeScriptModule->GetID()] = NewNativeScriptModule;
 	}
 	else
 	{
-		NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
+		NativeScriptModules[NewNativeScriptModule->GetID()] = NewNativeScriptModule;
 	}
 
-	NativeScriptModules[NewNativeScriptModule->ID]->SetName(Name);
-	return NativeScriptModules[NewNativeScriptModule->ID];
+	NativeScriptModules[NewNativeScriptModule->GetID()]->SetName(Name);
+	return NativeScriptModules[NewNativeScriptModule->GetID()];
 }
 
 FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::string& FilePath)
@@ -4477,8 +4471,8 @@ FENativeScriptModule* FEResourceManager::LoadFENativeScriptModule(const std::str
 
 	File.close();
 
-	NativeScriptModules[NewNativeScriptModule->ID] = NewNativeScriptModule;
-	return NativeScriptModules[NewNativeScriptModule->ID];
+	NativeScriptModules[NewNativeScriptModule->GetID()] = NewNativeScriptModule;
+	return NativeScriptModules[NewNativeScriptModule->GetID()];
 }
 
 void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, const std::string& FilePath)
@@ -4590,13 +4584,13 @@ bool FEResourceManager::DeleteNativeScriptModuleInternal(FENativeScriptModule* M
 		return false;
 	}
 
-	if (NativeScriptModules.find(Module->GetObjectID()) == NativeScriptModules.end())
+	if (NativeScriptModules.find(Module->GetID()) == NativeScriptModules.end())
 	{
 		LOG.Add("can't find Module in NativeScriptModules in FEResourceManager::DeleteNativeScriptModuleInternal", "FE_LOG_GENERAL", FE_LOG_ERROR);
 		return false;
 	}
 
-	NativeScriptModules.erase(Module->GetObjectID());
+	NativeScriptModules.erase(Module->GetID());
 	delete Module;
 
 	return true;
@@ -4623,7 +4617,11 @@ FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
 	// After having all files in the engine folder, we need to filter out only the header files.
 	for (size_t i = 0; i < AllFiles.size(); i++)
 	{
-		if (AllFiles[i].substr(AllFiles[i].size() - 2) == ".h" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".hpp" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".inl")
+		// GSL headers used by stduuid have no extension.
+		const std::string ParentDirectory = FILE_SYSTEM.GetDirectoryPath(AllFiles[i]);
+		const bool bStduuidGSLHeader = FILE_SYSTEM.GetFileName(ParentDirectory) == "gsl" && FILE_SYSTEM.GetFileName(FILE_SYSTEM.GetDirectoryPath(ParentDirectory)) == "stduuid";
+
+		if (AllFiles[i].substr(AllFiles[i].size() - 2) == ".h" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".hpp" || AllFiles[i].substr(AllFiles[i].size() - 4) == ".inl" || bStduuidGSLHeader)
 		{
 			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
@@ -5121,17 +5119,17 @@ bool FEResourceManager::UnPackPrivateEngineAssetPackage(FEAssetPackage* AssetPac
 	return true;
 }
 
-std::vector<std::string> FEResourceManager::GetPointCloudIDList()
+std::vector<FEUUID> FEResourceManager::GetPointCloudIDList()
 {
-	FE_MAP_TO_STR_VECTOR(PointClouds)
+	return GetResourceIDList(PointClouds);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivatePointCloudIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivatePointCloudIDList()
 {
 	return GetResourceIDListByTag(PointClouds, ENGINE_RESOURCE_TAG);
 }
 
-FEPointCloud* FEResourceManager::GetPointCloud(std::string ID)
+FEPointCloud* FEResourceManager::GetPointCloud(const FEUUID& ID)
 {
 	if (PointClouds.find(ID) == PointClouds.end())
 		return nullptr;
@@ -5154,7 +5152,7 @@ std::vector<FEPointCloud*> FEResourceManager::GetPointCloudByName(const std::str
 	return Result;
 }
 
-FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
+FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name, const FEUUID& ForceObjectID, bool bCenterPositions, bool bAdvancedRendering, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
 {
 	if (RawPointCloudDataDouble.empty())
 	{
@@ -5352,12 +5350,12 @@ bool FEResourceManager::SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std:
 	return true;
 }
 
-FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, std::string ForceObjectID, bool bCenterPositions, bool bAdvancedRendering, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
+FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name, const FEUUID& ForceObjectID, bool bCenterPositions, bool bAdvancedRendering, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
 {
 	FEPointCloud* NewPointCloud = new FEPointCloud();
 	NewPointCloud->SetName(Name);
 
-	if (!ForceObjectID.empty())	
+	if (!UNIQUE_ID.IsNull(ForceObjectID))	
 		NewPointCloud->SetID(ForceObjectID);
 
 	if (RawPointCloudData.empty())
@@ -5413,7 +5411,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	if (UserDataProcessor)
 		UserDataProcessor(RawPointCloudData);
 
-	PointClouds[NewPointCloud->GetObjectID()] = NewPointCloud;
+	PointClouds[NewPointCloud->GetID()] = NewPointCloud;
 	NewPointCloud->PointCount = RawPointCloudData.size();
 	NewPointCloud->bUseAdvancedRendering = bAdvancedRendering;
 
@@ -5427,7 +5425,7 @@ FEPointCloud* FEResourceManager::RawDataToFEPointCloud(std::vector<FEPointCloudV
 	return NewPointCloud;
 }
 
-FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name, std::string ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
+FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name, const FEUUID& ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
 
@@ -5511,7 +5509,7 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 	return LoadedPointCloud;
 }
 
-FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name, std::string ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
+FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name, const FEUUID& ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
 {
 	std::vector<FEPointCloudVertexDouble> RawDataDouble;
 	if (!ReadLasOrLaz(FilePath, RawDataDouble, OutHeaderCopy))
@@ -5565,11 +5563,11 @@ FEPointCloud* FEResourceManager::ImportPointCloud(const std::string& FilePath, s
 	if (bIsPLYFile)
 	{
 		FERawPLYData* PLYData = PLY_MANAGER.ParseFile(FilePath);
-		LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FilePath), "", true, UserDataProcessor);
+		LoadedPointCloud = RawPLYDataToFEPointCloud(PLYData, FILE_SYSTEM.GetFileName(FilePath), FEUUID(), true, UserDataProcessor);
 	}
 	else
 	{
-		LoadedPointCloud = LasOrLazToFEPointCloud(FilePath, FILE_SYSTEM.GetFileName(FilePath), "", true, UserDataProcessor);
+		LoadedPointCloud = LasOrLazToFEPointCloud(FilePath, FILE_SYSTEM.GetFileName(FilePath), FEUUID(), true, UserDataProcessor);
 	}
 
 	if (LoadedPointCloud == nullptr)
@@ -5712,7 +5710,7 @@ void FEResourceManager::LoadPointCloudFileAsyncCallBack(void* OutputData)
 
 	if (ResultInfo->bSuccess)
 	{
-		LoadedPointCloud = RESOURCE_MANAGER.RawDataToFEPointCloud(ResultInfo->RawData, FILE_SYSTEM.GetFileName(ResultInfo->FilePath), "", false, false, nullptr);
+		LoadedPointCloud = RESOURCE_MANAGER.RawDataToFEPointCloud(ResultInfo->RawData, FILE_SYSTEM.GetFileName(ResultInfo->FilePath), FEUUID(), false, false, nullptr);
 		if (LoadedPointCloud != nullptr)
 		{
 			RESOURCE_MANAGER.LastPointCloudAppliedShift = ResultInfo->AppliedShift;
@@ -5798,7 +5796,7 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(const std::string& FilePath, s
 	File.read(Buffer, 4);
 	const float Version = *(float*)Buffer;
 
-	std::string LoadedObjectID;
+	FEUUID LoadedObjectID;
 	std::string LoadedName;
 	if (Version != FE_POINT_CLOUD_VERSION)
 	{
@@ -6075,13 +6073,13 @@ void FEResourceManager::DeleteFEPointCloud(FEPointCloud* PointCloud)
 		return;
 	}
 
-	if (PointClouds.find(PointCloud->GetObjectID()) == PointClouds.end())
+	if (PointClouds.find(PointCloud->GetID()) == PointClouds.end())
 	{
 		LOG.Add("FEResourceManager::DeleteFEPointCloud: PointCloud does not exist in the resource manager", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
 		return;
 	}
 
-	PointClouds.erase(PointCloud->GetObjectID());
+	PointClouds.erase(PointCloud->GetID());
 	delete PointCloud;
 }
 
@@ -6733,7 +6731,7 @@ FELineCollection* FEResourceManager::RawDataToFELineCollection(std::vector<FELin
 	if (!Name.empty())
 		NewLineCollection->SetName(Name);
 
-	LineCollections[NewLineCollection->GetObjectID()] = NewLineCollection;
+	LineCollections[NewLineCollection->GetID()] = NewLineCollection;
 	return NewLineCollection;
 }
 
@@ -6745,7 +6743,7 @@ void FEResourceManager::DeleteFELineCollection(const FELineCollection* LineColle
 		return;
 	}
 
-	auto LineCollectionIterator = LineCollections.find(LineCollection->GetObjectID());
+	auto LineCollectionIterator = LineCollections.find(LineCollection->GetID());
 	if (LineCollectionIterator != LineCollections.end())
 	{
 		delete LineCollectionIterator->second;
@@ -6757,17 +6755,17 @@ void FEResourceManager::DeleteFELineCollection(const FELineCollection* LineColle
 	}
 }
 
-std::vector<std::string> FEResourceManager::GetFELineCollectionIDList()
+std::vector<FEUUID> FEResourceManager::GetFELineCollectionIDList()
 {
-	FE_MAP_TO_STR_VECTOR(LineCollections)
+	return GetResourceIDList(LineCollections);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateFELineCollectionIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateFELineCollectionIDList()
 {
 	return GetResourceIDListByTag(LineCollections, ENGINE_RESOURCE_TAG);
 }
 
-FELineCollection* FEResourceManager::GetLineCollection(std::string ID)
+FELineCollection* FEResourceManager::GetLineCollection(const FEUUID& ID)
 {
 	if (LineCollections.find(ID) == LineCollections.end())
 		return nullptr;
@@ -6816,7 +6814,7 @@ FELineCollection* FEResourceManager::LoadFELineCollection(const std::string& Fil
 		return nullptr;
 	}
 
-	std::string LoadedObjectID;
+	FEUUID LoadedObjectID;
 	std::string LoadedName;
 	FEObjectLoadedData ObjectData = OBJECT_MANAGER.LoadFEObjectPart(File);
 	LoadedObjectID = ObjectData.ID;
@@ -6840,13 +6838,13 @@ FELineCollection* FEResourceManager::LoadFELineCollection(const std::string& Fil
 	File.close();
 
 	FELineCollection* NewLineCollection = new FELineCollection(RawData);
-	const std::string OldID = NewLineCollection->ID;
+	const FEUUID OldID = NewLineCollection->GetID();
 	// Overwrite ID with Loaded ID.
-	if (!LoadedObjectID.empty())
+	if (!UNIQUE_ID.IsNull(LoadedObjectID))
 	{
 		NewLineCollection->SetID(LoadedObjectID);
 		LineCollections.erase(OldID);
-		LineCollections[NewLineCollection->GetObjectID()] = NewLineCollection;
+		LineCollections[NewLineCollection->GetID()] = NewLineCollection;
 	}
 
 	NewLineCollection->SetName(Name);
@@ -6893,7 +6891,7 @@ glm::dvec3 FEResourceManager::GetLastLoadedPointCloudAppliedShift()
 	return LastPointCloudAppliedShift;
 }
 
-FENewMaterial* FEResourceManager::GetNewMaterial(const std::string& ID)
+FENewMaterial* FEResourceManager::GetNewMaterial(const FEUUID& ID)
 {
 	if (NewMaterials.find(ID) == NewMaterials.end())
 		return nullptr;
@@ -6917,25 +6915,25 @@ std::vector<FENewMaterial*> FEResourceManager::GetNewMaterialByName(const std::s
 	return Result;
 }
 
-FENewMaterial* FEResourceManager::CreateNewMaterial(std::string Name, const std::string ForceObjectID)
+FENewMaterial* FEResourceManager::CreateNewMaterial(std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "Unnamed Material";
 
 	FENewMaterial* NewMaterial = new FENewMaterial(Name);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		NewMaterial->SetID(ForceObjectID);
-	NewMaterials[NewMaterial->GetObjectID()] = NewMaterial;
+	NewMaterials[NewMaterial->GetID()] = NewMaterial;
 
-	return NewMaterials[NewMaterial->GetObjectID()];
+	return NewMaterials[NewMaterial->GetID()];
 }
 
-std::vector<std::string> FEResourceManager::GetNewMaterialIDList()
+std::vector<FEUUID> FEResourceManager::GetNewMaterialIDList()
 {
-	FE_MAP_TO_STR_VECTOR(NewMaterials)
+	return GetResourceIDList(NewMaterials);
 }
 
-std::vector<std::string> FEResourceManager::GetEnginePrivateNewMaterialIDList()
+std::vector<FEUUID> FEResourceManager::GetEnginePrivateNewMaterialIDList()
 {
 	return GetResourceIDListByTag(NewMaterials, ENGINE_RESOURCE_TAG);
 }
@@ -6946,12 +6944,12 @@ void FEResourceManager::DeleteNewMaterial(const FENewMaterial* Material)
 	//while (GameModelIterator != GameModels.end())
 	//{
 	//	if (GameModelIterator->second->Material == Material)
-	//		GameModelIterator->second->Material = GetMaterial("18251A5E0F08013Z3939317U"/*"SolidColorMaterial"*/);
+	//		GameModelIterator->second->Material = GetMaterial(FEEngineResourceIDs::SolidColorMaterial);
 
 	//	GameModelIterator++;
 	//}
 
-	NewMaterials.erase(Material->GetObjectID());
+	NewMaterials.erase(Material->GetID());
 	delete Material;
 }
 
@@ -6966,7 +6964,7 @@ Json::Value FEResourceManager::SaveNewMaterialToJSON(FENewMaterial* Material)
 		return Root;
 	}
 
-	Root["ShaderID"] = Material->Shader->GetObjectID();
+	Root["ShaderID"] = UNIQUE_ID.ToString(Material->Shader->GetID());
 
 	Json::Value UniformsRoot;
 	for (const auto& UniformPair : Material->Shader->Uniforms)
@@ -6993,7 +6991,7 @@ Json::Value FEResourceManager::SaveNewMaterialToJSON(FENewMaterial* Material)
 			const FETexture* Texture = TextureOverrideIterator->second;
 			if (Texture != nullptr)
 			{
-				UniformsRoot[UniformName] = Texture->GetObjectID();
+				UniformsRoot[UniformName] = UNIQUE_ID.ToString(Texture->GetID());
 			}
 			else
 			{
@@ -7014,7 +7012,7 @@ Json::Value FEResourceManager::SaveNewMaterialToJSON(FENewMaterial* Material)
 	for (size_t i = 0; i < FE_MAX_TEXTURES_PER_MATERIAL; i++)
 	{
 		if (Material->Textures[i] != nullptr)
-			Root["Textures"][std::to_string(i).c_str()] = Material->Textures[i]->GetObjectID();
+			Root["Textures"][std::to_string(i).c_str()] = Material->Textures[i]->GetID();
 
 		if (Material->TextureBindings[i] != -1)
 			Root["Texture bindings"][std::to_string(i).c_str()] = Material->TextureBindings[i];
@@ -7045,8 +7043,8 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 	RESOURCE_MANAGER.SetTag(NewMaterial, LoadedObjectData.Tag);
 	
 	// SetShader() sets UniformOverrides and TextureOverrides, so it has to run before the values below are read.
-	const std::string ShaderID = Root["ShaderID"].asString();
-	if (ShaderID == "None")
+	const FEUUID ShaderID = UNIQUE_ID.FromString(Root["ShaderID"].asString());
+	if (UNIQUE_ID.IsNull(ShaderID))
 	{
 		NewMaterial->SetShader(nullptr);
 		return NewMaterial;
@@ -7055,7 +7053,7 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 	FEShader* RequestedShader = RESOURCE_MANAGER.GetShader(ShaderID);
 	if (RequestedShader == nullptr)
 	{
-		LOG.Add("FENewMaterial::FromJSON() failed to find shader with ID " + ShaderID, "FE_LOG_LOADING", FE_LOG_WARNING);
+		LOG.Add("FENewMaterial::FromJSON() failed to find shader with ID " + UNIQUE_ID.ToString(ShaderID), "FE_LOG_LOADING", FE_LOG_WARNING);
 		NewMaterial->SetShader(nullptr);
 		return NewMaterial;
 	}
@@ -7075,7 +7073,7 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 
 		if (TextureOverrideIterator != NewMaterial->TextureOverrides.end())
 		{
-			NewMaterial->SetTextureOverride(UniformName, UniformValue.asString());
+			NewMaterial->SetTextureOverride(UniformName, UNIQUE_ID.FromString(UniformValue.asString()));
 			continue;
 		}
 

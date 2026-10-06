@@ -8,7 +8,7 @@ FEPrefab::FEPrefab(const std::string Name, bool bSceneAllocation) : FEObject(FE_
 	SetName(Name);
 	if (bSceneAllocation)
 	{
-		Scene = SCENE_MANAGER.CreateScene(GetName() + "_Scene", "", FESceneFlag::PrefabDescription);
+		Scene = SCENE_MANAGER.CreateScene(GetName() + "_Scene", FEUUID(), FESceneFlag::PrefabDescription);
 		RESOURCE_MANAGER.SetTag(Scene, PREFAB_SCENE_DESCRIPTION_TAG);
 	}
 	
@@ -25,7 +25,7 @@ FEAABB FEPrefab::GetAABB()
 	return Scene->GetSceneAABB();
 }
 
-bool FEPrefab::IsUsingMaterial(const std::string MaterialID) const
+bool FEPrefab::IsUsingMaterial(const FEUUID& MaterialID) const
 {
 	if (Scene == nullptr)
 		return false;
@@ -34,17 +34,17 @@ bool FEPrefab::IsUsingMaterial(const std::string MaterialID) const
 	for (int i = 0; i < Entities.size(); i++)
 	{
 		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();
-		if (GameModelComponent.GetGameModel()->Material->GetObjectID() == MaterialID)
+		if (GameModelComponent.GetGameModel()->Material->GetID() == MaterialID)
 			return true;
 
-		if (GameModelComponent.GetGameModel()->BillboardMaterial != nullptr && GameModelComponent.GetGameModel()->BillboardMaterial->GetObjectID() == MaterialID)
+		if (GameModelComponent.GetGameModel()->BillboardMaterial != nullptr && GameModelComponent.GetGameModel()->BillboardMaterial->GetID() == MaterialID)
 			return true;
 	}
 
 	return false;
 }
 
-bool FEPrefab::IsUsingGameModel(const std::string GameModelID) const
+bool FEPrefab::IsUsingGameModel(const FEUUID& GameModelID) const
 {
 	if (Scene == nullptr)
 		return false;
@@ -53,7 +53,7 @@ bool FEPrefab::IsUsingGameModel(const std::string GameModelID) const
 	for (int i = 0; i < Entities.size(); i++)
 	{
 		FEGameModelComponent& GameModelComponent = Entities[i]->GetComponent<FEGameModelComponent>();
-		if (GameModelComponent.GetGameModel()->GetObjectID() == GameModelID)
+		if (GameModelComponent.GetGameModel()->GetID() == GameModelID)
 			return true;
 	}
 

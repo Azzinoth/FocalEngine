@@ -19,7 +19,7 @@ FEVolumeSystem::FEVolumeSystem()
 
 	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Basic", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
 																						  RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Basic.glsl").c_str()).c_str(),
-																						  nullptr, nullptr, nullptr, nullptr, "43590632272B4B5E403C096C"));
+																						  nullptr, nullptr, nullptr, nullptr, FEEngineResourceIDs::VolumetricShaderBasic));
 
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMin", 0.0f);
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMax", 1.0f);
@@ -28,11 +28,11 @@ FEVolumeSystem::FEVolumeSystem()
 
 	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Cleaned", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
 																							RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Cloud_Like.glsl").c_str()).c_str(),
-																							nullptr, nullptr, nullptr, nullptr, "391E240A020F67670C16001E"));
+																							nullptr, nullptr, nullptr, nullptr, FEEngineResourceIDs::VolumetricShaderCloudLike));
 
 	VolumetricShaders.push_back(RESOURCE_MANAGER.CreateShader("FEVolumetricShader_Basic_Animated", RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_VS.glsl").c_str()).c_str(),
 																								   RESOURCE_MANAGER.LoadGLSL((EngineFolder + "CoreExtensions//Volumetric//FE_Volumetric_FS_Basic_Animated.glsl").c_str()).c_str(),
-																								   nullptr, nullptr, nullptr, nullptr, "5C2A1B0D3E4F60718293A4B5"));
+																								   nullptr, nullptr, nullptr, nullptr, FEEngineResourceIDs::VolumetricShaderBasicAnimated));
 
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMin", 0.0f);
 	VolumetricShaders.back()->UpdateUniformData("DataRangeMax", 1.0f);
@@ -66,7 +66,7 @@ void FEVolumeSystem::InitializeTransferFunctionTexture(FEEntity* Entity)
 	if (VolumeComponent.VolumeMaterial->GetTextureOverride("TransferFunctionTexture") != nullptr)
 	{
 		RESOURCE_MANAGER.DeleteFETexture(VolumeComponent.VolumeMaterial->GetTextureOverride("TransferFunctionTexture"));
-		VolumeComponent.VolumeMaterial->SetTextureOverride("TransferFunctionTexture", "");
+		VolumeComponent.VolumeMaterial->SetTextureOverride("TransferFunctionTexture", FEUUID());
 	}
 
 	std::vector<unsigned char> InitialData(TRANSFER_FUNCTION_RESOLUTION * 4, 0);
@@ -74,11 +74,11 @@ void FEVolumeSystem::InitializeTransferFunctionTexture(FEEntity* Entity)
 	if (TransferFunctionTexture == nullptr)
 		return;
 
-	EntityTransferFunctionData[Entity->GetObjectID()] = FEPerEntityTransferFunctionData();
-	EntityTransferFunctionData[Entity->GetObjectID()].ColorPoints = DefaultTransferFunctionColorPoints;
-	EntityTransferFunctionData[Entity->GetObjectID()].OpacityPoints = DefaultTransferFunctionOpacityPoints;
+	EntityTransferFunctionData[Entity->GetID()] = FEPerEntityTransferFunctionData();
+	EntityTransferFunctionData[Entity->GetID()].ColorPoints = DefaultTransferFunctionColorPoints;
+	EntityTransferFunctionData[Entity->GetID()].OpacityPoints = DefaultTransferFunctionOpacityPoints;
 
-	VolumeComponent.VolumeMaterial->SetTextureOverride("TransferFunctionTexture", TransferFunctionTexture->GetObjectID());
+	VolumeComponent.VolumeMaterial->SetTextureOverride("TransferFunctionTexture", TransferFunctionTexture->GetID());
 	RESOURCE_MANAGER.SetTagInternal(TransferFunctionTexture, ENGINE_RESOURCE_TAG);
 
 	// Linear filtering interpolates between LUT entries, clamp so the ends of the range do not wrap.
@@ -97,10 +97,10 @@ glm::vec3 FEVolumeSystem::EvaluateTransferFunctionColor(FEEntity* Entity, float 
 	if (!DoesVolumeComponentHaveTransferFunction(VolumeComponent))
 		return glm::vec3(0.0f);
 
-	if (EntityTransferFunctionData.find(Entity->GetObjectID()) == EntityTransferFunctionData.end())
+	if (EntityTransferFunctionData.find(Entity->GetID()) == EntityTransferFunctionData.end())
 		return glm::vec3(0.0f);
 
-	std::vector<FETransferFunctionColorPoint>& ColorPoints = EntityTransferFunctionData[Entity->GetObjectID()].ColorPoints;
+	std::vector<FETransferFunctionColorPoint>& ColorPoints = EntityTransferFunctionData[Entity->GetID()].ColorPoints;
 
 	if (Position < ColorPoints.front().Position || Position > ColorPoints.back().Position)
 		return glm::vec3(0.0f);
@@ -134,10 +134,10 @@ float FEVolumeSystem::EvaluateTransferFunctionOpacity(FEEntity* Entity, float Po
 	if (!DoesVolumeComponentHaveTransferFunction(VolumeComponent))
 		return 0.0f;
 
-	if (EntityTransferFunctionData.find(Entity->GetObjectID()) == EntityTransferFunctionData.end())
+	if (EntityTransferFunctionData.find(Entity->GetID()) == EntityTransferFunctionData.end())
 		return 0.0f;
 
-	std::vector<FETransferFunctionOpacityPoint>& OpacityPoints = EntityTransferFunctionData[Entity->GetObjectID()].OpacityPoints;
+	std::vector<FETransferFunctionOpacityPoint>& OpacityPoints = EntityTransferFunctionData[Entity->GetID()].OpacityPoints;
 
 	if (Position <= OpacityPoints.front().Position)
 		return OpacityPoints.front().Opacity;
@@ -197,10 +197,10 @@ std::vector<FETransferFunctionColorPoint>& FEVolumeSystem::GetTransferFunctionCo
 	if (Entity == nullptr || !Entity->HasComponent<FEVolumeComponent>())
 		return DefaultTransferFunctionColorPoints;
 
-	if (EntityTransferFunctionData.find(Entity->GetObjectID()) == EntityTransferFunctionData.end())
+	if (EntityTransferFunctionData.find(Entity->GetID()) == EntityTransferFunctionData.end())
 		return DefaultTransferFunctionColorPoints;
 
-	return EntityTransferFunctionData[Entity->GetObjectID()].ColorPoints;
+	return EntityTransferFunctionData[Entity->GetID()].ColorPoints;
 }
 
 std::vector<FETransferFunctionOpacityPoint>& FEVolumeSystem::GetTransferFunctionOpacityPoints(FEEntity* Entity)
@@ -208,10 +208,10 @@ std::vector<FETransferFunctionOpacityPoint>& FEVolumeSystem::GetTransferFunction
 	if (Entity == nullptr || !Entity->HasComponent<FEVolumeComponent>())
 		return DefaultTransferFunctionOpacityPoints;
 
-	if (EntityTransferFunctionData.find(Entity->GetObjectID()) == EntityTransferFunctionData.end())
+	if (EntityTransferFunctionData.find(Entity->GetID()) == EntityTransferFunctionData.end())
 		return DefaultTransferFunctionOpacityPoints;
 
-	return EntityTransferFunctionData[Entity->GetObjectID()].OpacityPoints;
+	return EntityTransferFunctionData[Entity->GetID()].OpacityPoints;
 }
 
 FETexture* FEVolumeSystem::GetTransferFunctionLookupTexture(FEEntity* Entity)
@@ -287,7 +287,7 @@ Json::Value FEVolumeSystem::VolumeComponentToJson(FEEntity* Entity)
 	}
 
 	FEVolumeComponent& VolumeComponent = Entity->GetComponent<FEVolumeComponent>();
-	Root["MaterialID"] = VolumeComponent.VolumeMaterial == nullptr ? "none" : VolumeComponent.VolumeMaterial->GetObjectID();
+	Root["MaterialID"] = VolumeComponent.VolumeMaterial == nullptr ? "none" : UNIQUE_ID.ToString(VolumeComponent.VolumeMaterial->GetID());
 	
 	return Root;
 }
@@ -306,8 +306,8 @@ void FEVolumeSystem::VolumeComponentFromJson(FEEntity* Entity, Json::Value Root)
 	FEVolumeComponent& VolumeComponent = Entity->GetComponent<FEVolumeComponent>();
 	if (Root.isMember("MaterialID") && Root["MaterialID"].isString())
 	{
-		std::string MaterialID = Root["MaterialID"].asString();
-		if (MaterialID != "none")
+		const FEUUID MaterialID = UNIQUE_ID.FromString(Root["MaterialID"].asString());
+		if (!UNIQUE_ID.IsNull(MaterialID))
 			VolumeComponent.VolumeMaterial = RESOURCE_MANAGER.GetNewMaterial(MaterialID);
 	}
 }
@@ -374,7 +374,7 @@ bool FEVolumeSystem::RenderVolumeComponent(FETransformComponent& TransformCompon
 		VolumeComponent.VolumeMaterial->Bind();
 	}
 
-	FEMesh* ScreenQuad = RESOURCE_MANAGER.GetMesh("1Y251E6E6T78013635793156"/*"plane"*/);
+	FEMesh* ScreenQuad = RESOURCE_MANAGER.GetMesh(FEEngineResourceIDs::PlaneMesh);
 	FE_GL_ERROR(glBindVertexArray(ScreenQuad->GetVaoID()));
 	FE_GL_ERROR(glEnableVertexAttribArray(0));
 	FE_GL_ERROR(glDrawElements(GL_TRIANGLES, ScreenQuad->GetVertexCount(), GL_UNSIGNED_INT, nullptr));

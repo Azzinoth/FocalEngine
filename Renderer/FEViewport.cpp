@@ -3,7 +3,7 @@ using namespace FocalEngine;
 
 FEViewport::FEViewport()
 {
-	ID = UNIQUE_ID.GetUUID();
+	ID = UNIQUE_ID.GenerateID();
 }
 
 FEUUID FEViewport::GetID() const

@@ -70,7 +70,7 @@ bool FENewMaterial::SetShader(FEShader* NewShader)
 }
 
 #include "../FEResourceManager.h"
-bool FENewMaterial::SetTextureOverride(const std::string& UniformName, const std::string& TextureID)
+bool FENewMaterial::SetTextureOverride(const std::string& UniformName, const FEUUID& TextureID)
 {
 	if (Shader == nullptr)
 		return false;
@@ -91,7 +91,7 @@ bool FENewMaterial::SetTextureOverride(const std::string& UniformName, const std
 	FETexture* TextureToAdd = RESOURCE_MANAGER.GetTexture(TextureID);
 	if (TextureToAdd == nullptr)
 	{
-		LOG.Add("FENewMaterial::SetTextureOverride() failed to find texture with ID " + TextureID, "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FENewMaterial::SetTextureOverride() failed to find texture with ID " + UNIQUE_ID.ToString(TextureID), "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -268,15 +268,15 @@ FEShaderUniformValue* FENewMaterial::GetUniformOverride(const std::string& Name)
 	return &UniformOverrides[Name];
 }
 
-bool FENewMaterial::IsUserTextureBound(const std::string& TextureID) const
+bool FENewMaterial::IsUserTextureBound(const FEUUID& TextureID) const
 {
-	if (TextureID.empty())
+	if (UNIQUE_ID.IsNull(TextureID))
 		return false;
 
 	for (const auto& TextureBinding : TextureOverrides)
 	{
 		const FETexture* BoundTexture = TextureBinding.second;
-		if (BoundTexture != nullptr && BoundTexture->GetObjectID() == TextureID)
+		if (BoundTexture != nullptr && BoundTexture->GetID() == TextureID)
 			return true;
 	}
 

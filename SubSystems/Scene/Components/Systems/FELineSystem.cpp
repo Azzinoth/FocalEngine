@@ -18,7 +18,7 @@ FELineSystem::FELineSystem()
 	InstancedLineShader = RESOURCE_MANAGER.CreateShader("instancedLine", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_VS.glsl")).c_str(),
 																		 RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//InstancedLineMaterial//FE_InstancedLine_FS.glsl")).c_str(),
 																		 nullptr, nullptr, nullptr, nullptr,
-																		 "7E0826291010377D564F6115");
+																		 FEEngineResourceIDs::InstancedLineShader);
 	RESOURCE_MANAGER.SetTagInternal(InstancedLineShader, ENGINE_RESOURCE_TAG);
 }
 
@@ -79,7 +79,7 @@ Json::Value FELineSystem::LineComponentToJson(FEEntity* Entity)
 		return Root;
 	}
 
-	Root["Line Collection ID"] = LineComponent.GetLineCollection()->GetObjectID();
+	Root["Line Collection ID"] = UNIQUE_ID.ToString(LineComponent.GetLineCollection()->GetID());
 	
 	return Root;
 }
@@ -102,8 +102,7 @@ void FELineSystem::LineComponentFromJson(FEEntity* Entity, Json::Value Root)
 		return;
 	}
 
-	std::string LineCollectionID = Root["Line Collection ID"].asCString();
-	FELineCollection* LineCollection = RESOURCE_MANAGER.GetLineCollection(LineCollectionID);
+	FELineCollection* LineCollection = RESOURCE_MANAGER.GetLineCollection(UNIQUE_ID.FromString(Root["Line Collection ID"].asString()));
 
 	if (LineCollection != nullptr)
 		LineComponent.SetLineCollection(LineCollection);

@@ -115,8 +115,8 @@ namespace FocalEngine
 		FE_TEXTURE_WRAP_TYPE WrapV = FE_TEXTURE_WRAP_TYPE::REPEAT;
 		FE_TEXTURE_WRAP_TYPE WrapW = FE_TEXTURE_WRAP_TYPE::REPEAT;
 		void ApplyWrapType(GLenum CoordinateAxis, FE_TEXTURE_WRAP_TYPE Wrap);
-		void AddToOnDeleteCallBackList(std::string ObjectID);
-		void EraseFromOnDeleteCallBackList(std::string ObjectID);
+		void AddToOnDeleteCallBackList(const FEUUID& ObjectID);
+		void EraseFromOnDeleteCallBackList(const FEUUID& ObjectID);
 
 		static std::vector<GLuint> PreventAutoDeletionList;
 		static void MarkAsPersistent(GLuint TextureID);

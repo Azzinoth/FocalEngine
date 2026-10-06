@@ -284,7 +284,7 @@ void FEOpenXR::SceneNodesUpdate()
 
 	OpenXR_MANAGER.TryToAddVRRigToScene(CurrentScene);
 
-	if (CurrentScene->GetEntity(VRRigEntity->GetObjectID()) == nullptr || CurrentScene->GetEntity(VRHeadsetEntity->GetObjectID()) == nullptr)
+	if (CurrentScene->GetEntity(VRRigEntity->GetID()) == nullptr || CurrentScene->GetEntity(VRHeadsetEntity->GetID()) == nullptr)
 		return;
 
 	if (FEOpenXR_INPUT.IsLeftControllerConnectedAndTracked() && LeftController != nullptr)
@@ -331,7 +331,7 @@ bool FEOpenXR::SetCustomVRControllerModel(FEGameModel* CustomGameModel, bool bLe
 			return false;
 		}
 
-		ControllerEntity->GetComponent<FEGameModelComponent>().SetGameModel(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+		ControllerEntity->GetComponent<FEGameModelComponent>().SetGameModel(RESOURCE_MANAGER.GetGameModel(FEEngineResourceIDs::GenericVRControllerGameModel));
 		FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
 		ControllerTransform.SetScale(StandardControllerScale);
 
@@ -383,9 +383,9 @@ bool FEOpenXR::TryToAddVRRigToScene(FEScene* Scene)
 			// FE_FIX_ME: Temporary solution, SSAO is very slow in VR. And produce artifacts in right eye. strange.
 			VRHeadsetCamera.SetSSAOEnabled(false);
 
-			FENaiveSceneGraphNode* VRRigNode = Scene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
-			FENaiveSceneGraphNode* VRHeadsetNode = Scene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID());
-			Scene->SceneGraph.MoveNode(VRHeadsetNode->GetObjectID(), VRRigNode->GetObjectID());
+			FENaiveSceneGraphNode* VRRigNode = Scene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetID());
+			FENaiveSceneGraphNode* VRHeadsetNode = Scene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRHeadsetEntity->GetID());
+			Scene->SceneGraph.MoveNode(VRHeadsetNode->GetID(), VRRigNode->GetID());
 
 			if (OpenXR_MANAGER.VRHeadsetEntity == nullptr)
 				return false;
@@ -416,7 +416,7 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 
 	OpenXR_MANAGER.TryToAddVRRigToScene(CurrentScene);
 
-	if (CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetObjectID()) == nullptr || CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetObjectID()) == nullptr)
+	if (CurrentScene->GetEntity(OpenXR_MANAGER.VRRigEntity->GetID()) == nullptr || CurrentScene->GetEntity(OpenXR_MANAGER.VRHeadsetEntity->GetID()) == nullptr)
 		return;
 
 	FEEntity*& ControllerEntity = bLeftController ? OpenXR_MANAGER.LeftController : OpenXR_MANAGER.RightController;
@@ -427,13 +427,13 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 		{
 			std::string ControllerName = bLeftController ? "LeftController" : "RightController";
 			ControllerEntity = CurrentScene->CreateEntity(ControllerName);
-			ControllerEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+			ControllerEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(FEEngineResourceIDs::GenericVRControllerGameModel));
 			FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
 			ControllerTransform.SetScale(OpenXR_MANAGER.StandardControllerScale);
 
-			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
-			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetObjectID());
-			CurrentScene->SceneGraph.MoveNode(ControllerNode->GetObjectID(), VRRigNode->GetObjectID());
+			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetID());
+			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetID());
+			CurrentScene->SceneGraph.MoveNode(ControllerNode->GetID(), VRRigNode->GetID());
 		}
 
 		FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
@@ -446,12 +446,12 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 		{
 			// Before we delete controller from a scene, we should check if it has childs
 			// and move them to the VRRigEntity, so they are not lost.
-			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetObjectID());
+			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetID());
 			if (ControllerNode != nullptr && ControllerNode->GetRecursiveChildCount() > 0)
 			{
-				FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
+				FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetID());
 				for (auto Child : ControllerNode->GetChildren())
-					CurrentScene->SceneGraph.MoveNode(Child->GetObjectID(), VRRigNode->GetObjectID(), false);
+					CurrentScene->SceneGraph.MoveNode(Child->GetID(), VRRigNode->GetID(), false);
 			}
 
 			CurrentScene->DeleteEntity(ControllerEntity);
@@ -464,13 +464,13 @@ void FEOpenXR::OnControllerConnectionChanges(bool bLeftController, FE_VR_CONTROL
 		{
 			std::string ControllerName = bLeftController ? "LeftController" : "RightController";
 			ControllerEntity = CurrentScene->CreateEntity(ControllerName);
-			ControllerEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel("504029555848336725615C49"));
+			ControllerEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(FEEngineResourceIDs::GenericVRControllerGameModel));
 			FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();
 			ControllerTransform.SetScale(OpenXR_MANAGER.StandardControllerScale);
 
-			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetObjectID());
-			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetObjectID());
-			CurrentScene->SceneGraph.MoveNode(ControllerNode->GetObjectID(), VRRigNode->GetObjectID());
+			FENaiveSceneGraphNode* VRRigNode = CurrentScene->SceneGraph.GetNodeByEntityID(OpenXR_MANAGER.VRRigEntity->GetID());
+			FENaiveSceneGraphNode* ControllerNode = CurrentScene->SceneGraph.GetNodeByEntityID(ControllerEntity->GetID());
+			CurrentScene->SceneGraph.MoveNode(ControllerNode->GetID(), VRRigNode->GetID());
 		}
 
 		FETransformComponent& ControllerTransform = ControllerEntity->GetComponent<FETransformComponent>();

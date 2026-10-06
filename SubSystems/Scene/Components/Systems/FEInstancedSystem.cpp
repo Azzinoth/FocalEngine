@@ -68,7 +68,7 @@ void FEInstancedSystem::InitializeBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -78,7 +78,7 @@ void FEInstancedSystem::InitializeBuffers(FEEntity* Entity)
 				FEInstancedElementData* NewData = new FEInstancedElementData();
 				InstancedComponent.InstancedElementsData.push_back(NewData);
 
-				InstancedComponent.InstancedElementsData[CurrentBufferIndex]->EntityIDWithGameModelComponent = CurrentPrefabEntity->GetObjectID();
+				InstancedComponent.InstancedElementsData[CurrentBufferIndex]->EntityIDWithGameModelComponent = CurrentPrefabEntity->GetID();
 				InitializeBuffer(Entity, GameModelComponent, CurrentBufferIndex);
 				CurrentBufferIndex++;
 			}
@@ -89,7 +89,7 @@ void FEInstancedSystem::InitializeBuffers(FEEntity* Entity)
 		FEInstancedElementData* NewData = new FEInstancedElementData();
 		InstancedComponent.InstancedElementsData.push_back(NewData);
 
-		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->EntityIDWithGameModelComponent = Entity->GetObjectID();
+		InstancedComponent.InstancedElementsData[CurrentBufferIndex]->EntityIDWithGameModelComponent = Entity->GetID();
 		InitializeBuffer(Entity, Entity->GetComponent<FEGameModelComponent>(), CurrentBufferIndex);
 	}
 }
@@ -144,7 +144,7 @@ void FEInstancedSystem::InitializeGPUCullingBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -286,7 +286,7 @@ void FEInstancedSystem::UpdateBuffers(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -414,7 +414,7 @@ void FEInstancedSystem::DuplicateInstancedComponent(FEEntity* SourceEntity, FEEn
 		NewInstancedComponent.InstancedElementsData[i]->InstancePositions = OriginalInstancedComponent.InstancedElementsData[i]->InstancePositions;
 		NewInstancedComponent.InstancedElementsData[i]->InstancedMatricesLOD = OriginalInstancedComponent.InstancedElementsData[i]->InstancedMatricesLOD;
 
-		NewInstancedComponent.InstancedElementsData[i]->EntityIDWithGameModelComponent = TargetEntity->GetObjectID();
+		NewInstancedComponent.InstancedElementsData[i]->EntityIDWithGameModelComponent = TargetEntity->GetID();
 	}
 }
 
@@ -550,7 +550,7 @@ void FEInstancedSystem::UpdateMatrices(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -605,9 +605,9 @@ void FEInstancedSystem::Render(FEEntity* Entity, FEGameModelComponent& GameModel
 
 	CheckDirtyFlag(Entity);
 
-	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	if (BeforeRenderCallbacks.find(Entity->GetID()) != BeforeRenderCallbacks.end())
 	{
-		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetID()];
 		for (const auto& ExistingCallback : Callbacks)
 		{
 			if (ExistingCallback != nullptr)
@@ -931,8 +931,8 @@ void FEInstancedSystem::Update()
 {
 	for (int i = 0; i < EnitityIDListToInitialize.size(); i++)
 	{
-		std::string SceneID = EnitityIDListToInitialize[i].first;
-		std::string EntityID = EnitityIDListToInitialize[i].second;
+		FEUUID SceneID = EnitityIDListToInitialize[i].first;
+		FEUUID EntityID = EnitityIDListToInitialize[i].second;
 
 		FEScene* Scene = SCENE_MANAGER.GetSceneByID(SceneID);
 		if (Scene == nullptr)
@@ -959,7 +959,7 @@ void FEInstancedSystem::Update()
 
 		FEInstancedComponent& InstancedComponent = EntityToWorkWith->GetComponent<FEInstancedComponent>();
 
-		if (InstancedComponent.TerrainToSnap == nullptr && !InstancedComponent.PostponedTerrainToSnapID.empty())
+		if (InstancedComponent.TerrainToSnap == nullptr && !UNIQUE_ID.IsNull(InstancedComponent.PostponedTerrainToSnapID))
 		{
 			FEEntity* TerrainEntity = Scene->GetEntity(InstancedComponent.PostponedTerrainToSnapID);
 			if (TerrainEntity != nullptr)
@@ -1185,7 +1185,7 @@ void FEInstancedSystem::CheckDirtyFlag(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -1230,7 +1230,7 @@ void FEInstancedSystem::CheckDirtyFlag(FEEntity* Entity)
 			FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 			FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-			std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+			std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 			for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 			{
 				FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);
@@ -1375,7 +1375,7 @@ Json::Value FEInstancedSystem::InstanceComponentToJson(FEEntity* Entity)
 	}
 	else
 	{
-		Root["Snapped to terrain ID"] = InstancedComponent.GetSnappedToTerrain()->GetObjectID();
+		Root["Snapped to terrain ID"] = UNIQUE_ID.ToString(InstancedComponent.GetSnappedToTerrain()->GetID());
 		Root["Terrain layer"] = InstancedComponent.GetTerrainLayer();
 		Root["Min layer intensity to spawn"] = InstancedComponent.GetMinimalLayerIntensityToSpawn();
 	}
@@ -1402,9 +1402,10 @@ void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value 
 	InstancedComponent.SpawnInfo.RotationDeviation.y = Data["Spawn info"]["RotationDeviation"]["Y"].asFloat();
 	InstancedComponent.SpawnInfo.RotationDeviation.z = Data["Spawn info"]["RotationDeviation"]["Z"].asFloat();
 
-	if (Data["Snapped to terrain ID"].asString() != "none")
+	const FEUUID TerrainToSnapID = UNIQUE_ID.FromString(Data["Snapped to terrain ID"].asString());
+	if (!UNIQUE_ID.IsNull(TerrainToSnapID))
 	{
-		InstancedComponent.PostponedTerrainToSnapID = Data["Snapped to terrain ID"].asString();
+		InstancedComponent.PostponedTerrainToSnapID = TerrainToSnapID;
 		InstancedComponent.TerrainToSnap = nullptr;
 
 		if (Data.isMember("Terrain layer"))
@@ -1415,7 +1416,7 @@ void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value 
 	}
 
 	// Postponing this operation when loading is finished.
-	INSTANCED_RENDERING_SYSTEM.EnitityIDListToInitialize.push_back(std::make_pair(Entity->GetParentScene()->GetObjectID(), Entity->GetObjectID()));
+	INSTANCED_RENDERING_SYSTEM.EnitityIDListToInitialize.push_back(std::make_pair(Entity->GetParentScene()->GetID(), Entity->GetID()));
 
 	if (Data["Modifications to spawn"].asBool())
 	{
@@ -1423,7 +1424,7 @@ void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value 
 	}
 }
 
-FEEntity* FEInstancedSystem::GetEntityWithGameModelComponent(std::string EntityID)
+FEEntity* FEInstancedSystem::GetEntityWithGameModelComponent(const FEUUID& EntityID)
 {
 	FEObject* Object = OBJECT_MANAGER.GetFEObject(EntityID);
 	if (Object == nullptr || Object->GetType() != FE_ENTITY)
@@ -1441,20 +1442,20 @@ void FEInstancedSystem::AddBeforeRenderCallback(FEEntity* Entity, std::function<
 	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 
-	if (BeforeRenderCallbacks.find(Entity->GetObjectID()) != BeforeRenderCallbacks.end())
+	if (BeforeRenderCallbacks.find(Entity->GetID()) != BeforeRenderCallbacks.end())
 	{
-		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetObjectID()];
+		std::vector<std::function<void(FEEntity*)>>& Callbacks = BeforeRenderCallbacks[Entity->GetID()];
 		/*for (const auto& ExistingCallback : Callbacks)
 		{
 			if (ExistingCallback.target<void(FEEntity*)>() == Callback.target<void(FEEntity*)>())
 			{
-				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetObjectID(), "FE_LOG_ECS", FE_LOG_WARNING);
+				LOG.Add("FEInstancedSystem::AddBeforeRenderCallback: Callback already exists for entity " + Entity->GetID(), "FE_LOG_ECS", FE_LOG_WARNING);
 				return;
 			}
 		}*/
 	}
 
-	BeforeRenderCallbacks[Entity->GetObjectID()].push_back(Callback);
+	BeforeRenderCallbacks[Entity->GetID()].push_back(Callback);
 }
 
 void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
@@ -1483,7 +1484,7 @@ void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
 		FEPrefabInstanceComponent& PrefabInstanceComponent = Entity->GetComponent<FEPrefabInstanceComponent>();
 		FEScene* PrefabScene = PrefabInstanceComponent.GetPrefab()->GetScene();
 
-		std::vector<std::string> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
+		std::vector<FEUUID> AllPrefabEntities = PrefabScene->GetEntityIDListWithComponent<FEGameModelComponent>();
 		for (size_t i = 0; i < AllPrefabEntities.size(); i++)
 		{
 			FEEntity* CurrentPrefabEntity = PrefabScene->GetEntity(AllPrefabEntities[i]);

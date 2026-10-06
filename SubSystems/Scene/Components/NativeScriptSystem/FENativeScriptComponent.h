@@ -9,14 +9,14 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 
 		Json::Value RawData;
-		std::string ModuleID;
+		FEUUID ModuleID;
 	public:
 		Json::Value GetRawData()
 		{
 			return RawData;
 		}
 
-		std::string GetModuleID()
+		FEUUID GetModuleID()
 		{
 			return ModuleID;
 		}
@@ -27,12 +27,12 @@ namespace FocalEngine
 		friend class FENativeScriptSystem;
 
 		class FENativeScriptCore* CoreInstance = nullptr;
-		std::string ModuleID;
+		FEUUID ModuleID;
 		struct FEScriptData* ScriptData = nullptr;
 		FENativeScriptFailedToLoadData* FailedToLoadData = nullptr;
 	public:
 		bool IsInitialized();
-		std::string GetModuleID();
+		FEUUID GetModuleID();
 
 		class FENativeScriptCore* GetCoreInstance() const;
 		const struct FEScriptData* GetScriptData() const;

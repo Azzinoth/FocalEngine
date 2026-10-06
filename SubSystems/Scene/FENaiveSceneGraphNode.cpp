@@ -143,11 +143,11 @@ void FENaiveSceneGraphNode::DetachChild(FENaiveSceneGraphNode* Child, bool bPres
 	}
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChild(std::string ID)
+FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChild(const FEUUID& ID)
 {
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		if (Children[i]->GetObjectID() == ID)
+		if (Children[i]->GetID() == ID)
 			return Children[i];
 	}
 
@@ -246,8 +246,8 @@ Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFi
 {
 	Json::Value Node;
 	Node["Name"] = GetName();
-	Node["ID"] = GetObjectID();
-	Node["ParentID"] = (Parent != nullptr) ? Parent->GetObjectID() : "";
+	Node["ID"] = UNIQUE_ID.ToString(GetID());
+	Node["ParentID"] = (Parent != nullptr) ? UNIQUE_ID.ToString(Parent->GetID()) : "";
 	if (Entity != nullptr)
 		Node["Entity"] = Entity->ToJson();
 
@@ -257,7 +257,7 @@ Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFi
 		if (ChildFilter != nullptr && !ChildFilter(Children[i]->Entity))
 			continue;
 
-		ChildrenArray[std::to_string(i)]["ID"] = Children[i]->GetObjectID();
+		ChildrenArray[std::to_string(i)]["ID"] = UNIQUE_ID.ToString(Children[i]->GetID());
 	}
 	Node["Children"] = ChildrenArray;
 
@@ -273,15 +273,15 @@ void FENaiveSceneGraphNode::FromJson(Json::Value Root)
 	}
 
 	SetName(Root["Name"].asString());
-	SetID(Root["ID"].asString());
+	SetID(UNIQUE_ID.FromString(Root["ID"].asString()));
 	Entity->FromJson(Root["Entity"]);
 }
 
-FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByEntityID(std::string EntityID)
+FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetChildByEntityID(const FEUUID& EntityID)
 {
 	for (size_t i = 0; i < Children.size(); i++)
 	{
-		if (Children[i]->Entity->GetObjectID() == EntityID)
+		if (Children[i]->Entity->GetID() == EntityID)
 			return Children[i];
 	}
 

@@ -14,11 +14,11 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* GetRoot() const;
 		FEScene* GetParentScene() const;
 
-		std::string AddNode(FEEntity* Entity, bool bPreserveWorldTransform = true);
-		bool MoveNode(std::string NodeID, std::string NewParentID, bool bPreserveWorldTransform = true);
+		FEUUID AddNode(FEEntity* Entity, bool bPreserveWorldTransform = true);
+		bool MoveNode(const FEUUID& NodeID, const FEUUID& NewParentID, bool bPreserveWorldTransform = true);
 		void DetachNode(FENaiveSceneGraphNode* NodeToDetach, bool bPreserveWorldTransform = true);
 		void DeleteNode(FENaiveSceneGraphNode* NodeToDelete);
-		FENaiveSceneGraphNode* DuplicateNode(std::string NodeIDToDuplicate, std::string NewParentID, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
+		FENaiveSceneGraphNode* DuplicateNode(const FEUUID& NodeIDToDuplicate, const FEUUID& NewParentID, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
 		FENaiveSceneGraphNode* DuplicateNode(FENaiveSceneGraphNode* NodeToDuplicate, FENaiveSceneGraphNode* NewParent, bool bAddCopyInName = true, std::function<bool(FEEntity*)> Filter = nullptr);
 
 		FENaiveSceneGraphNode* ImportNode(FENaiveSceneGraphNode* NodeFromDifferentSceneGraph, FENaiveSceneGraphNode* TargetParent = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
@@ -28,8 +28,8 @@ namespace FocalEngine
 		bool IsDescendant(FENaiveSceneGraphNode* PotentialAncestor, FENaiveSceneGraphNode* PotentialDescendant);
         bool HasCycle(FENaiveSceneGraphNode* NodeToCheck);
 
-		FENaiveSceneGraphNode* GetNodeByID(std::string ID);
-		FENaiveSceneGraphNode* GetNodeByEntityID(std::string EntityID);
+		FENaiveSceneGraphNode* GetNodeByID(const FEUUID& ID);
+		FENaiveSceneGraphNode* GetNodeByEntityID(const FEUUID& EntityID);
 		std::vector<FENaiveSceneGraphNode*> GetNodeByName(std::string Name);
 
 		// Walks the ancestor chain upward and returns the first node whose entity has T.

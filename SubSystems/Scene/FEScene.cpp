@@ -40,7 +40,7 @@ bool FEScene::HasFlag(FESceneFlag Flag) const
 			static_cast<std::underlying_type_t<FESceneFlag>>(Flag)) != 0;
 }
 
-FEEntity* FEScene::GetEntity(std::string ID)
+FEEntity* FEScene::GetEntity(const FEUUID& ID)
 {
 	if (EntityMap.find(ID) == EntityMap.end())
 		return nullptr;
@@ -64,12 +64,13 @@ std::vector<FEEntity*> FEScene::GetEntityByName(const std::string Name)
 	return Result;
 }
 
-void FEScene::DeleteEntity(std::string ID)
+void FEScene::DeleteEntity(const FEUUID& ID)
 {
-	if (EntityMap.find(ID) == EntityMap.end())
+	FEEntity* Entity = GetEntity(ID);
+	if (Entity == nullptr)
 		return;
 
-	DeleteEntity(EntityMap[ID]);
+	DeleteEntity(Entity);
 }
 
 void FEScene::DeleteEntity(FEEntity* Entity)
@@ -80,8 +81,7 @@ void FEScene::DeleteEntity(FEEntity* Entity)
 		return;
 	}
 
-	std::string EntityID = Entity->ID;
-	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(EntityID);
+	FENaiveSceneGraphNode* GraphNode = SceneGraph.GetNodeByEntityID(Entity->GetID());
 	if (GraphNode == nullptr)
 	{
 		LOG.Add("Entity does not have a graph node in FEScene::DeleteEntity", "FE_LOG_ECS", FE_LOG_WARNING);
@@ -91,15 +91,24 @@ void FEScene::DeleteEntity(FEEntity* Entity)
 	SceneGraph.DeleteNode(GraphNode);
 }
 
-void FEScene::ClearEntityRecords(std::string EntityID, entt::entity EnttEntity)
+void FEScene::ClearEntityRecords(const FEUUID& EntityID, entt::entity EnttEntity)
 {
 	EntityMap.erase(EntityID);
 	EnttToEntity.erase(EnttEntity);
 }
 
-std::vector<std::string> FEScene::GetEntityIDList()
+std::vector<FEUUID> FEScene::GetEntityIDList()
 {
-	FE_MAP_TO_STR_VECTOR(EntityMap)
+	std::vector<FEUUID> Result;
+
+	auto EntityIterator = EntityMap.begin();
+	while (EntityIterator != EntityMap.end())
+	{
+		Result.push_back(EntityIterator->second->GetID());
+		EntityIterator++;
+	}
+
+	return Result;
 }
 
 void FEScene::Clear()
@@ -139,7 +148,7 @@ void FEScene::PrepareForGameModelDeletion(const FEGameModel* GameModel)
 			continue;
 
 		if (GameModelComponent.GetGameModel() == GameModel)
-			GameModelComponent.SetGameModel(RESOURCE_MANAGER.GetGameModel(RESOURCE_MANAGER.GetEnginePrivateGameModelIDList()[0]));
+			GameModelComponent.SetGameModel(RESOURCE_MANAGER.GetGameModel(FEEngineResourceIDs::StandardGameModel));
 	}
 }
 
@@ -272,7 +281,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 	{
 		FEMaterial* NewMaterial = RESOURCE_MANAGER.CreateMaterial(GLTF.Materials[i].Name);
 		MaterialsMap[static_cast<int>(i)] = NewMaterial;
-		NewMaterial->Shader = RESOURCE_MANAGER.GetShader("0800253C242B05321A332D09"/*"FEPBRShader"*/);
+		NewMaterial->Shader = RESOURCE_MANAGER.GetShader(FEEngineResourceIDs::PBRShader);
 
 		if (TextureMap.find(GLTF.Materials[i].PBRMetallicRoughness.BaseColorTexture.Index) != TextureMap.end() && TextureMap[GLTF.Materials[i].PBRMetallicRoughness.BaseColorTexture.Index] != nullptr)
 		{
@@ -412,7 +421,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 
 		for (size_t i = 0; i < SceneToLoad.RootChildren.size(); i++)
 		{
-			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], GLTFMeshesToGameModelMap, SceneGraph.GetRoot()->GetObjectID());
+			AddGLTFNodeToSceneGraph(GLTF, GLTF.Nodes[SceneToLoad.RootChildren[i]], GLTFMeshesToGameModelMap, SceneGraph.GetRoot()->GetID());
 		}
 	}
 
@@ -420,7 +429,7 @@ std::vector<FEObject*> FEScene::LoadGLTF(std::string FileName)
 	return Result;
 }
 
-std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNode& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const std::string ParentID)
+std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF, const GLTFNode& Node, const std::unordered_map<int, std::vector<FEGameModel*>>& GLTFMeshesToGameModelMap, const FEUUID& ParentID)
 {
 	std::vector<FEObject*> Result;
 
@@ -437,8 +446,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	Transform.SetQuaternion(Node.Rotation);
 	Transform.SetScale(Node.Scale);
 
-	FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByEntityID(Entity->GetObjectID());
-	SceneGraph.MoveNode(AddedNode->GetObjectID(), ParentID, false);
+	FENaiveSceneGraphNode* AddedNode = SceneGraph.GetNodeByEntityID(Entity->GetID());
+	SceneGraph.MoveNode(AddedNode->GetID(), ParentID, false);
 
 	if (GLTFMeshToPrefabIndex != -1)
 	{
@@ -467,8 +476,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 				FEEntity* ChildEntity = CreateEntity(CurrentNodeName);
 				ChildEntity->AddComponent<FEGameModelComponent>(GameModels[i]);
 		
-				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetObjectID());
-				SceneGraph.MoveNode(ChildNode->GetObjectID(), AddedNode->GetObjectID(), false);
+				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetID());
+				SceneGraph.MoveNode(ChildNode->GetID(), AddedNode->GetID(), false);
 			}
 		}
 	}
@@ -484,14 +493,14 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		}
 
 		GLTFNode ChildNode = GLTF.Nodes[Node.Children[i]];
-		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetObjectID());
+		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetID());
 		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
 	}
 
 	return Result;
 }
 
-FEEntity* FEScene::CreateEntity(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntity(std::string Name, const FEUUID& ForceObjectID)
 {
 	FEEntity* Result = CreateEntityOrphan(Name, ForceObjectID);
 	SceneGraph.AddNode(Result, false);
@@ -499,22 +508,22 @@ FEEntity* FEScene::CreateEntity(std::string Name, std::string ForceObjectID)
 	return Result;
 }
 
-FEEntity* FEScene::CreateEntityOrphan(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntityOrphan(std::string Name, const FEUUID& ForceObjectID)
 {
 	return CreateEntityInternal(Name, ForceObjectID);
 }
 
-FEEntity* FEScene::CreateEntityInternal(std::string Name, std::string ForceObjectID)
+FEEntity* FEScene::CreateEntityInternal(std::string Name, const FEUUID& ForceObjectID)
 {
 	if (Name.empty())
 		Name = "Unnamed Entity";
 
 	FEEntity* Entity = new FEEntity(Registry.create(), this);
-	if (!ForceObjectID.empty())
+	if (!UNIQUE_ID.IsNull(ForceObjectID))
 		Entity->SetID(ForceObjectID);
 	Entity->SetName(Name);
 
-	EntityMap[Entity->GetObjectID()] = Entity;
+	EntityMap[Entity->GetID()] = Entity;
 	EnttToEntity[Entity->EnTTEntity] = Entity;
 
 	Entity->AddComponent<FETagComponent>();
@@ -536,12 +545,13 @@ void FEScene::Update()
 
 }
 
-FEEntity* FEScene::DuplicateEntity(std::string ID, std::string NewEntityName)
+FEEntity* FEScene::DuplicateEntity(const FEUUID& ID, std::string NewEntityName)
 {
-	if (EntityMap.find(ID) == EntityMap.end())
+	FEEntity* SourceEntity = GetEntity(ID);
+	if (SourceEntity == nullptr)
 		return nullptr;
 
-	return DuplicateEntity(EntityMap[ID], NewEntityName);
+	return DuplicateEntity(SourceEntity, NewEntityName);
 }
 
 FEEntity* FEScene::DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName)
@@ -590,7 +600,7 @@ FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveScene
 	if (TargetParent == nullptr)
 		TargetParent = SceneGraph.GetRoot();
 
-	FENaiveSceneGraphNode* OriginalNode = EntityFromDifferentScene->GetParentScene()->SceneGraph.GetNodeByEntityID(EntityFromDifferentScene->GetObjectID());
+	FENaiveSceneGraphNode* OriginalNode = EntityFromDifferentScene->GetParentScene()->SceneGraph.GetNodeByEntityID(EntityFromDifferentScene->GetID());
 	FENaiveSceneGraphNode* NewNode = SceneGraph.ImportNode(OriginalNode, TargetParent, Filter);
 	if (NewNode == nullptr)
 	{
@@ -602,15 +612,16 @@ FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveScene
 	return Result;
 }
 
-FEAABB FEScene::GetEntityAABB(std::string ID)
+FEAABB FEScene::GetEntityAABB(const FEUUID& ID)
 {
-	if (EntityMap.find(ID) == EntityMap.end())
+	FEEntity* Entity = GetEntity(ID);
+	if (Entity == nullptr)
 	{
-		LOG.Add("Entity with ID: " + ID + " not found in FEScene::GetEntityAABB", "FE_LOG_ECS", FE_LOG_WARNING);
+		LOG.Add("Entity with ID: " + UNIQUE_ID.ToString(ID) + " not found in FEScene::GetEntityAABB", "FE_LOG_ECS", FE_LOG_WARNING);
 		return FEAABB();
 	}
 
-	return GetEntityAABB(EntityMap[ID]);
+	return GetEntityAABB(Entity);
 }
 
 FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
@@ -707,7 +718,7 @@ std::vector<FEEntity*> FEScene::GetEntityByTagComponent(std::string Tag)
 
 FEEntity* FEScene::CreateEntityFromJson(Json::Value Root)
 {
-	std::string EntityID = Root["FEObjectData"]["ID"].asString();
+	FEUUID EntityID = UNIQUE_ID.FromString(Root["FEObjectData"]["ID"].asString());
 	std::string EntityName = Root["FEObjectData"]["Name"].asString();
 
 	FEEntity* NewEntity = CreateEntity(EntityName, EntityID);

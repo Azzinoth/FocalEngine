@@ -27,7 +27,7 @@ namespace FocalEngine
 		// ********************************** PointOnTerrain END **********************************
 
 		// **************************** TERRAIN EDITOR TOOLS ****************************
-		std::string TerrainEntityIDWithBrushModeOn = "";
+		FEUUID TerrainEntityIDWithBrushModeOn;
 
 		bool bBrushActive = false;
 		FE_TERRAIN_BRUSH_MODE BrushMode = FE_TERRAIN_BRUSH_NONE;

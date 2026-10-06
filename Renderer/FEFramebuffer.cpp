@@ -61,7 +61,7 @@ void FEFramebuffer::SetColorAttachment(FETexture* NewTexture, const size_t Index
 		return;
 
 	if (ColorAttachments[Index] != nullptr)
-		ColorAttachments[Index]->EraseFromOnDeleteCallBackList(GetObjectID());
+		ColorAttachments[Index]->EraseFromOnDeleteCallBackList(GetID());
 
 	// This check was added because of postProcesses and how they "manage" colorAttachment of FB.
 	if (NewTexture == nullptr)
@@ -76,7 +76,7 @@ void FEFramebuffer::SetColorAttachment(FETexture* NewTexture, const size_t Index
 	AttachTexture(GL_COLOR_ATTACHMENT0 + static_cast<int>(Index), GL_TEXTURE_2D, NewTexture);
 	if (!bWasBind) UnBind();
 
-	NewTexture->AddToOnDeleteCallBackList(GetObjectID());
+	NewTexture->AddToOnDeleteCallBackList(GetID());
 }
 
 void FEFramebuffer::SetDepthAttachment(FETexture* NewTexture)
@@ -112,7 +112,7 @@ int FEFramebuffer::GetHeight()
 	return Height;
 }
 
-void FEFramebuffer::ProcessOnDeleteCallbacks(const std::string DeletingFEObject)
+void FEFramebuffer::ProcessOnDeleteCallbacks(const FEUUID& DeletingFEObject)
 {
 	const FEObject* Object = OBJECT_MANAGER.GetFEObject(DeletingFEObject);
 	if (Object != nullptr && Object->GetType() == FE_TEXTURE)
@@ -122,7 +122,7 @@ void FEFramebuffer::ProcessOnDeleteCallbacks(const std::string DeletingFEObject)
 			if (ColorAttachments[i] == nullptr)
 				continue;
 
-			if (ColorAttachments[i]->GetObjectID() == DeletingFEObject)
+			if (ColorAttachments[i]->GetID() == DeletingFEObject)
 			{
 				ColorAttachments[i] = nullptr;
 				return;
@@ -131,18 +131,18 @@ void FEFramebuffer::ProcessOnDeleteCallbacks(const std::string DeletingFEObject)
 	}
 }
 
-bool FEFramebuffer::HasTexture(const std::string ObjectID)
+bool FEFramebuffer::HasTexture(const FEUUID& ObjectID)
 {
 	for (size_t i = 0; i < ColorAttachments.size(); i++)
 	{
-		if (ColorAttachments[i] != nullptr && ColorAttachments[i]->GetObjectID() == ObjectID)
+		if (ColorAttachments[i] != nullptr && ColorAttachments[i]->GetID() == ObjectID)
 			return true;
 	}
 
-	if (DepthAttachment != nullptr && DepthAttachment->GetObjectID() == ObjectID)
+	if (DepthAttachment != nullptr && DepthAttachment->GetID() == ObjectID)
 		return true;
 
-	if (StencilAttachment != nullptr && StencilAttachment->GetObjectID() == ObjectID)
+	if (StencilAttachment != nullptr && StencilAttachment->GetID() == ObjectID)
 		return true;
 
 	return false;

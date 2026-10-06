@@ -20,7 +20,7 @@ FEVirtualUISystem::FEVirtualUISystem()
 	CanvasShader = RESOURCE_MANAGER.CreateShader("FEVirtualUISystem_CanvasShader", RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_VS.glsl")).c_str(),
 		RESOURCE_MANAGER.LoadGLSL((RESOURCE_MANAGER.EngineFolder + "CoreExtensions//StandardMaterial//VirtualInterfaceMaterial//FE_VirtualInterface_FS.glsl")).c_str(),
 		nullptr, nullptr, nullptr, nullptr,
-		"647C6C768E60130C68724124");
+		FEEngineResourceIDs::VirtualUICanvasShader);
 
 	CanvasShader->SetTag(ENGINE_RESOURCE_TAG);
 
@@ -106,7 +106,7 @@ Json::Value FEVirtualUISystem::VirtualUIComponentToJson(FEEntity* Entity)
 	// TO-DO: Save window to listen to?
 	//Root["Window to listen"] = VirtualUIComponent.GetWindowToListen() != nullptr;
 
-	Root["Canvas mesh ID"] = VirtualUIComponent.CanvasMesh->GetObjectID();
+	Root["Canvas mesh ID"] = UNIQUE_ID.ToString(VirtualUIComponent.CanvasMesh->GetID());
 	Root["Internal resolution"]["Width"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().x);
 	Root["Internal resolution"]["Height"] = static_cast<int>(VirtualUIComponent.GetCanvasResolution().y);
 
@@ -133,7 +133,7 @@ void FEVirtualUISystem::VirtualUIComponentFromJson(FEEntity* Entity, Json::Value
 		return;
 	}
 	glm::ivec2 Resolution = glm::vec2(Root["Internal resolution"]["Width"].asInt(), Root["Internal resolution"]["Height"].asInt());
-	FEMesh* CanvasMesh = RESOURCE_MANAGER.GetMesh(Root["Canvas mesh ID"].asString());
+	FEMesh* CanvasMesh = RESOURCE_MANAGER.GetMesh(UNIQUE_ID.FromString(Root["Canvas mesh ID"].asString()));
 	Entity->AddComponent<FEVirtualUIComponent>(Resolution.x, Resolution.y, CanvasMesh);
 	FEVirtualUIComponent& VirtualUIComponent = Entity->GetComponent<FEVirtualUIComponent>();
 
@@ -257,7 +257,7 @@ void FEVirtualUISystem::DummyRenderFunction(FEVirtualUI* VirtualUI)
 
 	FEVirtualUIComponent& VirtualUIComponent = ParentEntity->GetComponent<FEVirtualUIComponent>();
 	ImGui::SetNextWindowSize(ImVec2(static_cast<float>(VirtualUIComponent.GetWidth()), static_cast<float>(VirtualUIComponent.GetHeight())));
-	if (ImGui::Begin(std::string("Dummy UI##" + ParentEntity->GetObjectID()).c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoNav))
+	if (ImGui::Begin(std::string("Dummy UI##" + UNIQUE_ID.ToString(ParentEntity->GetID())).c_str(), nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoNav))
 	{
 		ImVec2 Center = ImGui::GetWindowContentRegionMax() / 2.0f;
 

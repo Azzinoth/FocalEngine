@@ -56,11 +56,11 @@ namespace FocalEngine
 		bool UpdateUniformOverrideData(const std::string& UniformName, const T& Value);
 		FEShaderUniformValue* GetUniformOverride(const std::string& Name);
 
-		bool SetTextureOverride(const std::string& UniformName, const std::string& TextureID);
+		bool SetTextureOverride(const std::string& UniformName, const FEUUID& TextureID);
 		FETexture* GetTextureOverride(const std::string& UniformName) const;
 		std::vector<std::pair<std::string, FETexture*>> GetAllTextureOverridePair() const;
 
-		bool IsUserTextureBound(const std::string& TextureID) const;
+		bool IsUserTextureBound(const FEUUID& TextureID) const;
 		int GetUsedTexturesCount() const;
 		bool IsAllUsedTexturesNonNullptrs() const;
 	private:

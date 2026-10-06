@@ -28,7 +28,7 @@ void FENativeScriptProject::SetWorkingDirectory(std::string NewValue)
 	}
 
 	WorkingDirectory = NewValue;
-	VSProjectDirectory = WorkingDirectory + "NativeScriptProjects/" + Parent->GetObjectID() + "/";
+	VSProjectDirectory = WorkingDirectory + "NativeScriptProjects/" + UNIQUE_ID.ToString(Parent->GetID()) + "/";
 }
 
 std::string FENativeScriptProject::GetWorkingDirectory()
@@ -227,7 +227,7 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 
 	std::string AppropriateProjectName = GetVSProjectName();
 	std::vector<std::string> VSProjectFilesToCheck = {
-		AppropriateProjectName + ".sln", AppropriateProjectName + ".vcxproj", AppropriateProjectName + ".vcxproj.filters"
+		AppropriateProjectName + ".slnx", AppropriateProjectName + ".vcxproj", AppropriateProjectName + ".vcxproj.filters"
 	};
 
 	for (size_t i = 0; i < VSProjectFilesToCheck.size(); i++)
@@ -277,8 +277,8 @@ bool FENativeScriptProject::EnsureVSProjectDirectoryIsIntact()
 		}
 	}
 
-	if (VSProjectDirectory != WorkingDirectory + "NativeScriptProjects/" + Parent->GetObjectID() + "/")
-		VSProjectDirectory = WorkingDirectory + "NativeScriptProjects/" + Parent->GetObjectID() + "/";
+	if (VSProjectDirectory != WorkingDirectory + "NativeScriptProjects/" + UNIQUE_ID.ToString(Parent->GetID()) + "/")
+		VSProjectDirectory = WorkingDirectory + "NativeScriptProjects/" + UNIQUE_ID.ToString(Parent->GetID()) + "/";
 
 	if (FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
@@ -511,7 +511,7 @@ bool FENativeScriptProject::ConfigureAndBuildCMake()
 		return false;
 	}
 
-	std::string Generator = "Visual Studio 17 2022";
+	std::string Generator = "Visual Studio 18 2026";
 
 	// CMake configure command.
 	std::string ConfigureCommand = "cmake -S \"" + VSProjectDirectory + "\" -B \"" + VSProjectDirectory + "\" -G \"" + Generator + "\"";
@@ -546,7 +546,7 @@ bool FENativeScriptProject::RunVSProject()
 		return false;
 	}
 
-	std::string SolutionPath = VSProjectDirectory + GetVSProjectName() + ".sln";
+	std::string SolutionPath = VSProjectDirectory + GetVSProjectName() + ".slnx";
 
 	// Use ShellExecute to open the solution file
 	HINSTANCE Result = ShellExecuteA(
@@ -629,7 +629,7 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 
 	CurrentInstruction.ContextPattern = "SET_MODULE_ID(\"PLACE_HOLDER\");";
 	CurrentInstruction.TargetText = "PLACE_HOLDER";
-	CurrentInstruction.ReplacementText = Parent->GetObjectID();
+	CurrentInstruction.ReplacementText = UNIQUE_ID.ToString(Parent->GetID());
 	Instructions.push_back(CurrentInstruction);
 
 	std::string ScriptHeaderFilePath = VSProjectDirectory + ScriptName + ".h";
@@ -803,7 +803,7 @@ bool FENativeScriptProject::Update()
 	// In some cases we would want to save such module right away.
 	// It is needed to ensure that the module is saved before the next frame.
 	// TO-DO: It is a hack and should be replaced with a proper solution.
-	RESOURCE_MANAGER.SaveFENativeScriptModule(Parent, VSProjectDirectory + Parent->GetObjectID() + ".nativescriptmodule");
+	RESOURCE_MANAGER.SaveFENativeScriptModule(Parent, VSProjectDirectory + UNIQUE_ID.ToString(Parent->GetID()) + ".nativescriptmodule");
 
 	UpdateTrackedFileWriteTime(DebugDllFileData);
 	UpdateTrackedFileWriteTime(DebugPdbFileData);

@@ -113,9 +113,9 @@ void FECameraSystem::SetMainCamera(FEEntity* CameraEntity)
 
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 
-	std::vector<std::string> EntitiesWithCameraComponent = CameraEntity->GetParentScene()->GetEntityIDListWithComponent<FECameraComponent>();
+	std::vector<FEUUID> EntitiesWithCameraComponent = CameraEntity->GetParentScene()->GetEntityIDListWithComponent<FECameraComponent>();
 	// Loop through all camera components and set them to not be the main camera.
-	for (const std::string& EntityID : EntitiesWithCameraComponent)
+	for (const FEUUID& EntityID : EntitiesWithCameraComponent)
 	{
 		FEEntity* Entity = CameraEntity->GetParentScene()->GetEntity(EntityID);
 		if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
@@ -136,8 +136,8 @@ FEEntity* FECameraSystem::GetMainCamera(FEScene* Scene) const
 		return nullptr;
 	}
 
-	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
-	for (const std::string& EntityID : EntitiesWithCameraComponent)
+	std::vector<FEUUID> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
+	for (const FEUUID& EntityID : EntitiesWithCameraComponent)
 	{
 		FEEntity* Entity = Scene->GetEntity(EntityID);
 		if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
@@ -208,8 +208,8 @@ void FECameraSystem::Update(const double DeltaTime)
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (FEScene* Scene : ActiveScenes)
 	{
-		std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
-		for (const std::string& EntityID : EntitiesWithCameraComponent)
+		std::vector<FEUUID> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
+		for (const FEUUID& EntityID : EntitiesWithCameraComponent)
 		{
 			FEEntity* Entity = Scene->GetEntity(EntityID);
 			if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())
@@ -290,8 +290,8 @@ FEViewport* FECameraSystem::GetMainCameraViewport(FEScene* Scene) const
 		return nullptr;
 	}
 
-	std::vector<std::string> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
-	for (const std::string& EntityID : EntitiesWithCameraComponent)
+	std::vector<FEUUID> EntitiesWithCameraComponent = Scene->GetEntityIDListWithComponent<FECameraComponent>();
+	for (const FEUUID& EntityID : EntitiesWithCameraComponent)
 	{
 		FEEntity* Entity = Scene->GetEntity(EntityID);
 		if (Entity == nullptr || !Entity->HasComponent<FECameraComponent>())

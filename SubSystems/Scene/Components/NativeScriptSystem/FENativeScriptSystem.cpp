@@ -25,13 +25,13 @@ FENativeScriptSystem::FENativeScriptSystem()
 
 	// Activate all standard script modules.
 	// After engine is initialized, we should activate the modules.
-	std::vector<std::string> ModulesIDsToActivate = RESOURCE_MANAGER.GetNativeScriptModuleIDList();
+	std::vector<FEUUID> ModulesIDsToActivate = RESOURCE_MANAGER.GetNativeScriptModuleIDList();
 	for (size_t i = 0; i < ModulesIDsToActivate.size(); i++)
 	{
-		ActivateNativeScriptModule(ModulesIDsToActivate[i]);
+		ActivateNativeScriptModule(RESOURCE_MANAGER.GetNativeScriptModule(ModulesIDsToActivate[i]));
 	}
 
-	FENativeScriptModule* ModuleWithCameraScripts = RESOURCE_MANAGER.GetNativeScriptModule("2B7956623302254F620A675F");
+	FENativeScriptModule* ModuleWithCameraScripts = RESOURCE_MANAGER.GetNativeScriptModule(FEEngineResourceIDs::CameraScriptsModule);
 	if (ModuleWithCameraScripts == nullptr)
 	{
 		LOG.Add("can't find module with camera scripts in FEResourceManager::LoadStandardPrefabs", "FE_LOG_LOADING", FE_LOG_ERROR);
@@ -39,7 +39,7 @@ FENativeScriptSystem::FENativeScriptSystem()
 	}
 
 	// Free camera
-	FEPrefab* FreeCameraPrefab = RESOURCE_MANAGER.CreatePrefab("Free camera prefab", "4575527C773848040760656F");
+	FEPrefab* FreeCameraPrefab = RESOURCE_MANAGER.CreatePrefab("Free camera prefab", FEEngineResourceIDs::FreeCameraPrefab);
 	FreeCameraPrefab->SetTag(ENGINE_RESOURCE_TAG);
 
 	FEScene* PrefabScene = FreeCameraPrefab->GetScene();
@@ -47,10 +47,10 @@ FENativeScriptSystem::FENativeScriptSystem()
 	FEEntity* CameraEntity = PrefabScene->CreateEntity("Free camera");
 	CameraEntity->AddComponent<FECameraComponent>();
 	CameraEntity->AddComponent<FENativeScriptComponent>();
-	InitializeScriptComponent(CameraEntity, ModuleWithCameraScripts->GetObjectID(), "FreeCameraController");
+	InitializeScriptComponent(CameraEntity, ModuleWithCameraScripts->GetID(), "FreeCameraController");
 
 	// Model view camera
-	FEPrefab* ModelViewCameraPrefab = RESOURCE_MANAGER.CreatePrefab("Model view camera prefab", "14745A482D1B2C328C268027");
+	FEPrefab* ModelViewCameraPrefab = RESOURCE_MANAGER.CreatePrefab("Model view camera prefab", FEEngineResourceIDs::ModelViewCameraPrefab);
 	ModelViewCameraPrefab->SetTag(ENGINE_RESOURCE_TAG);
 
 	PrefabScene = ModelViewCameraPrefab->GetScene();
@@ -58,7 +58,7 @@ FENativeScriptSystem::FENativeScriptSystem()
 	CameraEntity = PrefabScene->CreateEntity("Model view camera");
 	CameraEntity->AddComponent<FECameraComponent>();
 	CameraEntity->AddComponent<FENativeScriptComponent>();
-	InitializeScriptComponent(CameraEntity, ModuleWithCameraScripts->GetObjectID(), "ModelViewCameraController");
+	InitializeScriptComponent(CameraEntity, ModuleWithCameraScripts->GetID(), "ModelViewCameraController");
 }
 
 void FENativeScriptSystem::RegisterOnComponentCallbacks()
@@ -243,7 +243,7 @@ Json::Value FENativeScriptSystem::NativeScriptComponentToJson(FEEntity* Entity)
 		return Root;
 	}
 
-	Root["ModuleID"] = NativeScriptComponent.ModuleID;
+	Root["ModuleID"] = UNIQUE_ID.ToString(NativeScriptComponent.ModuleID);
 	Root["Name"] = NativeScriptComponent.GetScriptData()->Name;
 
 	Json::Value VariablesRoot;
@@ -308,8 +308,8 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 		return;
 	}
 
-	std::string ModuleID = Root["ModuleID"].asString();
-	if (ModuleID.empty())
+	const FEUUID ModuleID = UNIQUE_ID.FromString(Root["ModuleID"].asString());
+	if (UNIQUE_ID.IsNull(ModuleID))
 	{
 		LOG.Add("FENativeScriptSystem::NativeScriptComponentFromJson failed to get ModuleID from JSON.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return;
@@ -350,7 +350,7 @@ void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json:
 	}
 }
 
-bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativeScriptComponent& NativeScriptComponent, std::string ActiveModuleID, FEScriptData& ScriptData)
+bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativeScriptComponent& NativeScriptComponent, const FEUUID& ActiveModuleID, FEScriptData& ScriptData)
 {
 	if (Entity == nullptr)
 	{
@@ -358,7 +358,7 @@ bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativ
 		return false;
 	}
 
-	if (ActiveModuleID.empty())
+	if (UNIQUE_ID.IsNull(ActiveModuleID))
 	{
 		LOG.Add("FENativeScriptSystem::InitializeComponentInternal failed to add script component to entity with empty ModuleID.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -389,7 +389,7 @@ bool FENativeScriptSystem::InitializeComponentInternal(FEEntity* Entity, FENativ
 	return true;
 }
 
-void FENativeScriptSystem::AddFailedToLoadData(FEEntity* Entity, std::string ModuleID, Json::Value RawData)
+void FENativeScriptSystem::AddFailedToLoadData(FEEntity* Entity, const FEUUID& ModuleID, Json::Value RawData)
 {
 	if (Entity == nullptr)
 	{
@@ -397,7 +397,7 @@ void FENativeScriptSystem::AddFailedToLoadData(FEEntity* Entity, std::string Mod
 		return;
 	}
 
-	if (ModuleID.empty())
+	if (UNIQUE_ID.IsNull(ModuleID))
 	{
 		LOG.Add("FENativeScriptSystem::AddFailedToLoadData failed to add failed to load data to entity with empty ModuleID.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return;
@@ -411,23 +411,24 @@ void FENativeScriptSystem::AddFailedToLoadData(FEEntity* Entity, std::string Mod
 	Entity->GetComponent<FENativeScriptComponent>().FailedToLoadData = FailedToLoadData;
 }
 
-FENativeScriptModule* FENativeScriptSystem::GetActiveModule(std::string ModuleID)
+FENativeScriptModule* FENativeScriptSystem::GetActiveModule(const FEUUID& ModuleID)
 {
-	if (ActiveModules.find(ModuleID) == ActiveModules.end())
+	auto ModuleIterator = ActiveModules.find(ModuleID);
+	if (ModuleIterator == ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::GetActiveModule failed to find active module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetActiveModule failed to find active module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return nullptr;
 	}
 
-	return ActiveModules[ModuleID];
+	return ModuleIterator->second;
 }
 
-std::vector<std::string> FENativeScriptSystem::GetActiveModuleScriptNameList(std::string ModuleID)
+std::vector<std::string> FENativeScriptSystem::GetActiveModuleScriptNameList(const FEUUID& ModuleID)
 {
 	FENativeScriptModule* Module = GetActiveModule(ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetActiveModuleScriptNameList failed to find active module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetActiveModuleScriptNameList failed to find active module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::vector<std::string>();
 	}
 
@@ -445,14 +446,14 @@ std::vector<std::string> FENativeScriptSystem::GetActiveModuleScriptNameList(std
 	return Result;
 }
 
-std::vector<std::string> FENativeScriptSystem::GetActiveModuleIDList()
+std::vector<FEUUID> FENativeScriptSystem::GetActiveModuleIDList()
 {
-	std::vector<std::string> Result;
+	std::vector<FEUUID> Result;
 
 	auto Iterator = ActiveModules.begin();
 	while (Iterator != ActiveModules.end())
 	{
-		std::string ModuleID = Iterator->first;
+		FEUUID ModuleID = Iterator->second->GetID();
 		Result.push_back(ModuleID);
 
 		Iterator++;
@@ -461,7 +462,7 @@ std::vector<std::string> FENativeScriptSystem::GetActiveModuleIDList()
 	return Result;
 }
 
-bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::string ActiveModuleID, std::string ScriptName)
+bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, const FEUUID& ActiveModuleID, std::string ScriptName)
 {
 	if (Entity == nullptr)
 	{
@@ -469,7 +470,7 @@ bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::stri
 		return false;
 	}
 
-	if (ActiveModuleID.empty())
+	if (UNIQUE_ID.IsNull(ActiveModuleID))
 	{
 		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to add script component to entity with empty ActiveModuleID.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -484,13 +485,13 @@ bool FENativeScriptSystem::InitializeScriptComponent(FEEntity* Entity, std::stri
 	FENativeScriptModule* ActiveModule = GetActiveModule(ActiveModuleID);
 	if (ActiveModule == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with ID: " + ActiveModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find active module with ID: " + UNIQUE_ID.ToString(ActiveModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (ActiveModule->Registry.find(ScriptName) == ActiveModule->Registry.end())
 	{
-		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find script with name: " + ScriptName + " in module with ID: " + ActiveModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::InitializeScriptComponent failed to find script with name: " + ScriptName + " in module with ID: " + UNIQUE_ID.ToString(ActiveModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -527,62 +528,62 @@ std::unordered_map<std::string, FEScriptVariableInfo> FENativeScriptSystem::GetV
 	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(NativeScriptComponent.ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find module with ID: " + NativeScriptComponent.ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find module with ID: " + UNIQUE_ID.ToString(NativeScriptComponent.ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::unordered_map<std::string, FEScriptVariableInfo>();
 	}
 
 	if (!Module->IsLoadedToMemory() || GetActiveModule(NativeScriptComponent.ModuleID) == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find active module with ID: " + NativeScriptComponent.ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find active module with ID: " + UNIQUE_ID.ToString(NativeScriptComponent.ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::unordered_map<std::string, FEScriptVariableInfo>();
 	}
 
 	return Module->Registry[NativeScriptComponent.GetScriptData()->Name].VariablesRegistry;
 }
 
-std::unordered_map<std::string, FEScriptVariableInfo> FENativeScriptSystem::GetVariablesRegistry(std::string ModuleID, std::string ScriptName)
+std::unordered_map<std::string, FEScriptVariableInfo> FENativeScriptSystem::GetVariablesRegistry(const FEUUID& ModuleID, std::string ScriptName)
 {
 	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::unordered_map<std::string, FEScriptVariableInfo>();
 	}
 
 	if (!Module->IsLoadedToMemory() || GetActiveModule(ModuleID) == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find active module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find active module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::unordered_map<std::string, FEScriptVariableInfo>();
 	}
 
 	if (Module->Registry.find(ScriptName) == Module->Registry.end())
 	{
-		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find script with name: " + ScriptName + " in module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::GetVariablesRegistry failed to find script with name: " + ScriptName + " in module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return std::unordered_map<std::string, FEScriptVariableInfo>();
 	}
 
 	return Module->Registry[ScriptName].VariablesRegistry;
 }
 
-bool FENativeScriptSystem::ActivateNativeScriptModule(std::string ModuleID)
+bool FENativeScriptSystem::ActivateNativeScriptModule(const FEUUID& ModuleID)
 {
 	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to find module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to find module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (ActiveModules.find(ModuleID) != ActiveModules.end())
+	if (ActiveModules.find(Module->GetID()) != ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + ModuleID + " is already activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(ModuleID) + " is already activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 #ifndef FOCAL_ENGINE_SHARED
-	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetObjectID()))
+	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetID()))
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + ModuleID + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + UNIQUE_ID.ToString(ModuleID) + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 #endif //  FOCAL_ENGINE_SHARED
@@ -606,15 +607,15 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 		return false;
 	}
 
-	if (ActiveModules.find(Module->GetObjectID()) != ActiveModules.end())
+	if (ActiveModules.find(Module->GetID()) != ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is already activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(Module->GetID()) + " is already activated.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (Module->IsLoadedToMemory())
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is already loaded to memory.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(Module->GetID()) + " is already loaded to memory.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -624,7 +625,7 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
 		FILE_SYSTEM.MakeDirectory(ExtractedFolderPath);
 
-	ExtractedFolderPath += Module->GetObjectID() + "/";
+	ExtractedFolderPath += UNIQUE_ID.ToString(Module->GetID()) + "/";
 	if (!FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
 		FILE_SYSTEM.MakeDirectory(ExtractedFolderPath);
 
@@ -777,34 +778,34 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 		Iterator++;
 	}
 #else
-	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetObjectID()))
+	if (!STATIC_CORE_SCRIPT_MANAGER.HaveModuleWithID(Module->GetID()))
 	{
-		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + Module->GetObjectID() + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule(STATIC) failed because module with ID: " + UNIQUE_ID.ToString(Module->GetID()) + " is not registered.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	Module->bIsLoadedToMemory = true;
 	Module->DLLHandle = nullptr;
 	Module->ExtractedDLLPath = "";
-	Module->Registry = STATIC_CORE_SCRIPT_MANAGER.GetRegistryForModuleWithID(Module->GetObjectID());
+	Module->Registry = STATIC_CORE_SCRIPT_MANAGER.GetRegistryForModuleWithID(Module->GetID());
 #endif //  FOCAL_ENGINE_SHARED
 
-	ActiveModules[Module->GetObjectID()] = Module;
+	ActiveModules[Module->GetID()] = Module;
 	return true;
 }
 
-bool FENativeScriptSystem::DeactivateNativeScriptModule(std::string ModuleID)
+bool FENativeScriptSystem::DeactivateNativeScriptModule(const FEUUID& ModuleID)
 {
 	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed to find module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed to find module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (ActiveModules.find(ModuleID) == ActiveModules.end())
+	if (ActiveModules.find(Module->GetID()) == ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + ModuleID + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(ModuleID) + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return true;
 	}
 
@@ -819,15 +820,15 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 		return false;
 	}
 
-	if (ActiveModules.find(Module->GetObjectID()) == ActiveModules.end())
+	if (ActiveModules.find(Module->GetID()) == ActiveModules.end())
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(Module->GetID()) + " is not activated.", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return true;
 	}
 
 	if (!Module->IsLoadedToMemory())
 	{
-		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + Module->GetObjectID() + " is not loaded to memory.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::DeactivateNativeScriptModule failed because module with ID: " + UNIQUE_ID.ToString(Module->GetID()) + " is not loaded to memory.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -851,15 +852,15 @@ bool FENativeScriptSystem::DeactivateNativeScriptModule(FENativeScriptModule* Mo
 	}
 
 	std::string ExtractedFolderPath = FILE_SYSTEM.GetCurrentWorkingPath() + "/ExtractedNativeScripts/";
-	ExtractedFolderPath += Module->GetObjectID() + "/";
+	ExtractedFolderPath += UNIQUE_ID.ToString(Module->GetID()) + "/";
 	if (FILE_SYSTEM.DoesDirectoryExist(ExtractedFolderPath))
 		FILE_SYSTEM.DeleteDirectory(ExtractedFolderPath);
 
-	ActiveModules.erase(Module->GetObjectID());
+	ActiveModules.erase(Module->GetID());
 	return true;
 }
 
-void FENativeScriptSystem::RemoveComponentsFromScene(FEScene* Scene, std::string ModuleID)
+void FENativeScriptSystem::RemoveComponentsFromScene(FEScene* Scene, const FEUUID& ModuleID)
 {
 	std::vector<FEEntity*> Entities = Scene->GetEntityListWithComponent<FENativeScriptComponent>();
 
@@ -884,14 +885,14 @@ void FENativeScriptSystem::ComponentsClearOnModuleDeactivate(FENativeScriptModul
 
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
-		RemoveComponentsFromScene(Scene, Module->GetObjectID());
+		RemoveComponentsFromScene(Scene, Module->GetID());
 
 	// Besides active scenes, we should also check prefab internal scenes.
 	
 	// TO DO: That is an interesting way of handling prefabs scenes, but I am not sure if it is the best way.
 	//std::vector<FEScene*> PrefabInternalScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::PrefabInternal);
 
-	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+	std::vector<FEUUID> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
 	for (size_t i = 0; i < PrefabIDList.size(); i++)
 	{
 		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
@@ -900,11 +901,11 @@ void FENativeScriptSystem::ComponentsClearOnModuleDeactivate(FENativeScriptModul
 		if (PrefabInternalScene == nullptr)
 			continue;
 
-		RemoveComponentsFromScene(PrefabInternalScene, Module->GetObjectID());
+		RemoveComponentsFromScene(PrefabInternalScene, Module->GetID());
 	}
 }
 
-void FENativeScriptSystem::GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID)
+void FENativeScriptSystem::GetModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, const FEUUID& ModuleID)
 {
 	if (Scene == nullptr)
 	{
@@ -942,10 +943,10 @@ std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetModuleScriptInstanc
 
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
-		GetModuleScriptInstancesFromScene(Result, Scene, Module->GetObjectID());
+		GetModuleScriptInstancesFromScene(Result, Scene, Module->GetID());
 
 	// Besides active scenes, we should also check prefab internal scenes.
-	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+	std::vector<FEUUID> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
 	for (size_t i = 0; i < PrefabIDList.size(); i++)
 	{
 		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
@@ -954,13 +955,13 @@ std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetModuleScriptInstanc
 		if (PrefabInternalScene == nullptr)
 			continue;
 
-		GetModuleScriptInstancesFromScene(Result, PrefabInternalScene, Module->GetObjectID());
+		GetModuleScriptInstancesFromScene(Result, PrefabInternalScene, Module->GetID());
 	}
 
 	return Result;
 }
 
-void FENativeScriptSystem::GetFailedToLoadModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, std::string ModuleID)
+void FENativeScriptSystem::GetFailedToLoadModuleScriptInstancesFromScene(std::vector<FEModuleScriptInstance>& Result, FEScene* Scene, const FEUUID& ModuleID)
 {
 	if (Scene == nullptr)
 	{
@@ -999,10 +1000,10 @@ std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetFailedToLoadModuleS
 
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active);
 	for (FEScene* Scene : ActiveScenes)
-		GetFailedToLoadModuleScriptInstancesFromScene(Result, Scene, Module->GetObjectID());
+		GetFailedToLoadModuleScriptInstancesFromScene(Result, Scene, Module->GetID());
 
 	// Besides active scenes, we should also check prefab internal scenes.
-	std::vector<std::string> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
+	std::vector<FEUUID> PrefabIDList = RESOURCE_MANAGER.GetPrefabIDList();
 	for (size_t i = 0; i < PrefabIDList.size(); i++)
 	{
 		FEPrefab* CurrentPrefab = RESOURCE_MANAGER.GetPrefab(PrefabIDList[i]);
@@ -1011,18 +1012,18 @@ std::vector<FEModuleScriptInstance> FENativeScriptSystem::GetFailedToLoadModuleS
 		if (PrefabInternalScene == nullptr)
 			continue;
 
-		GetFailedToLoadModuleScriptInstancesFromScene(Result, PrefabInternalScene, Module->GetObjectID());
+		GetFailedToLoadModuleScriptInstancesFromScene(Result, PrefabInternalScene, Module->GetID());
 	}
 
 	return Result;
 }
 
-void FENativeScriptSystem::DeleteNativeScriptModule(std::string ModuleID)
+void FENativeScriptSystem::DeleteNativeScriptModule(const FEUUID& ModuleID)
 {
 	FENativeScriptModule* Module = RESOURCE_MANAGER.GetNativeScriptModule(ModuleID);
 	if (Module == nullptr)
 	{
-		LOG.Add("FENativeScriptSystem::DeleteNativeScriptModule failed to find module with ID: " + ModuleID, "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::DeleteNativeScriptModule failed to find module with ID: " + UNIQUE_ID.ToString(ModuleID), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return;
 	}
 
@@ -1037,7 +1038,7 @@ void FENativeScriptSystem::DeleteNativeScriptModule(FENativeScriptModule* Module
 		return;
 	}
 
-	if (ActiveModules.find(Module->GetObjectID()) != ActiveModules.end())
+	if (ActiveModules.find(Module->GetID()) != ActiveModules.end())
 		DeactivateNativeScriptModule(Module);
 
 	RESOURCE_MANAGER.DeleteNativeScriptModuleInternal(Module);
@@ -1165,14 +1166,14 @@ bool FENativeScriptSystem::ReloadDLL(FENativeScriptModule* ModuleToUpdate)
 	// Then we can deactivate module.
 	if (!DeactivateNativeScriptModule(ModuleToUpdate))
 	{
-		LOG.Add("FENativeScriptSystem::ReloadDLL failed to deactivate module with ID: " + ModuleToUpdate->GetObjectID(), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ReloadDLL failed to deactivate module with ID: " + UNIQUE_ID.ToString(ModuleToUpdate->GetID()), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	// And activate it again.
 	if (!ActivateNativeScriptModule(ModuleToUpdate))
 	{
-		LOG.Add("FENativeScriptSystem::ReloadDLL failed to activate module with ID: " + ModuleToUpdate->GetObjectID(), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::ReloadDLL failed to activate module with ID: " + UNIQUE_ID.ToString(ModuleToUpdate->GetID()), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -1181,7 +1182,7 @@ bool FENativeScriptSystem::ReloadDLL(FENativeScriptModule* ModuleToUpdate)
 	for (size_t i = 0; i < ComponentsToUpdate.size(); i++)
 	{
 		ComponentsToUpdate[i].Entity->AddComponent<FENativeScriptComponent>();
-		if (InitializeScriptComponent(ComponentsToUpdate[i].Entity, ModuleToUpdate->GetObjectID(), ComponentsToUpdate[i].ScriptName))
+		if (InitializeScriptComponent(ComponentsToUpdate[i].Entity, ModuleToUpdate->GetID(), ComponentsToUpdate[i].ScriptName))
 		{
 			bAtLeastOneComponentReinitialized = true;
 
@@ -1206,7 +1207,7 @@ bool FENativeScriptSystem::ReloadDLL(FENativeScriptModule* ModuleToUpdate)
 	for (size_t i = 0; i < FailedToLoadComponentsToUpdate.size(); i++)
 	{
 		FENativeScriptComponent& FailedNativeScriptComponent = FailedToLoadComponentsToUpdate[i].Entity->GetComponent<FENativeScriptComponent>();
-		if (FailedNativeScriptComponent.GetFailedToLoadData() != nullptr && FailedNativeScriptComponent.FailedToLoadData->GetModuleID() == ModuleToUpdate->GetObjectID())
+		if (FailedNativeScriptComponent.GetFailedToLoadData() != nullptr && FailedNativeScriptComponent.FailedToLoadData->GetModuleID() == ModuleToUpdate->GetID())
 		{
 			Json::Value RawData = FailedNativeScriptComponent.GetFailedToLoadData()->GetRawData();
 

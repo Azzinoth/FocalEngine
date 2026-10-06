@@ -12,6 +12,7 @@
 #include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
 
 #include "FELASLoader.h"
+#include "FEEngineResourceIDs.h"
 #include "Config.h"
 
 #define ENGINE_RESOURCE_TAG "ENGINE_PRIVATE_RESOURCE"
@@ -48,14 +49,14 @@ namespace FocalEngine
 
 		FEShader* CreateShader(std::string ShaderName, const char* VertexText, const char* FragmentText,
 							   const char* TessControlText = nullptr, const char* TessEvalText = nullptr,
-							   const char* GeometryText = nullptr, const char* ComputeText = nullptr, std::string ForceObjectID = "");
+							   const char* GeometryText = nullptr, const char* ComputeText = nullptr, const FEUUID& ForceObjectID = FEUUID());
 
-		FEShader* GetShader(std::string ShaderID);
+		FEShader* GetShader(const FEUUID& ShaderID);
 		std::vector<FEShader*> GetShaderByName(std::string Name);
-		std::vector<std::string> GetShaderIDList();
-		std::vector<std::string> GetEnginePrivateShaderIDList();
+		std::vector<FEUUID> GetShaderIDList();
+		std::vector<FEUUID> GetEnginePrivateShaderIDList();
 		void DeleteShader(const FEShader* Shader);
-		bool ReplaceShader(std::string OldShaderID, FEShader* NewShader);
+		bool ReplaceShader(const FEUUID& OldShaderID, FEShader* NewShader);
 		std::string LoadGLSL(const std::string& FilePath);
 
 		FETexture* LoadPNGTexture(const std::string& FilePath, std::string Name = "");
@@ -65,7 +66,7 @@ namespace FocalEngine
 		FETexture* LoadFETexture(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
-		FETexture* LoadFETextureAsync(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr, std::string ForceObjectID = "");
+		FETexture* LoadFETextureAsync(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr, const FEUUID& ForceObjectID = FEUUID());
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		FETexture* RawDataTo3DFETexture(unsigned char* TextureData, int Width, int Height, int Depth, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
 		std::vector<FETexture*> ChannelsToFETextures(FETexture* SourceTexture);
@@ -84,8 +85,8 @@ namespace FocalEngine
 		bool ExportRawDataToPFM(const std::string& FilePath, const std::vector<glm::vec3>& RawData, int Width, int Height);
 		bool ImportPFMToRawData(const std::string& FilePath, std::vector<float>& RawData, int& Width, int& Height);
 		void DeleteFETexture(const FETexture* Texture);
-		std::vector<std::string> GetTextureIDList();
-		FETexture* GetTexture(std::string ID);
+		std::vector<FEUUID> GetTextureIDList();
+		FETexture* GetTexture(const FEUUID& ID);
 		std::vector<FETexture*> GetTextureByName(std::string Name);
 		FETexture* NoTexture;
 		FETexture* CreateTexture(GLint InternalFormat, GLenum Format, int Width, int Height, bool bUnManaged = true, std::string Name = "");
@@ -106,15 +107,15 @@ namespace FocalEngine
 							  float* Colors = nullptr, int ColorsCount = 0,
 							  float* MaterialIndices = nullptr, int MaterialIndicesCount = 0, int MaterialCount = 0,
 							  std::string Name = "");
-		FEMesh* RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "");
+		FEMesh* RawPLYDataToFEMesh(FERawPLYData* PLYData, std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 
 		void DeleteFEMesh(const FEMesh* Mesh);
 		bool ExportFEMeshToOBJ(FEMesh* MeshToExport, const std::string& FilePath);
 		bool ExportFEMeshToPLY(FEMesh* MeshToExport, const std::string& FilePath);
 
-		std::vector<std::string> GetMeshIDList();
-		std::vector<std::string> GetEnginePrivateMeshIDList();
-		FEMesh* GetMesh(std::string ID);
+		std::vector<FEUUID> GetMeshIDList();
+		std::vector<FEUUID> GetEnginePrivateMeshIDList();
+		FEMesh* GetMesh(const FEUUID& ID);
 		std::vector<FEMesh*> GetMeshByName(std::string Name);
 		std::vector<FEObject*> ImportOBJ(const std::string& FilePath, bool bForceOneMesh = false);
 		
@@ -130,23 +131,23 @@ namespace FocalEngine
 
 		//bool ExportLineCollectionToShapeFile(FELineCollection* LineCollectionToExport, const std::string& FilePath);
 
-		std::vector<std::string> GetFELineCollectionIDList();
-		std::vector<std::string> GetEnginePrivateFELineCollectionIDList();
-		FELineCollection* GetLineCollection(std::string ID);
+		std::vector<FEUUID> GetFELineCollectionIDList();
+		std::vector<FEUUID> GetEnginePrivateFELineCollectionIDList();
+		FELineCollection* GetLineCollection(const FEUUID& ID);
 		std::vector<FELineCollection*> GetLineCollectionByName(std::string Name);
 
 		FELineCollection* LoadFELineCollection(const std::string& FilePath, std::string Name = "");
 		void SaveFELineCollection(FELineCollection* LineCollection, const std::string& FilePath);
 
-		std::vector<std::string> GetPointCloudIDList();
-		std::vector<std::string> GetEnginePrivatePointCloudIDList();
-		FEPointCloud* GetPointCloud(std::string ID);
+		std::vector<FEUUID> GetPointCloudIDList();
+		std::vector<FEUUID> GetEnginePrivatePointCloudIDList();
+		FEPointCloud* GetPointCloud(const FEUUID& ID);
 		std::vector<FEPointCloud*> GetPointCloudByName(std::string Name);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
-		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
-		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertexDouble>& RawPointCloudDataDouble, std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawDataToFEPointCloud(std::vector<FEPointCloudVertex>& RawPointCloudData, std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), bool bCenterPositions = true, bool bAdvancedRendering = false, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
+		FEPointCloud* RawPLYDataToFEPointCloud(FERawPLYData* PLYData, std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		bool ReadLasOrLaz(const std::string& FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy = nullptr);
-		FEPointCloud* LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name = "", std::string ForceObjectID = "", bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
+		FEPointCloud* LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
 		FEPointCloud* ImportPointCloud(const std::string& FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor = nullptr);
 		void ImportLasOrLazPointCloudAsync(const std::string& FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions = true, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor = nullptr, laszip_header* OutHeaderCopy = nullptr);
 		FEPointCloud* LoadFEPointCloud(const std::string& FilePath, std::string Name = "");
@@ -161,49 +162,49 @@ namespace FocalEngine
 		FEFramebuffer* CreateFramebuffer();
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
-		std::vector<std::string> GetMaterialIDList();
-		std::vector<std::string> GetEnginePrivateMaterialIDList();
-		FEMaterial* GetMaterial(std::string ID);
+		std::vector<FEUUID> GetMaterialIDList();
+		std::vector<FEUUID> GetEnginePrivateMaterialIDList();
+		FEMaterial* GetMaterial(const FEUUID& ID);
 		std::vector<FEMaterial*> GetMaterialByName(std::string Name);
-		FEMaterial* CreateMaterial(std::string Name = "", std::string ForceObjectID = "");
+		FEMaterial* CreateMaterial(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		Json::Value SaveMaterialToJSON(FEMaterial* Material);
 		FEMaterial* LoadMaterialFromJSON(Json::Value& Root);
 		void DeleteMaterial(const FEMaterial* Material);
 
-		std::vector<std::string> GetNewMaterialIDList();
-		std::vector<std::string> GetEnginePrivateNewMaterialIDList();
-		FENewMaterial* GetNewMaterial(const std::string& ID);
+		std::vector<FEUUID> GetNewMaterialIDList();
+		std::vector<FEUUID> GetEnginePrivateNewMaterialIDList();
+		FENewMaterial* GetNewMaterial(const FEUUID& ID);
 		std::vector<FENewMaterial*> GetNewMaterialByName(const std::string& Name);
-		FENewMaterial* CreateNewMaterial(std::string Name = "", std::string ForceObjectID = "");
+		FENewMaterial* CreateNewMaterial(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		Json::Value SaveNewMaterialToJSON(FENewMaterial* Material);
 		FENewMaterial* LoadNewMaterialFromJSON(Json::Value& Root);
 		void DeleteNewMaterial(const FENewMaterial* Material);
 
-		std::vector<std::string> GetGameModelIDList();
-		std::vector<std::string> GetEnginePrivateGameModelIDList();
-		FEGameModel* GetGameModel(std::string ID);
+		std::vector<FEUUID> GetGameModelIDList();
+		std::vector<FEUUID> GetEnginePrivateGameModelIDList();
+		FEGameModel* GetGameModel(const FEUUID& ID);
 		std::vector<FEGameModel*> GetGameModelByName(std::string Name);
-		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", std::string ForceObjectID = "");
+		FEGameModel* CreateGameModel(FEMesh* Mesh = nullptr, FEMaterial* Material = nullptr, std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		Json::Value SaveGameModelToJSON(FEGameModel* GameModel);
 		FEGameModel* LoadGameModelFromJSON(Json::Value& Root);
 		void DeleteGameModel(const FEGameModel* GameModel);
 
-		std::vector<std::string> GetPrefabIDList();
-		std::vector<std::string> GetEnginePrivatePrefabIDList();
-		FEPrefab* GetPrefab(std::string ID);
+		std::vector<FEUUID> GetPrefabIDList();
+		std::vector<FEUUID> GetEnginePrivatePrefabIDList();
+		FEPrefab* GetPrefab(const FEUUID& ID);
 		std::vector<FEPrefab*> GetPrefabByName(std::string Name);
-		FEPrefab* CreatePrefab(std::string Name = "", std::string ForceObjectID = "", FEScene* SceneDescription = nullptr);
+		FEPrefab* CreatePrefab(std::string Name = "", const FEUUID& ForceObjectID = FEUUID(), FEScene* SceneDescription = nullptr);
 		Json::Value SavePrefabToJSON(FEPrefab* Prefab);
 		FEPrefab* LoadPrefabFromJSON(Json::Value& Root);
 		void DeletePrefab(const FEPrefab* Prefab);
 
-		std::vector<std::string> GetNativeScriptModuleIDList();
-		std::vector<std::string> GetEnginePrivateNativeScriptModuleIDList();
-		FENativeScriptModule* GetNativeScriptModule(std::string ID);
+		std::vector<FEUUID> GetNativeScriptModuleIDList();
+		std::vector<FEUUID> GetEnginePrivateNativeScriptModuleIDList();
+		FENativeScriptModule* GetNativeScriptModule(const FEUUID& ID);
 		std::string ReadDLLModuleID(std::string DLLFilePath);
 		std::vector<FENativeScriptModule*> GetNativeScriptModuleByName(std::string Name);
-		FENativeScriptModule* CreateNativeScriptModule(std::string Name = "", std::string ForceObjectID = "");
-		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", std::string ForceObjectID = "");
+		FENativeScriptModule* CreateNativeScriptModule(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
+		FENativeScriptModule* CreateNativeScriptModule(std::string DebugDLLFilePath, std::string DebugPDBFilePath, std::string ReleaseDLLFilePath, std::vector<std::string> ScriptFiles = {}, std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		FENativeScriptModule* LoadFENativeScriptModule(const std::string& FilePath);
 		void SaveFENativeScriptModule(FENativeScriptModule* NativeScriptModule, const std::string& FilePath);
 
@@ -249,18 +250,18 @@ namespace FocalEngine
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
 
-		std::unordered_map<std::string, FEShader*> Shaders;
-		std::unordered_map<std::string, FETexture*> Textures;
-		std::unordered_map<std::string, FEMaterial*> Materials;
-		std::unordered_map<std::string, FENewMaterial*> NewMaterials;
-		std::unordered_map<std::string, FEMesh*> Meshes;
-		std::unordered_map<std::string, FELineCollection*> LineCollections;
-		std::unordered_map<std::string, FEPointCloud*> PointClouds;
-		std::unordered_map<std::string, FEGameModel*> GameModels;
-		std::unordered_map<std::string, FEPrefab*> Prefabs;
-		std::unordered_map<std::string, FENativeScriptModule*> NativeScriptModules;
+		std::unordered_map<FEUUID, FEShader*> Shaders;
+		std::unordered_map<FEUUID, FETexture*> Textures;
+		std::unordered_map<FEUUID, FEMaterial*> Materials;
+		std::unordered_map<FEUUID, FENewMaterial*> NewMaterials;
+		std::unordered_map<FEUUID, FEMesh*> Meshes;
+		std::unordered_map<FEUUID, FELineCollection*> LineCollections;
+		std::unordered_map<FEUUID, FEPointCloud*> PointClouds;
+		std::unordered_map<FEUUID, FEGameModel*> GameModels;
+		std::unordered_map<FEUUID, FEPrefab*> Prefabs;
+		std::unordered_map<FEUUID, FENativeScriptModule*> NativeScriptModules;
 
-		FETexture* CreateTexture(std::string Name = "", std::string ForceObjectID = "");
+		FETexture* CreateTexture(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		void Upload2DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLenum Format, GLenum DataType, const void* Data);
 		void Upload3DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLsizei Depth, GLenum Format, GLenum DataType, const void* Data);
 		FEMesh* CreateMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, FEAABB AABB, std::string Name = "");
@@ -281,12 +282,15 @@ namespace FocalEngine
 		std::vector<std::string> TagsThatWillPreventDeletion = { ENGINE_RESOURCE_TAG };
 
 		template<typename T>
-		void ClearResource(std::unordered_map<std::string, T*>& ResourceMap);
+		void ClearResource(std::unordered_map<FEUUID, T*>& ResourceMap);
 
 		void SetTagInternal(FEObject* Object, std::string NewTag);
 
 		template<typename T>
-		std::vector<std::string> GetResourceIDListByTag(const std::unordered_map<std::string, T*>& Resources, const std::string& Tag);
+		std::vector<FEUUID> GetResourceIDList(const std::unordered_map<FEUUID, T*>& Resources);
+
+		template<typename T>
+		std::vector<FEUUID> GetResourceIDListByTag(const std::unordered_map<FEUUID, T*>& Resources, const std::string& Tag);
 
 		bool DeleteNativeScriptModuleInternal(FENativeScriptModule* Module);
 

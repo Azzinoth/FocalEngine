@@ -71,7 +71,7 @@ bool FEPostProcess::ReplaceOutTexture(const size_t StageIndex, FETexture* NewTex
 	{
 		for (size_t i = 0; i < TexturesToDelete.size(); i++)
 		{
-			if (TexturesToDelete[i]->GetObjectID() == Stages[StageIndex]->OutTexture->GetObjectID())
+			if (TexturesToDelete[i]->GetID() == Stages[StageIndex]->OutTexture->GetID())
 			{
 				if (bDeleteOldTexture)
 					delete Stages[StageIndex]->OutTexture;

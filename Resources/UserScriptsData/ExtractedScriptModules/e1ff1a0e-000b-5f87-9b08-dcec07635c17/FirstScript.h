@@ -2,7 +2,7 @@
 using namespace FocalEngine;
 
 // DO NOT CHANGE THIS LINE.
-SET_MODULE_ID("2B7956623302254F620A675F");
+SET_MODULE_ID("e1ff1a0e-000b-5f87-9b08-dcec07635c17");
 
 class FreeCameraController : public FENativeScriptCore
 {

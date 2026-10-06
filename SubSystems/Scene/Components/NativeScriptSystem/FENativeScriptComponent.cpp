@@ -27,7 +27,7 @@ bool FENativeScriptComponent::IsInitialized()
 	return CoreInstance != nullptr;
 }
 
-std::string FENativeScriptComponent::GetModuleID()
+FEUUID FENativeScriptComponent::GetModuleID()
 {
 	return ModuleID;
 }

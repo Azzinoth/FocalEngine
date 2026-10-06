@@ -1,12 +1,12 @@
 #pragma once
 
 template<typename T>
-std::vector<std::string> FEScene::GetEntityIDListWithComponent()
+std::vector<FEUUID> FEScene::GetEntityIDListWithComponent()
 {
-	std::vector<std::string> Result;
+	std::vector<FEUUID> Result;
 	entt::basic_view ComponentView = Registry.view<T>();
 	for (entt::entity CurrentEntity : ComponentView)
-		Result.push_back(EnttToEntity[CurrentEntity]->GetObjectID());
+		Result.push_back(EnttToEntity[CurrentEntity]->GetID());
 
 	return Result;
 }

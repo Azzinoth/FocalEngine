@@ -62,7 +62,7 @@ void FENativeScriptSystem::SaveVariableTTypeToJSON(Json::Value& Root, std::any A
 	}
 	else if constexpr (std::is_same_v<T, FEPrefab*>)
 	{
-		Root["ID"] = Value == nullptr ? "" : Value->GetObjectID();
+		Root["ID"] = Value == nullptr ? "" : UNIQUE_ID.ToString(Value->GetID());
 	}
 }
 
@@ -146,8 +146,8 @@ std::any FENativeScriptSystem::LoadVariableTTypeToJSON(const Json::Value& Root)
 	else if constexpr (std::is_same_v<T, FEPrefab*>)
 	{
 		FEPrefab* Value = nullptr;
-		std::string PrefabID = Root["ID"].asString();
-		if (!PrefabID.empty())
+		const FEUUID PrefabID = UNIQUE_ID.FromString(Root["ID"].asString());
+		if (!UNIQUE_ID.IsNull(PrefabID))
 			Value = RESOURCE_MANAGER.GetPrefab(PrefabID);
 
 		return Value;
@@ -225,7 +225,7 @@ std::any FENativeScriptSystem::CreateEngineLocalScriptVariableCopyTemplated(std:
 				// Currently we support only childs of FEObject.
 				if (std::is_base_of<FEObject, std::remove_pointer_t<T>>::value)
 				{
-					std::string ObjectID = Pointer->GetObjectID();
+					FEUUID ObjectID = Pointer->GetID();
 					FEObject* LocalPointer = OBJECT_MANAGER.GetFEObject(ObjectID);
 					return std::any(static_cast<T>(LocalPointer));
 				}

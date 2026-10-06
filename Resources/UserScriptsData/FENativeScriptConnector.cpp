@@ -15,10 +15,10 @@
 		return &CORE_SCRIPT_MANAGER.GetRegistry();
 	}
 
-	#include "ResourceManager/Timestamp.h"
+	#include "Core/VersionInfo/FOCAL_ENGINE_Version.h"
 	extern "C" __declspec(dllexport) unsigned long long GetEngineHeadersBuildVersion()
 	{
-		std::string StringRepresentation = ENGINE_BUILD_TIMESTAMP;
+		std::string StringRepresentation = FOCAL_ENGINE__BUILD_TIMESTAMP;
 		unsigned long long BuildVersion = std::stoull(StringRepresentation.c_str());
 		return BuildVersion;
 	}
