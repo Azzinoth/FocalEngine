@@ -3,6 +3,11 @@
 #include "../Core/FECoreIncludes.h"
 #include "../Core/Geometry/FEGeometry.h"
 #include "BaseResources/FEPointCloud.h"
+
+// laszip_api.h adds "using namespace std;" to the global namespace, after that "byte" in the Windows rpcndr.h is ambiguous with std::byte, so rpcndr.h (through unknwn.h) is included first.
+#if FE_PLATFORM(WINDOWS)
+#include <unknwn.h>
+#endif
 #include "../ThirdParty/laszip/laszip_api.h"
 
 namespace FocalEngine
