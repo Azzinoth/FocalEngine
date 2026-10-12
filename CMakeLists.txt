@@ -366,8 +366,6 @@ file(GLOB Scene_SRC
 # *************** SUB_SYSTEM ***************
 
 file(GLOB FileSystem_SubSystems_SRC
-	"SubSystems/FileSystem/FEFileSystem.cpp"
-	"SubSystems/FileSystem/FEFileSystem.h"
 	"SubSystems/FileSystem/FEAssetPackage.cpp"
 	"SubSystems/FileSystem/FEAssetPackage.h"
 )

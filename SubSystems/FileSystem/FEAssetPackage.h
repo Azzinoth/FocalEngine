@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FEFileSystem.h"
+#include "../Core/FECoreIncludes.h"
 #include "../Core/FEObject.h"
 
 namespace FocalEngine

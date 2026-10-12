@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../SubSystems/FileSystem/FEFileSystem.h"
+#include "../Core/FECoreIncludes.h"
 #include "../Core/Geometry/FEGeometry.h"
 #include "BaseResources/FEPointCloud.h"
 #include "../ThirdParty/laszip/laszip_api.h"
