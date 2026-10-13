@@ -1,0 +1,25 @@
+{
+	"ID": "f5036d81-f6bf-4e0b-826a-7c22fd3ff437",
+	"Name": "DummyPlugin",
+	"Version": "1.0.0",
+	"SupportedOS": [ "Windows" ],
+	"Dependencies": [],
+	"Modules": [
+		{
+			"ID": "06da51fc-2ea3-4a51-9e2f-5f4097812ff8",
+			"Type": "Engine",
+			"Name": "DummyPlugin",
+			"EntryPointFileName": "DummyPlugin.dll",
+			"SupportedOS": [ "Windows" ],
+			"Dependencies": []
+		},
+		{
+			"ID": "5eec0ffb-5a93-42ec-ab25-7854a523906b",
+			"Type": "Editor",
+			"Name": "DummyPluginEditor",
+			"EntryPointFileName": "DummyPluginEditor.dll",
+			"SupportedOS": [ "Windows" ],
+			"Dependencies": [ "06da51fc-2ea3-4a51-9e2f-5f4097812ff8" ]
+		}
+	]
+}
