@@ -839,8 +839,8 @@ std::string FEShader::ParseShaderForMacro(const char* ShaderText)
 	Index = ParsedShaderText.find(FE_TEXTURE_MACRO);
 	while (Index != std::string::npos)
 	{
-		const size_t SemicolonPos = ParsedShaderText.find(";", Index);
-		std::string TextureName = ParsedShaderText.substr(Index + strlen(FE_TEXTURE_MACRO) + 1, SemicolonPos - (Index + strlen(FE_TEXTURE_MACRO)) - 1);
+		const size_t SemicolonPosition = ParsedShaderText.find(";", Index);
+		std::string TextureName = ParsedShaderText.substr(Index + strlen(FE_TEXTURE_MACRO) + 1, SemicolonPosition - (Index + strlen(FE_TEXTURE_MACRO)) - 1);
 
 		ParsedShaderText.replace(Index, strlen(FE_TEXTURE_MACRO), "uniform sampler2D");
 

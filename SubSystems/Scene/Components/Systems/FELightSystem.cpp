@@ -158,7 +158,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			LightComponent.CascadeData[i].ViewMat = CascadeView;
+			LightComponent.CascadeData[i].ViewMatrix = CascadeView;
 
 			NearPlane = FarPlane;
 			FarPlane = LightComponent.ShadowCoverage * (0.0447f * static_cast<float>(pow(2.1867f, (i + 1))));
@@ -183,7 +183,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			FrustumEdges[7] = glm::vec4(-FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
-				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
+				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMatrix * InverseVm * FrustumEdges[j];
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
@@ -206,7 +206,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 				MaxZ = std::max(MaxZ, FrustumEdges[j].z);
 			}
 
-			LightComponent.CascadeData[i].ProjectionMat = glm::ortho(MinX - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxX + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
+			LightComponent.CascadeData[i].ProjectionMatrix = glm::ortho(MinX - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxX + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
 																	 MinY - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxY + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
 																	 MinZ - FarPlane * LightComponent.CSMZDepth, MaxZ + FarPlane * LightComponent.CSMZDepth);
 		}
@@ -215,7 +215,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 	{
 		for (size_t i = 0; i < 4; i++)
 		{
-			LightComponent.CascadeData[i].ViewMat = CascadeView;
+			LightComponent.CascadeData[i].ViewMatrix = CascadeView;
 
 			NearPlane = FarPlane;
 			if (i == 0)
@@ -253,7 +253,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			FrustumEdges[7] = glm::vec4(-FirstCascadeX2, -FirstCascadeY2, -FarPlane, 1.0f);
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
-				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
+				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMatrix * InverseVm * FrustumEdges[j];
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
@@ -285,14 +285,14 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			float ZNear = MinZ - FarPlane * LightComponent.CSMZDepth;
 			float ZFar = MaxZ + FarPlane * LightComponent.CSMZDepth;
 
-			LightComponent.CascadeData[i].ProjectionMat = glm::ortho(Left, Right,
+			LightComponent.CascadeData[i].ProjectionMatrix = glm::ortho(Left, Right,
 																	 Bottom, Top,
 																	 ZNear, ZFar);
 
 			float Clip[16];
 			float T;
 
-			glm::mat4 Clipping = LightComponent.CascadeData[i].ProjectionMat * CascadeView;
+			glm::mat4 Clipping = LightComponent.CascadeData[i].ProjectionMatrix * CascadeView;
 			for (int j = 0; j < 4; j++)
 			{
 				Clip[j * 4] = Clipping[j][0];
@@ -386,36 +386,36 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 		float NearPlaneXLength = NearPlane * glm::tan(AspectRatio / 2.0f) * 2.0f;
 		float NearPlaneYLength = NearPlaneXLength / AspectRatio;
 
-		glm::vec3 CameraPos = glm::vec3(ViewMatrix[3][0], ViewMatrix[3][1], ViewMatrix[3][2]);
+		glm::vec3 CameraPosition = glm::vec3(ViewMatrix[3][0], ViewMatrix[3][1], ViewMatrix[3][2]);
 
-		glm::vec3 NearTopLeft = CameraPos;
+		glm::vec3 NearTopLeft = CameraPosition;
 		NearTopLeft += -CameraRight * (NearPlaneXLength / 2.0f);
 		NearTopLeft += CameraUp * (NearPlaneYLength / 2.0f);
 		NearTopLeft += CameraForward * NearPlane;
 
-		glm::vec3 NearTopRight = CameraPos;
+		glm::vec3 NearTopRight = CameraPosition;
 		NearTopRight += CameraRight * (NearPlaneXLength / 2.0f);
 		NearTopRight += CameraUp * (NearPlaneYLength / 2.0f);
 		NearTopRight += CameraForward * NearPlane;
 
-		glm::vec3 NearBottomLeft = CameraPos;
+		glm::vec3 NearBottomLeft = CameraPosition;
 		NearBottomLeft += -CameraRight * (NearPlaneXLength / 2.0f);
 		NearBottomLeft += -CameraUp * (NearPlaneYLength / 2.0f);
 		NearBottomLeft += CameraForward * NearPlane;
 
-		glm::vec3 NearBottomRight = CameraPos;
+		glm::vec3 NearBottomRight = CameraPosition;
 		NearBottomRight += CameraRight * (NearPlaneXLength / 2.0f);
 		NearBottomRight += -CameraUp * (NearPlaneYLength / 2.0f);
 		NearBottomRight += CameraForward * NearPlane;
 
-		glm::vec3 CameraToTopLeft = glm::normalize(NearTopLeft - CameraPos);
-		glm::vec3 CameraToTopRight = glm::normalize(NearTopRight - CameraPos);
-		glm::vec3 CameraToBottomLeft = glm::normalize(NearBottomLeft - CameraPos);
-		glm::vec3 CameraToBottomRight = glm::normalize(NearBottomRight - CameraPos);
+		glm::vec3 CameraToTopLeft = glm::normalize(NearTopLeft - CameraPosition);
+		glm::vec3 CameraToTopRight = glm::normalize(NearTopRight - CameraPosition);
+		glm::vec3 CameraToBottomLeft = glm::normalize(NearBottomLeft - CameraPosition);
+		glm::vec3 CameraToBottomRight = glm::normalize(NearBottomRight - CameraPosition);
 
 		for (size_t i = 0; i < 4; i++)
 		{
-			LightComponent.CascadeData[i].ViewMat = CascadeView;
+			LightComponent.CascadeData[i].ViewMatrix = CascadeView;
 
 			NearPlane = FarPlane;
 			if (i == 0)
@@ -436,20 +436,20 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 			}
 			LightComponent.CascadeData[i].Size = FarPlane * TestCSMScale;
 
-			CameraPos = glm::vec3(0.0f);
+			CameraPosition = glm::vec3(0.0f);
 
-			FrustumEdges[0] = glm::vec4(CameraPos + CameraToTopLeft * NearPlane, 1.0f);
-			FrustumEdges[1] = glm::vec4(CameraPos + CameraToTopRight * NearPlane, 1.0f);
-			FrustumEdges[2] = glm::vec4(CameraPos + CameraToBottomLeft * NearPlane, 1.0f);
-			FrustumEdges[3] = glm::vec4(CameraPos + CameraToBottomRight * NearPlane, 1.0f);
+			FrustumEdges[0] = glm::vec4(CameraPosition + CameraToTopLeft * NearPlane, 1.0f);
+			FrustumEdges[1] = glm::vec4(CameraPosition + CameraToTopRight * NearPlane, 1.0f);
+			FrustumEdges[2] = glm::vec4(CameraPosition + CameraToBottomLeft * NearPlane, 1.0f);
+			FrustumEdges[3] = glm::vec4(CameraPosition + CameraToBottomRight * NearPlane, 1.0f);
 
-			FrustumEdges[4] = glm::vec4(CameraPos + CameraToTopLeft * FarPlane, 1.0f);
-			FrustumEdges[5] = glm::vec4(CameraPos + CameraToTopRight * FarPlane, 1.0f);
-			FrustumEdges[6] = glm::vec4(CameraPos + CameraToBottomLeft * FarPlane, 1.0f);
-			FrustumEdges[7] = glm::vec4(CameraPos + CameraToBottomRight * FarPlane, 1.0f);
+			FrustumEdges[4] = glm::vec4(CameraPosition + CameraToTopLeft * FarPlane, 1.0f);
+			FrustumEdges[5] = glm::vec4(CameraPosition + CameraToTopRight * FarPlane, 1.0f);
+			FrustumEdges[6] = glm::vec4(CameraPosition + CameraToBottomLeft * FarPlane, 1.0f);
+			FrustumEdges[7] = glm::vec4(CameraPosition + CameraToBottomRight * FarPlane, 1.0f);
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
-				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMat * InverseVm * FrustumEdges[j];
+				FrustumEdges[j] = LightComponent.CascadeData[0].ViewMatrix * InverseVm * FrustumEdges[j];
 
 			for (size_t j = 0; j < FrustumEdges.size(); j++)
 				FrustumEdges[j].z = -FrustumEdges[j].z;
@@ -472,7 +472,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 				MaxZ = std::max(MaxZ, FrustumEdges[j].z);
 			}
 
-			LightComponent.CascadeData[i].ProjectionMat = glm::ortho(MinX - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxX + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
+			LightComponent.CascadeData[i].ProjectionMatrix = glm::ortho(MinX - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxX + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
 																	 MinY - FarPlane * (LightComponent.CSMXYDepth / 4.0f), MaxY + FarPlane * (LightComponent.CSMXYDepth / 4.0f),
 																	 MinZ - FarPlane * LightComponent.CSMZDepth, MaxZ + FarPlane * LightComponent.CSMZDepth);
 		}

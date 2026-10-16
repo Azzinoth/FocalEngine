@@ -341,10 +341,10 @@ void FEOpenXRInput::Init()
     if (FEOpenXR_CORE.bGazeSupported)
     {
         // Create an eye tracking space.
-        XrReferenceSpaceCreateInfo eyeSpaceCreateInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
-        eyeSpaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
-        eyeSpaceCreateInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
-        xrCreateReferenceSpace(FEOpenXR_CORE.Session, &eyeSpaceCreateInfo, &EyeSpace);
+        XrReferenceSpaceCreateInfo EyeSpaceCreateInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+        EyeSpaceCreateInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;
+        EyeSpaceCreateInfo.poseInReferenceSpace = { {0, 0, 0, 1}, {0, 0, 0} };
+        xrCreateReferenceSpace(FEOpenXR_CORE.Session, &EyeSpaceCreateInfo, &EyeSpace);
 
         /*XrReferenceSpaceCreateInfo ViewSpaceInfo{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
         ViewSpaceInfo.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_VIEW;

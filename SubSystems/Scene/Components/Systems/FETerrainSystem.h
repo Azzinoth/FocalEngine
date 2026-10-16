@@ -45,7 +45,7 @@ namespace FocalEngine
 		size_t WaitBeforeUpdateMs = 50;
 		std::chrono::system_clock::time_point LastChangesTimeStamp;
 		void UpdateCPUHeightInfo(FEEntity* TerrainEntity);
-		void UpdateSnapedInstancedEntities(FEEntity* TerrainEntity);
+		void UpdateSnappedInstancedEntities(FEEntity* TerrainEntity);
 
 		bool bCPUHeightInfoDirtyFlag = false;
 		size_t FramesBeforeUpdate = 50;

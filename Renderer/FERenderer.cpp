@@ -379,10 +379,10 @@ void FERenderer::LoadUniformBlocks(FEScene* CurrentScene)
 			DirectionalLightInfo.Position = glm::vec4(TransformComponent.GetPosition(), 0.0f);
 			DirectionalLightInfo.Color = glm::vec4(LightComponent.GetColor() * LightComponent.GetIntensity(), 0.0f);
 			DirectionalLightInfo.Direction = glm::vec4(LIGHT_SYSTEM.GetDirection(LightEntity), 0.0f);
-			DirectionalLightInfo.CSM0 = LightComponent.CascadeData[0].ProjectionMat * LightComponent.CascadeData[0].ViewMat;
-			DirectionalLightInfo.CSM1 = LightComponent.CascadeData[1].ProjectionMat * LightComponent.CascadeData[1].ViewMat;
-			DirectionalLightInfo.CSM2 = LightComponent.CascadeData[2].ProjectionMat * LightComponent.CascadeData[2].ViewMat;
-			DirectionalLightInfo.CSM3 = LightComponent.CascadeData[3].ProjectionMat * LightComponent.CascadeData[3].ViewMat;
+			DirectionalLightInfo.CSM0 = LightComponent.CascadeData[0].ProjectionMatrix * LightComponent.CascadeData[0].ViewMatrix;
+			DirectionalLightInfo.CSM1 = LightComponent.CascadeData[1].ProjectionMatrix * LightComponent.CascadeData[1].ViewMatrix;
+			DirectionalLightInfo.CSM2 = LightComponent.CascadeData[2].ProjectionMatrix * LightComponent.CascadeData[2].ViewMatrix;
+			DirectionalLightInfo.CSM3 = LightComponent.CascadeData[3].ProjectionMatrix * LightComponent.CascadeData[3].ViewMatrix;
 			DirectionalLightInfo.CSMSizes = glm::vec4(LightComponent.CascadeData[0].Size, LightComponent.CascadeData[1].Size, LightComponent.CascadeData[2].Size, LightComponent.CascadeData[3].Size);
 			DirectionalLightInfo.ActiveCascades = LightComponent.ActiveCascades;
 			DirectionalLightInfo.BiasFixed = LightComponent.ShadowBias;
@@ -999,8 +999,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 				}
 
 				// Put camera to the position of light.
-				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMat;
-				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMat;
+				CurrentCameraComponent.ProjectionMatrix = LightComponent.CascadeData[i].ProjectionMatrix;
+				CurrentCameraComponent.ViewMatrix = LightComponent.CascadeData[i].ViewMatrix;
 
 				SetGLViewport(0, 0, LightComponent.CascadeData[i].FrameBuffer->GetWidth(), LightComponent.CascadeData[i].FrameBuffer->GetHeight());
 
@@ -1686,8 +1686,8 @@ void FERenderer::RenderDebugLines(FEScene* CurrentScene, FEEntity* MainCameraEnt
 	LINE_SYSTEM.InstancedLineShader->Start();
 	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
-	glm::mat4 IdentityMat4(1.0f);
-	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEWorldMatrix", IdentityMat4);
+	glm::mat4 IdentityMatrix(1.0f);
+	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("FEWorldMatrix", IdentityMatrix);
 	LINE_SYSTEM.InstancedLineShader->UpdateUniformData("resolution", glm::vec2(CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight()));
 	LINE_SYSTEM.InstancedLineShader->LoadUniformsDataToGPU();
 
@@ -1787,15 +1787,15 @@ void FERenderer::SaveScreenshot(std::string FileName, FEScene* SceneToWorkWith)
 		return;
 	}
 
-	FETexture* TempTexture = CreateScreenshot(MainCameraEntity);
-	if (TempTexture == nullptr)
+	FETexture* TemporaryTexture = CreateScreenshot(MainCameraEntity);
+	if (TemporaryTexture == nullptr)
 	{
 		LOG.Add("Temp texture is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
-	RESOURCE_MANAGER.SaveFETexture(TempTexture, FileName);
-	RESOURCE_MANAGER.DeleteFETexture(TempTexture);
+	RESOURCE_MANAGER.SaveFETexture(TemporaryTexture, FileName);
+	RESOURCE_MANAGER.DeleteFETexture(TemporaryTexture);
 }
 
 FETexture* FERenderer::CreateScreenshot(FEScene* Scene)

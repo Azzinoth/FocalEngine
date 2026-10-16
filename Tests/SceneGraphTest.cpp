@@ -1348,13 +1348,13 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 	LOG.Add("Ending SceneGraphTest::Check_Save_Load_Simple_2", "FE_LOG_TEST", FE_LOG_INFO);
 }
 
-void AddNodeAndChildsToVector(std::vector<FENaiveSceneGraphNode*>& VectorToAdd, FENaiveSceneGraphNode* Node)
+void AddNodeAndChildrenToVector(std::vector<FENaiveSceneGraphNode*>& VectorToAdd, FENaiveSceneGraphNode* Node)
 {
 	VectorToAdd.push_back(Node);
-	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
+	std::vector<FENaiveSceneGraphNode*> Children = Node->GetChildren();
 	for (size_t i = 0; i < Node->GetImmediateChildrenCount(); i++)
 	{
-		AddNodeAndChildsToVector(VectorToAdd, Childrens[i]);
+		AddNodeAndChildrenToVector(VectorToAdd, Children[i]);
 	}
 }
 
@@ -1372,10 +1372,10 @@ bool CheckEntityParentScene(FEScene* Scene, FENaiveSceneGraphNode* Node)
 			return false;
 	}
 
-	std::vector<FENaiveSceneGraphNode*> Childrens = Node->GetChildren();
+	std::vector<FENaiveSceneGraphNode*> Children = Node->GetChildren();
 	for (size_t i = 0; i < Node->GetImmediateChildrenCount(); i++)
 	{
-		if (!CheckEntityParentScene(Scene, Childrens[i]))
+		if (!CheckEntityParentScene(Scene, Children[i]))
 			return false;
 	}
 
@@ -1448,7 +1448,7 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 			ASSERT_TRUE(CheckEntityParentScene(SecondScene, SecondScene->SceneGraph.GetRoot()));
 
 			// Then adjust DestinationNodes
-			AddNodeAndChildsToVector((*DestinationNodes), ImportedNode);
+			AddNodeAndChildrenToVector((*DestinationNodes), ImportedNode);
 
 			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetImmediateChildrenCount(), NewParentChildrenCount + 1);
 			ASSERT_EQ((*DestinationNodes)[RandomIndexOfNewParent]->GetRecursiveChildCount(), NewParentRecursiveChildCount + NodeToMoveRecursiveChildCount + 1);
@@ -1546,8 +1546,8 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	std::vector<FEUUID> ChildEntitiesToDelete;
 	std::vector<FEUUID> ChildNodesToDelete;
 
-	std::vector<FENaiveSceneGraphNode*> AllChildrens = Nodes[1]->GetRecursiveChildren();
-	for (FENaiveSceneGraphNode* Child : AllChildrens)
+	std::vector<FENaiveSceneGraphNode*> AllChildren = Nodes[1]->GetRecursiveChildren();
+	for (FENaiveSceneGraphNode* Child : AllChildren)
 	{
 		ChildEntitiesToDelete.push_back(Child->GetEntity()->GetID());
 		ChildNodesToDelete.push_back(Child->GetID());
@@ -1565,7 +1565,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	}
 
 	// Basic check if the hierarchy is correct.
-	NodeCount -= 1 + static_cast<int>(AllChildrens.size());
+	NodeCount -= 1 + static_cast<int>(AllChildren.size());
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), NodeCount);
 	ASSERT_EQ(Nodes[0]->GetRecursiveChildCount(), NodeCount - 1);
 
@@ -1691,26 +1691,26 @@ TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
 	CheckEntityParentScene(SourceScene, SourceScene->SceneGraph.GetRoot());
 	CheckEntityParentScene(TargetScene, TargetScene->SceneGraph.GetRoot());
 
-	std::vector<FENaiveSceneGraphNode*> Childrens = TargetNodes[11]->GetRecursiveChildren();
+	std::vector<FENaiveSceneGraphNode*> Children = TargetNodes[11]->GetRecursiveChildren();
 	int FoundChildrenCount = 0;
-	for (size_t i = 0; i < Childrens.size(); i++)
+	for (size_t i = 0; i < Children.size(); i++)
 	{
-		if (Childrens[i]->GetName() == "Node_0")
+		if (Children[i]->GetName() == "Node_0")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_1")
+		if (Children[i]->GetName() == "Node_1")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_2")
+		if (Children[i]->GetName() == "Node_2")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_3")
+		if (Children[i]->GetName() == "Node_3")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_4")
+		if (Children[i]->GetName() == "Node_4")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_5")
+		if (Children[i]->GetName() == "Node_5")
 			FoundChildrenCount++;
 
-		if (Childrens[i]->GetName() == "Node_20")
+		if (Children[i]->GetName() == "Node_20")
 			FoundChildrenCount++;
-		if (Childrens[i]->GetName() == "Node_27")
+		if (Children[i]->GetName() == "Node_27")
 			FoundChildrenCount++;
 	}
 	ASSERT_EQ(FoundChildrenCount, 8);

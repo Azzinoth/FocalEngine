@@ -330,9 +330,9 @@ bool FENaiveSceneGraph::HasCycleInternal(FENaiveSceneGraphNode* NodeToCheck,
 	RecursionStack.insert(NodeToCheck);
 
 	// Recur for all the children
-	for (auto& child : NodeToCheck->GetChildren())
+	for (auto& Child : NodeToCheck->GetChildren())
 	{
-		if (HasCycleInternal(child, Visited, RecursionStack))
+		if (HasCycleInternal(Child, Visited, RecursionStack))
 			return true;
 	}
 

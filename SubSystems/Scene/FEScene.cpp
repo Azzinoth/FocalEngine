@@ -437,7 +437,7 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	GLTFMeshToPrefabIndex = Node.Mesh;
 
 	std::string NodeName = "Unnamed Entity";
-	if (!NodeName.empty())
+	if (!Node.Name.empty())
 		NodeName = Node.Name;
 	FEEntity* Entity = CreateEntity(NodeName);
 
@@ -451,33 +451,35 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 
 	if (GLTFMeshToPrefabIndex != -1)
 	{
-		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex) == GLTFMeshesToGameModelMap.end())
+		const auto GameModelsIterator = GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex);
+		if (GameModelsIterator == GLTFMeshesToGameModelMap.end())
 		{
-			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("GLTFMeshesToGameModelMap does not contain GLTFMeshToPrefabIndex in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
-
-		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second.empty())
+		else if (GameModelsIterator->second.empty())
 		{
-			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
-		}
-
-		std::vector<FEGameModel*> GameModels = GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second;
-		if (GameModels.size() == 1)
-		{
-			Entity->AddComponent<FEGameModelComponent>(GameModels[0]);
+			LOG.Add("GLTFMeshesToGameModelMap[GLTFMeshToPrefabIndex] is empty in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
 		else
 		{
-			for (size_t i = 0; i < GameModels.size(); i++)
+			const std::vector<FEGameModel*>& GameModels = GameModelsIterator->second;
+			if (GameModels.size() == 1)
 			{
-				std::string CurrentNodeName = NodeName;
-				CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
+				Entity->AddComponent<FEGameModelComponent>(GameModels[0]);
+			}
+			else
+			{
+				for (size_t i = 0; i < GameModels.size(); i++)
+				{
+					std::string CurrentNodeName = NodeName;
+					CurrentNodeName = NodeName + "_Primitive_" + std::to_string(i);
 
-				FEEntity* ChildEntity = CreateEntity(CurrentNodeName);
-				ChildEntity->AddComponent<FEGameModelComponent>(GameModels[i]);
-		
-				FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetID());
-				SceneGraph.MoveNode(ChildNode->GetID(), AddedNode->GetID(), false);
+					FEEntity* ChildEntity = CreateEntity(CurrentNodeName);
+					ChildEntity->AddComponent<FEGameModelComponent>(GameModels[i]);
+
+					FENaiveSceneGraphNode* ChildNode = SceneGraph.GetNodeByEntityID(ChildEntity->GetID());
+					SceneGraph.MoveNode(ChildNode->GetID(), AddedNode->GetID(), false);
+				}
 			}
 		}
 	}
@@ -493,8 +495,8 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 		}
 
 		GLTFNode ChildNode = GLTF.Nodes[Node.Children[i]];
-		std::vector<FEObject*> TempResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetID());
-		Result.insert(Result.end(), TempResult.begin(), TempResult.end());
+		std::vector<FEObject*> TemporaryResult = AddGLTFNodeToSceneGraph(GLTF, ChildNode, GLTFMeshesToGameModelMap, AddedNode->GetID());
+		Result.insert(Result.end(), TemporaryResult.begin(), TemporaryResult.end());
 	}
 
 	return Result;

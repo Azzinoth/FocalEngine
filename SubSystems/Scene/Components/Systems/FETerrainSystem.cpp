@@ -360,11 +360,11 @@ void FETerrainSystem::SnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* Ent
 
 // There should be third system to manage that.
 #include "../SubSystems/Scene/Components/Systems/FEInstancedSystem.h"
-void FETerrainSystem::UpdateSnapedInstancedEntities(FEEntity* TerrainEntity)
+void FETerrainSystem::UpdateSnappedInstancedEntities(FEEntity* TerrainEntity)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::UpdateSnapedInstancedEntities TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::UpdateSnappedInstancedEntities TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -380,8 +380,8 @@ void FETerrainSystem::UpdateSnapedInstancedEntities(FEEntity* TerrainEntity)
 
 		INSTANCED_RENDERING_SYSTEM.ClearInstance(TerrainComponent.SnappedInstancedEntities[i]);
 		INSTANCED_RENDERING_SYSTEM.PopulateInstance(TerrainComponent.SnappedInstancedEntities[i], TerrainComponent.SnappedInstancedEntities[i]->GetComponent<FEInstancedComponent>().SpawnInfo);
-		//SnapedInstancedEntities[i]->Clear();
-		//SnapedInstancedEntities[i]->Populate(SnapedInstancedEntities[i]->SpawnInfo);
+		//SnappedInstancedEntities[i]->Clear();
+		//SnappedInstancedEntities[i]->Populate(SnappedInstancedEntities[i]->SpawnInfo);
 	}
 }
 
@@ -450,7 +450,7 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 		{
 			bCPUHeightInfoDirtyFlag = false;
 			UpdateCPUHeightInfo(TerrainEntityWithBrushModeOn);
-			UpdateSnapedInstancedEntities(TerrainEntityWithBrushModeOn);
+			UpdateSnappedInstancedEntities(TerrainEntityWithBrushModeOn);
 		}
 	}
 

@@ -246,7 +246,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 	const GLenum TextureTarget = (Texture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D) ? GL_TEXTURE_3D : GL_TEXTURE_2D;
 	FE_GL_ERROR(glBindTexture(TextureTarget, Texture->TextureID));
 
-	GLint ImgSize = 0;
+	GLint ImageSize = 0;
 	std::fstream File;
 	File.open(FilePath, std::ios::out | std::ios::binary);
 
@@ -301,16 +301,16 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 
 	for (size_t i = 0; i < MipmapCount; i++)
 	{
-		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, static_cast<GLint>(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &ImgSize));
+		FE_GL_ERROR(glGetTexLevelParameteriv(GL_TEXTURE_2D, static_cast<GLint>(i), GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &ImageSize));
 
-		char* Pixels = new char[ImgSize * 2];
-		for (size_t j = 0; j < static_cast<size_t>(ImgSize * 2); j++)
+		char* Pixels = new char[ImageSize * 2];
+		for (size_t j = 0; j < static_cast<size_t>(ImageSize * 2); j++)
 		{
 			Pixels[j] = ' ';
 		}
 
-		char* AdditionalTestPixels = new char[ImgSize * 2];
-		for (size_t j = 0; j < static_cast<size_t>(ImgSize * 2); j++)
+		char* AdditionalTestPixels = new char[ImageSize * 2];
+		for (size_t j = 0; j < static_cast<size_t>(ImageSize * 2); j++)
 		{
 			AdditionalTestPixels[j] = '1';
 		}
@@ -319,7 +319,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 		FE_GL_ERROR(glGetCompressedTexImage(GL_TEXTURE_2D, static_cast<GLint>(i), AdditionalTestPixels));
 
 		int RealSize = 0;
-		for (size_t j = ImgSize * 2 - 1; j > 0; j--)
+		for (size_t j = ImageSize * 2 - 1; j > 0; j--)
 		{
 			if (Pixels[j] != ' ')
 			{
@@ -329,7 +329,7 @@ void FEResourceManager::SaveFETexture(FETexture* Texture, const std::string& Fil
 		}
 
 		int AdditionalRealSize = 0;
-		for (size_t j = ImgSize * 2 - 1; j > 0; j--)
+		for (size_t j = ImageSize * 2 - 1; j > 0; j--)
 		{
 			if (AdditionalTestPixels[j] != '1')
 			{
@@ -1607,42 +1607,42 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 	LoadedName = ObjectData.Name;
 
 	File.read(Buffer, 4);
-	const int VertexCout = *(int*)Buffer;
-	char* VertexBuffer = new char[VertexCout * 4];
-	File.read(VertexBuffer, VertexCout * 4);
+	const int VertexCount = *(int*)Buffer;
+	char* VertexBuffer = new char[VertexCount * 4];
+	File.read(VertexBuffer, VertexCount * 4);
 
 	File.read(Buffer, 4);
-	const int TexCout = *(int*)Buffer;
-	char* TexBuffer = new char[TexCout * 4];
-	File.read(TexBuffer, TexCout * 4);
+	const int UVCount = *(int*)Buffer;
+	char* UVBuffer = new char[UVCount * 4];
+	File.read(UVBuffer, UVCount * 4);
 
 	File.read(Buffer, 4);
-	const int NormCout = *(int*)Buffer;
-	char* NormBuffer = new char[NormCout * 4];
-	File.read(NormBuffer, NormCout * 4);
+	const int NormalCount = *(int*)Buffer;
+	char* NormalBuffer = new char[NormalCount * 4];
+	File.read(NormalBuffer, NormalCount * 4);
 
 	File.read(Buffer, 4);
-	const int TangCout = *(int*)Buffer;
-	char* TangBuffer = new char[TangCout * 4];
-	File.read(TangBuffer, TangCout * 4);
+	const int TangentCount = *(int*)Buffer;
+	char* TangentBuffer = new char[TangentCount * 4];
+	File.read(TangentBuffer, TangentCount * 4);
 
 	File.read(Buffer, 4);
-	const int IndexCout = *(int*)Buffer;
-	char* IndexBuffer = new char[IndexCout * 4];
-	File.read(IndexBuffer, IndexCout * 4);
+	const int IndexCount = *(int*)Buffer;
+	char* IndexBuffer = new char[IndexCount * 4];
+	File.read(IndexBuffer, IndexCount * 4);
 
-	int MatIndexCout = 0;
-	char* MatIndexBuffer = nullptr;
+	int MaterialIndexCount = 0;
+	char* MaterialIndexBuffer = nullptr;
 
 	File.read(Buffer, 4);
-	const int MatCount = *(int*)Buffer;
+	const int MaterialCount = *(int*)Buffer;
 
-	if (MatCount > 1)
+	if (MaterialCount > 1)
 	{
 		File.read(Buffer, 4);
-		MatIndexCout = *(int*)Buffer;
-		MatIndexBuffer = new char[MatIndexCout * 4];
-		File.read(MatIndexBuffer, MatIndexCout * 4);
+		MaterialIndexCount = *(int*)Buffer;
+		MaterialIndexBuffer = new char[MaterialIndexCount * 4];
+		File.read(MaterialIndexBuffer, MaterialIndexCount * 4);
 	}
 
 	FEAABB MeshAABB;
@@ -1660,13 +1660,13 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 
 	File.close();
 
-	FEMesh* NewMesh = RawDataToMesh((float*)VertexBuffer, VertexCout,
-		(float*)TexBuffer, TexCout,
-		(float*)NormBuffer, NormCout,
-		(float*)TangBuffer, TangCout,
-		(int*)IndexBuffer, IndexCout,
+	FEMesh* NewMesh = RawDataToMesh((float*)VertexBuffer, VertexCount,
+		(float*)UVBuffer, UVCount,
+		(float*)NormalBuffer, NormalCount,
+		(float*)TangentBuffer, TangentCount,
+		(int*)IndexBuffer, IndexCount,
 		nullptr, 0,
-		(float*)MatIndexBuffer, MatIndexCout, MatCount,
+		(float*)MaterialIndexBuffer, MaterialIndexCount, MaterialCount,
 		Name.empty() ? LoadedName : Name);
 
 	const FEUUID OldID = NewMesh->GetID();
@@ -1680,9 +1680,9 @@ FEMesh* FEResourceManager::LoadFEMesh(const std::string& FilePath, const std::st
 
 	delete[] Buffer;
 	delete[] VertexBuffer;
-	delete[] TexBuffer;
-	delete[] NormBuffer;
-	delete[] TangBuffer;
+	delete[] UVBuffer;
+	delete[] NormalBuffer;
+	delete[] TangentBuffer;
 	delete[] IndexBuffer;
 
 	NewMesh->AABB = MeshAABB;
@@ -2037,10 +2037,10 @@ void FEResourceManager::SaveFEMesh(FEMesh* Mesh, const std::string& FilePath)
 	if (MaterialCount > 1)
 	{
 		Count = Mesh->GetMaterialsIndicesCount();
-		float* MatIndices = new float[Count];
-		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetMaterialsIndicesBufferID(), 0, sizeof(float) * Count, MatIndices));
+		float* MaterialIndices = new float[Count];
+		FE_GL_ERROR(glGetNamedBufferSubData(Mesh->GetMaterialsIndicesBufferID(), 0, sizeof(float) * Count, MaterialIndices));
 		File.write((char*)&Count, sizeof(int));
-		File.write((char*)MatIndices, sizeof(float) * Count);
+		File.write((char*)MaterialIndices, sizeof(float) * Count);
 	}
 
 	FEAABB TemporaryAABB(Positions, Mesh->GetPositionsCount());
@@ -5810,17 +5810,17 @@ FEPointCloud* FEResourceManager::LoadFEPointCloud(const std::string& FilePath, s
 
 	char* Buffer_8Byte = new char[8];
 	File.read(Buffer_8Byte, sizeof(size_t));
-	const size_t VertexCout = *(size_t*)Buffer_8Byte;
-	char* VertexBuffer = new char[VertexCout * sizeof(float)];
-	File.read(VertexBuffer, VertexCout * sizeof(float));
+	const size_t VertexCount = *(size_t*)Buffer_8Byte;
+	char* VertexBuffer = new char[VertexCount * sizeof(float)];
+	File.read(VertexBuffer, VertexCount * sizeof(float));
 
 	File.read(Buffer_8Byte, sizeof(size_t));
-	const size_t ColorCout = *(size_t*)Buffer_8Byte;
-	char* ColorBuffer = new char[ColorCout * sizeof(unsigned char)];
-	File.read(ColorBuffer, ColorCout * sizeof(unsigned char));
+	const size_t ColorCount = *(size_t*)Buffer_8Byte;
+	char* ColorBuffer = new char[ColorCount * sizeof(unsigned char)];
+	File.read(ColorBuffer, ColorCount * sizeof(unsigned char));
 
 	std::vector<FEPointCloudVertex> PointCloudData;
-	for (size_t i = 0; i < VertexCout / 3; i++)
+	for (size_t i = 0; i < VertexCount / 3; i++)
 	{
 		PointCloudData.push_back(FEPointCloudVertex());
 		PointCloudData[i].X = *(float*)(VertexBuffer + i * 3 * sizeof(float));

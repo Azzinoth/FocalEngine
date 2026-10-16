@@ -58,9 +58,9 @@ void FEOpenXRRendering::CreateSwapChain()
 		if (SwapChainFB == nullptr)
 		{
 			SwapChainFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT | FE_DEPTH_ATTACHMENT, ViewConfigs[i].recommendedImageRectWidth, ViewConfigs[i].recommendedImageRectHeight);
-			FETexture* TempTexture = SwapChainFB->GetColorAttachment();
+			FETexture* TemporaryTexture = SwapChainFB->GetColorAttachment();
 			SwapChainFB->SetColorAttachment(nullptr);
-			delete TempTexture;
+			delete TemporaryTexture;
 		}
 	}
 }

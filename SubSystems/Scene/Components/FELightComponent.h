@@ -47,8 +47,8 @@ namespace FocalEngine
 		~FECascadeData();
 
 		float Size;
-		glm::mat4 ProjectionMat;
-		glm::mat4 ViewMat;
+		glm::mat4 ProjectionMatrix;
+		glm::mat4 ViewMatrix;
 		FEFramebuffer* FrameBuffer = nullptr;
 		float** Frustum = nullptr;
 	};

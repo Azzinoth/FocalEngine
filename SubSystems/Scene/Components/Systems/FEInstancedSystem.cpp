@@ -370,12 +370,12 @@ void FEInstancedSystem::UpdateBuffer(FEEntity* Entity, FEGameModelComponent& Gam
 	glm::vec3 Position = TransformComponent.GetPosition();
 	for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
 	{
-		glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[BufferIndex]->TransformedInstancedMatrices[i];
-		MatWithoutTranslate[3][0] -= Position.x;
-		MatWithoutTranslate[3][1] -= Position.y;
-		MatWithoutTranslate[3][2] -= Position.z;
+		glm::mat4 MatrixWithoutTranslation = InstancedComponent.InstancedElementsData[BufferIndex]->TransformedInstancedMatrices[i];
+		MatrixWithoutTranslation[3][0] -= Position.x;
+		MatrixWithoutTranslation[3][1] -= Position.y;
+		MatrixWithoutTranslation[3][2] -= Position.z;
 
-		InstancedComponent.InstancedElementsData[BufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[BufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatWithoutTranslate));
+		InstancedComponent.InstancedElementsData[BufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[BufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatrixWithoutTranslation));
 	}
 	
 	TransformComponent.SetDirtyFlag(true);
@@ -1092,14 +1092,14 @@ bool FEInstancedSystem::PopulateInstanceInternal(FEEntity* Entity, FEGameModelCo
 	float YSize = sqrt((Max.y - Min.y) * (Max.y - Min.y));
 	YSize *= GameModelComponent.GetGameModel()->GetScaleFactor();
 
-	std::vector<glm::mat4> NewMats;
-	NewMats.resize(SpawnInfo.ObjectCount);
+	std::vector<glm::mat4> NewMatrices;
+	NewMatrices.resize(SpawnInfo.ObjectCount);
 
 	glm::vec3 Position = TransformComponent.GetPosition();
 
-	for (size_t i = 0; i < NewMats.size(); i++)
+	for (size_t i = 0; i < NewMatrices.size(); i++)
 	{
-		glm::mat4 NewMat = glm::mat4(1.0);
+		glm::mat4 NewMatrix = glm::mat4(1.0);
 		// spawner transformation would be taken in account later so consider center in 0
 		float X = SpawnInfo.GetPositionDeviation();
 		float Z = SpawnInfo.GetPositionDeviation();
@@ -1143,20 +1143,20 @@ bool FEInstancedSystem::PopulateInstanceInternal(FEEntity* Entity, FEGameModelCo
 			}
 		}
 
-		NewMat = glm::translate(NewMat, glm::vec3(X, Y, Z));
+		NewMatrix = glm::translate(NewMatrix, glm::vec3(X, Y, Z));
 
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
-		NewMat = glm::rotate(NewMat, SpawnInfo.GetRotationDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
+		NewMatrix = glm::rotate(NewMatrix, SpawnInfo.GetRotationDeviation(glm::vec3(1, 0, 0)) * ANGLE_TORADIANS_COF, glm::vec3(1, 0, 0));
+		NewMatrix = glm::rotate(NewMatrix, SpawnInfo.GetRotationDeviation(glm::vec3(0, 1, 0)) * ANGLE_TORADIANS_COF, glm::vec3(0, 1, 0));
+		NewMatrix = glm::rotate(NewMatrix, SpawnInfo.GetRotationDeviation(glm::vec3(0, 0, 1)) * ANGLE_TORADIANS_COF, glm::vec3(0, 0, 1));
 
 		float FinalScale = GameModelComponent.GetGameModel()->GetScaleFactor() + GameModelComponent.GetGameModel()->GetScaleFactor() * SpawnInfo.GetScaleDeviation();
 		if (FinalScale < 0.0f)
 			FinalScale = 0.01f;
-		NewMat = glm::scale(NewMat, glm::vec3(FinalScale));
+		NewMatrix = glm::scale(NewMatrix, glm::vec3(FinalScale));
 
-		NewMats[i] = NewMat;
+		NewMatrices[i] = NewMatrix;
 	}
-	AddInstances(Entity, NewMats.data(), NewMats.size());
+	AddInstances(Entity, NewMatrices.data(), NewMatrices.size());
 
 	if (InstancedComponent.TerrainToSnap != nullptr)
 	{
@@ -1494,12 +1494,12 @@ void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
 				glm::vec3 Position = TransformComponent.GetPosition();
 				for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
 				{
-					glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
-					MatWithoutTranslate[3][0] -= Position.x;
-					MatWithoutTranslate[3][1] -= Position.y;
-					MatWithoutTranslate[3][2] -= Position.z;
+					glm::mat4 MatrixWithoutTranslation = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+					MatrixWithoutTranslation[3][0] -= Position.x;
+					MatrixWithoutTranslation[3][1] -= Position.y;
+					MatrixWithoutTranslation[3][2] -= Position.z;
 
-					InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatWithoutTranslate));
+					InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->AllInstancesAABB.Merge(GameModelComponent.GetGameModel()->Mesh->AABB.Transform(MatrixWithoutTranslation));
 				}
 				CurrentBufferIndex++;
 			}
@@ -1514,12 +1514,12 @@ void FEInstancedSystem::ForceUpdateAABB(FEEntity* Entity)
 		glm::vec3 Position = TransformComponent.GetPosition();
 		for (size_t i = 0; i < InstancedComponent.InstanceCount; i++)
 		{
-			glm::mat4 MatWithoutTranslate = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
-			MatWithoutTranslate[3][0] -= Position.x;
-			MatWithoutTranslate[3][1] -= Position.y;
-			MatWithoutTranslate[3][2] -= Position.z;
+			glm::mat4 MatrixWithoutTranslation = InstancedComponent.InstancedElementsData[CurrentBufferIndex]->TransformedInstancedMatrices[i];
+			MatrixWithoutTranslation[3][0] -= Position.x;
+			MatrixWithoutTranslation[3][1] -= Position.y;
+			MatrixWithoutTranslation[3][2] -= Position.z;
 
-			InstancedElementData->AllInstancesAABB = InstancedElementData->AllInstancesAABB.Merge(MeshAABB.Transform(MatWithoutTranslate));
+			InstancedElementData->AllInstancesAABB = InstancedElementData->AllInstancesAABB.Merge(MeshAABB.Transform(MatrixWithoutTranslation));
 		}
 	}
 

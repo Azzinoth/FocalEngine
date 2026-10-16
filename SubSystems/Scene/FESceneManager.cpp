@@ -279,10 +279,10 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	FEScene* Result = CreateScene(NewSceneName, FEUUID(), Flags);
 
 	// Get children of the root entity and import them.
-	std::vector<FENaiveSceneGraphNode*> RootChildrens = SourceScene->SceneGraph.GetRoot()->GetChildren();
-	for (auto RootChildren : RootChildrens)
+	std::vector<FENaiveSceneGraphNode*> RootChildren = SourceScene->SceneGraph.GetRoot()->GetChildren();
+	for (auto RootChild : RootChildren)
 	{
-		FEEntity* EntityToDuplicate = RootChildren->GetEntity();
+		FEEntity* EntityToDuplicate = RootChild->GetEntity();
 		Result->ImportEntity(EntityToDuplicate, nullptr, Filter);
 	}
 

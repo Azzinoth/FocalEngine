@@ -460,7 +460,7 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 
 	if (bHaveTextureCoord && bHaveNormalCoord)
 	{
-		std::vector<std::pair<int, float>> DoubledVertexMatIndices;
+		std::vector<std::pair<int, float>> DoubledVertexMaterialIndices;
 		if (bDoubleVertexOnSeams)
 		{
 			std::vector<FEObjLoader::VertexThatNeedDoubling> VertexList;
@@ -509,14 +509,14 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 				{
 					if (Vertex.ActualIndex >= (static_cast<int>(Data->MaterialRecords[i].MinVertexIndex + 1)) && Vertex.ActualIndex <= (static_cast<int>(Data->MaterialRecords[i].MaxVertexIndex + 1)))
 					{
-						DoubledVertexMatIndices.push_back(std::make_pair(NewVertexIndex, static_cast<float>(i)));
+						DoubledVertexMaterialIndices.push_back(std::make_pair(NewVertexIndex, static_cast<float>(i)));
 					}
 				}
 
 				for (auto& VertexNext : VertexList)
 				{
 					if (VertexNext.bWasDone) continue;
-					if (Vertex.IndexInArray == VertexNext.IndexInArray && (Vertex.TexIndex == VertexNext.TexIndex || Vertex.NormIndex == VertexNext.NormIndex))
+					if (Vertex.IndexInArray == VertexNext.IndexInArray && (Vertex.TextureCoordinateIndex == VertexNext.TextureCoordinateIndex || Vertex.NormalIndex == VertexNext.NormalIndex))
 					{
 						Data->RawIndices[VertexNext.IndexInArray] = NewVertexIndex;
 						VertexNext.bWasDone = true;
@@ -541,19 +541,19 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			const int TIndex = Data->RawIndices[i + 1] - 1;
 			const int NIndex = Data->RawIndices[i + 2] - 1;
 
-			const int ShiftInVerArr = VIndex * 3;
-			const int ShiftInTexArr = VIndex * 2;
+			const int ShiftInVertexCoordinates = VIndex * 3;
+			const int ShiftInTextureCoordinates = VIndex * 2;
 
 			if (bUseDoublePrecisionForReadingCoordinates)
 			{
-				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
-				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
-				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+				Data->DVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
 			}
 
-			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
-			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
-			Data->FVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinates[VIndex][2];
+			Data->FVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinates[VIndex][0];
+			Data->FVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinates[VIndex][1];
+			Data->FVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinates[VIndex][2];
 
 			// saving material ID in vertex attribute array
 			for (size_t j = 0; j < Data->MaterialRecords.size(); j++)
@@ -564,21 +564,21 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 				}
 			}
 
-			Data->FTexC[ShiftInTexArr] = Data->RawTextureCoordinates[TIndex][0];
-			Data->FTexC[ShiftInTexArr + 1] = 1 - Data->RawTextureCoordinates[TIndex][1];
+			Data->FTexC[ShiftInTextureCoordinates] = Data->RawTextureCoordinates[TIndex][0];
+			Data->FTexC[ShiftInTextureCoordinates + 1] = 1 - Data->RawTextureCoordinates[TIndex][1];
 
-			Data->FNorC[ShiftInVerArr] = Data->RawNormalCoordinates[NIndex][0];
-			Data->FNorC[ShiftInVerArr + 1] = Data->RawNormalCoordinates[NIndex][1];
-			Data->FNorC[ShiftInVerArr + 2] = Data->RawNormalCoordinates[NIndex][2];
+			Data->FNorC[ShiftInVertexCoordinates] = Data->RawNormalCoordinates[NIndex][0];
+			Data->FNorC[ShiftInVertexCoordinates + 1] = Data->RawNormalCoordinates[NIndex][1];
+			Data->FNorC[ShiftInVertexCoordinates + 2] = Data->RawNormalCoordinates[NIndex][2];
 	
 			Data->FInd.push_back(VIndex);
 		}
 
 		if (bDoubleVertexOnSeams)
 		{
-			for (size_t j = 0; j < DoubledVertexMatIndices.size(); j++)
+			for (size_t j = 0; j < DoubledVertexMaterialIndices.size(); j++)
 			{
-				Data->MaterialIDs[DoubledVertexMatIndices[j].first - 1] = DoubledVertexMatIndices[j].second;
+				Data->MaterialIDs[DoubledVertexMaterialIndices[j].first - 1] = DoubledVertexMaterialIndices[j].second;
 			}
 		}
 
@@ -601,19 +601,19 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			int VIndex = Data->RawIndices[i] - 1;
 			int TIndex = Data->RawIndices[i + 1] - 1;
 
-			const int ShiftInVerArr = VIndex * 3;
-			const int ShiftInTexArr = VIndex * 2;
+			const int ShiftInVertexCoordinates = VIndex * 3;
+			const int ShiftInTextureCoordinates = VIndex * 2;
 
 			if (bUseDoublePrecisionForReadingCoordinates)
 			{
-				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
-				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
-				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+				Data->DVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
 			}
 
-			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
-			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
-			Data->FVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinates[VIndex][2];
+			Data->FVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinates[VIndex][0];
+			Data->FVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinates[VIndex][1];
+			Data->FVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinates[VIndex][2];
 
 			// Saving material ID in vertex attribute array.
 			for (size_t i = 0; i < Data->MaterialRecords.size(); i++)
@@ -624,8 +624,8 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 				}
 			}
 
-			Data->FTexC[ShiftInTexArr] = Data->RawTextureCoordinates[TIndex][0];
-			Data->FTexC[ShiftInTexArr + 1] = 1 - Data->RawTextureCoordinates[TIndex][1];
+			Data->FTexC[ShiftInTextureCoordinates] = Data->RawTextureCoordinates[TIndex][0];
+			Data->FTexC[ShiftInTextureCoordinates + 1] = 1 - Data->RawTextureCoordinates[TIndex][1];
 
 			Data->FInd.push_back(VIndex);
 		}
@@ -650,22 +650,22 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			int VIndex = Data->RawIndices[i] - 1;
 			const int NIndex = Data->RawIndices[i + 1] - 1;
 
-			const int ShiftInVerArr = VIndex * 3;
+			const int ShiftInVertexCoordinates = VIndex * 3;
 
 			if (bUseDoublePrecisionForReadingCoordinates)
 			{
-				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
-				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
-				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+				Data->DVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
 			}
 
-			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
-			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
-			Data->FVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinates[VIndex][2];
+			Data->FVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinates[VIndex][0];
+			Data->FVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinates[VIndex][1];
+			Data->FVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinates[VIndex][2];
 
-			Data->FNorC[ShiftInVerArr] = Data->RawNormalCoordinates[NIndex][0];
-			Data->FNorC[ShiftInVerArr + 1] = Data->RawNormalCoordinates[NIndex][1];
-			Data->FNorC[ShiftInVerArr + 2] = Data->RawNormalCoordinates[NIndex][2];
+			Data->FNorC[ShiftInVertexCoordinates] = Data->RawNormalCoordinates[NIndex][0];
+			Data->FNorC[ShiftInVertexCoordinates + 1] = Data->RawNormalCoordinates[NIndex][1];
+			Data->FNorC[ShiftInVertexCoordinates + 2] = Data->RawNormalCoordinates[NIndex][2];
 
 			Data->FInd.push_back(VIndex);
 		}
@@ -686,18 +686,18 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			// Faces index in OBJ file begins from 1 not 0.
 			int VIndex = Data->RawIndices[i] - 1;
 
-			int ShiftInVerArr = VIndex * 3;
+			int ShiftInVertexCoordinates = VIndex * 3;
 
 			if (bUseDoublePrecisionForReadingCoordinates)
 			{
-				Data->DVerC[ShiftInVerArr] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
-				Data->DVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
-				Data->DVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
+				Data->DVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinatesDoublePrecision[VIndex][0];
+				Data->DVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinatesDoublePrecision[VIndex][1];
+				Data->DVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinatesDoublePrecision[VIndex][2];
 			}
 
-			Data->FVerC[ShiftInVerArr] = Data->RawVertexCoordinates[VIndex][0];
-			Data->FVerC[ShiftInVerArr + 1] = Data->RawVertexCoordinates[VIndex][1];
-			Data->FVerC[ShiftInVerArr + 2] = Data->RawVertexCoordinates[VIndex][2];
+			Data->FVerC[ShiftInVertexCoordinates] = Data->RawVertexCoordinates[VIndex][0];
+			Data->FVerC[ShiftInVertexCoordinates + 1] = Data->RawVertexCoordinates[VIndex][1];
+			Data->FVerC[ShiftInVertexCoordinates + 2] = Data->RawVertexCoordinates[VIndex][2];
 
 			Data->FInd.push_back(VIndex);
 		}
@@ -715,11 +715,11 @@ void FEObjLoader::ProcessRawData(FERawOBJData* Data)
 			int VIndex = Data->RawIndices[i] - 1;
 			if (VIndex >= Data->RawVertexCoordinates.size())
 				continue;
-			const int ShiftInVerArr = VIndex * 3;
+			const int ShiftInVertexCoordinates = VIndex * 3;
 
-			Data->FColorsC[ShiftInVerArr] = Data->RawVertexColors[VIndex][0];
-			Data->FColorsC[ShiftInVerArr + 1] = Data->RawVertexColors[VIndex][1];
-			Data->FColorsC[ShiftInVerArr + 2] = Data->RawVertexColors[VIndex][2];
+			Data->FColorsC[ShiftInVertexCoordinates] = Data->RawVertexColors[VIndex][0];
+			Data->FColorsC[ShiftInVertexCoordinates + 1] = Data->RawVertexColors[VIndex][1];
+			Data->FColorsC[ShiftInVertexCoordinates + 2] = Data->RawVertexColors[VIndex][2];
 		}
 	}
 }
@@ -803,21 +803,21 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		}
 	};
 
-	std::string STemp;
+	std::string TemporaryString;
 	std::string* StringEdited = nullptr;
 
-	LineStream >> STemp;
+	LineStream >> TemporaryString;
 	// To lower case
-	std::transform(STemp.begin(), STemp.end(), STemp.begin(), [](const unsigned char C) { return std::tolower(C); });
+	std::transform(TemporaryString.begin(), TemporaryString.end(), TemporaryString.begin(), [](const unsigned char C) { return std::tolower(C); });
 
 	// if it is comment or object declaration or other not relevant info
-	if (STemp[0] == '#' || STemp[0] == 'o')
+	if (TemporaryString[0] == '#' || TemporaryString[0] == 'o')
 	{
 		// get to the next line
 		return;
 	}
 	// if this line contains material declaration
-	else if (STemp.find("newmtl") != std::string::npos)
+	else if (TemporaryString.find("newmtl") != std::string::npos)
 	{
 		std::string MaterialName;
 		LineStream >> MaterialName;
@@ -837,7 +837,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 		LOG.Add(std::string("can't find material: ") + MaterialName + " from material file in function FEObjLoader::ReadMaterialLine.", "FE_LOG_LOADING", FE_LOG_ERROR);
 	}
 	// The diffuse texture map.
-	else if (STemp.find("map_kd") != std::string::npos)
+	else if (TemporaryString.find("map_kd") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -852,7 +852,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Specular color texture map
-	else if (STemp.find("map_ks") != std::string::npos)
+	else if (TemporaryString.find("map_ks") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -867,7 +867,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Specular highlight component
-	else if (STemp.find("map_ns") != std::string::npos)
+	else if (TemporaryString.find("map_ns") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -882,7 +882,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// The alpha texture map
-	else if (STemp.find("map_d") != std::string::npos)
+	else if (TemporaryString.find("map_d") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -897,7 +897,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Some implementations use 'map_bump' instead of 'bump' below
-	else if (STemp.find("map_bump") != std::string::npos)
+	else if (TemporaryString.find("map_bump") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -912,7 +912,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Bump map (which by default uses luminance channel of the image)
-	else if (STemp.find("bump") != std::string::npos)
+	else if (TemporaryString.find("bump") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -927,7 +927,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Displacement map
-	else if (STemp.find("disp") != std::string::npos)
+	else if (TemporaryString.find("disp") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;
@@ -942,7 +942,7 @@ void FEObjLoader::ReadMaterialLine(std::stringstream& LineStream)
 			LookForFile(*StringEdited);
 	}
 	// Stencil decal texture (defaults to 'matte' channel of the image)
-	else if (STemp.find("decal") != std::string::npos)
+	else if (TemporaryString.find("decal") != std::string::npos)
 	{
 		if (!CheckCurrentMaterialObject())
 			return;

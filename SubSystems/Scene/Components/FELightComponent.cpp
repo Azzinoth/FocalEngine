@@ -210,8 +210,8 @@ FECascadeData::FECascadeData()
 FECascadeData::FECascadeData(const FECascadeData& Other)
 {
 	Size = Other.Size;
-	ProjectionMat = Other.ProjectionMat;
-	ViewMat = Other.ViewMat;
+	ProjectionMatrix = Other.ProjectionMatrix;
+	ViewMatrix = Other.ViewMatrix;
 	FrameBuffer = Other.FrameBuffer;
 
 	Frustum = new float* [6];
@@ -232,8 +232,8 @@ FECascadeData::FECascadeData(const FECascadeData& Other)
 void FECascadeData::operator=(const FECascadeData& Other)
 {
 	Size = Other.Size;
-	ProjectionMat = Other.ProjectionMat;
-	ViewMat = Other.ViewMat;
+	ProjectionMatrix = Other.ProjectionMatrix;
+	ViewMatrix = Other.ViewMatrix;
 	FrameBuffer = Other.FrameBuffer;
 
 	for (size_t i = 0; i < 6; i++)

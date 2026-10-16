@@ -122,18 +122,18 @@ namespace FocalEngine
 
 		struct VertexThatNeedDoubling
 		{
-			VertexThatNeedDoubling(const int IndexInArray, const int ActualIndex, const int TexIndex, const int NormIndex) : IndexInArray(IndexInArray),
-																															  ActualIndex(ActualIndex), TexIndex(TexIndex), NormIndex(NormIndex), bWasDone(false) {};
+			VertexThatNeedDoubling(const int IndexInArray, const int ActualIndex, const int TextureCoordinateIndex, const int NormalIndex) : IndexInArray(IndexInArray),
+																															  ActualIndex(ActualIndex), TextureCoordinateIndex(TextureCoordinateIndex), NormalIndex(NormalIndex), bWasDone(false) {};
 
 			int IndexInArray;
 			int ActualIndex;
-			int TexIndex;
-			int NormIndex;
+			int TextureCoordinateIndex;
+			int NormalIndex;
 			bool bWasDone;
 
 			friend bool operator==(const VertexThatNeedDoubling& Lhs, const VertexThatNeedDoubling& Rhs)
 			{
-				return Lhs.ActualIndex == Rhs.ActualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TexIndex == Rhs.TexIndex && Lhs.NormIndex == Rhs.NormIndex;
+				return Lhs.ActualIndex == Rhs.ActualIndex && Lhs.IndexInArray == Rhs.IndexInArray && Lhs.TextureCoordinateIndex == Rhs.TextureCoordinateIndex && Lhs.NormalIndex == Rhs.NormalIndex;
 			}
 		};
 

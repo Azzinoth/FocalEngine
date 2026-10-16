@@ -304,7 +304,7 @@ void FETerrainComponent::LoadLayersDataToGPU()
 
 	if (bGPUDataIsStale)
 	{
-		float* TerrainLayersDataPtr = static_cast<float*>(glMapNamedBufferRange(GPULayersDataBuffer, 0,
+		float* TerrainLayersDataPointer = static_cast<float*>(glMapNamedBufferRange(GPULayersDataBuffer, 0,
 			sizeof(float) * FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER *
 			FE_TERRAIN_MAX_LAYERS,
 			GL_MAP_WRITE_BIT/* |
@@ -312,7 +312,7 @@ void FETerrainComponent::LoadLayersDataToGPU()
 			GL_MAP_UNSYNCHRONIZED_BIT*/));
 		for (size_t i = 0; i < FE_TERRAIN_MATERIAL_PROPERTIES_PER_LAYER * FE_TERRAIN_MAX_LAYERS; i++)
 		{
-			TerrainLayersDataPtr[i] = GPULayersData[i];
+			TerrainLayersDataPointer[i] = GPULayersData[i];
 		}
 		FE_GL_ERROR(glUnmapNamedBuffer(GPULayersDataBuffer));
 	}

@@ -204,8 +204,8 @@ FEUUID FEInput::AddMouseMoveCallback(std::function<void(double, double)> UserOnM
 
 void FEInput::MouseButtonCallback(const int Button, const int Action, const int Mods)
 {
-	FEInputMouseButton TempButton = static_cast<FEInputMouseButton>(Button);
-	INPUT.MouseState.Buttons[TempButton].State = static_cast<FEInputKeyState>(Action);
+	FEInputMouseButton TemporaryButton = static_cast<FEInputMouseButton>(Button);
+	INPUT.MouseState.Buttons[TemporaryButton].State = static_cast<FEInputKeyState>(Action);
 
 	for (size_t i = 0; i < INPUT.UserOnMouseButtonCallbackFuncs.size(); i++)
 	{
@@ -232,12 +232,12 @@ void FEInput::MouseMoveCallback(double Xpos, double Ypos)
 
 void FEInput::KeyButtonCallback(const int Key, const int Scancode, const int Action, const int Mods)
 {
-	FEInputKey TempKey = static_cast<FEInputKey>(Key);
+	FEInputKey TemporaryKey = static_cast<FEInputKey>(Key);
 
-	bool bWasChanged = INPUT.KeyMap[TempKey].State != static_cast<FEInputKeyState>(Action) || INPUT.KeyModifier != static_cast<FEInputKeyModifier>(Mods);
-	INPUT.KeyMap[TempKey].bLastFrameUpdated = bWasChanged;
+	bool bWasChanged = INPUT.KeyMap[TemporaryKey].State != static_cast<FEInputKeyState>(Action) || INPUT.KeyModifier != static_cast<FEInputKeyModifier>(Mods);
+	INPUT.KeyMap[TemporaryKey].bLastFrameUpdated = bWasChanged;
 
-	INPUT.KeyMap[TempKey].State = static_cast<FEInputKeyState>(Action);
+	INPUT.KeyMap[TemporaryKey].State = static_cast<FEInputKeyState>(Action);
 	INPUT.KeyModifier = static_cast<FEInputKeyModifier>(Mods);
 
 	for (size_t i = 0; i < INPUT.UserOnKeyButtonCallbackFuncs.size(); i++)
