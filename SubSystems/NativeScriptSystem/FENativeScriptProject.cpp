@@ -94,7 +94,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 	{
 		if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 		{
-			LOG.Add("FENativeScriptProject::Save: VSProjectDirectory does not exist and DataToRecoverVSProject is nullptr!", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptProject::UpdateDataToRecoverVSProject: VSProjectDirectory does not exist and DataToRecoverVSProject is nullptr!", "FE_LOG_LOADING", FE_LOG_ERROR);
 			return;
 		}
 
@@ -104,7 +104,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 			std::string FullFilePath = VSProjectDirectory + SourceFileList[i];
 			if (!FILE_SYSTEM.DoesFileExist(FullFilePath))
 			{
-				LOG.Add("FENativeScriptProject::Save: File does not exist!", "FE_LOG_LOADING", FE_LOG_ERROR);
+				LOG.Add("FENativeScriptProject::UpdateDataToRecoverVSProject: File does not exist!", "FE_LOG_LOADING", FE_LOG_ERROR);
 				continue;
 			}
 
@@ -118,7 +118,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 	{
 		if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 		{
-			LOG.Add("FENativeScriptProject::Save: VSProjectDirectory does not exist and saving old DataToRecoverVSProject!", "FE_LOG_LOADING", FE_LOG_WARNING);
+			LOG.Add("FENativeScriptProject::UpdateDataToRecoverVSProject: VSProjectDirectory does not exist and saving old DataToRecoverVSProject!", "FE_LOG_LOADING", FE_LOG_WARNING);
 		}
 		else
 		{
@@ -128,7 +128,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 				std::string FullFilePath = VSProjectDirectory + SourceFileList[i];
 				if (!FILE_SYSTEM.DoesFileExist(FullFilePath))
 				{
-					LOG.Add("FENativeScriptProject::Save: File does not exist!", "FE_LOG_LOADING", FE_LOG_ERROR);
+					LOG.Add("FENativeScriptProject::UpdateDataToRecoverVSProject: File does not exist!", "FE_LOG_LOADING", FE_LOG_ERROR);
 					continue;
 				}
 
@@ -138,7 +138,7 @@ void FENativeScriptProject::UpdateDataToRecoverVSProject()
 					{
 						if (!DataToRecoverVSProject->UpdateAssetFromFile(OldSourceFilesList[j].ID, FullFilePath))
 						{
-							LOG.Add("FENativeScriptProject::Save: Failed to update asset!", "FE_LOG_LOADING", FE_LOG_ERROR);
+							LOG.Add("FENativeScriptProject::UpdateDataToRecoverVSProject: Failed to update asset!", "FE_LOG_LOADING", FE_LOG_ERROR);
 						}
 						break;
 					}
@@ -193,19 +193,19 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 {
 	if (Parent == nullptr)
 	{
-		LOG.Add("FENativeScriptProject::IsVSProjectValid: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (VSProjectDirectory.empty())
 	{
-		LOG.Add("FENativeScriptProject::IsVSProjectValid: Path is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: Path is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
-		LOG.Add("FENativeScriptProject::IsVSProjectValid: Path does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: Path does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -220,7 +220,7 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 	{
 		if (!FILE_SYSTEM.DoesFileExist(VSProjectDirectory + InitialFilesToCheck[i]))
 		{
-			LOG.Add("FENativeScriptProject::IsVSProjectValid: File " + InitialFilesToCheck[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+			LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: File " + InitialFilesToCheck[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 			return false;
 		}
 	}
@@ -234,7 +234,7 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 	{
 		if (!FILE_SYSTEM.DoesFileExist(VSProjectDirectory + VSProjectFilesToCheck[i]))
 		{
-			LOG.Add("FENativeScriptProject::IsVSProjectValid: File " + VSProjectFilesToCheck[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+			LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: File " + VSProjectFilesToCheck[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 			return false;
 		}
 	}
@@ -246,7 +246,7 @@ bool FENativeScriptProject::IsVSProjectFolderValidAndIntact()
 	{
 		if (!FILE_SYSTEM.DoesFileExist(VSProjectDirectory + SourceFileList[i]))
 		{
-			LOG.Add("FENativeScriptProject::IsVSProjectValid: File " + SourceFileList[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+			LOG.Add("FENativeScriptProject::IsVSProjectFolderValidAndIntact: File " + SourceFileList[i] + " does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 			return false;
 		}
 	}
@@ -302,26 +302,26 @@ bool FENativeScriptProject::RecreateVSProject()
 {
 	if (DataToRecoverVSProject == nullptr)
 	{
-		LOG.Add("FENativeScriptProject::RegenerateVSProject: DataToRecoverVSProject is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::RecreateVSProject: DataToRecoverVSProject is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	std::vector<FEAssetPackageAssetInfo> AssetPackageContent = DataToRecoverVSProject->GetEntryList();
 	if (AssetPackageContent.empty())
 	{
-		LOG.Add("FENativeScriptProject::RegenerateVSProject: Asset package is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::RecreateVSProject: Asset package is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (Parent == nullptr)
 	{
-		LOG.Add("FENativeScriptProject::RegenerateVSProject: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::RecreateVSProject: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (!EnsureVSProjectDirectoryIsIntact())
 	{
-		LOG.Add("FENativeScriptProject::RegenerateVSProject: Error ensuring VS project directory is intact", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::RecreateVSProject: Error ensuring VS project directory is intact", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -542,7 +542,7 @@ bool FENativeScriptProject::RunVSProject()
 {
 	if (VSProjectDirectory.empty())
 	{
-		LOG.Add("FENativeScriptProject::RunProjectVSSolution: VSProjectDirectory is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::RunVSProject: VSProjectDirectory is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -561,7 +561,7 @@ bool FENativeScriptProject::RunVSProject()
 	// Check if ShellExecute was successful
 	if ((INT_PTR)Result <= 32)
 	{
-		LOG.Add("FENativeScriptProject::RunProjectVSSolution: Error running solution", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::RunVSProject: Error running solution", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -675,13 +675,13 @@ bool FENativeScriptProject::CreateNewVSProject(std::string FirstScriptName)
 {
 	if (FirstScriptName.empty())
 	{
-		LOG.Add("FENativeScriptProject::GenerateNewVSProject: First script name is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::CreateNewVSProject: First script name is empty", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
 	if (Parent == nullptr)
 	{
-		LOG.Add("FENativeScriptProject::GenerateNewVSProject: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FENativeScriptProject::CreateNewVSProject: Parent is nullptr", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -700,7 +700,7 @@ bool FENativeScriptProject::CreateNewVSProject(std::string FirstScriptName)
 
 	if (!GenerateScriptFilesFromTemplate(FirstScriptName))
 	{
-		LOG.Add("FENativeScriptProject::GenerateNewVSProject: Error generating script files from template", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptProject::CreateNewVSProject: Error generating script files from template", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 

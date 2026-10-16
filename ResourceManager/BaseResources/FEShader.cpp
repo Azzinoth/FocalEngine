@@ -1027,7 +1027,7 @@ FEShaderUniform* FEShader::GetUniform(const std::string Name)
 {
 	if (Uniforms.find(Name) == Uniforms.end())
 	{
-		LOG.Add(std::string("getParameter can't find : ") + Name + " in function FEShader::getParameter", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add(std::string("GetUniform can't find : ") + Name + " in function FEShader::GetUniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 

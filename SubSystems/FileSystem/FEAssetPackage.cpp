@@ -28,21 +28,21 @@ FEUUID FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetP
 	// Because of this, we will not support adding directories to the asset package.
 	if (FILE_SYSTEM.DoesDirectoryExist(FilePath))
 	{
-		LOG.Add("FEAssetPackage::AddFile: Directories are not supported in asset packages: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::ImportAssetFromFile: Directories are not supported in asset packages: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return FEUUID();
 	}
 
 	// First check if file exists.
 	if (!FILE_SYSTEM.DoesFileExist(FilePath))
 	{
-		LOG.Add("FEAssetPackage::AddFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::ImportAssetFromFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return FEUUID();
 	}
 
 	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GenerateID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
-		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::ImportAssetFromFile: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return FEUUID();
 	}
 
@@ -55,7 +55,7 @@ FEUUID FEAssetPackage::ImportAssetFromFile(const std::string& FilePath, FEAssetP
 	std::ifstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
 	{
-		LOG.Add("FEAssetPackage::AddFile: Could not open file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::ImportAssetFromFile: Could not open file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return FEUUID();
 	}
 
@@ -94,7 +94,7 @@ FEUUID FEAssetPackage::ImportAssetFromMemory(unsigned char* RawData, size_t Size
 	FEUUID IDToUse = UNIQUE_ID.IsNull(InitializeData.ID) ? UNIQUE_ID.GenerateID() : InitializeData.ID;
 	if (IsAssetIDPresent(IDToUse))
 	{
-		LOG.Add("FEAssetPackage::AddFile: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::ImportAssetFromMemory: Asset ID already present: " + UNIQUE_ID.ToString(IDToUse), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return FEUUID();
 	}
 
@@ -302,7 +302,7 @@ bool FEAssetPackage::RemoveAsset(const FEUUID& ID)
 {
 	if (!IsAssetIDPresent(ID))
 	{
-		LOG.Add("FEAssetPackage::RemoveFile: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::RemoveAsset: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -327,33 +327,33 @@ bool FEAssetPackage::UpdateAssetFromFile(const FEUUID& ID, const std::string& Fi
 {
 	if (!IsAssetIDPresent(ID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromFile: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (!FILE_SYSTEM.DoesFileExist(FilePath))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromFile: File does not exist: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	FEAssetPackageAssetInfo OldEntryInfo = Header.Entries[ID];
 	if (!RemoveAsset(ID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Could not remove old asset: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromFile: Could not remove old asset: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	FEUUID NewID = ImportAssetFromFile(FilePath, FEAssetPackageEntryInitializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
 	if (UNIQUE_ID.IsNull(NewID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Could not import file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromFile: Could not import file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (NewID != ID)
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromFile: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -364,27 +364,27 @@ bool FEAssetPackage::UpdateAssetFromMemory(const FEUUID& ID, unsigned char* RawD
 {
 	if (!IsAssetIDPresent(ID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromMemory: Asset ID not present: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	FEAssetPackageAssetInfo OldEntryInfo = Header.Entries[ID];
 	if (!RemoveAsset(ID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Could not remove old asset: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromMemory: Could not remove old asset: " + UNIQUE_ID.ToString(ID), "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	FEUUID NewID = ImportAssetFromMemory(RawData, Size, FEAssetPackageEntryInitializeData{ OldEntryInfo.ID, OldEntryInfo.Name, OldEntryInfo.Type, OldEntryInfo.Tag, OldEntryInfo.Comment });
 	if (UNIQUE_ID.IsNull(NewID))
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: Could not import file from memory.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromMemory: Could not import file from memory.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (NewID != ID)
 	{
-		LOG.Add("FEAssetPackage::UpdateFile: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::UpdateAssetFromMemory: New ID is different from the old ID.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -438,7 +438,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	std::ofstream File(FilePath, std::ios::binary);
 	if (!File.is_open())
 	{
-		LOG.Add("FEAssetPackage::WriteToFile: Could not open file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::SaveToFile: Could not open file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -447,7 +447,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	unsigned char* RawData = ExportAsRawData(DataSize);
 	if (RawData == nullptr)
 	{
-		LOG.Add("FEAssetPackage::WriteToFile: Could not export asset package as raw data.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::SaveToFile: Could not export asset package as raw data.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
 		FILE_SYSTEM.RemoveFile(FilePath);
 		return false;
@@ -455,7 +455,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 
 	if (DataSize == 0)
 	{
-		LOG.Add("FEAssetPackage::WriteToFile: Asset package size is 0.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::SaveToFile: Asset package size is 0.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
 		delete[] RawData;
 		FILE_SYSTEM.RemoveFile(FilePath);
@@ -469,7 +469,7 @@ bool FEAssetPackage::SaveToFile(const std::string& FilePath)
 	size_t WrittenDataSize = File.tellp();
 	if (WrittenDataSize != Header.Size + Data.size())
 	{
-		LOG.Add("FEAssetPackage::WriteToFile: package size is not equal to the written data size.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		LOG.Add("FEAssetPackage::SaveToFile: package size is not equal to the written data size.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
 		File.close();
 		FILE_SYSTEM.RemoveFile(FilePath);
 		return false;

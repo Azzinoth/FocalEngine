@@ -9,7 +9,7 @@ bool FENativeScriptComponent::GetVariableValue(const std::string& VariableName, 
     auto VariablesIterator = ScriptData->VariablesRegistry.find(VariableName);
     if (VariablesIterator == ScriptData->VariablesRegistry.end())
     {
-        LOG.Add("FENativeScriptComponent::GetVariableValueRaw: Variable with name: " + VariableName + " not found in registry.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+        LOG.Add("FENativeScriptComponent::GetVariableValue: Variable with name: " + VariableName + " not found in registry.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
         return false;
     }
 

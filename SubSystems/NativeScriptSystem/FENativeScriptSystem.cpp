@@ -34,7 +34,7 @@ FENativeScriptSystem::FENativeScriptSystem()
 	FENativeScriptModule* ModuleWithCameraScripts = RESOURCE_MANAGER.GetNativeScriptModule(FEEngineResourceIDs::CameraScriptsModule);
 	if (ModuleWithCameraScripts == nullptr)
 	{
-		LOG.Add("can't find module with camera scripts in FEResourceManager::LoadStandardPrefabs", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("can't find module with camera scripts in FENativeScriptSystem::FENativeScriptSystem", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return;
 	}
 

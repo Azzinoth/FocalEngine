@@ -181,7 +181,7 @@ bool FENativeScriptSystem::IsEqualTType(std::any FirstScriptVariable, std::any S
 	}
 	catch (const std::bad_any_cast& e)
 	{
-		LOG.Add("FENativeScriptSystem::IsEqual: " + std::string(e.what()), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptSystem::IsEqualTType: " + std::string(e.what()), "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 }

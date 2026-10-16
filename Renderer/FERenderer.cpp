@@ -711,7 +711,7 @@ void FERenderer::SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEnt
 		{
 			if (!RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity))
 			{
-				LOG.Add("Function FERenderer::Render, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+				LOG.Add("Function FERenderer::SimplifiedRender, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 			}
 		}
 
@@ -994,7 +994,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 			{
 				if (LightComponent.CascadeData[i].FrameBuffer == nullptr)
 				{
-					LOG.Add("Function FERenderer::Render, LightComponent.CascadeData[i].FrameBuffer is nullptr!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+					LOG.Add("Function FERenderer::RenderInternal, LightComponent.CascadeData[i].FrameBuffer is nullptr!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 					continue;
 				}
 
@@ -1307,7 +1307,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		{
 			if (!RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity))
 			{
-				LOG.Add("Function FERenderer::Render, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
+				LOG.Add("Function FERenderer::RenderInternal, RENDERER.InitializeComputeShaderPointCloudRendering(MainCameraEntity) failed!", "FE_LOG_RENDERING", FE_LOG_ERROR);
 			}
 		}
 
@@ -1822,7 +1822,7 @@ FETexture* FERenderer::CreateScreenshot(FEEntity* CameraEntity)
 	FECameraRenderingData* CameraRenderingData = GetCameraRenderingData(CameraEntity);
 	if (CameraRenderingData == nullptr)
 	{
-		LOG.Add("Camera rendering data is nullptr in FERenderer::SaveScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("Camera rendering data is nullptr in FERenderer::CreateScreenshot", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return Result;
 	}
 
@@ -1929,7 +1929,7 @@ void FERenderer::RenderGameModelComponentForward(FEEntity* Entity, FEEntity* Cam
 	FEGameModel* GameModel = GameModelComponent.GetGameModel();
 	if (GameModel == nullptr)
 	{
-		LOG.Add("Trying to draw FEGameModelComponent with GameModel that is nullptr in FERenderer::RenderGameModelComponent", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("Trying to draw FEGameModelComponent with GameModel that is nullptr in FERenderer::RenderGameModelComponentForward", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return;
 	}
 
@@ -2859,14 +2859,14 @@ bool FERenderer::FuseTwoFrameBuffers(FEFramebuffer* FirstSource, float FirstNear
 
 	if (FirstSource == nullptr || SecondSource == nullptr || Target == nullptr)
 	{
-		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, either FirstSource, SecondSource or Target is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("In FERenderer::FuseTwoFrameBuffers, either FirstSource, SecondSource or Target is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (FirstSource->GetWidth() != SecondSource->GetWidth() || FirstSource->GetHeight() != SecondSource->GetHeight() ||
 		FirstSource->GetWidth() != Target->GetWidth() || FirstSource->GetHeight() != Target->GetHeight())
 	{
-		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, FirstSource, SecondSource and Target have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("In FERenderer::FuseTwoFrameBuffers, FirstSource, SecondSource and Target have different sizes.", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -2880,7 +2880,7 @@ bool FERenderer::FuseTwoFrameBuffers(FEFramebuffer* FirstSource, float FirstNear
 	FEShader* FEFuseTwoFrameBuffers = RESOURCE_MANAGER.GetShaderByName("FE_FuseTwoFrameBuffers")[0];
 	if (FEFuseTwoFrameBuffers == nullptr)
 	{
-		LOG.Add("In FERenderer::FuseFrameBufferDataAndCameraData, FEFuseTwoFrameBuffers is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
+		LOG.Add("In FERenderer::FuseTwoFrameBuffers, FEFuseTwoFrameBuffers is nullptr.", "FE_LOG_RENDERING", FE_LOG_ERROR);
 		return false;
 	}
 	FEFuseTwoFrameBuffers->Start();

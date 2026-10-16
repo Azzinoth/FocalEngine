@@ -765,13 +765,13 @@ bool FEObjLoader::CheckCurrentMaterialObject()
 {
 	if (CurrentMaterialObject == nullptr)
 	{
-		LOG.Add("currentMaterialObject is nullptr in function FEObjLoader::ReadMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("currentMaterialObject is nullptr in function FEObjLoader::CheckCurrentMaterialObject.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (CurrentMaterialObject->MaterialRecords.empty())
 	{
-		LOG.Add("MaterialRecords is empty in function FEObjLoader::ReadMaterialFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("MaterialRecords is empty in function FEObjLoader::CheckCurrentMaterialObject.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return false;
 	}
 

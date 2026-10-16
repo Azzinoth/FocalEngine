@@ -364,7 +364,7 @@ void FETerrainSystem::UpdateSnapedInstancedEntities(FEEntity* TerrainEntity)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::SnapInstancedEntity TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::UpdateSnapedInstancedEntities TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -389,7 +389,7 @@ void FETerrainSystem::UnSnapInstancedEntity(FEEntity* TerrainEntity, FEEntity* E
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::SnapInstancedEntity TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::UnSnapInstancedEntity TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -576,7 +576,7 @@ void FETerrainSystem::UpdateCPUHeightInfo(FEEntity* TerrainEntity)
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::SnapInstancedEntity TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::UpdateCPUHeightInfo TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
@@ -623,7 +623,7 @@ void FETerrainSystem::ConnectInstancedEntityToLayer(FEEntity* TerrainEntity, FEE
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::SnapInstancedEntity TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::ConnectInstancedEntityToLayer TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
@@ -666,7 +666,7 @@ void FETerrainSystem::LoadHeightMap(std::string FileName, FEEntity* TerrainEntit
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::InitTerrainEditTools TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::LoadHeightMap TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
@@ -694,7 +694,7 @@ void FETerrainSystem::SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity
 {
 	if (TerrainEntity == nullptr || !TerrainEntity->HasComponent<FETerrainComponent>())
 	{
-		LOG.Add("FETerrainSystem::InitTerrainEditTools TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::SetHeightMap TerrainEntity is nullptr or does not have FETerrainComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
@@ -1056,13 +1056,13 @@ void FETerrainSystem::ClearTerrainLayerMask(FEEntity* TerrainEntity, size_t Laye
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FEResourceManager::ClearTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::ClearTerrainLayerMask with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (TerrainComponent.Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FEResourceManager::ClearTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainSystem::ClearTerrainLayerMask on indicated layer slot layer is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 

@@ -224,7 +224,7 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 {
 	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FECameraComponent>())
 	{
-		LOG.Add("FECameraSystem::IndividuallyUpdate CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("FECameraSystem::IndividualUpdate CameraEntity is nullptr or does not have a camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return;
 	}
 
@@ -443,7 +443,7 @@ void FECameraSystem::PointCameraAt(FEEntity* CameraEntity, glm::vec3 Target, glm
 {
 	if (CameraEntity == nullptr || !CameraEntity->HasComponent<FETransformComponent>() || !CameraEntity->HasComponent<FECameraComponent>())
 	{
-		LOG.Add("FECameraSystem::LookAt CameraEntity is nullptr or does not have a transform or camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
+		LOG.Add("FECameraSystem::PointCameraAt CameraEntity is nullptr or does not have a transform or camera component.", "FE_LOG_ECS", FE_LOG_ERROR);
 		return;
 	}
 

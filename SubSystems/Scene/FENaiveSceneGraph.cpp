@@ -216,20 +216,20 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::ImportNode(FENaiveSceneGraphNode* Node
 	FENaiveSceneGraphNode* Result = nullptr;
 	if (NodeFromDifferentSceneGraph == nullptr)
 	{
-		LOG.Add("NodeFromDifferentSceneGraph is nullptr in FENaiveSceneGraph::ImportEntity", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		LOG.Add("NodeFromDifferentSceneGraph is nullptr in FENaiveSceneGraph::ImportNode", "FE_SCENE_GRAPH", FE_LOG_ERROR);
 		return Result;
 	}
 	
 	FEEntity* EntityFromDifferentScene = NodeFromDifferentSceneGraph->Entity;
 	if (EntityFromDifferentScene == nullptr)
 	{
-		LOG.Add("NodeFromDifferentSceneGraph has null entity in FENaiveSceneGraph::ImportEntity, it is root node that cannot be imported or it is malformed.", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		LOG.Add("NodeFromDifferentSceneGraph has null entity in FENaiveSceneGraph::ImportNode, it is root node that cannot be imported or it is malformed.", "FE_SCENE_GRAPH", FE_LOG_ERROR);
 		return Result;
 	}
 
 	if (EntityFromDifferentScene->GetParentScene() == ParentScene)
 	{
-		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportEntity", "FE_SCENE_GRAPH", FE_LOG_WARNING);
+		LOG.Add("EntityFromDifferentScene is already in this scene in FENaiveSceneGraph::ImportNode", "FE_SCENE_GRAPH", FE_LOG_WARNING);
 		return Result;
 	}
 

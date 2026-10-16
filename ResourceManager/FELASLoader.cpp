@@ -112,10 +112,10 @@ void FELASLoader::ClearLoadedData()
 static void CloseAndDestroyReader(laszip_POINTER LaszipReader, bool bCloseReader)
 {
 	if (bCloseReader && laszip_close_reader(LaszipReader))
-		LOG.Add("FELASLoader::ReadFile: closing laszip reader failed", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("CloseAndDestroyReader: closing laszip reader failed", "FE_LOG_LOADING", FE_LOG_ERROR);
 
 	if (laszip_destroy(LaszipReader))
-		LOG.Add("FELASLoader::ReadFile: destroying laszip reader failed", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("CloseAndDestroyReader: destroying laszip reader failed", "FE_LOG_LOADING", FE_LOG_ERROR);
 }
 
 bool FELASLoader::ReadFile(const std::string& FilePath, bool bSaveHeaderCopy, bool bSaveRawPoints)

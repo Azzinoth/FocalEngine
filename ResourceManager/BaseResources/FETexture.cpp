@@ -490,7 +490,7 @@ void FETexture::UpdateRawData(unsigned char* NewRawData, const size_t MipmapCoun
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT5_EXT &&
 		InternalFormat != GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
 	{
-		LOG.Add("FETexture::updateRawData internalFormat of texture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
+		LOG.Add("FETexture::UpdateRawData internalFormat of texture is not supported", "FE_LOG_SAVING", FE_LOG_ERROR);
 		return;
 	}
 

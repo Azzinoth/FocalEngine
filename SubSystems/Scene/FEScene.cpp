@@ -453,12 +453,12 @@ std::vector<FEObject*> FEScene::AddGLTFNodeToSceneGraph(const FEGLTFLoader& GLTF
 	{
 		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex) == GLTFMeshesToGameModelMap.end())
 		{
-			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("PrefabMap does not contain GLTFMesheToPrefabIndex in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
 
 		if (GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second.empty())
 		{
-			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::LoadGLTF", "FE_LOG_LOADING", FE_LOG_ERROR);
+			LOG.Add("GLTFMeshesToPrefabMap[GLTFMesheToPrefabIndex] is empty in FEScene::AddGLTFNodeToSceneGraph", "FE_LOG_LOADING", FE_LOG_ERROR);
 		}
 
 		std::vector<FEGameModel*> GameModels = GLTFMeshesToGameModelMap.find(GLTFMeshToPrefabIndex)->second;

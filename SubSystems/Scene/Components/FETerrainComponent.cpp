@@ -171,31 +171,31 @@ FETerrainLayer* FETerrainComponent::ActivateVacantLayerSlot(FEMaterial* Material
 	size_t LayerIndex = 0;
 	if (!GetNextEmptyLayerSlot(LayerIndex))
 	{
-		LOG.Add("FETerrainComponent::activateLayerSlot was not able to acquire vacant layer index", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::ActivateVacantLayerSlot was not able to acquire vacant layer index", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (Material == nullptr)
 	{
-		LOG.Add("FETerrainComponent::activateLayerSlot material is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::ActivateVacantLayerSlot material is nullptr", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (!Material->IsCompactPacking())
 	{
-		LOG.Add("FETerrainComponent::activateLayerSlot material is not compactly packed", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::ActivateVacantLayerSlot material is not compactly packed", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrainComponent::activateLayerSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::ActivateVacantLayerSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
 	if (Layers[LayerIndex] != nullptr)
 	{
-		LOG.Add("FETerrainComponent::activateLayerSlot on indicated layer slot layer is already active", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::ActivateVacantLayerSlot on indicated layer slot layer is already active", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
@@ -212,7 +212,7 @@ FETerrainLayer* FETerrainComponent::GetLayerInSlot(const size_t LayerIndex)
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrainComponent::getLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::GetLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return nullptr;
 	}
 
@@ -223,13 +223,13 @@ void FETerrainComponent::DeleteLayerInSlot(const size_t LayerIndex)
 {
 	if (LayerIndex < 0 || LayerIndex >= FE_TERRAIN_MAX_LAYERS)
 	{
-		LOG.Add("FETerrainComponent::deleteLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::DeleteLayerInSlot with out of bound \"layerIndex\"", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 
 	if (Layers[LayerIndex] == nullptr)
 	{
-		LOG.Add("FETerrainComponent::deleteLayerInSlot on indicated layer slot layer is already inactive", "FE_LOG_RENDERING", FE_LOG_WARNING);
+		LOG.Add("FETerrainComponent::DeleteLayerInSlot on indicated layer slot layer is already inactive", "FE_LOG_RENDERING", FE_LOG_WARNING);
 		return;
 	}
 

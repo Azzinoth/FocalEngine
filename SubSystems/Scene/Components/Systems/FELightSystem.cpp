@@ -107,7 +107,7 @@ void FELightSystem::UpdateCascades(FEEntity* LightEntity, float CameraFov, float
 {
 	if (LightEntity == nullptr || !LightEntity->HasComponent<FELightComponent>())
 	{
-		LOG.Add("FELightSystem::GetDirection LightEntity is nullptr or does not have FELightComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("FELightSystem::UpdateCascades LightEntity is nullptr or does not have FELightComponent", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 	FELightComponent& LightComponent = LightEntity->GetComponent<FELightComponent>();

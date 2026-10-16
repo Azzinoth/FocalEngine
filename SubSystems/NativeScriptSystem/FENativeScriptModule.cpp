@@ -31,19 +31,19 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	// First we will check if all files are valid
 	if (!FILE_SYSTEM.DoesFileExist(DebugDLLFilePath))
 	{
-		LOG.Add("FENativeScriptModule::Update: DebugDLLFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptModule::UpdateFiles: DebugDLLFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (!FILE_SYSTEM.DoesFileExist(DebugPDBFilePath))
 	{
-		LOG.Add("FENativeScriptModule::Update: DebugPDBFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptModule::UpdateFiles: DebugPDBFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (!FILE_SYSTEM.DoesFileExist(ReleaseDLLFilePath))
 	{
-		LOG.Add("FENativeScriptModule::Update: ReleaseDLLFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FENativeScriptModule::UpdateFiles: ReleaseDLLFilePath does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -51,7 +51,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	{
 		if (!FILE_SYSTEM.DoesFileExist(ScriptFiles[i]))
 		{
-			LOG.Add("FENativeScriptModule::Update: ScriptFiles[" + std::to_string(i) + "] does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: ScriptFiles[" + std::to_string(i) + "] does not exist", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -61,7 +61,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	{
 		if (!ScriptAssetPackage->UpdateAssetFromFile(DebugDLLAssetID, DebugDLLFilePath))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to update DebugDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to update DebugDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -70,7 +70,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 		DebugDLLAssetID = ScriptAssetPackage->ImportAssetFromFile(DebugDLLFilePath);
 		if (UNIQUE_ID.IsNull(DebugDLLAssetID))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to import DebugDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to import DebugDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -79,7 +79,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	{
 		if (!ScriptAssetPackage->UpdateAssetFromFile(DebugPDBAssetID, DebugPDBFilePath))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to update DebugPDBAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to update DebugPDBAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -88,7 +88,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 		DebugPDBAssetID = ScriptAssetPackage->ImportAssetFromFile(DebugPDBFilePath);
 		if (UNIQUE_ID.IsNull(DebugPDBAssetID))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to import DebugPDBAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to import DebugPDBAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -97,7 +97,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 	{
 		if (!ScriptAssetPackage->UpdateAssetFromFile(ReleaseDLLAssetID, ReleaseDLLFilePath))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to update ReleaseDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to update ReleaseDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -106,7 +106,7 @@ bool FENativeScriptModule::UpdateFiles(std::string DebugDLLFilePath, std::string
 		ReleaseDLLAssetID = ScriptAssetPackage->ImportAssetFromFile(ReleaseDLLFilePath);
 		if (UNIQUE_ID.IsNull(ReleaseDLLAssetID))
 		{
-			LOG.Add("FENativeScriptModule::Update: Failed to import ReleaseDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
+			LOG.Add("FENativeScriptModule::UpdateFiles: Failed to import ReleaseDLLAssetID", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);
 			return false;
 		}
 	}

@@ -2096,7 +2096,7 @@ void FEResourceManager::DeleteFETexture(const FETexture* Texture)
 {
 	if (Texture == NoTexture)
 	{
-		LOG.Add("Attempt to delete noTexture texture in function FEResourceManager::deleteFETexture.", "FE_LOG_GENERAL", FE_LOG_WARNING);
+		LOG.Add("Attempt to delete noTexture texture in function FEResourceManager::DeleteFETexture.", "FE_LOG_GENERAL", FE_LOG_WARNING);
 		return;
 	}
 
@@ -4913,7 +4913,7 @@ bool FEResourceManager::UnPackEngineLIBAssetPackage(FEAssetPackage* AssetPackage
 		// Now we are ready to write the file.
 		if (!AssetPackage->ExportAssetToFile(AssetPackageContent[i].ID, DirectoryPath + AssetPackageContent[i].Name))
 		{
-			LOG.Add("FEResourceManager::UnPackEngineHeadersAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			LOG.Add("FEResourceManager::UnPackEngineLIBAssetPackage: Error exporting asset " + UNIQUE_ID.ToString(AssetPackageContent[i].ID) + " to " + DirectoryPath + AssetPackageContent[i].Name, "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
 		}
 	}
@@ -6226,7 +6226,7 @@ std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> FEResourceManager:
 
 	if (PLYData == nullptr)
 	{
-		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("PLYData is nullptr in function FEResourceManager::ExtractPositionsFromPLYData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Positions;
 	}
 
@@ -6352,7 +6352,7 @@ std::vector<std::vector<unsigned char>> FEResourceManager::ExtractColorsFromPLYD
 
 	if (PLYData == nullptr)
 	{
-		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("PLYData is nullptr in function FEResourceManager::ExtractColorsFromPLYData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Colors;
 	}
 
@@ -6425,7 +6425,7 @@ std::vector<int> FEResourceManager::ExtractIndicesFromPLYData(FERawPLYData* PLYD
 
 	if (PLYData == nullptr)
 	{
-		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("PLYData is nullptr in function FEResourceManager::ExtractIndicesFromPLYData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Indices;
 	}
 
@@ -6480,7 +6480,7 @@ std::vector<glm::vec2> FEResourceManager::ExtractUVsFromPLYData(FERawPLYData* PL
 	std::vector<glm::vec2> UVs;
 	if (PLYData == nullptr)
 	{
-		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("PLYData is nullptr in function FEResourceManager::ExtractUVsFromPLYData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return UVs;
 	}
 
@@ -6613,7 +6613,7 @@ std::vector<glm::vec3> FEResourceManager::ExtractNormalsFromPLYData(FERawPLYData
 	std::vector<glm::vec3> Normals;
 	if (PLYData == nullptr)
 	{
-		LOG.Add("PLYData is nullptr in function FEResourceManager::RawPLYDataToFEMesh.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		LOG.Add("PLYData is nullptr in function FEResourceManager::ExtractNormalsFromPLYData.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		return Normals;
 	}
 
@@ -7053,7 +7053,7 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 	FEShader* RequestedShader = RESOURCE_MANAGER.GetShader(ShaderID);
 	if (RequestedShader == nullptr)
 	{
-		LOG.Add("FENewMaterial::FromJSON() failed to find shader with ID " + UNIQUE_ID.ToString(ShaderID), "FE_LOG_LOADING", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::LoadNewMaterialFromJSON() failed to find shader with ID " + UNIQUE_ID.ToString(ShaderID), "FE_LOG_LOADING", FE_LOG_WARNING);
 		NewMaterial->SetShader(nullptr);
 		return NewMaterial;
 	}
@@ -7084,7 +7084,7 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 			continue;
 		}
 
-		LOG.Add("FENewMaterial::FromJSON() no override slot for uniform: " + UniformName, "FE_LOG_LOADING", FE_LOG_WARNING);
+		LOG.Add("FEResourceManager::LoadNewMaterialFromJSON() no override slot for uniform: " + UniformName, "FE_LOG_LOADING", FE_LOG_WARNING);
 	}
 
 	return NewMaterial;
