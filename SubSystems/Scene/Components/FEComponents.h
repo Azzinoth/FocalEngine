@@ -16,7 +16,7 @@
 #include "FESkyDomeComponent.h"
 #include "FEPrefabInstanceComponent.h"
 #include "FEVirtualUIComponent.h"
-#include "NativeScriptSystem/FENativeScriptComponent.h"
+#include "FENativeScriptComponent.h"
 
 #include "entt.hpp"
 

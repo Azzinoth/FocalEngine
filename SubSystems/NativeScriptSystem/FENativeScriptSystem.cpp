@@ -1,6 +1,6 @@
 #include "FENativeScriptSystem.h"
 #ifndef FOCAL_ENGINE_SHARED
-#include "../../../../Resources/UserScriptsData/FENativeScriptConnector.h"
+#include "../../Resources/UserScriptsData/FENativeScriptConnector.h"
 #endif
 using namespace FocalEngine;
 

@@ -291,6 +291,9 @@ file(GLOB Scene_Components_SRC
 	"SubSystems/Scene/Components/FEPrefabInstanceComponent.cpp"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.h"
 	"SubSystems/Scene/Components/FEVirtualUIComponent.cpp"
+	"SubSystems/Scene/Components/FENativeScriptComponent.h"
+	"SubSystems/Scene/Components/FENativeScriptComponent.inl"
+	"SubSystems/Scene/Components/FENativeScriptComponent.cpp"
 )
 
 file(GLOB Scene_Component_Systems_SRC
@@ -320,18 +323,15 @@ file(GLOB Scene_Component_Systems_SRC
 )
 
 file(GLOB Scene_NativeScript_System_SRC
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.h"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptCore.cpp"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.cpp"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.h"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.inl"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptComponent.cpp"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.h"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.inl"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptSystem.cpp"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.h"
-	"SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.cpp"
+	"SubSystems/NativeScriptSystem/FENativeScriptCore.h"
+	"SubSystems/NativeScriptSystem/FENativeScriptCore.cpp"
+	"SubSystems/NativeScriptSystem/FENativeScriptModule.h"
+	"SubSystems/NativeScriptSystem/FENativeScriptModule.cpp"
+	"SubSystems/NativeScriptSystem/FENativeScriptSystem.h"
+	"SubSystems/NativeScriptSystem/FENativeScriptSystem.inl"
+	"SubSystems/NativeScriptSystem/FENativeScriptSystem.cpp"
+	"SubSystems/NativeScriptSystem/FENativeScriptProject.h"
+	"SubSystems/NativeScriptSystem/FENativeScriptProject.cpp"
 )
 
 set(Unpacked_NativeScript_Connector_SRC)
@@ -387,6 +387,8 @@ file(GLOB OpenXR_SRC
 )
 
 file(GLOB PluginSystem_SRC
+	"SubSystems/PluginSystem/FEPluginCore.h"
+	"SubSystems/PluginSystem/FEPluginCore.cpp"
 	"SubSystems/PluginSystem/FEPluginManager.h"
 	"SubSystems/PluginSystem/FEPluginManager.cpp"
 )
@@ -632,9 +634,9 @@ source_group("Source Files/SubSystems/FileSystem" FILES ${FileSystem_SubSystems_
 source_group("Source Files/SubSystems/Scene" FILES ${Scene_SRC})
 source_group("Source Files/SubSystems/Scene/Components" FILES ${Scene_Components_SRC})
 source_group("Source Files/SubSystems/Scene/Components/Systems" FILES ${Scene_Component_Systems_SRC})
-source_group("Source Files/SubSystems/Scene/NativeScriptSystem" FILES ${Scene_NativeScript_System_SRC})
+source_group("Source Files/SubSystems/NativeScriptSystem" FILES ${Scene_NativeScript_System_SRC})
 if(USE_STATIC_RUNTIME)
-	source_group("Source Files/SubSystems/Scene/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
+	source_group("Source Files/SubSystems/NativeScriptSystem/Connector" FILES ${Unpacked_NativeScript_Connector_SRC})
 endif()
 source_group("Source Files/SubSystems/FEOpenXR" FILES ${OpenXR_SRC})
 source_group("Source Files/SubSystems/PluginSystem" FILES ${PluginSystem_SRC})

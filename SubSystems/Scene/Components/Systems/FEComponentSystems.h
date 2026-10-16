@@ -12,4 +12,4 @@
 #include "FESkyDomeSystem.h"
 #include "FEPrefabInstanceSystem.h"
 #include "FEVirtualUISystem.h"
-#include "../NativeScriptSystem/FENativeScriptProject.h"
+#include "../../../NativeScriptSystem/FENativeScriptProject.h"

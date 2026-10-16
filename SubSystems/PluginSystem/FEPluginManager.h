@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Core/FECoreIncludes.h"
+#include "FEPluginCore.h"
 
 namespace FocalEngine
 {

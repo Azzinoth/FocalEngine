@@ -1,7 +1,7 @@
 #pragma once
 
 #include "FENativeScriptCore.h"
-#include "../../../FileSystem/FEAssetPackage.h"
+#include "../FileSystem/FEAssetPackage.h"
 
 namespace FocalEngine
 {

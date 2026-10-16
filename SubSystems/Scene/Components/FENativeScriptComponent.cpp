@@ -1,5 +1,5 @@
 #include "FENativeScriptComponent.h"
-#include "../../FEScene.h"
+#include "../FEScene.h"
 using namespace FocalEngine;
 
 void FENativeScriptComponent::Awake()

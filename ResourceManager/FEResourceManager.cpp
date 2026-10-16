@@ -1,6 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "FEResourceManager.h"
-#include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptProject.h"
+#include "../SubSystems/NativeScriptSystem/FENativeScriptProject.h"
 using namespace FocalEngine;
 
 #ifdef FOCAL_ENGINE_SHARED

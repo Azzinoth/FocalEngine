@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FENativeScriptCore.h"
+#include "../../NativeScriptSystem/FENativeScriptCore.h"
 
 namespace FocalEngine
 {

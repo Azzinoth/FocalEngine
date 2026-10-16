@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Scene/FESceneManager.h"
+#include "../Scene/FESceneManager.h"
 
 namespace FocalEngine
 {

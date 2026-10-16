@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Core/FEObject.h"
-#include "../Core/Geometry/FEGeometry.h"
+#include "../../Core/FEObject.h"
+#include "../../Core/Geometry/FEGeometry.h"
 #include <any>
 
 namespace FocalEngine

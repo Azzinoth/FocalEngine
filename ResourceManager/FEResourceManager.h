@@ -9,7 +9,7 @@
 #include "BaseResources/FELineCollection.h"
 #include "BaseResources/FEPointCloud.h"
 #include "../SubSystems/Scene/FEPrefab.h"
-#include "../SubSystems/Scene/Components/NativeScriptSystem/FENativeScriptModule.h"
+#include "../SubSystems/NativeScriptSystem/FENativeScriptModule.h"
 
 #include "FELASLoader.h"
 #include "FEEngineResourceIDs.h"
