@@ -38,8 +38,8 @@ endif()
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 file(GLOB Connection_To_Engine_SRC
-	"SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.cpp"
-    "SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.h"
+	"SubSystems/FocalEngine/SubSystems/NativeScriptSystem/FENativeScriptConnector.cpp"
+    "SubSystems/FocalEngine/SubSystems/NativeScriptSystem/FENativeScriptConnector.h"
 )
 
 file(GLOB Main_SRC PLACE_HOLDER)

@@ -374,7 +374,7 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	}
 
 	// Create all needed folders.
-	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine", "BuildManagement/", "SubSystems/FocalEngine/Resources/", "SubSystems/FocalEngine/Resources/UserScriptsData/" };
+	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine", "BuildManagement/", "SubSystems/FocalEngine/SubSystems/", "SubSystems/FocalEngine/SubSystems/NativeScriptSystem/" };
 	for (size_t i = 0; i < FoldersToCreate.size(); i++)
 	{
 		if (!FILE_SYSTEM.MakeDirectory(VSProjectDirectory + FoldersToCreate[i]))
@@ -387,12 +387,12 @@ bool FENativeScriptProject::InitializeProject(std::vector<std::string> SourceFil
 	// Place required files in the destination directory.
 	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER);
 	std::vector<std::pair<std::string, std::string>> FilesToCopy;
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/EnsureBuildCompletion.cmake", VSProjectDirectory + "BuildManagement/EnsureBuildCompletion.cmake" });
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/DebugBuildActions.cmake", VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake" });
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/BuildManagement/ReleaseBuildActions.cmake", VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake" });
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/NativeScriptProjectData/CMakeLists_Template.txt", VSProjectDirectory + "CMakeLists.txt" });
+	FilesToCopy.push_back({ EnginePath + "/SubSystems/NativeScriptSystem/Templates/BuildManagement/EnsureBuildCompletion.cmake", VSProjectDirectory + "BuildManagement/EnsureBuildCompletion.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/SubSystems/NativeScriptSystem/Templates/BuildManagement/DebugBuildActions.cmake", VSProjectDirectory + "BuildManagement/DebugBuildActions.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/SubSystems/NativeScriptSystem/Templates/BuildManagement/ReleaseBuildActions.cmake", VSProjectDirectory + "BuildManagement/ReleaseBuildActions.cmake" });
+	FilesToCopy.push_back({ EnginePath + "/SubSystems/NativeScriptSystem/Templates/CMakeLists_Template.txt", VSProjectDirectory + "CMakeLists.txt" });
 	// We need to copy only one .cpp file.
-	FilesToCopy.push_back({ EnginePath + "/Resources/UserScriptsData/FENativeScriptConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/Resources/UserScriptsData/FENativeScriptConnector.cpp" });
+	FilesToCopy.push_back({ EnginePath + "/SubSystems/NativeScriptSystem/FENativeScriptConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/SubSystems/NativeScriptSystem/FENativeScriptConnector.cpp" });
 
 	for (size_t i = 0; i < SourceFileFullPathList.size(); i++)
 	{
@@ -595,8 +595,8 @@ bool FENativeScriptProject::GenerateScriptFilesFromTemplate(std::string ScriptNa
 	}
 
 	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER);
-	std::string TemplateHeaderFilePath = EnginePath + "/Resources/UserScriptsData/NativeScriptTemplate.h";
-	std::string TemplateCPPFilePath = EnginePath + "/Resources/UserScriptsData/NativeScriptTemplate.cpp";
+	std::string TemplateHeaderFilePath = EnginePath + "/SubSystems/NativeScriptSystem/Templates/NativeScriptTemplate.h";
+	std::string TemplateCPPFilePath = EnginePath + "/SubSystems/NativeScriptSystem/Templates/NativeScriptTemplate.cpp";
 
 	if (!FILE_SYSTEM.CopyFileTo(TemplateHeaderFilePath, VSProjectDirectory + ScriptName + ".h"))
 	{

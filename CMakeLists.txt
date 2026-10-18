@@ -338,8 +338,8 @@ set(Unpacked_NativeScript_Connector_SRC)
 
 if(USE_STATIC_RUNTIME)
     list(APPEND Unpacked_NativeScript_Connector_SRC
-        "Resources/UserScriptsData/FENativeScriptConnector.h"
-        "Resources/UserScriptsData/FENativeScriptConnector.cpp"
+        "SubSystems/NativeScriptSystem/FENativeScriptConnector.h"
+        "SubSystems/NativeScriptSystem/FENativeScriptConnector.cpp"
     )
 endif()
 

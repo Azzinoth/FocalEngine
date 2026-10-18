@@ -1,4 +1,4 @@
-#include "../../FENativeScriptConnector.h"
+#include "../../../../SubSystems/NativeScriptSystem/FENativeScriptConnector.h"
 using namespace FocalEngine;
 
 // DO NOT CHANGE THIS LINE.
