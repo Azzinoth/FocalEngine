@@ -66,6 +66,7 @@ void FEngine::InternalUpdate()
 	VIRTUAL_UI_SYSTEM.Update();
 
 	NATIVE_SCRIPT_SYSTEM.Update(CurrentDeltaTime);
+	PLUGIN_MANAGER.Update(CurrentDeltaTime);
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{
@@ -168,7 +169,7 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
 	APPLICATION.GetMainWindow()->AddOnDropCallback(&FEngine::DropCallback);
-	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { OpenXR_MANAGER.Shutdown(); });
+	APPLICATION.GetMainWindow()->AddOnTerminateCallback([]() { PLUGIN_MANAGER.Shutdown(); OpenXR_MANAGER.Shutdown(); });
 	CreateViewport(NewWindow);
 
 	FE_GL_ERROR(glEnable(GL_DEPTH_TEST));

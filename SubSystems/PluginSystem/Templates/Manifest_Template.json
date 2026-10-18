@@ -1,0 +1,17 @@
+{
+	"ID": "PLUGIN_ID_PLACE_HOLDER",
+	"Name": "PLUGIN_NAME_PLACE_HOLDER",
+	"Version": "1.0.0",
+	"SupportedOS": [ "Windows" ],
+	"Dependencies": [],
+	"Modules": [
+		{
+			"ID": "MODULE_ID_PLACE_HOLDER",
+			"Type": "Engine",
+			"Name": "MODULE_NAME_PLACE_HOLDER",
+			"EntryPointFileName": "ENTRY_POINT_FILE_NAME_PLACE_HOLDER",
+			"SupportedOS": [ "Windows" ],
+			"Dependencies": []
+		}
+	]
+}

@@ -9,6 +9,7 @@ namespace FocalEngine
 	public:
 		virtual ~FEPluginCore() = default;
 		virtual void OnLoad() {}
+		// Plugin must remove everything it registered with the engine, its DLL is unloaded right after.
 		virtual void OnUnload() {}
 		virtual void OnUpdate(double DeltaTime) {}
 	};
