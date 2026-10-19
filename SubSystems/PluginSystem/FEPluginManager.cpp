@@ -33,8 +33,10 @@ void FEPluginManager::Initialize()
 
 #ifdef _DEBUG
 	const std::string ConfigurationPostfix = "_Debug";
+	const std::string ConfigurationFolder = "Debug";
 #else
 	const std::string ConfigurationPostfix = "_Release";
+	const std::string ConfigurationFolder = "Release";
 #endif
 
 	std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
@@ -85,10 +87,32 @@ void FEPluginManager::Initialize()
 					continue;
 				}
 
-				HMODULE DLLHandle = LoadLibraryA(DLLPath.c_str());
+				// DLLs that plugin depends on are stored in subfolder named after configuration.
+				// Windows needs that folder in DLL search path to resolve them while plugin DLL is loading.
+				const std::string DependencyFolderPath = PluginFolderPath + "/" + ConfigurationFolder;
+				DLL_DIRECTORY_COOKIE DependencyDirectoryCookie = nullptr;
+				if (FILE_SYSTEM.DoesDirectoryExist(DependencyFolderPath))
+				{
+					const std::string AbsoluteDependencyFolderPath = FILE_SYSTEM.GetAbsolutePath(DependencyFolderPath);
+					const int WideLength = MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, nullptr, 0);
+					std::wstring WideDependencyFolderPath(WideLength > 0 ? WideLength - 1 : 0, L'\0');
+					MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, WideDependencyFolderPath.data(), WideLength);
+
+					DependencyDirectoryCookie = AddDllDirectory(WideDependencyFolderPath.c_str());
+					if (DependencyDirectoryCookie == nullptr)
+						LOG.Add("FEPluginManager::Initialize: Failed to add \"" + DependencyFolderPath + "\" to DLL search path", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+				}
+
+				// LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR requires absolute path.
+				HMODULE DLLHandle = LoadLibraryExA(FILE_SYSTEM.GetAbsolutePath(DLLPath).c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+				DWORD ErrorMessageID = DLLHandle == nullptr ? ::GetLastError() : 0;
+
+				// Dependencies are resolved during loading, so folder is no longer needed in DLL search path.
+				if (DependencyDirectoryCookie != nullptr)
+					RemoveDllDirectory(DependencyDirectoryCookie);
+
 				if (!DLLHandle)
 				{
-					DWORD ErrorMessageID = ::GetLastError();
 					if (ErrorMessageID == 0)
 					{
 						LOG.Add("FEPluginManager::Initialize: Failed to load DLL \"" + DLLPath + "\" without error message", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
@@ -180,6 +204,7 @@ void FEPluginManager::Initialize()
 				ActivePlugins.push_back(Plugin);
 
 				Instance->OnLoad();
+				LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Module.Name + "\" loaded from \"" + DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 			}
 		}
 	}
@@ -204,6 +229,28 @@ void FEPluginManager::Shutdown()
 	}
 
 	ActivePlugins.clear();
+}
+
+FEPluginCore* FEPluginManager::GetPlugin(const FEUUID& PluginID)
+{
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+	{
+		if (ActivePlugins[i].Manifest->ID == PluginID)
+			return ActivePlugins[i].Instance;
+	}
+
+	return nullptr;
+}
+
+FEPluginCore* FEPluginManager::GetPluginByName(const std::string& PluginName)
+{
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+	{
+		if (ActivePlugins[i].Manifest->Name == PluginName)
+			return ActivePlugins[i].Instance;
+	}
+
+	return nullptr;
 }
 
 static bool ReadJsonFile(const std::string& FilePath, Json::Value& OutRoot)
@@ -345,11 +392,11 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	return true;
 }
 
-bool FEPluginManager::CreateNewVSProject(std::string& PluginName, const std::string& VSProjectDirectory)
+bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface)
 {
 	if (PluginName.empty())
 	{
-		LOG.Add("FEPluginManager::CreateNewVSProject: Plugin name is empty", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FEPluginManager::CreatePluginProject: Plugin name is empty", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -362,7 +409,7 @@ bool FEPluginManager::CreateNewVSProject(std::string& PluginName, const std::str
 
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
-		LOG.Add("FEPluginManager::CreateNewVSProject: VSProjectDirectory does not exist", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
+		LOG.Add("FEPluginManager::CreatePluginProject: VSProjectDirectory does not exist", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -370,21 +417,29 @@ bool FEPluginManager::CreateNewVSProject(std::string& PluginName, const std::str
 	if (ProjectDirectory.back() != '/' && ProjectDirectory.back() != '\\')
 		ProjectDirectory += '/';
 
-	if (!GeneratePluginSourceFilesFromTemplate(PluginName, ProjectDirectory))
+	if (!GeneratePluginSourceFilesFromTemplate(PluginName, ProjectDirectory, bAddPublicInterface))
 	{
-		LOG.Add("FEPluginManager::CreateNewVSProject: Error generating plugin source files from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FEPluginManager::CreatePluginProject: Error generating plugin source files from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (!GenerateManifestFromTemplate(PluginName, ProjectDirectory))
+	// Plugin ID is generated here, because manifest and public interface should have the same ID.
+	const FEUUID PluginID = UNIQUE_ID.GenerateID();
+	if (!GenerateManifestFromTemplate(PluginName, PluginID, ProjectDirectory))
 	{
-		LOG.Add("FEPluginManager::CreateNewVSProject: Error generating manifest from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FEPluginManager::CreatePluginProject: Error generating manifest from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	if (bAddPublicInterface && !GeneratePublicInterfaceFromTemplate(PluginName, PluginID, ProjectDirectory))
+	{
+		LOG.Add("FEPluginManager::CreatePluginProject: Error generating public interface from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
 	if (!InitializeProject(PluginName, ProjectDirectory, { ProjectDirectory + PluginName + ".h", ProjectDirectory + PluginName + ".cpp" }))
 	{
-		LOG.Add("FEPluginManager::CreateNewVSProject: Error initializing project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FEPluginManager::CreatePluginProject: Error initializing project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
@@ -394,7 +449,7 @@ bool FEPluginManager::CreateNewVSProject(std::string& PluginName, const std::str
 	return RunVSProject(PluginName, ProjectDirectory);
 }
 
-bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory)
+bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface)
 {
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
@@ -430,6 +485,23 @@ bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& P
 	CurrentInstruction.TargetText = "PLACE_HOLDER";
 	CurrentInstruction.ReplacementText = PluginName;
 	Instructions.push_back(CurrentInstruction);
+
+	if (bAddPublicInterface)
+	{
+		const std::string InterfaceName = PluginName + "Interface";
+
+		const std::string ConnectorInclude = "#include \"SubSystems/FocalEngine/SubSystems/PluginSystem/FEPluginConnector.h\"";
+		CurrentInstruction.ContextPattern = ConnectorInclude;
+		CurrentInstruction.TargetText = ConnectorInclude;
+		CurrentInstruction.ReplacementText = ConnectorInclude + "\n#include \"Public/" + InterfaceName + ".h\"";
+		Instructions.push_back(CurrentInstruction);
+
+		// Rules are applied one after another, so class name is already replaced at this point.
+		CurrentInstruction.ContextPattern = " : public FEPluginCore";
+		CurrentInstruction.TargetText = " : public FEPluginCore";
+		CurrentInstruction.ReplacementText = " : public FEPluginCore, public " + InterfaceName;
+		Instructions.push_back(CurrentInstruction);
+	}
 
 	std::string PluginHeaderFilePath = VSProjectDirectory + PluginName + ".h";
 	if (!FILE_SYSTEM.PerformTextReplacements(PluginHeaderFilePath, Instructions))
@@ -475,7 +547,7 @@ bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& P
 	return true;
 }
 
-bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory)
+bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory)
 {
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
@@ -503,7 +575,7 @@ bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName
 	FEFileSystem::TextReplacementRule CurrentInstruction;
 	CurrentInstruction.ContextPattern = "PLUGIN_ID_PLACE_HOLDER";
 	CurrentInstruction.TargetText = "PLUGIN_ID_PLACE_HOLDER";
-	CurrentInstruction.ReplacementText = UNIQUE_ID.ToString(UNIQUE_ID.GenerateID());
+	CurrentInstruction.ReplacementText = UNIQUE_ID.ToString(PluginID);
 	Instructions.push_back(CurrentInstruction);
 
 	CurrentInstruction.ContextPattern = "PLUGIN_NAME_PLACE_HOLDER";
@@ -529,6 +601,68 @@ bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName
 	if (!FILE_SYSTEM.PerformTextReplacements(ManifestFilePath, Instructions))
 	{
 		LOG.Add("FEPluginManager::GenerateManifestFromTemplate: Error initializing " + ManifestFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+	Instructions.clear();
+
+	return true;
+}
+
+bool FEPluginManager::GeneratePublicInterfaceFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory)
+{
+	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
+	{
+		LOG.Add("FEPluginManager::GeneratePublicInterfaceFromTemplate: VSProjectDirectory does not exist", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
+		return false;
+	}
+
+	if (PluginName.empty())
+	{
+		LOG.Add("FEPluginManager::GeneratePublicInterfaceFromTemplate: Plugin name is empty", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
+		return false;
+	}
+
+	std::string PublicDirectory = VSProjectDirectory + "Public/";
+	if (!FILE_SYSTEM.DoesDirectoryExist(PublicDirectory))
+	{
+		if (!FILE_SYSTEM.MakeDirectory(PublicDirectory))
+		{
+			LOG.Add("FEPluginManager::GeneratePublicInterfaceFromTemplate: Error creating " + PublicDirectory + " directory", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	const std::string InterfaceName = PluginName + "Interface";
+	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER);
+	std::string TemplateInterfaceFilePath = EnginePath + "/SubSystems/PluginSystem/Templates/PluginInterfaceTemplate.h";
+	std::string InterfaceFilePath = PublicDirectory + InterfaceName + ".h";
+
+	if (!FILE_SYSTEM.CopyFileTo(TemplateInterfaceFilePath, InterfaceFilePath))
+	{
+		LOG.Add("FEPluginManager::GeneratePublicInterfaceFromTemplate: Error copying file " + TemplateInterfaceFilePath + " to " + InterfaceFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	std::vector<FEFileSystem::TextReplacementRule> Instructions;
+	FEFileSystem::TextReplacementRule CurrentInstruction;
+	CurrentInstruction.ContextPattern = "INTERFACE_NAME_PLACE_HOLDER";
+	CurrentInstruction.TargetText = "INTERFACE_NAME_PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = InterfaceName;
+	Instructions.push_back(CurrentInstruction);
+
+	CurrentInstruction.ContextPattern = "PLUGIN_NAME_PLACE_HOLDER";
+	CurrentInstruction.TargetText = "PLUGIN_NAME_PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = PluginName;
+	Instructions.push_back(CurrentInstruction);
+
+	CurrentInstruction.ContextPattern = "PLUGIN_ID_PLACE_HOLDER";
+	CurrentInstruction.TargetText = "PLUGIN_ID_PLACE_HOLDER";
+	CurrentInstruction.ReplacementText = UNIQUE_ID.ToString(PluginID);
+	Instructions.push_back(CurrentInstruction);
+
+	if (!FILE_SYSTEM.PerformTextReplacements(InterfaceFilePath, Instructions))
+	{
+		LOG.Add("FEPluginManager::GeneratePublicInterfaceFromTemplate: Error initializing " + InterfaceFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
@@ -566,7 +700,8 @@ bool FEPluginManager::InitializeProject(const std::string& PluginName, const std
 	}
 
 	// Create all needed folders, the plugin folder is chosen by the user, so some of them could already exist.
-	std::vector<std::string> FoldersToCreate = { "SubSystems/", "SubSystems/FocalEngine/", "SubSystems/FocalEngine/SubSystems/", "SubSystems/FocalEngine/SubSystems/PluginSystem/", "BuildManagement/" };
+	// Engine files are not copied, engine is added as git submodule.
+	std::vector<std::string> FoldersToCreate = { "BuildManagement/" };
 	for (size_t i = 0; i < FoldersToCreate.size(); i++)
 	{
 		if (FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory + FoldersToCreate[i]))
@@ -584,7 +719,9 @@ bool FEPluginManager::InitializeProject(const std::string& PluginName, const std
 	std::vector<std::pair<std::string, std::string>> FilesToCopy;
 	FilesToCopy.push_back({ EnginePath + "/SubSystems/PluginSystem/Templates/CMakeLists_Template.txt", VSProjectDirectory + "CMakeLists.txt" });
 	FilesToCopy.push_back({ EnginePath + "/SubSystems/PluginSystem/Templates/BuildOtherConfiguration.cmake", VSProjectDirectory + "BuildManagement/BuildOtherConfiguration.cmake" });
-	FilesToCopy.push_back({ EnginePath + "/SubSystems/PluginSystem/FEPluginConnector.cpp", VSProjectDirectory + "SubSystems/FocalEngine/SubSystems/PluginSystem/FEPluginConnector.cpp" });
+	// Plugin folder could already be a git repository with its own .gitignore.
+	if (!FILE_SYSTEM.DoesFileExist(VSProjectDirectory + ".gitignore"))
+		FilesToCopy.push_back({ EnginePath + "/SubSystems/PluginSystem/Templates/Gitignore_Template", VSProjectDirectory + ".gitignore" });
 
 	for (size_t i = 0; i < SourceFileFullPathList.size(); i++)
 	{
@@ -608,9 +745,53 @@ bool FEPluginManager::InitializeProject(const std::string& PluginName, const std
 		return false;
 	}
 
-	if (!RESOURCE_MANAGER.CopyEngineFiles(true, false, true, VSProjectDirectory))
+	if (!AddEngineSubmodule(VSProjectDirectory))
 	{
-		LOG.Add("FEPluginManager::InitializeProject: Error copying engine files in plugin project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		LOG.Add("FEPluginManager::InitializeProject: Error adding engine submodule to plugin project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
+}
+
+bool FEPluginManager::AddEngineSubmodule(const std::string& VSProjectDirectory)
+{
+	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
+	{
+		LOG.Add("FEPluginManager::AddEngineSubmodule: VSProjectDirectory does not exist", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
+		return false;
+	}
+
+	// Trailing separator is removed, otherwise "D:\Plugin\" would escape closing quote on command line.
+	std::string GitDirectory = VSProjectDirectory;
+	while (!GitDirectory.empty() && (GitDirectory.back() == '/' || GitDirectory.back() == '\\'))
+		GitDirectory.pop_back();
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory + ".git"))
+	{
+		std::string InitCommand = "git -C \"" + GitDirectory + "\" init";
+		if (std::system(InitCommand.c_str()) != 0)
+		{
+			LOG.Add("FEPluginManager::AddEngineSubmodule: Error running git init, git should be installed and available in PATH", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory + "SubSystems/FocalEngine"))
+	{
+		std::string AddCommand = "git -C \"" + GitDirectory + "\" submodule add -b " + EngineRepositoryBranch + " " + EngineRepositoryURL + " SubSystems/FocalEngine";
+		if (std::system(AddCommand.c_str()) != 0)
+		{
+			LOG.Add("FEPluginManager::AddEngineSubmodule: Error adding engine submodule from " + EngineRepositoryURL, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
+	// Engine has its own submodules, FEBasicApplication is needed to build engine.
+	std::string UpdateCommand = "git -C \"" + GitDirectory + "\" submodule update --init --recursive";
+	if (std::system(UpdateCommand.c_str()) != 0)
+	{
+		LOG.Add("FEPluginManager::AddEngineSubmodule: Error updating engine submodule", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 

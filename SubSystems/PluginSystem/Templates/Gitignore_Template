@@ -1,0 +1,36 @@
+# FILES
+*.VC.db
+*.VC.opendb
+*.sdf
+*.pdb
+*.dll
+*.exe
+*.ilk
+*.opensdf
+*.idb
+*.suo
+*.dylib
+*.sln
+*.slnx
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+imgui.ini
+*.txt
+!CMakeLists.txt
+cmake_install.cmake
+
+# Prebuilt third party DLLs are needed to run plugin from fresh clone.
+!ThirdParty/**/*.dll
+
+#Folders
+# Build folders are anchored to root, otherwise ThirdParty/*/Debug/ and ThirdParty/*/Release/ would be ignored too.
+/Debug/
+/Release/
+/x64/
+/Build/
+/EngineBuild/
+/EngineLibs/
+*.dir/
+.vs/
+CMakeFiles/

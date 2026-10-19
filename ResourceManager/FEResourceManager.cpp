@@ -4617,6 +4617,11 @@ FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
 	// After having all files in the engine folder, we need to filter out only the header files.
 	for (size_t i = 0; i < AllFiles.size(); i++)
 	{
+		// Plugins folder can contain headers, that are not part of the engine, so we will skip them.
+		const std::string RelativeFilePath = AllFiles[i].substr(EnginePath.size());
+		if (RelativeFilePath.rfind("Plugins/", 0) == 0 || RelativeFilePath.rfind("Plugins\\", 0) == 0)
+			continue;
+
 		// GSL headers used by stduuid have no extension.
 		const std::string ParentDirectory = FILE_SYSTEM.GetDirectoryPath(AllFiles[i]);
 		const bool bStduuidGSLHeader = FILE_SYSTEM.GetFileName(ParentDirectory) == "gsl" && FILE_SYSTEM.GetFileName(FILE_SYSTEM.GetDirectoryPath(ParentDirectory)) == "stduuid";
@@ -4626,7 +4631,7 @@ FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
 			FEAssetPackageEntryInitializeData EntryData;
 			// Also since FEAssetPackage does not support folders, we need to save folder structure in the file name.
 			// But we will erase the engine folder path from the file name.
-			EntryData.Name = AllFiles[i].substr(EnginePath.size());
+			EntryData.Name = RelativeFilePath;
 			EntryData.Type = "Text";
 			EntryData.Tag = ENGINE_RESOURCE_TAG;
 			EntryData.Comment = "Engine header file";
