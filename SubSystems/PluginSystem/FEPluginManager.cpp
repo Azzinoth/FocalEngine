@@ -2,6 +2,8 @@
 #include "../../ResourceManager/FEResourceManager.h"
 #include "../Scene/FESceneManager.h"
 #include <shellapi.h>
+#include <cctype>
+#include <cstring>
 using namespace FocalEngine;
 
 #include "../../Core/VersionInfo/FOCAL_ENGINE_Version.h"
@@ -14,6 +16,94 @@ extern "C" __declspec(dllexport) void* GetPluginManager()
 	return FEPluginManager::GetInstancePointer();
 }
 #endif
+
+static bool IsDLLDependencyAvailable(const std::string& DependencyName, const std::vector<std::string>& SearchFolders)
+{
+	std::string LowerCaseName = DependencyName;
+	std::transform(LowerCaseName.begin(), LowerCaseName.end(), LowerCaseName.begin(), [](unsigned char Character) { return static_cast<char>(std::tolower(Character)); });
+	if (LowerCaseName.rfind("api-ms-", 0) == 0 || LowerCaseName.rfind("ext-ms-", 0) == 0)
+		return true;
+
+	// Already loaded DLL is used as it is.
+	if (GetModuleHandleA(DependencyName.c_str()) != nullptr)
+		return true;
+
+	for (size_t i = 0; i < SearchFolders.size(); i++)
+	{
+		if (FILE_SYSTEM.DoesFileExist(SearchFolders[i] + "/" + DependencyName))
+			return true;
+	}
+
+	return false;
+}
+
+static std::vector<std::string> FindMissingDLLDependencies(const std::string& DLLPath, const std::vector<std::string>& SearchFolders)
+{
+	std::vector<std::string> Result;
+
+	std::ifstream File(DLLPath, std::ios::binary);
+	if (!File.is_open())
+		return Result;
+
+	const std::vector<char> Data((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+	File.close();
+
+	if (Data.size() < sizeof(IMAGE_DOS_HEADER))
+		return Result;
+
+	const IMAGE_DOS_HEADER* DOSHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(Data.data());
+	if (DOSHeader->e_magic != IMAGE_DOS_SIGNATURE || DOSHeader->e_lfanew <= 0 || static_cast<size_t>(DOSHeader->e_lfanew) + sizeof(IMAGE_NT_HEADERS64) > Data.size())
+		return Result;
+
+	const IMAGE_NT_HEADERS64* NTHeaders = reinterpret_cast<const IMAGE_NT_HEADERS64*>(Data.data() + DOSHeader->e_lfanew);
+	if (NTHeaders->Signature != IMAGE_NT_SIGNATURE || NTHeaders->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+		return Result;
+
+	const IMAGE_DATA_DIRECTORY& ImportDirectory = NTHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT];
+	if (ImportDirectory.VirtualAddress == 0)
+		return Result;
+
+	const IMAGE_SECTION_HEADER* Sections = IMAGE_FIRST_SECTION(NTHeaders);
+	const WORD SectionCount = NTHeaders->FileHeader.NumberOfSections;
+	if (reinterpret_cast<const char*>(Sections + SectionCount) > Data.data() + Data.size())
+		return Result;
+
+	// Import table refers to data by relative virtual addresses, they are converted to offsets in the file through section table.
+	// Returns 0 if address is not inside of any section.
+	auto RelativeAddressToFileOffset = [&](const DWORD RelativeVirtualAddress) -> size_t
+	{
+		for (WORD i = 0; i < SectionCount; i++)
+		{
+			const DWORD SectionStart = Sections[i].VirtualAddress;
+			const DWORD SectionSize = Sections[i].Misc.VirtualSize > Sections[i].SizeOfRawData ? Sections[i].Misc.VirtualSize : Sections[i].SizeOfRawData;
+			if (RelativeVirtualAddress >= SectionStart && RelativeVirtualAddress < SectionStart + SectionSize)
+				return static_cast<size_t>(RelativeVirtualAddress - SectionStart + Sections[i].PointerToRawData);
+		}
+
+		return 0;
+	};
+
+	// Import table is an array of descriptors, one for each DLL, it ends with descriptor that has no name.
+	size_t DescriptorOffset = RelativeAddressToFileOffset(ImportDirectory.VirtualAddress);
+	while (DescriptorOffset != 0 && DescriptorOffset + sizeof(IMAGE_IMPORT_DESCRIPTOR) <= Data.size())
+	{
+		const IMAGE_IMPORT_DESCRIPTOR* Descriptor = reinterpret_cast<const IMAGE_IMPORT_DESCRIPTOR*>(Data.data() + DescriptorOffset);
+		if (Descriptor->Name == 0)
+			break;
+
+		const size_t NameOffset = RelativeAddressToFileOffset(Descriptor->Name);
+		if (NameOffset != 0 && NameOffset < Data.size())
+		{
+			const std::string DependencyName(Data.data() + NameOffset, strnlen(Data.data() + NameOffset, Data.size() - NameOffset));
+			if (!IsDLLDependencyAvailable(DependencyName, SearchFolders))
+				Result.push_back(DependencyName);
+		}
+
+		DescriptorOffset += sizeof(IMAGE_IMPORT_DESCRIPTOR);
+	}
+
+	return Result;
+}
 
 FEPluginManager::FEPluginManager()
 {
@@ -126,6 +216,36 @@ void FEPluginManager::Initialize()
 
 					std::string StringMessage(MessageBuffer, Size);
 					LocalFree(MessageBuffer);
+
+					// System message ends with line break.
+					while (!StringMessage.empty() && (StringMessage.back() == '\n' || StringMessage.back() == '\r' || StringMessage.back() == ' '))
+						StringMessage.pop_back();
+
+					// DLL file exists (checked above), so this error means that some DLL that it depends on was not found.
+					if (ErrorMessageID == ERROR_MOD_NOT_FOUND)
+					{
+						char ExecutablePath[MAX_PATH] = {};
+						GetModuleFileNameA(nullptr, ExecutablePath, MAX_PATH);
+						char SystemFolderPath[MAX_PATH] = {};
+						GetSystemDirectoryA(SystemFolderPath, MAX_PATH);
+
+						const std::vector<std::string> SearchFolders = { PluginFolderPath, DependencyFolderPath, FILE_SYSTEM.GetDirectoryPath(ExecutablePath), SystemFolderPath };
+						const std::vector<std::string> MissingDependencies = FindMissingDLLDependencies(DLLPath, SearchFolders);
+						if (MissingDependencies.empty())
+						{
+							StringMessage += " DLL that plugin depends on, or one of its own dependencies, was not found.";
+						}
+						else
+						{
+							StringMessage += " DLLs that plugin depends on were not found:";
+							for (size_t k = 0; k < MissingDependencies.size(); k++)
+								StringMessage += (k == 0 ? " " : ", ") + MissingDependencies[k];
+
+							StringMessage += ".";
+						}
+
+						StringMessage += " Plugin dependencies can be placed in \"" + DependencyFolderPath + "\".";
+					}
 
 					LOG.Add("FEPluginManager::Initialize: Failed to load DLL \"" + DLLPath + "\" with error: " + StringMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
 					continue;
