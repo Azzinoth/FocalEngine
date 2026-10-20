@@ -1,5 +1,6 @@
 #include "FEPluginManager.h"
 #include "../../ResourceManager/FEResourceManager.h"
+#include "../Scene/FESceneManager.h"
 #include <shellapi.h>
 using namespace FocalEngine;
 
@@ -153,6 +154,25 @@ void FEPluginManager::Initialize()
 #endif
 				}
 
+				// Plugin compiled with different FEPluginCore layout would crash when engine calls its functions, so it is not loaded.
+				typedef int (*Get_Plugin_Interface_Version_Function)(void);
+				Get_Plugin_Interface_Version_Function GetPluginInterfaceVersion = (Get_Plugin_Interface_Version_Function)GetProcAddress(DLLHandle, "GetPluginInterfaceVersion");
+				if (!GetPluginInterfaceVersion)
+				{
+					LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" does not export GetPluginInterfaceVersion, plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+					FreeLibrary(DLLHandle);
+					continue;
+				}
+
+				const int DLLPluginInterfaceVersion = GetPluginInterfaceVersion();
+				if (DLLPluginInterfaceVersion != FEPluginCore::InterfaceVersion)
+				{
+					LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" was compiled with plugin interface version " + std::to_string(DLLPluginInterfaceVersion) +
+							", while engine uses version " + std::to_string(FEPluginCore::InterfaceVersion) + ", plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+					FreeLibrary(DLLHandle);
+					continue;
+				}
+
 				// FE_FIX_ME: Instead of timestamp we should use engine git commit hash and dirty flag.
 				typedef unsigned long long (*Get_EngineHeaders_BuildVersion_Function)(void);
 				Get_EngineHeaders_BuildVersion_Function GetEngineHeadersBuildVersion = (Get_EngineHeaders_BuildVersion_Function)GetProcAddress(DLLHandle, "GetEngineHeadersBuildVersion");
@@ -203,6 +223,7 @@ void FEPluginManager::Initialize()
 				Plugin.DestroyFunction = DestroyPlugin;
 				ActivePlugins.push_back(Plugin);
 
+				Instance->PluginDirectory = FILE_SYSTEM.GetAbsolutePath(PluginFolderPath) + "/";
 				Instance->OnLoad();
 				LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Module.Name + "\" loaded from \"" + DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 			}
@@ -214,6 +235,64 @@ void FEPluginManager::Update(double DeltaTime)
 {
 	for (size_t i = 0; i < ActivePlugins.size(); i++)
 		ActivePlugins[i].Instance->OnUpdate(DeltaTime);
+}
+
+void FEPluginManager::BeforeRender()
+{
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+		ActivePlugins[i].Instance->OnBeforeRender();
+}
+
+void FEPluginManager::AfterRender()
+{
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+		ActivePlugins[i].Instance->OnAfterRender();
+}
+
+void FEPluginManager::CheckScenesForModification()
+{
+	if (ActivePlugins.empty())
+		return;
+
+	std::vector<FEScene*> Scenes = SCENE_MANAGER.GetAllScenes();
+	for (size_t i = 0; i < Scenes.size(); i++)
+	{
+		FEScene* Scene = Scenes[i];
+		auto ReportedScene = ReportedScenes.find(Scene->GetID());
+		if (ReportedScene == ReportedScenes.end())
+		{
+			ReportedScenes[Scene->GetID()] = Scene->Flags;
+			for (size_t j = 0; j < ActivePlugins.size(); j++)
+				ActivePlugins[j].Instance->OnSceneAdded(Scene);
+
+			continue;
+		}
+
+		if (ReportedScene->second != Scene->Flags)
+		{
+			// Stored flags are updated before plugins are called, because they could add scenes and invalidate iterator.
+			const FESceneFlag PreviousFlags = ReportedScene->second;
+			ReportedScene->second = Scene->Flags;
+			for (size_t j = 0; j < ActivePlugins.size(); j++)
+				ActivePlugins[j].Instance->OnSceneFlagsChanged(Scene, PreviousFlags);
+		}
+	}
+}
+
+void FEPluginManager::SceneDeleting(FEScene* Scene)
+{
+	if (Scene == nullptr)
+		return;
+
+	// Plugins are notified only about scenes that were reported to them with OnSceneAdded.
+	auto ReportedScene = ReportedScenes.find(Scene->GetID());
+	if (ReportedScene == ReportedScenes.end())
+		return;
+
+	// New scene with the same ID (for example after project reload) should be reported again as added.
+	ReportedScenes.erase(ReportedScene);
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+		ActivePlugins[i].Instance->OnSceneDeleting(Scene);
 }
 
 void FEPluginManager::Shutdown()
@@ -229,6 +308,7 @@ void FEPluginManager::Shutdown()
 	}
 
 	ActivePlugins.clear();
+	ReportedScenes.clear();
 }
 
 FEPluginCore* FEPluginManager::GetPlugin(const FEUUID& PluginID)

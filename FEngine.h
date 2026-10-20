@@ -85,7 +85,7 @@ namespace FocalEngine
 		static void DropCallback(int Count, const char** Paths);
 		std::vector<void(*)(int, const char**)> ClientDropCallbacks;
 
-		void InternalUpdate();
+		void InternalUpdate(bool bInternalCall);
 		std::vector<std::function<void()>> OnAfterUpdateCallbacks;
 
 		std::vector<FEViewport*> Viewports;

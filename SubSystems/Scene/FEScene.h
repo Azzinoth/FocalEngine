@@ -58,6 +58,7 @@ namespace FocalEngine
 		friend class FERenderer;
 		friend class FEngine;
 		friend class FETransformSystem;
+		friend class FEPluginManager;
 	public:
 		FEScene();
 

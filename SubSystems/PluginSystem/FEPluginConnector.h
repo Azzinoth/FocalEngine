@@ -5,6 +5,7 @@ using namespace FocalEngine;
 
 extern "C" __declspec(dllexport) unsigned long long GetEngineHeadersBuildVersion();
 extern "C" __declspec(dllexport) bool IsCompiledInDebugMode();
+extern "C" __declspec(dllexport) int GetPluginInterfaceVersion();
 
 #define REGISTER_PLUGIN(PluginClass)                                              \
 	extern "C" __declspec(dllexport) FEPluginCore* CreatePlugin() {               \

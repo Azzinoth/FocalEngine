@@ -42,11 +42,17 @@ namespace FocalEngine
 	class FOCAL_ENGINE_API FEPluginManager
 	{
 		friend class FEngine;
+		friend class FESceneManager;
 
 		SINGLETON_PRIVATE_PART(FEPluginManager)
 
 		std::string PluginDirectory = "Plugins";
 		std::vector<FEPlugin> ActivePlugins;
+
+		// Flags of scenes that plugins were notified about with OnSceneAdded, used to detect changes of flags.
+		std::unordered_map<FEUUID, FESceneFlag> ReportedScenes;
+		void CheckScenesForModification();
+		void SceneDeleting(FEScene* Scene);
 
 		// Plugin projects include engine as git submodule.
 		// TO-DO: Plugins should target stable engine version, plugins branch is used while plugin system is in development.
@@ -54,6 +60,8 @@ namespace FocalEngine
 		std::string EngineRepositoryBranch = "plugins";
 
 		void Update(double DeltaTime);
+		void BeforeRender();
+		void AfterRender();
 		void Shutdown();
 
 		bool GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface);

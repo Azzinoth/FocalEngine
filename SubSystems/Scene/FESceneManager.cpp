@@ -1,4 +1,5 @@
 #include "FESceneManager.h"
+#include "../PluginSystem/FEPluginManager.h"
 using namespace FocalEngine;
 
 #ifdef FOCAL_ENGINE_SHARED
@@ -221,6 +222,7 @@ void FESceneManager::DeleteScene(FEScene* Scene)
 		return;
 
 	const FEUUID SceneID = Scene->GetID();
+	PLUGIN_MANAGER.SceneDeleting(Scene);
 	delete Scene;
 
 	Scenes.erase(SceneID);

@@ -54,19 +54,25 @@ bool FEngine::IsNotTerminated()
 	return APPLICATION.IsNotTerminated();
 }
 
-void FEngine::InternalUpdate()
+void FEngine::InternalUpdate(const bool bInternalCall)
 {
 	CurrentDeltaTime = CPUTime + GPUTime;
 
 	ViewportCheckForModification();
-	
+	if (!bInternalCall)
+		PLUGIN_MANAGER.CheckScenesForModification();
+
 	INSTANCED_RENDERING_SYSTEM.Update();
 	SCENE_MANAGER.Update();
 	CAMERA_SYSTEM.Update(CurrentDeltaTime);
 	VIRTUAL_UI_SYSTEM.Update();
 
+	// Plugins are updated before native scripts, so data that plugins provide reaches scripts in the same frame.
+	// Internal frame (RenderTo) should not call plugins, they are called once per frame.
+	if (!bInternalCall)
+		PLUGIN_MANAGER.Update(CurrentDeltaTime);
+
 	NATIVE_SCRIPT_SYSTEM.Update(CurrentDeltaTime);
-	PLUGIN_MANAGER.Update(CurrentDeltaTime);
 
 	for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
 	{
@@ -118,19 +124,23 @@ void FEngine::BeginFrame(const bool bInternalCall)
 	}
 #endif
 
-	InternalUpdate();
+	InternalUpdate(bInternalCall);
 }
 
 void FEngine::Render(const bool bInternalCall)
 {
+	if (!bInternalCall)
+		PLUGIN_MANAGER.BeforeRender();
+
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
-	{
 		RENDERER.Render(ActiveScenes[i]);
-	}
 
 	if (bVRActive)
 		OpenXR_MANAGER.Update();
+
+	if (!bInternalCall)
+		PLUGIN_MANAGER.AfterRender();
 
 	APPLICATION.GetMainWindow()->Render();
 
@@ -150,6 +160,9 @@ void FEngine::EndFrame(const bool bInternalCall)
 	APPLICATION.EndFrame();
 	if (!bInternalCall)
 		GPUTime = TIME.EndTimeStamp();
+
+	if (!bInternalCall && !APPLICATION.IsNotTerminated())
+		PLUGIN_MANAGER.Shutdown();
 
 	// FE_FIX_ME: Since AssetPackage doesn't extract assets directly to memory, we need to delete the directory after the frame completes.
 	if (RESOURCE_MANAGER.PrivateEngineAssetPackage != nullptr)

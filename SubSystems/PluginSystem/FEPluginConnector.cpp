@@ -17,3 +17,9 @@ extern "C" __declspec(dllexport) bool IsCompiledInDebugMode()
 	return false;
 #endif
 }
+
+// Returns version that plugin was compiled with, plugin manager compares it with its own.
+extern "C" __declspec(dllexport) int GetPluginInterfaceVersion()
+{
+	return FEPluginCore::InterfaceVersion;
+}
