@@ -122,14 +122,6 @@ void FEPluginManager::Initialize()
 		return;
 	}
 
-#ifdef _DEBUG
-	const std::string ConfigurationPostfix = "_Debug";
-	const std::string ConfigurationFolder = "Debug";
-#else
-	const std::string ConfigurationPostfix = "_Release";
-	const std::string ConfigurationFolder = "Release";
-#endif
-
 	std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
 
 	for (int i = 0; i < PluginFolders.size(); i++)
@@ -163,192 +155,231 @@ void FEPluginManager::Initialize()
 			continue;
 		}
 
+		DiscoveredPlugin NewPlugin;
+		NewPlugin.Manifest = Manifest;
+		NewPlugin.FolderPath = PluginFolderPath;
+		DiscoveredPlugins.push_back(NewPlugin);
+	}
+
+	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+	{
+		const PluginManifest& Manifest = DiscoveredPlugins[i].Manifest;
 		for (size_t j = 0; j < Manifest.Modules.size(); j++)
 		{
-			const PluginModule& Module = Manifest.Modules[j];
-			if (Module.Type == "Engine")
-			{
-				// Plugin folder contains DLLs for both configurations, named with configuration postfix.
-				const std::string DLLFileName = FILE_SYSTEM.GetFileName(Module.EntryPointFileName, false) + ConfigurationPostfix + FILE_SYSTEM.GetFileExtension(Module.EntryPointFileName);
-				std::string DLLPath = PluginFolderPath + "/" + DLLFileName;
+			if (Manifest.Modules[j].Type != "Engine")
+				continue;
 
-				if (!FILE_SYSTEM.DoesFileExist(DLLPath))
-				{
-					LOG.Add("FEPluginManager::Initialize: DLL file \"" + DLLPath + "\" does not exist", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
-					continue;
-				}
+			FEPlugin Plugin;
+			if (!LoadPluginModule(DiscoveredPlugins[i], j, Plugin))
+				continue;
 
-				// DLLs that plugin depends on are stored in subfolder named after configuration.
-				// Windows needs that folder in DLL search path to resolve them while plugin DLL is loading.
-				const std::string DependencyFolderPath = PluginFolderPath + "/" + ConfigurationFolder;
-				DLL_DIRECTORY_COOKIE DependencyDirectoryCookie = nullptr;
-				if (FILE_SYSTEM.DoesDirectoryExist(DependencyFolderPath))
-				{
-					const std::string AbsoluteDependencyFolderPath = FILE_SYSTEM.GetAbsolutePath(DependencyFolderPath);
-					const int WideLength = MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, nullptr, 0);
-					std::wstring WideDependencyFolderPath(WideLength > 0 ? WideLength - 1 : 0, L'\0');
-					MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, WideDependencyFolderPath.data(), WideLength);
-
-					DependencyDirectoryCookie = AddDllDirectory(WideDependencyFolderPath.c_str());
-					if (DependencyDirectoryCookie == nullptr)
-						LOG.Add("FEPluginManager::Initialize: Failed to add \"" + DependencyFolderPath + "\" to DLL search path", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
-				}
-
-				// LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR requires absolute path.
-				HMODULE DLLHandle = LoadLibraryExA(FILE_SYSTEM.GetAbsolutePath(DLLPath).c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
-				DWORD ErrorMessageID = DLLHandle == nullptr ? ::GetLastError() : 0;
-
-				// Dependencies are resolved during loading, so folder is no longer needed in DLL search path.
-				if (DependencyDirectoryCookie != nullptr)
-					RemoveDllDirectory(DependencyDirectoryCookie);
-
-				if (!DLLHandle)
-				{
-					if (ErrorMessageID == 0)
-					{
-						LOG.Add("FEPluginManager::Initialize: Failed to load DLL \"" + DLLPath + "\" without error message", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-						continue;
-					}
-
-					LPSTR MessageBuffer = nullptr;
-					size_t Size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-						NULL, ErrorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&MessageBuffer, 0, NULL);
-
-					std::string StringMessage(MessageBuffer, Size);
-					LocalFree(MessageBuffer);
-
-					// System message ends with line break.
-					while (!StringMessage.empty() && (StringMessage.back() == '\n' || StringMessage.back() == '\r' || StringMessage.back() == ' '))
-						StringMessage.pop_back();
-
-					// DLL file exists (checked above), so this error means that some DLL that it depends on was not found.
-					if (ErrorMessageID == ERROR_MOD_NOT_FOUND)
-					{
-						char ExecutablePath[MAX_PATH] = {};
-						GetModuleFileNameA(nullptr, ExecutablePath, MAX_PATH);
-						char SystemFolderPath[MAX_PATH] = {};
-						GetSystemDirectoryA(SystemFolderPath, MAX_PATH);
-
-						const std::vector<std::string> SearchFolders = { PluginFolderPath, DependencyFolderPath, FILE_SYSTEM.GetDirectoryPath(ExecutablePath), SystemFolderPath };
-						const std::vector<std::string> MissingDependencies = FindMissingDLLDependencies(DLLPath, SearchFolders);
-						if (MissingDependencies.empty())
-						{
-							StringMessage += " DLL that plugin depends on, or one of its own dependencies, was not found.";
-						}
-						else
-						{
-							StringMessage += " DLLs that plugin depends on were not found:";
-							for (size_t k = 0; k < MissingDependencies.size(); k++)
-								StringMessage += (k == 0 ? " " : ", ") + MissingDependencies[k];
-
-							StringMessage += ".";
-						}
-
-						StringMessage += " Plugin dependencies can be placed in \"" + DependencyFolderPath + "\".";
-					}
-
-					LOG.Add("FEPluginManager::Initialize: Failed to load DLL \"" + DLLPath + "\" with error: " + StringMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-					continue;
-				}
-
-				typedef bool (*IsCompiledInDebugMode_Function)(void);
-				IsCompiledInDebugMode_Function IsCompiledInDebugMode = (IsCompiledInDebugMode_Function)GetProcAddress(DLLHandle, "IsCompiledInDebugMode");
-				if (IsCompiledInDebugMode)
-				{
-					bool bDLLInDebug = IsCompiledInDebugMode();
-
-#ifdef _DEBUG
-					if (!bDLLInDebug)
-					{
-						LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" was compiled in release mode, while engine is in debug mode", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-						FreeLibrary(DLLHandle);
-						continue;
-					}
-#else
-					if (bDLLInDebug)
-					{
-						LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" was compiled in debug mode, while engine is in release mode", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-						FreeLibrary(DLLHandle);
-						continue;
-					}
-#endif
-				}
-
-				// Plugin compiled with different FEPluginCore layout would crash when engine calls its functions, so it is not loaded.
-				typedef int (*Get_Plugin_Interface_Version_Function)(void);
-				Get_Plugin_Interface_Version_Function GetPluginInterfaceVersion = (Get_Plugin_Interface_Version_Function)GetProcAddress(DLLHandle, "GetPluginInterfaceVersion");
-				if (!GetPluginInterfaceVersion)
-				{
-					LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" does not export GetPluginInterfaceVersion, plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-					FreeLibrary(DLLHandle);
-					continue;
-				}
-
-				const int DLLPluginInterfaceVersion = GetPluginInterfaceVersion();
-				if (DLLPluginInterfaceVersion != FEPluginCore::InterfaceVersion)
-				{
-					LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" was compiled with plugin interface version " + std::to_string(DLLPluginInterfaceVersion) +
-							", while engine uses version " + std::to_string(FEPluginCore::InterfaceVersion) + ", plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-					FreeLibrary(DLLHandle);
-					continue;
-				}
-
-				// FE_FIX_ME: Instead of timestamp we should use engine git commit hash and dirty flag.
-				typedef unsigned long long (*Get_EngineHeaders_BuildVersion_Function)(void);
-				Get_EngineHeaders_BuildVersion_Function GetEngineHeadersBuildVersion = (Get_EngineHeaders_BuildVersion_Function)GetProcAddress(DLLHandle, "GetEngineHeadersBuildVersion");
-				if (GetEngineHeadersBuildVersion)
-				{
-					unsigned long long EngineHeadersBuildVersion = GetEngineHeadersBuildVersion();
-					std::string BuildTimestamp = GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
-					// Remove quotes from the timestamp.
-					BuildTimestamp.erase(std::remove_if(BuildTimestamp.begin(), BuildTimestamp.end(),
-						[](char Character) { return Character == '\"'; }),
-						BuildTimestamp.end());
-
-					unsigned long long EngineBuildVersion = std::stoull(BuildTimestamp);
-					if (EngineHeadersBuildVersion != EngineBuildVersion)
-					{
-						// Currently we will just log this error, but in the future we should handle this more gracefully.
-						LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" was compiled with different engine headers version, that could lead to crashes", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
-					}
-				}
-
-				// Ensuring that the DLL has the required functions.
-				typedef FEPluginCore* (*Create_Plugin_Function)(void);
-				Create_Plugin_Function CreatePlugin = (Create_Plugin_Function)GetProcAddress(DLLHandle, "CreatePlugin");
-
-				typedef void (*Destroy_Plugin_Function)(FEPluginCore*);
-				Destroy_Plugin_Function DestroyPlugin = (Destroy_Plugin_Function)GetProcAddress(DLLHandle, "DestroyPlugin");
-
-				if (!CreatePlugin || !DestroyPlugin)
-				{
-					LOG.Add("FEPluginManager::Initialize: DLL \"" + DLLPath + "\" does not export CreatePlugin/DestroyPlugin", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-					FreeLibrary(DLLHandle);
-					continue;
-				}
-
-				FEPluginCore* Instance = CreatePlugin();
-				if (Instance == nullptr)
-				{
-					LOG.Add("FEPluginManager::Initialize: CreatePlugin returned nullptr for DLL \"" + DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
-					FreeLibrary(DLLHandle);
-					continue;
-				}
-
-				FEPlugin Plugin;
-				Plugin.Manifest = new PluginManifest(Manifest);
-				Plugin.Module = &Plugin.Manifest->Modules[j];
-				Plugin.DLLHandle = DLLHandle;
-				Plugin.Instance = Instance;
-				Plugin.DestroyFunction = DestroyPlugin;
-				ActivePlugins.push_back(Plugin);
-
-				Instance->PluginDirectory = FILE_SYSTEM.GetAbsolutePath(PluginFolderPath) + "/";
-				Instance->OnLoad();
-				LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Module.Name + "\" loaded from \"" + DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
-			}
+			ActivePlugins.push_back(Plugin);
+			Plugin.Instance->OnLoad();
+			LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Manifest.Modules[j].Name + "\" loaded from \"" + Plugin.DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 		}
 	}
+}
+
+const std::vector<DiscoveredPlugin>& FEPluginManager::GetDiscoveredPlugins() const
+{
+	return DiscoveredPlugins;
+}
+
+bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex, FEPlugin& OutPlugin)
+{
+	if (ModuleIndex >= Plugin.Manifest.Modules.size())
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: Module index is out of range for plugin \"" + Plugin.Manifest.Name + "\"", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+#ifdef _DEBUG
+	const std::string ConfigurationPostfix = "_Debug";
+	const std::string ConfigurationFolder = "Debug";
+#else
+	const std::string ConfigurationPostfix = "_Release";
+	const std::string ConfigurationFolder = "Release";
+#endif
+
+	const std::string& PluginFolderPath = Plugin.FolderPath;
+	const PluginModule& Module = Plugin.Manifest.Modules[ModuleIndex];
+
+	// Plugin folder contains DLLs for both configurations, named with configuration postfix.
+	const std::string DLLFileName = FILE_SYSTEM.GetFileName(Module.EntryPointFileName, false) + ConfigurationPostfix + FILE_SYSTEM.GetFileExtension(Module.EntryPointFileName);
+	std::string DLLPath = PluginFolderPath + "/" + DLLFileName;
+
+	if (!FILE_SYSTEM.DoesFileExist(DLLPath))
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: DLL file \"" + DLLPath + "\" does not exist", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	// DLLs that plugin depends on are stored in subfolder named after configuration.
+	// Windows needs that folder in DLL search path to resolve them while plugin DLL is loading.
+	const std::string DependencyFolderPath = PluginFolderPath + "/" + ConfigurationFolder;
+	DLL_DIRECTORY_COOKIE DependencyDirectoryCookie = nullptr;
+	if (FILE_SYSTEM.DoesDirectoryExist(DependencyFolderPath))
+	{
+		const std::string AbsoluteDependencyFolderPath = FILE_SYSTEM.GetAbsolutePath(DependencyFolderPath);
+		const int WideLength = MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, nullptr, 0);
+		std::wstring WideDependencyFolderPath(WideLength > 0 ? WideLength - 1 : 0, L'\0');
+		MultiByteToWideChar(CP_UTF8, 0, AbsoluteDependencyFolderPath.c_str(), -1, WideDependencyFolderPath.data(), WideLength);
+
+		DependencyDirectoryCookie = AddDllDirectory(WideDependencyFolderPath.c_str());
+		if (DependencyDirectoryCookie == nullptr)
+			LOG.Add("FEPluginManager::LoadPluginModule: Failed to add \"" + DependencyFolderPath + "\" to DLL search path", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+	}
+
+	// LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR requires absolute path.
+	HMODULE DLLHandle = LoadLibraryExA(FILE_SYSTEM.GetAbsolutePath(DLLPath).c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
+	DWORD ErrorMessageID = DLLHandle == nullptr ? ::GetLastError() : 0;
+
+	// Dependencies are resolved during loading, so folder is no longer needed in DLL search path.
+	if (DependencyDirectoryCookie != nullptr)
+		RemoveDllDirectory(DependencyDirectoryCookie);
+
+	if (!DLLHandle)
+	{
+		if (ErrorMessageID == 0)
+		{
+			LOG.Add("FEPluginManager::LoadPluginModule: Failed to load DLL \"" + DLLPath + "\" without error message", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		LPSTR MessageBuffer = nullptr;
+		size_t Size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			NULL, ErrorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&MessageBuffer, 0, NULL);
+
+		std::string StringMessage(MessageBuffer, Size);
+		LocalFree(MessageBuffer);
+
+		// System message ends with line break.
+		while (!StringMessage.empty() && (StringMessage.back() == '\n' || StringMessage.back() == '\r' || StringMessage.back() == ' '))
+			StringMessage.pop_back();
+
+		// DLL file exists (checked above), so this error means that some DLL that it depends on was not found.
+		if (ErrorMessageID == ERROR_MOD_NOT_FOUND)
+		{
+			char ExecutablePath[MAX_PATH] = {};
+			GetModuleFileNameA(nullptr, ExecutablePath, MAX_PATH);
+			char SystemFolderPath[MAX_PATH] = {};
+			GetSystemDirectoryA(SystemFolderPath, MAX_PATH);
+
+			const std::vector<std::string> SearchFolders = { PluginFolderPath, DependencyFolderPath, FILE_SYSTEM.GetDirectoryPath(ExecutablePath), SystemFolderPath };
+			const std::vector<std::string> MissingDependencies = FindMissingDLLDependencies(DLLPath, SearchFolders);
+			if (MissingDependencies.empty())
+			{
+				StringMessage += " DLL that plugin depends on, or one of its own dependencies, was not found.";
+			}
+			else
+			{
+				StringMessage += " DLLs that plugin depends on were not found:";
+				for (size_t k = 0; k < MissingDependencies.size(); k++)
+					StringMessage += (k == 0 ? " " : ", ") + MissingDependencies[k];
+
+				StringMessage += ".";
+			}
+
+			StringMessage += " Plugin dependencies can be placed in \"" + DependencyFolderPath + "\".";
+		}
+
+		LOG.Add("FEPluginManager::LoadPluginModule: Failed to load DLL \"" + DLLPath + "\" with error: " + StringMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	typedef bool (*IsCompiledInDebugMode_Function)(void);
+	IsCompiledInDebugMode_Function IsCompiledInDebugMode = (IsCompiledInDebugMode_Function)GetProcAddress(DLLHandle, "IsCompiledInDebugMode");
+	if (IsCompiledInDebugMode)
+	{
+		bool bDLLInDebug = IsCompiledInDebugMode();
+
+#ifdef _DEBUG
+		if (!bDLLInDebug)
+		{
+			LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" was compiled in release mode, while engine is in debug mode", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+			FreeLibrary(DLLHandle);
+			return false;
+		}
+#else
+		if (bDLLInDebug)
+		{
+			LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" was compiled in debug mode, while engine is in release mode", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+			FreeLibrary(DLLHandle);
+			return false;
+		}
+#endif
+	}
+
+	// Plugin compiled with different FEPluginCore layout would crash when engine calls its functions, so it is not loaded.
+	typedef int (*Get_Plugin_Interface_Version_Function)(void);
+	Get_Plugin_Interface_Version_Function GetPluginInterfaceVersion = (Get_Plugin_Interface_Version_Function)GetProcAddress(DLLHandle, "GetPluginInterfaceVersion");
+	if (!GetPluginInterfaceVersion)
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" does not export GetPluginInterfaceVersion, plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
+		return false;
+	}
+
+	const int DLLPluginInterfaceVersion = GetPluginInterfaceVersion();
+	if (DLLPluginInterfaceVersion != FEPluginCore::InterfaceVersion)
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" was compiled with plugin interface version " + std::to_string(DLLPluginInterfaceVersion) +
+				", while engine uses version " + std::to_string(FEPluginCore::InterfaceVersion) + ", plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
+		return false;
+	}
+
+	// FE_FIX_ME: Instead of timestamp we should use engine git commit hash and dirty flag.
+	typedef unsigned long long (*Get_EngineHeaders_BuildVersion_Function)(void);
+	Get_EngineHeaders_BuildVersion_Function GetEngineHeadersBuildVersion = (Get_EngineHeaders_BuildVersion_Function)GetProcAddress(DLLHandle, "GetEngineHeadersBuildVersion");
+	if (GetEngineHeadersBuildVersion)
+	{
+		unsigned long long EngineHeadersBuildVersion = GetEngineHeadersBuildVersion();
+		std::string BuildTimestamp = GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
+		// Remove quotes from the timestamp.
+		BuildTimestamp.erase(std::remove_if(BuildTimestamp.begin(), BuildTimestamp.end(),
+			[](char Character) { return Character == '\"'; }),
+			BuildTimestamp.end());
+
+		unsigned long long EngineBuildVersion = std::stoull(BuildTimestamp);
+		if (EngineHeadersBuildVersion != EngineBuildVersion)
+		{
+			// Currently we will just log this error, but in the future we should handle this more gracefully.
+			LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" was compiled with different engine headers version, that could lead to crashes", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		}
+	}
+
+	// Ensuring that the DLL has the required functions.
+	typedef FEPluginCore* (*Create_Plugin_Function)(void);
+	Create_Plugin_Function CreatePlugin = (Create_Plugin_Function)GetProcAddress(DLLHandle, "CreatePlugin");
+
+	typedef void (*Destroy_Plugin_Function)(FEPluginCore*);
+	Destroy_Plugin_Function DestroyPlugin = (Destroy_Plugin_Function)GetProcAddress(DLLHandle, "DestroyPlugin");
+
+	if (!CreatePlugin || !DestroyPlugin)
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: DLL \"" + DLLPath + "\" does not export CreatePlugin/DestroyPlugin", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
+		return false;
+	}
+
+	FEPluginCore* Instance = CreatePlugin();
+	if (Instance == nullptr)
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: CreatePlugin returned nullptr for DLL \"" + DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		FreeLibrary(DLLHandle);
+		return false;
+	}
+
+	OutPlugin.Manifest = new PluginManifest(Plugin.Manifest);
+	OutPlugin.Module = &OutPlugin.Manifest->Modules[ModuleIndex];
+	OutPlugin.DLLPath = DLLPath;
+	OutPlugin.DLLHandle = DLLHandle;
+	OutPlugin.Instance = Instance;
+	OutPlugin.DestroyFunction = DestroyPlugin;
+	Instance->PluginDirectory = FILE_SYSTEM.GetAbsolutePath(PluginFolderPath) + "/";
+
+	return true;
 }
 
 void FEPluginManager::Update(double DeltaTime)
@@ -417,18 +448,48 @@ void FEPluginManager::SceneDeleting(FEScene* Scene)
 
 void FEPluginManager::Shutdown()
 {
+	// Modules loaded by applications could depend on engine modules, so they are unloaded first.
+	if (BeforeShutdownCallback)
+		BeforeShutdownCallback();
+
 	// Unload in reverse order of loading.
 	for (size_t i = ActivePlugins.size(); i > 0; i--)
 	{
 		FEPlugin& Plugin = ActivePlugins[i - 1];
 		Plugin.Instance->OnUnload();
-		Plugin.DestroyFunction(Plugin.Instance);
-		FreeLibrary(Plugin.DLLHandle);
-		delete Plugin.Manifest;
+		UnloadPluginModule(Plugin);
 	}
 
 	ActivePlugins.clear();
 	ReportedScenes.clear();
+}
+
+void FEPluginManager::UnloadPluginModule(FEPlugin& Plugin)
+{
+	if (Plugin.Instance != nullptr && Plugin.DestroyFunction != nullptr)
+		Plugin.DestroyFunction(Plugin.Instance);
+
+	if (Plugin.DLLHandle != nullptr)
+		FreeLibrary(Plugin.DLLHandle);
+
+	delete Plugin.Manifest;
+	Plugin = FEPlugin();
+}
+
+bool FEPluginManager::IsModuleLoaded(const FEUUID& ModuleID) const
+{
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+	{
+		if (ActivePlugins[i].Module->ID == ModuleID)
+			return true;
+	}
+
+	return false;
+}
+
+void FEPluginManager::SetBeforeShutdownCallback(std::function<void()> Callback)
+{
+	BeforeShutdownCallback = Callback;
 }
 
 FEPluginCore* FEPluginManager::GetPlugin(const FEUUID& PluginID)
@@ -592,7 +653,7 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	return true;
 }
 
-bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface)
+bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface, bool bConfigureAndBuild)
 {
 	if (PluginName.empty())
 	{
@@ -642,6 +703,9 @@ bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::st
 		LOG.Add("FEPluginManager::CreatePluginProject: Error initializing project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
+
+	if (!bConfigureAndBuild)
+		return true;
 
 	if (!ConfigureAndBuildCMake(ProjectDirectory))
 		return false;

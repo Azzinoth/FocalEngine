@@ -27,16 +27,29 @@ namespace FocalEngine
 		std::string Version;
 	};
 
+	// Plugin folder with valid manifest, found by plugin manager during initialization.
+	struct DiscoveredPlugin
+	{
+		PluginManifest Manifest;
+		std::string FolderPath;
+	};
+
 	class FEPlugin
 	{
 		friend class FEPluginManager;
 
 		PluginManifest* Manifest = nullptr;
 		PluginModule* Module = nullptr;
+		std::string DLLPath;
 
 		HMODULE DLLHandle = nullptr;
 		FEPluginCore* Instance = nullptr;
 		void (*DestroyFunction)(FEPluginCore*) = nullptr;
+	public:
+		FEPluginCore* GetInstance() const { return Instance; }
+		const PluginManifest* GetManifest() const { return Manifest; }
+		const PluginModule* GetModule() const { return Module; }
+		const std::string& GetDLLPath() const { return DLLPath; }
 	};
 
 	class FOCAL_ENGINE_API FEPluginManager
@@ -47,7 +60,9 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FEPluginManager)
 
 		std::string PluginDirectory = "Plugins";
+		std::vector<DiscoveredPlugin> DiscoveredPlugins;
 		std::vector<FEPlugin> ActivePlugins;
+		std::function<void()> BeforeShutdownCallback;
 
 		// Flags of scenes that plugins were notified about with OnSceneAdded, used to detect changes of flags.
 		std::unordered_map<FEUUID, FESceneFlag> ReportedScenes;
@@ -62,7 +77,6 @@ namespace FocalEngine
 		void Update(double DeltaTime);
 		void BeforeRender();
 		void AfterRender();
-		void Shutdown();
 
 		bool GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface);
 		bool GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory);
@@ -71,8 +85,6 @@ namespace FocalEngine
 		bool InitializeProject(const std::string& PluginName, const std::string& VSProjectDirectory, const std::vector<std::string>& SourceFileFullPathList);
 		bool InitializeCMakeFile(const std::string& PluginName, const std::string& VSProjectDirectory, const std::vector<std::string>& SourceFileFullPathList);
 		bool AddEngineSubmodule(const std::string& VSProjectDirectory);
-		bool ConfigureAndBuildCMake(const std::string& VSProjectDirectory);
-		bool RunVSProject(const std::string& PluginName, const std::string& VSProjectDirectory);
 	public:
 		SINGLETON_PUBLIC_PART(FEPluginManager)
 
@@ -80,8 +92,29 @@ namespace FocalEngine
 		bool IsValidManifest(const std::string& ManifestPath);
 		bool ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest);
 
+		const std::vector<DiscoveredPlugin>& GetDiscoveredPlugins() const;
+
+		// Loads module DLL and creates plugin instance, OnLoad is not called, that is responsibility of the caller.
+		// Used by plugin manager for engine modules and by applications for other module types (for example editor modules).
+		bool LoadPluginModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex, FEPlugin& OutPlugin);
+		// Destroys plugin instance and unloads its DLL, OnUnload should be called by the caller before that.
+		void UnloadPluginModule(FEPlugin& Plugin);
+
+		// Checks only engine modules, because only they are loaded by plugin manager.
+		bool IsModuleLoaded(const FEUUID& ModuleID) const;
+
+		// Called at the beginning of plugin manager shutdown, before engine modules are unloaded.
+		// Applications use it to unload modules that depend on engine modules, it could be called more than once.
+		void SetBeforeShutdownCallback(std::function<void()> Callback);
+		// Unloads engine modules in reverse order of loading, safe to call more than once.
+		void Shutdown();
+
 		// If bAddPublicInterface is true, plugin gets Public/<PluginName>Interface.h that applications can include to call plugin API.
-		bool CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface = false);
+		// If bConfigureAndBuild is false, project is only generated, so applications could add their own modules
+		// through AdditionalModules.cmake and then call ConfigureAndBuildCMake and RunVSProject themselves.
+		bool CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface = false, bool bConfigureAndBuild = true);
+		bool ConfigureAndBuildCMake(const std::string& VSProjectDirectory);
+		bool RunVSProject(const std::string& PluginName, const std::string& VSProjectDirectory);
 
 		// Returns nullptr if plugin is not loaded, result should not be stored because plugin could be unloaded.
 		FEPluginCore* GetPlugin(const FEUUID& PluginID);
