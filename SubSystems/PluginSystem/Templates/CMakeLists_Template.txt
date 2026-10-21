@@ -126,6 +126,9 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME} PRIVATE ${FOCAL_ENGINE_INCLUDES})
 target_compile_definitions(${PROJECT_NAME} PRIVATE FOCAL_ENGINE_HEADERS_ONLY)
 
+# Editor builds engine in Debug with FE_DEBUG_ENABLED, it changes FEShader layout, so plugin should use the same define.
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:FE_DEBUG_ENABLED>)
+
 source_group("Source Files/" FILES ${Main_SRC})
 source_group("Source Files/Public/" FILES ${Public_SRC})
 source_group("Source Files/Engine/" FILES ${Connection_To_Engine_SRC})
