@@ -25,6 +25,7 @@ namespace FocalEngine
 
 		std::string Name;
 		std::string Version;
+		std::string Description;
 	};
 
 	// Plugin folder with valid manifest, found by plugin manager during initialization.

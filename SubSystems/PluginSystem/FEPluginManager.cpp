@@ -580,6 +580,9 @@ bool FEPluginManager::IsValidManifest(const std::string& ManifestPath)
 		!IsValidOSList(Root["SupportedOS"]) || !IsValidIDList(Root["Dependencies"]))
 		return false;
 
+	if (!Root["Description"].isNull() && !Root["Description"].isString())
+		return false;
+
 	const Json::Value& Modules = Root["Modules"];
 	if (!Modules.isArray() || Modules.empty())
 		return false;
@@ -634,6 +637,7 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	Manifest.SupportedOS = ParseOSList(Root["SupportedOS"]);
 	Manifest.Name = Root["Name"].asString();
 	Manifest.Version = Root["Version"].asString();
+	Manifest.Description = Root["Description"].asString();
 
 	for (const Json::Value& ModuleData : Root["Modules"])
 	{
