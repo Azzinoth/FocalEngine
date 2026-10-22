@@ -115,7 +115,7 @@ FEPluginManager::~FEPluginManager()
 
 void FEPluginManager::Initialize()
 {
-	const std::string PluginDirectoryPath = RESOURCE_MANAGER.GetEngineFolder() + PluginDirectory;
+	const std::string PluginDirectoryPath = GetPluginDirectory();
 	if (!FILE_SYSTEM.DoesDirectoryExist(PluginDirectoryPath))
 	{
 		LOG.Add("FEPluginManager::Initialize: Plugin directory \"" + PluginDirectoryPath + "\" does not exist", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
@@ -175,7 +175,8 @@ void FEPluginManager::Initialize()
 
 			ActivePlugins.push_back(Plugin);
 			Plugin.Instance->OnLoad();
-			LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Manifest.Modules[j].Name + "\" loaded from \"" + Plugin.DLLPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+			const std::string Source = Plugin.DLLPath.empty() ? std::string("is statically linked") : "loaded from \"" + Plugin.DLLPath + "\"";
+			LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Manifest.Modules[j].Name + "\" " + Source, "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 		}
 	}
 }
@@ -185,12 +186,51 @@ const std::vector<DiscoveredPlugin>& FEPluginManager::GetDiscoveredPlugins() con
 	return DiscoveredPlugins;
 }
 
+void FEPluginManager::SetPluginDirectory(const std::string& NewValue)
+{
+	PluginDirectory = NewValue;
+}
+
+std::string FEPluginManager::GetPluginDirectory() const
+{
+	if (PluginDirectory.empty())
+		return RESOURCE_MANAGER.GetEngineFolder() + "Plugins";
+
+	return PluginDirectory;
+}
+
+void FEPluginManager::RegisterStaticPluginModule(const std::string& ModuleName, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction)
+{
+	StaticPluginModule& Module = GetStaticPluginModules()[ModuleName];
+	Module.CreateFunction = CreateFunction;
+	Module.DestroyFunction = DestroyFunction;
+}
+
+std::unordered_map<std::string, FEPluginManager::StaticPluginModule>& FEPluginManager::GetStaticPluginModules()
+{
+	static std::unordered_map<std::string, StaticPluginModule> StaticPluginModules;
+	return StaticPluginModules;
+}
+
 bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex, FEPlugin& OutPlugin)
 {
 	if (ModuleIndex >= Plugin.Manifest.Modules.size())
 	{
 		LOG.Add("FEPluginManager::LoadPluginModule: Module index is out of range for plugin \"" + Plugin.Manifest.Name + "\"", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
 		return false;
+	}
+
+	// Statically linked module is compiled together with the engine, so there is no DLL to load and no compatibility to check.
+	const std::unordered_map<std::string, StaticPluginModule>& StaticModules = GetStaticPluginModules();
+	const auto StaticModuleIterator = StaticModules.find(Plugin.Manifest.Modules[ModuleIndex].Name);
+	if (StaticModuleIterator != StaticModules.end())
+	{
+		OutPlugin.Manifest = new PluginManifest(Plugin.Manifest);
+		OutPlugin.Module = &OutPlugin.Manifest->Modules[ModuleIndex];
+		OutPlugin.Instance = StaticModuleIterator->second.CreateFunction();
+		OutPlugin.DestroyFunction = StaticModuleIterator->second.DestroyFunction;
+		OutPlugin.Instance->PluginDirectory = FILE_SYSTEM.GetAbsolutePath(Plugin.FolderPath) + "/";
+		return true;
 	}
 
 #ifdef _DEBUG

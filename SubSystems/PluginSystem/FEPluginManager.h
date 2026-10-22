@@ -60,7 +60,7 @@ namespace FocalEngine
 
 		SINGLETON_PRIVATE_PART(FEPluginManager)
 
-		std::string PluginDirectory = "Plugins";
+		std::string PluginDirectory;
 		std::vector<DiscoveredPlugin> DiscoveredPlugins;
 		std::vector<FEPlugin> ActivePlugins;
 		std::function<void()> BeforeShutdownCallback;
@@ -90,6 +90,16 @@ namespace FocalEngine
 		SINGLETON_PUBLIC_PART(FEPluginManager)
 
 		void Initialize();
+
+		// Default is Plugins folder of the engine, should be set before engine is initialized.
+		void SetPluginDirectory(const std::string& NewValue);
+		std::string GetPluginDirectory() const;
+
+		using CreatePluginFunction = FEPluginCore* (*)();
+		using DestroyPluginFunction = void (*)(FEPluginCore*);
+		// Called by REGISTER_PLUGIN when plugin is linked into application statically, LoadPluginModule then uses it instead of DLL.
+		static void RegisterStaticPluginModule(const std::string& ModuleName, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction);
+
 		bool IsValidManifest(const std::string& ManifestPath);
 		bool ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest);
 
@@ -133,6 +143,15 @@ namespace FocalEngine
 		{
 			return dynamic_cast<T*>(GetPluginByName(PluginName));
 		}
+	private:
+		struct StaticPluginModule
+		{
+			CreatePluginFunction CreateFunction = nullptr;
+			DestroyPluginFunction DestroyFunction = nullptr;
+		};
+
+		// Modules register during static initialization, so registry is a function local static.
+		static std::unordered_map<std::string, StaticPluginModule>& GetStaticPluginModules();
 	};
 
 #ifdef FOCAL_ENGINE_SHARED
