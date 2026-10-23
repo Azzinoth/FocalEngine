@@ -235,10 +235,13 @@ function(fe_write_static_link_file)
     )
 endfunction()
 
-fe_add_plugin_module(${PROJECT_NAME} STATIC_LIBRARY SOURCES ${Main_SRC})
+# Plugin without main module gets all its modules from AdditionalModules.cmake.
+if(Main_SRC)
+    fe_add_plugin_module(${PROJECT_NAME} STATIC_LIBRARY SOURCES ${Main_SRC})
 
-# set the startup project
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+    # set the startup project
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+endif()
 
 # Applications that generate plugin project could add more modules here, for example editor adds editor module.
 include(${CMAKE_CURRENT_SOURCE_DIR}/AdditionalModules.cmake OPTIONAL)

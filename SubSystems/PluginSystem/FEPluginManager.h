@@ -35,6 +35,18 @@ namespace FocalEngine
 		std::string FolderPath;
 	};
 
+	struct FEPluginProjectSettings
+	{
+		// Main module is engine module named after plugin. Without it manifest has no modules,
+		// application that creates project should add its own modules through AdditionalModules.cmake and manifest.
+		bool bAddMainModule = true;
+		// Plugin gets Public/<PluginName>Interface.h that applications can include to call API of main module.
+		bool bAddPublicInterface = false;
+		// If false, project is only generated, so application could add its own modules and then call ConfigureAndBuildCMake and RunVSProject.
+		bool bConfigureAndBuild = true;
+		std::string Description;
+	};
+
 	class FEPlugin
 	{
 		friend class FEPluginManager;
@@ -80,7 +92,7 @@ namespace FocalEngine
 		void AfterRender();
 
 		bool GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface);
-		bool GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory);
+		bool GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings);
 		bool GeneratePublicInterfaceFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory);
 
 		bool InitializeProject(const std::string& PluginName, const std::string& VSProjectDirectory, const std::vector<std::string>& SourceFileFullPathList);
@@ -120,10 +132,7 @@ namespace FocalEngine
 		// Unloads engine modules in reverse order of loading, safe to call more than once.
 		void Shutdown();
 
-		// If bAddPublicInterface is true, plugin gets Public/<PluginName>Interface.h that applications can include to call plugin API.
-		// If bConfigureAndBuild is false, project is only generated, so applications could add their own modules
-		// through AdditionalModules.cmake and then call ConfigureAndBuildCMake and RunVSProject themselves.
-		bool CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface = false, bool bConfigureAndBuild = true);
+		bool CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings = FEPluginProjectSettings());
 		bool ConfigureAndBuildCMake(const std::string& VSProjectDirectory);
 		bool RunVSProject(const std::string& PluginName, const std::string& VSProjectDirectory);
 

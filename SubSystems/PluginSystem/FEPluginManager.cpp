@@ -697,7 +697,7 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	return true;
 }
 
-bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface, bool bConfigureAndBuild)
+bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings)
 {
 	if (PluginName.empty())
 	{
@@ -722,7 +722,9 @@ bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::st
 	if (ProjectDirectory.back() != '/' && ProjectDirectory.back() != '\\')
 		ProjectDirectory += '/';
 
-	if (!GeneratePluginSourceFilesFromTemplate(PluginName, ProjectDirectory, bAddPublicInterface))
+	// Public interface belongs to main module.
+	const bool bAddPublicInterface = Settings.bAddMainModule && Settings.bAddPublicInterface;
+	if (Settings.bAddMainModule && !GeneratePluginSourceFilesFromTemplate(PluginName, ProjectDirectory, bAddPublicInterface))
 	{
 		LOG.Add("FEPluginManager::CreatePluginProject: Error generating plugin source files from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -730,7 +732,7 @@ bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::st
 
 	// Plugin ID is generated here, because manifest and public interface should have the same ID.
 	const FEUUID PluginID = UNIQUE_ID.GenerateID();
-	if (!GenerateManifestFromTemplate(PluginName, PluginID, ProjectDirectory))
+	if (!GenerateManifestFromTemplate(PluginName, PluginID, ProjectDirectory, Settings))
 	{
 		LOG.Add("FEPluginManager::CreatePluginProject: Error generating manifest from template", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
@@ -742,13 +744,17 @@ bool FEPluginManager::CreatePluginProject(std::string& PluginName, const std::st
 		return false;
 	}
 
-	if (!InitializeProject(PluginName, ProjectDirectory, { ProjectDirectory + PluginName + ".h", ProjectDirectory + PluginName + ".cpp" }))
+	std::vector<std::string> SourceFiles;
+	if (Settings.bAddMainModule)
+		SourceFiles = { ProjectDirectory + PluginName + ".h", ProjectDirectory + PluginName + ".cpp" };
+
+	if (!InitializeProject(PluginName, ProjectDirectory, SourceFiles))
 	{
 		LOG.Add("FEPluginManager::CreatePluginProject: Error initializing project", "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 
-	if (!bConfigureAndBuild)
+	if (!Settings.bConfigureAndBuild)
 		return true;
 
 	if (!ConfigureAndBuildCMake(ProjectDirectory))
@@ -855,7 +861,7 @@ bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& P
 	return true;
 }
 
-bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory)
+bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings)
 {
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
@@ -906,12 +912,41 @@ bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName
 	CurrentInstruction.ReplacementText = PluginName + ".dll";
 	Instructions.push_back(CurrentInstruction);
 
+	// Quotes are part of the target, because quoted string returned by jsoncpp already has them, together with escaped characters.
+	CurrentInstruction.ContextPattern = "PLUGIN_DESCRIPTION_PLACE_HOLDER";
+	CurrentInstruction.TargetText = "\"PLUGIN_DESCRIPTION_PLACE_HOLDER\"";
+	CurrentInstruction.ReplacementText = Json::valueToQuotedString(Settings.Description.c_str());
+	Instructions.push_back(CurrentInstruction);
+
 	if (!FILE_SYSTEM.PerformTextReplacements(ManifestFilePath, Instructions))
 	{
 		LOG.Add("FEPluginManager::GenerateManifestFromTemplate: Error initializing " + ManifestFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
 		return false;
 	}
 	Instructions.clear();
+
+	if (Settings.bAddMainModule)
+		return true;
+
+	// Without main module manifest has no modules, they are added by application that creates project.
+	Json::Value Root;
+	if (!ReadJsonFile(ManifestFilePath, Root))
+	{
+		LOG.Add("FEPluginManager::GenerateManifestFromTemplate: Error reading " + ManifestFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+	Root["Modules"] = Json::Value(Json::arrayValue);
+
+	std::ofstream ManifestFile(ManifestFilePath, std::ios::trunc);
+	if (!ManifestFile.is_open())
+	{
+		LOG.Add("FEPluginManager::GenerateManifestFromTemplate: Error writing " + ManifestFilePath, "FE_PLUGIN_SYSTEM", FE_LOG_ERROR);
+		return false;
+	}
+
+	const Json::StreamWriterBuilder Builder;
+	ManifestFile << Json::writeString(Builder, Root);
+	ManifestFile.close();
 
 	return true;
 }
@@ -989,12 +1024,6 @@ bool FEPluginManager::InitializeProject(const std::string& PluginName, const std
 	if (!FILE_SYSTEM.DoesDirectoryExist(VSProjectDirectory))
 	{
 		LOG.Add("FEPluginManager::InitializeProject: VSProjectDirectory does not exist", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (SourceFileFullPathList.empty())
-	{
-		LOG.Add("FEPluginManager::InitializeProject: Source file list is empty", "FE_PLUGIN_SYSTEM", FE_LOG_WARNING);
 		return false;
 	}
 
@@ -1127,12 +1156,17 @@ bool FEPluginManager::InitializeCMakeFile(const std::string& PluginName, const s
 	CurrentInstruction.ReplacementText = PluginName;
 	Instructions.push_back(CurrentInstruction);
 
-	std::string SourceFilesList = "file(GLOB Main_SRC\n";
-	for (size_t i = 0; i < SourceFileFullPathList.size(); i++)
+	// Empty list means that plugin has no main module.
+	std::string SourceFilesList = "set(Main_SRC \"\")";
+	if (!SourceFileFullPathList.empty())
 	{
-		SourceFilesList += "\t\"" + FILE_SYSTEM.GetFileName(SourceFileFullPathList[i]) + "\"\n";
+		SourceFilesList = "file(GLOB Main_SRC\n";
+		for (size_t i = 0; i < SourceFileFullPathList.size(); i++)
+		{
+			SourceFilesList += "\t\"" + FILE_SYSTEM.GetFileName(SourceFileFullPathList[i]) + "\"\n";
+		}
+		SourceFilesList += ")";
 	}
-	SourceFilesList += ")";
 
 	CurrentInstruction.ContextPattern = "file(GLOB Main_SRC PLACE_HOLDER)";
 	CurrentInstruction.TargetText = "file(GLOB Main_SRC PLACE_HOLDER)";
