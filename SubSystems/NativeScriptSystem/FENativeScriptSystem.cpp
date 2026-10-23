@@ -1253,3 +1253,20 @@ bool FENativeScriptSystem::IsEqualScriptVariable(FEScriptVariableInfo& VariableI
 
 	return false;
 }
+
+std::string FENativeScriptSystem::ConvertToCorrectScriptClassName(const std::string& Name) const
+{
+	std::string Result;
+	for (const char Character : Name)
+	{
+		const bool bLetter = (Character >= 'a' && Character <= 'z') || (Character >= 'A' && Character <= 'Z') || Character == '_';
+		const bool bDigit = Character >= '0' && Character <= '9';
+		if (bLetter || bDigit)
+			Result += Character;
+	}
+
+	if (!Result.empty() && Result[0] >= '0' && Result[0] <= '9')
+		Result = "Script" + Result;
+
+	return Result;
+}

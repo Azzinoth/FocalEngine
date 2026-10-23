@@ -105,7 +105,9 @@ namespace FocalEngine
 
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(FEEntity* Entity);
 		std::unordered_map<std::string, FEScriptVariableInfo> GetVariablesRegistry(const FEUUID& ModuleID, std::string ScriptName);
-		
+
+		std::string ConvertToCorrectScriptClassName(const std::string& Name) const;
+
 		template<typename T>
 		T* CastToScriptClass(FENativeScriptComponent& Component);
 

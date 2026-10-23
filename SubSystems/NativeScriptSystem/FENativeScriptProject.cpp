@@ -685,11 +685,12 @@ bool FENativeScriptProject::CreateNewVSProject(std::string FirstScriptName)
 		return false;
 	}
 
-	// Replace all spaces with underscores.
-	for (size_t i = 0; i < FirstScriptName.size(); i++)
+	// Script name is used as class name.
+	FirstScriptName = NATIVE_SCRIPT_SYSTEM.ConvertToCorrectScriptClassName(FirstScriptName);
+	if (FirstScriptName.empty())
 	{
-		if (FirstScriptName[i] == ' ')
-			FirstScriptName[i] = '_';
+		LOG.Add("FENativeScriptProject::CreateNewVSProject: First script name has no characters that could be used in class name", "FE_SCRIPT_SYSTEM", FE_LOG_WARNING);
+		return false;
 	}
 
 	if (!EnsureVSProjectDirectoryIsIntact())
