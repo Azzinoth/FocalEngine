@@ -205,6 +205,15 @@ std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 		return Result;
 	}
 
+	// Registered importers have priority over built-in formats, so plugin could replace them.
+	FEResourceImporter Importer;
+	if (RESOURCE_MANAGER.FindResourceImporter(FileName, Importer))
+	{
+		std::vector<FEObject*> LoadedObjects = Importer.Import(FileName, this);
+		Result.insert(Result.end(), LoadedObjects.begin(), LoadedObjects.end());
+		return Result;
+	}
+
 	std::string FileExtension = FILE_SYSTEM.GetFileExtension(FileName);
 	std::transform(FileExtension.begin(), FileExtension.end(), FileExtension.begin(), [](const unsigned char C) { return std::tolower(C); });
 

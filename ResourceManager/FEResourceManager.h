@@ -30,6 +30,24 @@ namespace FocalEngine
 		FE_DEPTH_EXPORT_32BIT_TIFF = 2			// FE_TO_DO: Implement raw float values, 32-bit float TIFF
 	};
 
+	//class FEScene;
+
+	struct FEResourceImporter
+	{
+		std::string Description;
+		// Lowercase and without dot, for example "las".
+		std::vector<std::string> Extensions;
+		std::function<std::vector<FEObject*>(const std::string& FilePath, FEScene* Scene)> Import;
+	};
+
+	struct FEResourceExporter
+	{
+		std::string Description;
+		std::vector<std::string> Extensions;
+		FE_OBJECT_TYPE ObjectType = FE_NULL;
+		std::function<bool(FEObject* Object, const std::string& FilePath)> Export;
+	};
+
 	class FOCAL_ENGINE_API FEResourceManager
 	{
 		friend class FETexture;
@@ -159,6 +177,17 @@ namespace FocalEngine
 		bool ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, const std::string& FilePath);
 		void DeleteFEPointCloud(FEPointCloud* PointCloud);
 
+		// File formats that are not built into the engine, for example registered by plugins.
+		// Plugin should unregister everything it registered in OnUnload.
+		FEUUID RegisterResourceImporter(const FEResourceImporter& Importer);
+		void UnregisterResourceImporter(const FEUUID& ID);
+		FEUUID RegisterResourceExporter(const FEResourceExporter& Exporter);
+		void UnregisterResourceExporter(const FEUUID& ID);
+		std::vector<FEResourceImporter> GetResourceImporters() const;
+		// If several importers support extension of the file, the one registered first is used.
+		bool FindResourceImporter(const std::string& FilePath, FEResourceImporter& OutImporter) const;
+		std::vector<FEResourceExporter> GetResourceExporters(FE_OBJECT_TYPE ObjectType) const;
+
 		FEFramebuffer* CreateFramebuffer();
 		FEFramebuffer* CreateFramebuffer(int Attachments, int Width, int Height, bool bHDR = true);
 
@@ -260,6 +289,9 @@ namespace FocalEngine
 		std::unordered_map<FEUUID, FEGameModel*> GameModels;
 		std::unordered_map<FEUUID, FEPrefab*> Prefabs;
 		std::unordered_map<FEUUID, FENativeScriptModule*> NativeScriptModules;
+
+		std::vector<std::pair<FEUUID, FEResourceImporter>> ResourceImporters;
+		std::vector<std::pair<FEUUID, FEResourceExporter>> ResourceExporters;
 
 		FETexture* CreateTexture(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		void Upload2DTextureDataToGPU(FETexture* Texture, GLint Level, GLint Internalformat, GLsizei Width, GLsizei Height, GLenum Format, GLenum DataType, const void* Data);

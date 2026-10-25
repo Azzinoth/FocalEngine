@@ -238,6 +238,22 @@ bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t Mo
 		return false;
 	}
 
+	const PluginModule& ModuleToLoad = Plugin.Manifest.Modules[ModuleIndex];
+	const std::vector<OS>& PluginOS = Plugin.Manifest.SupportedOS;
+	if (std::find(PluginOS.begin(), PluginOS.end(), GetOS()) == PluginOS.end() ||
+		std::find(ModuleToLoad.SupportedOS.begin(), ModuleToLoad.SupportedOS.end(), GetOS()) == ModuleToLoad.SupportedOS.end())
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: Module \"" + ModuleToLoad.Name + "\" of plugin \"" + Plugin.Manifest.Name + "\" is not loaded, because it does not support " + OSToString(GetOS()), "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		return false;
+	}
+
+	const std::vector<FEGraphicsMode>& GraphicsModes = ModuleToLoad.SupportedGraphicsModes;
+	if (std::find(GraphicsModes.begin(), GraphicsModes.end(), APPLICATION.GetGraphicsMode()) == GraphicsModes.end())
+	{
+		LOG.Add("FEPluginManager::LoadPluginModule: Module \"" + ModuleToLoad.Name + "\" of plugin \"" + Plugin.Manifest.Name + "\" is not loaded, because it does not support " + GraphicsModeToString(APPLICATION.GetGraphicsMode()) + " graphics mode", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		return false;
+	}
+
 	// Statically linked module is compiled together with the engine, so there is no DLL to load and no compatibility to check.
 	const std::unordered_map<std::string, StaticPluginModule>& StaticModules = GetStaticPluginModules();
 	const auto StaticModuleIterator = StaticModules.find(Plugin.Manifest.Modules[ModuleIndex].Name);
@@ -656,6 +672,20 @@ static bool IsValidManifestJson(const Json::Value& Root)
 		if (!IsValidID(Module["ID"]) || !IsNonEmptyString(Module["Name"]) || !IsNonEmptyString(Module["EntryPointFileName"]) ||
 			!IsValidOSList(Module["SupportedOS"]) || !IsValidIDList(Module["Dependencies"]))
 			return false;
+
+		const Json::Value& GraphicsModes = Module["SupportedGraphicsModes"];
+		if (!GraphicsModes.isNull())
+		{
+			if (!GraphicsModes.isArray() || GraphicsModes.empty())
+				return false;
+
+			for (const Json::Value& Element : GraphicsModes)
+			{
+				FEGraphicsMode GraphicsMode = FEGraphicsMode::OnScreen;
+				if (!Element.isString() || !GraphicsModeFromString(Element.asString(), GraphicsMode))
+					return false;
+			}
+		}
 	}
 
 	return true;
@@ -704,6 +734,17 @@ static bool ParseManifestJson(const Json::Value& Root, PluginManifest& OutManife
 		Module.ID = UNIQUE_ID.FromString(ModuleData["ID"].asString());
 		Module.PluginID = Manifest.ID;
 		Module.SupportedOS = ParseOSList(ModuleData["SupportedOS"]);
+		Module.SupportedGraphicsModes = { FEGraphicsMode::OnScreen };
+		if (ModuleData.isMember("SupportedGraphicsModes"))
+		{
+			Module.SupportedGraphicsModes.clear();
+			for (const Json::Value& Element : ModuleData["SupportedGraphicsModes"])
+			{
+				FEGraphicsMode GraphicsMode = FEGraphicsMode::OnScreen;
+				GraphicsModeFromString(Element.asString(), GraphicsMode);
+				Module.SupportedGraphicsModes.push_back(GraphicsMode);
+			}
+		}
 		Module.Dependencies = ParseIDList(ModuleData["Dependencies"]);
 		Module.Type = ModuleData["Type"].asString();
 		Module.Name = ModuleData["Name"].asString();
@@ -1117,6 +1158,18 @@ bool FEPluginManager::GenerateManifestFromTemplate(const std::string& PluginName
 	CurrentInstruction.TargetText = "\"PLUGIN_DESCRIPTION_PLACE_HOLDER\"";
 	CurrentInstruction.ReplacementText = Json::valueToQuotedString(Settings.Description.c_str());
 	Instructions.push_back(CurrentInstruction);
+
+	if (!Settings.SupportedGraphicsModes.empty())
+	{
+		std::string GraphicsModes;
+		for (size_t i = 0; i < Settings.SupportedGraphicsModes.size(); i++)
+			GraphicsModes += (i == 0 ? "\"" : ", \"") + GraphicsModeToString(Settings.SupportedGraphicsModes[i]) + "\"";
+
+		CurrentInstruction.ContextPattern = "\"SupportedGraphicsModes\"";
+		CurrentInstruction.TargetText = "[ \"OnScreen\" ]";
+		CurrentInstruction.ReplacementText = "[ " + GraphicsModes + " ]";
+		Instructions.push_back(CurrentInstruction);
+	}
 
 	if (!FILE_SYSTEM.PerformTextReplacements(ManifestFilePath, Instructions))
 	{

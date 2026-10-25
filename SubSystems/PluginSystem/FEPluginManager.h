@@ -9,6 +9,7 @@ namespace FocalEngine
 		FEUUID ID;
 		FEUUID PluginID;
 		std::vector<OS> SupportedOS;
+		std::vector<FEGraphicsMode> SupportedGraphicsModes;
 		std::vector<FEUUID> Dependencies;
 
 		std::string Type;
@@ -45,6 +46,8 @@ namespace FocalEngine
 		// If false, project is only generated, so application could add its own modules and then call ConfigureAndBuildCMake and RunVSProject.
 		bool bConfigureAndBuild = true;
 		std::string Description;
+		// Graphics modes of main module.
+		std::vector<FEGraphicsMode> SupportedGraphicsModes = { FEGraphicsMode::OnScreen };
 	};
 
 	class FEPlugin

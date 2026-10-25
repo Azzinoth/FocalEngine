@@ -18,6 +18,7 @@ namespace FocalEngine
 		int GetEngineBuildNumber();            // 231
 
 		void InitWindow(int Width = 1920 * 2, int Height = 1080 * 2, std::string WindowTitle = "FEWindow");
+		void InitHeadless();
 
 		void BeginFrame(bool bInternalCall = false);
 		void EndFrame(bool bInternalCall = false);

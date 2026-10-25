@@ -97,6 +97,23 @@ void FEngine::BeginFrame(const bool bInternalCall)
 	if (!bInternalCall)
 		TIME.BeginTimeStamp();
 
+	// FE_FIX_ME: Without graphics scenes are not updated yet, their systems need GPU.
+	if (APPLICATION.GetGraphicsMode() == FEGraphicsMode::None)
+	{
+		APPLICATION.BeginFrame();
+		CurrentDeltaTime = CPUTime + GPUTime;
+		if (!bInternalCall)
+			PLUGIN_MANAGER.Update(CurrentDeltaTime);
+
+		for (size_t i = 0; i < OnAfterUpdateCallbacks.size(); i++)
+		{
+			if (OnAfterUpdateCallbacks[i] != nullptr)
+				OnAfterUpdateCallbacks[i]();
+		}
+
+		return;
+	}
+
 	FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
 	RENDERER.BeginFrameDebugLines();
@@ -129,6 +146,14 @@ void FEngine::BeginFrame(const bool bInternalCall)
 
 void FEngine::Render(const bool bInternalCall)
 {
+	if (APPLICATION.GetGraphicsMode() == FEGraphicsMode::None)
+	{
+		if (!bInternalCall)
+			CPUTime = TIME.EndTimeStamp();
+
+		return;
+	}
+
 	if (!bInternalCall)
 		PLUGIN_MANAGER.BeforeRender();
 
@@ -150,6 +175,16 @@ void FEngine::Render(const bool bInternalCall)
 
 void FEngine::EndFrame(const bool bInternalCall)
 {
+	if (APPLICATION.GetGraphicsMode() == FEGraphicsMode::None)
+	{
+		APPLICATION.EndFrame();
+		if (!bInternalCall && !APPLICATION.IsNotTerminated())
+			PLUGIN_MANAGER.Shutdown();
+
+		CurentFrameIndex++;
+		return;
+	}
+
 	RENDERER.EndFrameDebugLines();
 
 	INPUT.EndFrame();
@@ -178,6 +213,12 @@ void FEngine::EndFrame(const bool bInternalCall)
 void FEngine::InitWindow(const int Width, const int Height, std::string WindowTitle)
 {
 	FEWindow* NewWindow = APPLICATION.AddWindow(Width, Height, WindowTitle);
+	if (NewWindow == nullptr)
+	{
+		LOG.Add("FEngine::InitWindow: Window could not be created", "FE_LOG_GENERAL", FE_LOG_ERROR);
+		return;
+	}
+
 	// Early initialization of INPUT system.
 	INPUT;
 	APPLICATION.GetMainWindow()->AddOnResizeCallback(&FEngine::WindowResizeCallback);
@@ -204,6 +245,14 @@ void FEngine::InitWindow(const int Width, const int Height, std::string WindowTi
 	PREFAB_INSTANCE_SYSTEM;
 	VIRTUAL_UI_SYSTEM;
 	NATIVE_SCRIPT_SYSTEM;
+	PLUGIN_MANAGER.Initialize();
+}
+
+void FEngine::InitHeadless()
+{
+	if (!APPLICATION.SetGraphicsMode(FEGraphicsMode::None))
+		return;
+
 	PLUGIN_MANAGER.Initialize();
 }
 
@@ -271,6 +320,14 @@ FEPostProcess* FEngine::CreatePostProcess(const std::string Name, int ScreenWidt
 
 void FEngine::Terminate()
 {
+	// Without graphics application could exit without another frame, so plugins are unloaded right away.
+	if (APPLICATION.GetGraphicsMode() == FEGraphicsMode::None)
+	{
+		APPLICATION.Close();
+		PLUGIN_MANAGER.Shutdown();
+		return;
+	}
+
 	OpenXR_MANAGER.Shutdown();
 	APPLICATION.Close();
 }

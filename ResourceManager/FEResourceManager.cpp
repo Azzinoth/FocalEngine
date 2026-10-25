@@ -12,8 +12,7 @@ extern "C" __declspec(dllexport) void* GetResourceManager()
 
 FEResourceManager::FEResourceManager()
 {
-	// Temporary check for the headless variant, proper headless support is to be implemented later.
-	if (glfwGetCurrentContext() != nullptr)
+	if (APPLICATION.GetGraphicsMode() != FEGraphicsMode::None)
 	{
 		glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &MaxColorAttachments);
 
@@ -7093,4 +7092,97 @@ FENewMaterial* FEResourceManager::LoadNewMaterialFromJSON(Json::Value& Root)
 	}
 
 	return NewMaterial;
+}
+
+static std::string NormalizeResourceExtension(std::string Extension)
+{
+	if (!Extension.empty() && Extension[0] == '.')
+		Extension.erase(0, 1);
+
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Character) { return static_cast<char>(std::tolower(Character)); });
+	return Extension;
+}
+
+FEUUID FEResourceManager::RegisterResourceImporter(const FEResourceImporter& Importer)
+{
+	if (Importer.Extensions.empty() || !Importer.Import)
+	{
+		LOG.Add("FEResourceManager::RegisterResourceImporter: Importer \"" + Importer.Description + "\" has no extensions or no import function", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return FEUUID();
+	}
+
+	FEResourceImporter NewImporter = Importer;
+	for (std::string& Extension : NewImporter.Extensions)
+		Extension = NormalizeResourceExtension(Extension);
+
+	const FEUUID ID = UNIQUE_ID.GenerateID();
+	ResourceImporters.push_back({ ID, NewImporter });
+	return ID;
+}
+
+void FEResourceManager::UnregisterResourceImporter(const FEUUID& ID)
+{
+	ResourceImporters.erase(std::remove_if(ResourceImporters.begin(), ResourceImporters.end(), [&](const std::pair<FEUUID, FEResourceImporter>& Entry) { return Entry.first == ID; }), ResourceImporters.end());
+}
+
+FEUUID FEResourceManager::RegisterResourceExporter(const FEResourceExporter& Exporter)
+{
+	if (Exporter.Extensions.empty() || !Exporter.Export || Exporter.ObjectType == FE_NULL)
+	{
+		LOG.Add("FEResourceManager::RegisterResourceExporter: Exporter \"" + Exporter.Description + "\" has no extensions, no export function or no object type", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+		return FEUUID();
+	}
+
+	FEResourceExporter NewExporter = Exporter;
+	for (std::string& Extension : NewExporter.Extensions)
+		Extension = NormalizeResourceExtension(Extension);
+
+	const FEUUID ID = UNIQUE_ID.GenerateID();
+	ResourceExporters.push_back({ ID, NewExporter });
+	return ID;
+}
+
+void FEResourceManager::UnregisterResourceExporter(const FEUUID& ID)
+{
+	ResourceExporters.erase(std::remove_if(ResourceExporters.begin(), ResourceExporters.end(), [&](const std::pair<FEUUID, FEResourceExporter>& Entry) { return Entry.first == ID; }), ResourceExporters.end());
+}
+
+std::vector<FEResourceImporter> FEResourceManager::GetResourceImporters() const
+{
+	std::vector<FEResourceImporter> Result;
+	for (size_t i = 0; i < ResourceImporters.size(); i++)
+		Result.push_back(ResourceImporters[i].second);
+
+	return Result;
+}
+
+bool FEResourceManager::FindResourceImporter(const std::string& FilePath, FEResourceImporter& OutImporter) const
+{
+	const std::string Extension = NormalizeResourceExtension(FILE_SYSTEM.GetFileExtension(FilePath));
+	if (Extension.empty())
+		return false;
+
+	for (size_t i = 0; i < ResourceImporters.size(); i++)
+	{
+		const std::vector<std::string>& Extensions = ResourceImporters[i].second.Extensions;
+		if (std::find(Extensions.begin(), Extensions.end(), Extension) != Extensions.end())
+		{
+			OutImporter = ResourceImporters[i].second;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+std::vector<FEResourceExporter> FEResourceManager::GetResourceExporters(FE_OBJECT_TYPE ObjectType) const
+{
+	std::vector<FEResourceExporter> Result;
+	for (size_t i = 0; i < ResourceExporters.size(); i++)
+	{
+		if (ResourceExporters[i].second.ObjectType == ObjectType)
+			Result.push_back(ResourceExporters[i].second);
+	}
+
+	return Result;
 }

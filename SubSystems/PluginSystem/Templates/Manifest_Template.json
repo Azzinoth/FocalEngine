@@ -12,6 +12,7 @@
 			"Name": "MODULE_NAME_PLACE_HOLDER",
 			"EntryPointFileName": "ENTRY_POINT_FILE_NAME_PLACE_HOLDER",
 			"SupportedOS": [ "Windows" ],
+			"SupportedGraphicsModes": [ "OnScreen" ],
 			"Dependencies": []
 		}
 	]
