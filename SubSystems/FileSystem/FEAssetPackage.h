@@ -62,6 +62,11 @@ namespace FocalEngine
 		bool UpdateAssetFromFile(const FEUUID& ID, const std::string& FilePath);
 		bool ExportAssetToFile(const FEUUID& ID, const std::string& FilePath);
 
+		// Imports all files of directory and its subdirectories.
+		bool ImportDirectory(const std::string& DirectoryPath);
+		// Writes every asset to DirectoryPath + asset name, creating subdirectories.
+		bool ExportToDirectory(const std::string& DirectoryPath);
+
 		FEUUID ImportAssetFromMemory(unsigned char* RawData, size_t Size, FEAssetPackageEntryInitializeData InitializeData = FEAssetPackageEntryInitializeData());
 		bool UpdateAssetFromMemory(const FEUUID& ID, unsigned char* RawData, size_t Size);
 		bool ExportAssetToMemory(const FEUUID& ID, unsigned char*& RawData, size_t& Size);

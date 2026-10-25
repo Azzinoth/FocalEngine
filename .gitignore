@@ -27,3 +27,7 @@ Debug/
 Release/
 .vs/
 CMakeFiles/
+
+# Installed plugins, folder itself is kept
+/Plugins/*
+!/Plugins/.gitkeep

@@ -98,6 +98,8 @@ namespace FocalEngine
 		bool InitializeProject(const std::string& PluginName, const std::string& VSProjectDirectory, const std::vector<std::string>& SourceFileFullPathList);
 		bool InitializeCMakeFile(const std::string& PluginName, const std::string& VSProjectDirectory, const std::vector<std::string>& SourceFileFullPathList);
 		bool AddEngineSubmodule(const std::string& VSProjectDirectory);
+
+		std::vector<std::string> GetValidManifestPaths(const std::string& FolderPath);
 	public:
 		SINGLETON_PUBLIC_PART(FEPluginManager)
 
@@ -135,6 +137,11 @@ namespace FocalEngine
 		bool CreatePluginProject(std::string& PluginName, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings = FEPluginProjectSettings());
 		bool ConfigureAndBuildCMake(const std::string& VSProjectDirectory);
 		bool RunVSProject(const std::string& PluginName, const std::string& VSProjectDirectory);
+
+		bool CreatePluginPackage(const std::string& PluginFolderPath, const std::string& PackageFilePath, std::string& OutErrorMessage);
+		bool ReadPluginPackageManifest(const std::string& PackageFilePath, PluginManifest& OutManifest, std::string& OutErrorMessage);
+		// Installed plugin is loaded on next start.
+		bool InstallPluginPackage(const std::string& PackageFilePath, std::string& OutErrorMessage);
 
 		// Returns nullptr if plugin is not loaded, result should not be stored because plugin could be unloaded.
 		FEPluginCore* GetPlugin(const FEUUID& PluginID);

@@ -105,6 +105,28 @@ static std::vector<std::string> FindMissingDLLDependencies(const std::string& DL
 	return Result;
 }
 
+// Plugin folder contains DLLs for both configurations, named with configuration postfix.
+static std::string GetModuleDLLFileName(const PluginModule& Module, const std::string& ConfigurationPostfix)
+{
+	return FILE_SYSTEM.GetFileName(Module.EntryPointFileName, false) + ConfigurationPostfix + FILE_SYSTEM.GetFileExtension(Module.EntryPointFileName);
+}
+
+// DLLs of both configurations of every module that supports current OS.
+static std::vector<std::string> GetRequiredModuleFiles(const PluginManifest& Manifest)
+{
+	std::vector<std::string> Result;
+	for (const PluginModule& Module : Manifest.Modules)
+	{
+		if (std::find(Module.SupportedOS.begin(), Module.SupportedOS.end(), GetOS()) == Module.SupportedOS.end())
+			continue;
+
+		Result.push_back(GetModuleDLLFileName(Module, "_Debug"));
+		Result.push_back(GetModuleDLLFileName(Module, "_Release"));
+	}
+
+	return Result;
+}
+
 FEPluginManager::FEPluginManager()
 {
 }
@@ -126,16 +148,12 @@ void FEPluginManager::Initialize()
 
 	for (int i = 0; i < PluginFolders.size(); i++)
 	{
+		// Folders starting with '.' are used by InstallPluginPackage for plugins that are not fully installed yet.
+		if (PluginFolders[i].rfind('.', 0) == 0)
+			continue;
+
 		const std::string PluginFolderPath = PluginDirectoryPath + "/" + PluginFolders[i];
-
-		std::vector<std::string> ManifestPaths;
-		for (const std::string& FileName : FILE_SYSTEM.GetFileList(PluginFolderPath))
-		{
-			const std::string FilePath = PluginFolderPath + "/" + FileName;
-			if (FILE_SYSTEM.GetFileExtension(FileName) == ".json" && IsValidManifest(FilePath))
-				ManifestPaths.push_back(FilePath);
-		}
-
+		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginFolderPath);
 		if (ManifestPaths.empty())
 		{
 			LOG.Add("FEPluginManager::Initialize: No valid manifest found in \"" + PluginFolderPath + "\"", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
@@ -244,9 +262,7 @@ bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t Mo
 	const std::string& PluginFolderPath = Plugin.FolderPath;
 	const PluginModule& Module = Plugin.Manifest.Modules[ModuleIndex];
 
-	// Plugin folder contains DLLs for both configurations, named with configuration postfix.
-	const std::string DLLFileName = FILE_SYSTEM.GetFileName(Module.EntryPointFileName, false) + ConfigurationPostfix + FILE_SYSTEM.GetFileExtension(Module.EntryPointFileName);
-	std::string DLLPath = PluginFolderPath + "/" + DLLFileName;
+	std::string DLLPath = PluginFolderPath + "/" + GetModuleDLLFileName(Module, ConfigurationPostfix);
 
 	if (!FILE_SYSTEM.DoesFileExist(DLLPath))
 	{
@@ -554,6 +570,14 @@ FEPluginCore* FEPluginManager::GetPluginByName(const std::string& PluginName)
 	return nullptr;
 }
 
+static bool ParseJsonText(const std::string& Text, Json::Value& OutRoot)
+{
+	JSONCPP_STRING Error;
+	Json::CharReaderBuilder Builder;
+	const std::unique_ptr<Json::CharReader> Reader(Builder.newCharReader());
+	return Reader->parse(Text.c_str(), Text.c_str() + Text.size(), &OutRoot, &Error);
+}
+
 static bool ReadJsonFile(const std::string& FilePath, Json::Value& OutRoot)
 {
 	std::ifstream File(FilePath);
@@ -563,18 +587,11 @@ static bool ReadJsonFile(const std::string& FilePath, Json::Value& OutRoot)
 	const std::string FileData((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
 	File.close();
 
-	JSONCPP_STRING Error;
-	Json::CharReaderBuilder Builder;
-	const std::unique_ptr<Json::CharReader> Reader(Builder.newCharReader());
-	return Reader->parse(FileData.c_str(), FileData.c_str() + FileData.size(), &OutRoot, &Error);
+	return ParseJsonText(FileData, OutRoot);
 }
 
-bool FEPluginManager::IsValidManifest(const std::string& ManifestPath)
+static bool IsValidManifestJson(const Json::Value& Root)
 {
-	Json::Value Root;
-	if (!ReadJsonFile(ManifestPath, Root))
-		return false;
-
 	auto IsNonEmptyString = [](const Json::Value& Value)
 	{
 		return Value.isString() && !Value.asString().empty();
@@ -644,13 +661,15 @@ bool FEPluginManager::IsValidManifest(const std::string& ManifestPath)
 	return true;
 }
 
-bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest)
+bool FEPluginManager::IsValidManifest(const std::string& ManifestPath)
 {
-	if (!IsValidManifest(ManifestPath))
-		return false;
-
 	Json::Value Root;
-	if (!ReadJsonFile(ManifestPath, Root))
+	return ReadJsonFile(ManifestPath, Root) && IsValidManifestJson(Root);
+}
+
+static bool ParseManifestJson(const Json::Value& Root, PluginManifest& OutManifest)
+{
+	if (!IsValidManifestJson(Root))
 		return false;
 
 	auto ParseIDList = [](const Json::Value& Value)
@@ -694,6 +713,187 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	}
 
 	OutManifest = Manifest;
+	return true;
+}
+
+bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest)
+{
+	Json::Value Root;
+	return ReadJsonFile(ManifestPath, Root) && ParseManifestJson(Root, OutManifest);
+}
+
+std::vector<std::string> FEPluginManager::GetValidManifestPaths(const std::string& FolderPath)
+{
+	std::vector<std::string> Result;
+	for (const std::string& FileName : FILE_SYSTEM.GetFileList(FolderPath))
+	{
+		const std::string FilePath = FolderPath + "/" + FileName;
+		if (FILE_SYSTEM.GetFileExtension(FileName) == ".json" && IsValidManifest(FilePath))
+			Result.push_back(FilePath);
+	}
+
+	return Result;
+}
+
+// Plugin is installed to folder named after it, folders starting with '.' are skipped by Initialize.
+static bool IsValidPluginFolderName(const std::string& Name)
+{
+	if (Name.empty() || Name.front() == '.' || Name.back() == '.' || Name.back() == ' ')
+		return false;
+
+	for (const char Character : Name)
+	{
+		if (static_cast<unsigned char>(Character) < 32 || std::strchr("<>:\"/\\|?*", Character) != nullptr)
+			return false;
+	}
+
+	return true;
+}
+
+// Same rule as for installed plugins: exactly one valid manifest in the root of plugin folder.
+static bool ReadManifestFromPackage(FEAssetPackage& Package, PluginManifest& OutManifest, std::string& OutErrorMessage)
+{
+	std::vector<Json::Value> Manifests;
+	const std::vector<FEAssetPackageAssetInfo> Entries = Package.GetEntryList();
+	for (size_t i = 0; i < Entries.size(); i++)
+	{
+		if (Entries[i].Name.find_first_of("/\\") != std::string::npos || FILE_SYSTEM.GetFileExtension(Entries[i].Name) != ".json")
+			continue;
+
+		unsigned char* RawData = nullptr;
+		size_t Size = 0;
+		if (!Package.ExportAssetToMemory(Entries[i].ID, RawData, Size))
+			continue;
+
+		const std::string Text(reinterpret_cast<char*>(RawData), Size);
+		delete[] RawData;
+
+		Json::Value Root;
+		if (ParseJsonText(Text, Root) && IsValidManifestJson(Root))
+			Manifests.push_back(Root);
+	}
+
+	if (Manifests.size() != 1)
+	{
+		OutErrorMessage = Manifests.empty() ? "Package does not contain valid plugin manifest" : "Package contains more than one valid plugin manifest";
+		return false;
+	}
+
+	return ParseManifestJson(Manifests[0], OutManifest);
+}
+
+bool FEPluginManager::CreatePluginPackage(const std::string& PluginFolderPath, const std::string& PackageFilePath, std::string& OutErrorMessage)
+{
+	auto Fail = [&](const std::string& Message) -> bool
+	{
+		OutErrorMessage = Message;
+		LOG.Add("FEPluginManager::CreatePluginPackage: " + Message, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	};
+
+	const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginFolderPath);
+	if (ManifestPaths.size() != 1)
+		return Fail((ManifestPaths.empty() ? "No valid manifest found in \"" : "More than one valid manifest found in \"") + PluginFolderPath + "\"");
+
+	PluginManifest Manifest;
+	if (!ParseManifest(ManifestPaths[0], Manifest))
+		return Fail("Failed to parse manifest \"" + ManifestPaths[0] + "\"");
+
+	const std::vector<std::string> RequiredFiles = GetRequiredModuleFiles(Manifest);
+	for (size_t i = 0; i < RequiredFiles.size(); i++)
+	{
+		if (!FILE_SYSTEM.DoesFileExist(PluginFolderPath + "/" + RequiredFiles[i]))
+			return Fail("\"" + PluginFolderPath + "\" does not contain \"" + RequiredFiles[i] + "\", plugin should be built in Debug and Release");
+	}
+
+	FEAssetPackage Package;
+	if (!Package.ImportDirectory(PluginFolderPath))
+		return Fail("Could not add files of \"" + PluginFolderPath + "\" to package");
+
+	if (!Package.SaveToFile(PackageFilePath))
+		return Fail("Could not save package to \"" + PackageFilePath + "\"");
+
+	return true;
+}
+
+bool FEPluginManager::ReadPluginPackageManifest(const std::string& PackageFilePath, PluginManifest& OutManifest, std::string& OutErrorMessage)
+{
+	FEAssetPackage Package;
+	if (!Package.LoadFromFile(PackageFilePath))
+	{
+		OutErrorMessage = "Could not load package \"" + PackageFilePath + "\"";
+		return false;
+	}
+
+	return ReadManifestFromPackage(Package, OutManifest, OutErrorMessage);
+}
+
+bool FEPluginManager::InstallPluginPackage(const std::string& PackageFilePath, std::string& OutErrorMessage)
+{
+	auto Fail = [&](const std::string& Message) -> bool
+	{
+		OutErrorMessage = Message;
+		LOG.Add("FEPluginManager::InstallPluginPackage: " + Message, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	};
+
+	FEAssetPackage Package;
+	if (!Package.LoadFromFile(PackageFilePath))
+		return Fail("Could not load package \"" + PackageFilePath + "\"");
+
+	PluginManifest Manifest;
+	std::string ManifestErrorMessage;
+	if (!ReadManifestFromPackage(Package, Manifest, ManifestErrorMessage))
+		return Fail(ManifestErrorMessage);
+
+	if (std::find(Manifest.SupportedOS.begin(), Manifest.SupportedOS.end(), GetOS()) == Manifest.SupportedOS.end())
+		return Fail("Plugin \"" + Manifest.Name + "\" does not support " + OSToString(GetOS()));
+
+	if (!IsValidPluginFolderName(Manifest.Name))
+		return Fail("Plugin name \"" + Manifest.Name + "\" can not be used as folder name");
+
+	const std::vector<std::string> RequiredFiles = GetRequiredModuleFiles(Manifest);
+	for (size_t i = 0; i < RequiredFiles.size(); i++)
+	{
+		if (Package.GetAssetIDsByName(RequiredFiles[i]).empty())
+			return Fail("Package does not contain \"" + RequiredFiles[i] + "\"");
+	}
+
+	// Plugins installed during this session are not in DiscoveredPlugins, so plugin folder is scanned.
+	const std::string PluginDirectoryPath = GetPluginDirectory();
+	const std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
+	for (size_t i = 0; i < PluginFolders.size(); i++)
+	{
+		if (PluginFolders[i].rfind('.', 0) == 0)
+			continue;
+
+		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginDirectoryPath + "/" + PluginFolders[i]);
+		PluginManifest InstalledManifest;
+		if (ManifestPaths.size() == 1 && ParseManifest(ManifestPaths[0], InstalledManifest) && InstalledManifest.ID == Manifest.ID)
+			return Fail("Plugin \"" + Manifest.Name + "\" is already installed in \"" + PluginDirectoryPath + "/" + PluginFolders[i] + "\"");
+	}
+
+	const std::string PluginFolderPath = PluginDirectoryPath + "/" + Manifest.Name;
+	if (FILE_SYSTEM.DoesDirectoryExist(PluginFolderPath))
+		return Fail("Folder \"" + PluginFolderPath + "\" already exists");
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(PluginDirectoryPath) && !FILE_SYSTEM.MakeDirectory(PluginDirectoryPath))
+		return Fail("Could not create plugin directory \"" + PluginDirectoryPath + "\"");
+
+	// Files are written to temporary folder that Initialize skips and then it is renamed, so partially installed plugin is never loaded.
+	const std::string TemporaryFolderPath = PluginDirectoryPath + "/.Installing_" + UNIQUE_ID.ToString(Manifest.ID);
+	if (FILE_SYSTEM.DoesDirectoryExist(TemporaryFolderPath) && !FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath))
+		return Fail("Could not delete \"" + TemporaryFolderPath + "\" left from previous installation");
+
+	if (!Package.ExportToDirectory(TemporaryFolderPath) || !FILE_SYSTEM.RenameDirectory(TemporaryFolderPath, PluginFolderPath))
+	{
+		if (FILE_SYSTEM.DoesDirectoryExist(TemporaryFolderPath))
+			FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath);
+
+		return Fail("Could not write plugin files to \"" + PluginFolderPath + "\"");
+	}
+
+	LOG.Add("FEPluginManager::InstallPluginPackage: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + " was installed to \"" + PluginFolderPath + "\", it will be loaded on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 	return true;
 }
 

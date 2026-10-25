@@ -1,7 +1,53 @@
 #include "FEAssetPackage.h"
 #include "../ResourceManager/FEResourceManager.h"
 #include "../SubSystems/Scene/FESceneManager.h"
+#include <cctype>
 using namespace FocalEngine;
+
+// Converts asset name to relative path with '/' separators.
+// Returns empty string if name is empty or could lead outside of directory it is exported to.
+static std::string ToSafeRelativePath(const std::string& AssetName)
+{
+	std::string Result;
+	std::string Part;
+	auto AddPart = [&]() -> bool
+	{
+		if (Part.empty() || Part == ".")
+		{
+			Part.clear();
+			return true;
+		}
+
+		// ':' is used by drive letters and by alternate data streams.
+		if (Part == ".." || Part.find(':') != std::string::npos)
+			return false;
+
+		if (!Result.empty())
+			Result += '/';
+
+		Result += Part;
+		Part.clear();
+		return true;
+	};
+
+	for (const char Character : AssetName)
+	{
+		if (Character == '/' || Character == '\\')
+		{
+			if (!AddPart())
+				return "";
+		}
+		else
+		{
+			Part += Character;
+		}
+	}
+
+	if (!AddPart())
+		return "";
+
+	return Result;
+}
 
 std::string FEAssetPackage::HeaderStartPhrase = "FEAssetPackage";
 FEAssetPackage::FEAssetPackage() : FEObject(FE_OBJECT_TYPE::FE_ASSET_PACKAGE, "Unnamed asset package") {}
@@ -496,10 +542,12 @@ bool FEAssetPackage::LoadFromFile(const std::string& FilePath)
 	File.read((char*)RawData, FileSize);
 	File.close();
 
-	if (!LoadFromMemory(RawData, FileSize))
+	const bool bLoaded = LoadFromMemory(RawData, FileSize);
+	delete[] RawData;
+
+	if (!bLoaded)
 	{
 		LOG.Add("FEAssetPackage::LoadFromFile: Could not properly load asset package from file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		delete[] RawData;
 		return false;
 	}
 
@@ -560,6 +608,104 @@ bool FEAssetPackage::ExportAssetToFile(const FEUUID& ID, const std::string& File
 	}
 
 	File.write(Data.data() + Entry.Offset, Entry.Size);
+	File.close();
+	if (File.fail())
+	{
+		LOG.Add("FEAssetPackage::ExportAssetToFile: Could not write file: " + FilePath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
+}
+
+bool FEAssetPackage::ImportDirectory(const std::string& DirectoryPath)
+{
+	if (!FILE_SYSTEM.DoesDirectoryExist(DirectoryPath))
+	{
+		LOG.Add("FEAssetPackage::ImportDirectory: Directory does not exist: " + DirectoryPath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	// Paths returned by GetFilesInDirectory start with DirectoryPath, so the rest of the path is relative to it.
+	const std::vector<std::string> Files = FILE_SYSTEM.GetFilesInDirectory(DirectoryPath, true);
+	std::vector<FEUUID> ImportedAssets;
+	for (size_t i = 0; i < Files.size(); i++)
+	{
+		FEAssetPackageEntryInitializeData EntryData;
+		EntryData.Name = ToSafeRelativePath(Files[i].substr(DirectoryPath.size()));
+
+		const FEUUID NewAssetID = EntryData.Name.empty() ? FEUUID() : ImportAssetFromFile(Files[i], EntryData);
+		if (UNIQUE_ID.IsNull(NewAssetID))
+		{
+			LOG.Add("FEAssetPackage::ImportDirectory: Could not import file: " + Files[i], "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+
+			// Assets are removed in reverse order, so each removed asset is at the end of data.
+			for (size_t j = ImportedAssets.size(); j > 0; j--)
+				RemoveAsset(ImportedAssets[j - 1]);
+
+			return false;
+		}
+
+		ImportedAssets.push_back(NewAssetID);
+	}
+
+	return true;
+}
+
+bool FEAssetPackage::ExportToDirectory(const std::string& DirectoryPath)
+{
+	std::vector<std::pair<FEUUID, std::string>> AssetsToExport;
+	// File names on Windows are case insensitive, so assets with names that differ only in case would overwrite each other.
+	std::unordered_map<std::string, std::string> LowerCaseNameToName;
+	for (const auto& Entry : Header.Entries)
+	{
+		const std::string RelativePath = ToSafeRelativePath(Entry.second.Name);
+		if (RelativePath.empty())
+		{
+			LOG.Add("FEAssetPackage::ExportToDirectory: Asset name \"" + Entry.second.Name + "\" is not a safe relative path, nothing was exported.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+			return false;
+		}
+
+		std::string LowerCaseName = RelativePath;
+		std::transform(LowerCaseName.begin(), LowerCaseName.end(), LowerCaseName.begin(), [](unsigned char Character) { return static_cast<char>(std::tolower(Character)); });
+		const auto NameIterator = LowerCaseNameToName.find(LowerCaseName);
+		if (NameIterator != LowerCaseNameToName.end())
+		{
+			LOG.Add("FEAssetPackage::ExportToDirectory: Assets \"" + NameIterator->second + "\" and \"" + RelativePath + "\" would be written to the same file, nothing was exported.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+			return false;
+		}
+
+		LowerCaseNameToName[LowerCaseName] = RelativePath;
+		AssetsToExport.push_back({ Entry.first, RelativePath });
+	}
+
+	if (!FILE_SYSTEM.DoesDirectoryExist(DirectoryPath) && !FILE_SYSTEM.MakeDirectory(DirectoryPath))
+	{
+		LOG.Add("FEAssetPackage::ExportToDirectory: Could not create directory: " + DirectoryPath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	for (size_t i = 0; i < AssetsToExport.size(); i++)
+	{
+		const std::string& RelativePath = AssetsToExport[i].second;
+		const std::vector<std::string> FolderChain = FILE_SYSTEM.GetFolderChain(FILE_SYSTEM.GetDirectoryPath(RelativePath));
+		for (size_t j = 0; j < FolderChain.size(); j++)
+		{
+			const std::string FolderPath = DirectoryPath + "/" + FolderChain[j];
+			if (!FILE_SYSTEM.DoesDirectoryExist(FolderPath) && !FILE_SYSTEM.MakeDirectory(FolderPath))
+			{
+				LOG.Add("FEAssetPackage::ExportToDirectory: Could not create directory: " + FolderPath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+				return false;
+			}
+		}
+
+		if (!ExportAssetToFile(AssetsToExport[i].first, DirectoryPath + "/" + RelativePath))
+		{
+			LOG.Add("FEAssetPackage::ExportToDirectory: Could not export asset \"" + RelativePath + "\" to " + DirectoryPath, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -674,92 +820,98 @@ unsigned char* FEAssetPackage::ExportAsRawData(size_t& Size)
 
 bool FEAssetPackage::LoadFromMemory(unsigned char* RawData, size_t Size)
 {
-	// First we will read the header.
-	unsigned char* CurrentDataPointer = RawData;
-	size_t HeaderStartPhraseSize = HeaderStartPhrase.size();
-	if (memcmp(CurrentDataPointer, HeaderStartPhrase.c_str(), HeaderStartPhraseSize) != 0)
-	{
-		LOG.Add("FEAssetPackage::LoadFromMemory: Header start phrase is not correct.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-		return  false;
-	}
-	CurrentDataPointer += HeaderStartPhraseSize;
+	Header = FEAssetPackageHeader();
+	Data.clear();
 
-	// Read the header size.
-	memcpy(&Header.Size, CurrentDataPointer, sizeof(size_t));
-	CurrentDataPointer += sizeof(size_t);
-	// Read the format version.
-	memcpy(&Header.FormatVersion, CurrentDataPointer, sizeof(size_t));
-	CurrentDataPointer += sizeof(size_t);
-	// Read the build time stamp.
-	memcpy(&Header.BuildTimeStamp, CurrentDataPointer, sizeof(size_t));
-	CurrentDataPointer += sizeof(size_t);
-	// Read the number of entries.
-	memcpy(&Header.EntriesCount, CurrentDataPointer, sizeof(size_t));
-	CurrentDataPointer += sizeof(size_t);
+	if (RawData == nullptr)
+	{
+		LOG.Add("FEAssetPackage::LoadFromMemory: RawData is nullptr.", "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		return false;
+	}
+
+	unsigned char* CurrentDataPointer = RawData;
+	size_t BytesLeft = Size;
+
+	// Package could be truncated or corrupted, so every read is checked against remaining size.
+	auto ReadBytes = [&](void* Destination, size_t Count) -> bool
+	{
+		if (Count > BytesLeft)
+			return false;
+
+		memcpy(Destination, CurrentDataPointer, Count);
+		CurrentDataPointer += Count;
+		BytesLeft -= Count;
+		return true;
+	};
+
+	auto ReadString = [&](std::string& Destination) -> bool
+	{
+		size_t StringSize = 0;
+		if (!ReadBytes(&StringSize, sizeof(size_t)) || StringSize > BytesLeft)
+			return false;
+
+		Destination = std::string((char*)CurrentDataPointer, StringSize);
+		CurrentDataPointer += StringSize;
+		BytesLeft -= StringSize;
+		return true;
+	};
+
+	auto Fail = [&](const std::string& Message) -> bool
+	{
+		LOG.Add("FEAssetPackage::LoadFromMemory: " + Message, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
+		Header = FEAssetPackageHeader();
+		Data.clear();
+		return false;
+	};
+
+	const size_t HeaderStartPhraseSize = HeaderStartPhrase.size();
+	if (Size < HeaderStartPhraseSize || memcmp(CurrentDataPointer, HeaderStartPhrase.c_str(), HeaderStartPhraseSize) != 0)
+		return Fail("Header start phrase is not correct.");
+
+	CurrentDataPointer += HeaderStartPhraseSize;
+	BytesLeft -= HeaderStartPhraseSize;
+
+	if (!ReadBytes(&Header.Size, sizeof(size_t)) || !ReadBytes(&Header.FormatVersion, sizeof(size_t)) ||
+		!ReadBytes(&Header.BuildTimeStamp, sizeof(size_t)) || !ReadBytes(&Header.EntriesCount, sizeof(size_t)))
+		return Fail("Package is too small to contain header.");
+
+	if (Header.Size > Size)
+		return Fail("Header size is bigger than package size.");
 
 	for (size_t i = 0; i < Header.EntriesCount; i++)
 	{
 		FEAssetPackageAssetInfo NewEntry;
 
-		// Read the ID.
-		size_t IDSize = 0;
-		memcpy(&IDSize, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		const std::string IDString = std::string((char*)CurrentDataPointer, IDSize);
+		std::string IDString;
+		if (!ReadString(IDString))
+			return Fail("Asset entry is out of package bounds.");
+
 		NewEntry.ID = UNIQUE_ID.FromString(IDString);
-		if (UNIQUE_ID.IsNull(NewEntry.ID) || UNIQUE_ID.ToString(NewEntry.ID).size() != IDSize)
-		{
-			LOG.Add("FEAssetPackage::LoadFromMemory: Asset ID is not a valid UUID: " + IDString, "FE_ASSET_PACKAGE", FE_LOG_ERROR);
-			Header = FEAssetPackageHeader();
-			return false;
-		}
-		CurrentDataPointer += IDSize;
+		if (UNIQUE_ID.IsNull(NewEntry.ID) || UNIQUE_ID.ToString(NewEntry.ID).size() != IDString.size())
+			return Fail("Asset ID is not a valid UUID: " + IDString);
 
-		// Read the name.
-		size_t NameSize = 0;
-		memcpy(&NameSize, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		NewEntry.Name = std::string((char*)CurrentDataPointer, NameSize);
-		CurrentDataPointer += NameSize;
+		if (Header.Entries.find(NewEntry.ID) != Header.Entries.end())
+			return Fail("Asset ID is not unique: " + IDString);
 
-		// Read the type.
-		size_t TypeSize = 0;
-		memcpy(&TypeSize, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		NewEntry.Type = std::string((char*)CurrentDataPointer, TypeSize);
-		CurrentDataPointer += TypeSize;
-
-		// Read the tag.
-		size_t TagSize = 0;
-		memcpy(&TagSize, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		NewEntry.Tag = std::string((char*)CurrentDataPointer, TagSize);
-		CurrentDataPointer += TagSize;
-
-		// Read the comment.
-		size_t CommentSize = 0;
-		memcpy(&CommentSize, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		NewEntry.Comment = std::string((char*)CurrentDataPointer, CommentSize);
-		CurrentDataPointer += CommentSize;
-
-		// Read the time stamp.
-		memcpy(&NewEntry.TimeStamp, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		// Read the size.
-		memcpy(&NewEntry.Size, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
-		// Read the offset.
-		memcpy(&NewEntry.Offset, CurrentDataPointer, sizeof(size_t));
-		CurrentDataPointer += sizeof(size_t);
+		if (!ReadString(NewEntry.Name) || !ReadString(NewEntry.Type) || !ReadString(NewEntry.Tag) || !ReadString(NewEntry.Comment) ||
+			!ReadBytes(&NewEntry.TimeStamp, sizeof(size_t)) || !ReadBytes(&NewEntry.Size, sizeof(size_t)) || !ReadBytes(&NewEntry.Offset, sizeof(size_t)))
+			return Fail("Asset entry is out of package bounds.");
 
 		Header.Entries[NewEntry.ID] = NewEntry;
 	}
 
-	// Now we will read the asset package data.
-	Data.resize(Size - Header.Size);
-	memcpy(Data.data(), CurrentDataPointer, Size - Header.Size);
+	if (Size - BytesLeft != Header.Size)
+		return Fail("Header size does not match header content.");
 
+	const size_t DataSize = Size - Header.Size;
+	for (const auto& Entry : Header.Entries)
+	{
+		if (Entry.second.Offset > DataSize || Entry.second.Size > DataSize - Entry.second.Offset)
+			return Fail("Asset " + UNIQUE_ID.ToString(Entry.first) + " is out of package data bounds.");
+	}
+
+	Data.resize(DataSize);
+	memcpy(Data.data(), CurrentDataPointer, DataSize);
 	return true;
 }
 
