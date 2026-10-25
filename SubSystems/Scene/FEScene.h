@@ -93,6 +93,7 @@ namespace FocalEngine
 		// Scene Management
 		void PrepareForGameModelDeletion(const FEGameModel* GameModel);
 		void PrepareForPrefabDeletion(const FEPrefab* Prefab);
+		bool IsUsingMaterial(const FEUUID& MaterialID);
 		void Clear();
 		void Update();
 

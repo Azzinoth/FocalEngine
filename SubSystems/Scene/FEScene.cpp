@@ -170,6 +170,25 @@ void FEScene::PrepareForPrefabDeletion(const FEPrefab* Prefab)
 	}
 }
 
+bool FEScene::IsUsingMaterial(const FEUUID& MaterialID)
+{
+	std::vector<FEEntity*> Entities = GetEntityListWithComponent<FEGameModelComponent>();
+	for (size_t i = 0; i < Entities.size(); i++)
+	{
+		FEGameModel* GameModel = Entities[i]->GetComponent<FEGameModelComponent>().GetGameModel();
+		if (GameModel == nullptr)
+			continue;
+
+		if (GameModel->GetMaterial() != nullptr && GameModel->GetMaterial()->GetID() == MaterialID)
+			return true;
+
+		if (GameModel->GetBillboardMaterial() != nullptr && GameModel->GetBillboardMaterial()->GetID() == MaterialID)
+			return true;
+	}
+
+	return false;
+}
+
 std::vector<FEObject*> FEScene::ImportAsset(std::string FileName)
 {
 	std::vector<FEObject*> Result;
