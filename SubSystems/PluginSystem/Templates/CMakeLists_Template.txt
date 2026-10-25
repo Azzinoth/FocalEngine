@@ -100,7 +100,7 @@ file(GLOB Connection_To_Engine_SRC
 file(GLOB Main_SRC PLACE_HOLDER)
 
 # Public headers of plugin API, applications include them and get plugin through PLUGIN_MANAGER.GetPlugin<T>.
-file(GLOB Public_SRC "Public/*.h")
+file(GLOB Public_SRC "Public/*.h" "Public/Editor/*.h")
 
 link_directories(${GLEW_LIB_DIR})
 link_directories(${GLFW_LIB_DIR})

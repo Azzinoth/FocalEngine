@@ -1,4 +1,5 @@
 #include "FENativeScriptProject.h"
+#include "../PluginSystem/FEPluginManager.h"
 #include <shellapi.h>
 using namespace FocalEngine;
 
@@ -465,6 +466,29 @@ bool FENativeScriptProject::InitializeCMakeFileAndScriptFiles(std::vector<std::s
 	CurrentInstruction.ContextPattern = "file(GLOB Main_SRC PLACE_HOLDER)";
 	CurrentInstruction.TargetText = "file(GLOB Main_SRC PLACE_HOLDER)";
 	CurrentInstruction.ReplacementText = SourceFilesList;
+	Instructions.push_back(CurrentInstruction);
+
+	// Scripts call plugins through header-only interfaces, so only include directories are needed, nothing to link.
+	std::string PluginIncludeDirectories;
+	const std::vector<DiscoveredPlugin>& Plugins = PLUGIN_MANAGER.GetDiscoveredPlugins();
+	for (size_t i = 0; i < Plugins.size(); i++)
+	{
+		bool bHasEngineModule = false;
+		for (size_t j = 0; j < Plugins[i].Manifest.Modules.size(); j++)
+			bHasEngineModule = bHasEngineModule || Plugins[i].Manifest.Modules[j].Type == "Engine";
+
+		std::string PublicDirectory = FILE_SYSTEM.GetAbsolutePath(Plugins[i].FolderPath) + "/Public";
+		if (!bHasEngineModule || !FILE_SYSTEM.DoesDirectoryExist(PublicDirectory))
+			continue;
+
+		// Backslash is escape character in CMake.
+		std::replace(PublicDirectory.begin(), PublicDirectory.end(), '\\', '/');
+		PluginIncludeDirectories += "target_include_directories(${PROJECT_NAME} PRIVATE \"" + PublicDirectory + "\")\n";
+	}
+
+	CurrentInstruction.ContextPattern = "#(PLACE_HOLDER) Here should be include directories of plugin public headers.";
+	CurrentInstruction.TargetText = "#(PLACE_HOLDER) Here should be include directories of plugin public headers.";
+	CurrentInstruction.ReplacementText = PluginIncludeDirectories;
 	Instructions.push_back(CurrentInstruction);
 
 	if (!FILE_SYSTEM.PerformTextReplacements(CMakeFilePath, Instructions))

@@ -61,6 +61,7 @@ target_link_libraries(${PROJECT_NAME}
 
 # FocalEngine is headers-only, we need to add its include directories
 target_include_directories(${PROJECT_NAME} PRIVATE ${FOCAL_ENGINE_INCLUDES})
+#(PLACE_HOLDER) Here should be include directories of plugin public headers.
 target_compile_definitions(${PROJECT_NAME} PRIVATE FOCAL_ENGINE_HEADERS_ONLY)
 
 source_group("Source Files/" FILES ${Main_SRC})
