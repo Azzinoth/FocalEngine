@@ -70,7 +70,7 @@ This modularity makes it easier to include just the engine in applications that 
 
 The Focal Engine provides specialized capabilities for working with large-scale point cloud data:
 
-- LAS/LAZ File Format Support
+- LAS/LAZ File Format Support through LASPlugin
 
 - High-Performance Rendering: Support for real-time visualization of massive point clouds (hundreds of millions to billions of points)
 
@@ -213,5 +213,3 @@ This project uses the following third-party libraries:
 5) **OpenXR**: This library is licensed under Apache 2.0 License. The full license text can be found at [OpenXR's GitHub repository](https://github.com/KhronosGroup/OpenXR-SDK-Source/blob/main/LICENSE).
 
 6) **EnTT**: This library is under the MIT License. The full license text can be found at [EnTT's GitHub repository](https://github.com/skypjack/entt?tab=MIT-1-ov-file).
-
-7) **LASzip**: This library is licensed under the Apache License 2.0. The full license text can be found at [LASzip's GitHub repository](https://github.com/LASzip/LASzip).

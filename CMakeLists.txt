@@ -225,8 +225,6 @@ file(GLOB ResourceManager_SRC
 	"ResourceManager/FEPLYManager.h"
 	"ResourceManager/FEglTFLoader.cpp"
 	"ResourceManager/FEglTFLoader.h"
-	"ResourceManager/FELASLoader.cpp"
-	"ResourceManager/FELASLoader.h"
 	"ResourceManager/FEResourceManager.cpp"
 	"ResourceManager/FEResourceManager.inl"
 	"ResourceManager/FEResourceManager.h"
@@ -414,11 +412,6 @@ file(GLOB stb_image_SRC
 	"ThirdParty/stb_image/stb_image.h"
 )
 
-file(GLOB LAS_LAZ_SRC
-	"ThirdParty/laszip/laszip_api.c"
-	"ThirdParty/laszip/laszip_api.h"
-)
-
 file(GLOB source_SRC
 	"FEngine.cpp"
 	"FEngine.h"
@@ -469,7 +462,6 @@ list(APPEND ALL_SOURCE_FILES
 			${jsoncpp_SRC}
 			${lodepng_SRC}
 			${stb_image_SRC}
-			${LAS_LAZ_SRC}
 )
 
 if(USE_STATIC_RUNTIME)
@@ -544,13 +536,6 @@ endif()
 
 # Set OpenXRLoader_DLL based on the current configuration
 set(OpenXRLoader_DLL $<$<CONFIG:Debug>:${OpenXRLoader_DLL_Debug}>$<$<CONFIG:Release>:${OpenXRLoader_DLL_Release}>)
-
-# LASZIP DLL paths
-set(LASZIP_DLL_Debug ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/laszip/lib/Debug/Dynamic_runtime/laszip3.dll)
-set(LASZIP_DLL_Release ${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/laszip/lib/Release/Dynamic_runtime/laszip3.dll)
-
-# Set LASZIP_DLL based on the current configuration
-set(LASZIP_DLL $<$<CONFIG:Debug>:${LASZIP_DLL_Debug}>$<$<CONFIG:Release>:${LASZIP_DLL_Release}>)
 
 # Define GLEW_STATIC for static builds
 if(USE_STATIC_RUNTIME)
@@ -644,7 +629,6 @@ source_group("Source Files/SubSystems/PluginSystem" FILES ${PluginSystem_SRC})
 source_group("Source Files/ThirdParty/lodepng" FILES ${lodepng_SRC})
 source_group("Source Files/ThirdParty/stb_image" FILES ${stb_image_SRC})
 source_group("Source Files/ThirdParty/jsoncpp" FILES ${jsoncpp_SRC})
-source_group("Source Files/ThirdParty/laszip" FILES ${LAS_LAZ_SRC})
 
 # set the startup project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT FocalEngine)
@@ -669,12 +653,6 @@ set(GLFW_LIBRARY ${GLFW_LIBRARY} PARENT_SCOPE)
 set(OpenXRLoader_DLL ${OpenXRLoader_DLL} PARENT_SCOPE)
 
 
-#set(LASZIP_DLL ${LASZIP_DLL})
-
-# Create a variable for the renamed DLL path and export it
-set(LASZIP_FINAL_DLL "$<TARGET_FILE_DIR:FocalEngine>/LASzip64.dll")
-set(LASZIP_FINAL_DLL ${LASZIP_FINAL_DLL} PARENT_SCOPE)
-
 # Add this line to define the .lib version info
 target_compile_definitions(FocalEngine PRIVATE 
     ENGINE_LIB_VERSION="${ENGINE_BUILD_TIMESTAMP}"
@@ -693,15 +671,6 @@ if(NOT ENGINE_HEADERS_ONLY)
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
 				${OpenXRLoader_DLL}
 				"$<TARGET_FILE_DIR:FocalEngine>"
-		)
-	endif()
-
-	if(LASZIP_DLL)
-		add_custom_command(TARGET FocalEngine POST_BUILD
-			# Copy and rename in one command
-			COMMAND ${CMAKE_COMMAND} -E copy_if_different
-				${LASZIP_DLL}
-				${LASZIP_FINAL_DLL}
 		)
 	endif()
 

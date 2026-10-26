@@ -5513,41 +5513,6 @@ FEPointCloud* FEResourceManager::RawPLYDataToFEPointCloud(FERawPLYData* PLYData,
 	return LoadedPointCloud;
 }
 
-FEPointCloud* FEResourceManager::LasOrLazToFEPointCloud(const std::string& FilePath, std::string Name, const FEUUID& ForceObjectID, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
-{
-	std::vector<FEPointCloudVertexDouble> RawDataDouble;
-	if (!ReadLasOrLaz(FilePath, RawDataDouble, OutHeaderCopy))
-		return nullptr;
-
-	return RawDataToFEPointCloud(RawDataDouble, Name, ForceObjectID, bCenterPositions, false, UserDataProcessor);
-}
-
-bool FEResourceManager::ReadLasOrLaz(const std::string& FilePath, std::vector<FEPointCloudVertexDouble>& RawData, laszip_header* OutHeaderCopy)
-{
-	if (!LAS_LOADER.ReadFile(FilePath, OutHeaderCopy != nullptr, false))
-		return false;
-
-	FELASData* LoadedData = nullptr;
-	LAS_LOADER.TakeOwnershipOfLastLoadedData(LoadedData);
-	if (LoadedData == nullptr)
-		return false;
-
-	RawData = std::move(LoadedData->PointCloudVertices);
-
-	if (OutHeaderCopy != nullptr && LoadedData->Header != nullptr)
-	{
-		*OutHeaderCopy = *LoadedData->Header;
-		// LoadedData still owns the VLR and user data buffers and frees them below,
-		// so the copy must not point at them.
-		OutHeaderCopy->user_data_in_header = nullptr;
-		OutHeaderCopy->vlrs = nullptr;
-		OutHeaderCopy->user_data_after_header = nullptr;
-	}
-
-	delete LoadedData;
-	return true;
-}
-
 FEPointCloud* FEResourceManager::ImportPointCloud(const std::string& FilePath, std::function<void(std::vector<FEPointCloudVertex>& RawData)> UserDataProcessor)
 {
 	FEPointCloud* LoadedPointCloud = nullptr;
@@ -5571,7 +5536,23 @@ FEPointCloud* FEResourceManager::ImportPointCloud(const std::string& FilePath, s
 	}
 	else
 	{
-		LoadedPointCloud = LasOrLazToFEPointCloud(FilePath, FILE_SYSTEM.GetFileName(FilePath), FEUUID(), true, UserDataProcessor);
+		// Other formats, for example LAS from plugin, come from registered importers.
+		FEResourceImporter Importer;
+		if (FindResourceImporter(FilePath, Importer))
+		{
+			if (UserDataProcessor != nullptr)
+				LOG.Add("FEResourceManager::ImportPointCloud: UserDataProcessor is not supported for formats of registered importers", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+
+			const std::vector<FEObject*> LoadedObjects = Importer.Import(FilePath, nullptr);
+			for (size_t i = 0; i < LoadedObjects.size(); i++)
+			{
+				if (LoadedObjects[i] != nullptr && LoadedObjects[i]->GetType() == FE_POINT_CLOUD)
+				{
+					LoadedPointCloud = GetPointCloud(LoadedObjects[i]->GetID());
+					break;
+				}
+			}
+		}
 	}
 
 	if (LoadedPointCloud == nullptr)
@@ -5581,177 +5562,6 @@ FEPointCloud* FEResourceManager::ImportPointCloud(const std::string& FilePath, s
 	}
 
 	return LoadedPointCloud;
-}
-
-struct LoadPointCloudAsyncInfo
-{
-	std::string FilePath;
-	std::function<void(FEPointCloud*)> UserCallBack;
-	std::function<void(std::vector<FEPointCloudVertexDouble>&)> UserDataProcessor;
-	std::vector<FEPointCloudVertex> RawData;
-	bool bSuccess = false;
-	bool bCenterPositions = true;
-	FEAABB AABB;
-	glm::dvec3 AppliedShift;
-	laszip_header* OutHeaderCopy = nullptr;
-};
-
-void LoadPointCloudFileAsync(void* InputData, void* OutputData)
-{
-	auto* Input = reinterpret_cast<LoadPointCloudAsyncInfo*>(InputData);
-	auto* Output = reinterpret_cast<LoadPointCloudAsyncInfo*>(OutputData);
-
-	std::vector<FEPointCloudVertexDouble> TemporaryRawData;
-	Output->bSuccess = RESOURCE_MANAGER.ReadLasOrLaz(Input->FilePath, TemporaryRawData, Input->OutHeaderCopy);
-
-	if (Output->bSuccess)
-	{
-		FEAABB PointCloudAABB;
-		// Before converting to float, we need to center the point cloud using 64 bit precision.
-		if (!TemporaryRawData.empty())
-		{
-			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
-			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
-
-			for (size_t i = 0; i < TemporaryRawData.size(); i++)
-			{
-				if (TemporaryRawData[i].X < Min.x)
-					Min.x = TemporaryRawData[i].X;
-
-				if (TemporaryRawData[i].X > Max.x)
-					Max.x = TemporaryRawData[i].X;
-
-				if (TemporaryRawData[i].Y < Min.y)
-					Min.y = TemporaryRawData[i].Y;
-
-				if (TemporaryRawData[i].Y > Max.y)
-					Max.y = TemporaryRawData[i].Y;
-
-				if (TemporaryRawData[i].Z < Min.z)
-					Min.z = TemporaryRawData[i].Z;
-
-				if (TemporaryRawData[i].Z > Max.z)
-					Max.z = TemporaryRawData[i].Z;
-			}
-
-			glm::dvec3 Extent = Max - Min;
-			glm::dvec3 Center = Min + Extent / 2.0;
-
-			if (Input->bCenterPositions)
-			{
-				for (size_t i = 0; i < TemporaryRawData.size(); i++)
-				{
-					TemporaryRawData[i].X = TemporaryRawData[i].X - Center.x;
-					TemporaryRawData[i].Y = TemporaryRawData[i].Y - Center.y;
-					TemporaryRawData[i].Z = TemporaryRawData[i].Z - Center.z;
-				}
-
-				Input->AppliedShift = Center;
-				PointCloudAABB = FEAABB(Min - Center, Max - Center);
-			}
-			else
-			{
-				PointCloudAABB = FEAABB(Min, Max);
-			}
-		}
-
-		if (Input->UserDataProcessor)
-		{
-			Input->UserDataProcessor(TemporaryRawData);
-
-			// Points might have been removed or changed in the user data processor.
-			glm::dvec3 Min = glm::dvec3(std::numeric_limits<double>::max());
-			glm::dvec3 Max = glm::dvec3(-std::numeric_limits<double>::max());
-
-			for (size_t i = 0; i < TemporaryRawData.size(); i++)
-			{
-				if (TemporaryRawData[i].X < Min.x)
-					Min.x = TemporaryRawData[i].X;
-
-				if (TemporaryRawData[i].X > Max.x)
-					Max.x = TemporaryRawData[i].X;
-
-				if (TemporaryRawData[i].Y < Min.y)
-					Min.y = TemporaryRawData[i].Y;
-
-				if (TemporaryRawData[i].Y > Max.y)
-					Max.y = TemporaryRawData[i].Y;
-
-				if (TemporaryRawData[i].Z < Min.z)
-					Min.z = TemporaryRawData[i].Z;
-
-				if (TemporaryRawData[i].Z > Max.z)
-					Max.z = TemporaryRawData[i].Z;
-			}
-
-			PointCloudAABB = FEAABB(Min, Max);
-		}
-
-		Output->RawData.resize(TemporaryRawData.size());
-		for (size_t i = 0; i < TemporaryRawData.size(); i++)
-		{
-			Output->RawData[i].X = static_cast<float>(TemporaryRawData[i].X);
-			Output->RawData[i].Y = static_cast<float>(TemporaryRawData[i].Y);
-			Output->RawData[i].Z = static_cast<float>(TemporaryRawData[i].Z);
-			Output->RawData[i].R = TemporaryRawData[i].R;
-			Output->RawData[i].G = TemporaryRawData[i].G;
-			Output->RawData[i].B = TemporaryRawData[i].B;
-			Output->RawData[i].A = TemporaryRawData[i].A;
-		}
-		TemporaryRawData.clear();
-
-		Output->AABB = PointCloudAABB;
-	}
-
-	Output->UserCallBack = Input->UserCallBack;
-	delete Input;
-}
-
-void FEResourceManager::LoadPointCloudFileAsyncCallBack(void* OutputData)
-{
-	FEPointCloud* LoadedPointCloud = nullptr;
-	auto* ResultInfo = reinterpret_cast<LoadPointCloudAsyncInfo*>(OutputData);
-
-	if (ResultInfo->bSuccess)
-	{
-		LoadedPointCloud = RESOURCE_MANAGER.RawDataToFEPointCloud(ResultInfo->RawData, FILE_SYSTEM.GetFileName(ResultInfo->FilePath), FEUUID(), false, false, nullptr);
-		if (LoadedPointCloud != nullptr)
-		{
-			RESOURCE_MANAGER.LastPointCloudAppliedShift = ResultInfo->AppliedShift;
-			LoadedPointCloud->AABB = ResultInfo->AABB;
-		}
-	}
-
-	if (ResultInfo->UserCallBack)
-		ResultInfo->UserCallBack(LoadedPointCloud);
-
-	delete ResultInfo;
-}
-
-void FEResourceManager::ImportLasOrLazPointCloudAsync(const std::string& FilePath, std::function<void(FEPointCloud*)> CallBack, bool bCenterPositions, std::function<void(std::vector<FEPointCloudVertexDouble>& RawData)> UserDataProcessor, laszip_header* OutHeaderCopy)
-{
-	FEPointCloud* LoadedPointCloud = nullptr;
-	if (FilePath.empty())
-	{
-		LOG.Add("FEResourceManager::ImportLasOrLazPointCloudAsync: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return;
-	}
-
-	if (!FILE_SYSTEM.DoesFileExist(FilePath))
-	{
-		LOG.Add("FEResourceManager::ImportLasOrLazPointCloudAsync: File does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return;
-	}
-
-	LoadPointCloudAsyncInfo* InputData = new LoadPointCloudAsyncInfo();
-	InputData->FilePath = FilePath;
-	InputData->UserCallBack = CallBack;
-	InputData->UserDataProcessor = UserDataProcessor;
-	InputData->bCenterPositions = bCenterPositions;
-	InputData->OutHeaderCopy = OutHeaderCopy;
-
-	LoadPointCloudAsyncInfo* OutputData = new LoadPointCloudAsyncInfo();
-	THREAD_POOL.Execute(LoadPointCloudFileAsync, InputData, OutputData, &LoadPointCloudFileAsyncCallBack);
 }
 
 FEObject* FEResourceManager::ImportPLYFile(const std::string& FilePath)
@@ -6169,59 +5979,6 @@ bool FEResourceManager::ExportFEPointCloudToPLY(FEPointCloud* PointCloudToExport
 	PointCloudData = PointCloudToExport->GetRawData();
 
 	return SaveRawDataToPLY(PointCloudData, FilePath);
-}
-
-bool FEResourceManager::SaveRawDataToLASOrLAZ(std::vector<FEPointCloudVertex>& RawData, const std::string& FilePath, bool bIsCompressed, double ScaleFactor)
-{
-	return LAS_LOADER.SaveRawDataToLASOrLAZ(RawData, FilePath, bIsCompressed, ScaleFactor);
-}
-
-bool FEResourceManager::ExportFEPointCloudToLAS(FEPointCloud* PointCloudToExport, const std::string& FilePath)
-{
-	if (PointCloudToExport == nullptr)
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAS: PointCloudToExport is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (FilePath.empty())
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAS: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (!LAS_LOADER.IsDLLPresent())
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAS: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	std::vector<FEPointCloudVertex> PointCloudData = PointCloudToExport->GetRawData();
-	return SaveRawDataToLASOrLAZ(PointCloudData, FilePath, false);
-}
-
-bool FEResourceManager::ExportFEPointCloudToLAZ(FEPointCloud* PointCloudToExport, const std::string& FilePath)
-{
-	if (PointCloudToExport == nullptr)
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAZ: PointCloudToExport is nullptr", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (FilePath.empty())
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAZ: FilePath is empty", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	if (!LAS_LOADER.IsDLLPresent())
-	{
-		LOG.Add("FEResourceManager::ExportFEPointCloudToLAZ: LAS/LAZ files are not enabled", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		return false;
-	}
-
-	std::vector<FEPointCloudVertex> PointCloudData = PointCloudToExport->GetRawData();
-	return SaveRawDataToLASOrLAZ(PointCloudData, FilePath, true);
 }
 
 std::variant<std::vector<glm::vec3>, std::vector<glm::dvec3>> FEResourceManager::ExtractPositionsFromPLYData(FERawPLYData* PLYData)
