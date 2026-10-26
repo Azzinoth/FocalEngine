@@ -94,6 +94,8 @@ namespace FocalEngine
 		void BeforeRender();
 		void AfterRender();
 
+		bool LoadEngineModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex);
+
 		bool GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface);
 		bool GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings);
 		bool GeneratePublicInterfaceFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory);

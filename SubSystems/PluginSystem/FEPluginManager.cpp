@@ -127,6 +127,21 @@ static std::vector<std::string> GetRequiredModuleFiles(const PluginManifest& Man
 	return Result;
 }
 
+static std::string GetModuleDisplayName(const std::vector<DiscoveredPlugin>& Plugins, const FEUUID& ModuleID)
+{
+	for (size_t i = 0; i < Plugins.size(); i++)
+	{
+		const PluginManifest& Manifest = Plugins[i].Manifest;
+		for (size_t j = 0; j < Manifest.Modules.size(); j++)
+		{
+			if (Manifest.Modules[j].ID == ModuleID)
+				return Manifest.Name + "/" + Manifest.Modules[j].Name;
+		}
+	}
+
+	return UNIQUE_ID.ToString(ModuleID);
+}
+
 FEPluginManager::FEPluginManager()
 {
 }
@@ -188,24 +203,76 @@ void FEPluginManager::Initialize()
 		DiscoveredPlugins.push_back(NewPlugin);
 	}
 
+	struct PendingModule
+	{
+		const DiscoveredPlugin* Plugin = nullptr;
+		size_t ModuleIndex = 0;
+	};
+
+	std::vector<PendingModule> PendingModules;
 	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
 	{
-		const PluginManifest& Manifest = DiscoveredPlugins[i].Manifest;
-		for (size_t j = 0; j < Manifest.Modules.size(); j++)
+		for (size_t j = 0; j < DiscoveredPlugins[i].Manifest.Modules.size(); j++)
 		{
-			if (Manifest.Modules[j].Type != "Engine")
-				continue;
-
-			FEPlugin Plugin;
-			if (!LoadPluginModule(DiscoveredPlugins[i], j, Plugin))
-				continue;
-
-			ActivePlugins.push_back(Plugin);
-			Plugin.Instance->OnLoad();
-			const std::string Source = Plugin.DLLPath.empty() ? std::string("is statically linked") : "loaded from \"" + Plugin.DLLPath + "\"";
-			LOG.Add("FEPluginManager::Initialize: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + ", module \"" + Manifest.Modules[j].Name + "\" " + Source, "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+			if (DiscoveredPlugins[i].Manifest.Modules[j].Type == "Engine")
+				PendingModules.push_back({ &DiscoveredPlugins[i], j });
 		}
 	}
+
+	// Engine modules could depend on engine modules of other plugins, so every pass loads modules whose dependencies are already loaded.
+	bool bAnyModuleProcessed = true;
+	while (bAnyModuleProcessed && !PendingModules.empty())
+	{
+		bAnyModuleProcessed = false;
+		for (int i = 0; i < static_cast<int>(PendingModules.size()); i++)
+		{
+			const PluginModule& Module = PendingModules[i].Plugin->Manifest.Modules[PendingModules[i].ModuleIndex];
+			bool bDependenciesLoaded = true;
+			for (size_t j = 0; j < Module.Dependencies.size(); j++)
+			{
+				if (!IsModuleLoaded(Module.Dependencies[j]))
+				{
+					bDependenciesLoaded = false;
+					break;
+				}
+			}
+
+			if (!bDependenciesLoaded)
+				continue;
+
+			LoadEngineModule(*PendingModules[i].Plugin, PendingModules[i].ModuleIndex);
+			PendingModules.erase(PendingModules.begin() + i, PendingModules.begin() + i + 1);
+			i--;
+			bAnyModuleProcessed = true;
+		}
+	}
+
+	for (size_t i = 0; i < PendingModules.size(); i++)
+	{
+		const PluginManifest& Manifest = PendingModules[i].Plugin->Manifest;
+		const PluginModule& Module = Manifest.Modules[PendingModules[i].ModuleIndex];
+		for (size_t j = 0; j < Module.Dependencies.size(); j++)
+		{
+			if (IsModuleLoaded(Module.Dependencies[j]))
+				continue;
+
+			LOG.Add("FEPluginManager::Initialize: Module \"" + Module.Name + "\" of plugin \"" + Manifest.Name + "\" is not loaded, because module \"" + GetModuleDisplayName(DiscoveredPlugins, Module.Dependencies[j]) + "\" that it depends on is not loaded", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+			break;
+		}
+	}
+}
+
+bool FEPluginManager::LoadEngineModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex)
+{
+	FEPlugin NewPlugin;
+	if (!LoadPluginModule(Plugin, ModuleIndex, NewPlugin))
+		return false;
+
+	ActivePlugins.push_back(NewPlugin);
+	NewPlugin.Instance->OnLoad();
+	const std::string Source = NewPlugin.DLLPath.empty() ? std::string("is statically linked") : "loaded from \"" + NewPlugin.DLLPath + "\"";
+	LOG.Add("FEPluginManager::LoadEngineModule: Plugin \"" + Plugin.Manifest.Name + "\" version " + Plugin.Manifest.Version + ", module \"" + Plugin.Manifest.Modules[ModuleIndex].Name + "\" " + Source, "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+	return true;
 }
 
 const std::vector<DiscoveredPlugin>& FEPluginManager::GetDiscoveredPlugins() const
