@@ -600,15 +600,16 @@ void FEPluginManager::Shutdown()
 	if (BeforeShutdownCallback)
 		BeforeShutdownCallback();
 
-	// Unload in reverse order of loading.
-	for (size_t i = ActivePlugins.size(); i > 0; i--)
+	// Unload in reverse order of loading, unloaded module is removed right away,
+	// because OnUnload of other modules could call GetPlugin or IsModuleLoaded.
+	while (!ActivePlugins.empty())
 	{
-		FEPlugin& Plugin = ActivePlugins[i - 1];
+		FEPlugin& Plugin = ActivePlugins.back();
 		Plugin.Instance->OnUnload();
 		UnloadPluginModule(Plugin);
+		ActivePlugins.pop_back();
 	}
 
-	ActivePlugins.clear();
 	ReportedScenes.clear();
 }
 
