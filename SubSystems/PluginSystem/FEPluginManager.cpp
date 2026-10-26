@@ -137,6 +137,15 @@ FEPluginManager::~FEPluginManager()
 
 void FEPluginManager::Initialize()
 {
+	if (!ActivePlugins.empty())
+	{
+		LOG.Add("FEPluginManager::Initialize: Plugins are already loaded, Shutdown should be called before Initialize", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		return;
+	}
+
+	// Otherwise plugins found by previous Initialize would be loaded again.
+	DiscoveredPlugins.clear();
+
 	const std::string PluginDirectoryPath = GetPluginDirectory();
 	if (!FILE_SYSTEM.DoesDirectoryExist(PluginDirectoryPath))
 	{
