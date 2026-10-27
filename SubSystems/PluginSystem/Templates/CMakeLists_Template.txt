@@ -207,9 +207,11 @@ function(fe_write_static_link_file)
     set(LinkLibraries "")
     set(LinkOptions "")
     foreach(Module ${StaticModules})
+        # Runtime of static library should match application, so Debug configuration links Debug library and any other configuration links Release library.
+        set(ModuleLibrary "\${CMAKE_CURRENT_LIST_DIR}/${Module}_$<IF:$<CONFIG:Debug>,Debug,Release>.lib")
         # Nothing references static registration of REGISTER_PLUGIN, so without /WHOLEARCHIVE linker would drop it.
-        list(APPEND LinkLibraries "\${CMAKE_CURRENT_LIST_DIR}/${Module}_Release.lib")
-        list(APPEND LinkOptions "/WHOLEARCHIVE:\${CMAKE_CURRENT_LIST_DIR}/${Module}_Release.lib")
+        list(APPEND LinkLibraries "${ModuleLibrary}")
+        list(APPEND LinkOptions "/WHOLEARCHIVE:${ModuleLibrary}")
     endforeach()
 
     foreach(Library ${STATIC_LINK_LIBRARIES})
