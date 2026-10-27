@@ -92,6 +92,18 @@ if(bFocalEngineLibrariesMissing)
     endforeach()
 endif()
 
+# Applications compare Build/EngineCommit.txt with commit of their engine, because plugin binaries depend on engine headers they were built with.
+find_package(Git QUIET)
+if(GIT_FOUND)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" -C "${FOCAL_ENGINE_DIRECTORY}" rev-parse HEAD OUTPUT_VARIABLE FocalEngineCommit OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE FocalEngineCommitResult ERROR_QUIET)
+    execute_process(COMMAND "${GIT_EXECUTABLE}" -C "${FOCAL_ENGINE_DIRECTORY}" rev-parse --absolute-git-dir OUTPUT_VARIABLE FocalEngineGitDirectory OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    if(FocalEngineCommitResult EQUAL 0 AND EXISTS "${FocalEngineGitDirectory}/HEAD")
+        file(WRITE "${CMAKE_CURRENT_SOURCE_DIR}/Build/EngineCommit.txt" "${FocalEngineCommit}")
+        # Submodule update changes HEAD, so configure runs again and file never has commit of older engine headers.
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${FocalEngineGitDirectory}/HEAD")
+    endif()
+endif()
+
 file(GLOB Connection_To_Engine_SRC
 	"SubSystems/FocalEngine/SubSystems/PluginSystem/FEPluginConnector.cpp"
     "SubSystems/FocalEngine/SubSystems/PluginSystem/FEPluginConnector.h"
