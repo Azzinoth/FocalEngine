@@ -583,6 +583,37 @@ if(NOT ENGINE_HEADERS_ONLY)
 	)
 endif()
 
+# Applications that link engine statically can not load plugin DLLs, so static libraries of installed plugins are linked through engine.
+if(NOT BUILD_SHARED_LIBS AND NOT FOCAL_ENGINE_ENABLE_TESTS)
+	file(GLOB StaticPluginLinkFiles CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/*/Static/*.cmake")
+	foreach(LinkFile ${StaticPluginLinkFiles})
+		get_filename_component(PluginName "${LinkFile}" NAME_WE)
+		get_filename_component(StaticFolder "${LinkFile}" DIRECTORY)
+		get_filename_component(PluginFolder "${StaticFolder}" DIRECTORY)
+		get_filename_component(PluginFolderName "${PluginFolder}" NAME)
+		string(SUBSTRING "${PluginFolderName}" 0 1 PluginFolderFirstCharacter)
+
+		# Folders starting with '.' are used by plugin manager for plugins that are not fully installed yet.
+		if(PluginFolderFirstCharacter STREQUAL ".")
+			continue()
+		endif()
+
+		if(NOT USE_STATIC_RUNTIME)
+			message(WARNING "Plugin ${PluginName} is not linked, its static libraries use static runtime, but engine uses dynamic runtime.")
+			continue()
+		endif()
+
+		include("${LinkFile}")
+		if(TARGET ${PluginName}::Static)
+			target_link_libraries(FocalEngine INTERFACE ${PluginName}::Static)
+			if(EXISTS "${PluginFolder}/Public")
+				target_include_directories(FocalEngine INTERFACE "${PluginFolder}/Public")
+			endif()
+			message(STATUS "Plugin ${PluginName} is linked statically")
+		endif()
+	endforeach()
+endif()
+
 if(FOCAL_ENGINE_ENABLE_TESTS)
 	source_group("Test Source Files" FILES ${TEST_SOURCE_FILES})
 endif()
