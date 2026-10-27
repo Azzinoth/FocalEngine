@@ -1,0 +1,35 @@
+# Copies Debug or Release folder content of plugins next to executable, when two plugins have entry with the same name only the first one is copied.
+# Expects PLUGIN_FOLDERS separated by '|', CONFIGURATION and DESTINATION_DIRECTORY to be passed with -D.
+cmake_minimum_required(VERSION 3.19)
+
+string(REPLACE "|" ";" PLUGIN_FOLDERS "${PLUGIN_FOLDERS}")
+set(CopiedNames "")
+set(CopiedNamesOwners "")
+foreach(PluginFolder ${PLUGIN_FOLDERS})
+	get_filename_component(PluginName "${PluginFolder}" NAME)
+	if(NOT IS_DIRECTORY "${PluginFolder}/${CONFIGURATION}")
+		message(WARNING "Plugin ${PluginName} has no ${CONFIGURATION} folder, nothing of it is copied next to executable")
+		continue()
+	endif()
+
+	file(GLOB Entries "${PluginFolder}/${CONFIGURATION}/*")
+	set(EntriesToCopy "")
+	foreach(Entry ${Entries})
+		get_filename_component(EntryName "${Entry}" NAME)
+		# File names on Windows are case insensitive.
+		string(TOLOWER "${EntryName}" LowerCaseEntryName)
+		list(FIND CopiedNames "${LowerCaseEntryName}" CopiedIndex)
+		if(CopiedIndex EQUAL -1)
+			list(APPEND CopiedNames "${LowerCaseEntryName}")
+			list(APPEND CopiedNamesOwners "${PluginName}")
+			list(APPEND EntriesToCopy "${Entry}")
+		else()
+			list(GET CopiedNamesOwners ${CopiedIndex} OwnerName)
+			message(WARNING "${EntryName} of plugin ${PluginName} is not copied next to executable, because plugin ${OwnerName} has ${EntryName} too")
+		endif()
+	endforeach()
+
+	if(EntriesToCopy)
+		file(COPY ${EntriesToCopy} DESTINATION "${DESTINATION_DIRECTORY}")
+	endif()
+endforeach()

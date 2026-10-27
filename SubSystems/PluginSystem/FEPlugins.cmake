@@ -96,3 +96,20 @@ function(fe_require_plugin PLUGIN_NAME)
 		message(WARNING "Plugin ${PLUGIN_NAME} ${PLUGIN_VERSION} was built with engine commit ${PluginEngineCommit}, but engine is at commit ${EngineCommit}, plugin could fail to link or crash. Use version of plugin that was built with this engine commit.")
 	endif()
 endfunction()
+
+# After each build copies Debug or Release folder of statically linked plugins that declared RUNTIME_NEXT_TO_EXECUTABLE next to executable.
+# Call it after engine is added, because plugins are linked when engine is added.
+# Usage: fe_copy_plugin_runtime(TargetName)
+function(fe_copy_plugin_runtime TARGET_NAME)
+	get_property(PluginFolders GLOBAL PROPERTY FE_RUNTIME_NEXT_TO_EXECUTABLE_PLUGIN_FOLDERS)
+	if(NOT PluginFolders)
+		return()
+	endif()
+
+	# ';' would split command argument.
+	string(REPLACE ";" "|" PluginFolders "${PluginFolders}")
+	add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+		COMMAND ${CMAKE_COMMAND} "-DPLUGIN_FOLDERS=${PluginFolders}" "-DCONFIGURATION=$<IF:$<CONFIG:Debug>,Debug,Release>" "-DDESTINATION_DIRECTORY=$<TARGET_FILE_DIR:${TARGET_NAME}>" -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/CopyPluginRuntime.cmake"
+		VERBATIM
+	)
+endfunction()

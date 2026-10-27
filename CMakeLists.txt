@@ -609,6 +609,12 @@ if(NOT BUILD_SHARED_LIBS AND NOT FOCAL_ENGINE_ENABLE_TESTS)
 			if(EXISTS "${PluginFolder}/Public")
 				target_include_directories(FocalEngine INTERFACE "${PluginFolder}/Public")
 			endif()
+
+			# Executable imports DLLs of such plugin, fe_copy_plugin_runtime copies them next to it.
+			get_target_property(RuntimeNextToExecutable ${PluginName}::Static FE_RUNTIME_NEXT_TO_EXECUTABLE)
+			if(RuntimeNextToExecutable)
+				set_property(GLOBAL APPEND PROPERTY FE_RUNTIME_NEXT_TO_EXECUTABLE_PLUGIN_FOLDERS "${PluginFolder}")
+			endif()
 			message(STATUS "Plugin ${PluginName} is linked statically")
 		endif()
 	endforeach()
