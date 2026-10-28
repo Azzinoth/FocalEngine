@@ -1160,6 +1160,10 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		FE_GL_ERROR(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 	}
 
+	// Clearing motion vector buffer with black color.
+	const float ZeroMotionVector[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	FE_GL_ERROR(glClearBufferfv(GL_COLOR, 6, ZeroMotionVector));
+
 	UpdateGPUCullingFrustum(MainCameraEntity);
 
 	for (entt::entity EnTTEntity : GameModelGroup)
