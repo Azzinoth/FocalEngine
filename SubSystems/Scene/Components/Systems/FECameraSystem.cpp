@@ -231,6 +231,9 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 	FETransformComponent& TransformComponent = CameraEntity->GetComponent<FETransformComponent>();
 	FECameraComponent& CameraComponent = CameraEntity->GetComponent<FECameraComponent>();
 
+	// Saved before view matrix is updated, otherwise camera without script would have no motion. Script updates view matrix later in the frame.
+	CameraComponent.PreviousFrameViewMatrix = CameraComponent.ViewMatrix;
+
 	// If no script is attached, we will use default camera view matrix update.
 	if (!CameraEntity->HasComponent<FENativeScriptComponent>())
 		CameraComponent.ViewMatrix = glm::inverse(TransformComponent.GetWorldMatrix());
@@ -246,8 +249,6 @@ void FECameraSystem::IndividualUpdate(FEEntity* CameraEntity, const double Delta
 												          -2.0f * CameraComponent.GetTemporalJitterOffset().y / CameraComponent.GetRenderTargetHeight(), 0.0f));
 		CameraComponent.ProjectionMatrix = JitterMatrix * CameraComponent.ProjectionMatrix;
 	}
-
-	CameraComponent.PreviousFrameViewMatrix = CameraComponent.ViewMatrix;
 }
 
 bool FECameraSystem::SetCameraViewport(FEEntity* CameraEntity, FEUUID ViewportID)
