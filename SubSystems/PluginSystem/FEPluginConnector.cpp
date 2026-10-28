@@ -1,7 +1,7 @@
 // DO NOT CHANGE THIS FILE.
 #include "FEPluginConnector.h"
 
-// Statically linked plugin is compiled together with the engine, so it does not need these checks, and exports of several plugins would conflict in one executable.
+// Statically linked plugin passes its interface version through REGISTER_PLUGIN instead, and exports of several plugins would conflict in one executable.
 #ifdef FOCAL_ENGINE_SHARED
 #include "Core/VersionInfo/FOCAL_ENGINE_Version.h"
 

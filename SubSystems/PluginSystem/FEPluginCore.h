@@ -4,7 +4,15 @@
 namespace FocalEngine
 {
 	class FEScene;
+	class FEEntity;
 	enum class FESceneFlag : uint32_t;
+
+	// Points in rendering of one camera where plugins are called, only Deferred rendering pipeline has them.
+	enum class FECameraRenderStage
+	{
+		BeforePostProcess,
+		AfterPostProcess
+	};
 
 	class FEPluginCore
 	{
@@ -15,10 +23,11 @@ namespace FocalEngine
 	public:
 		// Increase whenever layout of FEPluginCore (virtual functions or data members) or functions exported by FEPluginConnector change.
 		// Plugin manager refuses to load plugins compiled with different version.
-		static constexpr int InterfaceVersion = 2;
+		static constexpr int InterfaceVersion = 3;
 
 		virtual ~FEPluginCore() = default;
-		virtual void OnLoad() {}
+		// Returning false unloads plugin right away without OnUnload, so plugin should release what it created before returning.
+		virtual bool OnLoad() { return true; }
 		// Plugin must remove everything it registered with the engine, its DLL is unloaded right after.
 		virtual void OnUnload() {}
 		// Called once per frame, before native scripts and transform update.
@@ -39,6 +48,9 @@ namespace FocalEngine
 		// Called right before scene is deleted, scene and its entities are still valid.
 		// Plugin should release everything related to that scene, including pointers to the scene and its entities.
 		virtual void OnSceneDeleting(FEScene* Scene) {}
+
+		// Called at every stage of every render of a camera, except during internal frame of FEngine::RenderTo.
+		virtual void OnCameraRenderStage(FECameraRenderStage Stage, FEEntity* CameraEntity) {}
 
 		// Absolute path of the folder that plugin was loaded from, ends with "/".
 		const std::string& GetPluginDirectory() const { return PluginDirectory; }

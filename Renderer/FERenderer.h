@@ -65,6 +65,9 @@ namespace FocalEngine
 		FETexture* FinalScene = nullptr;
 		bool bTemporaryForceHDROutput = false;
 
+		// Plugin could set it at FECameraRenderStage::BeforePostProcess.
+		FETexture* PostProcessInput = nullptr;
+
 		// Scratch scene color copy for read-while-write passes (Translucent/Additive, Volumetric) to avoid sampling their own render target.
 		FETexture* SceneColorScratchTexture = nullptr;
 		FETexture* CurrentSceneColorSourceTexture = nullptr;

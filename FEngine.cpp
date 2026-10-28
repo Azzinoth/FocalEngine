@@ -157,12 +157,19 @@ void FEngine::Render(const bool bInternalCall)
 	if (!bInternalCall)
 		PLUGIN_MANAGER.BeforeRender();
 
+	// Internal frame could start while plugins are already skipped, so previous value is restored instead of being cleared.
+	const bool bWasInternalFrame = PLUGIN_MANAGER.bInternalFrame;
+	if (bInternalCall)
+		PLUGIN_MANAGER.bInternalFrame = true;
+
 	std::vector<FEScene*> ActiveScenes = SCENE_MANAGER.GetScenesByFlagMask(FESceneFlag::Active | FESceneFlag::Renderable);
 	for (size_t i = 0; i < ActiveScenes.size(); i++)
 		RENDERER.Render(ActiveScenes[i]);
 
 	if (bVRActive)
 		OpenXR_MANAGER.Update();
+
+	PLUGIN_MANAGER.bInternalFrame = bWasInternalFrame;
 
 	if (!bInternalCall)
 		PLUGIN_MANAGER.AfterRender();

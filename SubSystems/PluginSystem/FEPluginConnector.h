@@ -16,11 +16,13 @@ using namespace FocalEngine;
 			delete Plugin;                                                            \
 		}
 #else
+	// Version is the one plugin library was compiled with, plugin manager compares it with its own.
 	#define REGISTER_PLUGIN(PluginClass)                                              \
 		namespace {                                                                   \
 			struct Register##PluginClass {                                            \
 				Register##PluginClass() {                                             \
 					FEPluginManager::RegisterStaticPluginModule(#PluginClass,          \
+						FEPluginCore::InterfaceVersion,                               \
 						[]() -> FEPluginCore* { return new PluginClass(); },          \
 						[](FEPluginCore* Plugin) { delete Plugin; });                 \
 				}                                                                     \

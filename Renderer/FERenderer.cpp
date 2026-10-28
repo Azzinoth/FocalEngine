@@ -1502,19 +1502,17 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	}
 
 	// ********* VOLUMETRIC PASS END *********
-	
-	// ********* Upscale rendering result if needed *************
 
-	// Nothing here for now.
-
-	// ********* Upscale rendering result if needed END *********
+	// Plugins could replace image that post-processing starts from.
+	PLUGIN_MANAGER.CameraRenderStage(FECameraRenderStage::BeforePostProcess, MainCameraEntity);
+	FETexture* PostProcessInput = CurrentCameraRenderingData->PostProcessInput != nullptr ? CurrentCameraRenderingData->PostProcessInput : CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
 
 	// ********* POST_PROCESS EFFECTS *********
 	// Because we render post process effects with screen quad
 	// we will turn off write to depth buffer in order to get clear DB to be able to render additional objects
 	glDepthMask(GL_FALSE);
 
-	FETexture* PreviousStageTexture = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+	FETexture* PreviousStageTexture = PostProcessInput;
 
 	// FE_FIX_ME: Temporary hack to force HDR output.
 	if (CurrentCameraRenderingData->bTemporaryForceHDROutput)
@@ -1544,7 +1542,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 				}
 				else if (Effect.Stages[j]->InTextureSource[k] == FE_POST_PROCESS_SCENE_HDR_COLOR)
 				{
-					Effect.Stages[j]->InTexture[k] = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
+					Effect.Stages[j]->InTexture[k] = PostProcessInput;
 					Effect.Stages[j]->InTexture[k]->Bind(static_cast<int>(k));
 				}
 				else if (Effect.Stages[j]->InTextureSource[k] == FE_POST_PROCESS_SCENE_DEPTH)
@@ -1602,8 +1600,11 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		}
 	}
 
+	CurrentCameraRenderingData->PostProcessInput = nullptr;
 	glDepthMask(GL_TRUE);
 	// ********* SCREEN SPACE EFFECTS END *********
+
+	PLUGIN_MANAGER.CameraRenderStage(FECameraRenderStage::AfterPostProcess, MainCameraEntity);
 
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI *********
 	FETexture* OriginalColorAttachment = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();

@@ -72,6 +72,7 @@ namespace FocalEngine
 	{
 		friend class FEngine;
 		friend class FESceneManager;
+		friend class FERenderer;
 
 		SINGLETON_PRIVATE_PART(FEPluginManager)
 
@@ -93,6 +94,10 @@ namespace FocalEngine
 		void Update(double DeltaTime);
 		void BeforeRender();
 		void AfterRender();
+
+		// Set by FEngine while it renders internal frame of RenderTo, plugins are not called for its cameras.
+		bool bInternalFrame = false;
+		void CameraRenderStage(FECameraRenderStage Stage, FEEntity* CameraEntity);
 
 		bool LoadEngineModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex);
 
@@ -117,7 +122,7 @@ namespace FocalEngine
 		using CreatePluginFunction = FEPluginCore* (*)();
 		using DestroyPluginFunction = void (*)(FEPluginCore*);
 		// Called by REGISTER_PLUGIN when plugin is linked into application statically, LoadPluginModule then uses it instead of DLL.
-		static void RegisterStaticPluginModule(const std::string& ModuleName, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction);
+		static void RegisterStaticPluginModule(const std::string& ModuleName, int PluginInterfaceVersion, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction);
 
 		bool IsValidManifest(const std::string& ManifestPath);
 		bool ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest);
@@ -167,6 +172,7 @@ namespace FocalEngine
 	private:
 		struct StaticPluginModule
 		{
+			int PluginInterfaceVersion = 0;
 			CreatePluginFunction CreateFunction = nullptr;
 			DestroyPluginFunction DestroyFunction = nullptr;
 		};

@@ -269,7 +269,14 @@ bool FEPluginManager::LoadEngineModule(const DiscoveredPlugin& Plugin, size_t Mo
 		return false;
 
 	ActivePlugins.push_back(NewPlugin);
-	NewPlugin.Instance->OnLoad();
+	if (!NewPlugin.Instance->OnLoad())
+	{
+		LOG.Add("FEPluginManager::LoadEngineModule: Plugin \"" + Plugin.Manifest.Name + "\", module \"" + Plugin.Manifest.Modules[ModuleIndex].Name + "\" is unloaded, because its OnLoad returned false", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		UnloadPluginModule(ActivePlugins.back());
+		ActivePlugins.pop_back();
+		return false;
+	}
+
 	const std::string Source = NewPlugin.DLLPath.empty() ? std::string("is statically linked") : "loaded from \"" + NewPlugin.DLLPath + "\"";
 	LOG.Add("FEPluginManager::LoadEngineModule: Plugin \"" + Plugin.Manifest.Name + "\" version " + Plugin.Manifest.Version + ", module \"" + Plugin.Manifest.Modules[ModuleIndex].Name + "\" " + Source, "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 	return true;
@@ -293,9 +300,10 @@ std::string FEPluginManager::GetPluginDirectory() const
 	return PluginDirectory;
 }
 
-void FEPluginManager::RegisterStaticPluginModule(const std::string& ModuleName, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction)
+void FEPluginManager::RegisterStaticPluginModule(const std::string& ModuleName, int PluginInterfaceVersion, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction)
 {
 	StaticPluginModule& Module = GetStaticPluginModules()[ModuleName];
+	Module.PluginInterfaceVersion = PluginInterfaceVersion;
 	Module.CreateFunction = CreateFunction;
 	Module.DestroyFunction = DestroyFunction;
 }
@@ -330,11 +338,18 @@ bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t Mo
 		return false;
 	}
 
-	// Statically linked module is compiled together with the engine, so there is no DLL to load and no compatibility to check.
+	// Statically linked module has no DLL to load, but its library could be compiled with headers of other engine version.
 	const std::unordered_map<std::string, StaticPluginModule>& StaticModules = GetStaticPluginModules();
 	const auto StaticModuleIterator = StaticModules.find(Plugin.Manifest.Modules[ModuleIndex].Name);
 	if (StaticModuleIterator != StaticModules.end())
 	{
+		if (StaticModuleIterator->second.PluginInterfaceVersion != FEPluginCore::InterfaceVersion)
+		{
+			LOG.Add("FEPluginManager::LoadPluginModule: Statically linked module \"" + ModuleToLoad.Name + "\" of plugin \"" + Plugin.Manifest.Name + "\" was compiled with plugin interface version " + std::to_string(StaticModuleIterator->second.PluginInterfaceVersion) +
+					", while engine uses version " + std::to_string(FEPluginCore::InterfaceVersion) + ", plugin should be rebuilt with current engine", "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
 		OutPlugin.Manifest = new PluginManifest(Plugin.Manifest);
 		OutPlugin.Module = &OutPlugin.Manifest->Modules[ModuleIndex];
 		OutPlugin.Instance = StaticModuleIterator->second.CreateFunction();
@@ -546,6 +561,15 @@ void FEPluginManager::AfterRender()
 {
 	for (size_t i = 0; i < ActivePlugins.size(); i++)
 		ActivePlugins[i].Instance->OnAfterRender();
+}
+
+void FEPluginManager::CameraRenderStage(FECameraRenderStage Stage, FEEntity* CameraEntity)
+{
+	if (bInternalFrame)
+		return;
+
+	for (size_t i = 0; i < ActivePlugins.size(); i++)
+		ActivePlugins[i].Instance->OnCameraRenderStage(Stage, CameraEntity);
 }
 
 void FEPluginManager::CheckScenesForModification()
@@ -1153,7 +1177,7 @@ bool FEPluginManager::GeneratePluginSourceFilesFromTemplate(const std::string& P
 	CurrentInstruction.ReplacementText = PluginName;
 	Instructions.push_back(CurrentInstruction);
 
-	CurrentInstruction.ContextPattern = "void PLACE_HOLDER::OnLoad()";
+	CurrentInstruction.ContextPattern = "bool PLACE_HOLDER::OnLoad()";
 	CurrentInstruction.TargetText = "PLACE_HOLDER";
 	CurrentInstruction.ReplacementText = PluginName;
 	Instructions.push_back(CurrentInstruction);

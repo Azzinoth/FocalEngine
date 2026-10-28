@@ -4,9 +4,9 @@
 // The plugin manager uses it to create and destroy the plugin instance.
 REGISTER_PLUGIN(PLACE_HOLDER)
 
-void PLACE_HOLDER::OnLoad()
+bool PLACE_HOLDER::OnLoad()
 {
-
+	return true;
 }
 
 void PLACE_HOLDER::OnUnload()
