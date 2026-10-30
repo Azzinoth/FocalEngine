@@ -87,9 +87,8 @@ namespace FocalEngine
 		void SceneDeleting(FEScene* Scene);
 
 		// Plugin projects include engine as git submodule.
-		// TO-DO: Plugins should target stable engine version, plugins branch is used while plugin system is in development.
 		std::string EngineRepositoryURL = "https://github.com/Azzinoth/FocalEngine";
-		std::string EngineRepositoryBranch = "plugins";
+		std::string EngineRepositoryBranch = "master";
 
 		void Update(double DeltaTime);
 		void BeforeRender();
