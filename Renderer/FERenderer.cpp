@@ -1460,6 +1460,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		if (!Entity->IsVisible())
 			continue;
 
+		if (!Entity->IsComponentVisible(ComponentVisibilityType::VOLUME))
+			continue;
+
 		if (VolumeComponent.VolumeMaterial == nullptr)
 			continue;
 
