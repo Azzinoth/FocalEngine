@@ -148,7 +148,17 @@ namespace FocalEngine
 		bool IsOcclusionCullingEnabled();
 		void SetOcclusionCullingEnabled(bool NewValue);
 
-		void UpdateSSAO(FEEntity* Camera);
+		bool IsSSAOForceDisabled();
+		void SetSSAOForceDisabled(bool NewValue);
+
+		bool IsChromaticAberrationForceDisabled();
+		void SetChromaticAberrationForceDisabled(bool NewValue);
+
+		bool IsDOFForceDisabled();
+		void SetDOFForceDisabled(bool NewValue);
+
+		bool IsBloomForceDisabled();
+		void SetBloomForceDisabled(bool NewValue);
 
 		std::unordered_map<std::string, std::function<FETexture* ()>> GetDebugOutputTextures();
 		void SimplifiedRender(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
@@ -191,6 +201,13 @@ namespace FocalEngine
 		SINGLETON_PRIVATE_PART(FERenderer)
 
 		void RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData);
+
+		bool bForceDisableSSAO = false;
+		bool bForceDisableChromaticAberration = false;
+		bool bForceDisableDOF = false;
+		bool bForceDisableBloom = false;
+
+		void UpdateSSAO(FEEntity* Camera);
 
 		void LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, bool bReceivingShadows = false, const bool IsUniformLighting = false);
 		void LoadStandardUniforms(FEShader* Shader, bool bReceivingShadows, FEEntity* Camera, const bool bUniformLighting = false);

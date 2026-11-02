@@ -1339,7 +1339,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	CurrentCameraRenderingData->GBuffer->ShaderProperties->Bind(4);
 
 	// ************************************ SSAO ************************************
-	UpdateSSAO(MainCameraEntity);
+	if (!bForceDisableSSAO)
+		UpdateSSAO(MainCameraEntity);
 	// ************************************ SSAO END ************************************
 
 	// ************************************ COPYING DEPTH BUFFER ************************************
@@ -1367,7 +1368,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 	FEShader* FinalSceneShader = RESOURCE_MANAGER.GetShader(FEEngineResourceIDs::PBRShader);
 	FinalSceneShader->Start();
-	FinalSceneShader->UpdateUniformData("SSAOActive", CurrentCameraComponent.IsSSAOEnabled() ? 1.0f : 0.0f);
+	FinalSceneShader->UpdateUniformData("SSAOActive", (!bForceDisableSSAO && CurrentCameraComponent.IsSSAOEnabled()) ? 1.0f : 0.0f);
 	LoadStandardUniforms(FinalSceneShader, true, MainCameraEntity);
 	FinalSceneShader->LoadUniformsDataToGPU();
 
@@ -1527,6 +1528,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	for (size_t i = 0; i < CurrentCameraRenderingData->PostProcessEffects.size(); i++)
 	{
 		FEPostProcess& Effect = *CurrentCameraRenderingData->PostProcessEffects[i];
+		if (!Effect.bActive)
+			continue;
+
 		for (size_t j = 0; j < Effect.Stages.size(); j++)
 		{
 			Effect.Stages[j]->Shader->Start();
@@ -2205,6 +2209,9 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 
 	CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
 	CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
+
+	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
+	CameraData->PostProcessEffects[0]->bActive = !bForceDisableBloom;
 	// **************************** Bloom END ****************************
 
 	// **************************** FXAA ********************************
@@ -2232,10 +2239,15 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 
 	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
 	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
+
+	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
+	CameraData->PostProcessEffects[3]->bActive = !bForceDisableDOF;
 	// **************************** Depth of Field END ****************************
 
 	// **************************** Chromatic Aberration ********************************
 	CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateUniformData("intensity", CameraComponent.GetChromaticAberrationIntensity());
+	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
+	CameraData->PostProcessEffects[4]->bActive = !bForceDisableChromaticAberration;
 	// **************************** Chromatic Aberration END ****************************
 
 	// **************************** Distance Fog ********************************
@@ -2376,6 +2388,46 @@ bool FERenderer::IsOcclusionCullingEnabled()
 void FERenderer::SetOcclusionCullingEnabled(const bool NewValue)
 {
 	bUseOcclusionCulling = NewValue;
+}
+
+bool FERenderer::IsSSAOForceDisabled()
+{
+	return bForceDisableSSAO;
+}
+
+void FERenderer::SetSSAOForceDisabled(const bool NewValue)
+{
+	bForceDisableSSAO = NewValue;
+}
+
+bool FERenderer::IsChromaticAberrationForceDisabled()
+{
+	return bForceDisableChromaticAberration;
+}
+
+void FERenderer::SetChromaticAberrationForceDisabled(const bool NewValue)
+{
+	bForceDisableChromaticAberration = NewValue;
+}
+
+bool FERenderer::IsDOFForceDisabled()
+{
+	return bForceDisableDOF;
+}
+
+void FERenderer::SetDOFForceDisabled(const bool NewValue)
+{
+	bForceDisableDOF = NewValue;
+}
+
+bool FERenderer::IsBloomForceDisabled()
+{
+	return bForceDisableBloom;
+}
+
+void FERenderer::SetBloomForceDisabled(const bool NewValue)
+{
+	bForceDisableBloom = NewValue;
 }
 
 void FERenderer::UpdateSSAO(FEEntity* Camera)
