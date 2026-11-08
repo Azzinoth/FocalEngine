@@ -76,7 +76,7 @@ namespace FocalEngine
 		std::vector<std::string> GetTextureList();
 		std::vector<std::string> GetTextureNameList();
 
-		bool HasUniform(std::string UniformName);
+		bool HasUniform(const std::string& UniformName);
 		bool GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue);
 		template<typename T>
 		bool UpdateUniformData(std::string UniformName, const T& Data);

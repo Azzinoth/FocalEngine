@@ -1034,7 +1034,7 @@ FEShaderUniform* FEShader::GetUniform(const std::string Name)
 	return &Uniforms[Name];
 }
 
-bool FEShader::HasUniform(std::string UniformName)
+bool FEShader::HasUniform(const std::string& UniformName)
 {
 	return Uniforms.find(UniformName) != Uniforms.end();
 }

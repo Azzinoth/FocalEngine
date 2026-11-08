@@ -218,79 +218,79 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 		FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
 		FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
-		if (Shader->GetUniform("FEViewMatrix") != nullptr)
+		if (Shader->HasUniform("FEViewMatrix"))
 			Shader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
-		if (Shader->GetUniform("FEProjectionMatrix") != nullptr)
+		if (Shader->HasUniform("FEProjectionMatrix"))
 			Shader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
-		if (Shader->GetUniform("FEPreviousFrameViewMatrix") != nullptr)
+		if (Shader->HasUniform("FEPreviousFrameViewMatrix"))
 			Shader->UpdateUniformData("FEPreviousFrameViewMatrix", CurrentCameraComponent.PreviousFrameViewMatrix);
 
-		if (Shader->GetUniform("ScreenSize") != nullptr)
+		if (Shader->HasUniform("ScreenSize"))
 			Shader->UpdateUniformData("ScreenSize", glm::vec2(CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
 
-		if (Shader->GetUniform("FEPVMMatrix") != nullptr)
+		if (Shader->HasUniform("FEPVMMatrix"))
 			Shader->UpdateUniformData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
 
-		if (Shader->GetUniform("FECameraPosition") != nullptr)
+		if (Shader->HasUniform("FECameraPosition"))
 			Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-		if (Shader->GetUniform("FECameraDirection") != nullptr)
+		if (Shader->HasUniform("FECameraDirection"))
 			Shader->UpdateUniformData("FECameraDirection", CurrentCameraComponent.GetForward());
 
-		if (Shader->GetUniform("FEGamma") != nullptr)
+		if (Shader->HasUniform("FEGamma"))
 			Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());
 
-		if (Shader->GetUniform("FEExposure") != nullptr)
+		if (Shader->HasUniform("FEExposure"))
 			Shader->UpdateUniformData("FEExposure", CurrentCameraComponent.GetExposure());
 	}
 	
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
-	if (Shader->GetUniform("textureBindings") != nullptr)
+	if (Shader->HasUniform("textureBindings"))
 		Shader->GetUniform("textureBindings")->SetValue<std::vector<int>>(Material->TextureBindings);
 
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
-	if (Shader->GetUniform("textureChannels") != nullptr)
+	if (Shader->HasUniform("textureChannels"))
 		Shader->GetUniform("textureChannels")->SetValue<std::vector<int>>(Material->TextureChannels);
 
-	if (Shader->GetUniform("FEWorldMatrix") != nullptr)
+	if (Shader->HasUniform("FEWorldMatrix"))
 		Shader->UpdateUniformData("FEWorldMatrix", Transform->GetWorldMatrix());
 
-	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
+	if (Shader->HasUniform("FEReceiveShadows"))
 		Shader->UpdateUniformData("FEReceiveShadows", bReceivingShadows);
 
-	if (Shader->GetUniform("FEUniformLighting") != nullptr)
+	if (Shader->HasUniform("FEUniformLighting"))
 		Shader->UpdateUniformData("FEUniformLighting", IsUniformLighting);
 
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Material != nullptr)
 	{
-		if (Shader->GetUniform("FEAOIntensity") != nullptr)
+		if (Shader->HasUniform("FEAOIntensity"))
 			Shader->UpdateUniformData("FEAOIntensity", Material->GetAmbientOcclusionIntensity());
 
-		if (Shader->GetUniform("FEAOMapIntensity") != nullptr)
+		if (Shader->HasUniform("FEAOMapIntensity"))
 			Shader->UpdateUniformData("FEAOMapIntensity", Material->GetAmbientOcclusionMapIntensity());
 
-		if (Shader->GetUniform("FENormalMapIntensity") != nullptr)
+		if (Shader->HasUniform("FENormalMapIntensity"))
 			Shader->UpdateUniformData("FENormalMapIntensity", Material->GetNormalMapIntensity());
 
-		if (Shader->GetUniform("FERoughness") != nullptr)
+		if (Shader->HasUniform("FERoughness"))
 			Shader->UpdateUniformData("FERoughness", Material->Roughness);
 
-		if (Shader->GetUniform("FERoughnessMapIntensity") != nullptr)
+		if (Shader->HasUniform("FERoughnessMapIntensity"))
 			Shader->UpdateUniformData("FERoughnessMapIntensity", Material->GetRoughnessMapIntensity());
 
-		if (Shader->GetUniform("FEMetalness") != nullptr)
+		if (Shader->HasUniform("FEMetalness"))
 			Shader->UpdateUniformData("FEMetalness", Material->Metalness);
 
-		if (Shader->GetUniform("FEMetalnessMapIntensity") != nullptr)
+		if (Shader->HasUniform("FEMetalnessMapIntensity"))
 			Shader->UpdateUniformData("FEMetalnessMapIntensity", Material->GetMetalnessMapIntensity());
 
-		if (Shader->GetUniform("FETiling") != nullptr)
+		if (Shader->HasUniform("FETiling"))
 			Shader->UpdateUniformData("FETiling", Material->GetTiling());
 
-		if (Shader->GetUniform("compactMaterialPacking") != nullptr)
+		if (Shader->HasUniform("compactMaterialPacking"))
 			Shader->UpdateUniformData("compactMaterialPacking", Material->IsCompactPacking());
 	}
 }
@@ -302,29 +302,29 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool bReceivingSha
 		FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
 		FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
-		if (Shader->GetUniform("FEViewMatrix") != nullptr)
+		if (Shader->HasUniform("FEViewMatrix"))
 			Shader->UpdateUniformData("FEViewMatrix", CurrentCameraComponent.GetViewMatrix());
 
-		if (Shader->GetUniform("FEProjectionMatrix") != nullptr)
+		if (Shader->HasUniform("FEProjectionMatrix"))
 			Shader->UpdateUniformData("FEProjectionMatrix", CurrentCameraComponent.GetProjectionMatrix());
 
-		if (Shader->GetUniform("FECameraPosition") != nullptr)
+		if (Shader->HasUniform("FECameraPosition"))
 			Shader->UpdateUniformData("FECameraPosition", CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-		if (Shader->GetUniform("FECameraDirection") != nullptr)
+		if (Shader->HasUniform("FECameraDirection"))
 			Shader->UpdateUniformData("FECameraDirection", CurrentCameraComponent.GetForward());
 
-		if (Shader->GetUniform("FEGamma") != nullptr)
+		if (Shader->HasUniform("FEGamma"))
 			Shader->UpdateUniformData("FEGamma", CurrentCameraComponent.GetGamma());
 
-		if (Shader->GetUniform("FEExposure") != nullptr)
+		if (Shader->HasUniform("FEExposure"))
 			Shader->UpdateUniformData("FEExposure", CurrentCameraComponent.GetExposure());
 	}
 
-	if (Shader->GetUniform("FEReceiveShadows") != nullptr)
+	if (Shader->HasUniform("FEReceiveShadows"))
 		Shader->UpdateUniformData("FEReceiveShadows", bReceivingShadows);
 
-	if (Shader->GetUniform("FEUniformLighting") != nullptr)
+	if (Shader->HasUniform("FEUniformLighting"))
 		Shader->UpdateUniformData("FEUniformLighting", bUniformLighting);
 }
 
@@ -2054,7 +2054,7 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, TerrainComponent.GPULayersDataBuffer));
 
 	// Shadow map shader does not have this parameter.
-	if (TerrainComponent.Shader->GetUniform("usedLayersCount") != nullptr)
+	if (TerrainComponent.Shader->HasUniform("usedLayersCount"))
 		TerrainComponent.Shader->UpdateUniformData("usedLayersCount", static_cast<float>(LayersUsed));
 	// ************ Load materials data for all Terrain layers END ************
 
@@ -2091,13 +2091,13 @@ void FERenderer::RenderTerrainComponent(FEEntity* TerrainEntity, FEEntity* Camer
 			FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
 			TerrainComponent.Shader->UpdateUniformData("FEPVMMatrix", CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * TransformComponent.GetWorldMatrix());
-			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
+			if (TerrainComponent.Shader->HasUniform("FEWorldMatrix"))
 				TerrainComponent.Shader->UpdateUniformData("FEWorldMatrix", TransformComponent.GetWorldMatrix());
 			TerrainComponent.Shader->UpdateUniformData("HeightMapShift", glm::vec2(i * -1.0f, j * -1.0f));
 
 			TerrainComponent.Shader->LoadUniformDataToGPU("FEPVMMatrix");
 
-			if (TerrainComponent.Shader->GetUniform("FEWorldMatrix") != nullptr)
+			if (TerrainComponent.Shader->HasUniform("FEWorldMatrix"))
 				TerrainComponent.Shader->LoadUniformDataToGPU("FEWorldMatrix");
 
 			TerrainComponent.Shader->LoadUniformDataToGPU("HeightMapShift");
@@ -2469,9 +2469,9 @@ void FERenderer::UpdateSSAO(FEEntity* Camera)
 		// First blur stage
 		FEShader* BlurShader = RESOURCE_MANAGER.GetShader(FEEngineResourceIDs::SSAOBlurShader);
 		BlurShader->Start();
-		if (BlurShader->GetUniform("FEBlurDirection"))
+		if (BlurShader->HasUniform("FEBlurDirection"))
 			BlurShader->UpdateUniformData("FEBlurDirection", glm::vec2(0.0f, 1.0f));
-		if (BlurShader->GetUniform("BlurRadius"))
+		if (BlurShader->HasUniform("BlurRadius"))
 			BlurShader->UpdateUniformData("BlurRadius", 1.3f);
 
 		BlurShader->LoadUniformsDataToGPU();
@@ -2486,9 +2486,9 @@ void FERenderer::UpdateSSAO(FEEntity* Camera)
 		FE_GL_ERROR(glBindVertexArray(0));
 
 		// Second blur stage
-		if (BlurShader->GetUniform("FEBlurDirection"))
+		if (BlurShader->HasUniform("FEBlurDirection"))
 			BlurShader->UpdateUniformData("FEBlurDirection", glm::vec2(1.0f, 0.0f));
-		if (BlurShader->GetUniform("BlurRadius"))
+		if (BlurShader->HasUniform("BlurRadius"))
 			BlurShader->UpdateUniformData("BlurRadius", 1.3f);
 
 		BlurShader->LoadUniformsDataToGPU();
