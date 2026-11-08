@@ -114,29 +114,20 @@ bool FEEntity::IsVisible()
 	FENaiveSceneGraphNode* ThisNode = ParentScene->SceneGraph.GetNodeByEntityID(GetID());
 	if (ThisNode != nullptr)
 	{
-		// Check all parent nodes for visibility, if any of them is invisible, the entity is invisible
-		FENaiveSceneGraphNode* ParentNode = ThisNode->GetParent();
-		if (ParentNode != nullptr)
+		for (FENaiveSceneGraphNode* Node = ThisNode; Node != nullptr && Node->GetEntity() != nullptr; Node = Node->GetParent())
 		{
-			while (ParentNode != nullptr)
-			{
-				FEEntity* NodeEntity = ParentNode->GetEntity();
-				if (NodeEntity == nullptr)
-					break;
-
-				if (!NodeEntity->IsVisible())
-					return false;
-
-				ParentNode = ParentNode->GetParent();
-			}
+			FEEntity* NodeEntity = Node->GetEntity();
+			if (NodeEntity->HasComponent<FEVisibilityComponent>() &&
+				!NodeEntity->GetComponent<FEVisibilityComponent>().IsVisible())
+				return false;
 		}
-	}
+		return true;
 
+	}
 	if (!HasComponent<FEVisibilityComponent>())
 		return true;
 
-	FEVisibilityComponent& VisibilityComponent = GetComponent<FEVisibilityComponent>();
-	return VisibilityComponent.IsVisible();
+	return GetComponent<FEVisibilityComponent>().IsVisible();
 }
 
 void FEEntity::SetVisible(bool bNewValue)
