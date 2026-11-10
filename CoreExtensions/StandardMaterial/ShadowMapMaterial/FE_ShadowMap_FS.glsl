@@ -12,11 +12,15 @@ vec4 getAlbedo()
 	vec4 result = vec4(0);
 	if (materialIndex == 0.0)
 	{
-		result = texture(textures[textureBindings[0]], UV);
+		result = vec4(1.0);
+		if (textureBindings[0] != -1)
+			result = texture(textures[textureBindings[0]], UV);
 	}
 	else if (materialIndex == 1.0)
 	{
-		result = texture(textures[textureBindings[6]], UV);
+		result = vec4(1.0);
+		if (textureBindings[6] != -1)
+			result = texture(textures[textureBindings[6]], UV);
 	}
 
 	return result;

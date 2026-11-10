@@ -48,11 +48,15 @@ vec4 getAlbedo()
 	{
 		//float gamma = 1 / 2.2;
 		//result = pow(texture(textures[textureBindings[0]], FS_IN.UV).rgba, vec4(gamma));
-		result = texture(textures[textureBindings[0]], FS_IN.UV);
+		result = vec4(1.0);
+		if (textureBindings[0] != -1)
+			result = texture(textures[textureBindings[0]], FS_IN.UV);
 	}
 	else if (FS_IN.materialIndex == 1.0)
 	{
-		result = texture(textures[textureBindings[6]], FS_IN.UV);
+		result = vec4(1.0);
+		if (textureBindings[6] != -1)
+			result = texture(textures[textureBindings[6]], FS_IN.UV);
 	}
 
 	return result;
