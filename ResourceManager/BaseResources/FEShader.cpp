@@ -1000,7 +1000,7 @@ void FEShader::LoadUniformsDataToGPU()
 	}
 }
 
-bool FEShader::LoadUniformDataToGPU(std::string UniformName)
+bool FEShader::LoadUniformDataToGPU(const std::string& UniformName)
 {
 	FEShaderUniform* Uniform = GetUniform(UniformName);
 	if (Uniform == nullptr)
@@ -1023,23 +1023,27 @@ std::vector<std::string> FEShader::GetUniformNameList()
 	FE_MAP_TO_STR_VECTOR(Uniforms)
 }
 
-FEShaderUniform* FEShader::GetUniform(const std::string Name)
+FEShaderUniform* FEShader::FindUniform(const std::string& Name)
 {
-	if (Uniforms.find(Name) == Uniforms.end())
-	{
-		LOG.Add(std::string("GetUniform can't find : ") + Name + " in function FEShader::GetUniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
-		return nullptr;
-	}
+	auto UniformIterator = Uniforms.find(Name);
+	return UniformIterator == Uniforms.end() ? nullptr : &UniformIterator->second;
+}
 
-	return &Uniforms[Name];
+FEShaderUniform* FEShader::GetUniform(const std::string& Name)
+{
+	FEShaderUniform* Uniform = FindUniform(Name);
+	if (Uniform == nullptr)
+		LOG.Add(std::string("GetUniform can't find : ") + Name + " in function FEShader::GetUniform", "FE_LOG_RENDERING", FE_LOG_WARNING);
+
+	return Uniform;
 }
 
 bool FEShader::HasUniform(const std::string& UniformName)
 {
-	return Uniforms.find(UniformName) != Uniforms.end();
+	return FindUniform(UniformName) != nullptr;
 }
 
-bool FEShader::GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue)
+bool FEShader::GetUniformData(const std::string& UniformName, FEShaderUniformValue& ReturnedValue)
 {
 	FEShaderUniform* Uniform = GetUniform(UniformName);
 	if (Uniform == nullptr)

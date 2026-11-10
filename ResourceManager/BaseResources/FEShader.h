@@ -70,16 +70,16 @@ namespace FocalEngine
 		void Stop();
 
 		void LoadUniformsDataToGPU();
-		bool LoadUniformDataToGPU(std::string UniformName);
+		bool LoadUniformDataToGPU(const std::string& UniformName);
 		
 		std::vector<std::string> GetUniformNameList();
 		std::vector<std::string> GetTextureList();
 		std::vector<std::string> GetTextureNameList();
 
 		bool HasUniform(const std::string& UniformName);
-		bool GetUniformData(std::string UniformName, FEShaderUniformValue& ReturnedValue);
+		bool GetUniformData(const std::string& UniformName, FEShaderUniformValue& ReturnedValue);
 		template<typename T>
-		bool UpdateUniformData(std::string UniformName, const T& Data);
+		bool UpdateUniformData(const std::string& UniformName, const T& Data);
 
 		bool IsUniformProvidedByEngine(const std::string& UniformName) const;
 		
@@ -126,7 +126,8 @@ namespace FocalEngine
 		int VertexAttributes = 0;
 
 		std::unordered_map<std::string, FEShaderUniform> Uniforms;
-		FEShaderUniform* GetUniform(std::string Name);
+		FEShaderUniform* GetUniform(const std::string& Name);
+		FEShaderUniform* FindUniform(const std::string& Name);
 
 		std::unordered_map<int, GLuint> BlockUniforms;
 

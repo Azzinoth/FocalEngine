@@ -1,7 +1,7 @@
 #pragma once
 
 template<typename T>
-bool FEShader::UpdateUniformData(std::string UniformName, const T& Data)
+bool FEShader::UpdateUniformData(const std::string& UniformName, const T& Data)
 {
 	FEShaderUniform* Uniform = GetUniform(UniformName);
 	if (Uniform == nullptr)
