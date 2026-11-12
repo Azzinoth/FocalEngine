@@ -378,6 +378,8 @@ TEST_F(SceneGraphTest, Check_Extensive_Node_Manipulation)
 
 			ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), OldNodeCount - NodeToDeleteRecursiveChildCount - 1);
 		}
+
+		ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 	}
 
 	//test = CurrentScene->SceneGraph.ToJson().toStyledString();
@@ -1163,6 +1165,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple)
 		
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	CurrentScene->SceneGraph.FromJson(Root);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Retrieve the nodes with IDs of original nodes.
@@ -1282,6 +1285,7 @@ TEST_F(SceneGraphTest, Check_Save_Load_Simple_2)
 
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
 	CurrentScene->SceneGraph.FromJson(Root);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 30);
 
 	// Retrieve the nodes with IDs of original nodes.
@@ -1426,6 +1430,8 @@ TEST_F(SceneGraphTest, Check_SceneNodes_Import)
 		size_t NodesAdded = NodeToMoveRecursiveChildCount + 1;
 
 		FEEntity* ImportedEntity = DestinationScene->ImportEntity((*SourceNodes)[RandomIndexOfNodeToMove]->GetEntity(), (*DestinationNodes)[RandomIndexOfNewParent]);
+		ASSERT_TRUE(SourceScene->SceneGraph.ValidateEntityIndex());
+		ASSERT_TRUE(DestinationScene->SceneGraph.ValidateEntityIndex());
 		FENaiveSceneGraphNode* ImportedNode = nullptr;
 		if (ImportedEntity)
 			ImportedNode = DestinationScene->SceneGraph.GetNodeByEntityID(ImportedEntity->GetID());
@@ -1554,6 +1560,7 @@ TEST_F(SceneGraphTest, Check_Delete_Nodes_and_Entities)
 	}
 
 	CurrentScene->DeleteEntity(Nodes[1]->GetEntity());
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 
 	ASSERT_EQ(CurrentScene->GetEntity(EntityToDeleteID), nullptr);
 	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeByID(NodeToDeleteID), nullptr);
@@ -1599,6 +1606,9 @@ TEST_F(SceneGraphTest, Simple_Check_Of_Scene_Duplication)
 	}
 
 	FEScene* DuplicatedScene = SCENE_MANAGER.DuplicateScene(CurrentScene->GetID(), "TestScene_Duplicated");
+	ASSERT_NE(DuplicatedScene, nullptr);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+	ASSERT_TRUE(DuplicatedScene->SceneGraph.ValidateEntityIndex());
 	std::vector<FENaiveSceneGraphNode*> DuplicatedNodes = DuplicatedScene->SceneGraph.GetRoot()->GetRecursiveChildren();
 
 	// Save IDs of the entities
@@ -1669,6 +1679,8 @@ TEST_F(SceneGraphTest, Simple_Check_Of_ImportSceneAsNode)
 	ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), 6);
 
 	ASSERT_TRUE(!SCENE_MANAGER.ImportSceneAsNode(SourceScene, TargetScene, TargetNodes[11]).empty());
+	ASSERT_TRUE(SourceScene->SceneGraph.ValidateEntityIndex());
+	ASSERT_TRUE(TargetScene->SceneGraph.ValidateEntityIndex());
 
 	// Check if source scene is still valid.
 	ASSERT_EQ(SourceScene->SceneGraph.GetNodeCount(), 6);
@@ -1977,6 +1989,7 @@ TEST_F(SceneGraphTest, DuplicateNode_SubtreeEntityNamesMatchNodeNames)
 	// Duplicate the Node_1 subtree (has 3 immediate + grandchildren) under root, with bAddCopyInName = false to suppress the "_Copy" suffix.
 	FENaiveSceneGraphNode* Subtree = Nodes[1];
 	FENaiveSceneGraphNode* Duplicate = CurrentScene->SceneGraph.DuplicateNode(Subtree->GetID(), CurrentScene->SceneGraph.GetRoot()->GetID(), false);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 	ASSERT_NE(Duplicate, nullptr);
 
 	// Verify that top node does not have "_Copy".
@@ -2007,6 +2020,7 @@ TEST_F(SceneGraphTest, ImportNode_FilterAppliesToDescendants)
 	};
 
 	FENaiveSceneGraphNode* Imported = TargetScene->SceneGraph.ImportNode(SourceNodes[1], TargetScene->SceneGraph.GetRoot(), Filter);
+	ASSERT_TRUE(TargetScene->SceneGraph.ValidateEntityIndex());
 	ASSERT_NE(Imported, nullptr);
 
 	// Only one node should have been imported if the filter is working on descendants.
@@ -2048,6 +2062,10 @@ TEST_F(SceneGraphTest, AddChild_DetachesFromPreviousParent)
 	EXPECT_EQ(NodeA->GetImmediateChildrenCount(), 0);
 	// Overall node count should not change.
 	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 3);
+
+	// Direct AddChild keeps the entity index in sync.
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(EntityC->GetID()), NodeC);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 
 	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
 }
@@ -2329,6 +2347,7 @@ TEST_F(SceneGraphTest, FromJson_MutualParent_RecoversUnderRoot)
 	SceneHierarchy["Nodes"][NodeBID] = Node_B_Data;
 
 	CurrentScene->SceneGraph.FromJson(SceneHierarchy);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
 
 	// Both entities were created during loading and registered in the scene.
 	ASSERT_NE(CurrentScene->GetEntity(EntityAID), nullptr);
@@ -2376,4 +2395,193 @@ TEST_F(SceneGraphTest, NodeToJson_OnRoot_DoesNotDereferenceNull)
 	ASSERT_FALSE(RootNodeJson.isMember("Entity"));
 
 	SCENE_MANAGER.Clear();
+}
+
+TEST_F(SceneGraphTest, EntityIndex_DeletedSubtree_IsNotFound)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	std::vector<FENaiveSceneGraphNode*> Descendants = Nodes[0]->GetRecursiveChildren();
+	ASSERT_FALSE(Descendants.empty());
+
+	std::vector<FEUUID> DeletedEntityIDs;
+	DeletedEntityIDs.push_back(Nodes[0]->GetEntity()->GetID());
+	for (size_t i = 0; i < Descendants.size(); i++)
+		DeletedEntityIDs.push_back(Descendants[i]->GetEntity()->GetID());
+
+	const size_t CountBefore = CurrentScene->SceneGraph.GetNodeCount();
+	CurrentScene->SceneGraph.DeleteNode(Nodes[0]);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), CountBefore - DeletedEntityIDs.size());
+
+	for (size_t i = 0; i < DeletedEntityIDs.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(DeletedEntityIDs[i]), nullptr);
+
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, EntityIndex_MoveNode_KeepsSubtreeNodes)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+
+	// Nodes[1] is a child of Nodes[0] and has its own children.
+	FENaiveSceneGraphNode* NodeToMove = Nodes[1];
+	std::vector<FENaiveSceneGraphNode*> Subtree = NodeToMove->GetRecursiveChildren();
+	ASSERT_FALSE(Subtree.empty());
+	Subtree.push_back(NodeToMove);
+
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeToMove->GetID(), CurrentScene->SceneGraph.GetRoot()->GetID()));
+	for (size_t i = 0; i < Subtree.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(Subtree[i]->GetEntity()->GetID()), Subtree[i]);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	ASSERT_TRUE(CurrentScene->SceneGraph.MoveNode(NodeToMove->GetID(), Nodes[2]->GetID()));
+	for (size_t i = 0; i < Subtree.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(Subtree[i]->GetEntity()->GetID()), Subtree[i]);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	// Rejected move into own descendant changes nothing.
+	ASSERT_FALSE(CurrentScene->SceneGraph.MoveNode(NodeToMove->GetID(), Subtree[0]->GetID()));
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, EntityIndex_OrphanEntity_FoundOnlyAfterAddNode)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
+
+	FEEntity* Orphan = CurrentScene->CreateEntityOrphan("Orphan");
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(Orphan->GetID()), nullptr);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	const FEUUID NodeID = CurrentScene->SceneGraph.AddNode(Orphan);
+	ASSERT_FALSE(UNIQUE_ID.IsNull(NodeID));
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(Orphan->GetID()), CurrentScene->SceneGraph.GetNodeByID(NodeID));
+
+	// Adding the same entity again returns the existing node.
+	EXPECT_EQ(CurrentScene->SceneGraph.AddNode(Orphan), NodeID);
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 1);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, EntityIndex_DuplicateWithFilter_ThenDeleteDuplicate)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphMediumSize(CurrentScene);
+	const size_t CountBefore = CurrentScene->SceneGraph.GetNodeCount();
+
+	// Nodes[1] and its subtree are skipped by the filter.
+	FEEntity* RejectedEntity = Nodes[1]->GetEntity();
+	std::function<bool(FEEntity*)> Filter = [RejectedEntity](FEEntity* Entity) { return Entity != RejectedEntity; };
+
+	FENaiveSceneGraphNode* Duplicate = CurrentScene->SceneGraph.DuplicateNode(Nodes[0], CurrentScene->SceneGraph.GetRoot(), true, Filter);
+	ASSERT_NE(Duplicate, nullptr);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	std::vector<FENaiveSceneGraphNode*> DuplicatedNodes = Duplicate->GetRecursiveChildren();
+	DuplicatedNodes.push_back(Duplicate);
+	ASSERT_LT(DuplicatedNodes.size(), Nodes[0]->GetRecursiveChildCount() + 1);
+
+	std::vector<FEUUID> DuplicatedEntityIDs;
+	for (size_t i = 0; i < DuplicatedNodes.size(); i++)
+	{
+		DuplicatedEntityIDs.push_back(DuplicatedNodes[i]->GetEntity()->GetID());
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(DuplicatedEntityIDs.back()), DuplicatedNodes[i]);
+	}
+
+	CurrentScene->SceneGraph.DeleteNode(Duplicate);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), CountBefore);
+
+	for (size_t i = 0; i < DuplicatedEntityIDs.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(DuplicatedEntityIDs[i]), nullptr);
+
+	for (size_t i = 0; i < Nodes.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(Nodes[i]->GetEntity()->GetID()), Nodes[i]);
+
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, EntityIndex_Clear_ThenReuse)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("TestScene", FEUUID(), FESceneFlag::Active);
+	std::vector<FENaiveSceneGraphNode*> Nodes = PopulateSceneGraphSmallSize(CurrentScene);
+
+	std::vector<FEUUID> OldEntityIDs;
+	for (size_t i = 0; i < Nodes.size(); i++)
+		OldEntityIDs.push_back(Nodes[i]->GetEntity()->GetID());
+
+	CurrentScene->Clear();
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+
+	for (size_t i = 0; i < OldEntityIDs.size(); i++)
+		EXPECT_EQ(CurrentScene->SceneGraph.GetNodeByEntityID(OldEntityIDs[i]), nullptr);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	FEEntity* NewEntity = CurrentScene->CreateEntity("AfterClear");
+	FENaiveSceneGraphNode* NewNode = CurrentScene->SceneGraph.GetNodeByEntityID(NewEntity->GetID());
+	ASSERT_NE(NewNode, nullptr);
+	EXPECT_EQ(NewNode->GetEntity(), NewEntity);
+	EXPECT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, AddChild_Rejects_NodeFromDifferentScene)
+{
+	FEScene* SceneA = SCENE_MANAGER.CreateScene("AddChild_Foreign_SceneA");
+	FEScene* SceneB = SCENE_MANAGER.CreateScene("AddChild_Foreign_SceneB");
+
+	FEEntity* ParentInA = SceneA->CreateEntity("ParentInA");
+	FEEntity* ChildInA = SceneA->CreateEntity("ChildInA");
+	ASSERT_TRUE(ChildInA->AttachTo(ParentInA));
+	FENaiveSceneGraphNode* RootA = SceneA->SceneGraph.GetRoot();
+	FENaiveSceneGraphNode* ParentNode = SceneA->SceneGraph.GetNodeByEntityID(ParentInA->GetID());
+	FENaiveSceneGraphNode* ChildNode = SceneA->SceneGraph.GetNodeByEntityID(ChildInA->GetID());
+
+	FEEntity* EntityInB = SceneB->CreateEntity("EntityInB");
+	FENaiveSceneGraphNode* RootB = SceneB->SceneGraph.GetRoot();
+	FENaiveSceneGraphNode* NodeInB = SceneB->SceneGraph.GetNodeByEntityID(EntityInB->GetID());
+
+	// Under the root of a different scene.
+	EXPECT_FALSE(RootB->AddChild(ParentNode));
+	// Under a regular node of a different scene.
+	EXPECT_FALSE(NodeInB->AddChild(ParentNode));
+	// Node that is deeper in the hierarchy.
+	EXPECT_FALSE(NodeInB->AddChild(ChildNode));
+	// Root of a different scene can not become a child.
+	EXPECT_FALSE(NodeInB->AddChild(RootA));
+	EXPECT_FALSE(RootB->AddChild(RootA));
+
+	// Nothing has moved.
+	EXPECT_EQ(ParentNode->GetParent(), RootA);
+	EXPECT_EQ(ChildNode->GetParent(), ParentNode);
+	EXPECT_EQ(RootA->GetParent(), nullptr);
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeCount(), 2);
+	EXPECT_EQ(SceneB->SceneGraph.GetNodeCount(), 1);
+	EXPECT_EQ(NodeInB->GetImmediateChildrenCount(), 0);
+
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeByEntityID(ParentInA->GetID()), ParentNode);
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeByEntityID(ChildInA->GetID()), ChildNode);
+	EXPECT_EQ(SceneB->SceneGraph.GetNodeByEntityID(ParentInA->GetID()), nullptr);
+	EXPECT_EQ(SceneB->SceneGraph.GetNodeByEntityID(ChildInA->GetID()), nullptr);
+	EXPECT_TRUE(SceneA->SceneGraph.ValidateEntityIndex());
+	EXPECT_TRUE(SceneB->SceneGraph.ValidateEntityIndex());
+
+	// AddChild inside one scene still works.
+	EXPECT_TRUE(RootA->AddChild(ChildNode));
+	EXPECT_EQ(ChildNode->GetParent(), RootA);
+	EXPECT_EQ(SceneA->SceneGraph.GetNodeByEntityID(ChildInA->GetID()), ChildNode);
+	EXPECT_TRUE(SceneA->SceneGraph.ValidateEntityIndex());
+
+	SCENE_MANAGER.DeleteScene(SceneA->GetID());
+	SCENE_MANAGER.DeleteScene(SceneB->GetID());
 }

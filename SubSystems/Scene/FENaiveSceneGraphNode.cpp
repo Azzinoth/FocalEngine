@@ -60,6 +60,13 @@ bool FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 	if (NodeToAdd == nullptr || NodeToAdd == this || NodeToAdd->GetParent() == this)
 		return false;
 
+	// Entity of a node lives in the registry of its scene, so node can not be moved to a different scene.
+	if (NodeToAdd->GetParentScene() != GetParentScene())
+	{
+		LOG.Add("AddChild called with node from a different scene", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		return false;
+	}
+
 	// Reject if NodeToAdd is an ancestor of this node.
 	for (FENaiveSceneGraphNode* Ancestor = Parent; Ancestor != nullptr; Ancestor = Ancestor->Parent)
 	{
@@ -83,6 +90,10 @@ bool FENaiveSceneGraphNode::AddChild(FENaiveSceneGraphNode* NodeToAdd, bool bPre
 
 	Children.push_back(NodeToAdd);
 	NodeToAdd->Parent = this;
+
+	if (OwnerGraph != nullptr)
+		OwnerGraph->RegisterSubtree(NodeToAdd);
+
 	return true;
 }
 
@@ -130,6 +141,10 @@ void FENaiveSceneGraphNode::DetachChild(FENaiveSceneGraphNode* Child, bool bPres
 				ReverseTransformHierarchy(Child);
 			Child->Parent = nullptr;
 			Children.erase(Children.begin() + i);
+
+			if (Child->OwnerGraph != nullptr)
+				Child->OwnerGraph->UnregisterSubtree(Child);
+
 			return;
 		}
 	}
@@ -205,6 +220,18 @@ std::vector<FENaiveSceneGraphNode*> FENaiveSceneGraphNode::GetRecursiveChildren(
 FEEntity* FENaiveSceneGraphNode::GetEntity()
 {
 	return Entity;
+}
+
+FEScene* FENaiveSceneGraphNode::GetParentScene()
+{
+	if (Entity != nullptr)
+		return Entity->GetParentScene();
+
+	// Root node has no entity.
+	if (OwnerGraph != nullptr)
+		return OwnerGraph->GetParentScene();
+
+	return nullptr;
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraphNode::GetParent()

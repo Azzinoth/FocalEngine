@@ -1,12 +1,14 @@
 #pragma once
 #include "FENaiveSceneGraphNode.h"
 #include <unordered_set>
+#include <unordered_map>
 
 namespace FocalEngine
 {
 	class FENaiveSceneGraph
 	{
 		friend class FEScene;
+		friend class FENaiveSceneGraphNode;
 
 		FENaiveSceneGraph();
 		~FENaiveSceneGraph();
@@ -50,11 +52,17 @@ namespace FocalEngine
 		void FromJson(Json::Value Root);
 
 		FEAABB GetNodeAABB(FEAABB& CumulativeAABB, FENaiveSceneGraphNode* TargetNode = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
+
+		bool ValidateEntityIndex();
 	private:
 		FEScene* ParentScene = nullptr;
 
 		bool bClearing = false;
 		FENaiveSceneGraphNode* Root = nullptr;
+
+		std::unordered_map<FEUUID, FENaiveSceneGraphNode*> EntityIDToNode;
+		void RegisterSubtree(FENaiveSceneGraphNode* SubtreeRoot);
+		void UnregisterSubtree(FENaiveSceneGraphNode* SubtreeRoot);
 
 		void AddNodeInternal(FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);
 		void AddNodeInternal(FENaiveSceneGraphNode* Parent, FENaiveSceneGraphNode* NodeToAdd, bool bPreserveWorldTransform = true);

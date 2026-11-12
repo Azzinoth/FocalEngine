@@ -5,6 +5,8 @@
 
 namespace FocalEngine
 {
+	class FENaiveSceneGraph;
+
 	class FENaiveSceneGraphNode : public FEObject
 	{
 		friend class FENaiveSceneGraph;
@@ -32,11 +34,14 @@ namespace FocalEngine
 		FENaiveSceneGraphNode(std::string Name = "Unnamed NaiveSceneNode");
 		~FENaiveSceneGraphNode();
 
+		FENaiveSceneGraph* OwnerGraph = nullptr;
 		FENaiveSceneGraphNode* Parent = nullptr;
 		std::vector<FENaiveSceneGraphNode*> Children;
 		// FE_FIX_ME: Do not store Entity as a pointer, store it as an ID to prevent dangling pointer issues.
 		//std::string EntityID;
 		FEEntity* Entity = nullptr;
+
+		FEScene* GetParentScene();
 
 		void ApplyTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);
 		void ReverseTransformHierarchy(FENaiveSceneGraphNode* NodeToWorkOn);

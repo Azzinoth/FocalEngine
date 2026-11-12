@@ -11,6 +11,8 @@ FENaiveSceneGraph::FENaiveSceneGraph()
 void FENaiveSceneGraph::Clear()
 {
 	bClearing = true;
+	// Cleared first, so lookups during teardown return nullptr instead of deleted nodes.
+	EntityIDToNode.clear();
 	DeleteNode(Root);
 	Initialize(ParentScene);
 	bClearing = false;
@@ -20,6 +22,7 @@ void FENaiveSceneGraph::Initialize(FEScene* Scene)
 {
 	ParentScene = Scene;
 	FENaiveSceneGraphNode* NewRoot = new FENaiveSceneGraphNode("SceneRoot");
+	NewRoot->OwnerGraph = this;
 	Root = NewRoot;
 }
 
@@ -49,7 +52,69 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByID(const FEUUID& ID)
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(const FEUUID& EntityID)
 {
-	return Root->GetChildByEntityID(EntityID);
+	const auto NodeIterator = EntityIDToNode.find(EntityID);
+	if (NodeIterator == EntityIDToNode.end())
+		return nullptr;
+
+	return NodeIterator->second;
+}
+
+void FENaiveSceneGraph::RegisterSubtree(FENaiveSceneGraphNode* SubtreeRoot)
+{
+	SubtreeRoot->OwnerGraph = this;
+	if (SubtreeRoot->Entity != nullptr)
+	{
+		const FEUUID EntityID = SubtreeRoot->Entity->GetID();
+		if (EntityIDToNode.find(EntityID) != EntityIDToNode.end())
+		{
+			LOG.Add("Entity ID is already registered in the scene graph entity index", "FE_SCENE_GRAPH", FE_LOG_ERROR);
+		}
+		else
+		{
+			EntityIDToNode[EntityID] = SubtreeRoot;
+		}
+	}
+
+	for (size_t i = 0; i < SubtreeRoot->Children.size(); i++)
+		RegisterSubtree(SubtreeRoot->Children[i]);
+}
+
+void FENaiveSceneGraph::UnregisterSubtree(FENaiveSceneGraphNode* SubtreeRoot)
+{
+	SubtreeRoot->OwnerGraph = nullptr;
+	if (SubtreeRoot->Entity != nullptr)
+	{
+		const auto NodeIterator = EntityIDToNode.find(SubtreeRoot->Entity->GetID());
+		// Entry of a different node with the same entity ID should stay.
+		if (NodeIterator != EntityIDToNode.end() && NodeIterator->second == SubtreeRoot)
+			EntityIDToNode.erase(NodeIterator);
+	}
+
+	for (size_t i = 0; i < SubtreeRoot->Children.size(); i++)
+		UnregisterSubtree(SubtreeRoot->Children[i]);
+}
+
+bool FENaiveSceneGraph::ValidateEntityIndex()
+{
+	if (Root == nullptr || Root->OwnerGraph != this)
+		return false;
+
+	// First node is the root, it has no entity and is not in the index.
+	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
+	if (EntityIDToNode.size() != AllNodes.size() - 1)
+		return false;
+
+	for (size_t i = 1; i < AllNodes.size(); i++)
+	{
+		FENaiveSceneGraphNode* CurrentNode = AllNodes[i];
+		if (CurrentNode->OwnerGraph != this || CurrentNode->Entity == nullptr)
+			return false;
+
+		if (GetNodeByEntityID(CurrentNode->Entity->GetID()) != CurrentNode)
+			return false;
+	}
+
+	return true;
 }
 
 FEUUID FENaiveSceneGraph::AddNode(FEEntity* Entity, bool bPreserveWorldTransform)
