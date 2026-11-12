@@ -26,7 +26,7 @@ uniform float FEMetalnessMapIntensity;
 @CameraPosition@
 uniform float FEGamma;
 uniform int debugFlag;
-uniform bool compactMaterialPacking;
+uniform bool bCompactPacking;
 
 uniform float fogDensity;
 uniform float fogGradient;

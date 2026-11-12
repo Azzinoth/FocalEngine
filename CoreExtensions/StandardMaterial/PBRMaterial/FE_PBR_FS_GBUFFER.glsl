@@ -33,7 +33,7 @@ uniform float FEMetalness;
 uniform float FEMetalnessMapIntensity;
 
 uniform int debugFlag;
-uniform int compactMaterialPacking;
+uniform bool bCompactPacking;
 vec4 materialProperties;
 uniform vec3 baseColor;
 
@@ -92,7 +92,7 @@ float getAO()
 {
 	float result = 1;
 
-	if (compactMaterialPacking == 1)
+	if (bCompactPacking)
 	{
 		result = materialProperties[textureChannels[2]];
 		result *= FEAOMapIntensity;
@@ -122,7 +122,7 @@ float getRoughness()
 {
 	float result = FERoughness;
 
-	if (compactMaterialPacking == 1)
+	if (bCompactPacking)
 	{
 		result = materialProperties[textureChannels[3]] * FERoughnessMapIntensity;
 		return result;
@@ -154,7 +154,7 @@ float getMetalness()
 {
 	float result = FEMetalness;
 
-	if (compactMaterialPacking == 1)
+	if (bCompactPacking)
 	{
 		result = materialProperties[textureChannels[4]] * FEMetalnessMapIntensity;
 		return result;
@@ -178,9 +178,9 @@ float getDisplacement()
 {
 	float result = 0;
 
-	if (compactMaterialPacking == 1)
+	if (bCompactPacking)
 	{
-		result = materialProperties[textureChannels[5]] * FEMetalnessMapIntensity;
+		result = materialProperties[textureChannels[5]];
 		return result;
 	}
 
@@ -200,7 +200,7 @@ float getDisplacement()
 
 void main(void)
 {
-	if (compactMaterialPacking == 1)
+	if (bCompactPacking)
 	{
 		if (FS_IN.materialIndex == 0.0)
 		{

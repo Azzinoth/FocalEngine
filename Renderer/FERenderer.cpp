@@ -314,7 +314,7 @@ void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FE
 		if (CurrentUniform)
 			CurrentUniform->SetValue(Material->GetTiling());
 
-		CurrentUniform = Shader->FindUniform("compactMaterialPacking");
+		CurrentUniform = Shader->FindUniform("bCompactPacking");
 		if (CurrentUniform)
 			CurrentUniform->SetValue(Material->IsCompactPacking());
 	}

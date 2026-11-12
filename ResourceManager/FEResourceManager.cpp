@@ -2644,11 +2644,28 @@ FETexture* FEResourceManager::CreateCopyOfTexture(FETexture* ReferenceTexture, b
 		return Result;
 	}
 
+	// Uncompressed 2D color textures are copied on GPU, without downloading pixels to system memory.
+	const bool bCopyOnGPU = glCopyImageSubData != nullptr &&
+							ReferenceTexture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_2D &&
+							(ReferenceTexture->InternalFormat == GL_RGB || ReferenceTexture->InternalFormat == GL_RGBA);
+	if (bCopyOnGPU)
+	{
+		Result = CreateSameFormatTexture(ReferenceTexture, 0, 0, bUnManaged, Name);
+		if (Result == nullptr)
+			return Result;
+
+		FE_GL_ERROR(glCopyImageSubData(ReferenceTexture->TextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
+									   Result->TextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
+									   Result->Width, Result->Height, 1));
+		return Result;
+	}
+
 	unsigned char* ReferenceRawData = ReferenceTexture->GetRawData();
 	Result = CreateSameFormatTexture(ReferenceTexture, 0, 0, bUnManaged, Name);
 
 	FE_GL_ERROR(glBindTexture(GL_TEXTURE_2D, Result->TextureID));
 	Upload2DTextureDataToGPU(Result, 0, Result->InternalFormat, Result->Width, Result->Height, GL_RGB, GL_UNSIGNED_BYTE, ReferenceRawData);
+	delete[] ReferenceRawData;
 
 	return Result;
 }

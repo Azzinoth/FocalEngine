@@ -277,6 +277,10 @@ void FEShaderUniform::LoadUniformToGPU()
 
 		default:
 		{
+			// Texture uniforms get their texture unit once, when shader registers its uniforms.
+			if (IsTextureType(Type))
+				break;
+
 			LOG.Add("FEShaderUniform::LoadUniformToGPU: Unknown uniform type for uniform: " + Name, "FE_LOG_RENDERING", FE_LOG_ERROR);
 			break;
 		}
