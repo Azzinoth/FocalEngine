@@ -510,7 +510,7 @@ void LoadTextureFileAsync(void* InputData, void* OutputData)
 		Output->FileData = nullptr;
 		Output->NewTexture = Input->NewTexture;
 
-		delete InputData;
+		delete Input;
 		return;
 	}
 
@@ -523,7 +523,7 @@ void LoadTextureFileAsync(void* InputData, void* OutputData)
 	Output->FileData = FileData;
 	Output->NewTexture = Input->NewTexture;
 
-	delete InputData;
+	delete Input;
 }
 
 void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
@@ -560,7 +560,7 @@ void FEResourceManager::LoadTextureFileAsyncCallBack(void* OutputData)
 		}
 	}
 
-	delete Input->FileData;
+	delete[] Input->FileData;
 	delete Input;
 }
 
@@ -4126,6 +4126,8 @@ void FEResourceManager::AddColorToFEMeshVertices(FEMesh* Mesh, float* Colors, in
 	FE_GL_ERROR(glBindVertexArray(Mesh->VaoID));
 
 	Mesh->ColorCount = ColorSize;
+	if (Mesh->ColorBufferID != 0 && Mesh->ColorBufferID != GLuint(-1))
+		FE_GL_ERROR(glDeleteBuffers(1, &Mesh->ColorBufferID));
 	Mesh->ColorBufferID = 0;
 	Mesh->VertexAttributes |= FE_COLOR;
 	FE_GL_ERROR(glGenBuffers(1, &Mesh->ColorBufferID));
@@ -4559,6 +4561,7 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 	unsigned char* PackageFullCopy = NativeScriptModule->ScriptAssetPackage->ExportAsRawData(PackageFullCopySize);
 	File.write((char*)&PackageFullCopySize, sizeof(size_t));
 	File.write((char*)PackageFullCopy, PackageFullCopySize);
+	delete[] PackageFullCopy;
 
 	// Saveing project data.
 	size_t ProjectPackageFullCopySize = 0;
@@ -4575,6 +4578,7 @@ void FEResourceManager::SaveFENativeScriptModule(FENativeScriptModule* NativeScr
 			unsigned char* ProjectPackageFullCopy = NativeScriptModule->Project->DataToRecoverVSProject->ExportAsRawData(ProjectPackageFullCopySize);
 			File.write((char*)&ProjectPackageFullCopySize, sizeof(size_t));
 			File.write((char*)ProjectPackageFullCopy, ProjectPackageFullCopySize);
+			delete[] ProjectPackageFullCopy;
 		}
 	}
 	else
@@ -5317,6 +5321,12 @@ bool FEResourceManager::SetUpPointCloudGPUBuffers(FEPointCloud* PointCloud, std:
 	{
 		FE_GL_ERROR(glDeleteBuffers(1, &PointCloud->ComputeShaderBuffer));
 		PointCloud->ComputeShaderBuffer = GLuint(-1);
+	}
+
+	if (!PointCloud->ComputeShaderBuffers.empty())
+	{
+		FE_GL_ERROR(glDeleteBuffers(static_cast<GLsizei>(PointCloud->ComputeShaderBuffers.size()), PointCloud->ComputeShaderBuffers.data()));
+		PointCloud->ComputeShaderBuffers.clear();
 	}
 
 	if (!PointCloud->IsAdvancedRenderingEnabled())

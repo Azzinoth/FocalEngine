@@ -13,6 +13,7 @@ namespace FocalEngine
 
 		GLuint VaoID = -1;
 		GLenum BufferID = -1;
+		GLuint QuadBufferID = -1;
 		unsigned int LineCount = 0;
 
 		FELineCollection() : FEObject(FE_LINE_COLLECTION, "Name") {};

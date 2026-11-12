@@ -20,7 +20,8 @@ namespace FocalEngine
 		void InitializeResources(FEFramebuffer* MainFrameBuffer);
 	public:
 		FEGBuffer(FEFramebuffer* MainFrameBuffer);
-		
+		~FEGBuffer();
+
 		FEFramebuffer* GFrameBuffer = nullptr;
 
 		FETexture* Positions = nullptr;
@@ -43,6 +44,8 @@ namespace FocalEngine
 
 		FEFramebuffer* FB = nullptr;
 		FEShader* Shader = nullptr;
+	public:
+		~FESSAO();
 	};
 
 	// TO-DO: This is very non GPU memory efficient way to support multiple cameras.
@@ -56,6 +59,8 @@ namespace FocalEngine
 		FESSAO* SSAO = nullptr;
 		FETexture* DepthPyramid = nullptr;
 		std::vector<FEPostProcess*> PostProcessEffects;
+		// Effects created by renderer, they are deleted with this data. Effects added by application are not.
+		std::vector<FEPostProcess*> EngineProvidedPostProcessEffects;
 
 		// Variables for compute shader based point cloud rendering.
 		FEFramebuffer* PointCloudIntermediateFrameBuffer = nullptr;
@@ -80,6 +85,9 @@ namespace FocalEngine
 			delete DepthPyramid;
 			delete SceneColorScratchTexture;
 			delete PointCloudIntermediateFrameBuffer;
+
+			for (size_t i = 0; i < EngineProvidedPostProcessEffects.size(); i++)
+				delete EngineProvidedPostProcessEffects[i];
 
 			if (PointCloud64bitFrameBuffer != GLuint (-1))
 				FE_GL_ERROR(glDeleteBuffers(1, &PointCloud64bitFrameBuffer));

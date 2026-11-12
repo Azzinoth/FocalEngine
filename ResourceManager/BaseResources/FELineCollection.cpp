@@ -18,9 +18,8 @@ FELineCollection::FELineCollection(std::vector<FELine> Lines) : FEObject(FE_LINE
 	glGenVertexArrays(1, &VaoID);
 	glBindVertexArray(VaoID);
 
-	unsigned int QuadVBO;
-	glGenBuffers(1, &QuadVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, QuadVBO);
+	glGenBuffers(1, &QuadBufferID);
+	glBindBuffer(GL_ARRAY_BUFFER, QuadBufferID);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(QuadVertices), QuadVertices, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
@@ -64,6 +63,8 @@ unsigned int FELineCollection::GetLineCount() const
 FELineCollection::~FELineCollection()
 {
 	FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
+	FE_GL_ERROR(glDeleteBuffers(1, &QuadBufferID));
+	FE_GL_ERROR(glDeleteBuffers(1, &BufferID));
 }
 
 std::vector<FELine> FELineCollection::GetRawData() const

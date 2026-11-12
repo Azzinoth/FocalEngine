@@ -13,6 +13,10 @@ FEMesh::FEMesh(GLuint VaoID, unsigned int VertexCount, int VertexBuffersTypes, F
 FEMesh::~FEMesh()
 {
 	FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
+
+	// Buffer that mesh does not have is 0 or -1, glDeleteBuffers ignores such values.
+	const GLuint Buffers[] = { IndicesBufferID, PositionsBufferID, ColorBufferID, NormalsBufferID, TangentsBufferID, UVBufferID, MaterialsIndicesBufferID };
+	FE_GL_ERROR(glDeleteBuffers(7, Buffers));
 }
 
 GLuint FEMesh::GetVaoID() const
@@ -131,6 +135,9 @@ std::vector<std::vector<glm::vec3>> FEMesh::GetTrianglePositions()
 		Result.push_back(Triangle);
 	}
 
+	delete[] Positions;
+	delete[] Indices;
+
 	return Result;
 }
 
@@ -159,6 +166,9 @@ std::vector<std::vector<glm::vec2>> FEMesh::GetTriangleUVs()
 
 		Result.push_back(Triangle);
 	}
+
+	delete[] UVs;
+	delete[] Indices;
 
 	return Result;
 }

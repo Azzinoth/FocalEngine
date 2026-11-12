@@ -28,6 +28,11 @@ FEPostProcess::~FEPostProcess()
 	}
 
 	delete IntermediateFramebuffer;
+
+	for (size_t i = 0; i < Stages.size(); i++)
+	{
+		delete Stages[i];
+	}
 }
 
 void FEPostProcess::RenderResult()

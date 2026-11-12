@@ -882,6 +882,8 @@ FECameraRenderingData* FERenderer::CreateCameraRenderingData(FEEntity* CameraEnt
 	Result->PostProcessEffects.back()->ReplaceOutTexture(0, RESOURCE_MANAGER.CreateTexture(GL_RGB, GL_RGB, ViewportSize.x, ViewportSize.y));
 	// ************************************ Chromatic Aberration END ************************************
 
+	Result->EngineProvidedPostProcessEffects = Result->PostProcessEffects;
+
 	return Result;
 }
 
@@ -3183,7 +3185,8 @@ bool FERenderer::InitializeComputeShaderPointCloudRendering(FEEntity* CameraEnti
 	FE_GL_ERROR(glBindBuffer(GL_SHADER_STORAGE_BUFFER, CameraRenderingData->PointCloud64bitFrameBuffer));
 	FE_GL_ERROR(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, CameraRenderingData->PointCloud64bitFrameBuffer));
 	FE_GL_ERROR(glBufferData(GL_SHADER_STORAGE_BUFFER, RenderTargetWidth * RenderTargetHeight * 8, InitialData, GL_DYNAMIC_DRAW));
-	
+	delete[] InitialData;
+
 	CameraRenderingData->PointCloudIntermediateFrameBuffer = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, RenderTargetWidth, RenderTargetHeight);
 
 	FETexture* IntermediateDepthBuffer = RESOURCE_MANAGER.CreateTexture(GL_R32F, GL_RED, RenderTargetWidth, RenderTargetHeight, true, "IntermediateDepthBuffer");
@@ -3398,6 +3401,12 @@ FEGBuffer::FEGBuffer(FEFramebuffer* MainFrameBuffer)
 	InitializeResources(MainFrameBuffer);
 }
 
+FEGBuffer::~FEGBuffer()
+{
+	// Framebuffer deletes all textures that are attached to it.
+	delete GFrameBuffer;
+}
+
 void FEGBuffer::RenderTargetResize(FEFramebuffer* MainFrameBuffer)
 {
 	delete GFrameBuffer;
@@ -3413,6 +3422,11 @@ void FESSAO::InitializeResources(FEFramebuffer* MainFrameBuffer)
 {
 	FB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, MainFrameBuffer->GetColorAttachment()->GetWidth(), MainFrameBuffer->GetColorAttachment()->GetHeight(), false);
 	Shader = RESOURCE_MANAGER.GetShader(FEEngineResourceIDs::SSAOShader);
+}
+
+FESSAO::~FESSAO()
+{
+	delete FB;
 }
 
 void FESSAO::RenderTargetResize(FEFramebuffer* MainFrameBuffer)

@@ -91,6 +91,12 @@ void FETerrainSystem::DuplicateTerrainComponent(FEEntity* SourceEntity, FEEntity
 	FETerrainComponent& NewTerrainComponent = TargetEntity->GetComponent<FETerrainComponent>();
 	NewTerrainComponent = OriginalTerrainComponent;
 
+	// Cached layer maps data belongs to the original, copy will read its own data when it is needed.
+	for (size_t i = 0; i < NewTerrainComponent.LayerMapsRawData.size(); i++)
+	{
+		NewTerrainComponent.LayerMapsRawData[i] = nullptr;
+	}
+
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
 		if (OriginalTerrainComponent.Layers[i] != nullptr)
@@ -116,6 +122,12 @@ void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneCleari
 	}
 
 	FE_GL_ERROR(glDeleteBuffers(1, &TerrainComponent.GPULayersDataBuffer));
+
+	for (size_t i = 0; i < TerrainComponent.LayerMapsRawData.size(); i++)
+	{
+		delete[] TerrainComponent.LayerMapsRawData[i];
+		TerrainComponent.LayerMapsRawData[i] = nullptr;
+	}
 
 	if (bIsSceneClearing)
 		return;
@@ -729,6 +741,8 @@ void FETerrainSystem::SetHeightMap(FETexture* HeightMap, FEEntity* TerrainEntity
 			Min = TerrainComponent.HeightMapArray[i];
 	}
 
+	delete[] reinterpret_cast<unsigned char*>(TextureData);
+
 	const glm::vec3 MinPoint = glm::vec3(-1.0f, Min, -1.0f);
 	const glm::vec3 MaxPoint = glm::vec3(1.0f, Max, 1.0f);
 	TerrainComponent.AABB = FEAABB(MinPoint, MaxPoint);
@@ -776,7 +790,7 @@ bool FETerrainSystem::UpdateLayerMapsRawData(FEEntity* TerrainEntity)
 	{
 		if (TerrainComponent.LayerMapsRawData[i] != nullptr)
 		{
-			delete TerrainComponent.LayerMapsRawData[i];
+			delete[] TerrainComponent.LayerMapsRawData[i];
 			TerrainComponent.LayerMapsRawData[i] = nullptr;
 		}
 
@@ -1175,6 +1189,8 @@ void FETerrainSystem::DeleteTerrainLayerMask(FEEntity* TerrainEntity, size_t Lay
 		delete[] AllLayers[i];
 	}
 
+	delete[] LayersPerTextureData[0];
+	delete[] LayersPerTextureData[1];
 	delete[] FirstTextureData;
 	delete[] SecondTextureData;
 
@@ -1210,6 +1226,8 @@ void FETerrainSystem::LoadTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 	if (RawDataSize != LoadedTexture->GetWidth() * LoadedTexture->GetHeight() * 4)
 	{
 		LOG.Add(std::string("Can't use file: ") + FileName + " in function FETerrainSystem::LoadTerrainLayerMask as a mask.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		delete[] RawData;
+		RESOURCE_MANAGER.DeleteFETexture(LoadedTexture);
 		return;
 	}
 
@@ -1238,6 +1256,9 @@ void FETerrainSystem::LoadTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 			}
 		}
 
+		delete[] LayersPerTextureData[0];
+		delete[] LayersPerTextureData[1];
+
 		if (bNeedToResizeMaskTexture)
 		{
 			LOG.Add("FETerrainSystem::LoadTerrainLayerMask resizing loaded mask to match currently used one.", "FE_LOG_LOADING", FE_LOG_WARNING);
@@ -1245,6 +1266,8 @@ void FETerrainSystem::LoadTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 			if (NewRawData == nullptr)
 			{
 				LOG.Add("FETerrainSystem::LoadTerrainLayerMask resizing loaded mask failed.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				delete[] RawData;
+				RESOURCE_MANAGER.DeleteFETexture(LoadedTexture);
 				return;
 			}
 
@@ -1285,6 +1308,10 @@ void FETerrainSystem::LoadTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 	}
 
 	FillTerrainLayerMaskWithRawData(TerrainEntity, FilledChannel, LayerIndex);
+
+	delete[] FilledChannel;
+	delete[] RawData;
+	RESOURCE_MANAGER.DeleteFETexture(LoadedTexture);
 }
 
 void FETerrainSystem::SaveTerrainLayerMask(FEEntity* TerrainEntity, std::string FileName, const size_t LayerIndex)
@@ -1324,6 +1351,9 @@ void FETerrainSystem::SaveTerrainLayerMask(FEEntity* TerrainEntity, std::string 
 	}
 
 	RESOURCE_MANAGER.ExportRawDataToPNG(FileName, ResultingData, CorrectLayer->GetWidth(), CorrectLayer->GetHeight(), GL_RGBA);
+
+	delete[] RawData;
+	delete[] ResultingData;
 }
 
 Json::Value FETerrainSystem::TerrainComponentToJson(FEEntity* Entity)

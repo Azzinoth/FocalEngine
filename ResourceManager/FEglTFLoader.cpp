@@ -13,6 +13,9 @@ FEGLTFLoader::~FEGLTFLoader()
 
 void FEGLTFLoader::Clear()
 {
+	for (size_t i = 0; i < Buffers.size(); i++)
+		delete[] Buffers[i].RawData;
+	
 	Buffers.clear();
 	BufferViews.clear();
 	Accessors.clear();
@@ -188,6 +191,7 @@ void FEGLTFLoader::Load(const char* FileName)
 			if (!JsonBuffers[static_cast<int>(i)].isMember("byteLength"))
 			{
 				LOG.Add("ByteLength is not present in buffer with index: " + std::to_string(i) + " in function FEGLTFLoader::Load.", "FE_LOG_LOADING", FE_LOG_ERROR);
+				delete[] CurrentBuffer.RawData;
 				return;
 			}
 			CurrentBuffer.ByteLength = JsonBuffers[static_cast<int>(i)]["byteLength"].asInt();

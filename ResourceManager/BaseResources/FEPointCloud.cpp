@@ -7,6 +7,10 @@ FEPointCloud::~FEPointCloud()
 {
 	FE_GL_ERROR(glDeleteVertexArrays(1, &VaoID));
 	FE_GL_ERROR(glDeleteBuffers(1, &VboID));
+
+	FE_GL_ERROR(glDeleteBuffers(1, &ComputeShaderBuffer));
+	if (!ComputeShaderBuffers.empty())
+		FE_GL_ERROR(glDeleteBuffers(static_cast<GLsizei>(ComputeShaderBuffers.size()), ComputeShaderBuffers.data()));
 }
 
 GLuint FEPointCloud::GetVboID() const
