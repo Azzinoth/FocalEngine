@@ -112,21 +112,24 @@ void FreeCameraController::OnUpdate(double DeltaTime)
 		if (bFirstFrameActive)
 		{
 			bFirstFrameActive = false;
-			CurrentMouseYAngle = TransformComponent.GetRotation().x;
-			CurrentMouseXAngle = TransformComponent.GetRotation().y;
+
+			// Angles are taken from view direction, because Euler angles of the same rotation could contain 180 degrees roll.
+			const glm::vec3 ViewDirection = glm::normalize(TransformComponent.GetQuaternion() * glm::vec3(0.0f, 0.0f, -1.0f));
+			CurrentMouseYAngle = glm::degrees(asin(glm::clamp(ViewDirection.y, -1.0f, 1.0f)));
+			CurrentMouseXAngle = glm::degrees(atan2(-ViewDirection.x, -ViewDirection.z));
 
 			return;
 		}
 
 		if (LastMouseX < MouseX || abs(LastMouseX - MouseX) > CorrectionToSensitivity)
 		{
-			CurrentMouseXAngle -= (MouseX - LastMouseX) * 0.15f * static_cast<float>((DeltaTime / 5.0));
+			CurrentMouseXAngle -= (MouseX - LastMouseX) * MouseSensitivity;
 			SetCursorToCenter();
 		}
 
 		if (LastMouseY < MouseY || abs(LastMouseY - MouseY) > CorrectionToSensitivity)
 		{
-			CurrentMouseYAngle -= (MouseY - LastMouseY) * 0.15f * static_cast<float>((DeltaTime / 5.0));
+			CurrentMouseYAngle -= (MouseY - LastMouseY) * MouseSensitivity;
 			SetCursorToCenter();
 		}
 

@@ -56,8 +56,6 @@ bool FEngine::IsNotTerminated()
 
 void FEngine::InternalUpdate(const bool bInternalCall)
 {
-	CurrentDeltaTime = CPUTime + GPUTime;
-
 	ViewportCheckForModification();
 	if (!bInternalCall)
 		PLUGIN_MANAGER.CheckScenesForModification();
@@ -95,13 +93,18 @@ void FEngine::BeginFrame(const bool bInternalCall)
 		return;
 
 	if (!bInternalCall)
+	{
+		const double TimeSincePreviousFrame = TIME.EndTimeStamp("FEngineFrame");
+		CurrentDeltaTime = TimeSincePreviousFrame > 0.0 ? TimeSincePreviousFrame : 0.0;
+		TIME.BeginTimeStamp("FEngineFrame");
+
 		TIME.BeginTimeStamp();
+	}
 
 	// FE_FIX_ME: Without graphics scenes are not updated yet, their systems need GPU.
 	if (APPLICATION.GetGraphicsMode() == FEGraphicsMode::None)
 	{
 		APPLICATION.BeginFrame();
-		CurrentDeltaTime = CPUTime + GPUTime;
 		if (!bInternalCall)
 			PLUGIN_MANAGER.Update(CurrentDeltaTime);
 

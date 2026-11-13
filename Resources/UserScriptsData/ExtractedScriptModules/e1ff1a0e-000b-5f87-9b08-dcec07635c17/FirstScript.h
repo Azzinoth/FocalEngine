@@ -28,11 +28,14 @@ public:
 	void OnDestroy() override { /* ... */ }
 
 	float MovementSpeed = 10.0f;
+	// Degrees of rotation per pixel of mouse movement.
+	float MouseSensitivity = 0.15f;
 };
 
 REGISTER_SCRIPT(FreeCameraController)
 RUN_IN_EDITOR_MODE(FreeCameraController)
 REGISTER_SCRIPT_FIELD(FreeCameraController, float, MovementSpeed)
+REGISTER_SCRIPT_FIELD(FreeCameraController, float, MouseSensitivity)
 
 class ModelViewCameraController : public FENativeScriptCore
 {
