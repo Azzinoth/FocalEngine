@@ -213,154 +213,123 @@ void FERenderer::Init()
 
 void FERenderer::LoadStandardUniforms(FEShader* Shader, FEMaterial* Material, FETransformComponent* Transform, FEEntity* Camera, const bool bReceivingShadows, const bool IsUniformLighting)
 {
-	FEShaderUniform* CurrentUniform = nullptr;
+	const FEStandardShaderUniforms& StandardUniforms = Shader->GetStandardUniforms();
 
 	if (Camera != nullptr)
 	{
 		FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
 		FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
-		CurrentUniform = Shader->FindUniform("FEViewMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetViewMatrix());
+		if (StandardUniforms.ViewMatrix)
+			StandardUniforms.ViewMatrix->SetValue(CurrentCameraComponent.GetViewMatrix());
 
-		CurrentUniform = Shader->FindUniform("FEProjectionMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetProjectionMatrix());
+		if (StandardUniforms.ProjectionMatrix)
+			StandardUniforms.ProjectionMatrix->SetValue(CurrentCameraComponent.GetProjectionMatrix());
 
-		CurrentUniform = Shader->FindUniform("FEPreviousFrameViewMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.PreviousFrameViewMatrix);
+		if (StandardUniforms.PreviousFrameViewMatrix)
+			StandardUniforms.PreviousFrameViewMatrix->SetValue(CurrentCameraComponent.PreviousFrameViewMatrix);
 
-		CurrentUniform = Shader->FindUniform("ScreenSize");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(glm::vec2(CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
+		if (StandardUniforms.ScreenSize)
+			StandardUniforms.ScreenSize->SetValue(glm::vec2(CurrentCameraComponent.GetRenderTargetWidth(), CurrentCameraComponent.GetRenderTargetHeight()));
 
-		CurrentUniform = Shader->FindUniform("FEPVMMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
+		if (StandardUniforms.PVMMatrix)
+			StandardUniforms.PVMMatrix->SetValue(CurrentCameraComponent.GetProjectionMatrix() * CurrentCameraComponent.GetViewMatrix() * Transform->GetWorldMatrix());
 
-		CurrentUniform = Shader->FindUniform("FECameraPosition");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
+		if (StandardUniforms.CameraPosition)
+			StandardUniforms.CameraPosition->SetValue(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-		CurrentUniform = Shader->FindUniform("FECameraDirection");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetForward());
+		if (StandardUniforms.CameraDirection)
+			StandardUniforms.CameraDirection->SetValue(CurrentCameraComponent.GetForward());
 
-		CurrentUniform = Shader->FindUniform("FEGamma");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetGamma());
+		if (StandardUniforms.Gamma)
+			StandardUniforms.Gamma->SetValue(CurrentCameraComponent.GetGamma());
 
-		CurrentUniform = Shader->FindUniform("FEExposure");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetExposure());
+		if (StandardUniforms.Exposure)
+			StandardUniforms.Exposure->SetValue(CurrentCameraComponent.GetExposure());
 	}
 
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
-	CurrentUniform = Shader->FindUniform("textureBindings");
-	if (CurrentUniform)
-		CurrentUniform->SetValue<std::vector<int>>(Material->TextureBindings);
+	if (StandardUniforms.TextureBindings)
+		StandardUniforms.TextureBindings->SetValue<std::vector<int>>(Material->TextureBindings);
 
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
-	CurrentUniform = Shader->FindUniform("textureChannels");
-	if (CurrentUniform)
-		CurrentUniform->SetValue<std::vector<int>>(Material->TextureChannels);
+	if (StandardUniforms.TextureChannels)
+		StandardUniforms.TextureChannels->SetValue<std::vector<int>>(Material->TextureChannels);
 
-	CurrentUniform = Shader->FindUniform("FEWorldMatrix");
-	if (CurrentUniform)
-		CurrentUniform->SetValue(Transform->GetWorldMatrix());
+	if (StandardUniforms.WorldMatrix)
+		StandardUniforms.WorldMatrix->SetValue(Transform->GetWorldMatrix());
 
-	CurrentUniform = Shader->FindUniform("FEReceiveShadows");
-	if (CurrentUniform)
-		CurrentUniform->SetValue(bReceivingShadows);
+	if (StandardUniforms.ReceiveShadows)
+		StandardUniforms.ReceiveShadows->SetValue(bReceivingShadows);
 
-	CurrentUniform = Shader->FindUniform("FEUniformLighting");
-	if (CurrentUniform)
-		CurrentUniform->SetValue(IsUniformLighting);
+	if (StandardUniforms.UniformLighting)
+		StandardUniforms.UniformLighting->SetValue(IsUniformLighting);
 
 	// FE_TO_DO: Maybe it should be removed from here, because material->bind() should handle it.
 	if (Material != nullptr)
 	{
-		CurrentUniform = Shader->FindUniform("FEAOIntensity");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetAmbientOcclusionIntensity());
+		if (StandardUniforms.AOIntensity)
+			StandardUniforms.AOIntensity->SetValue(Material->GetAmbientOcclusionIntensity());
 
-		CurrentUniform = Shader->FindUniform("FEAOMapIntensity");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetAmbientOcclusionMapIntensity());
+		if (StandardUniforms.AOMapIntensity)
+			StandardUniforms.AOMapIntensity->SetValue(Material->GetAmbientOcclusionMapIntensity());
 
-		CurrentUniform = Shader->FindUniform("FENormalMapIntensity");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetNormalMapIntensity());
+		if (StandardUniforms.NormalMapIntensity)
+			StandardUniforms.NormalMapIntensity->SetValue(Material->GetNormalMapIntensity());
 
-		CurrentUniform = Shader->FindUniform("FERoughness");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->Roughness);
+		if (StandardUniforms.Roughness)
+			StandardUniforms.Roughness->SetValue(Material->Roughness);
 
-		CurrentUniform = Shader->FindUniform("FERoughnessMapIntensity");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetRoughnessMapIntensity());
+		if (StandardUniforms.RoughnessMapIntensity)
+			StandardUniforms.RoughnessMapIntensity->SetValue(Material->GetRoughnessMapIntensity());
 
-		CurrentUniform = Shader->FindUniform("FEMetalness");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->Metalness);
+		if (StandardUniforms.Metalness)
+			StandardUniforms.Metalness->SetValue(Material->Metalness);
 
-		CurrentUniform = Shader->FindUniform("FEMetalnessMapIntensity");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetMetalnessMapIntensity());
+		if (StandardUniforms.MetalnessMapIntensity)
+			StandardUniforms.MetalnessMapIntensity->SetValue(Material->GetMetalnessMapIntensity());
 
-		CurrentUniform = Shader->FindUniform("FETiling");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->GetTiling());
+		if (StandardUniforms.Tiling)
+			StandardUniforms.Tiling->SetValue(Material->GetTiling());
 
-		CurrentUniform = Shader->FindUniform("bCompactPacking");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(Material->IsCompactPacking());
+		if (StandardUniforms.CompactPacking)
+			StandardUniforms.CompactPacking->SetValue(Material->IsCompactPacking());
 	}
 }
 
 void FERenderer::LoadStandardUniforms(FEShader* Shader, const bool bReceivingShadows, FEEntity* Camera, const bool bUniformLighting)
 {
-	FEShaderUniform* CurrentUniform = nullptr;
+	const FEStandardShaderUniforms& StandardUniforms = Shader->GetStandardUniforms();
 
 	if (Camera != nullptr)
 	{
 		FECameraComponent& CurrentCameraComponent = Camera->GetComponent<FECameraComponent>();
 		FETransformComponent& CurrentCameraTransformComponent = Camera->GetComponent<FETransformComponent>();
 
-		CurrentUniform = Shader->FindUniform("FEViewMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetViewMatrix());
+		if (StandardUniforms.ViewMatrix)
+			StandardUniforms.ViewMatrix->SetValue(CurrentCameraComponent.GetViewMatrix());
 
-		CurrentUniform = Shader->FindUniform("FEProjectionMatrix");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetProjectionMatrix());
+		if (StandardUniforms.ProjectionMatrix)
+			StandardUniforms.ProjectionMatrix->SetValue(CurrentCameraComponent.GetProjectionMatrix());
 
-		CurrentUniform = Shader->FindUniform("FECameraPosition");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
+		if (StandardUniforms.CameraPosition)
+			StandardUniforms.CameraPosition->SetValue(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE));
 
-		CurrentUniform = Shader->FindUniform("FECameraDirection");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetForward());
+		if (StandardUniforms.CameraDirection)
+			StandardUniforms.CameraDirection->SetValue(CurrentCameraComponent.GetForward());
 
-		CurrentUniform = Shader->FindUniform("FEGamma");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetGamma());
+		if (StandardUniforms.Gamma)
+			StandardUniforms.Gamma->SetValue(CurrentCameraComponent.GetGamma());
 
-		CurrentUniform = Shader->FindUniform("FEExposure");
-		if (CurrentUniform)
-			CurrentUniform->SetValue(CurrentCameraComponent.GetExposure());
+		if (StandardUniforms.Exposure)
+			StandardUniforms.Exposure->SetValue(CurrentCameraComponent.GetExposure());
 	}
 
-	CurrentUniform = Shader->FindUniform("FEReceiveShadows");
-	if (CurrentUniform)
-		CurrentUniform->SetValue(bReceivingShadows);
+	if (StandardUniforms.ReceiveShadows)
+		StandardUniforms.ReceiveShadows->SetValue(bReceivingShadows);
 
-	CurrentUniform = Shader->FindUniform("FEUniformLighting");
-	if (CurrentUniform)
-		CurrentUniform->SetValue(bUniformLighting);
+	if (StandardUniforms.UniformLighting)
+		StandardUniforms.UniformLighting->SetValue(bUniformLighting);
 }
 
 void FERenderer::AddPostProcess(FECameraRenderingData* CameraRenderingData, FEPostProcess* NewPostProcess, const bool bNoProcessing)

@@ -61,6 +61,7 @@ namespace FocalEngine
 		FENaiveSceneGraphNode* Root = nullptr;
 
 		std::unordered_map<FEUUID, FENaiveSceneGraphNode*> EntityIDToNode;
+		std::unordered_map<FEUUID, FENaiveSceneGraphNode*> NodeIDToNode;
 		void RegisterSubtree(FENaiveSceneGraphNode* SubtreeRoot);
 		void UnregisterSubtree(FENaiveSceneGraphNode* SubtreeRoot);
 

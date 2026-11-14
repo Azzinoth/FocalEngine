@@ -49,6 +49,34 @@ namespace FocalEngine
 		FE_USER_DEFINED_DATA = 1 << 8
 	};
 
+	// Pointers are kept to avoid search by name for uniforms that are used in every draw call.
+	struct FEStandardShaderUniforms
+	{
+		FEShaderUniform* ViewMatrix = nullptr;
+		FEShaderUniform* ProjectionMatrix = nullptr;
+		FEShaderUniform* PreviousFrameViewMatrix = nullptr;
+		FEShaderUniform* ScreenSize = nullptr;
+		FEShaderUniform* PVMMatrix = nullptr;
+		FEShaderUniform* CameraPosition = nullptr;
+		FEShaderUniform* CameraDirection = nullptr;
+		FEShaderUniform* Gamma = nullptr;
+		FEShaderUniform* Exposure = nullptr;
+		FEShaderUniform* TextureBindings = nullptr;
+		FEShaderUniform* TextureChannels = nullptr;
+		FEShaderUniform* WorldMatrix = nullptr;
+		FEShaderUniform* ReceiveShadows = nullptr;
+		FEShaderUniform* UniformLighting = nullptr;
+		FEShaderUniform* AOIntensity = nullptr;
+		FEShaderUniform* AOMapIntensity = nullptr;
+		FEShaderUniform* NormalMapIntensity = nullptr;
+		FEShaderUniform* Roughness = nullptr;
+		FEShaderUniform* RoughnessMapIntensity = nullptr;
+		FEShaderUniform* Metalness = nullptr;
+		FEShaderUniform* MetalnessMapIntensity = nullptr;
+		FEShaderUniform* Tiling = nullptr;
+		FEShaderUniform* CompactPacking = nullptr;
+	};
+
 	class FEShader : public FEObject
 	{
 		friend class FEMaterial;
@@ -128,6 +156,10 @@ namespace FocalEngine
 		std::unordered_map<std::string, FEShaderUniform> Uniforms;
 		FEShaderUniform* GetUniform(const std::string& Name);
 		FEShaderUniform* FindUniform(const std::string& Name);
+
+		FEStandardShaderUniforms StandardUniforms;
+		bool bStandardUniformsOutdated = true;
+		const FEStandardShaderUniforms& GetStandardUniforms();
 
 		std::unordered_map<int, GLuint> BlockUniforms;
 

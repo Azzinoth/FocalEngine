@@ -152,6 +152,7 @@ void FEShader::CopyCode(const FEShader& Shader)
 	VertexAttributes = Shader.VertexAttributes;
 
 	Uniforms = Shader.Uniforms;
+	bStandardUniformsOutdated = true;
 	BlockUniforms = Shader.BlockUniforms;
 	TextureUniforms = Shader.TextureUniforms;
 
@@ -666,6 +667,7 @@ void FEShader::CleanUp()
 	ComputeShaderText = nullptr;
 
 	Uniforms.clear();
+	bStandardUniformsOutdated = true;
 #ifdef FE_DEBUG_ENABLED
 	if (bDebugRequest)
 		FE_GL_ERROR(glDeleteBuffers(1, &SSBO));
@@ -1016,6 +1018,7 @@ void FEShader::AddUniformInternal(FEShaderUniform NewUniform)
 {
 	NewUniform.bProvidedByEngine = RENDERER.IsEngineProvidedUniform(NewUniform.GetName());
 	Uniforms[NewUniform.GetName()] = NewUniform;
+	bStandardUniformsOutdated = true;
 }
 
 std::vector<std::string> FEShader::GetUniformNameList()
@@ -1027,6 +1030,39 @@ FEShaderUniform* FEShader::FindUniform(const std::string& Name)
 {
 	auto UniformIterator = Uniforms.find(Name);
 	return UniformIterator == Uniforms.end() ? nullptr : &UniformIterator->second;
+}
+
+const FEStandardShaderUniforms& FEShader::GetStandardUniforms()
+{
+	if (bStandardUniformsOutdated)
+	{
+		StandardUniforms.ViewMatrix = FindUniform("FEViewMatrix");
+		StandardUniforms.ProjectionMatrix = FindUniform("FEProjectionMatrix");
+		StandardUniforms.PreviousFrameViewMatrix = FindUniform("FEPreviousFrameViewMatrix");
+		StandardUniforms.ScreenSize = FindUniform("ScreenSize");
+		StandardUniforms.PVMMatrix = FindUniform("FEPVMMatrix");
+		StandardUniforms.CameraPosition = FindUniform("FECameraPosition");
+		StandardUniforms.CameraDirection = FindUniform("FECameraDirection");
+		StandardUniforms.Gamma = FindUniform("FEGamma");
+		StandardUniforms.Exposure = FindUniform("FEExposure");
+		StandardUniforms.TextureBindings = FindUniform("textureBindings");
+		StandardUniforms.TextureChannels = FindUniform("textureChannels");
+		StandardUniforms.WorldMatrix = FindUniform("FEWorldMatrix");
+		StandardUniforms.ReceiveShadows = FindUniform("FEReceiveShadows");
+		StandardUniforms.UniformLighting = FindUniform("FEUniformLighting");
+		StandardUniforms.AOIntensity = FindUniform("FEAOIntensity");
+		StandardUniforms.AOMapIntensity = FindUniform("FEAOMapIntensity");
+		StandardUniforms.NormalMapIntensity = FindUniform("FENormalMapIntensity");
+		StandardUniforms.Roughness = FindUniform("FERoughness");
+		StandardUniforms.RoughnessMapIntensity = FindUniform("FERoughnessMapIntensity");
+		StandardUniforms.Metalness = FindUniform("FEMetalness");
+		StandardUniforms.MetalnessMapIntensity = FindUniform("FEMetalnessMapIntensity");
+		StandardUniforms.Tiling = FindUniform("FETiling");
+		StandardUniforms.CompactPacking = FindUniform("bCompactPacking");
+		bStandardUniformsOutdated = false;
+	}
+
+	return StandardUniforms;
 }
 
 FEShaderUniform* FEShader::GetUniform(const std::string& Name)

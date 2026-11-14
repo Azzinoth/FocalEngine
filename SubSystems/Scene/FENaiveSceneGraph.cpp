@@ -13,6 +13,7 @@ void FENaiveSceneGraph::Clear()
 	bClearing = true;
 	// Cleared first, so lookups during teardown return nullptr instead of deleted nodes.
 	EntityIDToNode.clear();
+	NodeIDToNode.clear();
 	DeleteNode(Root);
 	Initialize(ParentScene);
 	bClearing = false;
@@ -47,7 +48,11 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByID(const FEUUID& ID)
 	if (ID == Root->GetID())
 		return Root;
 
-	return Root->GetChild(ID);
+	const auto NodeIterator = NodeIDToNode.find(ID);
+	if (NodeIterator == NodeIDToNode.end())
+		return nullptr;
+
+	return NodeIterator->second;
 }
 
 FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(const FEUUID& EntityID)
@@ -62,6 +67,7 @@ FENaiveSceneGraphNode* FENaiveSceneGraph::GetNodeByEntityID(const FEUUID& Entity
 void FENaiveSceneGraph::RegisterSubtree(FENaiveSceneGraphNode* SubtreeRoot)
 {
 	SubtreeRoot->OwnerGraph = this;
+	NodeIDToNode[SubtreeRoot->GetID()] = SubtreeRoot;
 	if (SubtreeRoot->Entity != nullptr)
 	{
 		const FEUUID EntityID = SubtreeRoot->Entity->GetID();
@@ -82,6 +88,10 @@ void FENaiveSceneGraph::RegisterSubtree(FENaiveSceneGraphNode* SubtreeRoot)
 void FENaiveSceneGraph::UnregisterSubtree(FENaiveSceneGraphNode* SubtreeRoot)
 {
 	SubtreeRoot->OwnerGraph = nullptr;
+	const auto NodeIDIterator = NodeIDToNode.find(SubtreeRoot->GetID());
+	if (NodeIDIterator != NodeIDToNode.end() && NodeIDIterator->second == SubtreeRoot)
+		NodeIDToNode.erase(NodeIDIterator);
+
 	if (SubtreeRoot->Entity != nullptr)
 	{
 		const auto NodeIterator = EntityIDToNode.find(SubtreeRoot->Entity->GetID());
@@ -101,7 +111,7 @@ bool FENaiveSceneGraph::ValidateEntityIndex()
 
 	// First node is the root, it has no entity and is not in the index.
 	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
-	if (EntityIDToNode.size() != AllNodes.size() - 1)
+	if (EntityIDToNode.size() != AllNodes.size() - 1 || NodeIDToNode.size() != AllNodes.size() - 1)
 		return false;
 
 	for (size_t i = 1; i < AllNodes.size(); i++)
@@ -110,7 +120,7 @@ bool FENaiveSceneGraph::ValidateEntityIndex()
 		if (CurrentNode->OwnerGraph != this || CurrentNode->Entity == nullptr)
 			return false;
 
-		if (GetNodeByEntityID(CurrentNode->Entity->GetID()) != CurrentNode)
+		if (GetNodeByEntityID(CurrentNode->Entity->GetID()) != CurrentNode || GetNodeByID(CurrentNode->GetID()) != CurrentNode)
 			return false;
 	}
 
