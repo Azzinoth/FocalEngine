@@ -92,8 +92,6 @@ namespace FocalEngine
 		FEInstancedComponent(const FEInstancedComponent& Other) = default;
 		~FEInstancedComponent();
 
-		void Clear();
-
 		size_t GetInstanceCount();
 
 		FE_CULLING_TYPE GetCullingType();

@@ -53,6 +53,7 @@ namespace FocalEngine
 		// **************************** TERRAIN EDITOR TOOLS END ****************************
 
 		void InitTerrainEditTools(FEEntity* TerrainEntity);
+		void DeleteTerrainEditTools(FETerrainComponent& TerrainComponent);
 		bool UpdateLayerMapsRawData(FEEntity* TerrainEntity);
 
 		static Json::Value TerrainComponentToJson(FEEntity* Entity);

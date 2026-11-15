@@ -43,17 +43,40 @@ void FEInstancedSystem::OnMyComponentAdded(FEEntity* Entity)
 #include "../SubSystems/Scene/Components/Systems/FETerrainSystem.h"
 void FEInstancedSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing)
 {
-	if (bIsSceneClearing)
-		return;
-
 	if (Entity == nullptr || !Entity->HasComponent<FEInstancedComponent>())
 		return;
 
 	FEInstancedComponent& InstancedComponent = Entity->GetComponent<FEInstancedComponent>();
-	if (InstancedComponent.TerrainToSnap != nullptr)
+	if (!bIsSceneClearing && InstancedComponent.TerrainToSnap != nullptr)
 	{
 		TERRAIN_SYSTEM.UnSnapInstancedEntity(InstancedComponent.TerrainToSnap, Entity);
 	}
+
+	INSTANCED_RENDERING_SYSTEM.DeleteElementsData(InstancedComponent);
+}
+
+void FEInstancedSystem::DeleteElementsData(FEInstancedComponent& InstancedComponent)
+{
+	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
+	{
+		FEInstancedElementData* Data = InstancedComponent.InstancedElementsData[i];
+
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->InstancedBuffer));
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->SourceDataBuffer));
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->PositionsBuffer));
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->AABBSizesBuffer));
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->LODInfoBuffer));
+		FE_GL_ERROR(glDeleteBuffers(1, &Data->IndirectDrawInfoBuffer));
+		if (Data->LODBuffers != nullptr)
+			FE_GL_ERROR(glDeleteBuffers(4, Data->LODBuffers));
+
+		delete[] Data->LODCounts;
+		delete[] Data->LODBuffers;
+		delete[] Data->IndirectDrawsInfo;
+		delete Data;
+	}
+
+	InstancedComponent.InstancedElementsData.clear();
 }
 
 FEInstancedSystem::~FEInstancedSystem() {};
@@ -1032,6 +1055,7 @@ void FEInstancedSystem::ClearInstance(FEEntity* Entity)
 	for (size_t i = 0; i < InstancedComponent.InstancedElementsData.size(); i++)
 	{
 		delete[] InstancedComponent.InstancedElementsData[i]->LODCounts;
+		InstancedComponent.InstancedElementsData[i]->LODCounts = nullptr;
 
 		InstancedComponent.InstancedElementsData[i]->InstancedAABBSizes.resize(0);
 		InstancedComponent.InstancedElementsData[i]->InstancedMatrices.resize(0);

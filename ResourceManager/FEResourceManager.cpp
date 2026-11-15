@@ -1422,6 +1422,14 @@ bool FEResourceManager::ExportFEMeshToPLY(FEMesh* MeshToExport, const std::strin
 	}
 
 	bResult = PLY_MANAGER.SaveToPLY(FilePath, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
+
+	delete PLYData;
+	delete[] Positions;
+	delete[] Normals;
+	delete[] UVs;
+	delete[] Indices;
+	delete[] Colors;
+
 	return bResult;
 }
 
@@ -4630,6 +4638,7 @@ FEAssetPackage* FEResourceManager::CreateEngineHeadersAssetPackage()
 	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
 	{
 		LOG.Add("FEResourceManager::CreateEngineHeadersAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		delete EngineHeadersAssetPackage;
 		return nullptr;
 	}
 
@@ -4757,6 +4766,7 @@ FEAssetPackage* FEResourceManager::CreateEngineSourceFilesAssetPackage()
 	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
 	{
 		LOG.Add("FEResourceManager::CreateEngineSourceFilesAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		delete EngineSourceFilesAssetPackage;
 		return nullptr;
 	}
 
@@ -4875,6 +4885,7 @@ FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
 	{
 		LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		delete EngineLIBAssetPackage;
 		return nullptr;
 	}
 
@@ -4963,7 +4974,9 @@ bool FEResourceManager::CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngin
 			return false;
 		}
 
-		if (!RESOURCE_MANAGER.UnPackEngineHeadersAssetPackage(EngineHeadersPackage, DestinationDirectoryPath + "SubSystems/FocalEngine/"))
+		const bool bUnPacked = RESOURCE_MANAGER.UnPackEngineHeadersAssetPackage(EngineHeadersPackage, DestinationDirectoryPath + "SubSystems/FocalEngine/");
+		delete EngineHeadersPackage;
+		if (!bUnPacked)
 		{
 			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine headers asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
@@ -4979,7 +4992,9 @@ bool FEResourceManager::CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngin
 			return false;
 		}
 
-		if (!RESOURCE_MANAGER.UnPackEngineSourceFilesAssetPackage(EngineSourcePackage, DestinationDirectoryPath + "SubSystems/FocalEngine/"))
+		const bool bUnPacked = RESOURCE_MANAGER.UnPackEngineSourceFilesAssetPackage(EngineSourcePackage, DestinationDirectoryPath + "SubSystems/FocalEngine/");
+		delete EngineSourcePackage;
+		if (!bUnPacked)
 		{
 			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine source files asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
@@ -4995,7 +5010,9 @@ bool FEResourceManager::CopyEngineFiles(bool bCopyEngineHeaders, bool bCopyEngin
 			return false;
 		}
 
-		if (!RESOURCE_MANAGER.UnPackEngineLIBAssetPackage(EngineLIBPackage, DestinationDirectoryPath))
+		const bool bUnPacked = RESOURCE_MANAGER.UnPackEngineLIBAssetPackage(EngineLIBPackage, DestinationDirectoryPath);
+		delete EngineLIBPackage;
+		if (!bUnPacked)
 		{
 			LOG.Add("FEResourceManager::CopyEngineFiles: Error unpacking engine lib asset package.", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
 			return false;
@@ -5019,6 +5036,7 @@ FEAssetPackage* FEResourceManager::CreatePrivateEngineAssetPackage()
 	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
 	{
 		LOG.Add("FEResourceManager::CreatePrivateEngineAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
+		delete PrivateEngineAssetPackage;
 		return nullptr;
 	}
 
@@ -5759,6 +5777,7 @@ void FEResourceManager::SaveFEPointCloud(FEPointCloud* PointCloud, const std::st
 	File.close();
 
 	delete[] Positions;
+	delete[] Colors;
 }
 
 bool FEResourceManager::DoesPLYContainMesh(FERawPLYData* PLYData)
@@ -5983,6 +6002,8 @@ bool FEResourceManager::SaveRawDataToPLY(std::vector<FEPointCloudVertex>& RawDat
 	}
 
 	bResult = PLY_MANAGER.SaveToPLY(FilePath, PLYData, PLYFileType::BINARY_LITTLE_ENDIAN);
+	delete PLYData;
+
 	return bResult;
 }
 

@@ -89,7 +89,16 @@ void FETerrainSystem::DuplicateTerrainComponent(FEEntity* SourceEntity, FEEntity
 	TargetEntity->AddComponent<FETerrainComponent>();
 
 	FETerrainComponent& NewTerrainComponent = TargetEntity->GetComponent<FETerrainComponent>();
+	const GLuint OwnGPULayersDataBuffer = NewTerrainComponent.GPULayersDataBuffer;
 	NewTerrainComponent = OriginalTerrainComponent;
+
+	// Copy keeps its own buffer, layers data will be loaded to it on first render.
+	NewTerrainComponent.GPULayersDataBuffer = OwnGPULayersDataBuffer;
+	std::fill(NewTerrainComponent.OldGPULayersData.begin(), NewTerrainComponent.OldGPULayersData.end(), FLT_MAX);
+
+	// Edit tools belong to the original, InitTerrainEditTools will create new ones.
+	NewTerrainComponent.BrushOutputFB = nullptr;
+	NewTerrainComponent.BrushVisualFB = nullptr;
 
 	// Cached layer maps data belongs to the original, copy will read its own data when it is needed.
 	for (size_t i = 0; i < NewTerrainComponent.LayerMapsRawData.size(); i++)
@@ -128,6 +137,8 @@ void FETerrainSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneCleari
 		delete[] TerrainComponent.LayerMapsRawData[i];
 		TerrainComponent.LayerMapsRawData[i] = nullptr;
 	}
+
+	TERRAIN_SYSTEM.DeleteTerrainEditTools(TerrainComponent);
 
 	if (bIsSceneClearing)
 		return;
@@ -760,6 +771,7 @@ void FETerrainSystem::InitTerrainEditTools(FEEntity* TerrainEntity)
 		return;
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
+	DeleteTerrainEditTools(TerrainComponent);
 
 	TerrainComponent.BrushOutputFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, 32, 32);
 	delete TerrainComponent.BrushOutputFB->GetColorAttachment();
@@ -767,6 +779,22 @@ void FETerrainSystem::InitTerrainEditTools(FEEntity* TerrainEntity)
 
 	TerrainComponent.BrushVisualFB = RESOURCE_MANAGER.CreateFramebuffer(FE_COLOR_ATTACHMENT, TerrainComponent.HeightMap->GetWidth(), TerrainComponent.HeightMap->GetHeight());
 	TerrainComponent.ProjectedMap = TerrainComponent.BrushVisualFB->GetColorAttachment();
+}
+
+void FETerrainSystem::DeleteTerrainEditTools(FETerrainComponent& TerrainComponent)
+{
+	if (TerrainComponent.BrushOutputFB != nullptr)
+	{
+		// Height map and layer maps are attached to this framebuffer, but it does not own them.
+		TerrainComponent.BrushOutputFB->SetColorAttachment(nullptr, 0);
+		TerrainComponent.BrushOutputFB->SetColorAttachment(nullptr, 1);
+		delete TerrainComponent.BrushOutputFB;
+		TerrainComponent.BrushOutputFB = nullptr;
+	}
+
+	delete TerrainComponent.BrushVisualFB;
+	TerrainComponent.BrushVisualFB = nullptr;
+	TerrainComponent.ProjectedMap = nullptr;
 }
 
 bool FETerrainSystem::UpdateLayerMapsRawData(FEEntity* TerrainEntity)

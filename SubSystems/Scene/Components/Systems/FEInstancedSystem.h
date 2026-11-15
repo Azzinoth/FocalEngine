@@ -19,6 +19,8 @@ namespace FocalEngine
 		static void OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneClearing);
 		void RegisterOnComponentCallbacks();
 
+		void DeleteElementsData(FEInstancedComponent& InstancedComponent);
+
 		void InitializeBuffers(FEEntity* Entity);
 		void InitializeBuffer(FEEntity* Entity, FEGameModelComponent& GameModelComponent, size_t BufferIndex = 0);
 		void InitializeGPUCullingBuffers(FEEntity* Entity);

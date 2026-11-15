@@ -81,6 +81,10 @@ void FENativeScriptSystem::OnMyComponentDestroy(FEEntity* Entity, bool bIsSceneC
 		return;
 
 	FENativeScriptComponent& NativeScriptComponent = Entity->GetComponent<FENativeScriptComponent>();
+	NativeScriptComponent.OnDestroy();
+
+	delete NativeScriptComponent.FailedToLoadData;
+	NativeScriptComponent.FailedToLoadData = nullptr;
 }
 
 FENativeScriptSystem::~FENativeScriptSystem() {};

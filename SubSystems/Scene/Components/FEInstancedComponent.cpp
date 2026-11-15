@@ -84,26 +84,6 @@ size_t FEInstancedComponent::GetInstanceCount()
 	return InstanceCount;
 }
 
-void FEInstancedComponent::Clear()
-{
-	InstanceCount = 0;
-
-	for (size_t i = 0; i < InstancedElementsData.size(); i++)
-	{
-		delete[] InstancedElementsData[i]->LODCounts;
-
-		InstancedElementsData[i]->InstancedAABBSizes.resize(0);
-		InstancedElementsData[i]->InstancedMatrices.resize(0);
-		InstancedElementsData[i]->TransformedInstancedMatrices.resize(0);
-		InstancedElementsData[i]->InstancePositions.resize(0);
-
-		delete InstancedElementsData[i];
-	}
-	InstancedElementsData.resize(0);
-
-	Modifications.clear();
-}
-
 FE_CULLING_TYPE FEInstancedComponent::GetCullingType()
 {
 	return CullingType;
