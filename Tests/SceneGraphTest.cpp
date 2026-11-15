@@ -2585,3 +2585,96 @@ TEST_F(SceneGraphTest, AddChild_Rejects_NodeFromDifferentScene)
 	SCENE_MANAGER.DeleteScene(SceneA->GetID());
 	SCENE_MANAGER.DeleteScene(SceneB->GetID());
 }
+
+TEST_F(SceneGraphTest, FromJson_KeepsOrderOfChildren)
+{
+	FEScene* CurrentScene = SCENE_MANAGER.CreateScene("ChildrenOrder");
+
+	// Nodes are saved by their IDs and IDs are random, so 12 children loaded in the order of their IDs would almost never be in this order.
+	const size_t ChildCount = 12;
+	std::vector<std::string> RootChildrenNames;
+	std::vector<std::string> NestedChildrenNames;
+	for (size_t i = 0; i < ChildCount; i++)
+	{
+		FEEntity* Entity = CurrentScene->CreateEntity("RootChild_" + std::to_string(i));
+		RootChildrenNames.push_back(Entity->GetName());
+	}
+
+	FENaiveSceneGraphNode* FirstRootChild = CurrentScene->SceneGraph.GetRoot()->GetChildren()[0];
+	for (size_t i = 0; i < ChildCount; i++)
+	{
+		FEEntity* Entity = CurrentScene->CreateEntity("NestedChild_" + std::to_string(i));
+		NestedChildrenNames.push_back(Entity->GetName());
+		ASSERT_TRUE(FirstRootChild->AddChild(CurrentScene->SceneGraph.GetNodeByEntityID(Entity->GetID())));
+	}
+
+	const auto GetChildrenNames = [](FENaiveSceneGraphNode* Node) {
+		std::vector<std::string> Names;
+		for (FENaiveSceneGraphNode* Child : Node->GetChildren())
+			Names.push_back(Child->GetEntity()->GetName());
+
+		return Names;
+	};
+
+	ASSERT_EQ(GetChildrenNames(CurrentScene->SceneGraph.GetRoot()), RootChildrenNames);
+	ASSERT_EQ(GetChildrenNames(FirstRootChild), NestedChildrenNames);
+
+	Json::Value SceneHierarchy = CurrentScene->SceneGraph.ToJson();
+	CurrentScene->Clear();
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), 0);
+
+	CurrentScene->SceneGraph.FromJson(SceneHierarchy);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+	ASSERT_EQ(CurrentScene->SceneGraph.GetNodeCount(), ChildCount * 2);
+	EXPECT_EQ(GetChildrenNames(CurrentScene->SceneGraph.GetRoot()), RootChildrenNames);
+	ASSERT_EQ(CurrentScene->SceneGraph.GetRoot()->GetImmediateChildrenCount(), ChildCount);
+	EXPECT_EQ(GetChildrenNames(CurrentScene->SceneGraph.GetRoot()->GetChildren()[0]), NestedChildrenNames);
+
+	// File that was saved before positions of nodes were saved is loaded too, with every node under its parent.
+	for (Json::Value& NodeData : SceneHierarchy["Nodes"])
+		NodeData.removeMember("IndexInParent");
+
+	CurrentScene->Clear();
+	CurrentScene->SceneGraph.FromJson(SceneHierarchy);
+	ASSERT_TRUE(CurrentScene->SceneGraph.ValidateEntityIndex());
+	EXPECT_EQ(CurrentScene->SceneGraph.GetNodeCount(), ChildCount * 2);
+	EXPECT_EQ(CurrentScene->SceneGraph.GetRoot()->GetImmediateChildrenCount(), ChildCount);
+	std::vector<FENaiveSceneGraphNode*> FirstRootChildNodes = CurrentScene->SceneGraph.GetRoot()->GetChildByName("RootChild_0");
+	ASSERT_EQ(FirstRootChildNodes.size(), 1);
+	EXPECT_EQ(FirstRootChildNodes[0]->GetImmediateChildrenCount(), ChildCount);
+
+	SCENE_MANAGER.DeleteScene(CurrentScene->GetID());
+}
+
+TEST_F(SceneGraphTest, ImportEntity_EntityLeftOutByFilter_IsNotAnError)
+{
+	FEScene* SourceScene = SCENE_MANAGER.CreateScene("ImportEntityFilter_Source");
+	FEEntity* SourceEntity = SourceScene->CreateEntity("SourceEntity");
+	FEScene* TargetScene = SCENE_MANAGER.CreateScene("ImportEntityFilter_Target");
+
+	const auto GetErrorCount = []() {
+		int Count = 0;
+		for (const LogItem& Item : LOG.GetLogItems("FE_LOG_ECS"))
+		{
+			if (Item.Severity >= FE_LOG_ERROR)
+				Count += Item.Count;
+		}
+
+		return Count;
+	};
+
+	const int ErrorsBefore = GetErrorCount();
+	FEEntity* NotImported = TargetScene->ImportEntity(SourceEntity, nullptr, [](FEEntity* Entity) { return false; });
+	EXPECT_EQ(NotImported, nullptr);
+	EXPECT_EQ(TargetScene->SceneGraph.GetNodeCount(), 0);
+	EXPECT_EQ(GetErrorCount(), ErrorsBefore);
+
+	FEEntity* Imported = TargetScene->ImportEntity(SourceEntity, nullptr, [](FEEntity* Entity) { return true; });
+	ASSERT_NE(Imported, nullptr);
+	EXPECT_EQ(Imported->GetName(), "SourceEntity");
+	EXPECT_EQ(TargetScene->SceneGraph.GetNodeCount(), 1);
+	EXPECT_EQ(GetErrorCount(), ErrorsBefore);
+
+	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
+	SCENE_MANAGER.DeleteScene(TargetScene->GetID());
+}

@@ -431,6 +431,15 @@ Json::Value FENaiveSceneGraph::ToJson(std::function<bool(FEEntity*)> Filter)
 {
 	Json::Value Root;
 	std::vector<FENaiveSceneGraphNode*> AllNodes = GetAllNodes();
+
+	// Nodes are saved by ID, so position of a node among children of its parent is saved with it.
+	std::unordered_map<FENaiveSceneGraphNode*, int> IndexInParent;
+	for (size_t i = 0; i < AllNodes.size(); i++)
+	{
+		for (size_t j = 0; j < AllNodes[i]->Children.size(); j++)
+			IndexInParent[AllNodes[i]->Children[j]] = static_cast<int>(j);
+	}
+
 	// Remove root node. It is not needed in serialization
 	AllNodes.erase(AllNodes.begin());
 
@@ -439,7 +448,9 @@ Json::Value FENaiveSceneGraph::ToJson(std::function<bool(FEEntity*)> Filter)
 		if (Filter != nullptr && !Filter(AllNodes[i]->GetEntity()))
 			continue;
 
-		Root["Nodes"][UNIQUE_ID.ToString(AllNodes[i]->GetID())] = AllNodes[i]->ToJson(Filter);
+		Json::Value NodeData = AllNodes[i]->ToJson(Filter);
+		NodeData["IndexInParent"] = IndexInParent[AllNodes[i]];
+		Root["Nodes"][UNIQUE_ID.ToString(AllNodes[i]->GetID())] = NodeData;
 	}
 
 	return Root;
@@ -470,11 +481,23 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 		LoadedNodes[NodeID] = NewNode;
 	}
 
-	// Second pass: Set up parent-child relationships
+	// Children are attached in the order they had when saved. Nodes of a file without saved positions keep the order of their IDs.
+	std::vector<std::pair<int, std::string>> NodeOrder;
 	for (Json::Value::const_iterator NodeIterator = Nodes.begin(); NodeIterator != Nodes.end(); NodeIterator++)
 	{
-		std::string NodeID = NodeIterator.key().asString();
-		Json::Value NodeData = *NodeIterator;
+		const Json::Value& Index = (*NodeIterator)["IndexInParent"];
+		NodeOrder.push_back({ Index.isInt() ? Index.asInt() : INT_MAX, NodeIterator.key().asString() });
+	}
+
+	std::stable_sort(NodeOrder.begin(), NodeOrder.end(), [](const std::pair<int, std::string>& First, const std::pair<int, std::string>& Second) {
+		return First.first < Second.first;
+	});
+
+	// Second pass: Set up parent-child relationships
+	for (size_t i = 0; i < NodeOrder.size(); i++)
+	{
+		std::string NodeID = NodeOrder[i].second;
+		Json::Value NodeData = Nodes[NodeID];
 
 		FENaiveSceneGraphNode* CurrentNode = LoadedNodes[NodeID];
 		std::string ParentID = NodeData["ParentID"].asString();

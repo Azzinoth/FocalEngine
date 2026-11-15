@@ -622,6 +622,10 @@ FEEntity* FEScene::ImportEntity(FEEntity* EntityFromDifferentScene, FENaiveScene
 		return Result;
 	}
 
+	// Entity that Filter leaves out is not imported, it is not a failure.
+	if (Filter != nullptr && !Filter(EntityFromDifferentScene))
+		return Result;
+
 	if (TargetParent == nullptr)
 		TargetParent = SceneGraph.GetRoot();
 
