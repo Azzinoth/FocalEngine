@@ -545,6 +545,11 @@ void FEngine::AddOnViewportMovedCallback(std::function<void(FEUUID)> Callback)
 
 void FEngine::ViewportCheckForModification()
 {
+	// Minimized window has zero size, sizes of its viewports mean nothing until it is restored.
+	FEWindow* MainWindow = APPLICATION.GetMainWindow();
+	if (MainWindow != nullptr && (MainWindow->GetWidth() <= 0 || MainWindow->GetHeight() <= 0))
+		return;
+
 	for (size_t i = 0; i < Viewports.size(); i++)
 	{
 		bool bMoved, bResize;
