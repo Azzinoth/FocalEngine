@@ -49,6 +49,12 @@
 	}
 #endif // FE_GL_ERROR
 
+// Discards errors that earlier OpenGL calls left.
+#define FE_GL_CLEAR_ERRORS()				\
+{											\
+	while (glGetError() != GL_NO_ERROR) {}	\
+}
+
 #define FE_MAX_LIGHTS 10
 #define FE_CSM_UNIT 28
 #define FE_MESH_VERSION 0.02f

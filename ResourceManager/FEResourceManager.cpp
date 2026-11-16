@@ -700,6 +700,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	const GLenum TextureTarget = (NewTexture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D) ? GL_TEXTURE_3D : GL_TEXTURE_2D;
 	FE_GL_ERROR(glBindTexture(TextureTarget, NewTexture->TextureID));
 
+	bool bMipmapsLoadedFromFile = false;
 	if (NewTexture->Type == FE_TEXTURE_TYPE::FE_TEXTURE_3D)
 	{
 		const int Size = *(int*)(&FileData[CurrentShift]);
@@ -748,29 +749,24 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 		const size_t MipmapCount = static_cast<size_t>(floor(log2(MaxDimension)) + 1);
 		FE_GL_ERROR(glTexStorage2D(GL_TEXTURE_2D, static_cast<int>(MipmapCount), NewTexture->InternalFormat, NewTexture->Width, NewTexture->Height));
 
-		int MipmapWidth = NewTexture->Width / 2;
-		int MipmapHeight = NewTexture->Height / 2;
+		// The file has every mipmap level, a level of a texture that is not square is never smaller than 1.
+		int MipmapWidth = NewTexture->Width;
+		int MipmapHeight = NewTexture->Height;
+		FE_GL_CLEAR_ERRORS();
+		bMipmapsLoadedFromFile = true;
 		for (size_t i = 0; i < MipmapCount; i++)
 		{
 			const int Size = *(int*)(&FileData[CurrentShift]);
 			CurrentShift += 4;
 
-			if (i == 0)
-			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, NewTexture->Width, NewTexture->Height, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
-			}
-			else
-			{
-				FE_GL_ERROR(glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipmapWidth, MipmapHeight, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift])));
-
-				MipmapWidth = MipmapWidth / 2;
-				MipmapHeight = MipmapHeight / 2;
-
-				if (MipmapWidth <= 0 || MipmapHeight <= 0)
-					break;
-			}
+			glCompressedTexSubImage2D(GL_TEXTURE_2D, static_cast<int>(i), 0, 0, MipmapWidth, MipmapHeight, NewTexture->InternalFormat, Size, static_cast<void*>(&FileData[CurrentShift]));
+			// Check if the mipmaps were loaded correctly, if not we will generate them later.
+			if (glGetError() != GL_NO_ERROR)
+				bMipmapsLoadedFromFile = false;
 
 			CurrentShift += Size;
+			MipmapWidth = std::max(MipmapWidth / 2, 1);
+			MipmapHeight = std::max(MipmapHeight / 2, 1);
 		}
 	}
 
@@ -778,7 +774,18 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	if (NewTexture->Type != FE_TEXTURE_TYPE::FE_TEXTURE_3D)
 	{
 		NewTexture->SetFilterType(LoadedFilter);
-		NewTexture->SetMipmappingEnabled(true);
+		if (bMipmapsLoadedFromFile)
+		{
+			NewTexture->bMipmappingEnabled = true;
+			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f));
+			FE_GL_ERROR(glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, 0.0f));
+		}
+		else
+		{
+			// Only if the mipmaps were not loaded from file, we generate them here.
+			NewTexture->SetMipmappingEnabled(true);
+		}
+
 		NewTexture->SetMipmapFilterType(LoadedMipmapFilter);
 	}
 
