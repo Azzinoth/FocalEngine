@@ -1695,10 +1695,13 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 void FERenderer::RenderDebugLines(FEScene* CurrentScene, FEEntity* MainCameraEntity, FECameraRenderingData* CurrentCameraRenderingData)
 {
+	if (DebugLineCounter == 0)
+		return;
+
 	FECameraComponent& CurrentCameraComponent = MainCameraEntity->GetComponent<FECameraComponent>();
 
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, DebugLinesBuffer));
-	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, FE_MAX_DEBUG_LINES * sizeof(FELine), this->DebugLines.data()));
+	FE_GL_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, DebugLineCounter * sizeof(FELine), this->DebugLines.data()));
 	FE_GL_ERROR(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
 	LINE_SYSTEM.InstancedLineShader->Start();
