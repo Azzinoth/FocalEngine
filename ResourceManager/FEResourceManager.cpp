@@ -1892,6 +1892,7 @@ void FEResourceManager::LoadStandardMaterial()
 		nullptr, nullptr, nullptr, nullptr,
 		FEEngineResourceIDs::SolidColorShader);
 	NewMaterial->Shader->SetTag(ENGINE_RESOURCE_TAG);
+	NewMaterial->Shader->UpdateUniformData("BrightnessFactor", 1.0f);
 
 	FEShaderUniformValue Color("BaseColor", glm::vec3(1.0f, 0.4f, 0.6f));
 	NewMaterial->SetUniformVariation(Color);

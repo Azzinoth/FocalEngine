@@ -1574,6 +1574,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 			}
 
 			FETexture* OrdinaryColorAttachment = Effect.IntermediateFramebuffer->GetColorAttachment();
+			// Framebuffer that is already bound is not bound and unbound again by SetColorAttachment.
+			Effect.IntermediateFramebuffer->Bind();
 			Effect.IntermediateFramebuffer->SetColorAttachment(Effect.Stages[j]->OutTexture);
 			if (Effect.Stages[j]->OutTexture->Width != CurrentCameraRenderingData->SceneToTextureFB->GetWidth())
 			{
@@ -1583,7 +1585,6 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 			{
 				SetGLViewport(0, 0, CurrentCameraRenderingData->SceneToTextureFB->GetWidth(), CurrentCameraRenderingData->SceneToTextureFB->GetHeight());
 			}
-			Effect.IntermediateFramebuffer->Bind();
 
 			FE_GL_ERROR(glBindVertexArray(Effect.ScreenQuad->GetVaoID()));
 			FE_GL_ERROR(glEnableVertexAttribArray(0));
@@ -1591,9 +1592,9 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 			FE_GL_ERROR(glDisableVertexAttribArray(0));
 			FE_GL_ERROR(glBindVertexArray(0));
 
-			Effect.IntermediateFramebuffer->UnBind();
 			// this was added because of postProcesses and how they "manage" colorAttachment of FB
 			Effect.IntermediateFramebuffer->SetColorAttachment(OrdinaryColorAttachment);
+			Effect.IntermediateFramebuffer->UnBind();
 
 			for (size_t k = 0; k < Effect.Stages[j]->InTextureSource.size(); k++)
 			{
@@ -1625,8 +1626,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI *********
 	FETexture* OriginalColorAttachment = CurrentCameraRenderingData->SceneToTextureFB->GetColorAttachment();
-	CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(CurrentCameraRenderingData->FinalScene);
 	CurrentCameraRenderingData->SceneToTextureFB->Bind();
+	CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(CurrentCameraRenderingData->FinalScene);
 
 	for (entt::entity EnTTEntity : GameModelGroup)
 	{
@@ -1654,8 +1655,8 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 		}
 	}
 
-	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 	CurrentCameraRenderingData->SceneToTextureFB->SetColorAttachment(OriginalColorAttachment);
+	CurrentCameraRenderingData->SceneToTextureFB->UnBind();
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
@@ -2155,7 +2156,7 @@ void FERenderer::DebugDrawLine(FELine LineToRender)
 
 void FERenderer::BeginFrameDebugLines()
 {
-	for (size_t i = 0; i < DebugLines.size(); i++)
+	for (size_t i = 0; i < static_cast<size_t>(DebugLineCounter); i++)
 	{
 		if (!DebugLinesDirtyFlags[i].bCurrentlyInUse)
 			continue;
@@ -2167,7 +2168,7 @@ void FERenderer::BeginFrameDebugLines()
 void FERenderer::EndFrameDebugLines()
 {
 	// Go through all lines and if debug dirty flag seen both start and end of frame, remove line.
-	for (size_t i = 0; i < DebugLines.size(); i++)
+	for (size_t i = 0; i < static_cast<size_t>(DebugLineCounter); i++)
 	{
 		if (!DebugLinesDirtyFlags[i].bCurrentlyInUse)
 			continue;

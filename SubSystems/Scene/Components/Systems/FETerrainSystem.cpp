@@ -105,6 +105,7 @@ void FETerrainSystem::DuplicateTerrainComponent(FEEntity* SourceEntity, FEEntity
 	{
 		NewTerrainComponent.LayerMapsRawData[i] = nullptr;
 	}
+	NewTerrainComponent.LayerMapsRawDataUpdateTime = 0;
 
 	for (size_t i = 0; i < FE_TERRAIN_MAX_LAYERS; i++)
 	{
@@ -806,13 +807,11 @@ bool FETerrainSystem::UpdateLayerMapsRawData(FEEntity* TerrainEntity)
 	}
 	FETerrainComponent& TerrainComponent = TerrainEntity->GetComponent<FETerrainComponent>();
 
-	if (TIME.EndTimeStamp(UNIQUE_ID.ToString(TerrainEntity->GetID())) != -1.0)
-	{
-		if (TIME.EndTimeStamp(UNIQUE_ID.ToString(TerrainEntity->GetID())) < 2000)
-			return false;
-	}
+	const uint64_t CurrentTime = TIME.GetTimeStamp(FE_TIME_RESOLUTION_MILLISECONDS);
+	if (TerrainComponent.LayerMapsRawDataUpdateTime != 0 && CurrentTime - TerrainComponent.LayerMapsRawDataUpdateTime < 2000)
+		return false;
 
-	TIME.BeginTimeStamp(UNIQUE_ID.ToString(TerrainEntity->GetID()));
+	TerrainComponent.LayerMapsRawDataUpdateTime = CurrentTime;
 
 	for (size_t i = 0; i < TerrainComponent.LayerMaps.size(); i++)
 	{

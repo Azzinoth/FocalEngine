@@ -460,14 +460,14 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 {
 	Clear();
 
-	Json::Value Nodes = Root["Nodes"];
+	const Json::Value& Nodes = Root["Nodes"];
 	std::unordered_map<std::string, FENaiveSceneGraphNode*> LoadedNodes;
 
 	// First pass: Create all nodes
 	for (Json::Value::const_iterator NodeIterator = Nodes.begin(); NodeIterator != Nodes.end(); NodeIterator++)
 	{
 		std::string NodeID = NodeIterator.key().asString();
-		Json::Value NodeData = *NodeIterator;
+		const Json::Value& NodeData = *NodeIterator;
 
 		FENaiveSceneGraphNode* NewNode = new FENaiveSceneGraphNode(NodeData["Name"].asString());
 
@@ -497,7 +497,7 @@ void FENaiveSceneGraph::FromJson(Json::Value Root)
 	for (size_t i = 0; i < NodeOrder.size(); i++)
 	{
 		std::string NodeID = NodeOrder[i].second;
-		Json::Value NodeData = Nodes[NodeID];
+		const Json::Value& NodeData = Nodes[NodeID];
 
 		FENaiveSceneGraphNode* CurrentNode = LoadedNodes[NodeID];
 		std::string ParentID = NodeData["ParentID"].asString();

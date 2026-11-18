@@ -120,6 +120,7 @@ namespace FocalEngine
 
 		std::vector<FETerrainLayer*> Layers;
 		std::vector<unsigned char*> LayerMapsRawData;
+		uint64_t LayerMapsRawDataUpdateTime = 0;
 		FETerrainLayer* ActivateVacantLayerSlot(FEMaterial* Material);
 		void DeleteLayerInSlot(size_t LayerIndex);
 		
