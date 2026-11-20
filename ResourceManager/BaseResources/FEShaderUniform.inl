@@ -34,7 +34,9 @@ bool FEShaderUniformValue::SetValue(const T& Value)
 		return false;
 	}
 
-	Data = Value;
+	// Assigning to std::any allocates memory for types like glm::mat4,
+	// so instead of assignment (Data = Value) we overwrite the stored value in place.
+	*std::any_cast<T>(&Data) = Value;
 	return true;
 }
 
