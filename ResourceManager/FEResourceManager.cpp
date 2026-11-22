@@ -4882,9 +4882,9 @@ bool FEResourceManager::UnPackEngineSourceFilesAssetPackage(FEAssetPackage* Asse
 FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 {
 #ifdef _DEBUG
-	const std::string Configuration = "Release";
-#else
 	const std::string Configuration = "Debug";
+#else
+	const std::string Configuration = "Release";
 #endif
 	const std::string EngineBinaryPath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_BINARY_FOLDER) + "/";
 	const std::vector<std::string> LibFiles = {
