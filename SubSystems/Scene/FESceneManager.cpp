@@ -1,5 +1,7 @@
 #include "FESceneManager.h"
 #include "../PluginSystem/FEPluginManager.h"
+// TO-DO: Improve FETransformSystem robustness by minimizing special case handling.
+#include "Components/Systems/FETransformSystem.h"
 using namespace FocalEngine;
 
 #ifdef FOCAL_ENGINE_SHARED
@@ -76,6 +78,8 @@ FEScene* FESceneManager::LoadSceneFromJSON(Json::Value& Root, FESceneFlag Flags)
 	RESOURCE_MANAGER.SetTag(NewScene, LoadedObjectData.Tag);
 
 	NewScene->SceneGraph.FromJson(Root["Scene hierarchy"]);
+	// Scripts run before the transform system in a frame, so world matrices are needed before the first one.
+	TRANSFORM_SYSTEM.UpdateInternal(NewScene->SceneGraph.GetRoot());
 	return NewScene;
 }
 
@@ -291,8 +295,6 @@ FEScene* FESceneManager::DuplicateScene(FEScene* SourceScene, std::string NewSce
 	return Result;
 }
 
-// TO-DO: Improve FETransformSystem robustness by minimizing special case handling.
-#include "Components/Systems/FETransformSystem.h"
 std::vector<FENaiveSceneGraphNode*> FESceneManager::ImportSceneAsNode(FEScene* SourceScene, FEScene* TargetScene, FENaiveSceneGraphNode* TargetParent, std::function<bool(FEEntity*)> Filter)
 {
 	std::vector<FENaiveSceneGraphNode*> Result;

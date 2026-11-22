@@ -2678,3 +2678,60 @@ TEST_F(SceneGraphTest, ImportEntity_EntityLeftOutByFilter_IsNotAnError)
 	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
 	SCENE_MANAGER.DeleteScene(TargetScene->GetID());
 }
+
+TEST_F(SceneGraphTest, LoadSceneFromJSON_WorldMatricesAreReadyBeforeFirstFrame)
+{
+	SCENE_MANAGER.Clear();
+
+	FEScene* SourceScene = SCENE_MANAGER.CreateScene("WorldMatricesAfterLoad", FEUUID(), FESceneFlag::Active);
+	FEEntity* Parent = SourceScene->CreateEntity("Parent");
+	FEEntity* Child = SourceScene->CreateEntity("Child");
+	FEEntity* GrandChild = SourceScene->CreateEntity("GrandChild");
+	ASSERT_TRUE(Child->AttachTo(Parent, false));
+	ASSERT_TRUE(GrandChild->AttachTo(Child, false));
+
+	Parent->GetComponent<FETransformComponent>().SetPosition(glm::vec3(10.0f, 0.0f, 0.0f));
+	Parent->GetComponent<FETransformComponent>().SetRotation(glm::vec3(0.0f, 90.0f, 0.0f));
+	Parent->GetComponent<FETransformComponent>().SetScale(glm::vec3(2.0f));
+	Child->GetComponent<FETransformComponent>().SetPosition(glm::vec3(1.0f, 2.0f, 3.0f));
+	GrandChild->GetComponent<FETransformComponent>().SetPosition(glm::vec3(0.0f, 0.0f, -4.0f));
+
+	const glm::mat4 ExpectedParent = glm::translate(glm::mat4(1.0f), glm::vec3(10.0f, 0.0f, 0.0f)) *
+		glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)) *
+		glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
+	const glm::mat4 ExpectedChild = ExpectedParent * glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 2.0f, 3.0f));
+	const glm::mat4 ExpectedGrandChild = ExpectedChild * glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -4.0f));
+	const std::vector<std::pair<FEUUID, glm::mat4>> Expected = {
+		{ Parent->GetID(), ExpectedParent },
+		{ Child->GetID(), ExpectedChild },
+		{ GrandChild->GetID(), ExpectedGrandChild }
+	};
+	const FEUUID GrandChildID = GrandChild->GetID();
+
+	Json::Value SceneData = SCENE_MANAGER.SaveSceneToJSON(SourceScene);
+	SCENE_MANAGER.DeleteScene(SourceScene->GetID());
+
+	// No frame runs before the checks: in the first frame of a loaded scene, scripts run before the transform system.
+	FEScene* LoadedScene = SCENE_MANAGER.LoadSceneFromJSON(SceneData, FESceneFlag::Active);
+	ASSERT_NE(LoadedScene, nullptr);
+
+	for (const auto& [EntityID, ExpectedMatrix] : Expected)
+	{
+		FEEntity* Entity = LoadedScene->GetEntity(EntityID);
+		ASSERT_NE(Entity, nullptr);
+		const glm::mat4 WorldMatrix = Entity->GetComponent<FETransformComponent>().GetWorldMatrix();
+		for (int Column = 0; Column < 4; Column++)
+		{
+			for (int Row = 0; Row < 4; Row++)
+				EXPECT_NEAR(WorldMatrix[Column][Row], ExpectedMatrix[Column][Row], 1e-4f) << Entity->GetName() << " [" << Column << "][" << Row << "]";
+		}
+	}
+
+	// Parent turns (1, 2, 3) + (0, 0, -4) by 90 degrees about Y and scales it 2 times: (-2, 4, -2) from (10, 0, 0).
+	const glm::vec3 GrandChildPosition = LoadedScene->GetEntity(GrandChildID)->GetComponent<FETransformComponent>().GetPosition(FE_WORLD_SPACE);
+	EXPECT_NEAR(GrandChildPosition.x, 8.0f, 1e-4f);
+	EXPECT_NEAR(GrandChildPosition.y, 4.0f, 1e-4f);
+	EXPECT_NEAR(GrandChildPosition.z, -2.0f, 1e-4f);
+
+	SCENE_MANAGER.DeleteScene(LoadedScene->GetID());
+}
