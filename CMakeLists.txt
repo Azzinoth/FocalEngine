@@ -66,6 +66,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # to make sure that the engine can find its dependencies
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}")
 set(ENGINE_FOLDER "${CMAKE_CURRENT_SOURCE_DIR}" PARENT_SCOPE)
+# Libraries of the engine are built here, apart from the sources when the build is out of source.
+set(ENGINE_BINARY_FOLDER "${CMAKE_CURRENT_BINARY_DIR}")
+set(ENGINE_BINARY_FOLDER "${CMAKE_CURRENT_BINARY_DIR}" PARENT_SCOPE)
 configure_file(${ENGINE_FOLDER}/ResourceManager/Config.h.in ${ENGINE_FOLDER}/ResourceManager/Config.h @ONLY)
 
 file(GLOB InstancedLineMaterial_SRC

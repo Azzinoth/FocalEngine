@@ -4881,45 +4881,34 @@ bool FEResourceManager::UnPackEngineSourceFilesAssetPackage(FEAssetPackage* Asse
 
 FEAssetPackage* FEResourceManager::CreateEngineLIBAssetPackage()
 {
+#ifdef _DEBUG
+	const std::string Configuration = "Release";
+#else
+	const std::string Configuration = "Debug";
+#endif
+	const std::string EngineBinaryPath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_BINARY_FOLDER) + "/";
+	const std::vector<std::string> LibFiles = {
+		EngineBinaryPath + Configuration + "/FocalEngine.lib",
+		EngineBinaryPath + "SubSystems/FEBasicApplication/" + Configuration + "/FEBasicApplication.lib"
+	};
+
 	FEAssetPackage* EngineLIBAssetPackage = new FEAssetPackage();
 	EngineLIBAssetPackage->SetName("EngineLib");
-	if (EngineLIBAssetPackage == nullptr)
+	for (const std::string& LibFile : LibFiles)
 	{
-		LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: Error creating asset package", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
-		return nullptr;
-	}
-
-	std::string EnginePath = FILE_SYSTEM.GetCurrentWorkingPath() + "/" + std::string(ENGINE_FOLDER) + "/";
-	if (!FILE_SYSTEM.DoesDirectoryExist(EnginePath))
-	{
-		LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: Engine folder does not exist", "FE_RESOURCE_MANAGER", FE_LOG_WARNING);
-		delete EngineLIBAssetPackage;
-		return nullptr;
-	}
-
-	std::vector<std::string> AllFiles = FILE_SYSTEM.GetFilesInDirectory(EnginePath, true);
-
-	std::vector<std::string> DebugStrings;
-	// After having all files in the engine folder, we need to filter out only the lib files.
-	for (size_t i = 0; i < AllFiles.size(); i++)
-	{
-		if (AllFiles[i].substr(AllFiles[i].size() - 4) == ".lib")
+		if (!FILE_SYSTEM.DoesFileExist(LibFile))
 		{
-			// FE_FIX_ME: Currently projects only need debug lib files. Is this correct?
-			// The code will grab either Debug or Release lib files. We should make this more deterministic.
-			// Note: Only FocalEngine.lib and FEBasicApplication.lib are needed.
-			if (AllFiles[i].find("FocalEngine.lib") == std::string::npos && AllFiles[i].find("FEBasicApplication.lib") == std::string::npos)
-				continue;
-
-			FEAssetPackageEntryInitializeData EntryData;
-			EntryData.Name = FILE_SYSTEM.GetFileName(AllFiles[i]);
-			DebugStrings.push_back(EntryData.Name);
-			EntryData.Type = "BINARY";
-			EntryData.Tag = ENGINE_RESOURCE_TAG;
-			EntryData.Comment = "Engine lib file";
-
-			EngineLIBAssetPackage->ImportAssetFromFile(AllFiles[i], EntryData);
+			LOG.Add("FEResourceManager::CreateEngineLIBAssetPackage: " + LibFile + " does not exist", "FE_RESOURCE_MANAGER", FE_LOG_ERROR);
+			delete EngineLIBAssetPackage;
+			return nullptr;
 		}
+
+		FEAssetPackageEntryInitializeData EntryData;
+		EntryData.Name = FILE_SYSTEM.GetFileName(LibFile);
+		EntryData.Type = "BINARY";
+		EntryData.Tag = ENGINE_RESOURCE_TAG;
+		EntryData.Comment = "Engine lib file";
+		EngineLIBAssetPackage->ImportAssetFromFile(LibFile, EntryData);
 	}
 
 	return EngineLIBAssetPackage;
