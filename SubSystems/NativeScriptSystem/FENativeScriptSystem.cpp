@@ -666,10 +666,14 @@ bool FENativeScriptSystem::ActivateNativeScriptModule(FENativeScriptModule* Modu
 	}
 #endif
 	
+	// Without SEM_FAILCRITICALERRORS Windows shows message box that blocks application when DLL is damaged, error is logged below instead.
+	DWORD PreviousErrorMode = 0;
+	SetThreadErrorMode(SEM_FAILCRITICALERRORS, &PreviousErrorMode);
 	HMODULE DLLHandle = LoadLibraryA(DLLPath.c_str());
+	const DWORD ErrorMessageID = DLLHandle == nullptr ? ::GetLastError() : 0;
+	SetThreadErrorMode(PreviousErrorMode, nullptr);
 	if (!DLLHandle)
 	{
-		DWORD ErrorMessageID = ::GetLastError();
 		if (ErrorMessageID == 0)
 		{
 			LOG.Add("FENativeScriptSystem::ActivateNativeScriptModule failed to load DLL: " + DLLPath + " without error message.", "FE_SCRIPT_SYSTEM", FE_LOG_ERROR);

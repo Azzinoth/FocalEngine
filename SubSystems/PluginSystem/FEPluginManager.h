@@ -3,6 +3,7 @@
 
 namespace FocalEngine
 {
+	class FEAssetPackage;
 
 	struct PluginModule
 	{
@@ -109,6 +110,23 @@ namespace FocalEngine
 		bool AddEngineSubmodule(const std::string& VSProjectDirectory);
 
 		std::vector<std::string> GetValidManifestPaths(const std::string& FolderPath);
+		// With bUpdate installed plugin with the same ID is replaced, right away if it was not found by Initialize, otherwise on next start.
+		bool InstallPluginFromPackage(FEAssetPackage& Package, bool bUpdate, PluginManifest& OutManifest, std::string& OutErrorMessage);
+		void InstallOrUpdatePluginPackageAsync(const std::string& PackageFilePath, bool bUpdate, std::function<void(bool bSucceeded, const std::string& ErrorMessage)> OnFinished);
+		// Scans plugin directory, so it finds also plugins that were installed after Initialize. Returns empty string if plugin is not installed.
+		std::string FindInstalledPluginFolder(const FEUUID& PluginID);
+		bool IsFoundByInitialize(const FEUUID& PluginID) const;
+
+		std::vector<FEUUID> PendingUninstallIDs;
+
+		struct FEPendingPluginUpdate
+		{
+			FEUUID PluginID;
+			std::string Version;
+			std::string StagedFolderPath;
+		};
+		std::vector<FEPendingPluginUpdate> PendingUpdates;
+		void AddPendingUpdate(const PluginManifest& Manifest);
 	public:
 		SINGLETON_PUBLIC_PART(FEPluginManager)
 
@@ -125,6 +143,7 @@ namespace FocalEngine
 
 		bool IsValidManifest(const std::string& ManifestPath);
 		bool ParseManifest(const std::string& ManifestPath, PluginManifest& OutManifest);
+		bool ParseManifestText(const std::string& ManifestText, PluginManifest& OutManifest);
 
 		const std::vector<DiscoveredPlugin>& GetDiscoveredPlugins() const;
 
@@ -148,9 +167,24 @@ namespace FocalEngine
 		bool RunVSProject(const std::string& PluginName, const std::string& VSProjectDirectory);
 
 		bool CreatePluginPackage(const std::string& PluginFolderPath, const std::string& PackageFilePath, std::string& OutErrorMessage);
+		// Package could be .feplugin file or zip archive with content of plugin folder, or with plugin folder itself.
 		bool ReadPluginPackageManifest(const std::string& PackageFilePath, PluginManifest& OutManifest, std::string& OutErrorMessage);
 		// Installed plugin is loaded on next start.
 		bool InstallPluginPackage(const std::string& PackageFilePath, std::string& OutErrorMessage);
+		// Same as InstallPluginPackage, but package is read and written on thread pool, OnFinished is called on main thread during frame update.
+		void InstallPluginPackageAsync(const std::string& PackageFilePath, std::function<void(bool bInstalled, const std::string& ErrorMessage)> OnFinished);
+
+		// Plugin that was found by Initialize could be loaded, so it is deleted on next start before plugins are loaded, other plugins are deleted right away.
+		bool UninstallPlugin(const FEUUID& PluginID, std::string& OutErrorMessage);
+		bool IsUninstallPending(const FEUUID& PluginID) const;
+		bool CancelUninstall(const FEUUID& PluginID, std::string& OutErrorMessage);
+
+		// Replaces installed plugin with the same ID as plugin in package, plugin found by Initialize is replaced on next start before plugins are loaded.
+		void UpdatePluginPackageAsync(const std::string& PackageFilePath, std::function<void(bool bUpdated, const std::string& ErrorMessage)> OnFinished);
+		bool IsUpdatePending(const FEUUID& PluginID) const;
+		// Empty if there is no pending update.
+		std::string GetPendingUpdateVersion(const FEUUID& PluginID) const;
+		bool CancelUpdate(const FEUUID& PluginID, std::string& OutErrorMessage);
 
 		// Returns nullptr if plugin is not loaded, result should not be stored because plugin could be unloaded.
 		FEPluginCore* GetPlugin(const FEUUID& PluginID);

@@ -4271,7 +4271,11 @@ std::string FEResourceManager::ReadDLLModuleID(std::string DLLFilePath)
 		return "";
 	}
 
+	// Without SEM_FAILCRITICALERRORS Windows shows message box that blocks application when DLL is damaged.
+	DWORD PreviousErrorMode = 0;
+	SetThreadErrorMode(SEM_FAILCRITICALERRORS, &PreviousErrorMode);
 	HMODULE DLLHandle = LoadLibraryA(DLLFilePath.c_str());
+	SetThreadErrorMode(PreviousErrorMode, nullptr);
 	if (!DLLHandle)
 	{
 		LOG.Add("FEResourceManager::ReadDLLModuleID failed to load DLL: " + DLLFilePath, "FE_LOG_LOADING", FE_LOG_ERROR);

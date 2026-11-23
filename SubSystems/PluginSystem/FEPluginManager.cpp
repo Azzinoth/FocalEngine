@@ -1,6 +1,7 @@
 #include "FEPluginManager.h"
 #include "../../ResourceManager/FEResourceManager.h"
 #include "../Scene/FESceneManager.h"
+#include "../FileSystem/FEZipArchive.h"
 #include <shellapi.h>
 #include <cctype>
 #include <cstring>
@@ -142,6 +143,108 @@ static std::string GetModuleDisplayName(const std::vector<DiscoveredPlugin>& Plu
 	return UNIQUE_ID.ToString(ModuleID);
 }
 
+// File in plugin folder that marks plugin for deletion on next start.
+static const std::string UninstallMarkerFileName = ".Uninstall";
+
+static void DeletePluginsMarkedForUninstall(const std::string& PluginDirectoryPath)
+{
+	const std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
+	for (size_t i = 0; i < PluginFolders.size(); i++)
+	{
+		const std::string PluginFolderPath = PluginDirectoryPath + "/" + PluginFolders[i];
+		if (PluginFolders[i].rfind(".Uninstalling_", 0) == 0)
+		{
+			FILE_SYSTEM.DeleteDirectory(PluginFolderPath);
+			continue;
+		}
+
+		if (PluginFolders[i].rfind('.', 0) == 0 || !FILE_SYSTEM.DoesFileExist(PluginFolderPath + "/" + UninstallMarkerFileName))
+			continue;
+
+		// Folder is renamed first, so plugin is not loaded even if deletion stops in the middle, rest of it is deleted on next start.
+		const std::string RenamedFolderPath = PluginDirectoryPath + "/.Uninstalling_" + PluginFolders[i];
+		if (!FILE_SYSTEM.RenameDirectory(PluginFolderPath, RenamedFolderPath))
+		{
+			LOG.Add("FEPluginManager::Initialize: Could not delete uninstalled plugin \"" + PluginFolderPath + "\", it is not loaded and deletion will be tried again on next start", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+			continue;
+		}
+
+		if (FILE_SYSTEM.DeleteDirectory(RenamedFolderPath))
+		{
+			LOG.Add("FEPluginManager::Initialize: Uninstalled plugin \"" + PluginFolderPath + "\" was deleted", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		}
+		else
+		{
+			LOG.Add("FEPluginManager::Initialize: Uninstalled plugin \"" + PluginFolderPath + "\" was deleted only partly, rest will be deleted on next start", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		}
+	}
+}
+
+// Folder next to plugin folder with new version of plugin, it is moved in place of plugin folder on next start.
+static const std::string UpdateFolderPrefix = ".Update_";
+
+static std::string GetFolderName(const std::string& FolderPath)
+{
+	const size_t SeparatorPosition = FolderPath.find_last_of("/\\");
+	return SeparatorPosition == std::string::npos ? FolderPath : FolderPath.substr(SeparatorPosition + 1);
+}
+
+static bool ReplacePluginFolder(const std::string& PluginFolderPath, const std::string& NewFolderPath, std::string& OutErrorMessage)
+{
+	// Old folder is renamed first, so it is not loaded even if its deletion stops in the middle, rest of it is deleted on next start.
+	const std::string OldFolderPath = PluginFolderPath.substr(0, PluginFolderPath.size() - GetFolderName(PluginFolderPath).size()) + ".Uninstalling_" + GetFolderName(PluginFolderPath);
+	if (FILE_SYSTEM.DoesDirectoryExist(OldFolderPath) && !FILE_SYSTEM.DeleteDirectory(OldFolderPath))
+	{
+		OutErrorMessage = "Could not delete \"" + OldFolderPath + "\" left from previous update or uninstall";
+		return false;
+	}
+
+	if (!FILE_SYSTEM.RenameDirectory(PluginFolderPath, OldFolderPath))
+	{
+		OutErrorMessage = "Could not move \"" + PluginFolderPath + "\", some of its files could be in use";
+		return false;
+	}
+
+	if (!FILE_SYSTEM.RenameDirectory(NewFolderPath, PluginFolderPath))
+	{
+		FILE_SYSTEM.RenameDirectory(OldFolderPath, PluginFolderPath);
+		OutErrorMessage = "Could not move \"" + NewFolderPath + "\" to \"" + PluginFolderPath + "\"";
+		return false;
+	}
+
+	FILE_SYSTEM.DeleteDirectory(OldFolderPath);
+	return true;
+}
+
+static void ApplyStagedUpdates(const std::string& PluginDirectoryPath)
+{
+	const std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
+	for (size_t i = 0; i < PluginFolders.size(); i++)
+	{
+		if (PluginFolders[i].rfind(UpdateFolderPrefix, 0) != 0)
+			continue;
+
+		// Update of plugin that was uninstalled is not needed.
+		const std::string StagedFolderPath = PluginDirectoryPath + "/" + PluginFolders[i];
+		const std::string PluginFolderPath = PluginDirectoryPath + "/" + PluginFolders[i].substr(UpdateFolderPrefix.size());
+		if (!FILE_SYSTEM.DoesDirectoryExist(PluginFolderPath) || FILE_SYSTEM.DoesFileExist(PluginFolderPath + "/" + UninstallMarkerFileName))
+		{
+			FILE_SYSTEM.DeleteDirectory(StagedFolderPath);
+			continue;
+		}
+
+		std::string ErrorMessage;
+		if (ReplacePluginFolder(PluginFolderPath, StagedFolderPath, ErrorMessage))
+		{
+			LOG.Add("FEPluginManager::Initialize: Plugin \"" + PluginFolderPath + "\" was updated", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		}
+		else
+		{
+			LOG.Add("FEPluginManager::Initialize: Could not update plugin \"" + PluginFolderPath + "\": " + ErrorMessage + ", old version is loaded and update will be tried again on next start", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+		}
+	}
+}
+
 FEPluginManager::FEPluginManager()
 {
 }
@@ -160,6 +263,8 @@ void FEPluginManager::Initialize()
 
 	// Otherwise plugins found by previous Initialize would be loaded again.
 	DiscoveredPlugins.clear();
+	PendingUninstallIDs.clear();
+	PendingUpdates.clear();
 
 	const std::string PluginDirectoryPath = GetPluginDirectory();
 	if (!FILE_SYSTEM.DoesDirectoryExist(PluginDirectoryPath))
@@ -168,6 +273,8 @@ void FEPluginManager::Initialize()
 		return;
 	}
 
+	DeletePluginsMarkedForUninstall(PluginDirectoryPath);
+	ApplyStagedUpdates(PluginDirectoryPath);
 	std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
 
 	for (int i = 0; i < PluginFolders.size(); i++)
@@ -176,7 +283,11 @@ void FEPluginManager::Initialize()
 		if (PluginFolders[i].rfind('.', 0) == 0)
 			continue;
 
+		// Uninstalled plugin that could not be deleted is not loaded, so deletion could succeed on next start.
 		const std::string PluginFolderPath = PluginDirectoryPath + "/" + PluginFolders[i];
+		if (FILE_SYSTEM.DoesFileExist(PluginFolderPath + "/" + UninstallMarkerFileName))
+			continue;
+
 		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginFolderPath);
 		if (ManifestPaths.empty())
 		{
@@ -201,6 +312,18 @@ void FEPluginManager::Initialize()
 		NewPlugin.Manifest = Manifest;
 		NewPlugin.FolderPath = PluginFolderPath;
 		DiscoveredPlugins.push_back(NewPlugin);
+	}
+
+	// Update that could not be applied above is still pending.
+	for (size_t i = 0; i < PluginFolders.size(); i++)
+	{
+		if (PluginFolders[i].rfind(UpdateFolderPrefix, 0) != 0)
+			continue;
+
+		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginDirectoryPath + "/" + PluginFolders[i]);
+		PluginManifest StagedManifest;
+		if (ManifestPaths.size() == 1 && ParseManifest(ManifestPaths[0], StagedManifest))
+			AddPendingUpdate(StagedManifest);
 	}
 
 	struct PendingModule
@@ -393,9 +516,13 @@ bool FEPluginManager::LoadPluginModule(const DiscoveredPlugin& Plugin, size_t Mo
 			LOG.Add("FEPluginManager::LoadPluginModule: Failed to add \"" + DependencyFolderPath + "\" to DLL search path", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
 	}
 
+	// Without SEM_FAILCRITICALERRORS Windows shows message box that blocks application when DLL is damaged, error is logged below instead.
+	DWORD PreviousErrorMode = 0;
+	SetThreadErrorMode(SEM_FAILCRITICALERRORS, &PreviousErrorMode);
 	// LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR requires absolute path.
 	HMODULE DLLHandle = LoadLibraryExA(FILE_SYSTEM.GetAbsolutePath(DLLPath).c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR);
 	DWORD ErrorMessageID = DLLHandle == nullptr ? ::GetLastError() : 0;
+	SetThreadErrorMode(PreviousErrorMode, nullptr);
 
 	// Dependencies are resolved during loading, so folder is no longer needed in DLL search path.
 	if (DependencyDirectoryCookie != nullptr)
@@ -864,6 +991,12 @@ bool FEPluginManager::ParseManifest(const std::string& ManifestPath, PluginManif
 	return ReadJsonFile(ManifestPath, Root) && ParseManifestJson(Root, OutManifest);
 }
 
+bool FEPluginManager::ParseManifestText(const std::string& ManifestText, PluginManifest& OutManifest)
+{
+	Json::Value Root;
+	return ParseJsonText(ManifestText, Root) && ParseManifestJson(Root, OutManifest);
+}
+
 std::vector<std::string> FEPluginManager::GetValidManifestPaths(const std::string& FolderPath)
 {
 	std::vector<std::string> Result;
@@ -924,6 +1057,70 @@ static bool ReadManifestFromPackage(FEAssetPackage& Package, PluginManifest& Out
 	return ParseManifestJson(Manifests[0], OutManifest);
 }
 
+// Returns the shared top-level folder (e.g. "MyPlugin/") if all entries are inside it, otherwise "".
+static std::string GetCommonRootFolderPrefix(const std::vector<FEZipArchiveFile>& Files)
+{
+	std::string Prefix;
+	for (size_t i = 0; i < Files.size(); i++)
+	{
+		const size_t SeparatorPosition = Files[i].Name.find('/');
+		if (SeparatorPosition == std::string::npos)
+			return "";
+
+		const std::string FileRootFolder = Files[i].Name.substr(0, SeparatorPosition + 1);
+		if (i == 0)
+		{
+			Prefix = FileRootFolder;
+		}
+		else if (FileRootFolder != Prefix)
+		{
+			return "";
+		}
+	}
+
+	return Prefix;
+}
+
+static bool AddArchiveFilesToPackage(std::vector<FEZipArchiveFile>& Files, FEAssetPackage& OutPackage, std::string& OutErrorMessage)
+{
+	const std::string RootFolderPrefix = GetCommonRootFolderPrefix(Files);
+	for (size_t i = 0; i < Files.size(); i++)
+	{
+		FEAssetPackageEntryInitializeData EntryData;
+		EntryData.Name = Files[i].Name.substr(RootFolderPrefix.size());
+		if (UNIQUE_ID.IsNull(OutPackage.ImportAssetFromMemory(Files[i].Data.data(), Files[i].Data.size(), EntryData)))
+		{
+			OutErrorMessage = "Could not add \"" + Files[i].Name + "\" to package";
+			return false;
+		}
+
+		Files[i].Data.clear();
+		Files[i].Data.shrink_to_fit();
+	}
+
+	return true;
+}
+
+static bool LoadPluginPackage(const std::string& PackageFilePath, FEAssetPackage& OutPackage, std::string& OutErrorMessage)
+{
+	std::string Extension = FILE_SYSTEM.GetFileExtension(PackageFilePath);
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), [](unsigned char Character) { return static_cast<char>(std::tolower(Character)); });
+	if (Extension != ".zip")
+	{
+		if (OutPackage.LoadFromFile(PackageFilePath))
+			return true;
+
+		OutErrorMessage = "Could not load package \"" + PackageFilePath + "\"";
+		return false;
+	}
+
+	std::vector<FEZipArchiveFile> Files;
+	if (!FEZipArchive::ReadFiles(PackageFilePath, Files, OutErrorMessage))
+		return false;
+
+	return AddArchiveFilesToPackage(Files, OutPackage, OutErrorMessage);
+}
+
 bool FEPluginManager::CreatePluginPackage(const std::string& PluginFolderPath, const std::string& PackageFilePath, std::string& OutErrorMessage)
 {
 	auto Fail = [&](const std::string& Message) -> bool
@@ -961,29 +1158,232 @@ bool FEPluginManager::CreatePluginPackage(const std::string& PluginFolderPath, c
 bool FEPluginManager::ReadPluginPackageManifest(const std::string& PackageFilePath, PluginManifest& OutManifest, std::string& OutErrorMessage)
 {
 	FEAssetPackage Package;
-	if (!Package.LoadFromFile(PackageFilePath))
-	{
-		OutErrorMessage = "Could not load package \"" + PackageFilePath + "\"";
+	if (!LoadPluginPackage(PackageFilePath, Package, OutErrorMessage))
 		return false;
-	}
 
 	return ReadManifestFromPackage(Package, OutManifest, OutErrorMessage);
 }
 
 bool FEPluginManager::InstallPluginPackage(const std::string& PackageFilePath, std::string& OutErrorMessage)
 {
+	FEAssetPackage Package;
+	PluginManifest Manifest;
+	if (!LoadPluginPackage(PackageFilePath, Package, OutErrorMessage) || !InstallPluginFromPackage(Package, false, Manifest, OutErrorMessage))
+	{
+		LOG.Add("FEPluginManager::InstallPluginPackage: " + OutErrorMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	return true;
+}
+
+void FEPluginManager::InstallPluginPackageAsync(const std::string& PackageFilePath, std::function<void(bool bInstalled, const std::string& ErrorMessage)> OnFinished)
+{
+	InstallOrUpdatePluginPackageAsync(PackageFilePath, false, OnFinished);
+}
+
+void FEPluginManager::UpdatePluginPackageAsync(const std::string& PackageFilePath, std::function<void(bool bUpdated, const std::string& ErrorMessage)> OnFinished)
+{
+	InstallOrUpdatePluginPackageAsync(PackageFilePath, true, OnFinished);
+}
+
+void FEPluginManager::InstallOrUpdatePluginPackageAsync(const std::string& PackageFilePath, const bool bUpdate, std::function<void(bool bSucceeded, const std::string& ErrorMessage)> OnFinished)
+{
+	struct FEInstallResult
+	{
+		bool bSucceeded = false;
+		std::string ErrorMessage;
+		PluginManifest Manifest;
+	};
+
+	// Package is created and deleted on main thread, because object manager is not thread safe, thread pool uses only data of the package.
+	FEAssetPackage* Package = new FEAssetPackage();
+	std::shared_ptr<FEInstallResult> Result = std::make_shared<FEInstallResult>();
+	THREAD_POOL.Execute([this, PackageFilePath, bUpdate, Package, Result](void*, void*) {
+		Result->bSucceeded = LoadPluginPackage(PackageFilePath, *Package, Result->ErrorMessage) && InstallPluginFromPackage(*Package, bUpdate, Result->Manifest, Result->ErrorMessage);
+	}, nullptr, nullptr, [this, bUpdate, Package, Result, OnFinished](void*) {
+		delete Package;
+		if (!Result->bSucceeded)
+		{
+			LOG.Add(std::string(bUpdate ? "FEPluginManager::UpdatePluginPackageAsync: " : "FEPluginManager::InstallPluginPackageAsync: ") + Result->ErrorMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		}
+		else if (bUpdate)
+		{
+			AddPendingUpdate(Result->Manifest);
+		}
+
+		if (OnFinished)
+			OnFinished(Result->bSucceeded, Result->ErrorMessage);
+	});
+}
+
+bool FEPluginManager::IsFoundByInitialize(const FEUUID& PluginID) const
+{
+	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+	{
+		if (DiscoveredPlugins[i].Manifest.ID == PluginID)
+			return true;
+	}
+
+	return false;
+}
+
+// Only plugins found by Initialize have staged updates, other plugins are updated right away.
+void FEPluginManager::AddPendingUpdate(const PluginManifest& Manifest)
+{
+	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+	{
+		if (DiscoveredPlugins[i].Manifest.ID != Manifest.ID)
+			continue;
+
+		const std::string StagedFolderPath = GetPluginDirectory() + "/" + UpdateFolderPrefix + GetFolderName(DiscoveredPlugins[i].FolderPath);
+		if (!FILE_SYSTEM.DoesDirectoryExist(StagedFolderPath))
+			return;
+
+		PendingUpdates.erase(std::remove_if(PendingUpdates.begin(), PendingUpdates.end(), [&](const FEPendingPluginUpdate& Update) { return Update.PluginID == Manifest.ID; }), PendingUpdates.end());
+		PendingUpdates.push_back({ Manifest.ID, Manifest.Version, StagedFolderPath });
+		return;
+	}
+}
+
+bool FEPluginManager::IsUpdatePending(const FEUUID& PluginID) const
+{
+	return !GetPendingUpdateVersion(PluginID).empty();
+}
+
+std::string FEPluginManager::GetPendingUpdateVersion(const FEUUID& PluginID) const
+{
+	for (size_t i = 0; i < PendingUpdates.size(); i++)
+	{
+		if (PendingUpdates[i].PluginID == PluginID)
+			return PendingUpdates[i].Version;
+	}
+
+	return "";
+}
+
+bool FEPluginManager::CancelUpdate(const FEUUID& PluginID, std::string& OutErrorMessage)
+{
+	for (size_t i = 0; i < PendingUpdates.size(); i++)
+	{
+		if (PendingUpdates[i].PluginID != PluginID)
+			continue;
+
+		if (FILE_SYSTEM.DoesDirectoryExist(PendingUpdates[i].StagedFolderPath) && !FILE_SYSTEM.DeleteDirectory(PendingUpdates[i].StagedFolderPath))
+		{
+			OutErrorMessage = "Could not delete \"" + PendingUpdates[i].StagedFolderPath + "\"";
+			LOG.Add("FEPluginManager::CancelUpdate: " + OutErrorMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+			return false;
+		}
+
+		PendingUpdates.erase(PendingUpdates.begin() + i);
+		return true;
+	}
+
+	OutErrorMessage = "Update of plugin " + UNIQUE_ID.ToString(PluginID) + " is not pending";
+	return false;
+}
+
+std::string FEPluginManager::FindInstalledPluginFolder(const FEUUID& PluginID)
+{
+	const std::string PluginDirectoryPath = GetPluginDirectory();
+	const std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
+	for (size_t i = 0; i < PluginFolders.size(); i++)
+	{
+		if (PluginFolders[i].rfind('.', 0) == 0)
+			continue;
+
+		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginDirectoryPath + "/" + PluginFolders[i]);
+		PluginManifest Manifest;
+		if (ManifestPaths.size() == 1 && ParseManifest(ManifestPaths[0], Manifest) && Manifest.ID == PluginID)
+			return PluginDirectoryPath + "/" + PluginFolders[i];
+	}
+
+	return "";
+}
+
+bool FEPluginManager::UninstallPlugin(const FEUUID& PluginID, std::string& OutErrorMessage)
+{
 	auto Fail = [&](const std::string& Message) -> bool
 	{
 		OutErrorMessage = Message;
-		LOG.Add("FEPluginManager::InstallPluginPackage: " + Message, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		LOG.Add("FEPluginManager::UninstallPlugin: " + Message, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
 		return false;
 	};
 
-	FEAssetPackage Package;
-	if (!Package.LoadFromFile(PackageFilePath))
-		return Fail("Could not load package \"" + PackageFilePath + "\"");
+	if (IsUninstallPending(PluginID))
+		return true;
 
-	PluginManifest Manifest;
+	const std::string PluginFolderPath = FindInstalledPluginFolder(PluginID);
+	if (PluginFolderPath.empty())
+		return Fail("Plugin " + UNIQUE_ID.ToString(PluginID) + " is not installed");
+
+	if (IsUpdatePending(PluginID))
+	{
+		std::string CancelErrorMessage;
+		CancelUpdate(PluginID, CancelErrorMessage);
+	}
+
+	// DLLs of such plugin could be loaded by plugin manager or by application, folder can not be deleted while they are loaded.
+	if (IsFoundByInitialize(PluginID))
+	{
+		std::ofstream MarkerFile(PluginFolderPath + "/" + UninstallMarkerFileName);
+		if (!MarkerFile.is_open())
+			return Fail("Could not mark \"" + PluginFolderPath + "\" for deletion");
+
+		MarkerFile << "Plugin in this folder is deleted on next start of application.";
+		MarkerFile.close();
+		if (MarkerFile.fail())
+			return Fail("Could not mark \"" + PluginFolderPath + "\" for deletion");
+
+		PendingUninstallIDs.push_back(PluginID);
+		LOG.Add("FEPluginManager::UninstallPlugin: Plugin in \"" + PluginFolderPath + "\" will be deleted on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		return true;
+	}
+
+	if (!FILE_SYSTEM.DeleteDirectory(PluginFolderPath))
+		return Fail("Could not delete \"" + PluginFolderPath + "\"");
+
+	LOG.Add("FEPluginManager::UninstallPlugin: Plugin in \"" + PluginFolderPath + "\" was deleted", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+	return true;
+}
+
+bool FEPluginManager::IsUninstallPending(const FEUUID& PluginID) const
+{
+	return std::find(PendingUninstallIDs.begin(), PendingUninstallIDs.end(), PluginID) != PendingUninstallIDs.end();
+}
+
+bool FEPluginManager::CancelUninstall(const FEUUID& PluginID, std::string& OutErrorMessage)
+{
+	auto PendingIterator = std::find(PendingUninstallIDs.begin(), PendingUninstallIDs.end(), PluginID);
+	if (PendingIterator == PendingUninstallIDs.end())
+	{
+		OutErrorMessage = "Uninstall of plugin " + UNIQUE_ID.ToString(PluginID) + " is not pending";
+		return false;
+	}
+
+	const std::string PluginFolderPath = FindInstalledPluginFolder(PluginID);
+	const std::string MarkerFilePath = PluginFolderPath + "/" + UninstallMarkerFileName;
+	if (!PluginFolderPath.empty() && FILE_SYSTEM.DoesFileExist(MarkerFilePath) && !FILE_SYSTEM.RemoveFile(MarkerFilePath))
+	{
+		OutErrorMessage = "Could not delete \"" + MarkerFilePath + "\"";
+		LOG.Add("FEPluginManager::CancelUninstall: " + OutErrorMessage, "FE_PLUGIN_MANAGER", FE_LOG_ERROR);
+		return false;
+	}
+
+	PendingUninstallIDs.erase(PendingIterator);
+	return true;
+}
+
+bool FEPluginManager::InstallPluginFromPackage(FEAssetPackage& Package, const bool bUpdate, PluginManifest& OutManifest, std::string& OutErrorMessage)
+{
+	auto Fail = [&](const std::string& Message) -> bool
+	{
+		OutErrorMessage = Message;
+		return false;
+	};
+
+	PluginManifest& Manifest = OutManifest;
 	std::string ManifestErrorMessage;
 	if (!ReadManifestFromPackage(Package, Manifest, ManifestErrorMessage))
 		return Fail(ManifestErrorMessage);
@@ -1001,22 +1401,24 @@ bool FEPluginManager::InstallPluginPackage(const std::string& PackageFilePath, s
 			return Fail("Package does not contain \"" + RequiredFiles[i] + "\"");
 	}
 
-	// Plugins installed during this session are not in DiscoveredPlugins, so plugin folder is scanned.
-	const std::string PluginDirectoryPath = GetPluginDirectory();
-	const std::vector<std::string> PluginFolders = FILE_SYSTEM.GetDirectoryList(PluginDirectoryPath);
-	for (size_t i = 0; i < PluginFolders.size(); i++)
+	const std::string InstalledFolderPath = FindInstalledPluginFolder(Manifest.ID);
+	if (bUpdate)
 	{
-		if (PluginFolders[i].rfind('.', 0) == 0)
-			continue;
+		if (InstalledFolderPath.empty())
+			return Fail("Plugin \"" + Manifest.Name + "\" is not installed, so it can not be updated");
 
-		const std::vector<std::string> ManifestPaths = GetValidManifestPaths(PluginDirectoryPath + "/" + PluginFolders[i]);
-		PluginManifest InstalledManifest;
-		if (ManifestPaths.size() == 1 && ParseManifest(ManifestPaths[0], InstalledManifest) && InstalledManifest.ID == Manifest.ID)
-			return Fail("Plugin \"" + Manifest.Name + "\" is already installed in \"" + PluginDirectoryPath + "/" + PluginFolders[i] + "\"");
+		// Marker file is checked instead of PendingUninstallIDs, because this function could run on thread pool.
+		if (FILE_SYSTEM.DoesFileExist(InstalledFolderPath + "/" + UninstallMarkerFileName))
+			return Fail("Plugin \"" + Manifest.Name + "\" will be uninstalled on next start, so it can not be updated");
+	}
+	else if (!InstalledFolderPath.empty())
+	{
+		return Fail("Plugin \"" + Manifest.Name + "\" is already installed in \"" + InstalledFolderPath + "\"");
 	}
 
-	const std::string PluginFolderPath = PluginDirectoryPath + "/" + Manifest.Name;
-	if (FILE_SYSTEM.DoesDirectoryExist(PluginFolderPath))
+	const std::string PluginDirectoryPath = GetPluginDirectory();
+	const std::string PluginFolderPath = bUpdate ? InstalledFolderPath : PluginDirectoryPath + "/" + Manifest.Name;
+	if (!bUpdate && FILE_SYSTEM.DoesDirectoryExist(PluginFolderPath))
 		return Fail("Folder \"" + PluginFolderPath + "\" already exists");
 
 	if (!FILE_SYSTEM.DoesDirectoryExist(PluginDirectoryPath) && !FILE_SYSTEM.MakeDirectory(PluginDirectoryPath))
@@ -1027,7 +1429,7 @@ bool FEPluginManager::InstallPluginPackage(const std::string& PackageFilePath, s
 	if (FILE_SYSTEM.DoesDirectoryExist(TemporaryFolderPath) && !FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath))
 		return Fail("Could not delete \"" + TemporaryFolderPath + "\" left from previous installation");
 
-	if (!Package.ExportToDirectory(TemporaryFolderPath) || !FILE_SYSTEM.RenameDirectory(TemporaryFolderPath, PluginFolderPath))
+	if (!Package.ExportToDirectory(TemporaryFolderPath) || (!bUpdate && !FILE_SYSTEM.RenameDirectory(TemporaryFolderPath, PluginFolderPath)))
 	{
 		if (FILE_SYSTEM.DoesDirectoryExist(TemporaryFolderPath))
 			FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath);
@@ -1035,7 +1437,34 @@ bool FEPluginManager::InstallPluginPackage(const std::string& PackageFilePath, s
 		return Fail("Could not write plugin files to \"" + PluginFolderPath + "\"");
 	}
 
-	LOG.Add("FEPluginManager::InstallPluginPackage: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + " was installed to \"" + PluginFolderPath + "\", it will be loaded on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+	if (!bUpdate)
+	{
+		LOG.Add("FEPluginManager::InstallPluginFromPackage: Plugin \"" + Manifest.Name + "\" version " + Manifest.Version + " was installed to \"" + PluginFolderPath + "\", it will be loaded on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		return true;
+	}
+
+	// Plugin that was installed after Initialize is not loaded, so it is replaced right away.
+	if (!IsFoundByInitialize(Manifest.ID))
+	{
+		std::string ReplaceErrorMessage;
+		if (!ReplacePluginFolder(PluginFolderPath, TemporaryFolderPath, ReplaceErrorMessage))
+		{
+			FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath);
+			return Fail(ReplaceErrorMessage);
+		}
+
+		LOG.Add("FEPluginManager::InstallPluginFromPackage: Plugin \"" + Manifest.Name + "\" was updated to version " + Manifest.Version + " in \"" + PluginFolderPath + "\", it will be loaded on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+		return true;
+	}
+
+	const std::string StagedFolderPath = PluginDirectoryPath + "/" + UpdateFolderPrefix + GetFolderName(PluginFolderPath);
+	if ((FILE_SYSTEM.DoesDirectoryExist(StagedFolderPath) && !FILE_SYSTEM.DeleteDirectory(StagedFolderPath)) || !FILE_SYSTEM.RenameDirectory(TemporaryFolderPath, StagedFolderPath))
+	{
+		FILE_SYSTEM.DeleteDirectory(TemporaryFolderPath);
+		return Fail("Could not write plugin files to \"" + StagedFolderPath + "\"");
+	}
+
+	LOG.Add("FEPluginManager::InstallPluginFromPackage: Plugin \"" + Manifest.Name + "\" will be updated to version " + Manifest.Version + " on next start", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
 	return true;
 }
 

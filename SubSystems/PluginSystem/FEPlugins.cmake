@@ -1,4 +1,4 @@
-# Applications include this file and call fe_require_plugin before they add engine, because engine links plugins that are in its Plugins folder when it is added.
+# Applications include this file and call fe_require_plugin or fe_optional_plugin before they add engine, because engine links plugins that are in its Plugins folder when it is added.
 include_guard(GLOBAL)
 
 if(CMAKE_VERSION VERSION_LESS 3.19)
@@ -25,11 +25,20 @@ endfunction()
 
 # Downloads plugin from GitHub release with tag v<VERSION>, release asset <PluginName>_<VERSION>.zip should contain Build folder of plugin.
 # Plugin is downloaded again only when VERSION differs from Version in manifest of installed plugin, SHA256 of archive is checked if it is given.
-# Usage: fe_require_plugin(PluginName REPOSITORY Owner/Repository VERSION 1.0.0 [SHA256 Hash])
-function(fe_require_plugin PLUGIN_NAME)
-	cmake_parse_arguments(PLUGIN "" "REPOSITORY;VERSION;SHA256" "" ${ARGN})
+# With REQUIRED problems stop configure, without it they are warnings. Installed plugin is kept if requested version could not be installed.
+# Usage: fe_download_plugin(PluginName [REQUIRED] REPOSITORY Owner/Repository VERSION 1.0.0 [SHA256 Hash])
+function(fe_download_plugin PLUGIN_NAME)
+	cmake_parse_arguments(PLUGIN "REQUIRED" "REPOSITORY;VERSION;SHA256" "" ${ARGN})
+	if(PLUGIN_REQUIRED)
+		set(FunctionName "fe_require_plugin")
+		set(MessageMode FATAL_ERROR)
+	else()
+		set(FunctionName "fe_optional_plugin")
+		set(MessageMode WARNING)
+	endif()
+
 	if(NOT PLUGIN_REPOSITORY OR NOT PLUGIN_VERSION)
-		message(FATAL_ERROR "fe_require_plugin: REPOSITORY and VERSION are required for plugin ${PLUGIN_NAME}")
+		message(FATAL_ERROR "${FunctionName}: REPOSITORY and VERSION are required for plugin ${PLUGIN_NAME}")
 	endif()
 
 	set(PluginFolder "${FE_PLUGINS_DIRECTORY}/${PLUGIN_NAME}")
@@ -41,23 +50,42 @@ function(fe_require_plugin PLUGIN_NAME)
 		set(ArchivePath "${FE_PLUGINS_DIRECTORY}/.Downloading_${ArchiveName}")
 		set(TemporaryFolder "${FE_PLUGINS_DIRECTORY}/.Downloading_${PLUGIN_NAME}")
 
-		message(STATUS "Downloading plugin ${PLUGIN_NAME} ${PLUGIN_VERSION} from ${ArchiveURL}")
-		set(DownloadArguments TLS_VERIFY ON STATUS DownloadStatus)
-		if(PLUGIN_SHA256)
-			list(APPEND DownloadArguments EXPECTED_HASH SHA256=${PLUGIN_SHA256})
+		set(KeptVersionMessage "")
+		if(InstalledVersion)
+			set(KeptVersionMessage ", installed version ${InstalledVersion} is kept")
 		endif()
 
-		file(DOWNLOAD "${ArchiveURL}" "${ArchivePath}" ${DownloadArguments})
+		message(STATUS "Downloading plugin ${PLUGIN_NAME} ${PLUGIN_VERSION} from ${ArchiveURL}")
+		file(DOWNLOAD "${ArchiveURL}" "${ArchivePath}" TLS_VERIFY ON STATUS DownloadStatus)
 		list(GET DownloadStatus 0 DownloadResult)
 		if(NOT DownloadResult EQUAL 0)
 			list(GET DownloadStatus 1 DownloadError)
 			file(REMOVE "${ArchivePath}")
-			message(FATAL_ERROR "fe_require_plugin: Could not download ${ArchiveURL}: ${DownloadError}")
+			message(${MessageMode} "${FunctionName}: Could not download ${ArchiveURL}: ${DownloadError}${KeptVersionMessage}")
+			return()
 		endif()
 
+		# Not EXPECTED_HASH of file(DOWNLOAD), its mismatch always stops configure.
+		if(PLUGIN_SHA256)
+			file(SHA256 "${ArchivePath}" ArchiveSHA256)
+			string(TOLOWER "${PLUGIN_SHA256}" ExpectedSHA256)
+			if(NOT ArchiveSHA256 STREQUAL ExpectedSHA256)
+				file(REMOVE "${ArchivePath}")
+				message(${MessageMode} "${FunctionName}: SHA256 of ${ArchiveName} is ${ArchiveSHA256}, but ${ExpectedSHA256} was expected${KeptVersionMessage}")
+				return()
+			endif()
+		endif()
+
+		# Not file(ARCHIVE_EXTRACT), it always stops configure if archive is damaged.
 		file(REMOVE_RECURSE "${TemporaryFolder}")
-		file(ARCHIVE_EXTRACT INPUT "${ArchivePath}" DESTINATION "${TemporaryFolder}")
+		file(MAKE_DIRECTORY "${TemporaryFolder}")
+		execute_process(COMMAND "${CMAKE_COMMAND}" -E tar xf "${ArchivePath}" WORKING_DIRECTORY "${TemporaryFolder}" RESULT_VARIABLE ExtractResult OUTPUT_QUIET ERROR_VARIABLE ExtractError ERROR_STRIP_TRAILING_WHITESPACE)
 		file(REMOVE "${ArchivePath}")
+		if(NOT ExtractResult EQUAL 0)
+			file(REMOVE_RECURSE "${TemporaryFolder}")
+			message(${MessageMode} "${FunctionName}: Could not extract ${ArchiveName}: ${ExtractError}${KeptVersionMessage}")
+			return()
+		endif()
 
 		# Archive could contain files of Build folder at its root or Build folder itself.
 		set(ExtractedFolder "${TemporaryFolder}")
@@ -71,7 +99,8 @@ function(fe_require_plugin PLUGIN_NAME)
 		fe_read_plugin_manifest_version("${ExtractedFolder}/${PLUGIN_NAME}.json" DownloadedVersion)
 		if(NOT DownloadedVersion STREQUAL PLUGIN_VERSION)
 			file(REMOVE_RECURSE "${TemporaryFolder}")
-			message(FATAL_ERROR "fe_require_plugin: ${ArchiveName} should contain ${PLUGIN_NAME}.json with version ${PLUGIN_VERSION}, but found version \"${DownloadedVersion}\"")
+			message(${MessageMode} "${FunctionName}: ${ArchiveName} should contain ${PLUGIN_NAME}.json with version ${PLUGIN_VERSION}, but found version \"${DownloadedVersion}\"${KeptVersionMessage}")
+			return()
 		endif()
 
 		file(REMOVE_RECURSE "${PluginFolder}")
@@ -94,6 +123,27 @@ function(fe_require_plugin PLUGIN_NAME)
 	execute_process(COMMAND "${GIT_EXECUTABLE}" -C "${FE_PLUGINS_ENGINE_DIRECTORY}" rev-parse HEAD OUTPUT_VARIABLE EngineCommit OUTPUT_STRIP_TRAILING_WHITESPACE RESULT_VARIABLE GitResult ERROR_QUIET)
 	if(GitResult EQUAL 0 AND NOT EngineCommit STREQUAL PluginEngineCommit)
 		message(WARNING "Plugin ${PLUGIN_NAME} ${PLUGIN_VERSION} was built with engine commit ${PluginEngineCommit}, but engine is at commit ${EngineCommit}, plugin could fail to link or crash. Use version of plugin that was built with this engine commit.")
+	endif()
+endfunction()
+
+# Configure stops if plugin could not be installed.
+# Usage: fe_require_plugin(PluginName REPOSITORY Owner/Repository VERSION 1.0.0 [SHA256 Hash])
+function(fe_require_plugin PLUGIN_NAME)
+	fe_download_plugin(${PLUGIN_NAME} REQUIRED ${ARGN})
+endfunction()
+
+# Problems are reported as warnings and configure continues, application should check at runtime if plugin is loaded.
+# RESULT_VARIABLE is TRUE if plugin is installed after the call, it could be older version if requested one could not be installed.
+# Usage: fe_optional_plugin(PluginName REPOSITORY Owner/Repository VERSION 1.0.0 [SHA256 Hash] [RESULT_VARIABLE Variable])
+function(fe_optional_plugin PLUGIN_NAME)
+	cmake_parse_arguments(OPTIONAL_PLUGIN "" "RESULT_VARIABLE" "" ${ARGN})
+	fe_download_plugin(${PLUGIN_NAME} ${OPTIONAL_PLUGIN_UNPARSED_ARGUMENTS})
+	if(OPTIONAL_PLUGIN_RESULT_VARIABLE)
+		if(EXISTS "${FE_PLUGINS_DIRECTORY}/${PLUGIN_NAME}/${PLUGIN_NAME}.json")
+			set(${OPTIONAL_PLUGIN_RESULT_VARIABLE} TRUE PARENT_SCOPE)
+		else()
+			set(${OPTIONAL_PLUGIN_RESULT_VARIABLE} FALSE PARENT_SCOPE)
+		endif()
 	endif()
 endfunction()
 

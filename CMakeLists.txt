@@ -369,6 +369,8 @@ file(GLOB Scene_SRC
 file(GLOB FileSystem_SubSystems_SRC
 	"SubSystems/FileSystem/FEAssetPackage.cpp"
 	"SubSystems/FileSystem/FEAssetPackage.h"
+	"SubSystems/FileSystem/FEZipArchive.cpp"
+	"SubSystems/FileSystem/FEZipArchive.h"
 )
 
 file(GLOB SubSystems_SRC

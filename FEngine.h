@@ -16,6 +16,7 @@ namespace FocalEngine
 		std::string GetFullVersion();          // "Focal Engine 1.0.0 build 231+52 (dev, ed4c7ce-dirty)"
 		std::string GetEngineBuildTimestamp(); // "20260207232613"
 		int GetEngineBuildNumber();            // 231
+		std::string GetEngineCommitHash();     // "ed4c7ce"
 
 		void InitWindow(int Width = 1920 * 2, int Height = 1080 * 2, std::string WindowTitle = "FEWindow");
 		void InitHeadless();

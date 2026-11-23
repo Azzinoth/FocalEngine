@@ -39,6 +39,11 @@ std::string FEngine::GetEngineBuildTimestamp()
 	return GetFOCAL_ENGINE_VersionInfo().BuildTimestamp;
 }
 
+std::string FEngine::GetEngineCommitHash()
+{
+	return GetFOCAL_ENGINE_VersionInfo().GitHash;
+}
+
 std::string FEngine::GetEngineBuildInfo()
 {
 	return GetFOCAL_ENGINE_VersionInfo().GetBuildInfo();
