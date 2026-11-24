@@ -261,6 +261,8 @@ void FEPluginManager::Initialize()
 		return;
 	}
 
+	bInitializeCalled = true;
+
 	// Otherwise plugins found by previous Initialize would be loaded again.
 	DiscoveredPlugins.clear();
 	PendingUninstallIDs.clear();
@@ -326,6 +328,18 @@ void FEPluginManager::Initialize()
 			AddPendingUpdate(StagedManifest);
 	}
 
+	if (!bAutomaticLoading)
+		return;
+
+	std::vector<const DiscoveredPlugin*> PluginsToLoad;
+	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+		PluginsToLoad.push_back(&DiscoveredPlugins[i]);
+
+	LoadEngineModulesOfPlugins(PluginsToLoad, "FEPluginManager::Initialize");
+}
+
+void FEPluginManager::LoadEngineModulesOfPlugins(const std::vector<const DiscoveredPlugin*>& Plugins, const std::string& CallerName)
+{
 	struct PendingModule
 	{
 		const DiscoveredPlugin* Plugin = nullptr;
@@ -333,12 +347,13 @@ void FEPluginManager::Initialize()
 	};
 
 	std::vector<PendingModule> PendingModules;
-	for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+	for (size_t i = 0; i < Plugins.size(); i++)
 	{
-		for (size_t j = 0; j < DiscoveredPlugins[i].Manifest.Modules.size(); j++)
+		for (size_t j = 0; j < Plugins[i]->Manifest.Modules.size(); j++)
 		{
-			if (DiscoveredPlugins[i].Manifest.Modules[j].Type == "Engine")
-				PendingModules.push_back({ &DiscoveredPlugins[i], j });
+			const PluginModule& Module = Plugins[i]->Manifest.Modules[j];
+			if (Module.Type == "Engine" && !IsModuleLoaded(Module.ID))
+				PendingModules.push_back({ Plugins[i], j });
 		}
 	}
 
@@ -379,7 +394,7 @@ void FEPluginManager::Initialize()
 			if (IsModuleLoaded(Module.Dependencies[j]))
 				continue;
 
-			LOG.Add("FEPluginManager::Initialize: Module \"" + Module.Name + "\" of plugin \"" + Manifest.Name + "\" is not loaded, because module \"" + GetModuleDisplayName(DiscoveredPlugins, Module.Dependencies[j]) + "\" that it depends on is not loaded", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+			LOG.Add(CallerName + ": Module \"" + Module.Name + "\" of plugin \"" + Manifest.Name + "\" is not loaded, because module \"" + GetModuleDisplayName(DiscoveredPlugins, Module.Dependencies[j]) + "\" that it depends on is not loaded", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
 			break;
 		}
 	}
@@ -421,6 +436,81 @@ std::string FEPluginManager::GetPluginDirectory() const
 		return RESOURCE_MANAGER.GetEngineFolder() + "Plugins";
 
 	return PluginDirectory;
+}
+
+void FEPluginManager::SetAutomaticLoading(const bool bNewValue)
+{
+	if (bInitializeCalled)
+		LOG.Add("FEPluginManager::SetAutomaticLoading: Initialize was already called, new value is used only if Initialize is called again", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+
+	bAutomaticLoading = bNewValue;
+}
+
+bool FEPluginManager::IsAutomaticLoadingEnabled() const
+{
+	return bAutomaticLoading;
+}
+
+bool FEPluginManager::ManuallyLoadPlugins(const std::vector<FEUUID>& PluginIDs)
+{
+	auto FindDiscoveredPlugin = [&](const FEUUID& PluginID) -> const DiscoveredPlugin* {
+		for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+		{
+			if (DiscoveredPlugins[i].Manifest.ID == PluginID)
+				return &DiscoveredPlugins[i];
+		}
+
+		return nullptr;
+	};
+
+	auto FindPluginIDOfModule = [&](const FEUUID& ModuleID) -> FEUUID {
+		for (size_t i = 0; i < DiscoveredPlugins.size(); i++)
+		{
+			for (size_t j = 0; j < DiscoveredPlugins[i].Manifest.Modules.size(); j++)
+			{
+				if (DiscoveredPlugins[i].Manifest.Modules[j].ID == ModuleID)
+					return DiscoveredPlugins[i].Manifest.ID;
+			}
+		}
+
+		return FEUUID();
+	};
+
+	// Additional plugins that current plugin or its modules depend on are added to the end of the list while it is processed.
+	bool bAllFound = true;
+	std::vector<const DiscoveredPlugin*> PluginsToLoad;
+	std::vector<FEUUID> IDsToCheck = PluginIDs;
+	for (size_t i = 0; i < IDsToCheck.size(); i++)
+	{
+		const DiscoveredPlugin* Plugin = FindDiscoveredPlugin(IDsToCheck[i]);
+		if (Plugin == nullptr)
+		{
+			LOG.Add("FEPluginManager::ManuallyLoadPlugins: Plugin " + UNIQUE_ID.ToString(IDsToCheck[i]) + " was not found by Initialize", "FE_PLUGIN_MANAGER", FE_LOG_WARNING);
+			bAllFound = false;
+			continue;
+		}
+
+		if (std::find(PluginsToLoad.begin(), PluginsToLoad.end(), Plugin) != PluginsToLoad.end())
+			continue;
+
+		PluginsToLoad.push_back(Plugin);
+		if (std::find(PluginIDs.begin(), PluginIDs.end(), Plugin->Manifest.ID) == PluginIDs.end())
+			LOG.Add("FEPluginManager::ManuallyLoadPlugins: Plugin \"" + Plugin->Manifest.Name + "\" is also loaded, because other plugins depend on it", "FE_PLUGIN_MANAGER", FE_LOG_INFO);
+
+		IDsToCheck.insert(IDsToCheck.end(), Plugin->Manifest.Dependencies.begin(), Plugin->Manifest.Dependencies.end());
+		for (const PluginModule& Module : Plugin->Manifest.Modules)
+		{
+			for (const FEUUID& ModuleDependencyID : Module.Dependencies)
+			{
+				const FEUUID OwnerPluginID = FindPluginIDOfModule(ModuleDependencyID);
+				if (!UNIQUE_ID.IsNull(OwnerPluginID))
+					IDsToCheck.push_back(OwnerPluginID);
+			}
+		}
+	}
+
+	LoadEngineModulesOfPlugins(PluginsToLoad, "FEPluginManager::ManuallyLoadPlugins");
+	return bAllFound;
 }
 
 void FEPluginManager::RegisterStaticPluginModule(const std::string& ModuleName, int PluginInterfaceVersion, CreatePluginFunction CreateFunction, DestroyPluginFunction DestroyFunction)

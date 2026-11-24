@@ -100,6 +100,11 @@ namespace FocalEngine
 		void CameraRenderStage(FECameraRenderStage Stage, FEEntity* CameraEntity);
 
 		bool LoadEngineModule(const DiscoveredPlugin& Plugin, size_t ModuleIndex);
+		// Engine modules that are already loaded are skipped, CallerName is used in log messages.
+		void LoadEngineModulesOfPlugins(const std::vector<const DiscoveredPlugin*>& Plugins, const std::string& CallerName);
+
+		bool bAutomaticLoading = true;
+		bool bInitializeCalled = false;
 
 		bool GeneratePluginSourceFilesFromTemplate(const std::string& PluginName, const std::string& VSProjectDirectory, bool bAddPublicInterface);
 		bool GenerateManifestFromTemplate(const std::string& PluginName, const FEUUID& PluginID, const std::string& VSProjectDirectory, const FEPluginProjectSettings& Settings);
@@ -135,6 +140,11 @@ namespace FocalEngine
 		// Default is Plugins folder of the engine, should be set before engine is initialized.
 		void SetPluginDirectory(const std::string& NewValue);
 		std::string GetPluginDirectory() const;
+
+		// Should be set before engine is initialized, by default Initialize loads all plugins it finds.
+		void SetAutomaticLoading(bool bNewValue);
+		bool IsAutomaticLoadingEnabled() const;
+		bool ManuallyLoadPlugins(const std::vector<FEUUID>& PluginIDs);
 
 		using CreatePluginFunction = FEPluginCore* (*)();
 		using DestroyPluginFunction = void (*)(FEPluginCore*);

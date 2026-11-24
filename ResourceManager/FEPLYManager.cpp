@@ -514,12 +514,12 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	else if (LoadedPLY->Header->StorageType == PLYFileType::BINARY_BIG_ENDIAN)
 	{
 		LOG.Add(std::string("BINARY_BIG_ENDIAN PLY files are not supported in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
-		return false;
+		return nullptr;
 	}
 	else
 	{
 		LOG.Add(std::string("Unknown PLY file type in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
-		return false;
+		return nullptr;
 	}
 
 	return LoadedPLY;
