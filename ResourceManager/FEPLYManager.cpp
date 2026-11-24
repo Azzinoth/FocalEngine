@@ -474,6 +474,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	{
 		LOG.Add(std::string("Empty file path in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
+		LoadedPLY = nullptr;
 		return nullptr;
 	}
 
@@ -482,6 +483,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	{
 		LOG.Add(std::string("Could not open file with path: ") + FilePath + " in function FEPLYManager::ParseFile.", "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
+		LoadedPLY = nullptr;
 		return nullptr;
 	}
 
@@ -490,6 +492,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 	{
 		LOG.Add(std::string("Could not parse header in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 		delete LoadedPLY;
+		LoadedPLY = nullptr;
 		return nullptr;
 	}
 
@@ -499,6 +502,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 		{
 			LOG.Add(std::string("Could not parse ASCII data in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 			delete LoadedPLY;
+			LoadedPLY = nullptr;
 			return nullptr;
 		}
 	}
@@ -508,6 +512,7 @@ FERawPLYData* FEPLYManager::ParseFile(std::string FilePath)
 		{
 			LOG.Add(std::string("Could not parse binary data in function FEPLYManager::ParseFile."), "FE_LOG_LOADING", FE_LOG_ERROR);
 			delete LoadedPLY;
+			LoadedPLY = nullptr;
 			return nullptr;
 		}
 	}
