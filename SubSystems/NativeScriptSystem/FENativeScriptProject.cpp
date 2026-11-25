@@ -469,16 +469,17 @@ bool FENativeScriptProject::InitializeCMakeFileAndScriptFiles(std::vector<std::s
 	Instructions.push_back(CurrentInstruction);
 
 	// Scripts call plugins through header-only interfaces, so only include directories are needed, nothing to link.
+	// Only loaded plugins could be called.
 	std::string PluginIncludeDirectories;
 	const std::vector<DiscoveredPlugin>& Plugins = PLUGIN_MANAGER.GetDiscoveredPlugins();
 	for (size_t i = 0; i < Plugins.size(); i++)
 	{
-		bool bHasEngineModule = false;
+		bool bEngineModuleLoaded = false;
 		for (size_t j = 0; j < Plugins[i].Manifest.Modules.size(); j++)
-			bHasEngineModule = bHasEngineModule || Plugins[i].Manifest.Modules[j].Type == "Engine";
+			bEngineModuleLoaded = bEngineModuleLoaded || (Plugins[i].Manifest.Modules[j].Type == "Engine" && PLUGIN_MANAGER.IsModuleLoaded(Plugins[i].Manifest.Modules[j].ID));
 
 		std::string PublicDirectory = FILE_SYSTEM.GetAbsolutePath(Plugins[i].FolderPath) + "/Public";
-		if (!bHasEngineModule || !FILE_SYSTEM.DoesDirectoryExist(PublicDirectory))
+		if (!bEngineModuleLoaded || !FILE_SYSTEM.DoesDirectoryExist(PublicDirectory))
 			continue;
 
 		// Backslash is escape character in CMake.
