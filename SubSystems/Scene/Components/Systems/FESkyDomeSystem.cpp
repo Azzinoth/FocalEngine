@@ -100,7 +100,7 @@ Json::Value FESkyDomeSystem::SkyDomeComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FESkyDomeSystem::SkyDomeComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FESkyDomeSystem::SkyDomeComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

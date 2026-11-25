@@ -22,7 +22,7 @@ namespace FocalEngine
 		bool bEnabled = true;
 
 		static Json::Value SkyDomeComponentToJson(FEEntity* Entity);
-		static void SkyDomeComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void SkyDomeComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FESkyDomeSystem)
 

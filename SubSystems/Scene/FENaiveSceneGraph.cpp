@@ -456,7 +456,7 @@ Json::Value FENaiveSceneGraph::ToJson(std::function<bool(FEEntity*)> Filter)
 	return Root;
 }
 
-void FENaiveSceneGraph::FromJson(Json::Value Root)
+void FENaiveSceneGraph::FromJson(const Json::Value& Root)
 {
 	Clear();
 

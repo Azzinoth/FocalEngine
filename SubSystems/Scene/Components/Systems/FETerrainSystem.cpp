@@ -1435,7 +1435,7 @@ Json::Value FETerrainSystem::TerrainComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FETerrainSystem::TerrainComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FETerrainSystem::TerrainComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

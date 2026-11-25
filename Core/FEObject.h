@@ -176,12 +176,12 @@ namespace FocalEngine
 		FEUUID GetID() const;
 		FE_OBJECT_TYPE GetType() const;
 
-		std::string GetTag() const;
+		const std::string& GetTag() const;
 
 		bool IsDirty() const;
 		void SetDirtyFlag(bool bNewValue);
 
-		std::string GetName() const;
+		const std::string& GetName() const;
 		void SetName(std::string NewValue);
 		int GetNameHash() const;
 

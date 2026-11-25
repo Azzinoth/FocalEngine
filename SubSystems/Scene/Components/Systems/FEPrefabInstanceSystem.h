@@ -18,7 +18,7 @@ namespace FocalEngine
 		void DuplicatePrefabInstanceComponent(FEEntity* EntityToWorkWith, FEEntity* NewEntity);
 		
 		static Json::Value PrefabInstanceComponentToJson(FEEntity* Entity);
-		static void PrefabInstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void PrefabInstanceComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FEPrefabInstanceSystem)
 

@@ -23,7 +23,7 @@ namespace FocalEngine
 
 		entt::registry& GetRegistry();
 
-		void FromJson(Json::Value Root);
+		void FromJson(const Json::Value& Root);
 		void SaveComponents(Json::Value& Root);
 	public:
 		template<typename T, typename... Args>

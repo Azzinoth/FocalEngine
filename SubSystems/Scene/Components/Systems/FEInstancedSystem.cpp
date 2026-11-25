@@ -1407,7 +1407,7 @@ Json::Value FEInstancedSystem::InstanceComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, Json::Value Data)
+void FEInstancedSystem::InstanceComponentFromJson(FEEntity* Entity, const Json::Value& Data)
 {
 	if (Entity == nullptr)
 	{

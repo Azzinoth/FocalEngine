@@ -32,7 +32,7 @@ namespace FocalEngine
 		void Update(double DeltaTime);
 
 		static Json::Value NativeScriptComponentToJson(FEEntity* Entity);
-		static void NativeScriptComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void NativeScriptComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 		static void DuplicateNativeScriptComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 		void AddFailedToLoadData(FEEntity* Entity, const FEUUID& ModuleID, Json::Value RawData);
 

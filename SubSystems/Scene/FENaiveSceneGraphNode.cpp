@@ -291,7 +291,7 @@ Json::Value FENaiveSceneGraphNode::ToJson(std::function<bool(FEEntity*)> ChildFi
 	return Node;
 }
 
-void FENaiveSceneGraphNode::FromJson(Json::Value Root)
+void FENaiveSceneGraphNode::FromJson(const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

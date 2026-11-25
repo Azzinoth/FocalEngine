@@ -21,7 +21,7 @@ namespace FocalEngine
 		static void DuplicateLightComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		static Json::Value LightComponentToJson(FEEntity* Entity);
-		static void LightComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void LightComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FELightSystem)
 

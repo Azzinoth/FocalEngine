@@ -21,7 +21,7 @@ namespace FocalEngine
 		static void DuplicateLineComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		static Json::Value LineComponentToJson(FEEntity* Entity);
-		static void LineComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void LineComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FELineSystem)
 

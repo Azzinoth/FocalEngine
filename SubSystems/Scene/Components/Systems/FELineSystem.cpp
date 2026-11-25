@@ -84,7 +84,7 @@ Json::Value FELineSystem::LineComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FELineSystem::LineComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FELineSystem::LineComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

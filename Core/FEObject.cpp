@@ -80,7 +80,7 @@ void FEObject::SetDirtyFlag(const bool bNewValue)
 	bDirtyFlag = bNewValue;
 }
 
-std::string FEObject::GetName() const
+const std::string& FEObject::GetName() const
 {
 	return Name;
 }
@@ -196,7 +196,7 @@ void FEObject::ProcessOnDeleteCallbacks(const FEUUID& DeletingFEObject)
 
 }
 
-std::string FEObject::GetTag() const
+const std::string& FEObject::GetTag() const
 {
 	return Tag;
 }

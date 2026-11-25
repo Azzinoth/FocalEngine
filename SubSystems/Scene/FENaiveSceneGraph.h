@@ -49,7 +49,7 @@ namespace FocalEngine
 		void Clear();
 
 		Json::Value ToJson(std::function<bool(FEEntity*)> Filter = nullptr);
-		void FromJson(Json::Value Root);
+		void FromJson(const Json::Value& Root);
 
 		FEAABB GetNodeAABB(FEAABB& CumulativeAABB, FENaiveSceneGraphNode* TargetNode = nullptr, std::function<bool(FEEntity*)> Filter = nullptr);
 

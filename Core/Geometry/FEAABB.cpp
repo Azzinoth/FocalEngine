@@ -490,16 +490,8 @@ FEAABB::FEAABB(FEAABB Other, glm::mat4 TransformMatrix)
 	TopLeftBack = TransformMatrix * TopLeftBack;
 
 	// for more convenient searching
-	std::vector<glm::vec4> AllPoints;
-	AllPoints.push_back(BottomLeftFront);
-	AllPoints.push_back(BottomRightFront);
-	AllPoints.push_back(BottomRightBack);
-	AllPoints.push_back(BottomLeftBack);
-
-	AllPoints.push_back(TopLeftFront);
-	AllPoints.push_back(TopRightFront);
-	AllPoints.push_back(TopRightBack);
-	AllPoints.push_back(TopLeftBack);
+	const glm::vec4 AllPoints[8] = { BottomLeftFront, BottomRightFront, BottomRightBack, BottomLeftBack,
+									 TopLeftFront, TopRightFront, TopRightBack, TopLeftBack };
 
 	Min = glm::vec3(std::numeric_limits<float>::max());
 	Max = glm::vec3(-std::numeric_limits<float>::max());
@@ -556,16 +548,8 @@ FEAABB FEAABB::Transform(const glm::mat4 TransformMatrix)
 	TopLeftBack = TransformMatrix * TopLeftBack;
 
 	// for more convenient searching
-	std::vector<glm::vec4> AllPoints;
-	AllPoints.push_back(BottomLeftFront);
-	AllPoints.push_back(BottomRightFront);
-	AllPoints.push_back(BottomRightBack);
-	AllPoints.push_back(BottomLeftBack);
-
-	AllPoints.push_back(TopLeftFront);
-	AllPoints.push_back(TopRightFront);
-	AllPoints.push_back(TopRightBack);
-	AllPoints.push_back(TopLeftBack);
+	const glm::vec4 AllPoints[8] = { BottomLeftFront, BottomRightFront, BottomRightBack, BottomLeftBack,
+									 TopLeftFront, TopRightFront, TopRightBack, TopLeftBack };
 
 	Result.Min = glm::vec3(std::numeric_limits<float>::max());
 	Result.Max = glm::vec3(-std::numeric_limits<float>::max());

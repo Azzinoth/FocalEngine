@@ -23,7 +23,7 @@ FEComponentsTools::FEComponentsTools()
 		return Root;
 	};
 
-	TagComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+	TagComponentInfo.FromJson = [](FEEntity* ParentEntity, const Json::Value& Root) {
 		FETagComponent& CurrentComponent = ParentEntity->GetComponent<FETagComponent>();
 		CurrentComponent.SetTag(Root["Tag"].asString());
 	};
@@ -54,7 +54,7 @@ FEComponentsTools::FEComponentsTools()
 		return Root;
 	};
 
-	VisibilityComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+	VisibilityComponentInfo.FromJson = [](FEEntity* ParentEntity, const Json::Value& Root) {
 		if (ParentEntity->AddComponent<FEVisibilityComponent>())
 		{
 			FEVisibilityComponent& CurrentComponent = ParentEntity->GetComponent<FEVisibilityComponent>();
@@ -107,7 +107,7 @@ FEComponentsTools::FEComponentsTools()
 		return Root;
 	};
 
-	GameModelComponentInfo.FromJson = [](FEEntity* ParentEntity, Json::Value Root) {
+	GameModelComponentInfo.FromJson = [](FEEntity* ParentEntity, const Json::Value& Root) {
 		ParentEntity->AddComponent<FEGameModelComponent>(RESOURCE_MANAGER.GetGameModel(UNIQUE_ID.FromString(Root["ModelID"].asString())));
 		FEGameModelComponent& CurrentComponent = ParentEntity->GetComponent<FEGameModelComponent>();
 

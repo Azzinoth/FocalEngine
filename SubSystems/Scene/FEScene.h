@@ -75,7 +75,7 @@ namespace FocalEngine
 
 		FEEntity* CreateEntity(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
 		FEEntity* CreateEntityOrphan(std::string Name = "", const FEUUID& ForceObjectID = FEUUID());
-		FEEntity* CreateEntityFromJson(Json::Value Root);
+		FEEntity* CreateEntityFromJson(const Json::Value& Root);
 		
 		FEEntity* DuplicateEntity(const FEUUID& ID, std::string NewEntityName = "");
 		FEEntity* DuplicateEntity(FEEntity* SourceEntity, std::string NewEntityName = "");

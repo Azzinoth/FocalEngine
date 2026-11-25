@@ -125,7 +125,7 @@ Json::Value FEVirtualUISystem::VirtualUIComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FEVirtualUISystem::VirtualUIComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FEVirtualUISystem::VirtualUIComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

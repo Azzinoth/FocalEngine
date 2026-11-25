@@ -63,7 +63,7 @@ namespace FocalEngine
 
         std::function<void(FEEntity*, FEEntity*)> DuplicateComponent = nullptr;
         std::function<Json::Value(FEEntity*)> ToJson = nullptr;
-        std::function<void(FEEntity*, Json::Value)> FromJson = nullptr;
+        std::function<void(FEEntity*, const Json::Value&)> FromJson = nullptr;
 
         bool EvaluateConstraints(const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards, std::string* ErrorMessage) const;
         bool EvaluateConstraint(const FEComponentConstraint& Constraint, const std::vector<FEComponentTypeInfo>& ComponentToCheckTowards) const;
@@ -100,7 +100,7 @@ namespace FocalEngine
 		}
         
 		template<typename T>
-        void RegisterComponentFromJsonFunction(std::function<void(FEEntity*, Json::Value)> Function)
+        void RegisterComponentFromJsonFunction(std::function<void(FEEntity*, const Json::Value&)> Function)
         {
             ComponentIDToInfo[entt::type_id<T>().hash()].FromJson = Function;
         }

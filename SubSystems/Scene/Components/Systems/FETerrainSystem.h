@@ -57,7 +57,7 @@ namespace FocalEngine
 		bool UpdateLayerMapsRawData(FEEntity* TerrainEntity);
 
 		static Json::Value TerrainComponentToJson(FEEntity* Entity);
-		static void TerrainComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void TerrainComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FETerrainSystem)
 

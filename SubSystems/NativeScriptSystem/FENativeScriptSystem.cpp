@@ -304,7 +304,7 @@ void FENativeScriptSystem::LoadVariableFromJSON(Json::Value& Root, FEScriptVaria
 	}
 }
 
-void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FENativeScriptSystem::NativeScriptComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

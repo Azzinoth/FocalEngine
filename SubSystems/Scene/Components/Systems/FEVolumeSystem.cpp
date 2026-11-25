@@ -292,7 +292,7 @@ Json::Value FEVolumeSystem::VolumeComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FEVolumeSystem::VolumeComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FEVolumeSystem::VolumeComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

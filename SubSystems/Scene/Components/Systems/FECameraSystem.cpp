@@ -365,7 +365,7 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

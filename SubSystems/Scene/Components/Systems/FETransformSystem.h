@@ -21,7 +21,7 @@ namespace FocalEngine
 		void UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot);
 
 		static Json::Value TransfromComponentToJson(FEEntity* Entity);
-		static void TransfromComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void TransfromComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 		static void DuplicateTransformComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 	public:
 		SINGLETON_PUBLIC_PART(FETransformSystem)

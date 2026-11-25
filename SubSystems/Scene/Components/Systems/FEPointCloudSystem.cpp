@@ -109,7 +109,7 @@ Json::Value FEPointCloudSystem::PointCloudComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FEPointCloudSystem::PointCloudComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FEPointCloudSystem::PointCloudComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

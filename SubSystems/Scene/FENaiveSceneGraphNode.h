@@ -11,6 +11,7 @@ namespace FocalEngine
 	{
 		friend class FENaiveSceneGraph;
 		friend class FEScene;
+		friend class FETransformSystem;
 	public:
 		size_t GetDepth();
 		FENaiveSceneGraphNode* GetParent();
@@ -29,7 +30,7 @@ namespace FocalEngine
 		FEEntity* GetEntity();
 
 		Json::Value ToJson(std::function<bool(FEEntity*)> ChildFilter = nullptr);
-		void FromJson(Json::Value Root);
+		void FromJson(const Json::Value& Root);
 	private:
 		FENaiveSceneGraphNode(std::string Name = "Unnamed NaiveSceneNode");
 		~FENaiveSceneGraphNode();

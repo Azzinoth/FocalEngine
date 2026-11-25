@@ -64,7 +64,7 @@ void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 	// If it is root node, then work only on children
 	if (SubTreeRoot->GetEntity() == nullptr)
 	{
-		auto Children = SubTreeRoot->GetChildren();
+		const std::vector<FENaiveSceneGraphNode*>& Children = SubTreeRoot->Children;
 		for (size_t i = 0; i < Children.size(); i++)
 		{
 			UpdateInternal(Children[i]);
@@ -86,7 +86,7 @@ void FETransformSystem::UpdateInternal(FENaiveSceneGraphNode* SubTreeRoot)
 	// FE_FIX_ME: Instanced position should update when parent (or terrain) is updated, currently no update occurs.
 	//bool bWasDirty = CurrentTransform.IsDirty();
 	//CurrentTransform.SetDirtyFlag(false);
-	auto Children = SubTreeRoot->GetChildren();
+	const std::vector<FENaiveSceneGraphNode*>& Children = SubTreeRoot->Children;
 	for (size_t i = 0; i < Children.size(); i++)
 	{
 		FETransformComponent& ChildTransform = Children[i]->GetEntity()->GetComponent<FETransformComponent>();
@@ -124,7 +124,7 @@ Json::Value FETransformSystem::TransfromComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FETransformSystem::TransfromComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FETransformSystem::TransfromComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	FETransformComponent& TransformComponent = Entity->GetComponent<FETransformComponent>();
 

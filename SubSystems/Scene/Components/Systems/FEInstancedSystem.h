@@ -52,7 +52,7 @@ namespace FocalEngine
 		void CheckDirtyFlag(FEEntity* Entity);
 
 		static Json::Value InstanceComponentToJson(FEEntity* Entity);
-		static void InstanceComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void InstanceComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 
 		// FIX ME: That system is redundant, Renderer have similar one.
 		std::unordered_map<FEUUID, std::vector<std::function<void(FEEntity*)>>> BeforeRenderCallbacks;

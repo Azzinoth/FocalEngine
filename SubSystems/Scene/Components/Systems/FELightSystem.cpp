@@ -521,7 +521,7 @@ Json::Value FELightSystem::LightComponentToJson(FEEntity* Entity)
 	return Root;
 }
 
-void FELightSystem::LightComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FELightSystem::LightComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

@@ -24,7 +24,7 @@ namespace FocalEngine
 		static void DuplicateVirtualUIComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		static Json::Value VirtualUIComponentToJson(FEEntity* Entity);
-		static void VirtualUIComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void VirtualUIComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 
 		void Update();
 

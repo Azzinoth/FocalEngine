@@ -120,7 +120,7 @@ Json::Value FEPrefabInstanceSystem::PrefabInstanceComponentToJson(FEEntity* Enti
 	return Root;
 }
 
-void FEPrefabInstanceSystem::PrefabInstanceComponentFromJson(FEEntity* Entity, Json::Value Root)
+void FEPrefabInstanceSystem::PrefabInstanceComponentFromJson(FEEntity* Entity, const Json::Value& Root)
 {
 	if (Entity == nullptr)
 	{

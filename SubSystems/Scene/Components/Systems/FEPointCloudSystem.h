@@ -27,7 +27,7 @@ namespace FocalEngine
 		static void DuplicatePointCloudComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		static Json::Value PointCloudComponentToJson(FEEntity* Entity);
-		static void PointCloudComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void PointCloudComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 
 		bool SetAdvancedRendering(FEPointCloud* PointCloud, bool bUseAdvancedRendering);
 	public:

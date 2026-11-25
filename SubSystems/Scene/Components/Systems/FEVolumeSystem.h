@@ -51,7 +51,7 @@ namespace FocalEngine
 		static void DuplicateVolumeComponent(FEEntity* SourceEntity, FEEntity* TargetEntity);
 
 		static Json::Value VolumeComponentToJson(FEEntity* Entity);
-		static void VolumeComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void VolumeComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FEVolumeSystem)
 

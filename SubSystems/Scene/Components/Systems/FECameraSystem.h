@@ -23,7 +23,7 @@ namespace FocalEngine
 		static void OnViewportResize(FEUUID ViewportID);
 
 		static Json::Value CameraComponentToJson(FEEntity* Entity);
-		static void CameraComponentFromJson(FEEntity* Entity, Json::Value Root);
+		static void CameraComponentFromJson(FEEntity* Entity, const Json::Value& Root);
 	public:
 		SINGLETON_PUBLIC_PART(FECameraSystem)
 

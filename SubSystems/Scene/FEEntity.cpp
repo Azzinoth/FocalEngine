@@ -38,7 +38,7 @@ void FEEntity::SaveComponents(Json::Value& Root)
 	}
 }
 
-void FEEntity::FromJson(Json::Value Root)
+void FEEntity::FromJson(const Json::Value& Root)
 {
 	FEObjectLoadedData Data = RESOURCE_MANAGER.LoadFEObjectPart(Root["FEObjectData"]);
 
