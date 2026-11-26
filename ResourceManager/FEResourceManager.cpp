@@ -614,6 +614,11 @@ FETexture* FEResourceManager::LoadFETexture(const std::string& FilePath, const s
 
 FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FETexture* ExistingTexture)
 {
+	return LoadFETextureInternal(FileData, Name, ExistingTexture, true);
+}
+
+FETexture* FEResourceManager::LoadFETextureInternal(char* FileData, std::string Name, FETexture* ExistingTexture, const bool bUseIDFromFile)
+{
 	int CurrentShift = 0;
 	// Version of FETexture File type
 	const float Version = *(float*)(&FileData[CurrentShift]);
@@ -790,7 +795,7 @@ FETexture* FEResourceManager::LoadFETexture(char* FileData, std::string Name, FE
 	}
 
 	// Overwrite ObjectID with ObjectID from File.
-	if (!UNIQUE_ID.IsNull(ID))
+	if (bUseIDFromFile && !UNIQUE_ID.IsNull(ID))
 	{
 		const FEUUID OldID = NewTexture->GetID();
 		NewTexture->SetID(ID);
@@ -810,6 +815,31 @@ FETexture* FEResourceManager::LoadFETextureUnmanaged(const std::string& FilePath
 {
 	FETexture* NewTexture = LoadFETexture(FilePath, Name);
 	if (NewTexture == nullptr)
+		return nullptr;
+
+	Textures.erase(NewTexture->GetID());
+	return NewTexture;
+}
+
+FETexture* FEResourceManager::LoadFETextureUnmanagedWithNewID(const std::string& FilePath)
+{
+	std::fstream File;
+	File.open(FilePath, std::ios::in | std::ios::binary | std::ios::ate);
+	const std::streamsize FileSize = File.tellg();
+	if (!File.is_open() || FileSize <= 0)
+	{
+		LOG.Add("Can't load file: " + FilePath + " in function FEResourceManager::LoadFETextureUnmanagedWithNewID.", "FE_LOG_LOADING", FE_LOG_ERROR);
+		return nullptr;
+	}
+
+	File.seekg(0, std::ios::beg);
+	char* FileData = new char[static_cast<size_t>(FileSize)];
+	File.read(FileData, FileSize);
+	File.close();
+
+	FETexture* NewTexture = LoadFETextureInternal(FileData, "", nullptr, false);
+	delete[] FileData;
+	if (NewTexture == nullptr || NewTexture == NoTexture)
 		return nullptr;
 
 	Textures.erase(NewTexture->GetID());

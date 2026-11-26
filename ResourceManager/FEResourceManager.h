@@ -29,8 +29,6 @@ namespace FocalEngine
 		FE_DEPTH_EXPORT_32BIT_TIFF = 2			// FE_TO_DO: Implement raw float values, 32-bit float TIFF
 	};
 
-	//class FEScene;
-
 	struct FEResourceImporter
 	{
 		std::string Description;
@@ -82,6 +80,7 @@ namespace FocalEngine
 		FETexture* LoadPFMTexture(const std::string& FilePath, std::string Name = "");
 		FETexture* LoadFETexture(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureUnmanaged(const std::string& FilePath, std::string Name = "");
+		FETexture* LoadFETextureUnmanagedWithNewID(const std::string& FilePath);
 		FETexture* LoadFETexture(char* FileData, std::string Name = "", FETexture* ExistingTexture = nullptr);
 		FETexture* LoadFETextureAsync(const std::string& FilePath, std::string Name = "", FETexture* ExistingTexture = nullptr, const FEUUID& ForceObjectID = FEUUID());
 		FETexture* RawDataToFETexture(unsigned char* TextureData, int Width, int Height, GLint Internalformat = -1, GLenum Format = GL_RGBA, GLenum Type = GL_UNSIGNED_BYTE);
@@ -271,6 +270,8 @@ namespace FocalEngine
 		glm::dvec3 GetLastLoadedPointCloudAppliedShift();
 	private:
 		SINGLETON_PRIVATE_PART(FEResourceManager)
+
+		FETexture* LoadFETextureInternal(char* FileData, std::string Name, FETexture* ExistingTexture, bool bUseIDFromFile);
 
 		std::unordered_map<FEUUID, FEShader*> Shaders;
 		std::unordered_map<FEUUID, FETexture*> Textures;
