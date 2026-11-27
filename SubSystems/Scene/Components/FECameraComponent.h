@@ -82,6 +82,9 @@ namespace FocalEngine
 		void SetFXAAReduceMul(float NewValue);
 
 		// *********** Bloom ***********
+		bool IsBloomEnabled();
+		void SetBloomEnabled(const bool NewValue);
+
 		float GetBloomThreshold();
 		void SetBloomThreshold(float NewValue);
 
@@ -89,6 +92,9 @@ namespace FocalEngine
 		void SetBloomSize(float NewValue);
 
 		// *********** Depth of Field ***********
+		bool IsDOFEnabled();
+		void SetDOFEnabled(const bool NewValue);
+
 		float GetDOFNearDistance();
 		void SetDOFNearDistance(float NewValue);
 
@@ -102,6 +108,9 @@ namespace FocalEngine
 		void SetDOFDistanceDependentStrength(float NewValue);
 
 		// *********** Chromatic Aberration ***********
+		bool IsChromaticAberrationEnabled();
+		void SetChromaticAberrationEnabled(const bool NewValue);
+
 		float GetChromaticAberrationIntensity();
 		void SetChromaticAberrationIntensity(float NewValue);
 
@@ -197,16 +206,19 @@ namespace FocalEngine
 		float FXAAReduceMul = 0.4f;
 
 		// *********** Bloom ***********
+		bool bBloomEnabled = true;
 		float BloomThreshold = 1.0f;
 		float BloomSize = 5.0f;
 
 		// *********** Depth of Field ***********
+		bool bDOFEnabled = false;
 		float DOFStrength = 2.0f;
 		float DOFNearDistance = 0.0f;
 		float DOFFarDistance = 9000.0f;
 		float DOFDistanceDependentStrength = 100.0f;
 
 		// *********** Chromatic Aberration ***********
+		bool bChromaticAberrationEnabled = true;
 		float ChromaticAberrationIntensity = 1.0f;
 
 		// *********** SSAO ***********

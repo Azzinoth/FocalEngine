@@ -257,6 +257,16 @@ bool FECameraComponent::TryToSetViewportSizeInternal(const int Width, const int 
 	return false;
 }
 
+bool FECameraComponent::IsBloomEnabled()
+{
+	return bBloomEnabled;
+}
+
+void FECameraComponent::SetBloomEnabled(const bool NewValue)
+{
+	bBloomEnabled = NewValue;
+}
+
 float FECameraComponent::GetBloomThreshold()
 {
 	return BloomThreshold;
@@ -372,6 +382,16 @@ void FECameraComponent::SetFXAAReduceMul(float NewValue)
 	FXAAReduceMul = NewValue;
 }
 
+bool FECameraComponent::IsDOFEnabled()
+{
+	return bDOFEnabled;
+}
+
+void FECameraComponent::SetDOFEnabled(const bool NewValue)
+{
+	bDOFEnabled = NewValue;
+}
+
 float FECameraComponent::GetDOFNearDistance()
 {
 	return DOFNearDistance;
@@ -410,6 +430,16 @@ float FECameraComponent::GetDOFDistanceDependentStrength()
 void FECameraComponent::SetDOFDistanceDependentStrength(float NewValue)
 {
 	DOFDistanceDependentStrength = NewValue;
+}
+
+bool FECameraComponent::IsChromaticAberrationEnabled()
+{
+	return bChromaticAberrationEnabled;
+}
+
+void FECameraComponent::SetChromaticAberrationEnabled(const bool NewValue)
+{
+	bChromaticAberrationEnabled = NewValue;
 }
 
 float FECameraComponent::GetChromaticAberrationIntensity()

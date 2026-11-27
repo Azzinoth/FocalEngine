@@ -2215,13 +2215,14 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	}
 	
 	// **************************** Bloom ********************************
-	CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateUniformData("thresholdBrightness", CameraComponent.GetBloomThreshold());
+	CameraData->PostProcessEffects[0]->bActive = !bForceDisableBloom && CameraComponent.IsBloomEnabled();
+	if (CameraData->PostProcessEffects[0]->bActive)
+	{
+		CameraData->PostProcessEffects[0]->Stages[0]->Shader->UpdateUniformData("thresholdBrightness", CameraComponent.GetBloomThreshold());
 
-	CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
-	CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
-
-	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
-	CameraData->PostProcessEffects[0]->bActive = !bForceDisableBloom;
+		CameraData->PostProcessEffects[0]->Stages[1]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
+		CameraData->PostProcessEffects[0]->Stages[2]->StageSpecificUniformValues[1].SetValue(CameraComponent.GetBloomSize());
+	}
 	// **************************** Bloom END ****************************
 
 	// **************************** FXAA ********************************
@@ -2232,32 +2233,33 @@ void FERenderer::UpdateShadersForCamera(FECameraRenderingData* CameraData)
 	// **************************** FXAA END ****************************
 
 	// **************************** Depth of Field ********************************
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
+	CameraData->PostProcessEffects[3]->bActive = !bForceDisableDOF && CameraComponent.IsDOFEnabled();
+	if (CameraData->PostProcessEffects[3]->bActive)
+	{
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThreshold", CameraComponent.GetDOFNearDistance());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("depthThresholdFar", CameraComponent.GetDOFFarDistance());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("blurSize", CameraComponent.GetDOFStrength());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("intMult", CameraComponent.GetDOFDistanceDependentStrength());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zNear", CameraComponent.GetNearPlane());
 
-	CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
-	CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
-
-	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
-	CameraData->PostProcessEffects[3]->bActive = !bForceDisableDOF;
+		CameraData->PostProcessEffects[3]->Stages[0]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
+		CameraData->PostProcessEffects[3]->Stages[1]->Shader->UpdateUniformData("zFar", CameraComponent.GetFarPlane());
+	}
 	// **************************** Depth of Field END ****************************
 
 	// **************************** Chromatic Aberration ********************************
-	CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateUniformData("intensity", CameraComponent.GetChromaticAberrationIntensity());
-	// This overwrites bActive every frame, so this effect can not be turned off individually per camera.
-	CameraData->PostProcessEffects[4]->bActive = !bForceDisableChromaticAberration;
+	CameraData->PostProcessEffects[4]->bActive = !bForceDisableChromaticAberration && CameraComponent.IsChromaticAberrationEnabled();
+	if (CameraData->PostProcessEffects[4]->bActive)
+		CameraData->PostProcessEffects[4]->Stages[0]->Shader->UpdateUniformData("intensity", CameraComponent.GetChromaticAberrationIntensity());
 	// **************************** Chromatic Aberration END ****************************
 
 	// **************************** Distance Fog ********************************

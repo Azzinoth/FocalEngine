@@ -337,9 +337,11 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	Root["Anti-Aliasing(FXAA)"]["FXAAReduceMin"] = CameraComponent.GetFXAAReduceMin();
 	Root["Anti-Aliasing(FXAA)"]["FXAAReduceMul"] = CameraComponent.GetFXAAReduceMul();
 	// *********** Bloom ***********
+	Root["Bloom"]["bIsBloom Enabled"] = CameraComponent.IsBloomEnabled();
 	Root["Bloom"]["Threshold Brightness"] = CameraComponent.GetBloomThreshold();
 	Root["Bloom"]["Bloom Size"] = CameraComponent.GetBloomSize();
 	// *********** Depth of Field ***********
+	Root["Depth of Field"]["bIsDepthOfField Enabled"] = CameraComponent.IsDOFEnabled();
 	Root["Depth of Field"]["Near distance"] = CameraComponent.GetDOFNearDistance();
 	Root["Depth of Field"]["Far distance"] = CameraComponent.GetDOFFarDistance();
 	Root["Depth of Field"]["Strength"] = CameraComponent.GetDOFStrength();
@@ -349,6 +351,7 @@ Json::Value FECameraSystem::CameraComponentToJson(FEEntity* Entity)
 	Root["Distance fog"]["Density"] = CameraComponent.GetDistanceFogDensity();
 	Root["Distance fog"]["Gradient"] = CameraComponent.GetDistanceFogGradient();
 	// *********** Chromatic Aberration ***********
+	Root["Chromatic Aberration"]["bIsChromaticAberration Enabled"] = CameraComponent.IsChromaticAberrationEnabled();
 	Root["Chromatic Aberration"]["Shift strength"] = CameraComponent.GetChromaticAberrationIntensity();
 	// *********** SSAO ***********
 	Root["SSAO"]["isSSAO Active"] = CameraComponent.IsSSAOEnabled();
@@ -398,6 +401,9 @@ void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, const Json::Value
 	CameraComponent.SetFXAAReduceMin(Root["Anti-Aliasing(FXAA)"]["FXAAReduceMin"].asFloat());
 	CameraComponent.SetFXAAReduceMul(Root["Anti-Aliasing(FXAA)"]["FXAAReduceMul"].asFloat());
 	// *********** Bloom ***********
+	if (Root["Bloom"].isMember("bIsBloom Enabled"))
+		CameraComponent.SetBloomEnabled(Root["Bloom"]["bIsBloom Enabled"].asBool());
+
 	CameraComponent.SetBloomThreshold(Root["Bloom"]["Threshold Brightness"].asFloat());
 	CameraComponent.SetBloomSize(Root["Bloom"]["Bloom Size"].asFloat());
 	// *********** Depth of Field ***********
@@ -405,11 +411,16 @@ void FECameraSystem::CameraComponentFromJson(FEEntity* Entity, const Json::Value
 	CameraComponent.SetDOFFarDistance(Root["Depth of Field"]["Far distance"].asFloat());
 	CameraComponent.SetDOFStrength(Root["Depth of Field"]["Strength"].asFloat());
 	CameraComponent.SetDOFDistanceDependentStrength(Root["Depth of Field"]["Distance dependent strength"].asFloat());
+	if (Root["Depth of Field"].isMember("bIsDepthOfField Enabled"))
+		CameraComponent.SetDOFEnabled(Root["Depth of Field"]["bIsDepthOfField Enabled"].asBool());
 	// *********** Distance fog ***********
 	CameraComponent.SetDistanceFogEnabled(Root["Distance fog"]["isDistanceFog Enabled"].asBool());
 	CameraComponent.SetDistanceFogDensity(Root["Distance fog"]["Density"].asFloat());
 	CameraComponent.SetDistanceFogGradient(Root["Distance fog"]["Gradient"].asFloat());
 	// *********** Chromatic Aberration ***********
+	if (Root["Chromatic Aberration"].isMember("bIsChromaticAberration Enabled"))
+		CameraComponent.SetChromaticAberrationEnabled(Root["Chromatic Aberration"]["bIsChromaticAberration Enabled"].asBool());
+
 	CameraComponent.SetChromaticAberrationIntensity(Root["Chromatic Aberration"]["Shift strength"].asFloat());
 	// *********** SSAO ***********
 	CameraComponent.SetSSAOEnabled(Root["SSAO"]["isSSAO Active"].asBool());
