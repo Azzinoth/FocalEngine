@@ -684,7 +684,7 @@ FEAABB FEScene::GetEntityAABB(FEEntity* Entity, bool bLocalAABB)
 
 	if (Entity->HasComponent<FETerrainComponent>())
 	{
-		Result = TERRAIN_SYSTEM.GetAABB(Entity);
+		Result = TERRAIN_SYSTEM.GetAABB(Entity, bLocalAABB);
 	}
 
 	if (Entity->HasComponent<FEVirtualUIComponent>())

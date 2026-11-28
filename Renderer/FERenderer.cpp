@@ -1660,6 +1660,7 @@ void FERenderer::RenderInternal(FEScene* CurrentScene, FEEntity* MainCameraEntit
 	// ********* ENTITIES THAT WILL NOT BE IMPACTED BY POST PROCESS. MAINLY FOR UI END *********
 
 	// **************************** TERRAIN EDITOR TOOLS ****************************
+	MouseRay = CAMERA_SYSTEM.GetMouseRayToWorld(MainCameraEntity);
 	TERRAIN_SYSTEM.UpdateBrush(CurrentCameraTransformComponent.GetPosition(FE_WORLD_SPACE), MouseRay);
 	// **************************** TERRAIN EDITOR TOOLS END ****************************
 

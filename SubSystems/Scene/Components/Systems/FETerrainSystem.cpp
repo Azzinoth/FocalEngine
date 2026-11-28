@@ -178,7 +178,7 @@ FEAABB FETerrainSystem::GetAABB(FEEntity* TerrainEntity, bool bLocalAABB)
 	TerrainComponent.XSize = TerrainComponent.FinalAABB.GetMax()[0] - TerrainComponent.FinalAABB.GetMin()[0];
 	TerrainComponent.ZSize = TerrainComponent.FinalAABB.GetMax()[2] - TerrainComponent.FinalAABB.GetMin()[2];
 	
-	if (!bLocalAABB)
+	if (bLocalAABB)
 		return Result;
 
 	return TerrainComponent.FinalAABB;
@@ -490,17 +490,14 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 	LocalX = LocalX / TerrainComponent.GetXSize();
 	LocalZ = LocalZ / TerrainComponent.GetZSize();
 
-	if (IsBrushActive())
+	const bool bMouseOnTerrain = LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0;
+	if (IsBrushActive() && bMouseOnTerrain)
 	{
 		LastChangesTimeStamp = std::chrono::system_clock::now();
 		bCPUHeightInfoDirtyFlag = true;
 		TerrainComponent.HeightMap->SetDirtyFlag(true);
 
-		if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
-		{
-			BrushOutputShader->UpdateUniformData("brushCenter", glm::vec2(LocalX, LocalZ));
-		}
-
+		BrushOutputShader->UpdateUniformData("brushCenter", glm::vec2(LocalX, LocalZ));
 		BrushOutputShader->UpdateUniformData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
 		BrushOutputShader->UpdateUniformData("brushMode", static_cast<float>(GetBrushMode()));
 
@@ -571,10 +568,9 @@ void FETerrainSystem::UpdateBrush(const glm::dvec3 MouseRayStart, const glm::dve
 		TerrainComponent.BrushOutputFB->UnBind();
 	}
 
-	if (LocalX > 0 && LocalZ > 0 && LocalX < 1.0 && LocalZ < 1.0)
-	{
+	if (bMouseOnTerrain)
 		BrushVisualShader->UpdateUniformData("brushCenter", glm::vec2(LocalX, LocalZ));
-	}
+
 	BrushVisualShader->UpdateUniformData("brushSize", BrushSize / (TerrainComponent.GetXSize() * 2.0f));
 
 	TerrainComponent.BrushVisualFB->Bind();
